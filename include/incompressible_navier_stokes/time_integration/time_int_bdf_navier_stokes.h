@@ -533,7 +533,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
           << std::endl
           << " Number of TIME STEPS: " << std::left << std::setw(8) << get_time_step_number()
           << "t_n = " << std::scientific << std::setprecision(4) << this->get_time()
-          << " -> t_n+1 = " << this->get_time() + this->get_time_step_size() << std::endl
+          << " -> t_n+1 = " << this->get_next_time() << std::endl
           << "______________________________________________________________________" << std::endl;
   }
 }

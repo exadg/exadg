@@ -473,7 +473,7 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
   timer.restart();
 
   // calculate rhs (rhs-vector f and inhomogeneous boundary face integrals)
-  conv_diff_operation->rhs(rhs_vector, this->get_time() + this->get_time_step_size());
+  conv_diff_operation->rhs(rhs_vector, this->get_next_time());
 
   // add the convective term to the right-hand side of the equations
   // if the convective term is treated explicitly (additive decomposition)
@@ -497,7 +497,7 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
   if(param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     // start time t_{n-i} initialized with t_{n+1}
-    double time_n_i = this->get_time() + this->get_time_step_size();
+    double time_n_i = this->get_next_time();
 
     // Loop over all previous time instants required by the BDF scheme
     // and calculate u_tilde by substepping algorithm, i.e.,
@@ -546,11 +546,8 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
     solution_np.add(extra.get_beta(i), solution[i]);
 
   // solve the linear system of equations
-  unsigned int iterations =
-    conv_diff_operation->solve(solution_np,
-                               rhs_vector,
-                               bdf.get_gamma0() / this->get_time_step_size(),
-                               this->get_time() + this->get_time_step_size());
+  unsigned int iterations = conv_diff_operation->solve(
+    solution_np, rhs_vector, bdf.get_gamma0() / this->get_time_step_size(), this->get_next_time());
 
   N_iter_average += iterations;
   solver_time_average += timer.wall_time();
@@ -568,7 +565,9 @@ template<int dim, int fe_degree, typename value_type>
 void
 TimeIntBDF<dim, fe_degree, value_type>::postprocessing() const
 {
-  conv_diff_operation->do_postprocessing(solution[0], this->get_time(), get_time_step_number());
+  conv_diff_operation->do_postprocessing(solution[0],
+                                         this->get_time(),
+                                         this->get_time_step_number());
 }
 
 template<int dim, int fe_degree, typename value_type>

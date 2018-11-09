@@ -346,8 +346,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
   {
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
     // step
-    navier_stokes_operation->rhs_stokes_problem(rhs_vector,
-                                                this->get_time() + this->get_time_step_size());
+    navier_stokes_operation->rhs_stokes_problem(rhs_vector, this->get_next_time());
 
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly (additive decomposition):
@@ -418,7 +417,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     navier_stokes_operation->solve_nonlinear_problem(
       solution_np,
       this->sum_alphai_ui,
-      this->get_time() + this->get_time_step_size(),
+      this->get_next_time(),
       this->get_scaling_factor_time_derivative_term(),
       newton_iterations,
       linear_iterations);
@@ -455,8 +454,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      navier_stokes_operation->shift_pressure(solution_np.block(1),
-                                              this->get_time() + this->get_time_step_size());
+      navier_stokes_operation->shift_pressure(solution_np.block(1), this->get_next_time());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -465,8 +463,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
       navier_stokes_operation->shift_pressure_mean_value(solution_np.block(1),
-                                                         this->get_time() +
-                                                           this->get_time_step_size());
+                                                         this->get_next_time());
     }
     else
     {

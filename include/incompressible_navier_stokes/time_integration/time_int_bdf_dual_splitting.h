@@ -505,7 +505,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
   if(this->param.right_hand_side == true)
   {
     navier_stokes_operation->evaluate_body_force_and_apply_inverse_mass_matrix(
-      velocity_np, this->get_time() + this->get_time_step_size());
+      velocity_np, this->get_next_time());
   }
   else // right_hand_side == false
   {
@@ -577,7 +577,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
     navier_stokes_operation->solve_nonlinear_convective_problem(
       velocity_np,
       this->sum_alphai_ui,
-      this->get_time() + this->get_time_step_size(),
+      this->get_next_time(),
       this->get_scaling_factor_time_derivative_term(),
       newton_iterations,
       linear_iterations);
@@ -630,8 +630,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      navier_stokes_operation->shift_pressure(pressure_np,
-                                              this->get_time() + this->get_time_step_size());
+      navier_stokes_operation->shift_pressure(pressure_np, this->get_next_time());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -639,9 +638,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
-      navier_stokes_operation->shift_pressure_mean_value(pressure_np,
-                                                         this->get_time() +
-                                                           this->get_time_step_size());
+      navier_stokes_operation->shift_pressure_mean_value(pressure_np, this->get_next_time());
     }
     else
     {
@@ -714,8 +711,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
 
       // body force term
       navier_stokes_operation->rhs_ppe_div_term_body_forces_add(rhs_vec_pressure,
-                                                                this->get_time() +
-                                                                  this->get_time_step_size());
+                                                                this->get_next_time());
     }
   }
 
@@ -726,11 +722,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
 
   // II.1. inhomogeneous BC terms depending on prescribed boundary data,
   //       i.e. pressure Dirichlet boundary conditions on Gamma_N
-  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure,
-                                               this->get_time() + this->get_time_step_size());
+  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->get_next_time());
   //       and body force vector, temporal derivative of velocity on Gamma_D
-  navier_stokes_operation->rhs_ppe_nbc_add(rhs_vec_pressure,
-                                           this->get_time() + this->get_time_step_size());
+  navier_stokes_operation->rhs_ppe_nbc_add(rhs_vec_pressure, this->get_next_time());
 
   // II.2. viscous term of pressure Neumann boundary condition on Gamma_D
   //       extrapolate vorticity and subsequently evaluate boundary face integral
@@ -841,8 +835,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
   /*
    *  II. calculate pressure gradient term
    */
-  navier_stokes_operation->evaluate_pressure_gradient_term(
-    rhs_vec_projection_temp, pressure_np, this->get_time() + this->get_time_step_size());
+  navier_stokes_operation->evaluate_pressure_gradient_term(rhs_vec_projection_temp,
+                                                           pressure_np,
+                                                           this->get_next_time());
 
   rhs_vec_projection.add(-this->get_time_step_size() / this->bdf.get_gamma0(),
                          rhs_vec_projection_temp);
@@ -920,8 +915,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
   /*
    *  II. inhomongeous parts of boundary face integrals of viscous operator
    */
-  navier_stokes_operation->rhs_add_viscous_term(rhs_vec_viscous,
-                                                this->get_time() + this->get_time_step_size());
+  navier_stokes_operation->rhs_add_viscous_term(rhs_vec_viscous, this->get_next_time());
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

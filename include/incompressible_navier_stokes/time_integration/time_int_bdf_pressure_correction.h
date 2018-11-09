@@ -542,7 +542,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     navier_stokes_operation->solve_nonlinear_momentum_equation(
       velocity_np,
       rhs_vec_momentum,
-      this->get_time() + this->get_time_step_size(),
+      this->get_next_time(),
       this->get_scaling_factor_time_derivative_term(),
       nonlinear_iterations_momentum,
       linear_iterations_momentum);
@@ -596,9 +596,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    */
   if(this->param.right_hand_side == true)
   {
-    navier_stokes_operation->evaluate_add_body_force_term(rhs_vec_momentum,
-                                                          this->get_time() +
-                                                            this->get_time_step_size());
+    navier_stokes_operation->evaluate_add_body_force_term(rhs_vec_momentum, this->get_next_time());
   }
 
   /*
@@ -649,8 +647,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    navier_stokes_operation->rhs_add_viscous_term(rhs_vec_momentum,
-                                                  this->get_time() + this->get_time_step_size());
+    navier_stokes_operation->rhs_add_viscous_term(rhs_vec_momentum, this->get_next_time());
   }
 }
 
@@ -708,8 +705,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      navier_stokes_operation->shift_pressure(pressure_np,
-                                              this->get_time() + this->get_time_step_size());
+      navier_stokes_operation->shift_pressure(pressure_np, this->get_next_time());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -717,9 +713,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
-      navier_stokes_operation->shift_pressure_mean_value(pressure_np,
-                                                         this->get_time() +
-                                                           this->get_time_step_size());
+      navier_stokes_operation->shift_pressure_mean_value(pressure_np, this->get_next_time());
     }
     else
     {
@@ -771,8 +765,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   /*
    *  I. calculate divergence term
    */
-  navier_stokes_operation->evaluate_velocity_divergence_term(
-    rhs_vec_pressure_temp, velocity_np, this->get_time() + this->get_time_step_size());
+  navier_stokes_operation->evaluate_velocity_divergence_term(rhs_vec_pressure_temp,
+                                                             velocity_np,
+                                                             this->get_next_time());
 
   rhs_vec_pressure.equ(-this->bdf.get_gamma0() / this->get_time_step_size(), rhs_vec_pressure_temp);
 
@@ -782,8 +777,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    *  i.e., pressure Dirichlet boundary conditions on Gamma_N and
    *  pressure Neumann boundary conditions on Gamma_D (always h=0 for pressure-correction scheme!)
    */
-  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure,
-                                               this->get_time() + this->get_time_step_size());
+  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->get_next_time());
 
   // incremental formulation of pressure-correction scheme
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
@@ -825,8 +819,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   if(this->param.rotational_formulation == true)
   {
     // Automatically sets pressure_np to zero before operator evaluation.
-    navier_stokes_operation->evaluate_velocity_divergence_term(
-      pressure_np, velocity_np, this->get_time() + this->get_time_step_size());
+    navier_stokes_operation->evaluate_velocity_divergence_term(pressure_np,
+                                                               velocity_np,
+                                                               this->get_next_time());
 
     navier_stokes_operation->apply_inverse_pressure_mass_matrix(pressure_np, pressure_np);
 
@@ -863,8 +858,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   /*
    *  II. calculate pressure gradient term including boundary condition g_p(t_{n+1})
    */
-  navier_stokes_operation->evaluate_pressure_gradient_term(
-    rhs_vec_projection_temp, pressure_increment, this->get_time() + this->get_time_step_size());
+  navier_stokes_operation->evaluate_pressure_gradient_term(rhs_vec_projection_temp,
+                                                           pressure_increment,
+                                                           this->get_next_time());
 
   rhs_vec_projection.add(-this->get_time_step_size() / this->bdf.get_gamma0(),
                          rhs_vec_projection_temp);
