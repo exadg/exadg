@@ -567,24 +567,11 @@ void
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   calculate_sum_alphai_ui_oif_substepping()
 {
-  unsigned int current_order = 0;
-  if(get_time_step_number() <= order && param.start_with_low_order == true)
-  {
-    current_order = get_time_step_number();
-  }
-  else
-  {
-    current_order = order;
-  }
-
-  AssertThrow(current_order > 0 && current_order <= order,
-              ExcMessage("Invalid parameter current_order"));
-
   // Loop over all previous time instants required by the BDF scheme
   // and calculate u_tilde by substepping algorithm, i.e.,
   // integrate over time interval t_{n-i} <= t <= t_{n+1}
   // using explicit Runge-Kutta methods.
-  for(unsigned int i = 0; i < current_order; ++i)
+  for(unsigned int i = 0; i < order; ++i)
   {
     // initialize solution: u_tilde(s=0) = u(t_{n-i})
     solution_tilde_m = get_velocity(i);
