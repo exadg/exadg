@@ -37,14 +37,14 @@ public:
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
   {
-    AssertThrow(time_step_number >= 0,
-                ExcMessage("This postprocessing tool can only be used for unsteady problems."));
-
-    AssertThrow(data.evaluate_individual_terms == false,
-                ExcMessage("Not implemented in this class."));
-
     if(data.calculate == true)
     {
+      AssertThrow(time_step_number >= 0,
+                  ExcMessage("This postprocessing tool can only be used for unsteady problems."));
+
+      AssertThrow(data.evaluate_individual_terms == false,
+                  ExcMessage("Not implemented in this class."));
+
       calculate_basic(velocity, time, time_step_number);
     }
   }
@@ -247,11 +247,11 @@ public:
   void
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number)
   {
-    AssertThrow(time_step_number >= 0,
-                ExcMessage("This postprocessing tool can only be used for unsteady problems."));
-
     if(this->data.calculate == true)
     {
+      AssertThrow(time_step_number >= 0,
+                  ExcMessage("This postprocessing tool can only be used for unsteady problems."));
+
       if(this->data.evaluate_individual_terms)
         calculate_detailed(velocity, time, time_step_number);
       else

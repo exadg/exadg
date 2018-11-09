@@ -116,8 +116,8 @@ public:
   do_postprocessing(VectorType const & velocity,
                     VectorType const & intermediate_velocity,
                     VectorType const & pressure,
-                    double const       time,
-                    int const          time_step_number)
+                    double const       time             = 0.0,
+                    int const          time_step_number = -1)
   {
     /*
      *  write output
