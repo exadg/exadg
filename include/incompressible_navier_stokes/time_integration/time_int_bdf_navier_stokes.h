@@ -588,7 +588,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   {
     solutions.at(i) = &get_velocity(i);
     // assume equidistant time step sizes
-    times.at(i) = this->get_time() - (double)(i) * this->get_time_step_size();
+    times.at(i) = this->get_previous_time(i);
   }
 
   // Loop over all previous time instants required by the BDF scheme

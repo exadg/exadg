@@ -269,8 +269,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    navier_stokes_operation->prescribe_initial_conditions(
-      velocity[i], pressure[i], this->get_time() - double(i) * this->get_time_step_size());
+    navier_stokes_operation->prescribe_initial_conditions(velocity[i],
+                                                          pressure[i],
+                                                          this->get_previous_time(i));
   }
 }
 
@@ -311,9 +312,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
   {
     navier_stokes_operation->evaluate_convective_term_and_apply_inverse_mass_matrix(
-      vec_convective_term[i],
-      velocity[i],
-      this->get_time() - double(i) * this->get_time_step_size());
+      vec_convective_term[i], velocity[i], this->get_previous_time(i));
   }
 }
 
@@ -683,13 +682,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
       // sum alpha_i * u_i term
       for(unsigned int i = 0; i < velocity.size(); ++i)
       {
-        double time_offset = 0.0;
-        for(unsigned int k = 0; k <= i; ++k)
-          time_offset += this->get_time_step_size(k);
-
-        rhs_vec_pressure_temp     = 0;
-        double const current_time = this->get_time() + this->get_time_step_size() - time_offset;
-        navier_stokes_operation->rhs_velocity_divergence_term(rhs_vec_pressure_temp, current_time);
+        rhs_vec_pressure_temp = 0;
+        double const t        = this->get_previous_time(i);
+        navier_stokes_operation->rhs_velocity_divergence_term(rhs_vec_pressure_temp, t);
 
         // note that the minus sign related to this term is already taken into account
         // in the function .rhs() of the divergence operator

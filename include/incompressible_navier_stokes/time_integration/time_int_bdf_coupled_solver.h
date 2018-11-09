@@ -176,8 +176,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::initiali
   {
     navier_stokes_operation->prescribe_initial_conditions(solution[i].block(0),
                                                           solution[i].block(1),
-                                                          this->get_time() -
-                                                            double(i) * this->get_time_step_size());
+                                                          this->get_previous_time(i));
   }
 }
 
@@ -212,8 +211,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
   {
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                       solution[i].block(0),
-                                                      this->get_time() -
-                                                        double(i) * this->get_time_step_size());
+                                                      this->get_previous_time(i));
   }
 }
 

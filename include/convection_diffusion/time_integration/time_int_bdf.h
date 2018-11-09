@@ -267,8 +267,7 @@ TimeIntBDF<dim, fe_degree, value_type>::initialize_solution()
 {
   for(unsigned int i = 0; i < solution.size(); ++i)
   {
-    double const current_time = this->get_time() - double(i) * this->get_time_step_size();
-    conv_diff_operation->prescribe_initial_conditions(solution[i], current_time);
+    conv_diff_operation->prescribe_initial_conditions(solution[i], this->get_previous_time(i));
   }
 }
 
@@ -279,10 +278,9 @@ TimeIntBDF<dim, fe_degree, value_type>::initialize_vec_convective_term()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
   {
-    double const current_time = this->get_time() - double(i) * this->get_time_step_size();
     conv_diff_operation->evaluate_convective_term(vec_convective_term[i],
                                                   solution[i],
-                                                  current_time);
+                                                  this->get_previous_time(i));
   }
 }
 
@@ -496,9 +494,6 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
   // and operator-integration-factor splitting
   if(param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    // start time t_{n-i} initialized with t_{n+1}
-    double time_n_i = this->get_next_time();
-
     // Loop over all previous time instants required by the BDF scheme
     // and calculate u_tilde by substepping algorithm, i.e.,
     // integrate over time interval t_{n-i} <= t <= t_{n+1}
@@ -508,7 +503,7 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
       // initialize solution: u_tilde(s=0) = u(t_{n-i})
       solution_tilde_m = solution[i];
       // calculate start time t_{n-i}
-      time_n_i -= this->get_time_step_size(i);
+      double time_n_i = this->get_previous_time(i);
 
       // time loop substepping: t_{n-i} <= t <= t_{n+1}
       for(unsigned int m = 0; m < M * (i + 1) /*assume equidistant time step sizes*/; ++m)

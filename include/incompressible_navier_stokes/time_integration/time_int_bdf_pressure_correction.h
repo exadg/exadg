@@ -275,8 +275,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    navier_stokes_operation->prescribe_initial_conditions(
-      velocity[i], pressure[i], this->get_time() - double(i) * this->get_time_step_size());
+    navier_stokes_operation->prescribe_initial_conditions(velocity[i],
+                                                          pressure[i],
+                                                          this->get_previous_time(i));
   }
 }
 
@@ -290,8 +291,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                       velocity[i],
-                                                      this->get_time() -
-                                                        double(i) * this->get_time_step_size());
+                                                      this->get_previous_time(i));
   }
 }
 
@@ -305,9 +305,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     navier_stokes_operation->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
                                                              pressure[i],
-                                                             this->get_time() -
-                                                               double(i) *
-                                                                 this->get_time_step_size());
+                                                             this->get_previous_time(i));
   }
 }
 
@@ -782,14 +780,10 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   // incremental formulation of pressure-correction scheme
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
-    double time_offset = 0.0;
-    for(unsigned int k = 0; k <= i; ++k)
-      time_offset += this->get_time_step_size(k);
-
     // set rhs_vec_pressure_temp to zero since rhs_ppe_laplace_add() adds into dst-vector
-    rhs_vec_pressure_temp     = 0.0;
-    double const current_time = this->get_time() + this->get_time_step_size() - time_offset;
-    navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp, current_time);
+    rhs_vec_pressure_temp = 0.0;
+    double const t        = this->get_previous_time(i);
+    navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp, t);
     rhs_vec_pressure.add(-extra_pressure_gradient.get_beta(i), rhs_vec_pressure_temp);
   }
 
@@ -871,12 +865,8 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    */
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
-    double time_offset = 0.0;
-    for(unsigned int k = 0; k <= i; ++k)
-      time_offset += this->get_time_step_size(k);
-
     // evaluate inhomogeneous parts of boundary face integrals
-    double const current_time = this->get_time() + this->get_time_step_size() - time_offset;
+    double const current_time = this->get_previous_time(i);
     navier_stokes_operation->rhs_pressure_gradient_term(rhs_vec_projection_temp, current_time);
 
     rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
