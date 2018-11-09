@@ -78,6 +78,9 @@ private:
   solve_timestep();
 
   void
+  calculate_sum_alphai_ui_oif_substepping();
+
+  void
   output_solver_info_header() const;
 
   void
@@ -494,34 +497,7 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
   // and operator-integration-factor splitting
   if(param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    // Loop over all previous time instants required by the BDF scheme
-    // and calculate u_tilde by substepping algorithm, i.e.,
-    // integrate over time interval t_{n-i} <= t <= t_{n+1}
-    // using explicit Runge-Kutta methods.
-    for(unsigned int i = 0; i < solution.size(); ++i)
-    {
-      // initialize solution: u_tilde(s=0) = u(t_{n-i})
-      solution_tilde_m = solution[i];
-      // calculate start time t_{n-i}
-      double time_n_i = this->get_previous_time(i);
-
-      // time loop substepping: t_{n-i} <= t <= t_{n+1}
-      for(unsigned int m = 0; m < M * (i + 1) /*assume equidistant time step sizes*/; ++m)
-      {
-        time_integrator_OIF->solve_timestep(solution_tilde_mp,
-                                            solution_tilde_m,
-                                            time_n_i + delta_s * m,
-                                            delta_s);
-
-        solution_tilde_mp.swap(solution_tilde_m);
-      }
-
-      // calculate sum (alpha_i/dt * u_tilde_i)
-      if(i == 0)
-        sum_alphai_ui.equ(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
-      else // i>0
-        sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
-    }
+    calculate_sum_alphai_ui_oif_substepping();
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else
@@ -555,6 +531,41 @@ TimeIntBDF<dim, fe_degree, value_type>::solve_timestep()
           << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 }
+
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntBDF<dim, fe_degree, value_type>::calculate_sum_alphai_ui_oif_substepping()
+{
+  // Loop over all previous time instants required by the BDF scheme
+  // and calculate u_tilde by substepping algorithm, i.e.,
+  // integrate over time interval t_{n-i} <= t <= t_{n+1}
+  // using explicit Runge-Kutta methods.
+  for(unsigned int i = 0; i < solution.size(); ++i)
+  {
+    // initialize solution: u_tilde(s=0) = u(t_{n-i})
+    solution_tilde_m = solution[i];
+    // calculate start time t_{n-i}
+    double time_n_i = this->get_previous_time(i);
+
+    // time loop substepping: t_{n-i} <= t <= t_{n+1}
+    for(unsigned int m = 0; m < M * (i + 1) /*assume equidistant time step sizes*/; ++m)
+    {
+      time_integrator_OIF->solve_timestep(solution_tilde_mp,
+                                          solution_tilde_m,
+                                          time_n_i + delta_s * m,
+                                          delta_s);
+
+      solution_tilde_mp.swap(solution_tilde_m);
+    }
+
+    // calculate sum (alpha_i/dt * u_tilde_i)
+    if(i == 0)
+      sum_alphai_ui.equ(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
+    else // i>0
+      sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
+  }
+}
+
 
 template<int dim, int fe_degree, typename value_type>
 void
