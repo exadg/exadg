@@ -59,13 +59,13 @@ private:
   update_time_integrator_constants();
 
   virtual void
-  initialize_vectors();
+  allocate_vectors();
 
   virtual void
   initialize_current_solution();
 
   virtual void
-  initialize_former_solution();
+  initialize_former_solutions();
 
   virtual void
   setup_derived();
@@ -118,17 +118,20 @@ private:
   virtual void
   postprocessing_steady_problem() const;
 
-  virtual void
-  read_restart_vectors(boost::archive::binary_iarchive & ia);
-
-  virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  get_velocity() const;
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity();
+  get_velocity(unsigned int i /* t_{n-i} */) const;
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity(unsigned int i /* t_{n-i} */);
+  get_pressure(unsigned int i /* t_{n-i} */) const;
+
+  virtual void
+  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */);
+
+  virtual void
+  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
@@ -218,7 +221,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_vectors()
+  allocate_vectors()
 {
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -270,7 +273,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_former_solution()
+  initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
@@ -312,6 +315,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
+  const
 {
   return velocity[0];
 }
@@ -319,49 +323,35 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(
-  unsigned int i)
+  unsigned int i) const
 {
   return velocity[i];
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  read_restart_vectors(boost::archive::binary_iarchive & ia)
+LinearAlgebra::distributed::Vector<value_type> const &
+TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_pressure(
+  unsigned int i) const
 {
-  Vector<double> tmp;
-  for(unsigned int i = 0; i < velocity.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), velocity[i].begin());
-  }
-  for(unsigned int i = 0; i < pressure.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), pressure[i].begin());
-  }
+  return pressure[i];
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::set_velocity(
+  VectorType const & velocity_in,
+  unsigned int const i)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  VectorView<double> tmp(velocity[0].local_size(), velocity[0].begin());
-#pragma GCC diagnostic pop
-  oa << tmp;
-  for(unsigned int i = 1; i < velocity.size(); i++)
-  {
-    tmp.reinit(velocity[i].local_size(), velocity[i].begin());
-    oa << tmp;
-  }
-  for(unsigned int i = 0; i < pressure.size(); i++)
-  {
-    tmp.reinit(pressure[i].local_size(), pressure[i].begin());
-    oa << tmp;
-  }
+  velocity[i] = velocity_in;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::set_pressure(
+  VectorType const & pressure_in,
+  unsigned int const i)
+{
+  pressure[i] = pressure_in;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

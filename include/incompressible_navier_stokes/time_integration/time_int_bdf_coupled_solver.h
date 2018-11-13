@@ -61,13 +61,13 @@ private:
   setup_derived();
 
   virtual void
-  initialize_vectors();
+  allocate_vectors();
 
   virtual void
   initialize_current_solution();
 
   virtual void
-  initialize_former_solution();
+  initialize_former_solutions();
 
   void
   initialize_vec_convective_term();
@@ -94,16 +94,19 @@ private:
   prepare_vectors_for_next_timestep();
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity();
+  get_velocity() const;
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity(unsigned int i /* t_{n-i} */);
+  get_velocity(unsigned int i /* t_{n-i} */) const;
+
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  get_pressure(unsigned int i /* t_{n-i} */) const;
 
   virtual void
-  read_restart_vectors(boost::archive::binary_iarchive & ia);
+  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */);
 
   virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
@@ -130,7 +133,7 @@ private:
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors()
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::allocate_vectors()
 {
   // solution
   for(unsigned int i = 0; i < solution.size(); ++i)
@@ -169,7 +172,8 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_former_solution()
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
+  initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
@@ -217,56 +221,43 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity() const
 {
   return solution[0].block(0);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(unsigned int i)
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(
+  unsigned int i) const
 {
   return solution[i].block(0);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::read_restart_vectors(
-  boost::archive::binary_iarchive & ia)
+LinearAlgebra::distributed::Vector<value_type> const &
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_pressure(
+  unsigned int i) const
 {
-  Vector<double> tmp;
-  for(unsigned int i = 0; i < solution.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), solution[i].block(0).begin());
-  }
-  for(unsigned int i = 0; i < solution.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), solution[i].block(1).begin());
-  }
+  return solution[i].block(1);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::write_restart_vectors(
-  boost::archive::binary_oarchive & oa) const
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::set_velocity(
+  VectorType const & velocity_in,
+  unsigned int const i)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  VectorView<value_type> tmp(solution[0].block(0).local_size(), solution[0].block(0).begin());
-#pragma GCC diagnostic pop
-  oa << tmp;
-  for(unsigned int i = 1; i < solution.size(); i++)
-  {
-    tmp.reinit(solution[i].block(0).local_size(), solution[i].block(0).begin());
-    oa << tmp;
-  }
-  for(unsigned int i = 0; i < solution.size(); i++)
-  {
-    tmp.reinit(solution[i].block(1).local_size(), solution[i].block(1).begin());
-    oa << tmp;
-  }
+  solution[i].block(0) = velocity_in;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::set_pressure(
+  VectorType const & pressure_in,
+  unsigned int const i)
+{
+  solution[i].block(1) = pressure_in;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

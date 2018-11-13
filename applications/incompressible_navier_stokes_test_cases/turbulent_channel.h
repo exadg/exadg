@@ -331,12 +331,6 @@ void InputParameters<dim>::set_input_parameters()
   // output of solver information
   output_solver_info_every_timesteps = 1e2; //1e3; //1e4;
 
-  // restart
-  write_restart = false;
-  restart_interval_time = 1.e2;
-  restart_interval_wall_time = 1.e6;
-  restart_every_timesteps = 1e8;
-
   // calculate div and mass error
   mass_data.calculate_error = false; //true;
   mass_data.start_time = START_TIME;

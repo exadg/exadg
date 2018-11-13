@@ -1,5 +1,5 @@
 /*
- * InputParametersConvDiff.h
+ * input_parameters.h
  *
  *  Created on: Aug 17, 2016
  *      Author: fehn
@@ -10,6 +10,7 @@
 
 #include <deal.II/base/exceptions.h>
 #include "../../functionalities/print_functions.h"
+#include "../../functionalities/restart_data.h"
 #include "../../postprocessor/error_calculation_data.h"
 #include "../../postprocessor/output_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
@@ -263,7 +264,10 @@ public:
       // calculation of errors
       error_data(ErrorCalculationData()),
 
-      output_solver_info_every_timesteps(1)
+      output_solver_info_every_timesteps(1),
+
+      // restart
+      restart_data(RestartData())
   {
   }
 
@@ -643,6 +647,8 @@ public:
     output_data.print(pcout, true /*problem_type == ProblemType::Unsteady*/);
 
     error_data.print(pcout, true /*problem_type == ProblemType::Unsteady*/);
+
+    restart_data.print(pcout);
   }
 
 
@@ -848,6 +854,9 @@ public:
 
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;
+
+  // Restart
+  RestartData restart_data;
 };
 
 } // namespace ConvDiff

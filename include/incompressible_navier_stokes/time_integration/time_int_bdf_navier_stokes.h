@@ -8,10 +8,10 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_NAVIER_STOKES_H_
 
-#include "time_integration/time_int_bdf_base.h"
+#include <deal.II/lac/vector_view.h>
 
-#include "../../incompressible_navier_stokes/time_integration/restart.h"
 #include "time_integration/explicit_runge_kutta.h"
+#include "time_integration/time_int_bdf_base.h"
 #include "time_integration/time_step_calculation.h"
 
 namespace IncNS
@@ -32,7 +32,7 @@ public:
                      param_in.order_time_integrator,
                      param_in.start_with_low_order,
                      use_adaptive_time_stepping_in,
-                     param_in.write_restart),
+                     param_in.restart_data),
       param(param_in),
       cfl(param.cfl / std::pow(2.0, n_refine_time_in)),
       cfl_oif(param_in.cfl_oif / std::pow(2.0, n_refine_time_in)),
@@ -45,16 +45,22 @@ public:
   {
   }
 
-  void
-  setup(bool do_restart);
-
 protected:
   virtual void
   update_time_integrator_constants();
 
-  virtual void
-  initialize_vectors() = 0;
+  InputParameters<dim> const & param;
 
+  // BDF time integration: Sum_i (alpha_i/dt * u_i)
+  VectorType sum_alphai_ui;
+
+  // global cfl number
+  double const cfl;
+
+  // cfl number cfl_oif for operator-integration-factor splitting
+  double const cfl_oif;
+
+private:
   void
   initialize_oif();
 
@@ -68,11 +74,32 @@ protected:
   do_timestep_oif_substepping_and_update_vectors(double const start_time,
                                                  double const time_step_size);
 
-  virtual void
-  calculate_time_step();
+  void
+  calculate_time_step_size();
+
+  double
+  recalculate_adaptive_time_step();
 
   virtual void
-  recalculate_adaptive_time_step();
+  solve_steady_problem() = 0;
+
+  virtual void
+  postprocessing_steady_problem() const = 0;
+
+  virtual VectorType const &
+  get_velocity() const = 0;
+
+  virtual VectorType const &
+  get_velocity(unsigned int i /* t_{n-i} */) const = 0;
+
+  virtual VectorType const &
+  get_pressure(unsigned int i /* t_{n-i} */) const = 0;
+
+  virtual void
+  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */) = 0;
+
+  virtual void
+  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */) = 0;
 
   void
   output_solver_info_header() const;
@@ -80,25 +107,15 @@ protected:
   void
   output_remaining_time() const;
 
-  virtual void
-  read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
-
-  virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
-
-  virtual void
-  resume_from_restart();
+  void
+  read_restart_vectors(boost::archive::binary_iarchive & ia);
 
   void
-  write_restart() const;
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
-  InputParameters<dim> const & param;
+  unsigned int const n_refine_time;
 
-  // BDF time integration: Sum_i (alpha_i/dt * u_i)
-  VectorType sum_alphai_ui;
-
-  // gobal cfl number
-  double const cfl;
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   // Operator-integration-factor splitting for convective term
   std::shared_ptr<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>>
@@ -110,100 +127,10 @@ protected:
                            VectorType>>
     time_integrator_OIF;
 
-  // cfl number cfl_oif for operator-integration-factor splitting
-  double const cfl_oif;
-
   // solution vectors needed for OIF substepping of convective term
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
-
-private:
-  virtual void
-  setup_derived() = 0;
-
-  virtual void
-  initialize_current_solution() = 0;
-
-  virtual void
-  initialize_former_solution() = 0;
-
-  void
-  initialize_solution_and_calculate_timestep(bool do_restart);
-
-  virtual void
-  solve_steady_problem() = 0;
-
-  virtual void
-  postprocessing_steady_problem() const = 0;
-
-  virtual void
-  prepare_vectors_for_next_timestep() = 0;
-
-  virtual VectorType const &
-  get_velocity() = 0;
-
-  virtual VectorType const &
-  get_velocity(unsigned int i /* t_{n-i} */) = 0;
-
-  unsigned int const n_refine_time;
-
-  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 };
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::setup(bool do_restart)
-{
-  pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
-
-  // operator-integration-factor splitting
-  initialize_oif();
-
-  // initialize global solution vectors (allocation)
-  initialize_vectors();
-
-  // initializes the solution and calculates the time step size!
-  initialize_solution_and_calculate_timestep(do_restart);
-
-  // this is where the setup of deriving classes is performed
-  setup_derived();
-
-  pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_solution_and_calculate_timestep(bool do_restart)
-{
-  if(do_restart)
-  {
-    resume_from_restart();
-
-    // if anything in the temporal discretization is changed, start_with_low_order has to be set to
-    // true otherwise the old solutions would not fit the time step increments, etc.
-    if(start_with_low_order == true)
-      calculate_time_step();
-
-    if(adaptive_time_stepping == true)
-      recalculate_adaptive_time_step();
-  }
-  else
-  {
-    // when using time step adaptivity the time_step depends on the velocity field. Therefore, first
-    // prescribe initial conditions before calculating the time step size
-    initialize_current_solution();
-
-    // initializing the solution at former time instants, e.g. t = start_time - time_step, requires
-    // the time step size. Therefore, first calculate the time step size
-    calculate_time_step();
-
-    // now: prescribe initial conditions at former time instants t = time - time_step, time
-    // - 2.0*time_step, etc.
-    if(start_with_low_order == false)
-      initialize_former_solution();
-  }
-}
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
@@ -300,50 +227,52 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::ini
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::resume_from_restart()
+TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::read_restart_vectors(
+  boost::archive::binary_iarchive & ia)
 {
-  const std::string filename = restart_filename<dim>(param);
-  std::ifstream     in(filename.c_str());
-  check_file(in, filename);
-  boost::archive::binary_iarchive ia(in);
-
-  double              time_local = 0.0;
-  std::vector<double> time_steps_local(order, -1.0);
-  resume_restart<dim, value_type>(ia, param, time_local, time_steps_local, order);
-  this->reset_time(time_local);
-  this->reset_time_step_vector(time_steps_local);
-
-  read_restart_vectors(ia);
-
-  finished_reading_restart_output();
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::write_restart() const
-{
-  const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
-
-  const double wall_time = global_timer.wall_time();
-  if((std::fmod(this->get_time(), param.restart_interval_time) <
-        this->get_time_step_size() + EPSILON &&
-      this->get_time() > param.restart_interval_time - EPSILON) ||
-     (std::fmod(wall_time, param.restart_interval_wall_time) < wall_time - total_time) ||
-     (get_time_step_number() % param.restart_every_timesteps == 0))
+  Vector<double> tmp;
+  for(unsigned int i = 0; i < this->order; i++)
   {
-    std::ostringstream oss;
-
-    boost::archive::binary_oarchive oa(oss);
-    write_restart_preamble<dim, value_type>(
-      oa, param, this->get_time_step_vector(), this->get_time(), order);
-    write_restart_vectors(oa);
-    write_restart_file<dim>(oss, param);
+    ia >> tmp;
+    VectorType velocity_copy = get_velocity(i);
+    std::copy(tmp.begin(), tmp.end(), velocity_copy.begin());
+    set_velocity(velocity_copy, i);
+  }
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    ia >> tmp;
+    VectorType pressure_copy = get_pressure(i);
+    std::copy(tmp.begin(), tmp.end(), pressure_copy.begin());
+    set_pressure(pressure_copy, i);
   }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_time_step()
+TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::write_restart_vectors(
+  boost::archive::binary_oarchive & oa) const
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    VectorView<value_type> vector_view(get_velocity(i).local_size(), get_velocity(i).begin());
+    oa << vector_view;
+  }
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    VectorView<value_type> vector_view(get_pressure(i).local_size(), get_pressure(i).begin());
+    oa << vector_view;
+  }
+
+#pragma GCC diagnostic pop
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
+  calculate_time_step_size()
 {
   if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
   {
@@ -356,7 +285,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
   {
-    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
+    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
       navier_stokes_operation->get_dof_handler_u().get_triangulation());
 
     double time_step = calculate_const_time_step_cfl(cfl,
@@ -381,7 +310,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
   }
   else if(adaptive_time_stepping == true)
   {
-    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
+    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
       navier_stokes_operation->get_dof_handler_u().get_triangulation());
 
     // calculate a temporary time step size using a  guess for the maximum velocity
@@ -423,7 +352,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
   {
-    const double global_min_cell_diameter = calculate_minimum_vertex_distance(
+    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
       navier_stokes_operation->get_dof_handler_u().get_triangulation());
 
     double time_step = calculate_time_step_max_efficiency(
@@ -455,7 +384,8 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
     // make sure that CFL condition is used for the calculation of the time step size (the aim
     // of the OIF splitting approach is to overcome limitations of the CFL condition)
     AssertThrow(
-      param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL,
+      param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
+        param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
       ExcMessage(
         "Specified calculation of time step size not compatible with OIF splitting approach!"));
 
@@ -466,27 +396,11 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::cal
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
+double
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   recalculate_adaptive_time_step()
 {
-  /*
-   * push back time steps
-   *
-   *   time t
-   *  -------->   t_{n-2}   t_{n-1}   t_{n}     t_{n+1}
-   *  _______________|_________|________|___________|___________\
-   *                 |         |        |           |           /
-   *  time_steps-vec:   dt[2]     dt[1]    dt[0]
-   *
-   *                    dt[1]  <- dt[0] <- new_dt
-   *
-   */
-  this->push_back_time_step_sizes();
-
-  double last_time_step = this->get_time_step_size();
-
-  double new_time_step = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
+  double new_time_step_size = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
     navier_stokes_operation->get_data(),
     navier_stokes_operation->get_dof_index_velocity(),
     navier_stokes_operation->get_quad_index_velocity_linear(),
@@ -495,13 +409,14 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
     param.cfl_exponent_fe_degree_velocity);
 
   bool use_limiter = true;
-  if(use_limiter == true)
+  if(use_limiter)
   {
-    double factor = param.adaptive_time_stepping_limiting_factor;
-    limit_time_step_change(new_time_step, last_time_step, factor);
+    double last_time_step_size = this->get_time_step_size();
+    double factor              = param.adaptive_time_stepping_limiting_factor;
+    limit_time_step_change(new_time_step_size, last_time_step_size, factor);
   }
 
-  this->set_time_step_size(new_time_step);
+  return new_time_step_size;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>

@@ -40,12 +40,12 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
+const ProblemType PROBLEM_TYPE = ProblemType::Steady;
 const double L = 1.0;
 
 std::string OUTPUT_FOLDER = "output/cavity/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re1e3"; //"Re1000_512_unsteady";
+std::string OUTPUT_NAME = "test"; //"Re1000_512_unsteady";
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
@@ -66,8 +66,8 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady; //Steady; //Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Implicit;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Implicit;
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   max_velocity = 1.0;
   cfl = 0.3;
@@ -188,13 +188,13 @@ void InputParameters<dim>::set_input_parameters()
 
   // nonlinear solver (Newton solver)
   newton_solver_data_coupled.abs_tol = 1.e-12;
-  newton_solver_data_coupled.rel_tol = 1.e-2; //TODO
+  newton_solver_data_coupled.rel_tol = 1.e-10;
   newton_solver_data_coupled.max_iter = 100;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //FGMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES; //FGMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-2; //TODO
+  rel_tol_linear = 1.e-2;
   max_iter_linear = 1e4;
   max_n_tmp_vectors = 1000;
 
@@ -203,8 +203,8 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
+  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
 
   // GMRES smoother data
   multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
@@ -215,7 +215,7 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5;
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
 
-  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //NoPreconditioner; //Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev; //NoPreconditioner; //Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;
 
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
@@ -234,7 +234,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // write output for visualization of results
   print_input_parameters = true;
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;

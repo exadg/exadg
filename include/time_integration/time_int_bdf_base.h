@@ -14,19 +14,22 @@
 #include "time_integration/bdf_time_integration.h"
 #include "time_integration/extrapolation_scheme.h"
 
+#include "functionalities/restart_data.h"
+#include "time_integration/restart.h"
+
 class TimeIntBDFBase
 {
 public:
   /*
    * Constructor.
    */
-  TimeIntBDFBase(double const       start_time_,
-                 double const       end_time_,
-                 unsigned int const max_number_of_time_steps_,
-                 double const       order_,
-                 bool const         start_with_low_order_,
-                 bool const         adaptive_time_stepping_,
-                 bool const         provide_restart_);
+  TimeIntBDFBase(double const        start_time_,
+                 double const        end_time_,
+                 unsigned int const  max_number_of_time_steps_,
+                 double const        order_,
+                 bool const          start_with_low_order_,
+                 bool const          adaptive_time_stepping_,
+                 RestartData const & restart_data_);
 
   /*
    * Destructor.
@@ -78,10 +81,20 @@ public:
   get_time_step_size(int const index = 0) const;
 
   /*
-   * Set the time step size.
+   * Set the time step size. Note that the push-back of time step sizes in case of adaptive time
+   * stepping may not be done here because calling this public function several times would falsify
+   * the results. Hence, set_time_step_size() is only allowed to overwrite the current time step
+   * size.
    */
   void
   set_time_step_size(double const & time_step);
+
+  /*
+   * Setup function where allocations/initializations are done. Calls another function
+   * setup_derived() in which the setup of derived classes can be performed.
+   */
+  void
+  setup(bool const do_restart);
 
 protected:
   /*
@@ -116,12 +129,6 @@ protected:
   update_time_integrator_constants();
 
   /*
-   * Reset the time step vector.
-   */
-  void
-  reset_time_step_vector(std::vector<double> const & time_steps_in);
-
-  /*
    * Get reference to vector with time step sizes
    */
   std::vector<double>
@@ -133,12 +140,23 @@ protected:
   void
   push_back_time_step_sizes();
 
-
   /*
    * This function implements the OIF sub-stepping algorithm.
    */
   void
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
+
+  /*
+   * Read all relevant data from restart files to start the time integrator.
+   */
+  virtual void
+  read_restart();
+
+  /*
+   * Calculate time step size.
+   */
+  virtual void
+  calculate_time_step_size() = 0;
 
   /*
    * Start and end times.
@@ -175,6 +193,16 @@ protected:
   bool const adaptive_time_stepping;
 
   /*
+   * Physical time.
+   */
+  double time;
+
+  /*
+   * Vector with time step sizes.
+   */
+  std::vector<double> time_steps;
+
+  /*
    * Computation time (wall clock time).
    */
   Timer  global_timer;
@@ -191,6 +219,43 @@ protected:
   ConditionalOStream pcout;
 
 private:
+  /*
+   * Allocate solution vectors (has to be implemented by derived classes).
+   */
+  virtual void
+  allocate_vectors() = 0;
+
+  /*
+   * Initializes everything related to OIF substepping.
+   */
+  virtual void
+  initialize_oif() = 0;
+
+  /*
+   * Initializes the solution vectors by prescribing initial conditions are reading data from
+   * restart files and calculates the time step size.
+   */
+  virtual void
+  initialize_solution_and_calculate_timestep(bool do_restart);
+
+  /*
+   * Initializes the solution vectors at time t
+   */
+  virtual void
+  initialize_current_solution() = 0;
+
+  /*
+   * Initializes the solution vectors at time t - dt[1], t - dt[1] - dt[2], etc.
+   */
+  virtual void
+  initialize_former_solutions() = 0;
+
+  /*
+   * Setup of derived classes.
+   */
+  virtual void
+  setup_derived() = 0;
+
   /*
    * This function prepares the solution vectors for the next time step, e.g., by switching pointers
    * to the solution vectors (called push back here).
@@ -239,16 +304,28 @@ private:
   analyze_computing_times() const = 0;
 
   /*
+   * Restart: read solution vectors (has to be implemented in derived classes).
+   */
+  virtual void
+  read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
+
+  /*
+   * Restart: write solution vectors (has to be implemented in derived classes).
+   */
+  virtual void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
+
+  /*
    * Write solution vectors to files so that the simulation can be restart from an intermediate
    * state.
    */
   virtual void
-  write_restart() const = 0;
+  write_restart() const;
 
   /*
    * Recalculate the time step size after each time step in case of adaptive time stepping.
    */
-  virtual void
+  virtual double
   recalculate_adaptive_time_step() = 0;
 
   /*
@@ -270,35 +347,26 @@ private:
   do_timestep_oif_substepping_and_update_vectors(double const start_time,
                                                  double const time_step_size);
 
-  /*
-   * Physical time.
-   */
-  double time;
-
+private:
   /*
    * The number of the current time step starting with time_step_number = 1.
    */
   unsigned int time_step_number;
 
   /*
-   * Vector with time step sizes.
-   */
-  std::vector<double> time_steps;
-
-  /*
    * Restart.
    */
-  bool const provide_restart;
+  RestartData const restart_data;
 };
 
 
-TimeIntBDFBase::TimeIntBDFBase(double const       start_time_,
-                               double const       end_time_,
-                               unsigned int const max_number_of_time_steps_,
-                               double const       order_,
-                               bool const         start_with_low_order_,
-                               bool const         adaptive_time_stepping_,
-                               bool const         provide_restart_)
+TimeIntBDFBase::TimeIntBDFBase(double const        start_time_,
+                               double const        end_time_,
+                               unsigned int const  max_number_of_time_steps_,
+                               double const        order_,
+                               bool const          start_with_low_order_,
+                               bool const          adaptive_time_stepping_,
+                               RestartData const & restart_data_)
   : start_time(start_time_),
     end_time(end_time_),
     max_number_of_time_steps(max_number_of_time_steps_),
@@ -307,14 +375,59 @@ TimeIntBDFBase::TimeIntBDFBase(double const       start_time_,
     extra(order_, start_with_low_order_),
     start_with_low_order(start_with_low_order_),
     adaptive_time_stepping(adaptive_time_stepping_),
+    time(start_time_),
+    time_steps(order_, -1.0),
     total_time(0.0),
     eps(1.e-10),
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    time(start_time_),
     time_step_number(1),
-    time_steps(order_, -1.0),
-    provide_restart(provide_restart_)
+    restart_data(restart_data_)
 {
+}
+
+void
+TimeIntBDFBase::setup(bool const do_restart)
+{
+  pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
+
+  // operator-integration-factor splitting
+  initialize_oif();
+
+  // allocate global solution vectors
+  allocate_vectors();
+
+  // initializes the solution and calculates the time step size
+  initialize_solution_and_calculate_timestep(do_restart);
+
+  // this is where the setup of derived classes is performed
+  setup_derived();
+
+  pcout << std::endl << "... done!" << std::endl;
+}
+
+void
+TimeIntBDFBase::initialize_solution_and_calculate_timestep(bool do_restart)
+{
+  if(do_restart)
+  {
+    // The solution vectors and the current time, the time step size, etc. have to be read from
+    // restart files.
+    read_restart();
+  }
+  else
+  {
+    // The time step size might depend on the current solution.
+    initialize_current_solution();
+
+    // The time step size has to be computed before the solution can be initialized at times t -
+    // dt[1], t - dt[1] - dt[2], etc.
+    calculate_time_step_size();
+
+    // Finally, prescribe initial conditions at former instants of time. This is only necessary if
+    // the time integrator starts with a high-order scheme in the first time step.
+    if(start_with_low_order == false)
+      initialize_former_solutions();
+  }
 }
 
 void
@@ -499,15 +612,6 @@ TimeIntBDFBase::get_time_step_size(int const i /* dt[i] */) const
   }
 }
 
-void
-TimeIntBDFBase::reset_time_step_vector(std::vector<double> const & time_steps_in)
-{
-  AssertThrow(time_steps_in.size() == order,
-              ExcMessage("Invalid parameters. Sizes of time step vectors do not match."));
-
-  this->time_steps = time_steps_in;
-}
-
 std::vector<double>
 TimeIntBDFBase::get_time_step_vector() const
 {
@@ -546,7 +650,7 @@ TimeIntBDFBase::set_time_step_size(double const & time_step)
 
   time_steps[0] = time_step;
 
-  // fill time_steps array
+  // Fill time_steps array in the first time step
   if(time_step_number == 1)
   {
     for(unsigned int i = 1; i < order; ++i)
@@ -570,11 +674,17 @@ TimeIntBDFBase::do_timestep()
   time += time_steps[0];
   ++time_step_number;
 
-  if(provide_restart == true)
-    write_restart();
-
   if(adaptive_time_stepping == true)
-    recalculate_adaptive_time_step();
+  {
+    push_back_time_step_sizes();
+    double const dt = recalculate_adaptive_time_step();
+    set_time_step_size(dt);
+  }
+
+  if(restart_data.write_restart == true)
+  {
+    write_restart();
+  }
 }
 
 void
@@ -655,6 +765,64 @@ TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(double const cfl, double
     }
 
     update_sum_alphai_ui_oif_substepping(i);
+  }
+}
+
+void
+TimeIntBDFBase::read_restart()
+{
+  const std::string filename = restart_filename(restart_data.filename);
+  std::ifstream     in(filename.c_str());
+
+  AssertThrow(in, ExcMessage("File " + filename + " does not exist."));
+
+  boost::archive::binary_iarchive ia(in);
+
+  read_restart_preamble(ia, time, time_steps, order);
+
+  pcout << std::endl
+        << "______________________________________________________________________" << std::endl
+        << std::endl
+        << " Reading restart file at time t = " << this->get_time() << ":" << std::endl;
+
+  read_restart_vectors(ia);
+
+  // In order to change the CFL number (or the time step calculation criterion in general),
+  // start_with_low_order = true has to be used. Otherwise, the old solutions would not fit the
+  // time step increments.
+  if(start_with_low_order == true)
+    calculate_time_step_size();
+
+  pcout << std::endl
+        << " ... done!" << std::endl
+        << "______________________________________________________________________" << std::endl
+        << std::endl;
+}
+
+void
+TimeIntBDFBase::write_restart() const
+{
+  double const wall_time = global_timer.wall_time();
+
+  if(restart_data.do_restart(wall_time, time - start_time, time_step_number, time_step_number == 2))
+  {
+    pcout << std::endl
+          << "______________________________________________________________________" << std::endl
+          << std::endl
+          << " Writing restart file at time t = " << this->get_time() << ":" << std::endl;
+
+    std::ostringstream              oss;
+    boost::archive::binary_oarchive oa(oss);
+
+    std::string const name = restart_data.filename;
+
+    write_restart_preamble(oa, name, time, time_steps, order);
+    write_restart_vectors(oa);
+    write_restart_file(oss, name);
+
+    pcout << std::endl
+          << " ... done!" << std::endl
+          << "______________________________________________________________________" << std::endl;
   }
 }
 

@@ -422,13 +422,10 @@ main(int argc, char ** argv)
       if(do_restart)
       {
         AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX,
-                    ExcMessage("Spatial refinement with restart not possible!"));
+                    ExcMessage("Spatial refinement not possible in combination with restart!"));
 
-        // this does in principle work although it doesn't make much sense
-        if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX &&
-           Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-          std::cout << "Warning: you are starting from a restart and refine the time steps!"
-                    << std::endl;
+        AssertThrow(REFINE_STEPS_TIME_MIN == REFINE_STEPS_TIME_MAX,
+                    ExcMessage("Temporal refinement not possible in combination with restart!"));
       }
     }
 

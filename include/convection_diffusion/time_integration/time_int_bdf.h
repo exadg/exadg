@@ -8,6 +8,8 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 
+#include <deal.II/lac/vector_view.h>
+
 #include <deal.II/lac/la_parallel_vector.h>
 
 #include "time_integration/explicit_runge_kutta.h"
@@ -23,18 +25,17 @@ class TimeIntBDF : public TimeIntBDFBase
 public:
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
-  TimeIntBDF(
-    std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation_in,
-    ConvDiff::InputParameters const &                                  param_in,
-    std::shared_ptr<Function<dim>>                                     velocity_in,
-    unsigned int const                                                 n_refine_time_in)
+  TimeIntBDF(std::shared_ptr<DGOperation<dim, fe_degree, value_type>> conv_diff_operation_in,
+             InputParameters const &                                  param_in,
+             std::shared_ptr<Function<dim>>                           velocity_in,
+             unsigned int const                                       n_refine_time_in)
     : TimeIntBDFBase(param_in.start_time,
                      param_in.end_time,
                      param_in.max_number_of_time_steps,
                      param_in.order_time_integrator,
                      param_in.start_with_low_order,
                      false /* TODO */,
-                     false /* TODO */),
+                     param_in.restart_data),
       conv_diff_operation(conv_diff_operation_in),
       param(param_in),
       velocity(velocity_in),
@@ -42,38 +43,39 @@ public:
       cfl_number(param.cfl_number / std::pow(2.0, n_refine_time_in)),
       solution(param_in.order_time_integrator),
       vec_convective_term(param_in.order_time_integrator),
-      cfl_oif(param.cfl_oif / std::pow(2.0, n_refine_time_in)),
       N_iter_average(0.0),
-      solver_time_average(0.0)
+      solver_time_average(0.0),
+      cfl_oif(param.cfl_oif / std::pow(2.0, n_refine_time_in))
   {
   }
-
-  virtual ~TimeIntBDF()
-  {
-  }
-
-  virtual void
-  setup(bool do_restart = 0);
-
 
 private:
   void
-  initialize_vectors();
+  allocate_vectors();
 
   void
-  initialize_solution();
+  initialize_current_solution();
+
+  void
+  initialize_former_solutions();
 
   void
   initialize_vec_convective_term();
 
   void
-  calculate_timestep();
+  calculate_time_step_size();
 
   void
   prepare_vectors_for_next_timestep();
 
   void
   solve_timestep();
+
+  void
+  initialize_oif();
+
+  void
+  setup_derived();
 
   void
   initialize_solution_oif_substepping(unsigned int i);
@@ -92,9 +94,12 @@ private:
   output_remaining_time() const;
 
   void
-  write_restart() const;
+  read_restart_vectors(boost::archive::binary_iarchive & ia);
 
   void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+
+  double
   recalculate_adaptive_time_step();
 
   void
@@ -103,9 +108,9 @@ private:
   void
   analyze_computing_times() const;
 
-  std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation;
+  std::shared_ptr<DGOperation<dim, fe_degree, value_type>> conv_diff_operation;
 
-  ConvDiff::InputParameters const & param;
+  InputParameters const & param;
 
   std::shared_ptr<Function<dim>> velocity;
 
@@ -117,6 +122,18 @@ private:
   std::vector<VectorType> solution;
   std::vector<VectorType> vec_convective_term;
 
+  VectorType sum_alphai_ui;
+  VectorType rhs_vector;
+
+  // iteration counts and solver time
+  double N_iter_average;
+  double solver_time_average;
+
+  // Operator-integration-factor (OIF) splitting
+
+  // cfl number for OIF splitting
+  double const cfl_oif;
+
   std::shared_ptr<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>>
     convective_operator_OIF;
 
@@ -124,37 +141,17 @@ private:
     ExplicitTimeIntegrator<ConvectiveOperatorOIFSplitting<dim, fe_degree, value_type>, VectorType>>
     time_integrator_OIF;
 
-  // cfl number cfl_oif for operator-integration-factor splitting
-  double const cfl_oif;
-
+  // solution vectors needed for OIF substepping of convective term
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
-
-  VectorType sum_alphai_ui;
-  VectorType rhs_vector;
-
-  double N_iter_average;
-  double solver_time_average;
 };
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntBDF<dim, fe_degree, value_type>::setup(bool /*do_restart*/)
+TimeIntBDF<dim, fe_degree, value_type>::setup_derived()
 {
-  pcout << std::endl << "Setup time integrator ..." << std::endl;
-
-  // initialize global solution vectors (allocation)
-  initialize_vectors();
-
-  // calculate time step size before initializing the solution because
-  // initialization of solution depends on the time step size
-  calculate_timestep();
-
-  // initializes the solution by interpolation of analytical solution
-  initialize_solution();
-
-  // initialize vec_convective_term: Note that this function has to be called
-  // after initialize_solution() because the solution is evaluated in this function
+  // Initialize vec_convective_term: Note that this function has to be called
+  // after the solution has been initialized because the solution is evaluated in this function.
   if(param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Explicit &&
      (param.equation_type == ConvDiff::EquationType::Convection ||
       param.equation_type == ConvDiff::EquationType::ConvectionDiffusion) &&
@@ -162,7 +159,12 @@ TimeIntBDF<dim, fe_degree, value_type>::setup(bool /*do_restart*/)
   {
     initialize_vec_convective_term();
   }
+}
 
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntBDF<dim, fe_degree, value_type>::initialize_oif()
+{
   // Operator-integration-factor splitting
   if(param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
   {
@@ -234,13 +236,11 @@ TimeIntBDF<dim, fe_degree, value_type>::setup(bool /*do_restart*/)
       AssertThrow(false, ExcMessage("Not implemented."));
     }
   }
-
-  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntBDF<dim, fe_degree, value_type>::initialize_vectors()
+TimeIntBDF<dim, fe_degree, value_type>::allocate_vectors()
 {
   for(unsigned int i = 0; i < solution.size(); ++i)
     conv_diff_operation->initialize_dof_vector(solution[i]);
@@ -267,9 +267,17 @@ TimeIntBDF<dim, fe_degree, value_type>::initialize_vectors()
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntBDF<dim, fe_degree, value_type>::initialize_solution()
+TimeIntBDF<dim, fe_degree, value_type>::initialize_current_solution()
 {
-  for(unsigned int i = 0; i < solution.size(); ++i)
+  conv_diff_operation->prescribe_initial_conditions(solution[0], this->get_time());
+}
+
+template<int dim, int fe_degree, typename value_type>
+void
+TimeIntBDF<dim, fe_degree, value_type>::initialize_former_solutions()
+{
+  // Start with i=1 since we only want to initialize the solution at former instants of time.
+  for(unsigned int i = 1; i < solution.size(); ++i)
   {
     conv_diff_operation->prescribe_initial_conditions(solution[i], this->get_previous_time(i));
   }
@@ -290,7 +298,7 @@ TimeIntBDF<dim, fe_degree, value_type>::initialize_vec_convective_term()
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntBDF<dim, fe_degree, value_type>::calculate_timestep()
+TimeIntBDF<dim, fe_degree, value_type>::calculate_time_step_size()
 {
   pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
@@ -438,16 +446,39 @@ TimeIntBDF<dim, fe_degree, value_type>::output_remaining_time() const
 
 template<int dim, int fe_degree, typename value_type>
 void
-TimeIntBDF<dim, fe_degree, value_type>::write_restart() const
+TimeIntBDF<dim, fe_degree, value_type>::read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
-  // currently no write restart implemented, do nothing
+  Vector<double> tmp;
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    ia >> tmp;
+    std::copy(tmp.begin(), tmp.end(), solution[i].begin());
+  }
 }
 
 template<int dim, int fe_degree, typename value_type>
 void
+TimeIntBDF<dim, fe_degree, value_type>::write_restart_vectors(
+  boost::archive::binary_oarchive & oa) const
+{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
+  for(unsigned int i = 0; i < this->order; i++)
+  {
+    VectorView<value_type> vector_view(solution[i].local_size(), solution[i].begin());
+    oa << vector_view;
+  }
+
+#pragma GCC diagnostic pop
+}
+
+template<int dim, int fe_degree, typename value_type>
+double
 TimeIntBDF<dim, fe_degree, value_type>::recalculate_adaptive_time_step()
 {
   // currently no adaptive time stepping implemented, do nothing
+  return this->get_time_step_size();
 }
 
 template<int dim, int fe_degree, typename value_type>

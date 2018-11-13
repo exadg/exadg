@@ -25,8 +25,8 @@ const unsigned int DIMENSION = 2;
 const unsigned int FE_DEGREE = 6;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 2;
-const unsigned int REFINE_STEPS_SPACE_MAX = 2;
+const unsigned int REFINE_STEPS_SPACE_MIN = 3;
+const unsigned int REFINE_STEPS_SPACE_MAX = 3;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -54,13 +54,13 @@ void ConvDiff::InputParameters::set_input_parameters()
   // BDF
   order_time_integrator = 2; // instabilities for BDF 3 and 4
   start_with_low_order = false;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //ExplicitOIF; //Explicit; //ExplicitOIF;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::ExplicitOIF; //ExplicitOIF; //Explicit; //ExplicitOIF;
   time_integrator_oif = TimeIntegratorRK::ExplRK4Stage8Reg2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
 
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepUserSpecified; //ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   time_step_size = 1.e-2;
-  cfl_oif = 2.0;
-  cfl_number = cfl_oif * 1.0;
+  cfl_oif = 0.2; //TODO //2.0;
+  cfl_number = cfl_oif * 4.0; // TODO cfl_oif * 1.0;
   diffusion_number = 0.01;
   exponent_fe_degree_convection = 2.0;
   exponent_fe_degree_diffusion = 3.0;
@@ -126,6 +126,11 @@ void ConvDiff::InputParameters::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   output_solver_info_every_timesteps = 1e6;
+
+  // restart
+  restart_data.write_restart = true;
+  restart_data.filename = "output_conv_diff/rotating_hill";
+  restart_data.interval_time = 0.4;
 }
 
 
