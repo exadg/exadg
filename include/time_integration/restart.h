@@ -15,7 +15,7 @@
 #include <fstream>
 #include <sstream>
 
-std::string const
+inline std::string
 restart_filename(std::string const & name)
 {
   std::string const rank =
@@ -26,7 +26,7 @@ restart_filename(std::string const & name)
   return filename;
 }
 
-void
+inline void
 read_restart_preamble(boost::archive::binary_iarchive & ia,
                       double &                          time,
                       std::vector<double> &             time_steps,
@@ -53,7 +53,7 @@ read_restart_preamble(boost::archive::binary_iarchive & ia,
     ia & time_steps[i];
 }
 
-void
+inline void
 write_restart_preamble(boost::archive::binary_oarchive & oa,
                        std::string const &               name,
                        double const                      time,
@@ -84,7 +84,7 @@ write_restart_preamble(boost::archive::binary_oarchive & oa,
   }
 }
 
-void
+inline void
 write_restart_file(std::ostringstream & oss, std::string const & name)
 {
   const std::string filename = restart_filename(name);

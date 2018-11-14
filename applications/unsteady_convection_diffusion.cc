@@ -16,6 +16,9 @@
 // spatial discretization
 #include "convection_diffusion/spatial_discretization/dg_convection_diffusion_operation.h"
 
+// interface space and time discretizations
+#include "convection_diffusion/interface_space_time/operator.h"
+
 // time integration
 #include "convection_diffusion/time_integration/time_int_bdf.h"
 #include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
@@ -50,11 +53,10 @@
 using namespace dealii;
 using namespace ConvDiff;
 
-template<int dim, int fe_degree, typename Number = double>
+template<int dim, int degree, typename Number = double>
 class ConvDiffProblem
 {
 public:
-  typedef double value_type;
   ConvDiffProblem(const unsigned int n_refine_space, const unsigned int n_refine_time);
 
   void
@@ -74,23 +76,25 @@ private:
   const unsigned int n_refine_space;
   const unsigned int n_refine_time;
 
-  ConvDiff::InputParameters param;
+  InputParameters param;
 
-  std::shared_ptr<ConvDiff::FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
-  std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution;
+  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
 
-  std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation;
-  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>>           postprocessor;
+  typedef DGOperation<dim, degree, Number> OPERATOR;
+  std::shared_ptr<OPERATOR>                conv_diff_operator;
 
-  std::shared_ptr<ConvDiff::TimeIntExplRK<dim, fe_degree, value_type>> time_integrator_explRK;
-  std::shared_ptr<ConvDiff::TimeIntBDF<dim, fe_degree, value_type>>    time_integrator_BDF;
+  std::shared_ptr<PostProcessor<dim, degree>> postprocessor;
+
+  std::shared_ptr<TimeIntExplRK<Number>> time_integrator_explRK;
+  std::shared_ptr<TimeIntBDF<Number>>    time_integrator_BDF;
 };
 
-template<int dim, int fe_degree, typename Number>
-ConvDiffProblem<dim, fe_degree, Number>::ConvDiffProblem(const unsigned int n_refine_space_in,
-                                                         const unsigned int n_refine_time_in)
+template<int dim, int degree, typename Number>
+ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refine_space_in,
+                                                      const unsigned int n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
@@ -109,45 +113,48 @@ ConvDiffProblem<dim, fe_degree, Number>::ConvDiffProblem(const unsigned int n_re
   if(param.print_input_parameters)
     param.print(pcout);
 
-  field_functions.reset(new ConvDiff::FieldFunctions<dim>());
+  field_functions.reset(new FieldFunctions<dim>());
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new ConvDiff::AnalyticalSolution<dim>());
+  analytical_solution.reset(new AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
 
   // initialize postprocessor
-  postprocessor.reset(new ConvDiff::PostProcessor<dim, fe_degree>());
+  postprocessor.reset(new PostProcessor<dim, degree>());
 
   // initialize convection diffusion operation
-  conv_diff_operation.reset(
-    new ConvDiff::DGOperation<dim, fe_degree, value_type>(triangulation, param, postprocessor));
+  conv_diff_operator.reset(new OPERATOR(triangulation, param, postprocessor));
+
+  bool use_adaptive_time_stepping = false;
+  if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+    use_adaptive_time_stepping = true;
 
   // initialize time integrator
-  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
   {
-    time_integrator_explRK.reset(new ConvDiff::TimeIntExplRK<dim, fe_degree, value_type>(
-      conv_diff_operation, param, field_functions->velocity, n_refine_time));
+    time_integrator_explRK.reset(
+      new TimeIntExplRK<Number>(conv_diff_operator, param, n_refine_time));
   }
-  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  else if(param.temporal_discretization == TemporalDiscretization::BDF)
   {
-    time_integrator_BDF.reset(new ConvDiff::TimeIntBDF<dim, fe_degree, value_type>(
-      conv_diff_operation, param, field_functions->velocity, n_refine_time));
+    time_integrator_BDF.reset(
+      new TimeIntBDF<Number>(conv_diff_operator, param, n_refine_time, use_adaptive_time_stepping));
   }
   else
   {
-    AssertThrow(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK ||
-                  param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
+    AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
+                  param.temporal_discretization == TemporalDiscretization::BDF,
                 ExcMessage("Specified time integration scheme is not implemented!"));
   }
 }
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, int degree, typename Number>
 void
-ConvDiffProblem<dim, fe_degree, Number>::print_header()
+ConvDiffProblem<dim, degree, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -160,9 +167,9 @@ ConvDiffProblem<dim, fe_degree, Number>::print_header()
   // clang-format on
 }
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, int degree, typename Number>
 void
-ConvDiffProblem<dim, fe_degree, Number>::solve_problem(bool const do_restart)
+ConvDiffProblem<dim, degree, Number>::solve_problem(bool const do_restart)
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -170,33 +177,33 @@ ConvDiffProblem<dim, fe_degree, Number>::solve_problem(bool const do_restart)
 
   print_grid_data(pcout, n_refine_space, triangulation);
 
-  conv_diff_operation->setup(periodic_faces,
-                             boundary_descriptor,
-                             field_functions,
-                             analytical_solution);
+  conv_diff_operator->setup(periodic_faces,
+                            boundary_descriptor,
+                            field_functions,
+                            analytical_solution);
 
   // setup time integrator
-  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
   {
     time_integrator_explRK->setup();
   }
-  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  else if(param.temporal_discretization == TemporalDiscretization::BDF)
   {
     // call setup() of time_integrator before setup_solvers() of conv_diff_operation
     // because setup_solver() needs quantities such as the time step size for a
     // correct initialization of preconditioners
     time_integrator_BDF->setup(do_restart);
 
-    conv_diff_operation->setup_solver(
+    conv_diff_operator->setup_solver(
       time_integrator_BDF->get_scaling_factor_time_derivative_term());
   }
 
   // run timeloop
-  if(param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
   {
     time_integrator_explRK->timeloop();
   }
-  else if(param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  else if(param.temporal_discretization == TemporalDiscretization::BDF)
   {
     time_integrator_BDF->timeloop();
   }

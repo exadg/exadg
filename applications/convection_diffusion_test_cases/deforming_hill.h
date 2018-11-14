@@ -104,24 +104,24 @@ void ConvDiff::InputParameters::set_input_parameters()
  */
 
 template<int dim>
-class AnalyticalSolution : public Function<dim>
+class Solution : public Function<dim>
 {
 public:
-  AnalyticalSolution (const unsigned int  n_components = 1,
-                      const double        time = 0.)
+  Solution (const unsigned int  n_components = 1,
+            const double        time = 0.)
     :
     Function<dim>(n_components, time)
   {}
 
-  virtual ~AnalyticalSolution(){};
+  virtual ~Solution(){};
 
   virtual double value (const Point<dim>   &p,
                         const unsigned int component = 0) const;
 };
 
 template<int dim>
-double AnalyticalSolution<dim>::value(const Point<dim>    &p,
-                                      const unsigned int  /* component */) const
+double Solution<dim>::value(const Point<dim>    &p,
+                            const unsigned int  /* component */) const
 {
   // The analytical solution is only known at t = start_time and t = end_time
 
@@ -246,7 +246,7 @@ void create_grid_and_set_boundary_conditions(
   triangulation.refine_global(n_refine_space);
 
   std::shared_ptr<Function<dim> > analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution.reset(new Solution<dim>());
 
   //problem with pure Dirichlet boundary conditions
   boundary_descriptor->dirichlet_bc.insert(
@@ -258,7 +258,7 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution.reset(new Solution<dim>());
 
   std::shared_ptr<Function<dim> > right_hand_side;
   right_hand_side.reset(new RightHandSide<dim>());
@@ -275,7 +275,7 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
 template<int dim>
 void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+  analytical_solution->solution.reset(new Solution<dim>(1));
 }
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DEFORMING_HILL_H_ */

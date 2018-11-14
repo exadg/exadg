@@ -236,7 +236,7 @@ TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>
       sqrt(param.heat_capacity_ratio * param.specific_gas_constant * param.max_temperature);
     double const acoustic_wave_speed = param.max_velocity + speed_of_sound;
 
-    time_step = calculate_const_time_step_cfl(
+    time_step = calculate_time_step_cfl_global(
       cfl_number, acoustic_wave_speed, h_min, fe_degree, param.exponent_fe_degree_cfl);
 
     // decrease time_step in order to exactly hit end_time
@@ -290,7 +290,7 @@ TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, NavierStokesOperation>
       sqrt(param.heat_capacity_ratio * param.specific_gas_constant * param.max_temperature);
     double const acoustic_wave_speed = param.max_velocity + speed_of_sound;
 
-    time_step_conv = calculate_const_time_step_cfl(
+    time_step_conv = calculate_time_step_cfl_global(
       cfl_number, acoustic_wave_speed, h_min, fe_degree, param.exponent_fe_degree_cfl);
 
     print_parameter(pcout, "U_max", param.max_velocity);

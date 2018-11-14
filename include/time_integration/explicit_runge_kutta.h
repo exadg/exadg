@@ -8,6 +8,8 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_EXPLICIT_RUNGE_KUTTA_H_
 #define INCLUDE_CONVECTION_DIFFUSION_EXPLICIT_RUNGE_KUTTA_H_
 
+using namespace dealii;
+
 template<typename Operator, typename VectorType>
 class ExplicitTimeIntegrator
 {

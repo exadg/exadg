@@ -34,7 +34,6 @@ template<int dim, int fe_degree, typename Number = double>
 class ConvDiffProblem
 {
 public:
-  typedef double value_type;
   ConvDiffProblem(const unsigned int n_refine_space);
 
   void
@@ -51,24 +50,20 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  ConvDiff::InputParameters param;
+  InputParameters param;
 
   const unsigned int n_refine_space;
 
-  std::shared_ptr<ConvDiff::FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
-  std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution;
+  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
 
-  std::shared_ptr<ConvDiff::DGOperation<dim, fe_degree, value_type>> conv_diff_operation;
+  std::shared_ptr<DGOperation<dim, fe_degree, Number>> conv_diff_operation;
 
-  std::shared_ptr<ConvDiff::PostProcessor<dim, fe_degree>> postprocessor;
+  std::shared_ptr<PostProcessor<dim, fe_degree>> postprocessor;
 
-  std::shared_ptr<ConvDiff::DriverSteadyProblems<dim,
-                                                 fe_degree,
-                                                 value_type,
-                                                 ConvDiff::DGOperation<dim, fe_degree, value_type>>>
-    driver_steady;
+  std::shared_ptr<DriverSteadyProblems<Number>> driver_steady;
 };
 
 template<int dim, int fe_degree, typename Number>
@@ -89,30 +84,25 @@ ConvDiffProblem<dim, fe_degree, Number>::ConvDiffProblem(const unsigned int n_re
   if(param.print_input_parameters == true)
     param.print(pcout);
 
-  field_functions.reset(new ConvDiff::FieldFunctions<dim>());
+  field_functions.reset(new FieldFunctions<dim>());
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new ConvDiff::AnalyticalSolution<dim>());
+  analytical_solution.reset(new AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
 
   // initialize postprocessor
-  postprocessor.reset(new ConvDiff::PostProcessor<dim, fe_degree>());
+  postprocessor.reset(new PostProcessor<dim, fe_degree>());
 
   // initialize convection diffusion operation
   conv_diff_operation.reset(
-    new ConvDiff::DGOperation<dim, fe_degree, value_type>(triangulation, param, postprocessor));
+    new DGOperation<dim, fe_degree, Number>(triangulation, param, postprocessor));
 
   // initialize driver for steady convection-diffusion problems
-  driver_steady.reset(
-    new ConvDiff::DriverSteadyProblems<dim,
-                                       fe_degree,
-                                       value_type,
-                                       ConvDiff::DGOperation<dim, fe_degree, value_type>>(
-      conv_diff_operation, param));
+  driver_steady.reset(new DriverSteadyProblems<Number>(conv_diff_operation, param));
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -157,7 +147,6 @@ main(int argc, char ** argv)
 {
   try
   {
-    // using namespace ConvectionDiffusionProblem;
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)

@@ -25,17 +25,21 @@
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 
+#include "time_integration/time_step_calculation.h"
+
+#include "../interface_space_time/operator.h"
+
 namespace ConvDiff
 {
 template<int dim, int degree, typename Number>
-class DGOperation : public MatrixOperatorBase
+class DGOperation : public MatrixOperatorBase, public Interface::Operator<Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  DGOperation(parallel::distributed::Triangulation<dim> const &     triangulation,
-              ConvDiff::InputParameters const &                     param_in,
-              std::shared_ptr<ConvDiff::PostProcessor<dim, degree>> postprocessor_in)
+  DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
+              InputParameters const &                           param_in,
+              std::shared_ptr<PostProcessor<dim, degree>>       postprocessor_in)
     : fe(degree),
       mapping(param_in.degree_mapping),
       dof_handler(triangulation),
@@ -46,10 +50,10 @@ public:
 
   void
   setup(const std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-                                                           periodic_face_pairs,
-        std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_in,
-        std::shared_ptr<ConvDiff::FieldFunctions<dim>>     field_functions_in,
-        std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution_in)
+                                                 periodic_face_pairs,
+        std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor_in,
+        std::shared_ptr<FieldFunctions<dim>>     field_functions_in,
+        std::shared_ptr<AnalyticalSolution<dim>> analytical_solution_in)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
@@ -402,6 +406,37 @@ public:
     postprocessor->do_postprocessing(solution, time, time_step_number);
   }
 
+  double
+  calculate_time_step_cfl(double const time,
+                          double const cfl,
+                          double const exponent_fe_degree) const
+  {
+    return calculate_time_step_cfl_local<dim, degree, Number>(data,
+                                                              0 /*dof_index*/,
+                                                              0 /*quad_index*/,
+                                                              field_functions->velocity,
+                                                              time,
+                                                              cfl,
+                                                              exponent_fe_degree);
+  }
+
+  double
+  calculate_maximum_velocity(double const time) const
+  {
+    return calculate_max_velocity(dof_handler.get_triangulation(), field_functions->velocity, time);
+  }
+
+  double
+  calculate_minimum_element_length() const
+  {
+    return calculate_minimum_vertex_distance(dof_handler.get_triangulation());
+  }
+
+  unsigned int
+  get_polynomial_degree() const
+  {
+    return degree;
+  }
 
 private:
   void
@@ -552,35 +587,6 @@ private:
 
   // postprocessor
   std::shared_ptr<ConvDiff::PostProcessor<dim, degree>> postprocessor;
-};
-
-template<int dim, int degree, typename Number>
-class ConvectiveOperatorOIFSplitting
-{
-public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  ConvectiveOperatorOIFSplitting(
-    std::shared_ptr<ConvDiff::DGOperation<dim, degree, Number>> conv_diff_operation_in)
-    : conv_diff_operation(conv_diff_operation_in)
-  {
-  }
-
-  void
-  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
-  {
-    conv_diff_operation->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-      dst, src, evaluation_time);
-  }
-
-  void
-  initialize_dof_vector(VectorType & src) const
-  {
-    conv_diff_operation->initialize_dof_vector(src);
-  }
-
-private:
-  std::shared_ptr<ConvDiff::DGOperation<dim, degree, Number>> conv_diff_operation;
 };
 
 } // namespace ConvDiff

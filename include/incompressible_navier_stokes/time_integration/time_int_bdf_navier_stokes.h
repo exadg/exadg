@@ -288,11 +288,11 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
     double const global_min_cell_diameter = calculate_minimum_vertex_distance(
       navier_stokes_operation->get_dof_handler_u().get_triangulation());
 
-    double time_step = calculate_const_time_step_cfl(cfl,
-                                                     param.max_velocity,
-                                                     global_min_cell_diameter,
-                                                     fe_degree_u,
-                                                     param.cfl_exponent_fe_degree_velocity);
+    double time_step = calculate_time_step_cfl_global(cfl,
+                                                      param.max_velocity,
+                                                      global_min_cell_diameter,
+                                                      fe_degree_u,
+                                                      param.cfl_exponent_fe_degree_velocity);
 
     // decrease time_step in order to exactly hit end_time
     time_step = (param.end_time - param.start_time) /
@@ -314,11 +314,11 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
       navier_stokes_operation->get_dof_handler_u().get_triangulation());
 
     // calculate a temporary time step size using a  guess for the maximum velocity
-    double time_step_tmp = calculate_const_time_step_cfl(cfl,
-                                                         param.max_velocity,
-                                                         global_min_cell_diameter,
-                                                         fe_degree_u,
-                                                         param.cfl_exponent_fe_degree_velocity);
+    double time_step_tmp = calculate_time_step_cfl_global(cfl,
+                                                          param.max_velocity,
+                                                          global_min_cell_diameter,
+                                                          fe_degree_u,
+                                                          param.cfl_exponent_fe_degree_velocity);
 
     pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
 
@@ -329,7 +329,7 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
     print_parameter(pcout, "Time step size", time_step_tmp);
 
     // if u(x,t=0)=0, this time step size will tend to infinity
-    double time_step_adap = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
+    double time_step_adap = calculate_time_step_cfl_local<dim, fe_degree_u, value_type>(
       navier_stokes_operation->get_data(),
       navier_stokes_operation->get_dof_index_velocity(),
       navier_stokes_operation->get_quad_index_velocity_linear(),
@@ -369,14 +369,13 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
   else
   {
-    AssertThrow(
-      param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified ||
-        param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-        param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL ||
-        param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency,
-      ExcMessage(
-        "User did not specify how to calculate time step size - "
-        "possibilities are ConstTimeStepUserSpecified, ConstTimeStepCFL  and AdaptiveTimeStepCFL."));
+    AssertThrow(param.calculation_of_time_step_size ==
+                    TimeStepCalculation::ConstTimeStepUserSpecified ||
+                  param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
+                  param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL ||
+                  param.calculation_of_time_step_size ==
+                    TimeStepCalculation::ConstTimeStepMaxEfficiency,
+                ExcMessage("Specified type of time step calculation is not implemented."));
   }
 
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
@@ -400,7 +399,7 @@ double
 TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   recalculate_adaptive_time_step()
 {
-  double new_time_step_size = calculate_adaptive_time_step_cfl<dim, fe_degree_u, value_type>(
+  double new_time_step_size = calculate_time_step_cfl_local<dim, fe_degree_u, value_type>(
     navier_stokes_operation->get_data(),
     navier_stokes_operation->get_dof_index_velocity(),
     navier_stokes_operation->get_quad_index_velocity_linear(),
