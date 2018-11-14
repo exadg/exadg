@@ -44,6 +44,7 @@ SET( TARGET_SRC
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
+     include/convection_diffusion/interface_space_time/operator.cpp
      include/convection_diffusion/time_integration/time_int_bdf.cpp
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
