@@ -55,9 +55,14 @@ public:
   advance_one_timestep(bool write_final_output);
 
   void
-  set_time(double const & current_time)
+  reset_time(double const & current_time)
   {
-    this->time = current_time;
+    const double EPSILON = 1.0e-10;
+
+    if(current_time <= this->param.start_time + EPSILON)
+      this->time = current_time;
+    else
+      AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
   }
 
   double

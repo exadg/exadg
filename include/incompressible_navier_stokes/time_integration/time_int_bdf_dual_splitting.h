@@ -50,7 +50,10 @@ public:
   virtual void
   analyze_computing_times() const;
 
-protected:
+  void
+  postprocessing_stability_analysis();
+
+private:
   virtual void
   setup_derived();
 
@@ -58,7 +61,7 @@ protected:
   solve_timestep();
 
   virtual void
-  initialize_vectors();
+  allocate_vectors();
 
   virtual void
   prepare_vectors_for_next_timestep();
@@ -67,38 +70,10 @@ protected:
   convective_step();
 
   virtual void
-  read_restart_vectors(boost::archive::binary_iarchive & ia);
-
-  virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
-
-  std::vector<VectorType> velocity;
-
-  std::vector<VectorType> pressure;
-
-  VectorType velocity_np;
-
-  std::vector<VectorType> vorticity;
-
-  std::vector<VectorType> vec_convective_term;
-
-  std::vector<double>       computing_times;
-  std::vector<unsigned int> iterations;
-
-  VectorType rhs_vec_viscous;
-
-  // postprocessing: intermediate velocity
-  VectorType intermediate_velocity;
-
-  virtual void
   postprocessing() const;
 
   virtual void
   postprocessing_steady_problem() const;
-
-private:
-  virtual void
-  initialize_time_integrator_constants();
 
   virtual void
   update_time_integrator_constants();
@@ -107,7 +82,7 @@ private:
   initialize_current_solution();
 
   virtual void
-  initialize_former_solution();
+  initialize_former_solutions();
 
   void
   initialize_vorticity();
@@ -143,13 +118,37 @@ private:
   evaluate_residual();
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity();
+  get_velocity() const;
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity(unsigned int i /* t_{n-i} */);
+  get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  void
-  postprocessing_stability_analysis();
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  get_pressure(unsigned int i /* t_{n-i} */) const;
+
+  virtual void
+  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */);
+
+  virtual void
+  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
+
+  std::vector<VectorType> velocity;
+
+  std::vector<VectorType> pressure;
+
+  VectorType velocity_np;
+
+  std::vector<VectorType> vorticity;
+
+  std::vector<VectorType> vec_convective_term;
+
+  std::vector<double>       computing_times;
+  std::vector<unsigned int> iterations;
+
+  VectorType rhs_vec_viscous;
+
+  // postprocessing: intermediate velocity
+  VectorType intermediate_velocity;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;
@@ -174,35 +173,20 @@ private:
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_time_integrator_constants()
-{
-  // call function of base class to initialize the standard time integrator constants
-  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-    initialize_time_integrator_constants();
-
-  // set time integrator constants for extrapolation scheme of viscous term and convective term in
-  // pressure NBC
-  extra_pressure_nbc.initialize();
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
   TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
     update_time_integrator_constants();
 
-  // update time integrator constants for extrapolation scheme of pressure gradient term in case of
-  // incremental formulation of pressure-correction scheme
+  // update time integrator constants for extrapolation scheme of pressure Neumann bc
   if(this->adaptive_time_stepping == false)
   {
-    extra_pressure_nbc.update(this->time_step_number);
+    extra_pressure_nbc.update(this->get_time_step_number());
   }
   else // adaptive time stepping
   {
-    extra_pressure_nbc.update(this->time_step_number, this->time_steps);
+    extra_pressure_nbc.update(this->get_time_step_number(), this->get_time_step_vector());
   }
 
   // use this function to check the correctness of the time integrator constants
@@ -220,12 +204,14 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::se
 
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.start_with_low_order == false)
+  {
     initialize_vec_convective_term();
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vectors()
+TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::allocate_vectors()
 {
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -275,19 +261,20 @@ void
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   initialize_current_solution()
 {
-  navier_stokes_operation->prescribe_initial_conditions(velocity[0], pressure[0], this->time);
+  navier_stokes_operation->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_former_solution()
+  initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    navier_stokes_operation->prescribe_initial_conditions(
-      velocity[i], pressure[i], this->time - double(i) * this->time_steps[0]);
+    navier_stokes_operation->prescribe_initial_conditions(velocity[i],
+                                                          pressure[i],
+                                                          this->get_previous_time(i));
   }
 }
 
@@ -328,13 +315,13 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
   {
     navier_stokes_operation->evaluate_convective_term_and_apply_inverse_mass_matrix(
-      vec_convective_term[i], velocity[i], this->time - value_type(i) * this->time_steps[0]);
+      vec_convective_term[i], velocity[i], this->get_previous_time(i));
   }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
+TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity() const
 {
   return velocity[0];
 }
@@ -342,49 +329,35 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::ge
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(
-  unsigned int i)
+  unsigned int i) const
 {
   return velocity[i];
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::read_restart_vectors(
-  boost::archive::binary_iarchive & ia)
+LinearAlgebra::distributed::Vector<value_type> const &
+TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_pressure(
+  unsigned int i) const
 {
-  Vector<double> tmp;
-  for(unsigned int i = 0; i < velocity.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), velocity[i].begin());
-  }
-  for(unsigned int i = 0; i < pressure.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), pressure[i].begin());
-  }
+  return pressure[i];
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::write_restart_vectors(
-  boost::archive::binary_oarchive & oa) const
+TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::set_velocity(
+  VectorType const & velocity_in,
+  unsigned int const i)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  VectorView<double> tmp(velocity[0].local_size(), velocity[0].begin());
-#pragma GCC diagnostic pop
-  oa << tmp;
-  for(unsigned int i = 1; i < velocity.size(); i++)
-  {
-    tmp.reinit(velocity[i].local_size(), velocity[i].begin());
-    oa << tmp;
-  }
-  for(unsigned int i = 0; i < pressure.size(); i++)
-  {
-    tmp.reinit(pressure[i].local_size(), pressure[i].begin());
-    oa << tmp;
-  }
+  velocity[i] = velocity_in;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::set_pressure(
+  VectorType const & pressure_in,
+  unsigned int const i)
+{
+  pressure[i] = pressure_in;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -394,8 +367,11 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::po
   bool const standard = true;
   if(standard)
   {
-    navier_stokes_operation->do_postprocessing(
-      velocity[0], intermediate_velocity, pressure[0], this->time, this->time_step_number);
+    navier_stokes_operation->do_postprocessing(velocity[0],
+                                               intermediate_velocity,
+                                               pressure[0],
+                                               this->get_time(),
+                                               this->get_time_step_number());
   }
   else // consider solution increment
   {
@@ -410,8 +386,11 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::po
     pressure_incr = pressure[0];
     pressure_incr.add(-1.0, pressure[1]);
 
-    navier_stokes_operation->do_postprocessing(
-      velocity_incr, intermediate_velocity, pressure_incr, this->time, this->time_step_number);
+    navier_stokes_operation->do_postprocessing(velocity_incr,
+                                               intermediate_velocity,
+                                               pressure_incr,
+                                               this->get_time(),
+                                               this->get_time_step_number());
   }
 }
 
@@ -482,7 +461,8 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
       norm_max = norm;
 
     // print eigenvalues
-    //    std::cout << propagation_matrix.eigenvalue(i) << std::endl;
+    std::cout << std::scientific << std::setprecision(5) << propagation_matrix.eigenvalue(i)
+              << std::endl;
   }
 
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
@@ -513,7 +493,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
   if(this->param.right_hand_side == true)
   {
     navier_stokes_operation->evaluate_body_force_and_apply_inverse_mass_matrix(
-      velocity_np, this->time + this->time_steps[0]);
+      velocity_np, this->get_next_time());
   }
   else // right_hand_side == false
   {
@@ -525,7 +505,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     navier_stokes_operation->evaluate_convective_term_and_apply_inverse_mass_matrix(
-      vec_convective_term[0], velocity[0], this->time);
+      vec_convective_term[0], velocity[0], this->get_time());
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
   }
@@ -535,15 +515,15 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    this->calculate_sum_alphai_ui_oif_substepping();
+    this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else
   {
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], velocity[0]);
+    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
     for(unsigned int i = 1; i < velocity.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], velocity[i]);
+      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
     }
   }
 
@@ -551,14 +531,14 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
   if(this->param.small_time_steps_stability == false)
   {
     velocity_np.add(1.0, this->sum_alphai_ui);
-    velocity_np *= this->time_steps[0] / this->bdf.get_gamma0();
+    velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
   }
 
   if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     // write output explicit case
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Solve nonlinear convective step explicitly:" << std::endl
@@ -576,22 +556,22 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
         "Use TreatmentOfConvectiveTerm::Explicit when solving the Stokes equations or when using the STS approach."));
 
     // calculate Sum_i (alpha_i/dt * u_i)
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], velocity[0]);
+    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
     for(unsigned int i = 1; i < velocity.size(); ++i)
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], velocity[i]);
+      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
 
     unsigned int newton_iterations;
     unsigned int linear_iterations;
     navier_stokes_operation->solve_nonlinear_convective_problem(
       velocity_np,
       this->sum_alphai_ui,
-      this->time + this->time_steps[0],
+      this->get_next_time(),
       this->get_scaling_factor_time_derivative_term(),
       newton_iterations,
       linear_iterations);
 
     // write output implicit case
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Solve nonlinear convective step for intermediate velocity:" << std::endl
@@ -638,7 +618,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      navier_stokes_operation->shift_pressure(pressure_np, this->time + this->time_steps[0]);
+      navier_stokes_operation->shift_pressure(pressure_np, this->get_next_time());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -646,8 +626,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
-      navier_stokes_operation->shift_pressure_mean_value(pressure_np,
-                                                         this->time + this->time_steps[0]);
+      navier_stokes_operation->shift_pressure_mean_value(pressure_np, this->get_next_time());
     }
     else
     {
@@ -657,7 +636,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   }
 
   // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Solve Poisson equation for pressure p:" << std::endl
@@ -682,7 +661,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
   if(this->param.small_time_steps_stability == true)
     rhs_vec_pressure *= -1.0;
   else
-    rhs_vec_pressure *= -this->bdf.get_gamma0() / this->time_steps[0];
+    rhs_vec_pressure *= -this->bdf.get_gamma0() / this->get_time_step_size();
 
   // inhomogeneous parts of boundary face integrals of velocity divergence operator
   if(this->param.divu_integrated_by_parts == true)
@@ -692,18 +671,14 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
       // sum alpha_i * u_i term
       for(unsigned int i = 0; i < velocity.size(); ++i)
       {
-        double time_offset = 0.0;
-        for(unsigned int k = 0; k <= i; ++k)
-          time_offset += this->time_steps[k];
-
         rhs_vec_pressure_temp = 0;
-        navier_stokes_operation->rhs_velocity_divergence_term(rhs_vec_pressure_temp,
-                                                              this->time + this->time_steps[0] -
-                                                                time_offset);
+        double const t        = this->get_previous_time(i);
+        navier_stokes_operation->rhs_velocity_divergence_term(rhs_vec_pressure_temp, t);
 
         // note that the minus sign related to this term is already taken into account
         // in the function .rhs() of the divergence operator
-        rhs_vec_pressure.add(this->bdf.get_alpha(i) / this->time_steps[0], rhs_vec_pressure_temp);
+        rhs_vec_pressure.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
+                             rhs_vec_pressure_temp);
       }
 
       // convective term
@@ -720,7 +695,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
 
       // body force term
       navier_stokes_operation->rhs_ppe_div_term_body_forces_add(rhs_vec_pressure,
-                                                                this->time + this->time_steps[0]);
+                                                                this->get_next_time());
     }
   }
 
@@ -731,9 +706,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
 
   // II.1. inhomogeneous BC terms depending on prescribed boundary data,
   //       i.e. pressure Dirichlet boundary conditions on Gamma_N
-  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->time + this->time_steps[0]);
+  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->get_next_time());
   //       and body force vector, temporal derivative of velocity on Gamma_D
-  navier_stokes_operation->rhs_ppe_nbc_add(rhs_vec_pressure, this->time + this->time_steps[0]);
+  navier_stokes_operation->rhs_ppe_nbc_add(rhs_vec_pressure, this->get_next_time());
 
   // II.2. viscous term of pressure Neumann boundary condition on Gamma_D
   //       extrapolate vorticity and subsequently evaluate boundary face integral
@@ -781,7 +756,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   if(this->param.small_time_steps_stability == true)
   {
     velocity_np.add(1.0, this->sum_alphai_ui);
-    velocity_np *= this->time_steps[0] / this->bdf.get_gamma0();
+    velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
   }
 
   // compute right-hand-side vector
@@ -799,7 +774,8 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
 
-    navier_stokes_operation->update_projection_operator(velocity_extrapolated, this->time_steps[0]);
+    navier_stokes_operation->update_projection_operator(velocity_extrapolated,
+                                                        this->get_time_step_size());
 
     // solve linear system of equations
     iterations_projection =
@@ -811,7 +787,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   }
 
   // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Solve projection step for intermediate velocity:" << std::endl
@@ -845,9 +821,10 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
    */
   navier_stokes_operation->evaluate_pressure_gradient_term(rhs_vec_projection_temp,
                                                            pressure_np,
-                                                           this->time + this->time_steps[0]);
+                                                           this->get_next_time());
 
-  rhs_vec_projection.add(-this->time_steps[0] / this->bdf.get_gamma0(), rhs_vec_projection_temp);
+  rhs_vec_projection.add(-this->get_time_step_size() / this->bdf.get_gamma0(),
+                         rhs_vec_projection_temp);
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -873,7 +850,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::vi
 
     navier_stokes_operation->update_turbulence_model(velocity_extrapolated);
 
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
@@ -897,7 +874,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::vi
                                            this->get_scaling_factor_time_derivative_term());
 
   // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Solve viscous step for velocity u:" << std::endl
@@ -917,12 +894,12 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
    *  I. calculate mass matrix term
    */
   navier_stokes_operation->apply_mass_matrix(rhs_vec_viscous, velocity_np);
-  rhs_vec_viscous *= this->bdf.get_gamma0() / this->time_steps[0];
+  rhs_vec_viscous *= this->bdf.get_gamma0() / this->get_time_step_size();
 
   /*
    *  II. inhomongeous parts of boundary face integrals of viscous operator
    */
-  navier_stokes_operation->rhs_add_viscous_term(rhs_vec_viscous, this->time + this->time_steps[0]);
+  navier_stokes_operation->rhs_add_viscous_term(rhs_vec_viscous, this->get_next_time());
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -957,7 +934,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::so
   if(this->param.convergence_criterion_steady_problem ==
      ConvergenceCriterionSteadyProblem::SolutionIncrement)
   {
-    while(!converged && this->time_step_number <= this->param.max_number_of_time_steps)
+    while(!converged && this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step
       velocity_tmp = this->velocity[0];
@@ -987,7 +964,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::so
         incr_rel = incr / norm;
 
       // write output
-      if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+      if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
       {
         this->pcout << std::endl
                     << "Norm of solution increment:" << std::endl
@@ -1036,7 +1013,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   analyze_computing_times() const
 {
   std::string  names[5]     = {"Convection   ", "Pressure     ", "Projection   ", "Viscous      "};
-  unsigned int N_time_steps = this->time_step_number - 1;
+  unsigned int N_time_steps = this->get_time_step_number() - 1;
 
   // iterations
   this->pcout << std::endl

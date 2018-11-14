@@ -133,7 +133,7 @@ calculate_adaptive_time_step_cfl(MatrixFree<dim, value_type> const &            
 {
   FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(data, dof_index, quad_index);
 
-  double new_time_step = std::numeric_limits<value_type>::max();
+  double new_time_step = std::numeric_limits<double>::max();
 
   double const cfl_p = cfl / pow(fe_degree, exponent_fe_degree);
 
@@ -168,7 +168,7 @@ calculate_adaptive_time_step_cfl(MatrixFree<dim, value_type> const &            
     }
 
     // loop over vectorized array
-    value_type dt = std::numeric_limits<value_type>::max();
+    double dt = std::numeric_limits<double>::max();
     for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
     {
       dt = std::min(dt, delta_t_cell[v]);

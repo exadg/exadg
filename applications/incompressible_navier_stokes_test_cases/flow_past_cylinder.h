@@ -241,12 +241,6 @@ void InputParameters<dim>::set_input_parameters()
   // output of solver information
   output_solver_info_every_timesteps = 1e0; // 1e5;
 
-  // restart
-  write_restart = false;
-  restart_interval_time = 1.e2;
-  restart_interval_wall_time = 1.e6;
-  restart_every_timesteps = 1e8;
-
   // lift and drag
   lift_and_drag_data.calculate_lift_and_drag = true;
   lift_and_drag_data.viscosity = viscosity;

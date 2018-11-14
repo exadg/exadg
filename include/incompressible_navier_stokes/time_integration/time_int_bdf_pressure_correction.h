@@ -32,13 +32,12 @@ public:
         n_refine_time_in,
         use_adaptive_time_stepping),
       navier_stokes_operation(navier_stokes_operation_in),
-      velocity(this->order),
-      pressure(this->order),
-      vec_convective_term(this->order),
-      order_pressure_extrapolation(this->param.order_pressure_extrapolation),
-      extra_pressure_gradient(this->param.order_pressure_extrapolation,
-                              this->param.start_with_low_order),
-      vec_pressure_gradient_term(this->param.order_pressure_extrapolation),
+      velocity(param_in.order_time_integrator),
+      pressure(param_in.order_time_integrator),
+      vec_convective_term(param_in.order_time_integrator),
+      order_pressure_extrapolation(param_in.order_pressure_extrapolation),
+      extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
+      vec_pressure_gradient_term(param_in.order_pressure_extrapolation),
       computing_times(3),
       iterations(3),
       N_iter_nonlinear_momentum(0)
@@ -52,21 +51,21 @@ public:
   virtual void
   analyze_computing_times() const;
 
-private:
-  virtual void
-  initialize_time_integrator_constants();
+  void
+  postprocessing_stability_analysis();
 
+private:
   virtual void
   update_time_integrator_constants();
 
   virtual void
-  initialize_vectors();
+  allocate_vectors();
 
   virtual void
   initialize_current_solution();
 
   virtual void
-  initialize_former_solution();
+  initialize_former_solutions();
 
   virtual void
   setup_derived();
@@ -119,20 +118,20 @@ private:
   virtual void
   postprocessing_steady_problem() const;
 
-  virtual void
-  postprocessing_stability_analysis();
-
-  virtual void
-  read_restart_vectors(boost::archive::binary_iarchive & ia);
-
-  virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  get_velocity() const;
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity();
+  get_velocity(unsigned int i /* t_{n-i} */) const;
 
   virtual LinearAlgebra::distributed::Vector<value_type> const &
-  get_velocity(unsigned int i /* t_{n-i} */);
+  get_pressure(unsigned int i /* t_{n-i} */) const;
+
+  virtual void
+  set_velocity(VectorType const & velocity, unsigned int const i /* t_{n-i} */);
+
+  virtual void
+  set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
@@ -178,23 +177,6 @@ private:
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_time_integrator_constants()
-{
-  // call function of base class to initialize the standard time integrator constants
-  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-    initialize_time_integrator_constants();
-
-  // set time integrator constants for extrapolation scheme of pressure gradient term
-  // in case of incremental formulation of pressure-correction scheme
-  if(extra_pressure_gradient.get_order() > 0)
-  {
-    extra_pressure_gradient.initialize();
-  }
-}
-
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
   update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
@@ -211,16 +193,16 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   // step, etc.
   if(this->adaptive_time_stepping == false)
   {
-    extra_pressure_gradient.update(this->time_step_number - 1);
+    extra_pressure_gradient.update(this->get_time_step_number() - 1);
   }
   else // adaptive time stepping
   {
-    extra_pressure_gradient.update(this->time_step_number - 1, this->time_steps);
+    extra_pressure_gradient.update(this->get_time_step_number() - 1, this->get_time_step_vector());
   }
 
   // use this function to check the correctness of the time integrator constants
   //  std::cout << "Coefficients extrapolation scheme pressure: Time step = " <<
-  //  this->time_step_number << std::endl; extra_pressure_gradient.print();
+  //  this->get_time_step_number() << std::endl; extra_pressure_gradient.print();
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -228,7 +210,7 @@ void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::setup_derived()
 {
   if(this->param.equation_type == EquationType::NavierStokes &&
-     this->param.start_with_low_order == false &&
+     this->start_with_low_order == false &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     initialize_vec_convective_term();
 
@@ -239,7 +221,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_vectors()
+  allocate_vectors()
 {
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -285,19 +267,20 @@ void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
   initialize_current_solution()
 {
-  navier_stokes_operation->prescribe_initial_conditions(velocity[0], pressure[0], this->time);
+  navier_stokes_operation->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_former_solution()
+  initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    navier_stokes_operation->prescribe_initial_conditions(
-      velocity[i], pressure[i], this->time - double(i) * this->time_steps[0]);
+    navier_stokes_operation->prescribe_initial_conditions(velocity[i],
+                                                          pressure[i],
+                                                          this->get_previous_time(i));
   }
 }
 
@@ -311,7 +294,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                       velocity[i],
-                                                      this->time - double(i) * this->time_steps[0]);
+                                                      this->get_previous_time(i));
   }
 }
 
@@ -323,14 +306,16 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
   {
-    navier_stokes_operation->evaluate_pressure_gradient_term(
-      vec_pressure_gradient_term[i], pressure[i], this->time - double(i) * this->time_steps[0]);
+    navier_stokes_operation->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
+                                                             pressure[i],
+                                                             this->get_previous_time(i));
   }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
+  const
 {
   return velocity[0];
 }
@@ -338,49 +323,35 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 LinearAlgebra::distributed::Vector<value_type> const &
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(
-  unsigned int i)
+  unsigned int i) const
 {
   return velocity[i];
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  read_restart_vectors(boost::archive::binary_iarchive & ia)
+LinearAlgebra::distributed::Vector<value_type> const &
+TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_pressure(
+  unsigned int i) const
 {
-  Vector<double> tmp;
-  for(unsigned int i = 0; i < velocity.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), velocity[i].begin());
-  }
-  for(unsigned int i = 0; i < pressure.size(); i++)
-  {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), pressure[i].begin());
-  }
+  return pressure[i];
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::set_velocity(
+  VectorType const & velocity_in,
+  unsigned int const i)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  VectorView<double> tmp(velocity[0].local_size(), velocity[0].begin());
-#pragma GCC diagnostic pop
-  oa << tmp;
-  for(unsigned int i = 1; i < velocity.size(); i++)
-  {
-    tmp.reinit(velocity[i].local_size(), velocity[i].begin());
-    oa << tmp;
-  }
-  for(unsigned int i = 0; i < pressure.size(); i++)
-  {
-    tmp.reinit(pressure[i].local_size(), pressure[i].begin());
-    oa << tmp;
-  }
+  velocity[i] = velocity_in;
+}
+
+template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+void
+TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::set_pressure(
+  VectorType const & pressure_in,
+  unsigned int const i)
+{
+  pressure[i] = pressure_in;
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -390,8 +361,8 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 {
   navier_stokes_operation->do_postprocessing(velocity[0],
                                              pressure[0],
-                                             this->time,
-                                             this->time_step_number);
+                                             this->get_time(),
+                                             this->get_time_step_number());
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -455,7 +426,8 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
       norm_max = norm;
 
     // print eigenvalues
-    //    std::cout << propagation_matrix.eigenvalue(i) << std::endl;
+    std::cout << std::scientific << std::setprecision(5) << propagation_matrix.eigenvalue(i)
+              << std::endl;
   }
 
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
@@ -500,7 +472,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 
     navier_stokes_operation->update_turbulence_model(velocity_np);
 
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
@@ -534,7 +506,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
       linear_iterations_momentum);
 
     // write output explicit case
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Solve linear momentum equation for intermediate velocity:" << std::endl
@@ -558,13 +530,13 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     navier_stokes_operation->solve_nonlinear_momentum_equation(
       velocity_np,
       rhs_vec_momentum,
-      this->time + this->time_steps[0],
+      this->get_next_time(),
       this->get_scaling_factor_time_derivative_term(),
       nonlinear_iterations_momentum,
       linear_iterations_momentum);
 
     // write output implicit case
-    if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
     {
       this->pcout << std::endl
                   << "Solve nonlinear momentum equation for intermediate velocity:" << std::endl
@@ -601,7 +573,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     navier_stokes_operation->evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
                                                              pressure[0],
-                                                             this->time);
+                                                             this->get_time());
 
     for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
       rhs_vec_momentum.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
@@ -612,8 +584,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    */
   if(this->param.right_hand_side == true)
   {
-    navier_stokes_operation->evaluate_add_body_force_term(rhs_vec_momentum,
-                                                          this->time + this->time_steps[0]);
+    navier_stokes_operation->evaluate_add_body_force_term(rhs_vec_momentum, this->get_next_time());
   }
 
   /*
@@ -625,7 +596,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[0],
                                                       velocity[0],
-                                                      this->time);
+                                                      this->get_time());
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       rhs_vec_momentum.add(-this->extra.get_beta(i), vec_convective_term[i]);
@@ -640,15 +611,15 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    this->calculate_sum_alphai_ui_oif_substepping();
+    this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else
   {
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->time_steps[0], velocity[0]);
+    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
     for(unsigned int i = 1; i < velocity.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->time_steps[0], velocity[i]);
+      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
     }
   }
 
@@ -664,8 +635,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    navier_stokes_operation->rhs_add_viscous_term(rhs_vec_momentum,
-                                                  this->time + this->time_steps[0]);
+    navier_stokes_operation->rhs_add_viscous_term(rhs_vec_momentum, this->get_next_time());
   }
 }
 
@@ -703,7 +673,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     // formulation of the pressure-correction scheme.
     for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
     {
-      pressure_increment.add(-this->extra_pressure_gradient.get_beta(i), pressure[i]);
+      pressure_increment.add(-extra_pressure_gradient.get_beta(i), pressure[i]);
     }
   }
 
@@ -723,7 +693,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      navier_stokes_operation->shift_pressure(pressure_np, this->time + this->time_steps[0]);
+      navier_stokes_operation->shift_pressure(pressure_np, this->get_next_time());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -731,8 +701,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
-      navier_stokes_operation->shift_pressure_mean_value(pressure_np,
-                                                         this->time + this->time_steps[0]);
+      navier_stokes_operation->shift_pressure_mean_value(pressure_np, this->get_next_time());
     }
     else
     {
@@ -742,7 +711,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 
   // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Solve Poisson equation for pressure p:" << std::endl
@@ -760,15 +729,21 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   double & chi) const
 {
   if(this->param.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+  {
     chi = 1.0;
+  }
   else if(this->param.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+  {
     chi = 2.0;
+  }
   else
+  {
     AssertThrow(this->param.formulation_viscous_term ==
                     FormulationViscousTerm::LaplaceFormulation &&
                   this->param.formulation_viscous_term ==
                     FormulationViscousTerm::DivergenceFormulation,
                 ExcMessage("Not implemented!"));
+  }
 }
 
 template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
@@ -780,9 +755,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    */
   navier_stokes_operation->evaluate_velocity_divergence_term(rhs_vec_pressure_temp,
                                                              velocity_np,
-                                                             this->time + this->time_steps[0]);
+                                                             this->get_next_time());
 
-  rhs_vec_pressure.equ(-this->bdf.get_gamma0() / this->time_steps[0], rhs_vec_pressure_temp);
+  rhs_vec_pressure.equ(-this->bdf.get_gamma0() / this->get_time_step_size(), rhs_vec_pressure_temp);
 
 
   /*
@@ -790,19 +765,15 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    *  i.e., pressure Dirichlet boundary conditions on Gamma_N and
    *  pressure Neumann boundary conditions on Gamma_D (always h=0 for pressure-correction scheme!)
    */
-  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->time + this->time_steps[0]);
+  navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure, this->get_next_time());
 
   // incremental formulation of pressure-correction scheme
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
-    double time_offset = 0.0;
-    for(unsigned int k = 0; k <= i; ++k)
-      time_offset += this->time_steps[k];
-
-    rhs_vec_pressure_temp =
-      0.0; // set rhs_vec_pressure_temp to zero since rhs_ppe_laplace_add() adds into dst-vector
-    navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp,
-                                                 this->time + this->time_steps[0] - time_offset);
+    // set rhs_vec_pressure_temp to zero since rhs_ppe_laplace_add() adds into dst-vector
+    rhs_vec_pressure_temp = 0.0;
+    double const t        = this->get_previous_time(i);
+    navier_stokes_operation->rhs_ppe_laplace_add(rhs_vec_pressure_temp, t);
     rhs_vec_pressure.add(-extra_pressure_gradient.get_beta(i), rhs_vec_pressure_temp);
   }
 
@@ -834,7 +805,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     // Automatically sets pressure_np to zero before operator evaluation.
     navier_stokes_operation->evaluate_velocity_divergence_term(pressure_np,
                                                                velocity_np,
-                                                               this->time + this->time_steps[0]);
+                                                               this->get_next_time());
 
     navier_stokes_operation->apply_inverse_pressure_mass_matrix(pressure_np, pressure_np);
 
@@ -855,7 +826,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   // p^{n+1} = (pressure_increment)^{n+1} + sum_i (beta_pressure_extrapolation_i * p^{n-i});
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
-    pressure_np.add(this->extra_pressure_gradient.get_beta(i), pressure[i]);
+    pressure_np.add(extra_pressure_gradient.get_beta(i), pressure[i]);
   }
 }
 
@@ -873,9 +844,10 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    */
   navier_stokes_operation->evaluate_pressure_gradient_term(rhs_vec_projection_temp,
                                                            pressure_increment,
-                                                           this->time + this->time_steps[0]);
+                                                           this->get_next_time());
 
-  rhs_vec_projection.add(-this->time_steps[0] / this->bdf.get_gamma0(), rhs_vec_projection_temp);
+  rhs_vec_projection.add(-this->get_time_step_size() / this->bdf.get_gamma0(),
+                         rhs_vec_projection_temp);
 
   /*
    *  III. pressure gradient term: boundary conditions g_p(t_{n-i})
@@ -883,16 +855,11 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
    */
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
-    double time_offset = 0.0;
-    for(unsigned int k = 0; k <= i; ++k)
-      time_offset += this->time_steps[k];
-
     // evaluate inhomogeneous parts of boundary face integrals
-    navier_stokes_operation->rhs_pressure_gradient_term(rhs_vec_projection_temp,
-                                                        this->time + this->time_steps[0] -
-                                                          time_offset);
+    double const current_time = this->get_previous_time(i);
+    navier_stokes_operation->rhs_pressure_gradient_term(rhs_vec_projection_temp, current_time);
 
-    rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i) * this->time_steps[0] /
+    rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
                              this->bdf.get_gamma0(),
                            rhs_vec_projection_temp);
   }
@@ -920,7 +887,8 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
 
-    navier_stokes_operation->update_projection_operator(velocity_extrapolated, this->time_steps[0]);
+    navier_stokes_operation->update_projection_operator(velocity_extrapolated,
+                                                        this->get_time_step_size());
 
     // solve linear system of equations
     iterations_projection =
@@ -932,7 +900,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 
   // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Solve projection step for intermediate velocity:" << std::endl
@@ -980,11 +948,11 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   if(this->param.convergence_criterion_steady_problem ==
      ConvergenceCriterionSteadyProblem::SolutionIncrement)
   {
-    while(!converged && this->time_step_number <= this->param.max_number_of_time_steps)
+    while(!converged && this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step
-      velocity_tmp = this->velocity[0];
-      pressure_tmp = this->pressure[0];
+      velocity_tmp = velocity[0];
+      pressure_tmp = pressure[0];
 
       // calculate normm of solution
       double const norm_u = velocity_tmp.l2_norm();
@@ -999,8 +967,8 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
       //           = solution[0] - solution_tmp
       velocity_tmp *= -1.0;
       pressure_tmp *= -1.0;
-      velocity_tmp.add(1.0, this->velocity[0]);
-      pressure_tmp.add(1.0, this->pressure[0]);
+      velocity_tmp.add(1.0, velocity[0]);
+      pressure_tmp.add(1.0, pressure[0]);
 
       double const incr_u   = velocity_tmp.l2_norm();
       double const incr_p   = pressure_tmp.l2_norm();
@@ -1010,7 +978,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
         incr_rel = incr / norm;
 
       // write output
-      if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+      if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
       {
         this->pcout << std::endl
                     << "Norm of solution increment:" << std::endl
@@ -1032,7 +1000,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   {
     double const initial_residual = evaluate_residual();
 
-    while(!converged && this->time_step_number <= this->param.max_number_of_time_steps)
+    while(!converged && this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       this->do_timestep();
 
@@ -1068,16 +1036,16 @@ double
 TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
   evaluate_residual()
 {
-  this->navier_stokes_operation->evaluate_nonlinear_residual_steady(
-    this->velocity_np, this->pressure_np, this->velocity[0], this->pressure[0], this->time);
+  navier_stokes_operation->evaluate_nonlinear_residual_steady(
+    velocity_np, pressure_np, velocity[0], pressure[0], this->get_time());
 
-  double const norm_u = this->velocity_np.l2_norm();
-  double const norm_p = this->pressure_np.l2_norm();
+  double const norm_u = velocity_np.l2_norm();
+  double const norm_p = pressure_np.l2_norm();
 
   double residual = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
   // write output
-  if((this->time_step_number - 1) % this->param.output_solver_info_every_timesteps == 0)
+  if((this->get_time_step_number() - 1) % this->param.output_solver_info_every_timesteps == 0)
   {
     this->pcout << std::endl
                 << "Norm of residual of steady Navier-Stokes equations:" << std::endl
@@ -1095,7 +1063,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   analyze_computing_times() const
 {
   std::string  names[3]     = {"Momentum     ", "Pressure     ", "Projection   "};
-  unsigned int N_time_steps = this->time_step_number - 1;
+  unsigned int N_time_steps = this->get_time_step_number() - 1;
 
   // iterations
   this->pcout << std::endl

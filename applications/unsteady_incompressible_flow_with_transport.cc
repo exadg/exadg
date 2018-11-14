@@ -154,7 +154,7 @@ private:
 
   // SCALAR TRANSPORT
   void
-  setup_convection_diffusion();
+  setup_convection_diffusion(bool const do_restart);
 
   ConvDiff::InputParameters scalar_param;
 
@@ -208,7 +208,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   {
     AssertThrow(false, ExcMessage("Not implemented"));
 
-    // TODO: use this later once adaptive time stepping has been implemented for scaling
+    // TODO: use this later once adaptive time stepping has been implemented for scalar
     // convection-diffusion equation
     //    AssertThrow(scalar_param.calculation_of_time_step_size ==
     //    ConvDiff::TimeStepCalculation::AdaptiveTimeStepCFL,
@@ -443,7 +443,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes_solvers(
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion()
+Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(bool const do_restart)
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -470,7 +470,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion()
     // call setup() of time_integrator before setup_solvers() of conv_diff_operation
     // because setup_solver() needs quantities such as the time step size for a
     // correct initialization of preconditioners
-    scalar_time_integrator_BDF->setup();
+    scalar_time_integrator_BDF->setup(do_restart);
 
     conv_diff_operation->setup_solver(
       scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term());
@@ -491,17 +491,17 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time()
   // fluid
   if(fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
-    time_integrator_coupled->set_time(time);
+    time_integrator_coupled->reset_time(time);
   }
   else if(fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
   {
-    time_integrator_dual_splitting->set_time(time);
+    time_integrator_dual_splitting->reset_time(time);
   }
   else if(fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
   {
-    time_integrator_pressure_correction->set_time(time);
+    time_integrator_pressure_correction->reset_time(time);
   }
   else
   {
@@ -511,11 +511,11 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time()
   // scalar transport
   if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
   {
-    scalar_time_integrator_explRK->set_time(time);
+    scalar_time_integrator_explRK->reset_time(time);
   }
   else if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
   {
-    scalar_time_integrator_BDF->set_time(time);
+    scalar_time_integrator_BDF->reset_time(time);
   }
   else
   {
@@ -702,7 +702,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
 {
   setup_navier_stokes(do_restart);
 
-  setup_convection_diffusion();
+  setup_convection_diffusion(do_restart);
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>

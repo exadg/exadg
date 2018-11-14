@@ -1,6 +1,8 @@
 /*
- * UnsteadyCompressibleNavierStokes.cc
+ * unsteady_compressible_navier_stokes.cc
  *
+ *  Created on: 2018
+ *      Author: fehn
  */
 
 
@@ -28,16 +30,16 @@
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-// EULER EQUATIONS
+// Euler equations
 //#include "compressible_navier_stokes_test_cases/euler_vortex_flow.h"
 
-// NAVIER-STOKES EQUATIONS
-#include "compressible_navier_stokes_test_cases/channel_flow.h"
+// Navier-Stokes equations
+//#include "compressible_navier_stokes_test_cases/channel_flow.h"
 //#include "compressible_navier_stokes_test_cases/couette_flow.h"
 //#include "compressible_navier_stokes_test_cases/steady_shear_flow.h"
 //#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
 //#include "compressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;

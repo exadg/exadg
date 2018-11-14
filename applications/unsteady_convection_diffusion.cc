@@ -58,7 +58,7 @@ public:
   ConvDiffProblem(const unsigned int n_refine_space, const unsigned int n_refine_time);
 
   void
-  solve_problem();
+  solve_problem(bool const do_restart);
 
 private:
   void
@@ -162,7 +162,7 @@ ConvDiffProblem<dim, fe_degree, Number>::print_header()
 
 template<int dim, int fe_degree, typename Number>
 void
-ConvDiffProblem<dim, fe_degree, Number>::solve_problem()
+ConvDiffProblem<dim, fe_degree, Number>::solve_problem(bool const do_restart)
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -185,7 +185,7 @@ ConvDiffProblem<dim, fe_degree, Number>::solve_problem()
     // call setup() of time_integrator before setup_solvers() of conv_diff_operation
     // because setup_solver() needs quantities such as the time step size for a
     // correct initialization of preconditioners
-    time_integrator_BDF->setup();
+    time_integrator_BDF->setup(do_restart);
 
     conv_diff_operation->setup_solver(
       time_integrator_BDF->get_scaling_factor_time_derivative_term());
@@ -219,6 +219,20 @@ main(int argc, char ** argv)
 
     deallog.depth_console(0);
 
+    bool do_restart = false;
+    if(argc > 1)
+    {
+      do_restart = std::atoi(argv[1]);
+      if(do_restart)
+      {
+        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX,
+                    ExcMessage("Spatial refinement not possible in combination with restart!"));
+
+        AssertThrow(REFINE_STEPS_TIME_MIN == REFINE_STEPS_TIME_MAX,
+                    ExcMessage("Temporal refinement not possible in combination with restart!"));
+      }
+    }
+
     // mesh refinements in order to perform spatial convergence tests
     for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
         refine_steps_space <= REFINE_STEPS_SPACE_MAX;
@@ -231,7 +245,8 @@ main(int argc, char ** argv)
       {
         ConvDiffProblem<DIMENSION, FE_DEGREE> conv_diff_problem(refine_steps_space,
                                                                 refine_steps_time);
-        conv_diff_problem.solve_problem();
+
+        conv_diff_problem.solve_problem(do_restart);
       }
     }
   }

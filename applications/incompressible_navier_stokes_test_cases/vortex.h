@@ -304,10 +304,11 @@ void InputParameters<dim>::set_input_parameters()
   output_solver_info_every_timesteps = 1e5;
 
   // restart
-  write_restart = false;
-  restart_interval_time = 1.e2;
-  restart_interval_wall_time = 1.e6;
-  restart_every_timesteps = 1e8;
+  restart_data.write_restart = true;
+  restart_data.interval_time = 0.75;
+  restart_data.interval_wall_time = 1.e6;
+  restart_data.interval_time_steps = 1e8;
+  restart_data.filename = "output/vortex/vortex";
 }
 
 /**************************************************************************************/
@@ -605,7 +606,6 @@ void create_grid_and_set_boundary_conditions(
     }
     static const SphericalManifold<dim> spherical_manifold;
     triangulation.set_manifold(1, spherical_manifold);
-    triangulation.set_boundary(0);
 
     // refine globally due to boundary conditions for vortex problem
     triangulation.refine_global(1);

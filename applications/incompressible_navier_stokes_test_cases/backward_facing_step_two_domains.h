@@ -1,5 +1,5 @@
 /*
- * TurbulentChannel.h
+ * backward_facing_step_two_domains.h
  *
  *  Created on: Oct 14, 2016
  *      Author: fehn

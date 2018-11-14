@@ -11,6 +11,7 @@
 #include "deal.II/base/conditional_ostream.h"
 
 #include "../../functionalities/print_functions.h"
+#include "../../functionalities/restart_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
@@ -629,8 +630,6 @@ struct PerturbationEnergyData
   double       U_max;
 };
 
-
-
 template<int dim>
 class InputParameters
 {
@@ -840,10 +839,7 @@ public:
       output_solver_info_every_timesteps(1),
 
       // restart
-      write_restart(false),
-      restart_interval_time(std::numeric_limits<double>::max()),
-      restart_interval_wall_time(std::numeric_limits<double>::max()),
-      restart_every_timesteps(std::numeric_limits<unsigned int>::max()),
+      restart_data(RestartData()),
 
       // lift and drag
       lift_and_drag_data(LiftAndDragData()),
@@ -1799,13 +1795,7 @@ public:
     // restart
     if(problem_type == ProblemType::Unsteady)
     {
-      print_parameter(pcout, "Write restart", write_restart);
-      if(write_restart == true)
-      {
-        print_parameter(pcout, "Restart interval time", restart_interval_time);
-        print_parameter(pcout, "Restart interval wall time", restart_interval_wall_time);
-        print_parameter(pcout, "Restart every timesteps", restart_every_timesteps);
-      }
+      restart_data.print(pcout);
     }
 
     // turbulent channel statistics
@@ -2326,17 +2316,8 @@ public:
   // show solver performance (wall time, number of iterations) every ... timesteps
   unsigned int output_solver_info_every_timesteps;
 
-  // write restart
-  bool write_restart;
-
-  // specifies the time interval in which restarts are written, starting from start_time
-  double restart_interval_time;
-
-  // specifies the wall time interwal in which restarts are written
-  double restart_interval_wall_time;
-
-  // specifies the restart interval via number of time steps
-  unsigned int restart_every_timesteps;
+  // restart
+  RestartData restart_data;
 
   // computation of lift and drag coefficients
   LiftAndDragData lift_and_drag_data;
