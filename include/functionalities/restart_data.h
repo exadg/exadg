@@ -40,7 +40,10 @@ struct RestartData
   }
 
   bool
-  do_restart(double const wall_time, double const time, unsigned int const time_step_number, bool const reset_counter) const
+  do_restart(double const       wall_time,
+             double const       time,
+             unsigned int const time_step_number,
+             bool const         reset_counter) const
   {
     // After a restart, the counter is reset to 1. If the restart is controlled by
     // the variable interval_time, we have to reinitialize the counter because the variable time
@@ -49,10 +52,9 @@ struct RestartData
     // if the restart is controlled by the wall time or the time_step_number because these
     // variables are reinitialized after a restart anyway.
     if(reset_counter)
-      counter += int((time+1.e-10)/interval_time);
+      counter += int((time + 1.e-10) / interval_time);
 
-    bool do_restart = wall_time > interval_wall_time * counter ||
-                      time > interval_time * counter ||
+    bool do_restart = wall_time > interval_wall_time * counter || time > interval_time * counter ||
                       time_step_number > interval_time_steps * counter;
 
     if(do_restart)
@@ -73,7 +75,7 @@ struct RestartData
   unsigned int interval_time_steps;
 
   // filename for restart files
-  std::string  filename;
+  std::string filename;
 
   // counter needed do decide when to write restart
   mutable unsigned int counter;
