@@ -8,7 +8,11 @@
 #ifndef INCLUDE_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_
 #define INCLUDE_TIME_INTEGRATION_SSP_RUNGE_KUTTA_H_
 
+#include <deal.II/lac/full_matrix.h>
+
 #include "explicit_runge_kutta.h"
+
+using namespace dealii;
 
 /*
  *  Strong-Stability-Preserving Runge-Kutta Methods according to

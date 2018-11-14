@@ -189,24 +189,24 @@ void CompNS::InputParameters<dim>::set_input_parameters()
  */
 
 template<int dim>
-class AnalyticalSolution : public Function<dim>
+class Solution : public Function<dim>
 {
 public:
-  AnalyticalSolution (const unsigned int  n_components = dim + 2,
-                      const double        time = 0.)
+  Solution (const unsigned int  n_components = dim + 2,
+            const double        time = 0.)
     :
   Function<dim>(n_components, time)
   {}
 
-  virtual ~AnalyticalSolution(){};
+  virtual ~Solution(){};
 
   virtual double value (const Point<dim>   &x,
                         const unsigned int component = 0) const;
 };
 
 template<int dim>
-double AnalyticalSolution<dim>::value(const Point<dim>    &x,
-                                      const unsigned int  component) const
+double Solution<dim>::value(const Point<dim>    &x,
+                            const unsigned int  component) const
 {
   double const u1 = V_0*std::sin(x[0]/L)*std::cos(x[1]/L)*std::cos(x[2]/L);
   double const u2 = -V_0*std::cos(x[0]/L)*std::sin(x[1]/L)*std::cos(x[2]/L);
@@ -326,7 +326,7 @@ void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_fun
 
   // initial solution
   std::shared_ptr<Function<dim> > initial_solution;
-  initial_solution.reset(new AnalyticalSolution<dim>());
+  initial_solution.reset(new Solution<dim>());
   field_functions->initial_solution = initial_solution;
 
   // rhs density
@@ -342,7 +342,7 @@ void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_fun
 template<int dim>
 void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution->solution.reset(new Solution<dim>());
 }
 
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
