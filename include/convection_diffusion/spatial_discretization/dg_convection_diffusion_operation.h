@@ -407,9 +407,7 @@ public:
   }
 
   double
-  calculate_time_step_cfl(double const time,
-                          double const cfl,
-                          double const exponent_fe_degree) const
+  calculate_time_step_cfl(double const time, double const cfl, double const exponent_degree) const
   {
     return calculate_time_step_cfl_local<dim, degree, Number>(data,
                                                               0 /*dof_index*/,
@@ -417,7 +415,7 @@ public:
                                                               field_functions->velocity,
                                                               time,
                                                               cfl,
-                                                              exponent_fe_degree);
+                                                              exponent_degree);
   }
 
   double

@@ -324,7 +324,7 @@ TimeIntBDFBase::do_timestep()
   if(adaptive_time_stepping == true)
   {
     push_back_time_step_sizes();
-    double const dt = recalculate_adaptive_time_step();
+    double const dt = recalculate_time_step();
     set_time_step_size(dt);
   }
 

@@ -16,35 +16,20 @@
 
 namespace IncNS
 {
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-class TimeIntBDFCoupled
-  : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
+class TimeIntBDFCoupled : public TimeIntBDF<dim, Number, NavierStokesOperation>
 {
 public:
-  typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
+  typedef TimeIntBDF<dim, Number, NavierStokesOperation> Base;
 
-  typedef typename Base::VectorType                           VectorType;
-  typedef LinearAlgebra::distributed::BlockVector<value_type> BlockVectorType;
+  typedef typename Base::VectorType VectorType;
+
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   TimeIntBDFCoupled(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                     InputParameters<dim> const &           param_in,
                     unsigned int const                     n_refine_time_in,
-                    bool const                             use_adaptive_time_stepping)
-    : TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>(
-        navier_stokes_operation_in,
-        param_in,
-        n_refine_time_in,
-        use_adaptive_time_stepping),
-      navier_stokes_operation(navier_stokes_operation_in),
-      solution(this->order),
-      vec_convective_term(this->order),
-      computing_times(2),
-      iterations(2),
-      N_iter_nonlinear(0.0),
-      scaling_factor_continuity(1.0),
-      characteristic_element_length(1.0)
-  {
-  }
+                    bool const                             use_adaptive_time_stepping);
 
   virtual ~TimeIntBDFCoupled()
   {
@@ -93,13 +78,13 @@ private:
   virtual void
   prepare_vectors_for_next_timestep();
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   virtual void
@@ -118,7 +103,7 @@ private:
   std::vector<VectorType> vec_convective_term;
 
   // performance analysis: average number of iterations and solver time
-  std::vector<value_type>   computing_times;
+  std::vector<Number>       computing_times;
   std::vector<unsigned int> iterations;
   unsigned int              N_iter_nonlinear;
 
@@ -131,9 +116,30 @@ private:
   VectorType pressure_tmp;
 };
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::TimeIntBDFCoupled(
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
+  InputParameters<dim> const &           param_in,
+  unsigned int const                     n_refine_time_in,
+  bool const                             use_adaptive_time_stepping)
+  : TimeIntBDF<dim, Number, NavierStokesOperation>(navier_stokes_operation_in,
+                                                   param_in,
+                                                   n_refine_time_in,
+                                                   use_adaptive_time_stepping),
+    navier_stokes_operation(navier_stokes_operation_in),
+    solution(this->order),
+    vec_convective_term(this->order),
+    computing_times(2),
+    iterations(2),
+    N_iter_nonlinear(0.0),
+    scaling_factor_continuity(1.0),
+    characteristic_element_length(1.0)
+{
+}
+
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::allocate_vectors()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::allocate_vectors()
 {
   // solution
   for(unsigned int i = 0; i < solution.size(); ++i)
@@ -160,20 +166,18 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::allocate
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_current_solution()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::initialize_current_solution()
 {
   navier_stokes_operation->prescribe_initial_conditions(solution[0].block(0),
                                                         solution[0].block(1),
                                                         this->get_time());
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_former_solutions()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
@@ -184,17 +188,19 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::setup_derived()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::setup_derived()
 {
   // scaling factor continuity equation:
   // Calculate characteristic element length h
-  characteristic_element_length = calculate_minimum_vertex_distance(
-    navier_stokes_operation->get_dof_handler_u().get_triangulation());
+  double characteristic_element_length =
+    navier_stokes_operation->calculate_minimum_element_length();
+
+  unsigned int const degree_u = navier_stokes_operation->get_polynomial_degree();
 
   characteristic_element_length =
-    calculate_characteristic_element_length(characteristic_element_length, fe_degree_u);
+    calculate_characteristic_element_length(characteristic_element_length, degree_u);
 
   // convective term treated explicitly (additive decomposition)
   if(this->param.equation_type == EquationType::NavierStokes &&
@@ -205,10 +211,9 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::setup_de
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_vec_convective_term()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
@@ -219,50 +224,46 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity() const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::get_velocity() const
 {
   return solution[0].block(0);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(
-  unsigned int i) const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::get_velocity(unsigned int i) const
 {
   return solution[i].block(0);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::get_pressure(
-  unsigned int i) const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::get_pressure(unsigned int i) const
 {
   return solution[i].block(1);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::set_velocity(
-  VectorType const & velocity_in,
-  unsigned int const i)
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::set_velocity(VectorType const & velocity_in,
+                                                                    unsigned int const i)
 {
   solution[i].block(0) = velocity_in;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::set_pressure(
-  VectorType const & pressure_in,
-  unsigned int const i)
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::set_pressure(VectorType const & pressure_in,
+                                                                    unsigned int const i)
 {
   solution[i].block(1) = pressure_in;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_timestep()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::solve_timestep()
 {
   Timer timer;
   timer.restart();
@@ -476,9 +477,9 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_ti
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postprocess_velocity()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::postprocess_velocity()
 {
   Timer timer;
   timer.restart();
@@ -513,9 +514,9 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postprocessing() const
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::postprocessing() const
 {
   navier_stokes_operation->do_postprocessing(solution[0].block(0),
                                              solution[0].block(1),
@@ -523,20 +524,18 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::postproc
                                              this->get_time_step_number());
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  postprocessing_steady_problem() const
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::postprocessing_steady_problem() const
 {
   navier_stokes_operation->do_postprocessing_steady_problem(solution[0].block(0),
                                                             solution[0].block(1));
 }
 
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  postprocessing_stability_analysis()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis"));
@@ -551,7 +550,7 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
 
   const unsigned int size = solution[0].block(0).local_size();
 
-  LAPACKFullMatrix<value_type> propagation_matrix(size, size);
+  LAPACKFullMatrix<Number> propagation_matrix(size, size);
 
   // loop over all columns of propagation matrix
   for(unsigned int j = 0; j < size; ++j)
@@ -593,10 +592,9 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  prepare_vectors_for_next_timestep()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::prepare_vectors_for_next_timestep()
 {
   push_back(solution);
   solution[0].swap(solution_np);
@@ -608,9 +606,9 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_steady_problem()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -703,9 +701,9 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_st
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 double
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::evaluate_residual()
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::evaluate_residual()
 {
   this->navier_stokes_operation->evaluate_nonlinear_residual_steady(this->solution_np,
                                                                     this->solution[0]);
@@ -724,10 +722,9 @@ TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::evaluate
   return residual;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFCoupled<dim, fe_degree_u, value_type, NavierStokesOperation>::analyze_computing_times()
-  const
+TimeIntBDFCoupled<dim, Number, NavierStokesOperation>::analyze_computing_times() const
 {
   std::string  names[2]     = {"Coupled system ", "Postprocessing "};
   unsigned int N_time_steps = this->get_time_step_number() - 1;

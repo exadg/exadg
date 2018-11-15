@@ -13,35 +13,18 @@
 
 namespace IncNS
 {
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-class TimeIntBDFDualSplitting
-  : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
+class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number, NavierStokesOperation>
 {
 public:
-  typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
+  typedef TimeIntBDF<dim, Number, NavierStokesOperation> Base;
 
   typedef typename Base::VectorType VectorType;
 
   TimeIntBDFDualSplitting(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                           InputParameters<dim> const &           param_in,
                           unsigned int const                     n_refine_time_in,
-                          bool const                             use_adaptive_time_stepping)
-    : TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>(
-        navier_stokes_operation_in,
-        param_in,
-        n_refine_time_in,
-        use_adaptive_time_stepping),
-      velocity(this->order),
-      pressure(this->order),
-      vorticity(this->param.order_extrapolation_pressure_nbc),
-      vec_convective_term(this->order),
-      computing_times(4),
-      iterations(4),
-      extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
-                         this->param.start_with_low_order),
-      navier_stokes_operation(navier_stokes_operation_in)
-  {
-  }
+                          bool const                             use_adaptive_time_stepping);
 
   virtual ~TimeIntBDFDualSplitting()
   {
@@ -117,13 +100,13 @@ private:
   double
   evaluate_residual();
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   virtual void
@@ -165,19 +148,39 @@ private:
 
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
-  // temporary vectors needed for pseudo-timestepping algorithm
+  // temporary vectors needed for pseudo-time-stepping algorithm
   VectorType velocity_tmp;
   VectorType pressure_tmp;
 };
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::TimeIntBDFDualSplitting(
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
+  InputParameters<dim> const &           param_in,
+  unsigned int const                     n_refine_time_in,
+  bool const                             use_adaptive_time_stepping)
+  : TimeIntBDF<dim, Number, NavierStokesOperation>(navier_stokes_operation_in,
+                                                   param_in,
+                                                   n_refine_time_in,
+                                                   use_adaptive_time_stepping),
+    velocity(this->order),
+    pressure(this->order),
+    vorticity(this->param.order_extrapolation_pressure_nbc),
+    vec_convective_term(this->order),
+    computing_times(4),
+    iterations(4),
+    extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
+                       this->param.start_with_low_order),
+    navier_stokes_operation(navier_stokes_operation_in)
+{
+}
+
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  update_time_integrator_constants()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
-  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-    update_time_integrator_constants();
+  TimeIntBDF<dim, Number, NavierStokesOperation>::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure Neumann bc
   if(this->adaptive_time_stepping == false)
@@ -194,9 +197,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   //  extra_pressure_nbc.print();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::setup_derived()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::setup_derived()
 {
   initialize_vorticity();
 
@@ -209,9 +212,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::se
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::allocate_vectors()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::allocate_vectors()
 {
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -256,18 +259,16 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::al
 }
 
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_current_solution()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::initialize_current_solution()
 {
   navier_stokes_operation->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_former_solutions()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
@@ -278,9 +279,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_vorticity()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::initialize_vorticity()
 {
   navier_stokes_operation->compute_vorticity(vorticity[0], velocity[0]);
 
@@ -293,10 +294,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::in
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_intermediate_velocity()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::initialize_intermediate_velocity()
 {
   // intermediate velocity
   if(this->param.output_data.write_divergence == true ||
@@ -306,10 +306,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_vec_convective_term()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
@@ -319,50 +318,48 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity() const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::get_velocity() const
 {
   return velocity[0];
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(
-  unsigned int i) const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::get_pressure(
-  unsigned int i) const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::get_pressure(unsigned int i) const
 {
   return pressure[i];
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::set_velocity(
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::set_velocity(
   VectorType const & velocity_in,
   unsigned int const i)
 {
   velocity[i] = velocity_in;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::set_pressure(
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::set_pressure(
   VectorType const & pressure_in,
   unsigned int const i)
 {
   pressure[i] = pressure_in;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::postprocessing() const
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::postprocessing() const
 {
   bool const standard = true;
   if(standard)
@@ -394,20 +391,18 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::po
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  postprocessing_steady_problem() const
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::postprocessing_steady_problem() const
 {
   navier_stokes_operation->do_postprocessing_steady_problem(velocity[0],
                                                             intermediate_velocity,
                                                             pressure[0]);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  postprocessing_stability_analysis()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
@@ -422,7 +417,7 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
 
   const unsigned int size = velocity[0].local_size();
 
-  LAPACKFullMatrix<value_type> propagation_matrix(size, size);
+  LAPACKFullMatrix<Number> propagation_matrix(size, size);
 
   // loop over all columns of propagation matrix
   for(unsigned int j = 0; j < size; ++j)
@@ -468,9 +463,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_timestep()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::solve_timestep()
 {
   // perform the four substeps of the dual-splitting method
   convective_step();
@@ -482,9 +477,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::so
   viscous_step();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::convective_step()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::convective_step()
 {
   Timer timer;
   timer.restart();
@@ -588,9 +583,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::co
   computing_times[0] += timer.wall_time();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pressure_step()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::pressure_step()
 {
   Timer timer;
   timer.restart();
@@ -648,9 +643,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   iterations[1] += iterations_pressure;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rhs_pressure()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::rhs_pressure()
 {
   /*
    *  I. calculate divergence term
@@ -744,9 +739,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
     set_zero_mean_value(rhs_vec_pressure);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::projection_step()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::projection_step()
 {
   Timer timer;
   timer.restart();
@@ -807,9 +802,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::pr
   iterations[2] += iterations_projection;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rhs_projection()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::rhs_projection()
 {
   /*
    *  I. calculate mass matrix term
@@ -827,9 +822,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
                          rhs_vec_projection_temp);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::viscous_step()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::viscous_step()
 {
   Timer timer;
   timer.restart();
@@ -886,9 +881,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::vi
   iterations[3] += iterations_viscous;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rhs_viscous()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::rhs_viscous()
 {
   /*
    *  I. calculate mass matrix term
@@ -902,10 +897,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::rh
   navier_stokes_operation->rhs_add_viscous_term(rhs_vec_viscous, this->get_next_time());
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  prepare_vectors_for_next_timestep()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::prepare_vectors_for_next_timestep()
 {
   push_back(velocity);
   velocity[0].swap(velocity_np);
@@ -922,9 +916,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_steady_problem()
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -1007,10 +1001,9 @@ TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::so
 }
 
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFDualSplitting<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  analyze_computing_times() const
+TimeIntBDFDualSplitting<dim, Number, NavierStokesOperation>::analyze_computing_times() const
 {
   std::string  names[5]     = {"Convection   ", "Pressure     ", "Projection   ", "Viscous      "};
   unsigned int N_time_steps = this->get_time_step_number() - 1;

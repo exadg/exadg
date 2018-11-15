@@ -115,12 +115,11 @@ private:
 
   std::shared_ptr<Postprocessor> postprocessor_1, postprocessor_2;
 
-  typedef TimeIntBDFCoupled<dim, degree_u, Number, DGCoupled> TimeIntCoupled;
+  typedef TimeIntBDFCoupled<dim, Number, DGCoupled> TimeIntCoupled;
 
-  typedef TimeIntBDFDualSplitting<dim, degree_u, Number, DGDualSplitting> TimeIntDualSplitting;
+  typedef TimeIntBDFDualSplitting<dim, Number, DGDualSplitting> TimeIntDualSplitting;
 
-  typedef TimeIntBDFPressureCorrection<dim, degree_u, Number, DGPressureCorrection>
-    TimeIntPressureCorrection;
+  typedef TimeIntBDFPressureCorrection<dim, Number, DGPressureCorrection> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeIntCoupled> time_integrator_coupled_1, time_integrator_coupled_2;
 

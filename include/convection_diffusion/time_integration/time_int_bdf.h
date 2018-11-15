@@ -93,7 +93,7 @@ private:
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   double
-  recalculate_adaptive_time_step();
+  recalculate_time_step();
 
   void
   postprocessing() const;

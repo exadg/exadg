@@ -192,7 +192,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
 {
   pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
-  unsigned int degree = pde_operator->get_polynomial_degree();
+  unsigned int const degree = pde_operator->get_polynomial_degree();
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
   {
@@ -210,9 +210,8 @@ TimeIntBDF<Number>::calculate_time_step_size()
     double time_step_conv = calculate_time_step_cfl_global(
       cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step_conv = (param.end_time - param.start_time) /
-                     (1 + int((param.end_time - param.start_time) / time_step_conv));
+    time_step_conv =
+      adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_conv);
 
     this->set_time_step_size(time_step_conv);
 
@@ -272,9 +271,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
     double time_step =
       calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, n_refine_time);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->set_time_step_size(time_step);
 
@@ -284,13 +281,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
   }
   else
   {
-    AssertThrow(param.calculation_of_time_step_size ==
-                    TimeStepCalculation::ConstTimeStepUserSpecified ||
-                  param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-                  param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL ||
-                  param.calculation_of_time_step_size ==
-                    TimeStepCalculation::ConstTimeStepMaxEfficiency,
-                ExcMessage("Specified type of time step calculation is not implemented."));
+    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
   }
 
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
@@ -311,7 +302,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
 template<typename Number>
 double
-TimeIntBDF<Number>::recalculate_adaptive_time_step()
+TimeIntBDF<Number>::recalculate_time_step()
 {
   double new_time_step_size =
     pde_operator->calculate_time_step_cfl(this->get_time(),

@@ -13,36 +13,18 @@
 
 namespace IncNS
 {
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-class TimeIntBDFPressureCorrection
-  : public TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
+class TimeIntBDFPressureCorrection : public TimeIntBDF<dim, Number, NavierStokesOperation>
 {
 public:
-  typedef TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation> Base;
+  typedef TimeIntBDF<dim, Number, NavierStokesOperation> Base;
 
   typedef typename Base::VectorType VectorType;
 
   TimeIntBDFPressureCorrection(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
                                InputParameters<dim> const &           param_in,
                                unsigned int const                     n_refine_time_in,
-                               bool const                             use_adaptive_time_stepping)
-    : TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>(
-        navier_stokes_operation_in,
-        param_in,
-        n_refine_time_in,
-        use_adaptive_time_stepping),
-      navier_stokes_operation(navier_stokes_operation_in),
-      velocity(param_in.order_time_integrator),
-      pressure(param_in.order_time_integrator),
-      vec_convective_term(param_in.order_time_integrator),
-      order_pressure_extrapolation(param_in.order_pressure_extrapolation),
-      extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
-      vec_pressure_gradient_term(param_in.order_pressure_extrapolation),
-      computing_times(3),
-      iterations(3),
-      N_iter_nonlinear_momentum(0)
-  {
-  }
+                               bool const                             use_adaptive_time_stepping);
 
   virtual ~TimeIntBDFPressureCorrection()
   {
@@ -118,13 +100,13 @@ private:
   virtual void
   postprocessing_steady_problem() const;
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
 
-  virtual LinearAlgebra::distributed::Vector<value_type> const &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_pressure(unsigned int i /* t_{n-i} */) const;
 
   virtual void
@@ -164,7 +146,7 @@ private:
 
   std::vector<VectorType> vec_pressure_gradient_term;
 
-  std::vector<value_type>   computing_times;
+  std::vector<Number>       computing_times;
   std::vector<unsigned int> iterations;
 
   unsigned int N_iter_nonlinear_momentum;
@@ -174,14 +156,35 @@ private:
   VectorType pressure_tmp;
 };
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::TimeIntBDFPressureCorrection(
+  std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
+  InputParameters<dim> const &           param_in,
+  unsigned int const                     n_refine_time_in,
+  bool const                             use_adaptive_time_stepping)
+  : TimeIntBDF<dim, Number, NavierStokesOperation>(navier_stokes_operation_in,
+                                                   param_in,
+                                                   n_refine_time_in,
+                                                   use_adaptive_time_stepping),
+    navier_stokes_operation(navier_stokes_operation_in),
+    velocity(param_in.order_time_integrator),
+    pressure(param_in.order_time_integrator),
+    vec_convective_term(param_in.order_time_integrator),
+    order_pressure_extrapolation(param_in.order_pressure_extrapolation),
+    extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
+    vec_pressure_gradient_term(param_in.order_pressure_extrapolation),
+    computing_times(3),
+    iterations(3),
+    N_iter_nonlinear_momentum(0)
+{
+}
+
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  update_time_integrator_constants()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
-  TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-    update_time_integrator_constants();
+  TimeIntBDF<dim, Number, NavierStokesOperation>::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure gradient term
 
@@ -205,9 +208,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   //  this->get_time_step_number() << std::endl; extra_pressure_gradient.print();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::setup_derived()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::setup_derived()
 {
   if(this->param.equation_type == EquationType::NavierStokes &&
      this->start_with_low_order == false &&
@@ -218,10 +221,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     initialize_vec_pressure_gradient_term();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  allocate_vectors()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::allocate_vectors()
 {
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -262,18 +264,16 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 }
 
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_current_solution()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::initialize_current_solution()
 {
   navier_stokes_operation->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_former_solutions()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
@@ -284,10 +284,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_vec_convective_term()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
@@ -298,9 +297,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::
   initialize_vec_pressure_gradient_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
@@ -312,52 +311,48 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity()
-  const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::get_velocity() const
 {
   return velocity[0];
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_velocity(
-  unsigned int i) const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-LinearAlgebra::distributed::Vector<value_type> const &
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::get_pressure(
-  unsigned int i) const
+template<int dim, typename Number, typename NavierStokesOperation>
+LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::get_pressure(unsigned int i) const
 {
   return pressure[i];
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::set_velocity(
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::set_velocity(
   VectorType const & velocity_in,
   unsigned int const i)
 {
   velocity[i] = velocity_in;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::set_pressure(
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::set_pressure(
   VectorType const & pressure_in,
   unsigned int const i)
 {
   pressure[i] = pressure_in;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::postprocessing()
-  const
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::postprocessing() const
 {
   navier_stokes_operation->do_postprocessing(velocity[0],
                                              pressure[0],
@@ -365,17 +360,17 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
                                              this->get_time_step_number());
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  postprocessing_steady_problem() const
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::postprocessing_steady_problem()
+  const
 {
   navier_stokes_operation->do_postprocessing_steady_problem(velocity[0], pressure[0]);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::
   postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
@@ -391,7 +386,7 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 
   const unsigned int size = velocity[0].local_size();
 
-  LAPACKFullMatrix<value_type> propagation_matrix(size, size);
+  LAPACKFullMatrix<Number> propagation_matrix(size, size);
 
   // loop over all columns of propagation matrix
   for(unsigned int j = 0; j < size; ++j)
@@ -433,9 +428,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::solve_timestep()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::solve_timestep()
 {
   // perform the substeps of the pressure-correction scheme
   momentum_step();
@@ -445,9 +440,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   projection_step();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::momentum_step()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::momentum_step()
 {
   Timer timer;
   timer.restart();
@@ -560,9 +555,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   computing_times[0] += timer.wall_time();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::rhs_momentum()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::rhs_momentum()
 {
   rhs_vec_momentum = 0;
 
@@ -639,9 +634,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::pressure_step()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::pressure_step()
 {
   Timer timer;
   timer.restart();
@@ -723,10 +718,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   iterations[1] += iterations_pressure;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::calculate_chi(
-  double & chi) const
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::calculate_chi(double & chi) const
 {
   if(this->param.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
   {
@@ -746,9 +740,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::rhs_pressure()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::rhs_pressure()
 {
   /*
    *  I. calculate divergence term
@@ -791,9 +785,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
     set_zero_mean_value(rhs_vec_pressure);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::pressure_update()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::pressure_update()
 {
   // First set pressure solution to zero.
   pressure_np = 0.0;
@@ -830,9 +824,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::rhs_projection()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::rhs_projection()
 {
   /*
    *  I. calculate mass matrix term
@@ -865,9 +859,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::projection_step()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::projection_step()
 {
   Timer timer;
   timer.restart();
@@ -912,9 +906,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   iterations[2] += iterations_projection;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::
   prepare_vectors_for_next_timestep()
 {
   push_back(velocity);
@@ -935,10 +929,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  solve_steady_problem()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -1031,10 +1024,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 double
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  evaluate_residual()
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::evaluate_residual()
 {
   navier_stokes_operation->evaluate_nonlinear_residual_steady(
     velocity_np, pressure_np, velocity[0], pressure[0], this->get_time());
@@ -1057,10 +1049,9 @@ TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation
 }
 
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFPressureCorrection<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  analyze_computing_times() const
+TimeIntBDFPressureCorrection<dim, Number, NavierStokesOperation>::analyze_computing_times() const
 {
   std::string  names[3]     = {"Momentum     ", "Pressure     ", "Projection   "};
   unsigned int N_time_steps = this->get_time_step_number() - 1;

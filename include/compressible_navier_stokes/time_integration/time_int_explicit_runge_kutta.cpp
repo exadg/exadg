@@ -139,9 +139,7 @@ TimeIntExplRK<dim, Number>::calculate_timestep()
     time_step = calculate_time_step_cfl_global(
       cfl_number, acoustic_wave_speed, h_min, degree, param.exponent_fe_degree_cfl);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     print_parameter(pcout, "U_max", param.max_velocity);
     print_parameter(pcout, "speed of sound", speed_of_sound);
@@ -162,9 +160,7 @@ TimeIntExplRK<dim, Number>::calculate_timestep()
                                                degree,
                                                param.exponent_fe_degree_viscous);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     print_parameter(pcout, "Diffusion number", diffusion_number);
     print_parameter(pcout, "Time step size (diffusion)", time_step);
@@ -205,18 +201,15 @@ TimeIntExplRK<dim, Number>::calculate_timestep()
     print_parameter(pcout, "Diffusion number", diffusion_number);
     print_parameter(pcout, "Time step size (diffusion)", time_step_diff);
 
-    // adopt minimum time step size
-    time_step = time_step_diff < time_step_conv ? time_step_diff : time_step_conv;
+    time_step = std::min(time_step_conv, time_step_diff);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     print_parameter(pcout, "Time step size (combined)", time_step);
   }
   else
   {
-    AssertThrow(false, ExcMessage("Specified calculation of time step size is not implemented!"));
+    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
   }
 }
 

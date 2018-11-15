@@ -140,9 +140,7 @@ TimeIntExplRK<Number>::calculate_timestep()
     double const time_step_conv = calculate_time_step_cfl_global(
       cfl_number, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step_conv));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_conv);
 
     print_parameter(pcout, "h_min", h_min);
     print_parameter(pcout, "U_max", max_velocity);
@@ -163,9 +161,7 @@ TimeIntExplRK<Number>::calculate_timestep()
     double const time_step_diff = calculate_const_time_step_diff(
       diffusion_number, param.diffusivity, h_min, degree, param.exponent_fe_degree_diffusion);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step_diff));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_diff);
 
     print_parameter(pcout, "h_min", h_min);
     print_parameter(pcout, "Diffusion number", diffusion_number);
@@ -204,9 +200,7 @@ TimeIntExplRK<Number>::calculate_timestep()
     // adopt minimum time step size
     time_step = time_step_diff < time_step_conv ? time_step_diff : time_step_conv;
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     print_parameter(pcout, "Time step size (combined)", time_step);
   }
@@ -217,12 +211,10 @@ TimeIntExplRK<Number>::calculate_timestep()
 
     unsigned int const order = rk_time_integrator->get_order();
 
-    double time_step_tmp =
+    time_step =
       calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, n_refine_time);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step_tmp));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
     print_parameter(pcout, "C_eff", param.c_eff / std::pow(2, n_refine_time));
@@ -230,13 +222,7 @@ TimeIntExplRK<Number>::calculate_timestep()
   }
   else
   {
-    AssertThrow(
-      param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified ||
-        param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-        param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepDiffusion ||
-        param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFLAndDiffusion ||
-        param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency,
-      ExcMessage("Specified calculation of time step size is not implemented!"));
+    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
   }
 }
 

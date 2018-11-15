@@ -34,6 +34,17 @@ limit_time_step_change(double & new_time_step, double const & last_time_step, do
 }
 
 /*
+ * Decrease time_step in order to exactly hit end_time.
+ */
+inline double
+adjust_time_step_to_hit_end_time(double const start_time,
+                                 double const end_time,
+                                 double const time_step)
+{
+  return (end_time - start_time) / (1 + int((end_time - start_time) / time_step));
+}
+
+/*
  * This function calculates the time step size for a given time step size and a specified number of
  * refinements, where the time step size is reduced by a factor of 2 for each refinement level.
  */

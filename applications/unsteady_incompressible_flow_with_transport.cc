@@ -138,12 +138,11 @@ private:
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
-  typedef IncNS::TimeIntBDFCoupled<dim, degree_u, Number, DGCoupled> TimeIntCoupled;
+  typedef IncNS::TimeIntBDFCoupled<dim, Number, DGCoupled> TimeIntCoupled;
 
-  typedef IncNS::TimeIntBDFDualSplitting<dim, degree_u, Number, DGDualSplitting>
-    TimeIntDualSplitting;
+  typedef IncNS::TimeIntBDFDualSplitting<dim, Number, DGDualSplitting> TimeIntDualSplitting;
 
-  typedef IncNS::TimeIntBDFPressureCorrection<dim, degree_u, Number, DGPressureCorrection>
+  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number, DGPressureCorrection>
     TimeIntPressureCorrection;
 
   std::shared_ptr<TimeIntCoupled> time_integrator_coupled;

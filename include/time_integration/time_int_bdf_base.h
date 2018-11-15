@@ -328,7 +328,7 @@ private:
    * Recalculate the time step size after each time step in case of adaptive time stepping.
    */
   virtual double
-  recalculate_adaptive_time_step() = 0;
+  recalculate_time_step() = 0;
 
   /*
    * Initializes the solution for OIF sub-stepping at time t_{n-i}.

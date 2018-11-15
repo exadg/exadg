@@ -16,16 +16,16 @@
 
 namespace IncNS
 {
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
-class TimeIntBDFNavierStokes : public TimeIntBDFBase
+template<int dim, typename Number, typename NavierStokesOperation>
+class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  TimeIntBDFNavierStokes(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
-                         InputParameters<dim> const &           param_in,
-                         unsigned int const                     n_refine_time_in,
-                         bool const                             use_adaptive_time_stepping_in)
+  TimeIntBDF(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
+             InputParameters<dim> const &           param_in,
+             unsigned int const                     n_refine_time_in,
+             bool const                             use_adaptive_time_stepping_in)
     : TimeIntBDFBase(param_in.start_time,
                      param_in.end_time,
                      param_in.max_number_of_time_steps,
@@ -41,7 +41,7 @@ public:
   {
   }
 
-  virtual ~TimeIntBDFNavierStokes()
+  virtual ~TimeIntBDF()
   {
   }
 
@@ -78,7 +78,7 @@ private:
   calculate_time_step_size();
 
   double
-  recalculate_adaptive_time_step();
+  recalculate_time_step();
 
   virtual void
   solve_steady_problem() = 0;
@@ -118,12 +118,12 @@ private:
   std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
 
   // Operator-integration-factor splitting for convective term
-  std::shared_ptr<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>>
+  std::shared_ptr<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>>
     convective_operator_OIF;
 
   // OIF splitting
   std::shared_ptr<
-    ExplicitTimeIntegrator<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+    ExplicitTimeIntegrator<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
                            VectorType>>
     time_integrator_OIF;
 
@@ -132,86 +132,84 @@ private:
   VectorType solution_tilde_mp;
 };
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  update_time_integrator_constants()
+TimeIntBDF<dim, Number, NavierStokesOperation>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
   TimeIntBDFBase::update_time_integrator_constants();
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::initialize_oif()
+TimeIntBDF<dim, Number, NavierStokesOperation>::initialize_oif()
 {
   // Operator-integration-factor splitting
   if(param.equation_type == EquationType::NavierStokes &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     convective_operator_OIF.reset(
-      new ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>(
-        navier_stokes_operation));
+      new ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>(navier_stokes_operation));
 
     // initialize OIF time integrator
     if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK1Stage1)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+                                ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
                                 VectorType>(1, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK2Stage2)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+                                ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
                                 VectorType>(2, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage3)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+                                ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
                                 VectorType>(3, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage4)
     {
       time_integrator_OIF.reset(new ExplicitRungeKuttaTimeIntegrator<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+                                ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
                                 VectorType>(4, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage4Reg2C)
     {
-      time_integrator_OIF.reset(new LowStorageRK3Stage4Reg2C<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
-                                VectorType>(convective_operator_OIF));
+      time_integrator_OIF.reset(
+        new LowStorageRK3Stage4Reg2C<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
+                                     VectorType>(convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg2C)
     {
-      time_integrator_OIF.reset(new LowStorageRK4Stage5Reg2C<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
-                                VectorType>(convective_operator_OIF));
+      time_integrator_OIF.reset(
+        new LowStorageRK4Stage5Reg2C<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
+                                     VectorType>(convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg3C)
     {
-      time_integrator_OIF.reset(new LowStorageRK4Stage5Reg3C<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
-                                VectorType>(convective_operator_OIF));
+      time_integrator_OIF.reset(
+        new LowStorageRK4Stage5Reg3C<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
+                                     VectorType>(convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK5Stage9Reg2S)
     {
-      time_integrator_OIF.reset(new LowStorageRK5Stage9Reg2S<
-                                ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
-                                VectorType>(convective_operator_OIF));
+      time_integrator_OIF.reset(
+        new LowStorageRK5Stage9Reg2S<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
+                                     VectorType>(convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage7Reg2)
     {
       time_integrator_OIF.reset(
-        new LowStorageRKTD<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+        new LowStorageRKTD<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
                            VectorType>(convective_operator_OIF, 3, 7));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage8Reg2)
     {
       time_integrator_OIF.reset(
-        new LowStorageRKTD<ConvectiveOperatorNavierStokes<NavierStokesOperation, value_type>,
+        new LowStorageRKTD<ConvectiveOperatorNavierStokes<NavierStokesOperation, Number>,
                            VectorType>(convective_operator_OIF, 4, 8));
     }
     else
@@ -225,9 +223,9 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::ini
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::read_restart_vectors(
+TimeIntBDF<dim, Number, NavierStokesOperation>::read_restart_vectors(
   boost::archive::binary_iarchive & ia)
 {
   Vector<double> tmp;
@@ -247,9 +245,9 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::rea
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::write_restart_vectors(
+TimeIntBDF<dim, Number, NavierStokesOperation>::write_restart_vectors(
   boost::archive::binary_oarchive & oa) const
 {
 #pragma GCC diagnostic push
@@ -257,23 +255,24 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::wri
 
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorView<value_type> vector_view(get_velocity(i).local_size(), get_velocity(i).begin());
+    VectorView<Number> vector_view(get_velocity(i).local_size(), get_velocity(i).begin());
     oa << vector_view;
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorView<value_type> vector_view(get_pressure(i).local_size(), get_pressure(i).begin());
+    VectorView<Number> vector_view(get_pressure(i).local_size(), get_pressure(i).begin());
     oa << vector_view;
   }
 
 #pragma GCC diagnostic pop
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  calculate_time_step_size()
+TimeIntBDF<dim, Number, NavierStokesOperation>::calculate_time_step_size()
 {
+  unsigned int const degree_u = navier_stokes_operation->get_polynomial_degree();
+
   if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
   {
     double const time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
@@ -285,24 +284,18 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
   {
-    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
-      navier_stokes_operation->get_dof_handler_u().get_triangulation());
+    double const h_min = navier_stokes_operation->calculate_minimum_element_length();
 
-    double time_step = calculate_time_step_cfl_global(cfl,
-                                                      param.max_velocity,
-                                                      global_min_cell_diameter,
-                                                      fe_degree_u,
-                                                      param.cfl_exponent_fe_degree_velocity);
+    double time_step = calculate_time_step_cfl_global(
+      cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (param.end_time - param.start_time) /
-                (1 + int((param.end_time - param.start_time) / time_step));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->set_time_step_size(time_step);
 
     pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
 
-    print_parameter(pcout, "h_min", global_min_cell_diameter);
+    print_parameter(pcout, "h_min", h_min);
     print_parameter(pcout, "U_max", param.max_velocity);
     print_parameter(pcout, "CFL", cfl);
     print_parameter(pcout, "exponent fe_degree_velocity", param.cfl_exponent_fe_degree_velocity);
@@ -310,32 +303,28 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
   else if(adaptive_time_stepping == true)
   {
-    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
-      navier_stokes_operation->get_dof_handler_u().get_triangulation());
+    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
+                ExcMessage("Specified type of time step calculation does not make sense!"));
+
+    double const h_min = navier_stokes_operation->calculate_minimum_element_length();
 
     // calculate a temporary time step size using a  guess for the maximum velocity
-    double time_step_tmp = calculate_time_step_cfl_global(cfl,
-                                                          param.max_velocity,
-                                                          global_min_cell_diameter,
-                                                          fe_degree_u,
-                                                          param.cfl_exponent_fe_degree_velocity);
+    double time_step_tmp = calculate_time_step_cfl_global(
+      cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
 
     pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
 
-    print_parameter(pcout, "h_min", global_min_cell_diameter);
+    print_parameter(pcout, "h_min", h_min);
     print_parameter(pcout, "U_max", param.max_velocity);
     print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "exponent fe_degree_velocity", param.cfl_exponent_fe_degree_velocity);
+    print_parameter(pcout, "exponent velocity degree", param.cfl_exponent_fe_degree_velocity);
     print_parameter(pcout, "Time step size", time_step_tmp);
 
     // if u(x,t=0)=0, this time step size will tend to infinity
-    double time_step_adap = calculate_time_step_cfl_local<dim, fe_degree_u, value_type>(
-      navier_stokes_operation->get_data(),
-      navier_stokes_operation->get_dof_index_velocity(),
-      navier_stokes_operation->get_quad_index_velocity_linear(),
-      get_velocity(),
-      cfl,
-      param.cfl_exponent_fe_degree_velocity);
+    double time_step_adap =
+      navier_stokes_operation->calculate_time_step_cfl(get_velocity(),
+                                                       cfl,
+                                                       param.cfl_exponent_fe_degree_velocity);
 
     // use adaptive time step size only if it is smaller, otherwise use temporary time step size
     time_step_adap = std::min(time_step_adap, time_step_tmp);
@@ -347,19 +336,17 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
           << std::endl;
 
     print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "exponent fe_degree_velocity", param.cfl_exponent_fe_degree_velocity);
+    print_parameter(pcout, "exponent velocity degree", param.cfl_exponent_fe_degree_velocity);
     print_parameter(pcout, "Time step size", time_step_adap);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
   {
-    double const global_min_cell_diameter = calculate_minimum_vertex_distance(
-      navier_stokes_operation->get_dof_handler_u().get_triangulation());
+    double const h_min = navier_stokes_operation->calculate_minimum_element_length();
 
-    double time_step = calculate_time_step_max_efficiency(
-      param.c_eff, global_min_cell_diameter, fe_degree_u, order, n_refine_time);
+    double time_step =
+      calculate_time_step_max_efficiency(param.c_eff, h_min, degree_u, order, n_refine_time);
 
-    // decrease time_step in order to exactly hit end_time
-    time_step = (end_time - start_time) / (1 + int((end_time - start_time) / time_step));
+    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->set_time_step_size(time_step);
 
@@ -369,24 +356,17 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
   else
   {
-    AssertThrow(param.calculation_of_time_step_size ==
-                    TimeStepCalculation::ConstTimeStepUserSpecified ||
-                  param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-                  param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL ||
-                  param.calculation_of_time_step_size ==
-                    TimeStepCalculation::ConstTimeStepMaxEfficiency,
-                ExcMessage("Specified type of time step calculation is not implemented."));
+    AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
   }
 
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     // make sure that CFL condition is used for the calculation of the time step size (the aim
     // of the OIF splitting approach is to overcome limitations of the CFL condition)
-    AssertThrow(
-      param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-        param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
-      ExcMessage(
-        "Specified calculation of time step size not compatible with OIF splitting approach!"));
+    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
+                  param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
+                ExcMessage(
+                  "Specified type of time step calculation is not compatible with OIF approach!"));
 
     pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
 
@@ -394,18 +374,14 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 double
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  recalculate_adaptive_time_step()
+TimeIntBDF<dim, Number, NavierStokesOperation>::recalculate_time_step()
 {
-  double new_time_step_size = calculate_time_step_cfl_local<dim, fe_degree_u, value_type>(
-    navier_stokes_operation->get_data(),
-    navier_stokes_operation->get_dof_index_velocity(),
-    navier_stokes_operation->get_quad_index_velocity_linear(),
-    get_velocity(),
-    cfl,
-    param.cfl_exponent_fe_degree_velocity);
+  double new_time_step_size =
+    navier_stokes_operation->calculate_time_step_cfl(get_velocity(),
+                                                     cfl,
+                                                     param.cfl_exponent_fe_degree_velocity);
 
   bool use_limiter = true;
   if(use_limiter)
@@ -418,10 +394,9 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
   return new_time_step_size;
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  output_solver_info_header() const
+TimeIntBDF<dim, Number, NavierStokesOperation>::output_solver_info_header() const
 {
   if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
   {
@@ -440,10 +415,9 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
  * simulated and the measured wall time already needed to simulate from the start time until the
  * current time.
  */
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::output_remaining_time()
-  const
+TimeIntBDF<dim, Number, NavierStokesOperation>::output_remaining_time() const
 {
   if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
   {
@@ -459,19 +433,17 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::out
   }
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  initialize_solution_oif_substepping(unsigned int i)
+TimeIntBDF<dim, Number, NavierStokesOperation>::initialize_solution_oif_substepping(unsigned int i)
 {
   // initialize solution: u_tilde(s=0) = u(t_{n-i})
   solution_tilde_m = get_velocity(i);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  update_sum_alphai_ui_oif_substepping(unsigned int i)
+TimeIntBDF<dim, Number, NavierStokesOperation>::update_sum_alphai_ui_oif_substepping(unsigned int i)
 {
   // calculate sum (alpha_i/dt * u_tilde_i)
   if(i == 0)
@@ -480,11 +452,11 @@ TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
     sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
 }
 
-template<int dim, int fe_degree_u, typename value_type, typename NavierStokesOperation>
+template<int dim, typename Number, typename NavierStokesOperation>
 void
-TimeIntBDFNavierStokes<dim, fe_degree_u, value_type, NavierStokesOperation>::
-  do_timestep_oif_substepping_and_update_vectors(double const start_time,
-                                                 double const time_step_size)
+TimeIntBDF<dim, Number, NavierStokesOperation>::do_timestep_oif_substepping_and_update_vectors(
+  double const start_time,
+  double const time_step_size)
 {
   // solve sub-step
   time_integrator_OIF->solve_timestep(solution_tilde_mp,
