@@ -12,10 +12,13 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include "solvers_and_preconditioners/newton/newton_solver.h"
 
+#include "../interface_space_time/operator.h"
+
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
-class DGNavierStokesCoupled : public DGNavierStokesBase<dim, degree_u, degree_p, Number>
+class DGNavierStokesCoupled : public DGNavierStokesBase<dim, degree_u, degree_p, Number>,
+                              public Interface::OperatorCoupled<Number>
 {
 public:
   typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> BASE;
@@ -165,7 +168,7 @@ public:
   void
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & sum_alphai_ui,
-                          double const &     eval_time,
+                          double const &     evaluation_time,
                           double const &     scaling_factor_mass_matrix_term,
                           unsigned int &     newton_iterations,
                           unsigned int &     linear_iterations);
@@ -175,7 +178,7 @@ public:
    *  This function evaluates the nonlinear residual.
    */
   void
-  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src);
+  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src) const;
 
   /*
    *  This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
@@ -184,7 +187,7 @@ public:
    * evaluated).
    */
   void
-  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src);
+  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src) const;
 
 
   void
@@ -228,10 +231,10 @@ public:
   do_postprocessing(VectorType const & velocity,
                     VectorType const & pressure,
                     double const       time,
-                    unsigned int const time_step_number);
+                    unsigned int const time_step_number) const;
 
   void
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure);
+  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure) const;
 
 private:
   friend class BlockPreconditionerNavierStokes<dim, degree_u, degree_p, Number, THIS>;
@@ -572,7 +575,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_residual(
   BlockVectorType &       dst,
-  BlockVectorType const & src)
+  BlockVectorType const & src) const
 {
   // velocity-block
 
@@ -626,7 +629,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_residual_steady(
   BlockVectorType &       dst,
-  BlockVectorType const & src)
+  BlockVectorType const & src) const
 {
   // velocity-block
 
@@ -677,7 +680,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing(
   VectorType const & velocity,
   VectorType const & pressure,
   double const       time,
-  unsigned int const time_step_number)
+  unsigned int const time_step_number) const
 {
   bool const standard = true;
   if(standard)
@@ -713,7 +716,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing_steady_problem(
   VectorType const & velocity,
-  VectorType const & pressure)
+  VectorType const & pressure) const
 {
   this->postprocessor->do_postprocessing(velocity,
                                          velocity, // intermediate_velocity

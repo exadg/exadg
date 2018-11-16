@@ -40,9 +40,12 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 
+#include "../include/incompressible_navier_stokes/interface_space_time/operator.h"
+
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Parameters, BCs, etc.
@@ -138,18 +141,12 @@ private:
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
-  typedef IncNS::TimeIntBDFCoupled<dim, Number, DGCoupled> TimeIntCoupled;
+  typedef IncNS::TimeIntBDF<dim, Number>                   TimeInt;
+  typedef IncNS::TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
+  typedef IncNS::TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
+  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
-  typedef IncNS::TimeIntBDFDualSplitting<dim, Number, DGDualSplitting> TimeIntDualSplitting;
-
-  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number, DGPressureCorrection>
-    TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeIntCoupled> time_integrator_coupled;
-
-  std::shared_ptr<TimeIntDualSplitting> time_integrator_dual_splitting;
-
-  std::shared_ptr<TimeIntPressureCorrection> time_integrator_pressure_correction;
+  std::shared_ptr<TimeInt> fluid_time_integrator;
 
   // SCALAR TRANSPORT
   void
@@ -184,6 +181,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   print_header();
   print_MPI_info(pcout);
 
+  // FLUID
   fluid_param.set_input_parameters();
   fluid_param.check_input_parameters();
 
@@ -236,6 +234,12 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
       new DGCoupled(triangulation, fluid_param, fluid_postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
+
+    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
+                                                   navier_stokes_operation_coupled,
+                                                   fluid_param,
+                                                   refine_steps_time,
+                                                   use_adaptive_time_stepping));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -244,6 +248,12 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
       new DGDualSplitting(triangulation, fluid_param, fluid_postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_dual_splitting;
+
+    fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
+                                                         navier_stokes_operation_dual_splitting,
+                                                         fluid_param,
+                                                         refine_steps_time,
+                                                         use_adaptive_time_stepping));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -252,33 +262,10 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
       new DGPressureCorrection(triangulation, fluid_param, fluid_postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_pressure_correction;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
 
-
-  // initialize time integrator that depends on navier_stokes_operation
-  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled.reset(new TimeIntCoupled(
-      navier_stokes_operation_coupled, fluid_param, refine_steps_time, use_adaptive_time_stepping));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting.reset(
-      new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
-                               fluid_param,
-                               refine_steps_time,
-                               use_adaptive_time_stepping));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction.reset(
+    fluid_time_integrator.reset(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
+                                    navier_stokes_operation_pressure_correction,
                                     fluid_param,
                                     refine_steps_time,
                                     use_adaptive_time_stepping));
@@ -289,7 +276,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   }
 
 
-
+  // SCALAR TRANSPORT
   scalar_param.set_input_parameters();
   scalar_param.check_input_parameters();
   AssertThrow(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady,
@@ -393,24 +380,7 @@ void
 Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes_time_integrator(
   bool const do_restart)
 {
-  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled->setup(do_restart);
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting->setup(do_restart);
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction->setup(do_restart);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  fluid_time_integrator->setup(do_restart);
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -420,21 +390,21 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes_solvers(
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operation_coupled->setup_solvers(
-      time_integrator_coupled->get_scaling_factor_time_derivative_term());
+      fluid_time_integrator->get_scaling_factor_time_derivative_term());
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operation_dual_splitting->setup_solvers(
-      time_integrator_dual_splitting->get_time_step_size(),
-      time_integrator_dual_splitting->get_scaling_factor_time_derivative_term());
+      fluid_time_integrator->get_time_step_size(),
+      fluid_time_integrator->get_scaling_factor_time_derivative_term());
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
   {
     navier_stokes_operation_pressure_correction->setup_solvers(
-      time_integrator_pressure_correction->get_time_step_size(),
-      time_integrator_pressure_correction->get_scaling_factor_time_derivative_term());
+      fluid_time_integrator->get_time_step_size(),
+      fluid_time_integrator->get_scaling_factor_time_derivative_term());
   }
   else
   {
@@ -491,24 +461,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time()
   // Set the same start time for both solvers
 
   // fluid
-  if(fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled->reset_time(time);
-  }
-  else if(fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting->reset_time(time);
-  }
-  else if(fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction->reset_time(time);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  fluid_time_integrator->reset_time(time);
 
   // scalar transport
   if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
@@ -533,24 +486,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
   double time_step_size_fluid = 1.0, time_step_size_scalar = 1.0;
 
   // fluid
-  if(fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_step_size_fluid = time_integrator_coupled->get_time_step_size();
-  }
-  else if(fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_step_size_fluid = time_integrator_dual_splitting->get_time_step_size();
-  }
-  else if(fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_step_size_fluid = time_integrator_pressure_correction->get_time_step_size();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  time_step_size_fluid = fluid_time_integrator->get_time_step_size();
 
   // scalar transport
   if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
@@ -581,25 +517,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
   // Set the same time step size for both solvers
 
   // fluid
-  if(fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled->set_time_step_size(time_step_size);
-  }
-  else if(fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting->set_time_step_size(time_step_size);
-  }
-  else if(fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction->set_time_step_size(time_step_size);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
+  fluid_time_integrator->set_time_step_size(time_step_size);
 
   // scalar transport
   if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
@@ -629,24 +547,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop()
   while(!finished_fluid || !finished_scalar)
   {
     // fluid: advance one time step
-    if(fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-    {
-      finished_fluid = time_integrator_coupled->advance_one_timestep(!finished_fluid);
-    }
-    else if(fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      finished_fluid = time_integrator_dual_splitting->advance_one_timestep(!finished_fluid);
-    }
-    else if(fluid_param.temporal_discretization ==
-            IncNS::TemporalDiscretization::BDFPressureCorrection)
-    {
-      finished_fluid = time_integrator_pressure_correction->advance_one_timestep(!finished_fluid);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    finished_fluid = fluid_time_integrator->advance_one_timestep(!finished_fluid);
 
     // Communicate between fluid solver and scalar transport solver, i.e., ask the fluid solver
     // for the velocity field and hand it over to the scalar transport solver

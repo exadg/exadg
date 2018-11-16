@@ -44,42 +44,22 @@ public:
   setup_solvers(double const & time_step_size,
                 double const & scaling_factor_time_derivative_term) = 0;
 
-  // velocity divergence
-  void
-  evaluate_velocity_divergence_term(VectorType &       dst,
-                                    VectorType const & src,
-                                    double const       evaluation_time) const;
-
-  // pressure gradient term
-  void
-  evaluate_pressure_gradient_term(VectorType &       dst,
-                                  VectorType const & src,
-                                  double const       evaluation_time) const;
-
   // rhs viscous term (add)
   void
-  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
+  do_rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
 
   // rhs pressure Poisson equation: inhomogeneous parts of boundary face
   // integrals of negative Laplace operator
   void
-  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
+  do_rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
 
   // solve pressure step
   unsigned int
-  solve_pressure(VectorType & dst, VectorType const & src) const;
+  do_solve_pressure(VectorType & dst, VectorType const & src) const;
 
   // apply projection operator
   void
   apply_projection_operator(VectorType & dst, VectorType const & src) const;
-
-  // Evaluate residual of steady, coupled incompressible Navier-Stokes equations
-  void
-  evaluate_nonlinear_residual_steady(VectorType &       dst_u,
-                                     VectorType &       dst_p,
-                                     VectorType const & src_u,
-                                     VectorType const & src_p,
-                                     double const &     evaluation_time);
 
   // apply homogeneous Laplace operator
   void
@@ -240,27 +220,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::evaluate_velocity_divergence_term(
-  VectorType &       dst,
-  VectorType const & src,
-  double const       evaluation_time) const
-{
-  this->divergence_operator.evaluate(dst, src, evaluation_time);
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::evaluate_pressure_gradient_term(
-  VectorType &       dst,
-  VectorType const & src,
-  double const       evaluation_time) const
-{
-  this->gradient_operator.evaluate(dst, src, evaluation_time);
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::rhs_add_viscous_term(
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_rhs_add_viscous_term(
   VectorType & dst,
   double const evaluation_time) const
 {
@@ -269,7 +229,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::rhs_add_viscou
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::rhs_ppe_laplace_add(
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_rhs_ppe_laplace_add(
   VectorType &   dst,
   double const & evaluation_time) const
 {
@@ -278,7 +238,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::rhs_ppe_laplac
 
 template<int dim, int degree_u, int degree_p, typename Number>
 unsigned int
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::solve_pressure(
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_solve_pressure(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -319,47 +279,6 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::apply_projecti
 
   this->projection_operator->vmult(dst, src);
 }
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
-  evaluate_nonlinear_residual_steady(VectorType &       dst_u,
-                                     VectorType &       dst_p,
-                                     VectorType const & src_u,
-                                     VectorType const & src_p,
-                                     double const &     evaluation_time)
-{
-  // velocity-block
-
-  // set dst_u to zero. This is necessary since subsequent operators
-  // call functions of type ..._add
-  dst_u = 0.0;
-
-  if(this->param.right_hand_side == true)
-  {
-    this->body_force_operator.evaluate(dst_u, evaluation_time);
-    // Shift body force term to the left-hand side of the equation.
-    // This works since body_force_operator is the first operator
-    // that is evaluated.
-    dst_u *= -1.0;
-  }
-
-  if(this->param.equation_type == EquationType::NavierStokes)
-    this->convective_operator.evaluate_add(dst_u, src_u, evaluation_time);
-
-  this->viscous_operator.evaluate_add(dst_u, src_u, evaluation_time);
-
-  // gradient operator scaled by scaling_factor_continuity
-  this->gradient_operator.evaluate_add(dst_u, src_p, evaluation_time);
-
-  // pressure-block
-
-  this->divergence_operator.evaluate(dst_p, src_u, evaluation_time);
-  // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
-  // with respect to pressure gradient term and velocity divergence term
-  dst_p *= -1.0;
-}
-
 
 } // namespace IncNS
 

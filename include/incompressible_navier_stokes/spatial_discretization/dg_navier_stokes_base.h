@@ -48,12 +48,14 @@
 
 #include "time_integration/time_step_calculation.h"
 
+#include "../interface_space_time/operator.h"
+
 using namespace dealii;
 
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
-class DGNavierStokesBase : public MatrixOperatorBase
+class DGNavierStokesBase : public MatrixOperatorBase, public Interface::OperatorBase<Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -139,7 +141,7 @@ public:
   void
   apply_mass_matrix_add(VectorType & dst, VectorType const & src) const;
 
-  virtual void
+  void
   prescribe_initial_conditions(VectorType & velocity,
                                VectorType & pressure,
                                double const evaluation_time) const;
@@ -278,11 +280,12 @@ public:
     this->data.initialize_dof_vector(src, dof_index_u_scalar);
   }
 
-  void
-  initialize_vector_vorticity(VectorType & src) const
-  {
-    this->data.initialize_dof_vector(src, dof_index_u);
-  }
+  // TODO remove this and use initialize_vector_velocity instead providing the same functionality
+  //  void
+  //  initialize_vector_vorticity(VectorType & src) const
+  //  {
+  //    this->data.initialize_dof_vector(src, dof_index_u);
+  //  }
 
   void
   initialize_vector_pressure(VectorType & src) const
@@ -332,6 +335,18 @@ public:
   evaluate_convective_term(VectorType &       dst,
                            VectorType const & src,
                            Number const       evaluation_time) const;
+
+  // pressure gradient term
+  void
+  evaluate_pressure_gradient_term(VectorType &       dst,
+                                  VectorType const & src,
+                                  double const       evaluation_time) const;
+
+  // velocity divergence
+  void
+  evaluate_velocity_divergence_term(VectorType &       dst,
+                                    VectorType const & src,
+                                    double const       evaluation_time) const;
 
   // OIF splitting
   void
@@ -1054,6 +1069,26 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::evaluate_convective_term(
   Number const       evaluation_time) const
 {
   convective_operator.evaluate(dst, src, evaluation_time);
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+DGNavierStokesBase<dim, degree_u, degree_p, Number>::evaluate_pressure_gradient_term(
+  VectorType &       dst,
+  VectorType const & src,
+  double const       evaluation_time) const
+{
+  this->gradient_operator.evaluate(dst, src, evaluation_time);
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+DGNavierStokesBase<dim, degree_u, degree_p, Number>::evaluate_velocity_divergence_term(
+  VectorType &       dst,
+  VectorType const & src,
+  double const       evaluation_time) const
+{
+  this->divergence_operator.evaluate(dst, src, evaluation_time);
 }
 
 // OIF splitting

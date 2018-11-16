@@ -17,11 +17,14 @@
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 
+#include "../interface_space_time/operator.h"
+
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class DGNavierStokesPressureCorrection
-  : public DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>
+  : public DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>,
+    public Interface::OperatorPressureCorrection<Number>
 {
 public:
   typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> BASE;
@@ -100,19 +103,43 @@ public:
   void
   evaluate_add_body_force_term(VectorType & dst, double const evaluation_time) const;
 
-
   // apply inverse pressure mass matrix
   void
   apply_inverse_pressure_mass_matrix(VectorType & dst, VectorType const & src) const;
 
   void
+  evaluate_nonlinear_residual_steady(VectorType &       dst_u,
+                                     VectorType &       dst_p,
+                                     VectorType const & src_u,
+                                     VectorType const & src_p,
+                                     double const &     evaluation_time) const;
+
+  void
+  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const
+  {
+    PROJECTION_METHODS_BASE::do_rhs_add_viscous_term(dst, evaluation_time);
+  }
+
+  unsigned int
+  solve_pressure(VectorType & dst, VectorType const & src) const
+  {
+    return PROJECTION_METHODS_BASE::do_solve_pressure(dst, src);
+  }
+
+  void
+  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const
+  {
+    PROJECTION_METHODS_BASE::do_rhs_ppe_laplace_add(dst, evaluation_time);
+  }
+
+  void
   do_postprocessing(VectorType const & velocity,
                     VectorType const & pressure,
                     double const       time,
-                    unsigned int const time_step_number);
+                    unsigned int const time_step_number) const;
 
   void
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure);
+  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure) const;
 
 private:
   // setup of solvers
@@ -414,7 +441,6 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::evaluate_add_
   this->body_force_operator.evaluate_add(dst, evaluation_time);
 }
 
-
 template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
@@ -502,11 +528,51 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
+DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
+  evaluate_nonlinear_residual_steady(VectorType &       dst_u,
+                                     VectorType &       dst_p,
+                                     VectorType const & src_u,
+                                     VectorType const & src_p,
+                                     double const &     evaluation_time) const
+{
+  // velocity-block
+
+  // set dst_u to zero. This is necessary since subsequent operators
+  // call functions of type ..._add
+  dst_u = 0.0;
+
+  if(this->param.right_hand_side == true)
+  {
+    this->body_force_operator.evaluate(dst_u, evaluation_time);
+    // Shift body force term to the left-hand side of the equation.
+    // This works since body_force_operator is the first operator
+    // that is evaluated.
+    dst_u *= -1.0;
+  }
+
+  if(this->param.equation_type == EquationType::NavierStokes)
+    this->convective_operator.evaluate_add(dst_u, src_u, evaluation_time);
+
+  this->viscous_operator.evaluate_add(dst_u, src_u, evaluation_time);
+
+  // gradient operator scaled by scaling_factor_continuity
+  this->gradient_operator.evaluate_add(dst_u, src_p, evaluation_time);
+
+  // pressure-block
+
+  this->divergence_operator.evaluate(dst_p, src_u, evaluation_time);
+  // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
+  // with respect to pressure gradient term and velocity divergence term
+  dst_p *= -1.0;
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::do_postprocessing(
   VectorType const & velocity,
   VectorType const & pressure,
   double const       time,
-  unsigned int const time_step_number)
+  unsigned int const time_step_number) const
 {
   bool const standard = true;
   if(standard)
@@ -542,7 +608,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::do_postprocessing_steady_problem(
   VectorType const & velocity,
-  VectorType const & pressure)
+  VectorType const & pressure) const
 {
   this->postprocessor->do_postprocessing(velocity,
                                          velocity, // intermediate_velocity

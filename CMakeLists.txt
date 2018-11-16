@@ -53,7 +53,13 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.cpp
-     include/incompressible_navier_stokes/spatial_discretization/operators/body_force_operator.cpp     
+     include/incompressible_navier_stokes/spatial_discretization/operators/body_force_operator.cpp 
+     include/incompressible_navier_stokes/interface_space_time/operator.cpp 
+     include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.cpp
+     include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
+     include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.cpp
+     include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
+     include/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
      include/incompressible_navier_stokes/postprocessor/statistics_manager.cpp 
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/compressible_navier_stokes/interface_space_time/operator.cpp

@@ -14,9 +14,15 @@ namespace Interface
 // nothing to implement here because all member functions of interface class Operator are pure
 // virtual.
 
-// instantiate for float and double
+// instantiations
+#include <navierstokes/config.h>
+
+#if OP_FLOAT
 template class Operator<float>;
+#endif
+#if OP_DOUBLE
 template class Operator<double>;
+#endif
 
 } // namespace Interface
 

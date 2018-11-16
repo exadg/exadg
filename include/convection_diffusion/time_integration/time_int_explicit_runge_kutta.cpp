@@ -467,8 +467,14 @@ TimeIntExplRK<Number>::analyze_computing_times() const
         << std::endl;
 }
 
-// instantiate for float and double
+// instantiations
+#include <navierstokes/config.h>
+
+#if OP_FLOAT
 template class TimeIntExplRK<float>;
+#endif
+#if OP_DOUBLE
 template class TimeIntExplRK<double>;
+#endif
 
 } // namespace ConvDiff

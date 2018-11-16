@@ -9,20 +9,38 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_DRIVER_STEADY_PROBLEMS_H_
 
 #include <deal.II/base/timer.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
+
+using namespace dealii;
 
 namespace IncNS
 {
-template<int dim, typename value_type, typename NavierStokesOperation>
+// forward declarations
+template<int dim>
+class InputParameters;
+
+namespace Interface
+{
+template<typename Number>
+class OperatorBase;
+template<typename Number>
+class OperatorCoupled;
+
+} // namespace Interface
+
+template<int dim, typename Number>
 class DriverSteadyProblems
 {
 public:
-  typedef LinearAlgebra::distributed::BlockVector<value_type> BlockVectorType;
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  DriverSteadyProblems(std::shared_ptr<NavierStokesOperation> navier_stokes_operation_in,
-                       InputParameters<dim> const &           param_in)
-    : navier_stokes_operation(navier_stokes_operation_in), param(param_in), total_time(0.0)
-  {
-  }
+  typedef Interface::OperatorBase<Number>    OperatorBase;
+  typedef Interface::OperatorCoupled<Number> OperatorPDE;
+
+  DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
+                       std::shared_ptr<OperatorPDE>  operator_in,
+                       InputParameters<dim> const &  param_in);
 
   void
   setup();
@@ -46,183 +64,17 @@ private:
   void
   postprocessing();
 
-  std::shared_ptr<NavierStokesOperation> navier_stokes_operation;
+  std::shared_ptr<OperatorBase> operator_base;
+  std::shared_ptr<OperatorPDE>  pde_operator;
 
   InputParameters<dim> const & param;
 
-  Timer      global_timer;
-  value_type total_time;
+  Timer  global_timer;
+  double total_time;
 
   BlockVectorType solution;
   BlockVectorType rhs_vector;
 };
-
-template<int dim, typename value_type, typename NavierStokesOperation>
-void
-DriverSteadyProblems<dim, value_type, NavierStokesOperation>::setup()
-{
-  // initialize global solution vectors (allocation)
-  initialize_vectors();
-
-  // initialize solution by using the analytical solution
-  // or a guess of the velocity and pressure field
-  initialize_solution();
-}
-
-template<int dim, typename value_type, typename NavierStokesOperation>
-void
-DriverSteadyProblems<dim, value_type, NavierStokesOperation>::initialize_vectors()
-{
-  // solution
-  navier_stokes_operation->initialize_block_vector_velocity_pressure(solution);
-
-  // rhs_vector
-  if(this->param.equation_type == EquationType::Stokes)
-    navier_stokes_operation->initialize_block_vector_velocity_pressure(rhs_vector);
-}
-
-template<int dim, typename value_type, typename NavierStokesOperation>
-void
-DriverSteadyProblems<dim, value_type, NavierStokesOperation>::initialize_solution()
-{
-  double time = 0.0;
-  navier_stokes_operation->prescribe_initial_conditions(solution.block(0), solution.block(1), time);
-}
-
-
-template<int dim, typename value_type, typename NavierStokesOperation>
-void
-DriverSteadyProblems<dim, value_type, NavierStokesOperation>::solve()
-{
-  Timer timer;
-  timer.restart();
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "Solving steady state problem ..." << std::endl;
-
-  // Update divegence and continuity penalty operator in case
-  // that these terms are added to the monolithic system of equations
-  // instead of applying these terms in a postprocessing step.
-  if(this->param.add_penalty_terms_to_monolithic_system == true)
-  {
-    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
-    {
-      if(this->param.use_divergence_penalty == true)
-      {
-        navier_stokes_operation->update_divergence_penalty_operator(solution.block(0));
-      }
-      if(this->param.use_continuity_penalty == true)
-      {
-        navier_stokes_operation->update_continuity_penalty_operator(solution.block(0));
-      }
-    }
-  }
-
-  // Steady Stokes equations
-  if(this->param.equation_type == EquationType::Stokes)
-  {
-    // calculate rhs vector
-    navier_stokes_operation->rhs_stokes_problem(rhs_vector);
-
-    // solve coupled system of equations
-    unsigned int iterations =
-      navier_stokes_operation->solve_linear_stokes_problem(solution, rhs_vector);
-    // write output
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << std::endl
-                << "Solve linear Stokes problem:" << std::endl
-                << "  Iterations:   " << std::setw(12) << std::right << iterations << std::endl
-                << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
-                << timer.wall_time() << std::endl;
-    }
-  }
-  else // Steady Navier-Stokes equations
-  {
-    // Newton solver
-    unsigned int newton_iterations;
-    unsigned int linear_iterations;
-    navier_stokes_operation->solve_nonlinear_steady_problem(solution,
-                                                            newton_iterations,
-                                                            linear_iterations);
-
-    // write output
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << std::endl
-                << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Newton iterations:      " << std::setw(12) << std::right << newton_iterations
-                << std::endl
-                << "  Linear iterations (avg):" << std::setw(12) << std::scientific
-                << std::setprecision(4) << std::right
-                << double(linear_iterations) / double(newton_iterations) << std::endl
-                << "  Linear iterations (tot):" << std::setw(12) << std::scientific
-                << std::setprecision(4) << std::right << linear_iterations << std::endl
-                << "  Wall time [s]:          " << std::setw(12) << std::scientific
-                << std::setprecision(4) << timer.wall_time() << std::endl;
-    }
-  }
-
-  // special case: pure Dirichlet BC's
-  if(this->param.pure_dirichlet_bc)
-  {
-    if(this->param.error_data.analytical_solution_available == true)
-      navier_stokes_operation->shift_pressure(solution.block(1));
-    else // analytical_solution_available == false
-      set_zero_mean_value(solution.block(1));
-  }
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, typename value_type, typename NavierStokesOperation>
-void
-DriverSteadyProblems<dim, value_type, NavierStokesOperation>::solve_steady_problem()
-{
-  global_timer.restart();
-
-  postprocessing();
-
-  solve();
-
-  postprocessing();
-
-  total_time += global_timer.wall_time();
-
-  analyze_computing_times();
-}
-
-template<int dim, typename value_type, typename NavierStokesOperation>
-void
-DriverSteadyProblems<dim, value_type, NavierStokesOperation>::postprocessing()
-{
-  navier_stokes_operation->do_postprocessing_steady_problem(solution.block(0), solution.block(1));
-}
-
-template<int dim, typename value_type, typename NavierStokesOperation>
-void
-DriverSteadyProblems<dim, value_type, NavierStokesOperation>::analyze_computing_times() const
-{
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max "
-        << std::endl;
-
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  pcout << "  Global time:         " << std::scientific << std::setprecision(4) << std::setw(10)
-        << data.min << " " << std::setprecision(4) << std::setw(10) << data.avg << " "
-        << std::setprecision(4) << std::setw(10) << data.max << " "
-        << "          "
-        << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6) << std::left
-        << data.max_index << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl;
-}
 
 } // namespace IncNS
 
