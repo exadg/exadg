@@ -115,6 +115,7 @@ enum class TimeStepCalculation
   Undefined,
   ConstTimeStepUserSpecified,
   ConstTimeStepCFL,
+  AdaptiveTimeStepCFL,
   ConstTimeStepDiffusion,
   ConstTimeStepCFLAndDiffusion,
   ConstTimeStepMaxEfficiency
@@ -221,6 +222,7 @@ public:
       start_with_low_order(true),
       treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
+      adaptive_time_stepping_limiting_factor(1.2),
       time_step_size(-1.),
       max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
       cfl_number(-1.),
@@ -529,12 +531,21 @@ public:
     std::string str_time_step_calc[] = {"Undefined",
                                         "ConstTimeStepUserSpecified",
                                         "ConstTimeStepCFL",
+                                        "AdaptiveTimeStepCFL",
                                         "ConstTimeStepDiffusion",
-                                        "ConstTimeStepCFLAndDiffusion"};
+                                        "ConstTimeStepCFLAndDiffusion",
+                                        "ConstTimeStepMaxEfficiency"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
                     str_time_step_calc[(int)calculation_of_time_step_size]);
+
+    if(calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+    {
+      print_parameter(pcout,
+                      "Adaptive time stepping limiting factor",
+                      adaptive_time_stepping_limiting_factor);
+    }
 
 
     // here we do not print quantities such as  cfl_number, diffusion_number, time_step_size
@@ -707,6 +718,13 @@ public:
 
   // calculation of time step size
   TimeStepCalculation calculation_of_time_step_size;
+
+  // This parameter defines by which factor the time step size is allowed to increase
+  // or to decrease in case of adaptive time step, e.g., if one wants to avoid large
+  // jumps in the time step size. A factor of 1 implies that the time step size can not
+  // change at all, while a factor towards infinity implies that arbitrary changes in
+  // the time step size are allowed from one time step to the next.
+  double adaptive_time_stepping_limiting_factor;
 
   // user specified time step size:  note that this time_step_size is the first
   // in a series of time_step_size's when performing temporal convergence tests,

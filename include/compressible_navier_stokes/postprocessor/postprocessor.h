@@ -30,11 +30,12 @@
 #include "postprocessor/error_calculation.h"
 #include "write_output.h"
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-class DGCompNavierStokesOperation;
-
 namespace CompNS
 {
+// forward declarations
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+class DGOperator;
+
 template<int dim>
 struct PostProcessorData
 {
@@ -53,14 +54,13 @@ struct PostProcessorData
   KineticEnergySpectrumData   kinetic_energy_spectrum_data;
 };
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
 class PostProcessor
 {
 public:
   typedef LinearAlgebra::distributed::Vector<double> VectorType;
 
-  typedef DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>
-    NavierStokesOperator;
+  typedef DGOperator<dim, degree, n_q_points_conv, n_q_points_vis, Number> NavierStokesOperator;
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data) : pp_data(postprocessor_data)
   {
@@ -157,7 +157,7 @@ protected:
   VectorType vorticity;
   VectorType divergence;
 
-  std::vector<SolutionField<dim, value_type>> additional_fields;
+  std::vector<SolutionField<dim, Number>> additional_fields;
 
 private:
   void
@@ -167,7 +167,7 @@ private:
     {
       navier_stokes_operator->initialize_dof_vector_scalar(pressure);
 
-      SolutionField<dim, value_type> field;
+      SolutionField<dim, Number> field;
       field.type        = SolutionFieldType::scalar;
       field.name        = "pressure";
       field.dof_handler = &navier_stokes_operator->get_dof_handler_scalar();
@@ -180,7 +180,7 @@ private:
     {
       navier_stokes_operator->initialize_dof_vector_dim_components(velocity);
 
-      SolutionField<dim, value_type> field;
+      SolutionField<dim, Number> field;
       field.type        = SolutionFieldType::vector;
       field.name        = "velocity";
       field.dof_handler = &navier_stokes_operator->get_dof_handler_vector();
@@ -193,7 +193,7 @@ private:
     {
       navier_stokes_operator->initialize_dof_vector_scalar(temperature);
 
-      SolutionField<dim, value_type> field;
+      SolutionField<dim, Number> field;
       field.type        = SolutionFieldType::scalar;
       field.name        = "temperature";
       field.dof_handler = &navier_stokes_operator->get_dof_handler_scalar();
@@ -206,7 +206,7 @@ private:
     {
       navier_stokes_operator->initialize_dof_vector_dim_components(vorticity);
 
-      SolutionField<dim, value_type> field;
+      SolutionField<dim, Number> field;
       field.type        = SolutionFieldType::vector;
       field.name        = "vorticity";
       field.dof_handler = &navier_stokes_operator->get_dof_handler_vector();
@@ -219,7 +219,7 @@ private:
     {
       navier_stokes_operator->initialize_dof_vector_scalar(divergence);
 
-      SolutionField<dim, value_type> field;
+      SolutionField<dim, Number> field;
       field.type        = SolutionFieldType::scalar;
       field.name        = "velocity_divergence";
       field.dof_handler = &navier_stokes_operator->get_dof_handler_scalar();
@@ -272,12 +272,12 @@ private:
 
   SmartPointer<NavierStokesOperator const> navier_stokes_operator;
 
-  OutputGenerator<dim>                                            output_generator;
-  ErrorCalculator<dim, double>                                    error_calculator;
-  LiftAndDragCalculator<dim, fe_degree, fe_degree, double>        lift_and_drag_calculator;
-  PressureDifferenceCalculator<dim, fe_degree, fe_degree, double> pressure_difference_calculator;
-  KineticEnergyCalculator<dim, fe_degree, double>                 kinetic_energy_calculator;
-  KineticEnergySpectrumCalculator<dim, fe_degree, double> kinetic_energy_spectrum_calculator;
+  OutputGenerator<dim>                                      output_generator;
+  ErrorCalculator<dim, double>                              error_calculator;
+  LiftAndDragCalculator<dim, degree, degree, double>        lift_and_drag_calculator;
+  PressureDifferenceCalculator<dim, degree, degree, double> pressure_difference_calculator;
+  KineticEnergyCalculator<dim, degree, double>              kinetic_energy_calculator;
+  KineticEnergySpectrumCalculator<dim, degree, double>      kinetic_energy_spectrum_calculator;
 };
 
 } // namespace CompNS

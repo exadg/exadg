@@ -27,9 +27,14 @@
 #include "operators/inverse_mass_matrix.h"
 #include "operators/matrix_operator_base.h"
 
+#include "time_integration/time_step_calculation.h"
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-class DGCompNavierStokesOperation : public MatrixOperatorBase
+#include "../interface_space_time/operator.h"
+
+namespace CompNS
+{
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+class DGOperator : public MatrixOperatorBase, public Interface::Operator<Number>
 {
 public:
   enum class DofHandlerSelector
@@ -48,12 +53,9 @@ public:
     n_variants           = standard + 1
   };
 
-  typedef value_type Number;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
-
-  typedef CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>
-    Postprocessor;
+  typedef PostProcessor<dim, degree, n_q_points_conv, n_q_points_vis, Number> Postprocessor;
 
   static const unsigned int dof_index_all =
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
@@ -80,14 +82,14 @@ public:
   static const unsigned int quad_index_l2_projections =
     quad_index_standard; // quad_index_overintegration_conv;
   static const unsigned int n_q_points_l2_projections =
-    (quad_index_l2_projections == quad_index_standard) ? fe_degree + 1 : n_q_points_conv;
+    (quad_index_l2_projections == quad_index_standard) ? degree + 1 : n_q_points_conv;
 
-  DGCompNavierStokesOperation(parallel::distributed::Triangulation<dim> const & triangulation,
-                              CompNS::InputParameters<dim> const &              param_in,
-                              std::shared_ptr<Postprocessor>                    postprocessor_in)
-    : fe(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim + 2)),
-      fe_vector(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim)),
-      fe_scalar(fe_degree),
+  DGOperator(parallel::distributed::Triangulation<dim> const & triangulation,
+             InputParameters<dim> const &                      param_in,
+             std::shared_ptr<Postprocessor>                    postprocessor_in)
+    : fe(new FESystem<dim>(FE_DGQ<dim>(degree), dim + 2)),
+      fe_vector(new FESystem<dim>(FE_DGQ<dim>(degree), dim)),
+      fe_scalar(degree),
       mapping(param_in.degree_mapping),
       dof_handler(triangulation),
       dof_handler_vector(triangulation),
@@ -99,12 +101,12 @@ public:
   }
 
   void
-  setup(std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
-        std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
-        std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
-        std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
-        std::shared_ptr<CompNS::FieldFunctions<dim>>           field_functions_in,
-        std::shared_ptr<CompNS::AnalyticalSolution<dim>>       analytical_solution_in)
+  setup(std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
+        std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
+        std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
+        std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
+        std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
+        std::shared_ptr<AnalyticalSolution<dim>>       analytical_solution_in)
   {
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
     pcout << std::endl << "Setup compressible Navier-Stokes DG operator ..." << std::endl;
@@ -162,7 +164,7 @@ public:
    *  and finally applies the inverse mass matrix operator.
    */
   void
-  evaluate(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
   {
     Timer timer;
     timer.restart();
@@ -178,14 +180,14 @@ public:
     else // apply operators separately
     {
       // viscous operator
-      if(param.equation_type == CompNS::EquationType::NavierStokes)
+      if(param.equation_type == EquationType::NavierStokes)
       {
         viscous_operator.evaluate_add(dst, src, evaluation_time);
       }
 
       // convective operator
-      if(param.equation_type == CompNS::EquationType::Euler ||
-         param.equation_type == CompNS::EquationType::NavierStokes)
+      if(param.equation_type == EquationType::Euler ||
+         param.equation_type == EquationType::NavierStokes)
       {
         convective_operator.evaluate_add(dst, src, evaluation_time);
       }
@@ -207,29 +209,27 @@ public:
   }
 
   void
-  evaluate_convective(VectorType &       dst,
-                      VectorType const & src,
-                      value_type const   evaluation_time) const
+  evaluate_convective(VectorType & dst, VectorType const & src, Number const evaluation_time) const
   {
     // set dst to zero
     dst = 0.0;
 
     // convective operator
-    if(param.equation_type == CompNS::EquationType::Euler ||
-       param.equation_type == CompNS::EquationType::NavierStokes)
+    if(param.equation_type == EquationType::Euler ||
+       param.equation_type == EquationType::NavierStokes)
     {
       convective_operator.evaluate_add(dst, src, evaluation_time);
     }
   }
 
   void
-  evaluate_viscous(VectorType & dst, VectorType const & src, value_type const evaluation_time) const
+  evaluate_viscous(VectorType & dst, VectorType const & src, Number const evaluation_time) const
   {
     // set dst to zero
     dst = 0.0;
 
     // viscous operator
-    if(param.equation_type == CompNS::EquationType::NavierStokes)
+    if(param.equation_type == EquationType::NavierStokes)
     {
       viscous_operator.evaluate_add(dst, src, evaluation_time);
     }
@@ -238,7 +238,7 @@ public:
   void
   evaluate_convective_and_viscous(VectorType &       dst,
                                   VectorType const & src,
-                                  value_type const   evaluation_time) const
+                                  Number const       evaluation_time) const
   {
     // set dst to zero
     dst = 0.0;
@@ -251,14 +251,14 @@ public:
     else // apply operators separately
     {
       // viscous operator
-      if(param.equation_type == CompNS::EquationType::NavierStokes)
+      if(param.equation_type == EquationType::NavierStokes)
       {
         viscous_operator.evaluate_add(dst, src, evaluation_time);
       }
 
       // convective operator
-      if(param.equation_type == CompNS::EquationType::Euler ||
-         param.equation_type == CompNS::EquationType::NavierStokes)
+      if(param.equation_type == EquationType::Euler ||
+         param.equation_type == EquationType::NavierStokes)
       {
         convective_operator.evaluate_add(dst, src, evaluation_time);
       }
@@ -273,7 +273,7 @@ public:
   }
 
   // getters
-  MatrixFree<dim, value_type> const &
+  MatrixFree<dim, Number> const &
   get_data() const
   {
     return data;
@@ -374,9 +374,23 @@ public:
   }
 
   void
-  do_postprocessing(VectorType const & solution, double const time, int const time_step_number)
+  do_postprocessing(VectorType const & solution,
+                    double const       time,
+                    int const          time_step_number) const
   {
     postprocessor->do_postprocessing(solution, time, time_step_number);
+  }
+
+  double
+  calculate_minimum_element_length() const
+  {
+    return calculate_minimum_vertex_distance(dof_handler.get_triangulation());
+  }
+
+  unsigned int
+  get_polynomial_degree() const
+  {
+    return degree;
   }
 
 private:
@@ -388,7 +402,7 @@ private:
     dof_handler_vector.distribute_dofs(*fe_vector);
     dof_handler_scalar.distribute_dofs(fe_scalar);
 
-    constexpr int ndofs_per_cell = Utilities::pow(fe_degree + 1, dim) * (dim + 2);
+    constexpr int ndofs_per_cell = Utilities::pow(degree + 1, dim) * (dim + 2);
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -396,10 +410,10 @@ private:
           << "Discontinuous Galerkin finite element discretization:" << std::endl
           << std::endl;
 
-    print_parameter(pcout, "degree of 1D polynomials", fe_degree);
+    print_parameter(pcout, "degree of 1D polynomials", degree);
     print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
     print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-    print_parameter(pcout, "number of 1D q-points (std)", fe_degree + 1);
+    print_parameter(pcout, "number of 1D q-points (std)", degree + 1);
     print_parameter(pcout, "number of 1D q-points (over-conv)", n_q_points_conv);
     print_parameter(pcout, "number of 1D q-points (over-vis)", n_q_points_vis);
   }
@@ -412,7 +426,7 @@ private:
     quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::n_variants));
     quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::standard)]             = QGauss<1>(fe_degree + 1);
+      QuadratureSelector::standard)]             = QGauss<1>(degree + 1);
     quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::overintegration_conv)] = QGauss<1>(n_q_points_conv);
     quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
@@ -427,9 +441,9 @@ private:
     dof_handler_vec[dof_index_scalar] = &dof_handler_scalar;
 
     // initialize matrix_free_data
-    typename MatrixFree<dim, value_type>::AdditionalData additional_data;
+    typename MatrixFree<dim, Number>::AdditionalData additional_data;
     additional_data.tasks_parallel_scheme =
-      MatrixFree<dim, value_type>::AdditionalData::partition_partition;
+      MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
     additional_data.mapping_update_flags =
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
@@ -461,19 +475,19 @@ private:
 
     // inverse mass matrix operator
     inverse_mass_matrix_operator.reset(
-      new InverseMassMatrixOperator<dim, fe_degree, value_type, dim + 2>());
+      new InverseMassMatrixOperator<dim, degree, Number, dim + 2>());
     inverse_mass_matrix_operator->initialize(data, dof_index_all, quad_index_standard);
 
     inverse_mass_matrix_operator_vector.reset(
-      new InverseMassMatrixOperator<dim, fe_degree, value_type, dim>());
+      new InverseMassMatrixOperator<dim, degree, Number, dim>());
     inverse_mass_matrix_operator_vector->initialize(data, dof_index_vector, quad_index_standard);
 
     inverse_mass_matrix_operator_scalar.reset(
-      new InverseMassMatrixOperator<dim, fe_degree, value_type, 1>());
+      new InverseMassMatrixOperator<dim, degree, Number, 1>());
     inverse_mass_matrix_operator_scalar->initialize(data, dof_index_scalar, quad_index_standard);
 
     // body force operator
-    CompNS::BodyForceOperatorData<dim> body_force_operator_data;
+    BodyForceOperatorData<dim> body_force_operator_data;
     body_force_operator_data.dof_index  = dof_index_all;
     body_force_operator_data.quad_index = quad_index_standard;
     body_force_operator_data.rhs_rho    = field_functions->right_hand_side_density;
@@ -540,7 +554,7 @@ private:
   }
 
   void
-  setup_postprocessor(std::shared_ptr<CompNS::AnalyticalSolution<dim>> analytical_solution_in)
+  setup_postprocessor(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution_in)
   {
     DofQuadIndexData dof_quad_index_data;
     dof_quad_index_data.dof_index_velocity  = dof_index_vector;
@@ -572,47 +586,47 @@ private:
   // DoFHandler for scalar quantities such as pressure, temperature
   DoFHandler<dim> dof_handler_scalar;
 
-  MatrixFree<dim, value_type> data;
+  MatrixFree<dim, Number> data;
 
-  CompNS::InputParameters<dim> const & param;
+  InputParameters<dim> const & param;
 
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
-  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
-  std::shared_ptr<CompNS::FieldFunctions<dim>>           field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
+  std::shared_ptr<FieldFunctions<dim>>           field_functions;
 
   // DG operators
 
   // use standard quadrature for mass matrix operator
-  CompNS::MassMatrixOperatorData                                        mass_matrix_operator_data;
-  CompNS::MassMatrixOperator<dim, fe_degree, fe_degree + 1, value_type> mass_matrix_operator;
+  MassMatrixOperatorData                              mass_matrix_operator_data;
+  MassMatrixOperator<dim, degree, degree + 1, Number> mass_matrix_operator;
 
-  std::shared_ptr<InverseMassMatrixOperator<dim, fe_degree, value_type, dim + 2>>
+  std::shared_ptr<InverseMassMatrixOperator<dim, degree, Number, dim + 2>>
     inverse_mass_matrix_operator;
-  std::shared_ptr<InverseMassMatrixOperator<dim, fe_degree, value_type, dim>>
+  std::shared_ptr<InverseMassMatrixOperator<dim, degree, Number, dim>>
     inverse_mass_matrix_operator_vector;
-  std::shared_ptr<InverseMassMatrixOperator<dim, fe_degree, value_type, 1>>
+  std::shared_ptr<InverseMassMatrixOperator<dim, degree, Number, 1>>
     inverse_mass_matrix_operator_scalar;
 
   // use standard quadrature for body force operator
-  CompNS::BodyForceOperatorData<dim>                                   body_force_operator_data;
-  CompNS::BodyForceOperator<dim, fe_degree, fe_degree + 1, value_type> body_force_operator;
+  BodyForceOperatorData<dim>                         body_force_operator_data;
+  BodyForceOperator<dim, degree, degree + 1, Number> body_force_operator;
 
-  CompNS::ConvectiveOperatorData<dim>                                     convective_operator_data;
-  CompNS::ConvectiveOperator<dim, fe_degree, n_q_points_conv, value_type> convective_operator;
+  ConvectiveOperatorData<dim>                              convective_operator_data;
+  ConvectiveOperator<dim, degree, n_q_points_conv, Number> convective_operator;
 
-  CompNS::ViscousOperatorData<dim>                                    viscous_operator_data;
-  CompNS::ViscousOperator<dim, fe_degree, n_q_points_vis, value_type> viscous_operator;
+  ViscousOperatorData<dim>                             viscous_operator_data;
+  ViscousOperator<dim, degree, n_q_points_vis, Number> viscous_operator;
 
   // convective and viscous terms combined to one operator
-  CompNS::CombinedOperatorData<dim>                                    combined_operator_data;
-  CompNS::CombinedOperator<dim, fe_degree, n_q_points_vis, value_type> combined_operator;
+  CombinedOperatorData<dim>                             combined_operator_data;
+  CombinedOperator<dim, degree, n_q_points_vis, Number> combined_operator;
 
   // L2 projections to calculate derived quantities
-  p_u_T_Calculator<dim, fe_degree, n_q_points_l2_projections, value_type> p_u_T_calculator;
-  VorticityCalculator<dim, fe_degree, value_type>                         vorticity_calculator;
-  DivergenceCalculator<dim, fe_degree, value_type>                        divergence_calculator;
+  p_u_T_Calculator<dim, degree, n_q_points_l2_projections, Number> p_u_T_calculator;
+  VorticityCalculator<dim, degree, Number>                         vorticity_calculator;
+  DivergenceCalculator<dim, degree, Number>                        divergence_calculator;
 
   // postprocessor
   std::shared_ptr<Postprocessor> postprocessor;
@@ -620,5 +634,7 @@ private:
   // wall time for operator evaluation
   mutable double wall_time_operator_evaluation;
 };
+
+} // namespace CompNS
 
 #endif /* INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_ */

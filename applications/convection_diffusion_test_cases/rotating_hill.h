@@ -54,13 +54,13 @@ void ConvDiff::InputParameters::set_input_parameters()
   // BDF
   order_time_integrator = 2; // instabilities for BDF 3 and 4
   start_with_low_order = false;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::ExplicitOIF; //ExplicitOIF; //Explicit; //ExplicitOIF;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF;
   time_integrator_oif = TimeIntegratorRK::ExplRK4Stage8Reg2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
 
   calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
   time_step_size = 1.e-2;
   cfl_oif = 0.2; //TODO //2.0;
-  cfl_number = cfl_oif * 4.0; // TODO cfl_oif * 1.0;
+  cfl_number = cfl_oif * 1.0;
   diffusion_number = 0.01;
   exponent_fe_degree_convection = 2.0;
   exponent_fe_degree_diffusion = 3.0;
@@ -128,7 +128,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_solver_info_every_timesteps = 1e6;
 
   // restart
-  restart_data.write_restart = true;
+  restart_data.write_restart = false;
   restart_data.filename = "output_conv_diff/rotating_hill";
   restart_data.interval_time = 0.4;
 }
@@ -145,23 +145,23 @@ void ConvDiff::InputParameters::set_input_parameters()
  */
 
 template<int dim>
-class AnalyticalSolution : public Function<dim>
+class Solution : public Function<dim>
 {
 public:
-  AnalyticalSolution (const unsigned int  n_components = 1,
-                      const double        time = 0.)
+  Solution (const unsigned int  n_components = 1,
+            const double        time = 0.)
     :
     Function<dim>(n_components, time)
   {}
 
-  virtual ~AnalyticalSolution(){};
+  virtual ~Solution(){};
 
   virtual double value (const Point<dim>   &p,
                         const unsigned int component = 0) const;
 };
 
 template<int dim>
-double AnalyticalSolution<dim>::value(const Point<dim>    &p,
+double Solution<dim>::value(const Point<dim>    &p,
                                       const unsigned int  /* component */) const
 {
   double t = this->get_time();
@@ -255,12 +255,18 @@ template<int dim>
 double VelocityField<dim>::value(const Point<dim>   &point,
                                  const unsigned int component) const
 {
+  // TODO
+//  double t = this->get_time();
+
   double value = 0.0;
 
   if(component == 0)
     value = -point[1]*2.0*numbers::PI;
   else if(component ==1)
     value =  point[0]*2.0*numbers::PI;
+
+  // TODO
+//  value *= 1.0-t;
 
   return value;
 }
@@ -283,7 +289,7 @@ void create_grid_and_set_boundary_conditions(
   triangulation.refine_global(n_refine_space);
 
   std::shared_ptr<Function<dim> > analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution.reset(new Solution<dim>());
   //problem with pure Dirichlet boundary conditions
   boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,analytical_solution));
 }
@@ -293,7 +299,7 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution.reset(new Solution<dim>());
 
   std::shared_ptr<Function<dim> > right_hand_side;
   right_hand_side.reset(new RightHandSide<dim>());
@@ -309,7 +315,7 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
 template<int dim>
 void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+  analytical_solution->solution.reset(new Solution<dim>(1));
 }
 
 

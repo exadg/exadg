@@ -52,10 +52,10 @@
 /**************************************************************************************/
 
 // set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_MIN = 1;
-unsigned int const FE_DEGREE_MAX = 15;
+unsigned int const FE_DEGREE_MIN = 2;
+unsigned int const FE_DEGREE_MAX = 2;
 
-// refinement level: l = REFINE_LEVELS[fe_degree-1]
+// refinement level: l = REFINE_LEVELS[degree-1]
 std::vector<int> REFINE_LEVELS = {
   7, /* k=1 */
   6,
@@ -104,19 +104,22 @@ std::vector<std::pair<unsigned int, double>> wall_times;
 using namespace dealii;
 using namespace CompNS;
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
-class CompressibleNavierStokesProblem
+namespace CompNS
+{
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number = double>
+class Problem
 {
 public:
-  typedef double value_type;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>
-    DG_OPERATOR;
+  typedef DGOperator<dim, degree, n_q_points_conv, n_q_points_vis, Number> DG_OPERATOR;
 
-  typedef TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, DG_OPERATOR> TIME_INT;
+  typedef TimeIntExplRK<dim, Number> TIME_INT;
 
-  CompressibleNavierStokesProblem(const unsigned int refine_steps_space,
-                                  const unsigned int refine_steps_time = 0);
+  typedef PostProcessor<dim, degree, n_q_points_conv, n_q_points_vis, Number> POSTPROCESSOR;
+
+  Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
 
   void
   setup();
@@ -138,25 +141,27 @@ private:
   const unsigned int n_refine_space;
   const unsigned int n_refine_time;
 
-  std::shared_ptr<CompNS::FieldFunctions<dim>>           field_functions;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
-  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
-  std::shared_ptr<CompNS::AnalyticalSolution<dim>>       analytical_solution;
+  std::shared_ptr<FieldFunctions<dim>>           field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
+  std::shared_ptr<AnalyticalSolution<dim>>       analytical_solution;
 
-  CompNS::InputParameters<dim> param;
+  InputParameters<dim> param;
 
   std::shared_ptr<DG_OPERATOR> comp_navier_stokes_operator;
+
+  std::shared_ptr<POSTPROCESSOR> postprocessor;
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
 };
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::
-  CompressibleNavierStokesProblem(const unsigned int n_refine_space_in,
-                                  const unsigned int n_refine_time_in)
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
+  unsigned int const n_refine_space_in,
+  unsigned int const n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
@@ -174,24 +179,31 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
   if(param.print_input_parameters == true)
     param.print(pcout);
 
-  field_functions.reset(new CompNS::FieldFunctions<dim>());
+  field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new CompNS::AnalyticalSolution<dim>());
+  analytical_solution.reset(new AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_density.reset(new CompNS::BoundaryDescriptor<dim>());
-  boundary_descriptor_velocity.reset(new CompNS::BoundaryDescriptor<dim>());
-  boundary_descriptor_pressure.reset(new CompNS::BoundaryDescriptor<dim>());
-  boundary_descriptor_energy.reset(new CompNS::BoundaryDescriptorEnergy<dim>());
+  boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_energy.reset(new BoundaryDescriptorEnergy<dim>());
+
+  // initialize postprocessor
+  // this function has to be defined in the header file
+  // that implements all problem specific things like
+  // parameters, geometry, boundary conditions, etc.
+  postprocessor =
+    construct_postprocessor<dim, degree, n_q_points_conv, n_q_points_vis, Number>(param);
 
   // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(new DG_OPERATOR(triangulation, param));
+  comp_navier_stokes_operator.reset(new DG_OPERATOR(triangulation, param, postprocessor));
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
 void
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::print_header()
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -204,9 +216,9 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
   // clang-format on
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
 void
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::setup()
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup()
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -224,17 +236,18 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
                                      boundary_descriptor_velocity,
                                      boundary_descriptor_pressure,
                                      boundary_descriptor_energy,
-                                     field_functions);
+                                     field_functions,
+                                     analytical_solution);
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
 void
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::apply_operator()
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::apply_operator()
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
   // Vectors
-  parallel::distributed::Vector<double> dst, src;
+  VectorType dst, src;
 
   // initialize vectors
   comp_navier_stokes_operator->initialize_dof_vector(src);
@@ -256,7 +269,7 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
       timer.restart();
 
 #ifdef LIKWID_PERFMON
-      LIKWID_MARKER_START(("compressible_deg_" + std::to_string(fe_degree)).c_str());
+      LIKWID_MARKER_START(("compressible_deg_" + std::to_string(degree)).c_str());
 #endif
 
       if(OPERATOR_TYPE == OperatorType::ConvectiveTerm)
@@ -277,7 +290,7 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
         AssertThrow(false, ExcMessage("Specified operator type not implemented"));
 
 #ifdef LIKWID_PERFMON
-      LIKWID_MARKER_STOP(("compressible_deg_" + std::to_string(fe_degree)).c_str());
+      LIKWID_MARKER_STOP(("compressible_deg_" + std::to_string(degree)).c_str());
 #endif
 
       Utilities::MPI::MinMaxAvg wall_time =
@@ -313,9 +326,11 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
         << std::scientific << std::setprecision(4) << "DoFs/(sec*core): " << 1. / wall_time_per_dofs / (double)N_mpi_processes << std::endl;
   // clang-format on
 
-  wall_times.push_back(std::pair<unsigned int, double>(fe_degree, wall_time_per_dofs));
+  wall_times.push_back(std::pair<unsigned int, double>(degree, wall_time_per_dofs));
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
+}
+
 }
 
 void
@@ -370,26 +385,26 @@ print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times
 
 /*
  *  Precompile NavierStokesProblem for all polynomial degrees in the range
- *  FE_DEGREE_MIN < fe_degree_i < FE_DEGREE_MAX so that we do not have to recompile
+ *  FE_DEGREE_MIN < degree_i < FE_DEGREE_MAX so that we do not have to recompile
  *  in order to run the program for different polynomial degrees
  */
-template<int dim, int fe_degree, int max_fe_degree>
+template<int dim, int degree, int max_degree>
 class NavierStokesPrecompiled
 {
 public:
   static void
   run()
   {
-    NavierStokesPrecompiled<dim, fe_degree, fe_degree>::run();
-    NavierStokesPrecompiled<dim, fe_degree + 1, max_fe_degree>::run();
+    NavierStokesPrecompiled<dim, degree, degree>::run();
+    NavierStokesPrecompiled<dim, degree + 1, max_degree>::run();
   }
 };
 
 /*
- * specialization of templates: fe_degree == max_fe_degree
+ * specialization of templates: degree == max_degree
  */
-template<int dim, int fe_degree>
-class NavierStokesPrecompiled<dim, fe_degree, fe_degree>
+template<int dim, int degree>
+class NavierStokesPrecompiled<dim, degree, degree>
 {
 public:
   /*
@@ -397,20 +412,20 @@ public:
    */
 
   // standard quadrature
-  //  static const unsigned int n_q_points_conv = fe_degree+1;
+  //  static const unsigned int n_q_points_conv = degree+1;
 
   // 3/2 dealiasing rule
-  //  static const unsigned int n_q_points_conv = fe_degree+(fe_degree+2)/2;
+  //  static const unsigned int n_q_points_conv = degree+(degree+2)/2;
 
   // 2k dealiasing rule
-  static const unsigned int n_q_points_conv = 2 * fe_degree + 1;
+  static const unsigned int n_q_points_conv = 2 * degree + 1;
 
   /*
    *  Select the quadrature formula manually for viscous term
    */
 
   // standard quadrature
-  //  static const unsigned int n_q_points_vis = fe_degree+1;
+  //  static const unsigned int n_q_points_vis = degree+1;
 
   // same as convective term
   static const unsigned int n_q_points_vis = n_q_points_conv;
@@ -420,12 +435,11 @@ public:
   static void
   run()
   {
-    typedef CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
-      NAVIER_STOKES_PROBLEM;
+    typedef Problem<dim, degree, n_q_points_conv, n_q_points_vis> PROBLEM;
 
-    NAVIER_STOKES_PROBLEM navier_stokes_problem(REFINE_LEVELS[fe_degree - 1]);
-    navier_stokes_problem.setup();
-    navier_stokes_problem.apply_operator();
+    PROBLEM problem(REFINE_LEVELS[degree - 1]);
+    problem.setup();
+    problem.apply_operator();
   }
 };
 

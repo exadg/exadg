@@ -43,21 +43,23 @@
 //#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;
+
 using namespace CompNS;
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
-class CompressibleNavierStokesProblem
+namespace CompNS
+{
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number = double>
+class Problem
 {
 public:
-  typedef double value_type;
+  typedef DGOperator<dim, degree, n_q_points_conv, n_q_points_vis, Number> DG_OPERATOR;
 
-  typedef DGCompNavierStokesOperation<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>
-    DG_OPERATOR;
+  typedef TimeIntExplRK<dim, Number> TIME_INT;
 
-  typedef TimeIntExplRKCompNavierStokes<dim, fe_degree, value_type, DG_OPERATOR> TIME_INT;
+  typedef PostProcessor<dim, degree, n_q_points_conv, n_q_points_vis, Number> POSTPROCESSOR;
 
-  CompressibleNavierStokesProblem(const unsigned int refine_steps_space,
-                                  const unsigned int refine_steps_time = 0);
+  Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
 
   void
   solve_problem();
@@ -72,31 +74,29 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  const unsigned int n_refine_space;
-  const unsigned int n_refine_time;
+  unsigned int const n_refine_space;
+  unsigned int const n_refine_time;
 
-  std::shared_ptr<CompNS::FieldFunctions<dim>>           field_functions;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_density;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
-  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
-  std::shared_ptr<CompNS::AnalyticalSolution<dim>>       analytical_solution;
+  std::shared_ptr<FieldFunctions<dim>>           field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
+  std::shared_ptr<AnalyticalSolution<dim>>       analytical_solution;
 
-  CompNS::InputParameters<dim> param;
+  InputParameters<dim> param;
 
   std::shared_ptr<DG_OPERATOR> comp_navier_stokes_operator;
 
-  std::shared_ptr<
-    CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>>
-    postprocessor;
+  std::shared_ptr<POSTPROCESSOR> postprocessor;
 
   std::shared_ptr<TIME_INT> time_integrator;
 };
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::
-  CompressibleNavierStokesProblem(const unsigned int n_refine_space_in,
-                                  const unsigned int n_refine_time_in)
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
+  unsigned int const n_refine_space_in,
+  unsigned int const n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
@@ -113,23 +113,23 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
   if(param.print_input_parameters == true)
     param.print(pcout);
 
-  field_functions.reset(new CompNS::FieldFunctions<dim>());
+  field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new CompNS::AnalyticalSolution<dim>());
+  analytical_solution.reset(new AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
-  boundary_descriptor_density.reset(new CompNS::BoundaryDescriptor<dim>());
-  boundary_descriptor_velocity.reset(new CompNS::BoundaryDescriptor<dim>());
-  boundary_descriptor_pressure.reset(new CompNS::BoundaryDescriptor<dim>());
-  boundary_descriptor_energy.reset(new CompNS::BoundaryDescriptorEnergy<dim>());
+  boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_energy.reset(new BoundaryDescriptorEnergy<dim>());
 
   // initialize postprocessor
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   postprocessor =
-    construct_postprocessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>(param);
+    construct_postprocessor<dim, degree, n_q_points_conv, n_q_points_vis, Number>(param);
 
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DG_OPERATOR(triangulation, param, postprocessor));
@@ -138,9 +138,9 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
   time_integrator.reset(new TIME_INT(comp_navier_stokes_operator, param, n_refine_time));
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
 void
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::print_header()
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -153,9 +153,9 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
   // clang-format on
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis>
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
 void
-CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>::solve_problem()
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve_problem()
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -178,6 +178,8 @@ CompressibleNavierStokesProblem<dim, fe_degree, n_q_points_conv, n_q_points_vis>
 
   time_integrator->setup();
   time_integrator->timeloop();
+}
+
 }
 
 int
@@ -206,8 +208,8 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        CompressibleNavierStokesProblem<DIMENSION, FE_DEGREE, QPOINTS_CONV, QPOINTS_VIS>
-          navier_stokes_problem(refine_steps_space, refine_steps_time);
+        Problem<DIMENSION, FE_DEGREE, QPOINTS_CONV, QPOINTS_VIS> navier_stokes_problem(
+          refine_steps_space, refine_steps_time);
 
         navier_stokes_problem.solve_problem();
       }

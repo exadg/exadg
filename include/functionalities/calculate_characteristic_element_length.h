@@ -8,6 +8,7 @@
 #ifndef INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
 #define INCLUDE_FUNCTIONALITIES_CALCULATE_CHARACTERISTIC_ELEMENT_LENGTH_H_
 
+using namespace dealii;
 
 /*
  *  This function calculates the characteristic element length h
@@ -15,7 +16,7 @@
  *  minimum vertex distance of element e.
  */
 template<int dim>
-double
+inline double
 calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation)
 {
   typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
@@ -38,7 +39,7 @@ calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation)
   return global_min_cell_diameter;
 }
 
-double
+inline double
 calculate_characteristic_element_length(double const element_length, unsigned int const fe_degree)
 {
   return element_length / ((double)(fe_degree + 1));

@@ -46,6 +46,8 @@
 #include "projection_operators.h"
 #include "projection_solvers.h"
 
+#include "time_integration/time_step_calculation.h"
+
 using namespace dealii;
 
 namespace IncNS
@@ -373,6 +375,34 @@ public:
   unsigned int
   solve_projection(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * Time step calculation.
+   */
+
+  // Minimum element length h_min required for global CFL condition.
+  double
+  calculate_minimum_element_length() const
+  {
+    return calculate_minimum_vertex_distance(dof_handler_u.get_triangulation());
+  }
+
+  // Polynomial degree required for CFL condition, e.g., CFL_k = CFL / k^{exp}.
+  unsigned int
+  get_polynomial_degree() const
+  {
+    return degree_u;
+  }
+
+  // Calculate time step size according to local CFL criterion
+  double
+  calculate_time_step_cfl(VectorType const & velocity,
+                          double const       cfl,
+                          double const       exponent_degree) const
+  {
+    return calculate_time_step_cfl_local<dim, degree_u, Number>(
+      data, dof_index_u, quad_index_u, velocity, cfl, exponent_degree);
+  }
+
 protected:
   MatrixFree<dim, Number> data;
 
@@ -504,7 +534,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup(
   std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl << "Setup Navier-Stokes operation ..." << std::endl << std::flush;
+  pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
   this->periodic_face_pairs          = periodic_face_pairs;
   this->boundary_descriptor_velocity = boundary_descriptor_velocity_in;
@@ -641,7 +671,8 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup(
       {
         if(cell->is_locally_owned())
         {
-          first_cell                 = cell;
+          first_cell = cell;
+
           processor_has_active_cells = true;
           break;
         }

@@ -134,24 +134,24 @@ void CompNS::InputParameters<dim>::set_input_parameters()
  *  Analytical solutions for initial field functions
  */
 template<int dim>
-class AnalyticalSolutionCompNS : public Function<dim>
+class Solution : public Function<dim>
 {
 public:
-  AnalyticalSolutionCompNS (const unsigned int  n_components = dim + 2,
-                            const double        time = 0.)
+  Solution (const unsigned int  n_components = dim + 2,
+            const double        time = 0.)
     :
   Function<dim>(n_components, time)
   {}
 
-  virtual ~AnalyticalSolutionCompNS(){};
+  virtual ~Solution(){};
 
   virtual double value (const Point<dim>   &p,
                         const unsigned int component = 0) const;
 };
 
 template<int dim>
-double AnalyticalSolutionCompNS<dim>::value(const Point<dim>    &p,
-                                            const unsigned int  component) const
+double Solution<dim>::value(const Point<dim>    &p,
+                            const unsigned int  component) const
 {
   const double T = T_0  + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1]*p[1]/(H*H) - 1.0);
   const double rho = PRESSURE / (R * T);
@@ -365,7 +365,7 @@ void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_fun
 
   // initial solution
   std::shared_ptr<Function<dim> > initial_solution;
-  initial_solution.reset(new AnalyticalSolutionCompNS<dim>());
+  initial_solution.reset(new Solution<dim>());
   field_functions->initial_solution = initial_solution;
 
   // rhs density
@@ -381,7 +381,7 @@ void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_fun
 template<int dim>
 void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolutionCompNS<dim>());
+  analytical_solution->solution.reset(new Solution<dim>());
 }
 
 template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>

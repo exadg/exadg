@@ -162,7 +162,8 @@ enum class TimeStepCalculation
   ConstTimeStepUserSpecified,
   ConstTimeStepCFL,
   AdaptiveTimeStepCFL,
-  ConstTimeStepMaxEfficiency
+  ConstTimeStepMaxEfficiency // only relevant for analytical test cases with optimal rates of
+                             // convergence in space
 };
 
 /*

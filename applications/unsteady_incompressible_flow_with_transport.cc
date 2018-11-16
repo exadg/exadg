@@ -138,12 +138,11 @@ private:
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
-  typedef IncNS::TimeIntBDFCoupled<dim, degree_u, Number, DGCoupled> TimeIntCoupled;
+  typedef IncNS::TimeIntBDFCoupled<dim, Number, DGCoupled> TimeIntCoupled;
 
-  typedef IncNS::TimeIntBDFDualSplitting<dim, degree_u, Number, DGDualSplitting>
-    TimeIntDualSplitting;
+  typedef IncNS::TimeIntBDFDualSplitting<dim, Number, DGDualSplitting> TimeIntDualSplitting;
 
-  typedef IncNS::TimeIntBDFPressureCorrection<dim, degree_u, Number, DGPressureCorrection>
+  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number, DGPressureCorrection>
     TimeIntPressureCorrection;
 
   std::shared_ptr<TimeIntCoupled> time_integrator_coupled;
@@ -163,11 +162,13 @@ private:
 
   std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> scalar_analytical_solution;
 
-  std::shared_ptr<ConvDiff::DGOperation<dim, degree_s, Number>> conv_diff_operation;
-  std::shared_ptr<ConvDiff::PostProcessor<dim, degree_s>>       scalar_postprocessor;
+  typedef ConvDiff::DGOperation<dim, degree_s, Number> ConvDiffOperator;
+  std::shared_ptr<ConvDiffOperator>                    conv_diff_operator;
 
-  std::shared_ptr<ConvDiff::TimeIntExplRK<dim, degree_s, Number>> scalar_time_integrator_explRK;
-  std::shared_ptr<ConvDiff::TimeIntBDF<dim, degree_s, Number>>    scalar_time_integrator_BDF;
+  std::shared_ptr<ConvDiff::PostProcessor<dim, degree_s>> scalar_postprocessor;
+
+  std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> scalar_time_integrator_explRK;
+  std::shared_ptr<ConvDiff::TimeIntBDF<Number>>    scalar_time_integrator_BDF;
 };
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -311,20 +312,20 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   scalar_postprocessor.reset(new ConvDiff::PostProcessor<dim, degree_s>());
 
   // initialize convection diffusion operation
-  conv_diff_operation.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(triangulation,
-                                                                             scalar_param,
-                                                                             scalar_postprocessor));
+  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(triangulation,
+                                                                            scalar_param,
+                                                                            scalar_postprocessor));
 
   // initialize time integrator
   if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
   {
-    scalar_time_integrator_explRK.reset(new ConvDiff::TimeIntExplRK<dim, degree_s, Number>(
-      conv_diff_operation, scalar_param, scalar_field_functions->velocity, refine_steps_time));
+    scalar_time_integrator_explRK.reset(
+      new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator, scalar_param, refine_steps_time));
   }
   else if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
   {
-    scalar_time_integrator_BDF.reset(new ConvDiff::TimeIntBDF<dim, degree_s, Number>(
-      conv_diff_operation, scalar_param, scalar_field_functions->velocity, refine_steps_time));
+    scalar_time_integrator_BDF.reset(new ConvDiff::TimeIntBDF<Number>(
+      conv_diff_operator, scalar_param, refine_steps_time, use_adaptive_time_stepping));
   }
   else
   {
@@ -443,7 +444,8 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes_solvers(
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(bool const do_restart)
+Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(
+  bool const do_restart)
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -456,10 +458,10 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(b
                                                     n_refine_space,
                                                     scalar_boundary_descriptor);
 
-  conv_diff_operation->setup(periodic_faces,
-                             scalar_boundary_descriptor,
-                             scalar_field_functions,
-                             scalar_analytical_solution);
+  conv_diff_operator->setup(periodic_faces,
+                            scalar_boundary_descriptor,
+                            scalar_field_functions,
+                            scalar_analytical_solution);
 
   if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
   {
@@ -467,12 +469,12 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(b
   }
   else if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
   {
-    // call setup() of time_integrator before setup_solvers() of conv_diff_operation
+    // call setup() of time_integrator before setup_solvers() of conv_diff_operator
     // because setup_solver() needs quantities such as the time step size for a
     // correct initialization of preconditioners
     scalar_time_integrator_BDF->setup(do_restart);
 
-    conv_diff_operation->setup_solver(
+    conv_diff_operator->setup_solver(
       scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term());
   }
 }
@@ -650,25 +652,26 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop()
     // for the velocity field and hand it over to the scalar transport solver
 
     // TODO
-//    LinearAlgebra::distributed::Vector<Number> velocity;
-//    if(fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-//    {
-//      velocity = time_integrator_coupled->get_velocity();
-//    }
-//    else if(fluid_param.temporal_discretization ==
-//            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-//    {
-//      velocity = time_integrator_dual_splitting->get_velocity();
-//    }
-//    else if(fluid_param.temporal_discretization ==
-//            IncNS::TemporalDiscretization::BDFPressureCorrection)
-//    {
-//      velocity = time_integrator_pressure_correction->get_velocity();
-//    }
-//    else
-//    {
-//      AssertThrow(false, ExcMessage("Not implemented."));
-//    }
+    //    LinearAlgebra::distributed::Vector<Number> velocity;
+    //    if(fluid_param.temporal_discretization ==
+    //    IncNS::TemporalDiscretization::BDFCoupledSolution)
+    //    {
+    //      velocity = time_integrator_coupled->get_velocity();
+    //    }
+    //    else if(fluid_param.temporal_discretization ==
+    //            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
+    //    {
+    //      velocity = time_integrator_dual_splitting->get_velocity();
+    //    }
+    //    else if(fluid_param.temporal_discretization ==
+    //            IncNS::TemporalDiscretization::BDFPressureCorrection)
+    //    {
+    //      velocity = time_integrator_pressure_correction->get_velocity();
+    //    }
+    //    else
+    //    {
+    //      AssertThrow(false, ExcMessage("Not implemented."));
+    //    }
 
 
     // scalar transport: advance one time step
