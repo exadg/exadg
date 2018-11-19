@@ -18,9 +18,12 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 
+#include "../include/incompressible_navier_stokes/interface_space_time/operator.h"
+
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Paramters, BCs, etc.
@@ -115,19 +118,12 @@ private:
 
   std::shared_ptr<Postprocessor> postprocessor_1, postprocessor_2;
 
-  typedef TimeIntBDFCoupled<dim, Number, DGCoupled> TimeIntCoupled;
+  typedef TimeIntBDF<dim, Number>                   TimeInt;
+  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
+  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
+  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
-  typedef TimeIntBDFDualSplitting<dim, Number, DGDualSplitting> TimeIntDualSplitting;
-
-  typedef TimeIntBDFPressureCorrection<dim, Number, DGPressureCorrection> TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeIntCoupled> time_integrator_coupled_1, time_integrator_coupled_2;
-
-  std::shared_ptr<TimeIntDualSplitting> time_integrator_dual_splitting_1,
-    time_integrator_dual_splitting_2;
-
-  std::shared_ptr<TimeIntPressureCorrection> time_integrator_pressure_correction_1,
-    time_integrator_pressure_correction_2;
+  std::shared_ptr<TimeInt> time_integrator_1, time_integrator_2;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -214,6 +210,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGCoupled(triangulation_1, param_1, postprocessor_1));
 
     navier_stokes_operation_1 = navier_stokes_operation_coupled_1;
+
+    time_integrator_1.reset(new TimeIntCoupled(navier_stokes_operation_coupled_1,
+                                               navier_stokes_operation_coupled_1,
+                                               param_1,
+                                               refine_steps_time,
+                                               use_adaptive_time_stepping));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -221,6 +223,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGDualSplitting(triangulation_1, param_1, postprocessor_1));
 
     navier_stokes_operation_1 = navier_stokes_operation_dual_splitting_1;
+
+    time_integrator_1.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_1,
+                                                     navier_stokes_operation_dual_splitting_1,
+                                                     param_1,
+                                                     refine_steps_time,
+                                                     use_adaptive_time_stepping));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -228,6 +236,13 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGPressureCorrection(triangulation_1, param_1, postprocessor_1));
 
     navier_stokes_operation_1 = navier_stokes_operation_pressure_correction_1;
+
+    time_integrator_1.reset(
+      new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_1,
+                                    navier_stokes_operation_pressure_correction_1,
+                                    param_1,
+                                    refine_steps_time,
+                                    use_adaptive_time_stepping));
   }
   else
   {
@@ -241,6 +256,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGCoupled(triangulation_2, param_2, postprocessor_2));
 
     navier_stokes_operation_2 = navier_stokes_operation_coupled_2;
+
+    time_integrator_2.reset(new TimeIntCoupled(navier_stokes_operation_coupled_2,
+                                               navier_stokes_operation_coupled_2,
+                                               param_2,
+                                               refine_steps_time,
+                                               use_adaptive_time_stepping));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -248,6 +269,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGDualSplitting(triangulation_2, param_2, postprocessor_2));
 
     navier_stokes_operation_2 = navier_stokes_operation_dual_splitting_2;
+
+    time_integrator_2.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_2,
+                                                     navier_stokes_operation_dual_splitting_2,
+                                                     param_2,
+                                                     refine_steps_time,
+                                                     use_adaptive_time_stepping));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -255,57 +282,10 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGPressureCorrection(triangulation_2, param_2, postprocessor_2));
 
     navier_stokes_operation_2 = navier_stokes_operation_pressure_correction_2;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
 
-  // initialize time integrator for DOMAIN 1 that depends on navier_stokes_operation
-  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_1.reset(new TimeIntCoupled(
-      navier_stokes_operation_coupled_1, param_1, refine_steps_time, use_adaptive_time_stepping));
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_1.reset(
-      new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_1,
-                               param_1,
-                               refine_steps_time,
-                               use_adaptive_time_stepping));
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_1.reset(
-      new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_1,
-                                    param_1,
-                                    refine_steps_time,
-                                    use_adaptive_time_stepping));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  // initialize time integrator for DOMAIN 2 that depends on navier_stokes_operation
-  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_2.reset(new TimeIntCoupled(
-      navier_stokes_operation_coupled_2, param_2, refine_steps_time, use_adaptive_time_stepping));
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_2.reset(
-      new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_2,
-                               param_2,
-                               refine_steps_time,
-                               use_adaptive_time_stepping));
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_2.reset(
+    time_integrator_2.reset(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_2,
+                                    navier_stokes_operation_pressure_correction_2,
                                     param_2,
                                     refine_steps_time,
                                     use_adaptive_time_stepping));
@@ -368,40 +348,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_time_integrator(bool
   AssertThrow(param_1.start_with_low_order == true && param_2.start_with_low_order == true,
               ExcMessage("start_with_low_order has to be true for two-domain solver."));
 
-  // DOMAIN 1
-  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_1->setup(do_restart);
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_1->setup(do_restart);
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_1->setup(do_restart);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-  // DOMAIN 2
-  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_2->setup(do_restart);
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_2->setup(do_restart);
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_2->setup(do_restart);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  time_integrator_1->setup(do_restart);
+  time_integrator_2->setup(do_restart);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -414,40 +362,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time()
   double time = std::min(time_1, time_2);
 
   // Set the same time step size for both time integrators (for the two domains)
-  // DOMAIN 1
-  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_1->reset_time(time);
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_1->reset_time(time);
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_1->reset_time(time);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-  // DOMAIN 2
-  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_2->reset_time(time);
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_2->reset_time(time);
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_2->reset_time(time);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  time_integrator_1->reset_time(time);
+  time_integrator_2->reset_time(time);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -457,88 +373,27 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size
   // Setup time integrator and get time step size
   double time_step_size_1 = 1.0, time_step_size_2 = 1.0;
 
-  // DOMAIN 1
-  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_step_size_1 = time_integrator_coupled_1->get_time_step_size();
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_step_size_1 = time_integrator_dual_splitting_1->get_time_step_size();
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_step_size_1 = time_integrator_pressure_correction_1->get_time_step_size();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-  // DOMAIN 2
-  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_step_size_2 = time_integrator_coupled_2->get_time_step_size();
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_step_size_2 = time_integrator_dual_splitting_2->get_time_step_size();
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_step_size_2 = time_integrator_pressure_correction_2->get_time_step_size();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  // get time step sizes
+  time_step_size_1 = time_integrator_1->get_time_step_size();
+  time_step_size_2 = time_integrator_2->get_time_step_size();
 
+  // take the minimum
   double time_step_size = std::min(time_step_size_1, time_step_size_2);
 
   // decrease time_step in order to exactly hit end_time
   if(use_adaptive_time_stepping == false)
   {
-    time_step_size = (param_1.end_time - param_1.start_time) /
-                     (1 + int((param_1.end_time - param_1.start_time) / time_step_size));
+    // assume that domain 1 is the first to start and the last to end
+    time_step_size =
+      adjust_time_step_to_hit_end_time(param_1.start_time, param_1.end_time, time_step_size);
 
     pcout << std::endl
           << "Combined time step size for both domains: " << time_step_size << std::endl;
   }
 
-  // Set the same time step size for both time integrators (for the two domains)
-  // DOMAIN 1
-  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_1->set_time_step_size(time_step_size);
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_1->set_time_step_size(time_step_size);
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_1->set_time_step_size(time_step_size);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-  // DOMAIN 2
-  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled_2->set_time_step_size(time_step_size);
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting_2->set_time_step_size(time_step_size);
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction_2->set_time_step_size(time_step_size);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  // set the time step size
+  time_integrator_1->set_time_step_size(time_step_size);
+  time_integrator_2->set_time_step_size(time_step_size);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -549,19 +404,19 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_solvers()
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operation_coupled_1->setup_solvers(
-      time_integrator_coupled_1->get_scaling_factor_time_derivative_term());
+      time_integrator_1->get_scaling_factor_time_derivative_term());
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operation_dual_splitting_1->setup_solvers(
-      time_integrator_dual_splitting_1->get_time_step_size(),
-      time_integrator_dual_splitting_1->get_scaling_factor_time_derivative_term());
+      time_integrator_1->get_time_step_size(),
+      time_integrator_1->get_scaling_factor_time_derivative_term());
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     navier_stokes_operation_pressure_correction_1->setup_solvers(
-      time_integrator_pressure_correction_1->get_time_step_size(),
-      time_integrator_pressure_correction_1->get_scaling_factor_time_derivative_term());
+      time_integrator_1->get_time_step_size(),
+      time_integrator_1->get_scaling_factor_time_derivative_term());
   }
   else
   {
@@ -572,19 +427,19 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_solvers()
   if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operation_coupled_2->setup_solvers(
-      time_integrator_coupled_2->get_scaling_factor_time_derivative_term());
+      time_integrator_2->get_scaling_factor_time_derivative_term());
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operation_dual_splitting_2->setup_solvers(
-      time_integrator_dual_splitting_2->get_time_step_size(),
-      time_integrator_dual_splitting_2->get_scaling_factor_time_derivative_term());
+      time_integrator_2->get_time_step_size(),
+      time_integrator_2->get_scaling_factor_time_derivative_term());
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     navier_stokes_operation_pressure_correction_2->setup_solvers(
-      time_integrator_pressure_correction_2->get_time_step_size(),
-      time_integrator_pressure_correction_2->get_scaling_factor_time_derivative_term());
+      time_integrator_2->get_time_step_size(),
+      time_integrator_2->get_scaling_factor_time_derivative_term());
   }
   else
   {
@@ -605,44 +460,14 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::run_timeloop()
   while(!finished_1 || !finished_2)
   {
     // advance one time step for DOMAIN 1
-    if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
-      finished_1 = time_integrator_coupled_1->advance_one_timestep(!finished_1);
-    }
-    else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      finished_1 = time_integrator_dual_splitting_1->advance_one_timestep(!finished_1);
-    }
-    else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      finished_1 = time_integrator_pressure_correction_1->advance_one_timestep(!finished_1);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    finished_1 = time_integrator_1->advance_one_timestep(!finished_1);
 
     // Note that the coupling of both solvers via the inflow boundary conditions is performed in the
     // postprocessing step of the solver for DOMAIN 1, overwriting the data global structures which
     // are subsequently used by the solver for DOMAIN 2 to evaluate the boundary conditions.
 
     // advance one time step for DOMAIN 2
-    if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
-      finished_2 = time_integrator_coupled_2->advance_one_timestep(!finished_2);
-    }
-    else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      finished_2 = time_integrator_dual_splitting_2->advance_one_timestep(!finished_2);
-    }
-    else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      finished_2 = time_integrator_pressure_correction_2->advance_one_timestep(!finished_2);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    finished_2 = time_integrator_2->advance_one_timestep(!finished_2);
 
     if(use_adaptive_time_stepping == true)
     {

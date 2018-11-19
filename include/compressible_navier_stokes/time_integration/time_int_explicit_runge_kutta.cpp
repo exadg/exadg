@@ -376,11 +376,21 @@ TimeIntExplRK<dim, Number>::analyze_computing_times() const
         << std::endl;
 }
 
-// instantiate for 2d/3d and float/double
-template class TimeIntExplRK<2, float>;
-template class TimeIntExplRK<3, float>;
+// instantiations
+#include <navierstokes/config.h>
 
+#if DIM_2 && OP_FLOAT
+template class TimeIntExplRK<2, float>;
+#endif
+#if DIM_3 && OP_FLOAT
+template class TimeIntExplRK<3, float>;
+#endif
+
+#if DIM_2 && OP_DOUBLE
 template class TimeIntExplRK<2, double>;
+#endif
+#if DIM_3 && OP_DOUBLE
 template class TimeIntExplRK<3, double>;
+#endif
 
 } // namespace CompNS

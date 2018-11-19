@@ -11,11 +11,14 @@
 #include "dg_navier_stokes_projection_methods.h"
 #include "dual_splitting_boundary_conditions.h"
 
+#include "../interface_space_time/operator.h"
+
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class DGNavierStokesDualSplitting
-  : public DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>
+  : public DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>,
+    public Interface::OperatorDualSplitting<Number>
 {
 public:
   typedef DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number> PROJECTION_METHODS_BASE;
@@ -119,7 +122,7 @@ public:
   rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & eval_time);
 
   void
-  rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src);
+  rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const;
 
   // rhs pressure
   void
@@ -133,6 +136,12 @@ public:
   void
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const;
 
+  void
+  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const
+  {
+    PROJECTION_METHODS_BASE::do_rhs_ppe_laplace_add(dst, evaluation_time);
+  }
+
   // viscous step
   unsigned int
   solve_viscous(VectorType &       dst,
@@ -144,16 +153,28 @@ public:
   apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
 
   void
+  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const
+  {
+    PROJECTION_METHODS_BASE::do_rhs_add_viscous_term(dst, evaluation_time);
+  }
+
+  unsigned int
+  solve_pressure(VectorType & dst, VectorType const & src) const
+  {
+    return PROJECTION_METHODS_BASE::do_solve_pressure(dst, src);
+  }
+
+  void
   do_postprocessing(VectorType const & velocity,
                     VectorType const & intermediate_velocity,
                     VectorType const & pressure,
                     double const       time,
-                    unsigned int const time_step_number);
+                    unsigned int const time_step_number) const;
 
   void
   do_postprocessing_steady_problem(VectorType const & velocity,
                                    VectorType const & intermediate_velocity,
-                                   VectorType const & pressure);
+                                   VectorType const & pressure) const;
 
 private:
   // setup of solvers
@@ -721,7 +742,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::rhs_ppe_div_term_convective_term_add(
   VectorType &       dst,
-  VectorType const & src)
+  VectorType const & src) const
 {
   velocity_divergence_convective_term.calculate(dst, src);
 }
@@ -875,7 +896,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::do_postprocessing(
   VectorType const & intermediate_velocity,
   VectorType const & pressure,
   double const       time,
-  unsigned int const time_step_number)
+  unsigned int const time_step_number) const
 {
   bool const standard = true;
   if(standard)
@@ -906,7 +927,7 @@ void
 DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::do_postprocessing_steady_problem(
   VectorType const & velocity,
   VectorType const & intermediate_velocity,
-  VectorType const & pressure)
+  VectorType const & pressure) const
 {
   this->postprocessor->do_postprocessing(velocity, intermediate_velocity, pressure);
 }

@@ -41,13 +41,13 @@ public:
   }
 
   /*
-   * Perform whole timeloop from start time to end time.
+   * Perform whole time loop from start time to end time.
    */
   void
   timeloop();
 
   /*
-   * Pseudo-timestepping for steady-state problems.
+   * Pseudo-time-stepping for steady-state problems.
    */
   void
   timeloop_steady_problem();
@@ -228,7 +228,7 @@ private:
   allocate_vectors() = 0;
 
   /*
-   * Initializes everything related to OIF substepping.
+   * Initializes everything related to OIF sub-stepping.
    */
   virtual void
   initialize_oif() = 0;
@@ -272,7 +272,7 @@ private:
   solve_timestep() = 0;
 
   /*
-   * Solve for a steady-state solution using pseudo-timestepping.
+   * Solve for a steady-state solution using pseudo-time-stepping.
    */
   virtual void
   solve_steady_problem();

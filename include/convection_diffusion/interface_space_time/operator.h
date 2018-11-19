@@ -78,15 +78,15 @@ public:
                           double const cfl,
                           double const exponent_fe_degree) const = 0;
 
-  // needed time step calculation
+  // needed for time step calculation
   virtual double
   calculate_maximum_velocity(double const time) const = 0;
 
-  // needed time step calculation
+  // needed for time step calculation
   virtual double
   calculate_minimum_element_length() const = 0;
 
-  // needed time step calculation
+  // needed for time step calculation
   virtual unsigned int
   get_polynomial_degree() const = 0;
 

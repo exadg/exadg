@@ -9,17 +9,23 @@
 
 namespace ConvDiff
 {
-
 namespace Interface
 {
-// nothing to implement here because all member functions of interface class Operator are pure virtual.
+// nothing to implement here because all member functions of interface class Operator are pure
+// virtual.
 
-// instantiate for float and double
+// instantiations
+#include <navierstokes/config.h>
+
+#if OP_FLOAT
 template class Operator<float>;
-template class Operator<double>;
-
 template class OperatorOIF<float>;
+#endif
+
+#if OP_DOUBLE
+template class Operator<double>;
 template class OperatorOIF<double>;
+#endif
 
 } // namespace Interface
 

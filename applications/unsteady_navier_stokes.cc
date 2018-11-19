@@ -18,9 +18,12 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 
+#include "../include/incompressible_navier_stokes/interface_space_time/operator.h"
+
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Parameters, BCs, etc.
@@ -104,16 +107,14 @@ private:
 
   InputParameters<dim> param;
 
-  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> DGBase;
-
-  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number> DGCoupled;
-
-  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number> DGDualSplitting;
-
+  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number>               DGBase;
+  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number>            DGCoupled;
+  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>      DGDualSplitting;
   typedef DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number> DGPressureCorrection;
 
   std::shared_ptr<DGBase> navier_stokes_operation;
 
+  // TODO remove this
   std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
 
   std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
@@ -124,17 +125,12 @@ private:
 
   std::shared_ptr<Postprocessor> postprocessor;
 
-  typedef TimeIntBDFCoupled<dim, Number, DGCoupled> TimeIntCoupled;
+  typedef TimeIntBDF<dim, Number>                   TimeInt;
+  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
+  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
+  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
-  typedef TimeIntBDFDualSplitting<dim, Number, DGDualSplitting> TimeIntDualSplitting;
-
-  typedef TimeIntBDFPressureCorrection<dim, Number, DGPressureCorrection> TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeIntCoupled> time_integrator_coupled;
-
-  std::shared_ptr<TimeIntDualSplitting> time_integrator_dual_splitting;
-
-  std::shared_ptr<TimeIntPressureCorrection> time_integrator_pressure_correction;
+  std::shared_ptr<TimeInt> time_integrator;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -190,6 +186,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     navier_stokes_operation_coupled.reset(new DGCoupled(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
+
+    time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
+                                             navier_stokes_operation_coupled,
+                                             param,
+                                             refine_steps_time,
+                                             use_adaptive_time_stepping));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -197,6 +199,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGDualSplitting(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_dual_splitting;
+
+    time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
+                                                   navier_stokes_operation_dual_splitting,
+                                                   param,
+                                                   refine_steps_time,
+                                                   use_adaptive_time_stepping));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -204,34 +212,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new DGPressureCorrection(triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_pressure_correction;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
 
-
-  // initialize time integrator that depends on navier_stokes_operation
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled.reset(new TimeIntCoupled(
-      navier_stokes_operation_coupled, param, refine_steps_time, use_adaptive_time_stepping));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting.reset(
-      new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
-                               param,
-                               refine_steps_time,
-                               use_adaptive_time_stepping));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction.reset(
-      new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
-                                    param,
-                                    refine_steps_time,
-                                    use_adaptive_time_stepping));
+    time_integrator.reset(new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
+                                                        navier_stokes_operation_pressure_correction,
+                                                        param,
+                                                        refine_steps_time,
+                                                        use_adaptive_time_stepping));
   }
   else
   {
@@ -272,22 +258,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_time_integrator(bool const do_restart)
 {
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    time_integrator_coupled->setup(do_restart);
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    time_integrator_dual_splitting->setup(do_restart);
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    time_integrator_pressure_correction->setup(do_restart);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  time_integrator->setup(do_restart);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -297,19 +268,19 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_solvers()
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operation_coupled->setup_solvers(
-      time_integrator_coupled->get_scaling_factor_time_derivative_term());
+      time_integrator->get_scaling_factor_time_derivative_term());
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operation_dual_splitting->setup_solvers(
-      time_integrator_dual_splitting->get_time_step_size(),
-      time_integrator_dual_splitting->get_scaling_factor_time_derivative_term());
+      time_integrator->get_time_step_size(),
+      time_integrator->get_scaling_factor_time_derivative_term());
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     navier_stokes_operation_pressure_correction->setup_solvers(
-      time_integrator_pressure_correction->get_time_step_size(),
-      time_integrator_pressure_correction->get_scaling_factor_time_derivative_term());
+      time_integrator->get_time_step_size(),
+      time_integrator->get_scaling_factor_time_derivative_term());
   }
   else
   {
@@ -322,54 +293,15 @@ void
 NavierStokesProblem<dim, degree_u, degree_p, Number>::run_timeloop()
 {
   // stability analysis (uncomment if desired)
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    // time_integrator_coupled->postprocessing_stability_analysis();
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    // time_integrator_dual_splitting->postprocessing_stability_analysis();
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    // time_integrator_pressure_correction->postprocessing_stability_analysis();
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  // time_integrator->postprocessing_stability_analysis();
 
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    if(this->param.problem_type == ProblemType::Steady)
-      time_integrator_coupled->timeloop_steady_problem();
-    else if(this->param.problem_type == ProblemType::Unsteady)
-      time_integrator_coupled->timeloop();
-    else
-      AssertThrow(false, ExcMessage("Not implemented."));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    if(this->param.problem_type == ProblemType::Steady)
-      time_integrator_dual_splitting->timeloop_steady_problem();
-    else if(this->param.problem_type == ProblemType::Unsteady)
-      time_integrator_dual_splitting->timeloop();
-    else
-      AssertThrow(false, ExcMessage("Not implemented."));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    if(this->param.problem_type == ProblemType::Steady)
-      time_integrator_pressure_correction->timeloop_steady_problem();
-    else if(this->param.problem_type == ProblemType::Unsteady)
-      time_integrator_pressure_correction->timeloop();
-    else
-      AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  // run the time loop
+  if(this->param.problem_type == ProblemType::Steady)
+    time_integrator->timeloop_steady_problem();
+  else if(this->param.problem_type == ProblemType::Unsteady)
+    time_integrator->timeloop();
   else
-  {
     AssertThrow(false, ExcMessage("Not implemented."));
-  }
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>

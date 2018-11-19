@@ -126,8 +126,14 @@ DriverSteadyProblems<Number>::postprocessing() const
   pde_operator->do_postprocessing(solution);
 }
 
-// instantiate for float and double
+// instantiations
+#include <navierstokes/config.h>
+
+#if OP_FLOAT
 template class DriverSteadyProblems<float>;
+#endif
+#if OP_DOUBLE
 template class DriverSteadyProblems<double>;
+#endif
 
 } // namespace ConvDiff
