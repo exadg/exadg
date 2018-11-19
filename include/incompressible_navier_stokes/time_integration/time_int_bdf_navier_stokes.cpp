@@ -17,14 +17,13 @@ namespace IncNS
 template<int dim, typename Number>
 TimeIntBDF<dim, Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
                                     InputParameters<dim> const &   param_in,
-                                    unsigned int const             n_refine_time_in,
-                                    bool const                     use_adaptive_time_stepping_in)
+                                    unsigned int const             n_refine_time_in)
   : TimeIntBDFBase(param_in.start_time,
                    param_in.end_time,
                    param_in.max_number_of_time_steps,
                    param_in.order_time_integrator,
                    param_in.start_with_low_order,
-                   use_adaptive_time_stepping_in,
+                   param_in.adaptive_time_stepping,
                    param_in.restart_data),
     param(param_in),
     cfl(param.cfl / std::pow(2.0, n_refine_time_in)),
@@ -170,7 +169,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
 {
   unsigned int const degree_u = operator_base->get_polynomial_degree();
 
-  if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
+  if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
     double const time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
 
@@ -179,64 +178,47 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
     pcout << "User specified time step size:" << std::endl << std::endl;
     print_parameter(pcout, "time step size", time_step);
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
+    double time_step = 1.0;
+
     double const h_min = operator_base->calculate_minimum_element_length();
 
-    double time_step = calculate_time_step_cfl_global(
+    double time_step_global = calculate_time_step_cfl_global(
       cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
 
-    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
+    pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
+    print_parameter(pcout, "h_min", h_min);
+    print_parameter(pcout, "U_max", param.max_velocity);
+    print_parameter(pcout, "CFL", cfl);
+    print_parameter(pcout, "exponent fe_degree", param.cfl_exponent_fe_degree_velocity);
+    print_parameter(pcout, "Time step size (global)", time_step_global);
+
+    if(adaptive_time_stepping == true)
+    {
+      // if u(x,t=0)=0, this time step size will tend to infinity
+      double time_step_adap =
+        operator_base->calculate_time_step_cfl(get_velocity(),
+                                               cfl,
+                                               param.cfl_exponent_fe_degree_velocity);
+
+      // use adaptive time step size only if it is smaller, otherwise use temporary time step size
+      time_step = std::min(time_step_adap, time_step_global);
+
+      print_parameter(pcout, "Time step size (adaptive)", time_step);
+    }
+    else
+    {
+      time_step =
+        adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_global);
+
+      pcout << std::endl << "Adjust time step size to hit end time:" << std::endl << std::endl;
+      print_parameter(pcout, "Time step size", time_step);
+    }
 
     this->set_time_step_size(time_step);
-
-    pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
-
-    print_parameter(pcout, "h_min", h_min);
-    print_parameter(pcout, "U_max", param.max_velocity);
-    print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "exponent fe_degree_velocity", param.cfl_exponent_fe_degree_velocity);
-    print_parameter(pcout, "Time step size", time_step);
   }
-  else if(adaptive_time_stepping == true)
-  {
-    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
-                ExcMessage("Specified type of time step calculation does not make sense!"));
-
-    double const h_min = operator_base->calculate_minimum_element_length();
-
-    // calculate a temporary time step size using a  guess for the maximum velocity
-    double time_step_tmp = calculate_time_step_cfl_global(
-      cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
-
-    pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
-
-    print_parameter(pcout, "h_min", h_min);
-    print_parameter(pcout, "U_max", param.max_velocity);
-    print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "exponent velocity degree", param.cfl_exponent_fe_degree_velocity);
-    print_parameter(pcout, "Time step size", time_step_tmp);
-
-    // if u(x,t=0)=0, this time step size will tend to infinity
-    double time_step_adap =
-      operator_base->calculate_time_step_cfl(get_velocity(),
-                                             cfl,
-                                             param.cfl_exponent_fe_degree_velocity);
-
-    // use adaptive time step size only if it is smaller, otherwise use temporary time step size
-    time_step_adap = std::min(time_step_adap, time_step_tmp);
-
-    this->set_time_step_size(time_step_adap);
-
-    pcout << std::endl
-          << "Calculation of time step size according to adaptive CFL condition:" << std::endl
-          << std::endl;
-
-    print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "exponent velocity degree", param.cfl_exponent_fe_degree_velocity);
-    print_parameter(pcout, "Time step size", time_step_adap);
-  }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
     double const h_min = operator_base->calculate_minimum_element_length();
 
@@ -260,20 +242,18 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   {
     // make sure that CFL condition is used for the calculation of the time step size (the aim
     // of the OIF splitting approach is to overcome limitations of the CFL condition)
-    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-                  param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
+    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
                 ExcMessage(
                   "Specified type of time step calculation is not compatible with OIF approach!"));
 
-    pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
-
+    pcout << std::endl << "OIF sub-stepping for convective term:" << std::endl << std::endl;
     print_parameter(pcout, "CFL (OIF)", cfl_oif);
   }
 }
 
 template<int dim, typename Number>
 double
-TimeIntBDF<dim, Number>::recalculate_time_step()
+TimeIntBDF<dim, Number>::recalculate_time_step_size() const
 {
   double new_time_step_size =
     operator_base->calculate_time_step_cfl(get_velocity(),
@@ -292,42 +272,10 @@ TimeIntBDF<dim, Number>::recalculate_time_step()
 }
 
 template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::output_solver_info_header() const
+bool
+TimeIntBDF<dim, Number>::print_solver_info() const
 {
-  if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
-  {
-    pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Number of TIME STEPS: " << std::left << std::setw(8) << get_time_step_number()
-          << "t_n = " << std::scientific << std::setprecision(4) << this->get_time()
-          << " -> t_n+1 = " << this->get_next_time() << std::endl
-          << "______________________________________________________________________" << std::endl;
-  }
-}
-
-/*
- *  This function estimates the remaining wall time based on the overall time interval to be
- * simulated and the measured wall time already needed to simulate from the start time until the
- * current time.
- */
-template<int dim, typename Number>
-void
-TimeIntBDF<dim, Number>::output_remaining_time() const
-{
-  if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
-  {
-    if(this->get_time() > start_time)
-    {
-      double const remaining_time =
-        global_timer.wall_time() * (end_time - this->get_time()) / (this->get_time() - start_time);
-
-      pcout << std::endl
-            << "Estimated time until completion is " << remaining_time << " s / "
-            << remaining_time / 3600. << " h." << std::endl;
-    }
-  }
+  return get_time_step_number() % param.output_solver_info_every_timesteps == 0;
 }
 
 template<int dim, typename Number>

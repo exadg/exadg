@@ -19,12 +19,8 @@ TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
   std::shared_ptr<InterfaceBase> operator_base_in,
   std::shared_ptr<InterfacePDE>  pde_operator_in,
   InputParameters<dim> const &   param_in,
-  unsigned int const             n_refine_time_in,
-  bool const                     use_adaptive_time_stepping_in)
-  : TimeIntBDF<dim, Number>(operator_base_in,
-                            param_in,
-                            n_refine_time_in,
-                            use_adaptive_time_stepping_in),
+  unsigned int const             n_refine_time_in)
+  : TimeIntBDF<dim, Number>(operator_base_in, param_in, n_refine_time_in),
     pde_operator(pde_operator_in),
     velocity(param_in.order_time_integrator),
     pressure(param_in.order_time_integrator),
@@ -321,7 +317,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 
     this->operator_base->update_turbulence_model(velocity_np);
 
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
@@ -354,7 +350,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
                                                  linear_iterations_momentum);
 
     // write output explicit case
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Solve linear momentum equation for intermediate velocity:" << std::endl
@@ -383,7 +379,7 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
                                                     linear_iterations_momentum);
 
     // write output implicit case
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Solve nonlinear momentum equation for intermediate velocity:" << std::endl
@@ -558,7 +554,7 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step()
   }
 
   // write output
-  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+  if(this->print_solver_info())
   {
     this->pcout << std::endl
                 << "Solve Poisson equation for pressure p:" << std::endl
@@ -745,7 +741,7 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step()
   }
 
   // write output
-  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+  if(this->print_solver_info())
   {
     this->pcout << std::endl
                 << "Solve projection step for intermediate velocity:" << std::endl
@@ -821,7 +817,7 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
         incr_rel = incr / norm;
 
       // write output
-      if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+      if(this->print_solver_info())
       {
         this->pcout << std::endl
                     << "Norm of solution increment:" << std::endl

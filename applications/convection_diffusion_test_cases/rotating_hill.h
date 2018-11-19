@@ -46,7 +46,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
+  temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
 
   // Explicit RK
   time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -57,9 +57,10 @@ void ConvDiff::InputParameters::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF;
   time_integrator_oif = TimeIntegratorRK::ExplRK4Stage8Reg2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
 
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
+  adaptive_time_stepping = false;
   time_step_size = 1.e-2;
-  cfl_oif = 0.2; //TODO //2.0;
+  cfl_oif = 0.2;
   cfl_number = cfl_oif * 1.0;
   diffusion_number = 0.01;
   exponent_fe_degree_convection = 2.0;
@@ -128,7 +129,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_solver_info_every_timesteps = 1e6;
 
   // restart
-  restart_data.write_restart = false;
+  restart_data.write_restart = true;
   restart_data.filename = "output_conv_diff/rotating_hill";
   restart_data.interval_time = 0.4;
 }
@@ -255,9 +256,6 @@ template<int dim>
 double VelocityField<dim>::value(const Point<dim>   &point,
                                  const unsigned int component) const
 {
-  // TODO
-//  double t = this->get_time();
-
   double value = 0.0;
 
   if(component == 0)
@@ -265,7 +263,8 @@ double VelocityField<dim>::value(const Point<dim>   &point,
   else if(component ==1)
     value =  point[0]*2.0*numbers::PI;
 
-  // TODO
+  // TODO time dependent velocity field to test adaptive time stepping
+//  double t = this->get_time();
 //  value *= 1.0-t;
 
   return value;

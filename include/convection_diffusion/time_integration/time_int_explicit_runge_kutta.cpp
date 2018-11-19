@@ -5,6 +5,8 @@
  *      Author: fehn
  */
 
+#include <deal.II/lac/vector_view.h>
+
 #include "time_int_explicit_runge_kutta.h"
 
 #include "../interface_space_time/operator.h"
@@ -18,212 +20,193 @@ template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
                                      InputParameters const &   param_in,
                                      unsigned int const        n_refine_time_in)
-  : pde_operator(operator_in),
+  : TimeIntExplRKBase<Number>(param_in.start_time,
+                              param_in.end_time,
+                              param_in.max_number_of_time_steps,
+                              param_in.restart_data,
+                              param_in.adaptive_time_stepping),
+    pde_operator(operator_in),
     param(param_in),
-    total_time(0.0),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    time(param.start_time),
-    time_step(1.0),
-    time_step_number(1),
-    adaptive_time_stepping(false),
+    time_step_diff(1.0),
     n_refine_time(n_refine_time_in),
-    cfl_number(param.cfl_number / std::pow(2.0, n_refine_time)),
+    cfl(param.cfl_number / std::pow(2.0, n_refine_time)),
     diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time))
 {
 }
 
 template<typename Number>
 void
-TimeIntExplRK<Number>::reset_time(double const & current_time)
-{
-  const double EPSILON = 1.0e-10;
-
-  if(current_time <= this->param.start_time + EPSILON)
-    this->time = current_time;
-  else
-    AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
-}
-
-template<typename Number>
-double
-TimeIntExplRK<Number>::get_time_step_size() const
-{
-  if(adaptive_time_stepping == true)
-  {
-    double const EPSILON = 1.e-10;
-    if(time > param.start_time - EPSILON)
-    {
-      return time_step;
-    }
-    else // time integrator has not yet started
-    {
-      // return a large value because we take the minimum time step size when coupling this time
-      // integrator to others. This way, this time integrator does not pose a restriction on the
-      // time step size.
-      return std::numeric_limits<double>::max();
-    }
-  }
-  else // constant time step size
-  {
-    return time_step;
-  }
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::set_time_step_size(double const time_step_size)
-{
-  time_step = time_step_size;
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::setup()
-{
-  pcout << std::endl << "Setup time integrator ..." << std::endl;
-
-  // initialize global solution vectors (allocation)
-  initialize_vectors();
-
-  // initializes the solution by interpolation of analytical solution
-  initialize_solution();
-
-  // initialize time integrator
-  initialize_time_integrator();
-
-  // calculate time step size
-  calculate_timestep();
-
-  pcout << std::endl << "... done!" << std::endl;
-}
-
-template<typename Number>
-void
 TimeIntExplRK<Number>::initialize_vectors()
 {
-  pde_operator->initialize_dof_vector(solution_n);
-  pde_operator->initialize_dof_vector(solution_np);
+  pde_operator->initialize_dof_vector(this->solution_n);
+  pde_operator->initialize_dof_vector(this->solution_np);
 }
 
 template<typename Number>
 void
 TimeIntExplRK<Number>::initialize_solution()
 {
-  pde_operator->prescribe_initial_conditions(solution_n, time);
+  pde_operator->prescribe_initial_conditions(this->solution_n, this->time);
 }
 
 template<typename Number>
 void
-TimeIntExplRK<Number>::calculate_timestep()
+TimeIntExplRK<Number>::calculate_time_step_size()
 {
-  pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
-
   unsigned int degree = pde_operator->get_polynomial_degree();
 
-  if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
+  if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
+    this->time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
 
-    print_parameter(pcout, "time step size", time_step);
+    this->pcout << std::endl
+                << "Calculation of time step size (user-specified):" << std::endl
+                << std::endl;
+    print_parameter(this->pcout, "time step size", this->time_step);
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL ||
+          param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
   {
-    AssertThrow(param.equation_type == EquationType::Convection ||
-                  param.equation_type == EquationType::ConvectionDiffusion,
-                ExcMessage("Time step calculation ConstTimeStepCFL does not make sense!"));
-
     // calculate minimum vertex distance
     double const h_min = pde_operator->calculate_minimum_element_length();
 
-    double const max_velocity = pde_operator->calculate_maximum_velocity(time);
+    double const max_velocity = pde_operator->calculate_maximum_velocity(this->time);
 
-    double const time_step_conv = calculate_time_step_cfl_global(
-      cfl_number, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
+    double time_step_conv = calculate_time_step_cfl_global(
+      cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
 
-    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_conv);
+    this->pcout << std::endl
+                << "Calculation of time step size according to CFL condition:" << std::endl
+                << std::endl;
+    print_parameter(this->pcout, "h_min", h_min);
+    print_parameter(this->pcout, "U_max", max_velocity);
+    print_parameter(this->pcout, "CFL", cfl);
+    print_parameter(this->pcout, "Exponent fe_degree", param.exponent_fe_degree_convection);
+    print_parameter(this->pcout, "Time step size (global)", time_step_conv);
 
-    print_parameter(pcout, "h_min", h_min);
-    print_parameter(pcout, "U_max", max_velocity);
-    print_parameter(pcout, "CFL", cfl_number);
-    print_parameter(pcout, "Exponent fe_degree (convection)", param.exponent_fe_degree_convection);
-    print_parameter(pcout, "Time step size (convection)", time_step);
+    // adaptive time stepping
+    if(this->adaptive_time_stepping)
+    {
+      double time_step_adap =
+        pde_operator->calculate_time_step_cfl(this->get_time(),
+                                              cfl,
+                                              param.exponent_fe_degree_convection);
+
+      // use adaptive time step size only if it is smaller, otherwise use global time step size
+      time_step_conv = std::min(time_step_adap, time_step_conv);
+
+      print_parameter(this->pcout, "Time step size (adaptive)", time_step_conv);
+    }
+
+    // Diffusion number condition
+    if(param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
+    {
+      // calculate time step according to Diffusion number condition
+      time_step_diff = calculate_const_time_step_diff(
+        diffusion_number, param.diffusivity, h_min, degree, param.exponent_fe_degree_diffusion);
+
+      this->pcout << std::endl
+                  << "Calculation of time step size according to Diffusion condition:" << std::endl
+                  << std::endl;
+      print_parameter(this->pcout, "h_min", h_min);
+      print_parameter(this->pcout, "Diffusion number", diffusion_number);
+      print_parameter(this->pcout, "Exponent fe_degree", param.exponent_fe_degree_diffusion);
+      print_parameter(this->pcout, "Time step size", time_step_diff);
+
+      time_step_conv = std::min(time_step_conv, time_step_diff);
+
+      this->pcout << std::endl << "Use minimum time step size:" << std::endl << std::endl;
+      print_parameter(this->pcout, "Time step size (combined)", time_step_conv);
+    }
+
+    if(this->adaptive_time_stepping == false)
+    {
+      time_step_conv =
+        adjust_time_step_to_hit_end_time(this->start_time, this->end_time, time_step_conv);
+
+      this->pcout << std::endl
+                  << "Adjust time step size to hit end time:" << std::endl
+                  << std::endl;
+      print_parameter(this->pcout, "Time step size", time_step_conv);
+    }
+
+    // set the time step size
+    this->time_step = time_step_conv;
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepDiffusion)
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::Diffusion)
   {
-    AssertThrow(param.equation_type == EquationType::Diffusion ||
-                  param.equation_type == EquationType::ConvectionDiffusion,
-                ExcMessage("Time step calculation ConstTimeStepDiffusion does not make sense!"));
-
     // calculate minimum vertex distance
     double const h_min = pde_operator->calculate_minimum_element_length();
 
     // calculate time step according to Diffusion number condition
-    double const time_step_diff = calculate_const_time_step_diff(
+    time_step_diff = calculate_const_time_step_diff(
       diffusion_number, param.diffusivity, h_min, degree, param.exponent_fe_degree_diffusion);
 
-    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_diff);
+    this->time_step =
+      adjust_time_step_to_hit_end_time(this->start_time, this->end_time, time_step_diff);
 
-    print_parameter(pcout, "h_min", h_min);
-    print_parameter(pcout, "Diffusion number", diffusion_number);
-    print_parameter(pcout, "Exponent fe_degree (diffusion)", param.exponent_fe_degree_diffusion);
-    print_parameter(pcout, "Time step size (diffusion)", time_step);
+    this->pcout << std::endl
+                << "Calculation of time step size according to Diffusion condition:" << std::endl
+                << std::endl;
+    print_parameter(this->pcout, "h_min", h_min);
+    print_parameter(this->pcout, "Diffusion number", diffusion_number);
+    print_parameter(this->pcout,
+                    "Exponent fe_degree (diffusion)",
+                    param.exponent_fe_degree_diffusion);
+    print_parameter(this->pcout, "Time step size (diffusion)", this->time_step);
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFLAndDiffusion)
-  {
-    AssertThrow(param.equation_type == EquationType::ConvectionDiffusion,
-                ExcMessage(
-                  "Time step calculation ConstTimeStepCFLAndDiffusion does not make sense!"));
-
-    // calculate minimum vertex distance
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    // calculate time step according to CFL condition
-    double const max_velocity = pde_operator->calculate_maximum_velocity(time);
-
-    double const time_step_conv = calculate_time_step_cfl_global(
-      cfl_number, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
-
-    print_parameter(pcout, "h_min", h_min);
-    print_parameter(pcout, "U_max", max_velocity);
-    print_parameter(pcout, "CFL", cfl_number);
-    print_parameter(pcout, "Exponent fe_degree (convection)", param.exponent_fe_degree_convection);
-    print_parameter(pcout, "Time step size (convection)", time_step_conv);
-
-    // calculate time step according to Diffusion number condition
-    double const time_step_diff = calculate_const_time_step_diff(
-      diffusion_number, param.diffusivity, h_min, degree, param.exponent_fe_degree_diffusion);
-
-    print_parameter(pcout, "Diffusion number", diffusion_number);
-    print_parameter(pcout, "Exponent fe_degree (diffusion)", param.exponent_fe_degree_diffusion);
-    print_parameter(pcout, "Time step size (diffusion)", time_step_diff);
-
-    // adopt minimum time step size
-    time_step = time_step_diff < time_step_conv ? time_step_diff : time_step_conv;
-
-    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
-
-    print_parameter(pcout, "Time step size (combined)", time_step);
-  }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
     // calculate minimum vertex distance
     double const h_min = pde_operator->calculate_minimum_element_length();
 
     unsigned int const order = rk_time_integrator->get_order();
 
-    time_step =
+    this->time_step =
       calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, n_refine_time);
 
-    time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
+    this->time_step =
+      adjust_time_step_to_hit_end_time(this->start_time, this->end_time, this->time_step);
 
-    pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
-    print_parameter(pcout, "C_eff", param.c_eff / std::pow(2, n_refine_time));
-    print_parameter(pcout, "Time step size", time_step);
+    this->pcout << std::endl
+                << "Calculation of time step size (max efficiency):" << std::endl
+                << std::endl;
+    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, n_refine_time));
+    print_parameter(this->pcout, "Time step size", this->time_step);
   }
   else
   {
     AssertThrow(false, ExcMessage("Specified type of time step calculation is not implemented."));
   }
+}
+
+template<typename Number>
+double
+TimeIntExplRK<Number>::recalculate_time_step_size() const
+{
+  AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL ||
+                param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion,
+              ExcMessage(
+                "Adaptive time step is not implemented for this type of time step calculation."));
+
+  double new_time_step_size =
+    pde_operator->calculate_time_step_cfl(this->get_time(),
+                                          cfl,
+                                          param.exponent_fe_degree_convection);
+
+  // take viscous term into account
+  if(param.calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
+    new_time_step_size = std::min(new_time_step_size, time_step_diff);
+
+  bool use_limiter = true;
+  if(use_limiter)
+  {
+    double last_time_step_size = this->get_time_step_size();
+    double factor              = param.adaptive_time_stepping_limiting_factor;
+    limit_time_step_change(new_time_step_size, last_time_step_size, factor);
+  }
+
+  return new_time_step_size;
 }
 
 template<typename Number>
@@ -281,142 +264,10 @@ TimeIntExplRK<Number>::initialize_time_integrator()
 }
 
 template<typename Number>
-void
-TimeIntExplRK<Number>::timeloop()
-{
-  pcout << std::endl << "Starting time loop ..." << std::endl;
-
-  global_timer.restart();
-
-  postprocessing();
-
-  const double EPSILON = 1.0e-10;
-  while(time < (param.end_time - EPSILON))
-  {
-    do_timestep();
-
-    postprocessing();
-  }
-
-  total_time += global_timer.wall_time();
-
-  pcout << std::endl << "... done!" << std::endl;
-
-  analyze_computing_times();
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::do_timestep()
-{
-  output_solver_info_header();
-
-  solve_timestep();
-
-  output_remaining_time();
-
-  prepare_vectors_for_next_timestep();
-
-  time += time_step;
-  ++time_step_number;
-
-  // currently no write_restart implemented
-
-  // currently no adaptive time stepping implemented
-}
-
-template<typename Number>
 bool
-TimeIntExplRK<Number>::advance_one_timestep(bool write_final_output)
+TimeIntExplRK<Number>::print_solver_info() const
 {
-  // a small number which is much smaller than the time step size
-  const Number EPSILON = 1.0e-10;
-
-  bool started = time > (param.start_time - EPSILON);
-
-  // If the time integrator has not yet started, simply increment physical time without solving the
-  // current time step.
-  if(!started)
-  {
-    time += time_step;
-  }
-
-  if(started && time_step_number == 1)
-  {
-    pcout << std::endl
-          << "Starting time loop for scalar convection-diffusion equation ..." << std::endl;
-
-    global_timer.restart();
-
-    postprocessing();
-  }
-
-  // check if we have reached the end of the time loop
-  bool finished =
-    !(time < (param.end_time - EPSILON) && time_step_number <= param.max_number_of_time_steps);
-
-  if(started && !finished)
-  {
-    // advance one time step
-    do_timestep();
-
-    postprocessing();
-  }
-
-  if(finished && write_final_output)
-  {
-    total_time += global_timer.wall_time();
-
-    pcout << std::endl << "... done!" << std::endl;
-
-    analyze_computing_times();
-  }
-
-  return finished;
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::prepare_vectors_for_next_timestep()
-{
-  // solution at t_n+1 -> solution at t_n
-  solution_n.swap(solution_np);
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::output_solver_info_header()
-{
-  // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
-  {
-    pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Number of TIME STEPS: " << std::left << std::setw(8) << this->time_step_number
-          << "t_n = " << std::scientific << std::setprecision(4) << this->time
-          << " -> t_n+1 = " << this->time + this->time_step << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl;
-  }
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::output_remaining_time()
-{
-  // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
-  {
-    if(time > param.start_time)
-    {
-      double const remaining_time =
-        global_timer.wall_time() * (param.end_time - time) / (time - param.start_time);
-      pcout << std::endl
-            << "Estimated time until completion is " << remaining_time << " s / "
-            << remaining_time / 3600. << " h." << std::endl;
-    }
-  }
+  return this->get_time_step_number() % param.output_solver_info_every_timesteps == 0;
 }
 
 template<typename Number>
@@ -426,14 +277,17 @@ TimeIntExplRK<Number>::solve_timestep()
   Timer timer;
   timer.restart();
 
-  rk_time_integrator->solve_timestep(solution_np, solution_n, time, time_step);
+  rk_time_integrator->solve_timestep(this->solution_np,
+                                     this->solution_n,
+                                     this->time,
+                                     this->time_step);
 
   // write output
-  if(this->time_step_number % this->param.output_solver_info_every_timesteps == 0)
+  if(print_solver_info())
   {
-    pcout << std::endl
-          << "Solve time step explicitly: Wall time in [s] = " << std::scientific
-          << timer.wall_time() << std::endl;
+    this->pcout << std::endl
+                << "Solve time step explicitly: Wall time in [s] = " << std::scientific
+                << timer.wall_time() << std::endl;
   }
 }
 
@@ -441,30 +295,30 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::postprocessing() const
 {
-  pde_operator->do_postprocessing(solution_n, time, time_step_number);
+  pde_operator->do_postprocessing(this->solution_n, this->time, this->time_step_number);
 }
 
 template<typename Number>
 void
 TimeIntExplRK<Number>::analyze_computing_times() const
 {
-  pcout << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max "
-        << std::endl;
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl
+              << "Computing times:          min        avg        max        rel      p_min  p_max "
+              << std::endl;
 
   Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  pcout << "  Global time:         " << std::scientific << std::setprecision(4) << std::setw(10)
-        << data.min << " " << std::setprecision(4) << std::setw(10) << data.avg << " "
-        << std::setprecision(4) << std::setw(10) << data.max << " "
-        << "          "
-        << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6) << std::left
-        << data.max_index << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl;
+  this->pcout << "  Global time:         " << std::scientific << std::setprecision(4)
+              << std::setw(10) << data.min << " " << std::setprecision(4) << std::setw(10)
+              << data.avg << " " << std::setprecision(4) << std::setw(10) << data.max << " "
+              << "          "
+              << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6)
+              << std::left << data.max_index << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
 }
 
 // instantiations

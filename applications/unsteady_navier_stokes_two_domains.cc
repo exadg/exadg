@@ -187,11 +187,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   AssertThrow(param_1.calculation_of_time_step_size == param_2.calculation_of_time_step_size,
               ExcMessage("Type of time step calculation has to be the same for both domains."));
 
-  if(param_1.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
-  {
-    use_adaptive_time_stepping = true;
-  }
-
   AssertThrow(param_1.solver_type == SolverType::Unsteady &&
                 param_2.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
@@ -214,8 +209,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_1.reset(new TimeIntCoupled(navier_stokes_operation_coupled_1,
                                                navier_stokes_operation_coupled_1,
                                                param_1,
-                                               refine_steps_time,
-                                               use_adaptive_time_stepping));
+                                               refine_steps_time));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -227,8 +221,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_1.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_1,
                                                      navier_stokes_operation_dual_splitting_1,
                                                      param_1,
-                                                     refine_steps_time,
-                                                     use_adaptive_time_stepping));
+                                                     refine_steps_time));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -241,8 +234,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_1,
                                     navier_stokes_operation_pressure_correction_1,
                                     param_1,
-                                    refine_steps_time,
-                                    use_adaptive_time_stepping));
+                                    refine_steps_time));
   }
   else
   {
@@ -260,8 +252,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_2.reset(new TimeIntCoupled(navier_stokes_operation_coupled_2,
                                                navier_stokes_operation_coupled_2,
                                                param_2,
-                                               refine_steps_time,
-                                               use_adaptive_time_stepping));
+                                               refine_steps_time));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -273,8 +264,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_2.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_2,
                                                      navier_stokes_operation_dual_splitting_2,
                                                      param_2,
-                                                     refine_steps_time,
-                                                     use_adaptive_time_stepping));
+                                                     refine_steps_time));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -287,8 +277,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_2,
                                     navier_stokes_operation_pressure_correction_2,
                                     param_2,
-                                    refine_steps_time,
-                                    use_adaptive_time_stepping));
+                                    refine_steps_time));
   }
   else
   {
@@ -370,12 +359,18 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size()
 {
+  double const EPSILON = 1.e-10;
+
   // Setup time integrator and get time step size
-  double time_step_size_1 = 1.0, time_step_size_2 = 1.0;
+  double time_step_size_1 = std::numeric_limits<double>::max();
+  double time_step_size_2 = std::numeric_limits<double>::max();
 
   // get time step sizes
-  time_step_size_1 = time_integrator_1->get_time_step_size();
-  time_step_size_2 = time_integrator_2->get_time_step_size();
+  if(time_integrator_1->get_time() > param_1.start_time - EPSILON)
+    time_step_size_1 = time_integrator_1->get_time_step_size();
+
+  if(time_integrator_2->get_time() > param_2.start_time - EPSILON)
+    time_step_size_2 = time_integrator_2->get_time_step_size();
 
   // take the minimum
   double time_step_size = std::min(time_step_size_1, time_step_size_2);

@@ -297,10 +297,11 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   
 //  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
 //  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-//  calculation_of_time_step_size = TimeStepCalculation::AdaptiveTimeStepCFL;
+//  calculation_of_time_step_size = TimeStepCalculation::CFL;
+//  adaptive_time_stepping = true;
   temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping_limiting_factor = 3.0;
   max_velocity = MAX_VELOCITY_CFL;
   // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3

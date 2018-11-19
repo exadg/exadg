@@ -48,7 +48,6 @@ using namespace CompNS;
 
 namespace CompNS
 {
-
 template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number = double>
 class Problem
 {
@@ -62,7 +61,7 @@ public:
   Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
 
   void
-  solve_problem();
+  solve_problem(bool const do_restart);
 
 private:
   void
@@ -155,7 +154,7 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
 
 template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve_problem()
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve_problem(bool const do_restart)
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -176,11 +175,11 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve_problem()
                                      field_functions,
                                      analytical_solution);
 
-  time_integrator->setup();
+  time_integrator->setup(do_restart);
   time_integrator->timeloop();
 }
 
-}
+} // namespace CompNS
 
 int
 main(int argc, char ** argv)
@@ -198,6 +197,20 @@ main(int argc, char ** argv)
 
     deallog.depth_console(0);
 
+    bool do_restart = false;
+    if(argc > 1)
+    {
+      do_restart = std::atoi(argv[1]);
+      if(do_restart)
+      {
+        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX,
+                    ExcMessage("Spatial refinement not possible in combination with restart!"));
+
+        AssertThrow(REFINE_STEPS_TIME_MIN == REFINE_STEPS_TIME_MAX,
+                    ExcMessage("Temporal refinement not possible in combination with restart!"));
+      }
+    }
+
     // mesh refinements in order to perform spatial convergence tests
     for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
         refine_steps_space <= REFINE_STEPS_SPACE_MAX;
@@ -211,7 +224,7 @@ main(int argc, char ** argv)
         Problem<DIMENSION, FE_DEGREE, QPOINTS_CONV, QPOINTS_VIS> navier_stokes_problem(
           refine_steps_space, refine_steps_time);
 
-        navier_stokes_problem.solve_problem();
+        navier_stokes_problem.solve_problem(do_restart);
       }
     }
   }

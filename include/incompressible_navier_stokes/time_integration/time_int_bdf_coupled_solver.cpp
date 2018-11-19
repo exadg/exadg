@@ -19,12 +19,8 @@ template<int dim, typename Number>
 TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
                                                   std::shared_ptr<InterfacePDE>  pde_operator_in,
                                                   InputParameters<dim> const &   param_in,
-                                                  unsigned int const             n_refine_time_in,
-                                                  bool const use_adaptive_time_stepping_in)
-  : TimeIntBDF<dim, Number>(operator_base_in,
-                            param_in,
-                            n_refine_time_in,
-                            use_adaptive_time_stepping_in),
+                                                  unsigned int const             n_refine_time_in)
+  : TimeIntBDF<dim, Number>(operator_base_in, param_in, n_refine_time_in),
     pde_operator(pde_operator_in),
     solution(this->order),
     vec_convective_term(this->order),
@@ -189,7 +185,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
 
     this->operator_base->update_turbulence_model(solution_np.block(0));
 
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
@@ -280,7 +276,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     computing_times[0] += timer.wall_time();
 
     // write output
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
       pcout << "Solve linear Stokes problem:" << std::endl
@@ -314,7 +310,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     computing_times[0] += timer.wall_time();
 
     // write output
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -401,7 +397,7 @@ TimeIntBDFCoupled<dim, Number>::postprocess_velocity()
   iterations[1] += iterations_postprocessing;
 
   // write output
-  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+  if(this->print_solver_info())
   {
     this->pcout << std::endl
                 << "Postprocessing of velocity field:" << std::endl
@@ -545,7 +541,7 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
         incr_rel = incr / norm;
 
       // write output
-      if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+      if(this->print_solver_info())
       {
         this->pcout << std::endl
                     << "Norm of solution increment:" << std::endl

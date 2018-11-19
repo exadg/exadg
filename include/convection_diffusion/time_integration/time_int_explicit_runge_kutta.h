@@ -11,6 +11,8 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "time_integration/time_int_explicit_runge_kutta_base.h"
+
 #include "time_integration/explicit_runge_kutta.h"
 
 using namespace dealii;
@@ -27,7 +29,7 @@ class Operator;
 }
 
 template<typename Number>
-class TimeIntExplRK
+class TimeIntExplRK : public TimeIntExplRKBase<Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -37,24 +39,6 @@ public:
   TimeIntExplRK(std::shared_ptr<Operator> operator_in,
                 InputParameters const &   param_in,
                 unsigned int const        n_refine_time_in);
-
-  void
-  setup();
-
-  void
-  timeloop();
-
-  bool
-  advance_one_timestep(bool write_final_output);
-
-  void
-  reset_time(double const & current_time);
-
-  double
-  get_time_step_size() const;
-
-  void
-  set_time_step_size(double const time_step_size);
 
 private:
   void
@@ -66,23 +50,17 @@ private:
   void
   postprocessing() const;
 
-  void
-  output_solver_info_header();
-
-  void
-  output_remaining_time();
-
-  void
-  do_timestep();
+  bool
+  print_solver_info() const;
 
   void
   solve_timestep();
 
   void
-  prepare_vectors_for_next_timestep();
+  calculate_time_step_size();
 
-  void
-  calculate_timestep();
+  double
+  recalculate_time_step_size() const;
 
   void
   initialize_time_integrator();
@@ -96,27 +74,12 @@ private:
 
   InputParameters const & param;
 
-  // timer
-  Timer  global_timer;
-  double total_time;
-
-  // screen output
-  ConditionalOStream pcout;
-
-  // solution vectors
-  VectorType solution_n, solution_np;
-
-  // current time and time step size
-  double time, time_step;
-
-  // the number of the current time step starting with time_step_number = 1
-  unsigned int time_step_number;
-
-  // use adaptive time stepping?
-  bool const adaptive_time_stepping;
+  // store time step size according to diffusion condition so that it does not have to be
+  // recomputed in case of adaptive time stepping
+  double time_step_diff;
 
   unsigned int const n_refine_time;
-  double const       cfl_number;
+  double const       cfl;
   double const       diffusion_number;
 };
 

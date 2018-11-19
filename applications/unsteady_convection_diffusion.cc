@@ -88,8 +88,7 @@ private:
 
   std::shared_ptr<PostProcessor<dim, degree>> postprocessor;
 
-  std::shared_ptr<TimeIntExplRK<Number>> time_integrator_explRK;
-  std::shared_ptr<TimeIntBDF<Number>>    time_integrator_BDF;
+  std::shared_ptr<TimeIntBase> time_integrator;
 };
 
 template<int dim, int degree, typename Number>
@@ -129,20 +128,14 @@ ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refin
   // initialize convection diffusion operation
   conv_diff_operator.reset(new OPERATOR(triangulation, param, postprocessor));
 
-  bool use_adaptive_time_stepping = false;
-  if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
-    use_adaptive_time_stepping = true;
-
   // initialize time integrator
   if(param.temporal_discretization == TemporalDiscretization::ExplRK)
   {
-    time_integrator_explRK.reset(
-      new TimeIntExplRK<Number>(conv_diff_operator, param, n_refine_time));
+    time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param, n_refine_time));
   }
   else if(param.temporal_discretization == TemporalDiscretization::BDF)
   {
-    time_integrator_BDF.reset(
-      new TimeIntBDF<Number>(conv_diff_operator, param, n_refine_time, use_adaptive_time_stepping));
+    time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param, n_refine_time));
   }
   else
   {
@@ -183,30 +176,19 @@ ConvDiffProblem<dim, degree, Number>::solve_problem(bool const do_restart)
                             analytical_solution);
 
   // setup time integrator
-  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+  time_integrator->setup(do_restart);
+
+  // setup solvers in case of BDF time integration
+  if(param.temporal_discretization == TemporalDiscretization::BDF)
   {
-    time_integrator_explRK->setup();
-  }
-  else if(param.temporal_discretization == TemporalDiscretization::BDF)
-  {
-    // call setup() of time_integrator before setup_solvers() of conv_diff_operation
-    // because setup_solver() needs quantities such as the time step size for a
-    // correct initialization of preconditioners
-    time_integrator_BDF->setup(do_restart);
+    std::shared_ptr<TimeIntBDF<Number>> time_integrator_bdf =
+      std::dynamic_pointer_cast<TimeIntBDF<Number>>(time_integrator);
 
     conv_diff_operator->setup_solver(
-      time_integrator_BDF->get_scaling_factor_time_derivative_term());
+      time_integrator_bdf->get_scaling_factor_time_derivative_term());
   }
 
-  // run timeloop
-  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
-  {
-    time_integrator_explRK->timeloop();
-  }
-  else if(param.temporal_discretization == TemporalDiscretization::BDF)
-  {
-    time_integrator_BDF->timeloop();
-  }
+  time_integrator->timeloop();
 }
 
 int

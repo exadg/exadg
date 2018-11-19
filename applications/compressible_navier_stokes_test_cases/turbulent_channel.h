@@ -115,7 +115,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::ExplRK3Stage7Reg2; //ExplRK; //SSPRK; //ExplRK4Stage5Reg3C; //ExplRK3Stage7Reg2;
   order_time_integrator = 3;
   stages = 7;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
+  calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
   time_step_size = 1.0e-3;
   max_velocity = MAX_VELOCITY;
   cfl_number = 1.9;

@@ -79,7 +79,7 @@ const double CHARACTERISTIC_TIME = L/V_0;
 
 // output folders and filenames
 std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/";
-std::string FILENAME = "test"; // "Re1600_l2_k15_overint";
+std::string FILENAME = "after_refactoring_runge_kutta"; // "Re1600_l2_k15_overint";
 
 template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
@@ -103,7 +103,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::ExplRK3Stage7Reg2; //ExplRK; //SSPRK; //ExplRK4Stage5Reg3C; //ExplRK3Stage7Reg2;
   order_time_integrator = 3;
   stages = 7;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
+  calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
   time_step_size = 1.0e-3;
   max_velocity = MAX_VELOCITY;
 
@@ -175,6 +175,11 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   kinetic_energy_spectrum_data.output_tolerance = 1.e-12;
 
   output_solver_info_every_timesteps = 1e3; //1e6;
+
+  // restart
+  restart_data.write_restart = false;
+  restart_data.interval_time = 8.0;
+  restart_data.filename = OUTPUT_FOLDER + FILENAME + "_restart";
 }
 
 

@@ -60,7 +60,7 @@ void InputParameters<dim>::set_input_parameters()
   solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
   max_velocity = 1.0;
   cfl = 0.025;
   cfl_exponent_fe_degree_velocity = 1.5;

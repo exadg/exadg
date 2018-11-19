@@ -18,14 +18,13 @@ namespace ConvDiff
 template<typename Number>
 TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator> operator_in,
                                InputParameters const &   param_in,
-                               unsigned int const        n_refine_time_in,
-                               bool const                use_adaptive_time_stepping_in)
+                               unsigned int const        n_refine_time_in)
   : TimeIntBDFBase(param_in.start_time,
                    param_in.end_time,
                    param_in.max_number_of_time_steps,
                    param_in.order_time_integrator,
                    param_in.start_with_low_order,
-                   use_adaptive_time_stepping_in,
+                   param_in.adaptive_time_stepping,
                    param_in.restart_data),
     pde_operator(operator_in),
     param(param_in),
@@ -190,80 +189,66 @@ template<typename Number>
 void
 TimeIntBDF<Number>::calculate_time_step_size()
 {
-  pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
-
   unsigned int const degree = pde_operator->get_polynomial_degree();
 
-  if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
+  if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
     double const time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
     this->set_time_step_size(time_step);
 
+    pcout << std::endl
+          << "Calculation of time step size (user-specified):" << std::endl
+          << std::endl;
     print_parameter(pcout, "time step size", time_step);
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL)
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
-    double const h_min = pde_operator->calculate_minimum_element_length();
-
-    double const max_velocity = pde_operator->calculate_maximum_velocity(this->get_time());
-
-    double time_step_conv = calculate_time_step_cfl_global(
-      cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
-
-    time_step_conv =
-      adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_conv);
-
-    this->set_time_step_size(time_step_conv);
-
-    print_parameter(pcout, "h_min", h_min);
-    print_parameter(pcout, "U_max", max_velocity);
-    print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "Exponent fe_degree (convection)", param.exponent_fe_degree_convection);
-    print_parameter(pcout, "Time step size (convection)", time_step_conv);
-  }
-  else if(adaptive_time_stepping == true)
-  {
-    AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
-                ExcMessage("Specified type of time step calculation does not make sense!"));
-
     AssertThrow(param.equation_type == EquationType::Convection ||
                   param.equation_type == EquationType::ConvectionDiffusion,
                 ExcMessage("Specified type of time step calculation does not make sense!"));
 
+    double time_step = 1.0;
+
     double const h_min = pde_operator->calculate_minimum_element_length();
 
     double const max_velocity = pde_operator->calculate_maximum_velocity(this->get_time());
 
-    double time_step_tmp = calculate_time_step_cfl_global(
+    double time_step_global = calculate_time_step_cfl_global(
       cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
 
-    pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
-
+    pcout << std::endl
+          << "Calculation of time step size according to CFL condition:" << std::endl
+          << std::endl;
     print_parameter(pcout, "h_min", h_min);
     print_parameter(pcout, "U_max", max_velocity);
     print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "Exponent fe_degree (convection)", param.exponent_fe_degree_convection);
-    print_parameter(pcout, "Time step size (convection)", time_step_tmp);
+    print_parameter(pcout, "Exponent fe_degree", param.exponent_fe_degree_convection);
+    print_parameter(pcout, "Time step size (global)", time_step_global);
 
-    double time_step_adap =
-      pde_operator->calculate_time_step_cfl(this->get_time(),
-                                            cfl,
-                                            param.exponent_fe_degree_convection);
+    if(adaptive_time_stepping == true)
+    {
+      double time_step_adap =
+        pde_operator->calculate_time_step_cfl(this->get_time(),
+                                              cfl,
+                                              param.exponent_fe_degree_convection);
 
-    // use adaptive time step size only if it is smaller, otherwise use temporary time step size
-    time_step_adap = std::min(time_step_adap, time_step_tmp);
+      // use adaptive time step size only if it is smaller, otherwise use global time step size
+      time_step = std::min(time_step_adap, time_step_global);
 
-    this->set_time_step_size(time_step_adap);
+      print_parameter(pcout, "Time step size (adaptive)", time_step);
+    }
+    else // constant time step size
+    {
+      time_step =
+        adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_global);
 
-    pcout << std::endl
-          << "Calculation of time step size according to adaptive CFL condition:" << std::endl
-          << std::endl;
+      pcout << std::endl << "Adjust time step size to hit end time:" << std::endl << std::endl;
+      print_parameter(pcout, "Time step size", time_step);
+    }
 
-    print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "exponent fe_degree_velocity", param.exponent_fe_degree_convection);
-    print_parameter(pcout, "Time step size", time_step_adap);
+    this->set_time_step_size(time_step);
   }
-  else if(param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+  else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
     // calculate minimum vertex distance
     double const h_min = pde_operator->calculate_minimum_element_length();
@@ -275,7 +260,9 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
     this->set_time_step_size(time_step);
 
-    pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
+    pcout << std::endl
+          << "Calculation of time step size (max efficiency):" << std::endl
+          << std::endl;
     print_parameter(pcout, "C_eff", param.c_eff / std::pow(2, n_refine_time));
     print_parameter(pcout, "Time step size", time_step);
   }
@@ -289,20 +276,18 @@ TimeIntBDF<Number>::calculate_time_step_size()
     // make sure that CFL condition is used for the calculation of the time step size (the aim
     // of the OIF splitting approach is to overcome limitations of the CFL condition)
     AssertThrow(
-      param.calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFL ||
-        param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL,
+      param.calculation_of_time_step_size == TimeStepCalculation::CFL,
       ExcMessage(
         "Specified type of time step calculation is not compatible with OIF splitting approach!"));
 
     pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
-
     print_parameter(pcout, "CFL (OIF)", cfl_oif);
   }
 }
 
 template<typename Number>
 double
-TimeIntBDF<Number>::recalculate_time_step()
+TimeIntBDF<Number>::recalculate_time_step_size() const
 {
   double new_time_step_size =
     pde_operator->calculate_time_step_cfl(this->get_time(),
@@ -337,39 +322,10 @@ TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
 }
 
 template<typename Number>
-void
-TimeIntBDF<Number>::output_solver_info_header() const
+bool
+TimeIntBDF<Number>::print_solver_info() const
 {
-  // write output
-  if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
-  {
-    pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Number of TIME STEPS: " << std::left << std::setw(8) << this->get_time_step_number()
-          << "t_n = " << std::scientific << std::setprecision(4) << this->get_time()
-          << " -> t_n+1 = " << this->get_next_time() << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl;
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDF<Number>::output_remaining_time() const
-{
-  // write output
-  if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
-  {
-    if(this->get_time() > param.start_time)
-    {
-      double const remaining_time = global_timer.wall_time() * (param.end_time - this->get_time()) /
-                                    (this->get_time() - param.start_time);
-      pcout << std::endl
-            << "Estimated time until completion is " << remaining_time << " s / "
-            << remaining_time / 3600. << " h." << std::endl;
-    }
-  }
+  return this->get_time_step_number() % param.output_solver_info_every_timesteps == 0;
 }
 
 template<typename Number>
@@ -457,7 +413,7 @@ TimeIntBDF<Number>::solve_timestep()
   solver_time_average += timer.wall_time();
 
   // write output
-  if(get_time_step_number() % param.output_solver_info_every_timesteps == 0)
+  if(print_solver_info())
   {
     pcout << "Solve scalar convection-diffusion problem:" << std::endl
           << "  Iterations: " << std::setw(6) << std::right << iterations

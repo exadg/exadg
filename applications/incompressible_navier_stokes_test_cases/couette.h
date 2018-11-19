@@ -25,11 +25,11 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 2;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
+unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MIN = 5;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -37,7 +37,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
+const ProblemType PROBLEM_TYPE = ProblemType::Steady;
 const double H = 1.0;
 const double L = 4.0;
 const double MAX_VELOCITY = 1.0;
@@ -59,15 +59,15 @@ void InputParameters<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
+  solver_type = SolverType::Steady;
   temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
   cfl = 1.0e-1;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
 
@@ -167,27 +167,44 @@ void InputParameters<dim>::set_input_parameters()
 
   // nonlinear solver (Newton solver)
   newton_solver_data_coupled.abs_tol = 1.e-12;
-  newton_solver_data_coupled.rel_tol = 1.e-6;
+  newton_solver_data_coupled.rel_tol = 1.e-10;
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
-  abs_tol_linear = 1.e-14;
-  rel_tol_linear = 1.e-6;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES;
+  abs_tol_linear = 1.e-12;
+  rel_tol_linear = 1.e-2;
   max_iter_linear = 1e4;
+  max_n_tmp_vectors = 1000;
 
   // preconditioning linear solver
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
+  update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi;
+
+  // GMRES smoother data
+  multigrid_data_momentum_preconditioner.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data_momentum_preconditioner.gmres_smoother_data.number_of_iterations = 5;
+
+  // Jacobi smoother data
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.number_of_smoothing_steps = 5;
+  multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
+
+  multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
+
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::CahouetChabard;
-  discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  discretization_of_laplacian = DiscretizationOfLaplacian::Classical;
+  multigrid_data_schur_complement_preconditioner.chebyshev_smoother_data.smoother_poly_degree = 5;
+  multigrid_data_schur_complement_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   exact_inversion_of_laplace_operator = false;
   rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
@@ -208,6 +225,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // calculation of error
   error_data.analytical_solution_available = true;
+  error_data.calculate_relative_errors = false;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
@@ -469,10 +487,12 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   // initialize functions (analytical solution, rhs, boundary conditions)
   std::shared_ptr<Function<dim> > initial_solution_velocity;
-//  initial_solution_velocity.reset(new ZeroFunction<dim>(dim));
-  initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+  initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+//  initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+
   std::shared_ptr<Function<dim> > initial_solution_pressure;
   initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+
   std::shared_ptr<Function<dim> > analytical_solution_pressure;
   analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
 

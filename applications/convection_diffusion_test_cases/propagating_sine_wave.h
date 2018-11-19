@@ -51,7 +51,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF; //Explicit;
   order_time_integrator = 3;
   start_with_low_order = false;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
   time_step_size = 1.0e-1;
   cfl_number = 0.4;
   cfl_oif = cfl_number/1.0;

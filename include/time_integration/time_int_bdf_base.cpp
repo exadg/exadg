@@ -14,28 +14,20 @@ TimeIntBDFBase::TimeIntBDFBase(double const        start_time_,
                                bool const          start_with_low_order_,
                                bool const          adaptive_time_stepping_,
                                RestartData const & restart_data_)
-  : start_time(start_time_),
-    end_time(end_time_),
-    max_number_of_time_steps(max_number_of_time_steps_),
+  : TimeIntBase(start_time_, end_time_, max_number_of_time_steps_, restart_data_),
     order(order_),
     bdf(order_, start_with_low_order_),
     extra(order_, start_with_low_order_),
     start_with_low_order(start_with_low_order_),
     adaptive_time_stepping(adaptive_time_stepping_),
-    time(start_time_),
-    time_steps(order_, -1.0),
-    total_time(0.0),
-    eps(1.e-10),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    time_step_number(1),
-    restart_data(restart_data_)
+    time_steps(order_, -1.0)
 {
 }
 
 void
 TimeIntBDFBase::setup(bool const do_restart)
 {
-  pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
+  this->pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
 
   // operator-integration-factor splitting
   initialize_oif();
@@ -49,7 +41,7 @@ TimeIntBDFBase::setup(bool const do_restart)
   // this is where the setup of derived classes is performed
   setup_derived();
 
-  pcout << std::endl << "... done!" << std::endl;
+  this->pcout << std::endl << "... done!" << std::endl;
 }
 
 void
@@ -78,32 +70,9 @@ TimeIntBDFBase::initialize_solution_and_calculate_timestep(bool do_restart)
 }
 
 void
-TimeIntBDFBase::timeloop()
-{
-  pcout << std::endl << "Starting time loop ..." << std::endl;
-
-  global_timer.restart();
-
-  postprocessing();
-
-  while(time < (end_time - eps) && time_step_number <= max_number_of_time_steps)
-  {
-    do_timestep();
-
-    postprocessing();
-  }
-
-  total_time += global_timer.wall_time();
-
-  pcout << std::endl << "... finished time loop!" << std::endl;
-
-  analyze_computing_times();
-}
-
-void
 TimeIntBDFBase::timeloop_steady_problem()
 {
-  global_timer.restart();
+  this->global_timer.restart();
 
   postprocessing_steady_problem();
 
@@ -111,66 +80,15 @@ TimeIntBDFBase::timeloop_steady_problem()
 
   postprocessing_steady_problem();
 
-  total_time += global_timer.wall_time();
+  this->total_time += this->global_timer.wall_time();
 
   analyze_computing_times();
-}
-
-bool
-TimeIntBDFBase::advance_one_timestep(bool write_final_output)
-{
-  bool started = time > (start_time - eps);
-
-  // If the time integrator has not yet started, simply increment physical time without solving the
-  // current time step.
-  if(!started)
-  {
-    time += time_steps[0];
-  }
-
-  if(started && time_step_number == 1)
-  {
-    pcout << std::endl << "Starting time loop ..." << std::endl;
-
-    global_timer.restart();
-
-    postprocessing();
-  }
-
-  // check if we have reached the end of the time loop
-  bool finished = !(time < (end_time - eps) && time_step_number <= max_number_of_time_steps);
-
-  // advance one time step and perform postprocessing
-  if(started && !finished)
-  {
-    do_timestep();
-
-    postprocessing();
-  }
-
-  // for the statistics
-  if(finished && write_final_output)
-  {
-    total_time += global_timer.wall_time();
-
-    pcout << std::endl << "... done!" << std::endl;
-
-    analyze_computing_times();
-  }
-
-  return finished;
 }
 
 double
 TimeIntBDFBase::get_scaling_factor_time_derivative_term() const
 {
   return bdf.get_gamma0() / time_steps[0];
-}
-
-double
-TimeIntBDFBase::get_time() const
-{
-  return this->time;
 }
 
 double
@@ -206,12 +124,6 @@ TimeIntBDFBase::get_previous_time(int const i /* t_{n-i} */) const
   return t;
 }
 
-unsigned int
-TimeIntBDFBase::get_time_step_number() const
-{
-  return this->time_step_number;
-}
-
 void
 TimeIntBDFBase::reset_time(double const & current_time)
 {
@@ -221,6 +133,12 @@ TimeIntBDFBase::reset_time(double const & current_time)
     this->time = current_time;
   else
     AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
+}
+
+double
+TimeIntBDFBase::get_time_step_size() const
+{
+  return get_time_step_size(0);
 }
 
 double
@@ -235,28 +153,9 @@ TimeIntBDFBase::get_time_step_size(int const i /* dt[i] */) const
    */
   AssertThrow(i >= 0 && i <= int(order) - 1, ExcMessage("Invalid access."));
 
-  if(adaptive_time_stepping == true)
-  {
-    if(time > start_time - eps)
-    {
-      AssertThrow(time_steps[i] > 0.0, ExcMessage("Invalid or uninitialized time step size."));
+  AssertThrow(time_steps[i] > 0.0, ExcMessage("Invalid or uninitialized time step size."));
 
-      return time_steps[i];
-    }
-    else // time integrator has not yet started
-    {
-      // return a large value because we take the minimum time step size when coupling this time
-      // integrator to others. This way, this time integrator does not pose a restriction on the
-      // time step size.
-      return std::numeric_limits<double>::max();
-    }
-  }
-  else // constant time step size
-  {
-    AssertThrow(time_steps[i] > 0.0, ExcMessage("Invalid or uninitialized time step size."));
-
-    return time_steps[i];
-  }
+  return time_steps[i];
 }
 
 std::vector<double>
@@ -285,7 +184,7 @@ TimeIntBDFBase::push_back_time_step_sizes()
 }
 
 void
-TimeIntBDFBase::set_time_step_size(double const & time_step)
+TimeIntBDFBase::set_time_step_size(double const & time_step_size)
 {
   // constant time step sizes
   if(adaptive_time_stepping == false)
@@ -295,7 +194,7 @@ TimeIntBDFBase::set_time_step_size(double const & time_step)
                            "function can only be called in the very first time step."));
   }
 
-  time_steps[0] = time_step;
+  time_steps[0] = time_step_size;
 
   // Fill time_steps array in the first time step
   if(time_step_number == 1)
@@ -324,7 +223,7 @@ TimeIntBDFBase::do_timestep()
   if(adaptive_time_stepping == true)
   {
     push_back_time_step_sizes();
-    double const dt = recalculate_time_step();
+    double const dt = recalculate_time_step_size();
     set_time_step_size(dt);
   }
 
@@ -416,22 +315,10 @@ TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(double const cfl, double
 }
 
 void
-TimeIntBDFBase::read_restart()
+TimeIntBDFBase::do_read_restart(std::ifstream & in)
 {
-  const std::string filename = restart_filename(restart_data.filename);
-  std::ifstream     in(filename.c_str());
-
-  AssertThrow(in, ExcMessage("File " + filename + " does not exist."));
-
   boost::archive::binary_iarchive ia(in);
-
-  read_restart_preamble(ia, time, time_steps, order);
-
-  pcout << std::endl
-        << "______________________________________________________________________" << std::endl
-        << std::endl
-        << " Reading restart file at time t = " << this->get_time() << ":" << std::endl;
-
+  read_restart_preamble(ia);
   read_restart_vectors(ia);
 
   // In order to change the CFL number (or the time step calculation criterion in general),
@@ -439,38 +326,67 @@ TimeIntBDFBase::read_restart()
   // time step increments.
   if(start_with_low_order == true)
     calculate_time_step_size();
-
-  pcout << std::endl
-        << " ... done!" << std::endl
-        << "______________________________________________________________________" << std::endl
-        << std::endl;
 }
 
 void
-TimeIntBDFBase::write_restart() const
+TimeIntBDFBase::read_restart_preamble(boost::archive::binary_iarchive & ia)
 {
-  double const wall_time = global_timer.wall_time();
+  // Note that the operations done here must be in sync with the output.
 
-  if(restart_data.do_restart(wall_time, time - start_time, time_step_number, time_step_number == 2))
-  {
-    pcout << std::endl
-          << "______________________________________________________________________" << std::endl
-          << std::endl
-          << " Writing restart file at time t = " << this->get_time() << ":" << std::endl;
+  // 1. ranks
+  unsigned int n_old_ranks = 1;
+  ia &         n_old_ranks;
 
-    std::ostringstream              oss;
-    boost::archive::binary_oarchive oa(oss);
+  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  AssertThrow(n_old_ranks == n_ranks,
+              ExcMessage("Tried to restart with " + Utilities::to_string(n_ranks) +
+                         " processes, "
+                         "but restart was written on " +
+                         Utilities::to_string(n_old_ranks) + " processes."));
 
-    std::string const name = restart_data.filename;
+  // 2. time
+  ia & time;
 
-    write_restart_preamble(oa, name, time, time_steps, order);
-    write_restart_vectors(oa);
-    write_restart_file(oss, name);
+  // 3. order
+  unsigned int old_order = 1;
+  ia &         old_order;
 
-    pcout << std::endl
-          << " ... done!" << std::endl
-          << "______________________________________________________________________" << std::endl;
-  }
+  AssertThrow(old_order == order, ExcMessage("Order of time integrator may not change."));
+
+  // 4. time step sizes
+  for(unsigned int i = 0; i < order; i++)
+    ia & time_steps[i];
+}
+
+void
+TimeIntBDFBase::do_write_restart(std::string const & filename) const
+{
+  std::ostringstream oss;
+
+  boost::archive::binary_oarchive oa(oss);
+
+  write_restart_preamble(oa);
+  write_restart_vectors(oa);
+  write_restart_file(oss, filename);
+}
+
+void
+TimeIntBDFBase::write_restart_preamble(boost::archive::binary_oarchive & oa) const
+{
+  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  // 1. ranks
+  oa & n_ranks;
+
+  // 2. time
+  oa & time;
+
+  // 3. order
+  oa & order;
+
+  // 4. time step sizes
+  for(unsigned int i = 0; i < order; i++)
+    oa & time_steps[i];
 }
 
 void

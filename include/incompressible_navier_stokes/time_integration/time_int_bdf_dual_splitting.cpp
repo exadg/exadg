@@ -19,12 +19,8 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
   std::shared_ptr<InterfaceBase> operator_base_in,
   std::shared_ptr<InterfacePDE>  pde_operator_in,
   InputParameters<dim> const &   param_in,
-  unsigned int const             n_refine_time_in,
-  bool const                     use_adaptive_time_stepping_in)
-  : TimeIntBDF<dim, Number>(operator_base_in,
-                            param_in,
-                            n_refine_time_in,
-                            use_adaptive_time_stepping_in),
+  unsigned int const             n_refine_time_in)
+  : TimeIntBDF<dim, Number>(operator_base_in, param_in, n_refine_time_in),
     pde_operator(pde_operator_in),
     velocity(this->order),
     pressure(this->order),
@@ -392,7 +388,7 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     // write output explicit case
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Solve nonlinear convective step explicitly:" << std::endl
@@ -425,7 +421,7 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
       linear_iterations);
 
     // write output implicit case
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Solve nonlinear convective step for intermediate velocity:" << std::endl
@@ -489,7 +485,7 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   }
 
   // write output
-  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+  if(this->print_solver_info())
   {
     this->pcout << std::endl
                 << "Solve Poisson equation for pressure p:" << std::endl
@@ -637,7 +633,7 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   }
 
   // write output
-  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+  if(this->print_solver_info())
   {
     this->pcout << std::endl
                 << "Solve projection step for intermediate velocity:" << std::endl
@@ -700,7 +696,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 
     this->operator_base->update_turbulence_model(velocity_extrapolated);
 
-    if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+    if(this->print_solver_info())
     {
       this->pcout << std::endl
                   << "Update of turbulent viscosity:   Wall time [s]: " << std::scientific
@@ -724,7 +720,7 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
                                 this->get_scaling_factor_time_derivative_term());
 
   // write output
-  if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+  if(this->print_solver_info())
   {
     this->pcout << std::endl
                 << "Solve viscous step for velocity u:" << std::endl
@@ -813,7 +809,7 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
         incr_rel = incr / norm;
 
       // write output
-      if(this->get_time_step_number() % this->param.output_solver_info_every_timesteps == 0)
+      if(this->print_solver_info())
       {
         this->pcout << std::endl
                     << "Norm of solution increment:" << std::endl

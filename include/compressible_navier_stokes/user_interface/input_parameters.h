@@ -13,7 +13,8 @@
 #include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/pressure_difference_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
-#include "../include/functionalities/print_functions.h"
+#include "functionalities/print_functions.h"
+#include "functionalities/restart_data.h"
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
 
@@ -110,10 +111,10 @@ enum class TreatmentOfConvectiveTerm
 enum class TimeStepCalculation
 {
   Undefined,
-  ConstTimeStepUserSpecified,
-  ConstTimeStepCFL,
-  ConstTimeStepDiffusion,
-  ConstTimeStepCFLAndDiffusion
+  UserSpecified,
+  CFL,
+  Diffusion,
+  CFLAndDiffusion
 };
 
 /**************************************************************************************/
@@ -210,6 +211,7 @@ public:
       stages(1),
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       time_step_size(-1.),
+      max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
       max_velocity(-1.),
       cfl_number(-1.),
       diffusion_number(-1.),
@@ -243,7 +245,10 @@ public:
       lift_and_drag_data(LiftAndDragData()),
 
       // pressure difference
-      pressure_difference_data(PressureDifferenceData<dim>())
+      pressure_difference_data(PressureDifferenceData<dim>()),
+
+      // restart
+      restart_data(RestartData())
   {
   }
 
@@ -274,7 +279,7 @@ public:
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
                 ExcMessage("parameter must be defined"));
 
-    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
+    if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
       AssertThrow(time_step_size > 0.0, ExcMessage("parameter must be defined"));
 
     if(temporal_discretization == TemporalDiscretization::ExplRK)
@@ -288,7 +293,7 @@ public:
       AssertThrow(stages >= 1, ExcMessage("Specify number of RK stages!"));
     }
 
-    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepCFLAndDiffusion)
+    if(calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
     {
       AssertThrow(max_velocity >= 0.0, ExcMessage("Invalid parameter max_velocity."));
       AssertThrow(cfl_number > 0.0, ExcMessage("parameter must be defined"));
@@ -417,15 +422,15 @@ public:
       print_parameter(pcout, "Number of stages", stages);
     }
 
-    std::string str_time_step_calc[] = {"Undefined",
-                                        "ConstTimeStepUserSpecified",
-                                        "ConstTimeStepCFL",
-                                        "ConstTimeStepDiffusion",
-                                        "ConstTimeStepCFLAndDiffusion"};
+    std::string str_time_step_calc[] = {
+      "Undefined", "UserSpecified", "CFL", "Diffusion", "CFLAndDiffusion"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
                     str_time_step_calc[(int)calculation_of_time_step_size]);
+
+    // maximum number of time steps
+    print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
 
 
     // here we do not print quantities such as  cfl_number, diffusion_number, time_step_size
@@ -482,6 +487,9 @@ public:
 
     // turbulent channel data
     turb_ch_data.print(pcout);
+
+    // restart
+    restart_data.print(pcout);
   }
 
 
@@ -553,6 +561,9 @@ public:
   // in a series of time_step_size's when performing temporal convergence tests,
   // i.e., delta_t = time_step_size, time_step_size/2, ...
   double time_step_size;
+
+  // maximum number of time steps
+  unsigned int max_number_of_time_steps;
 
   // maximum velocity needed when calculating the time step according to cfl-condition
   double max_velocity;
@@ -644,6 +655,9 @@ public:
 
   // turbulent channel
   TurbulentChannelData turb_ch_data;
+
+  // Restart
+  RestartData restart_data;
 };
 
 } // namespace CompNS
