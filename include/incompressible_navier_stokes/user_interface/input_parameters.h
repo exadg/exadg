@@ -884,13 +884,6 @@ public:
     AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
     AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
-    if(use_outflow_bc_convective_term)
-    {
-      AssertThrow(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation,
-                  ExcMessage("Outflow boundary condition for convective term is currently "
-                             "only implemented for divergence formulation of convective term"));
-    }
-
     AssertThrow(formulation_viscous_term != FormulationViscousTerm::Undefined,
                 ExcMessage("parameter must be defined"));
     AssertThrow(formulation_convective_term != FormulationConvectiveTerm::Undefined,

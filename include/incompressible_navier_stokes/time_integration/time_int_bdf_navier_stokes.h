@@ -47,12 +47,23 @@ public:
   {
   }
 
+  virtual VectorType const &
+  get_velocity() const = 0;
+
 protected:
   virtual void
   update_time_integrator_constants();
 
   bool
   print_solver_info() const;
+
+  /*
+   * This function implements the OIF sub-stepping algorithm. Has to be implemented here in order
+   * to complement by functionalities related to incompressible flows only (nonlinear convective
+   * term).
+   */
+  void
+  calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
 
   InputParameters<dim> const & param;
 
@@ -92,9 +103,6 @@ private:
 
   virtual void
   postprocessing_steady_problem() const = 0;
-
-  virtual VectorType const &
-  get_velocity() const = 0;
 
   virtual VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const = 0;

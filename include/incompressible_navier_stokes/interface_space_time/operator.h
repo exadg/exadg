@@ -14,10 +14,8 @@ using namespace dealii;
 
 namespace IncNS
 {
-
 namespace Interface
 {
-
 /*
  * Base operator for incompressible Navier-Stokes solvers.
  */
@@ -27,9 +25,13 @@ class OperatorBase
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OperatorBase(){}
+  OperatorBase()
+  {
+  }
 
-  virtual ~OperatorBase(){}
+  virtual ~OperatorBase()
+  {
+  }
 
   virtual double
   calculate_time_step_cfl(VectorType const & velocity,
@@ -54,15 +56,19 @@ public:
                                double const time) const = 0;
 
   virtual void
-  evaluate_convective_term(VectorType &       dst,
-                           VectorType const & src,
-                           Number const       time) const = 0;
+  evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const = 0;
+
+  virtual void
+  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
+                                                                  VectorType const & src,
+                                                                  Number const time) const = 0;
 
   virtual void
   evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
     VectorType &       dst,
     VectorType const & src,
-    Number const       time) const = 0;
+    Number const       time,
+    VectorType const & solution_interpolated) const = 0;
 
   virtual void
   evaluate_pressure_gradient_term(VectorType &       dst,
@@ -113,9 +119,13 @@ public:
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  OperatorCoupled(){}
+  OperatorCoupled()
+  {
+  }
 
-  virtual ~OperatorCoupled(){}
+  virtual ~OperatorCoupled()
+  {
+  }
 
   virtual void
   initialize_block_vector_velocity_pressure(BlockVectorType & src) const = 0;
@@ -160,7 +170,8 @@ public:
                     unsigned int const time_step_number) const = 0;
 
   virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure) const = 0;
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & pressure) const = 0;
 };
 
 /*
@@ -172,9 +183,13 @@ class OperatorDualSplitting
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OperatorDualSplitting(){}
+  OperatorDualSplitting()
+  {
+  }
 
-  virtual ~OperatorDualSplitting(){}
+  virtual ~OperatorDualSplitting()
+  {
+  }
 
   virtual void
   evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst,
@@ -183,7 +198,7 @@ public:
   virtual void
   evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
                                                          VectorType const & src,
-                                                         double const       evaluation_time) const = 0;
+                                                         double const evaluation_time) const = 0;
 
   virtual void
   solve_nonlinear_convective_problem(VectorType &       dst,
@@ -239,7 +254,6 @@ public:
   do_postprocessing_steady_problem(VectorType const & velocity,
                                    VectorType const & intermediate_velocity,
                                    VectorType const & pressure) const = 0;
-
 };
 
 /*
@@ -251,9 +265,13 @@ class OperatorPressureCorrection
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OperatorPressureCorrection(){}
+  OperatorPressureCorrection()
+  {
+  }
 
-  virtual ~OperatorPressureCorrection(){}
+  virtual ~OperatorPressureCorrection()
+  {
+  }
 
   virtual void
   do_postprocessing(VectorType const & velocity,
@@ -262,7 +280,8 @@ public:
                     unsigned int const time_step_number) const = 0;
 
   virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure) const = 0;
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & pressure) const = 0;
 
   virtual void
   solve_linear_momentum_equation(VectorType &       solution,
@@ -314,16 +333,11 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OperatorOIF(std::shared_ptr<IncNS::Interface::OperatorBase<Number>> operator_in)
-    : pde_operator(operator_in)
+    : pde_operator(operator_in),
+      transport_with_interpolated_velocity(true) // TODO adjust this parameter manually
   {
-  }
-
-  void
-  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
-  {
-    pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst,
-                                                                                  src,
-                                                                                  evaluation_time);
+    if(transport_with_interpolated_velocity)
+      initialize_dof_vector(solution_interpolated);
   }
 
   void
@@ -332,13 +346,74 @@ public:
     pde_operator->initialize_vector_velocity(src);
   }
 
+  // OIF splitting (transport with interpolated velocity)
+  void
+  set_solutions_and_times(std::vector<VectorType const *> & solutions_in,
+                          std::vector<double> &             times_in)
+  {
+    solutions = solutions_in;
+    times     = times_in;
+  }
+
+  // OIF splitting (transport with interpolated velocity)
+  void
+  interpolate(VectorType &                          dst,
+              double const                          evaluation_time,
+              std::vector<VectorType const *> const solutions,
+              std::vector<double> const             times) const
+  {
+    dst = 0;
+
+    // loop over all interpolation points
+    for(unsigned int k = 0; k < solutions.size(); ++k)
+    {
+      // evaluate Lagrange polynomial l_k
+      double l_k = 1.0;
+
+      for(unsigned int j = 0; j < solutions.size(); ++j)
+      {
+        if(j != k)
+        {
+          l_k *= (evaluation_time - times[j]) / (times[k] - times[j]);
+        }
+      }
+
+      dst.add(l_k, *solutions[k]);
+    }
+  }
+
+
+  void
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
+  {
+    if(transport_with_interpolated_velocity)
+    {
+      interpolate(solution_interpolated, evaluation_time, solutions, times);
+
+      solution_interpolated.update_ghost_values();
+      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+        dst, src, evaluation_time, solution_interpolated);
+    }
+    else // nonlinear transport (standard convective term)
+    {
+      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+        dst, src, evaluation_time);
+    }
+  }
+
 private:
   std::shared_ptr<IncNS::Interface::OperatorBase<Number>> pde_operator;
+
+  // OIF splitting (transport with interpolated velocity)
+  bool                            transport_with_interpolated_velocity;
+  std::vector<VectorType const *> solutions;
+  std::vector<double>             times;
+  VectorType mutable solution_interpolated;
 };
 
-}
+} // namespace Interface
 
-}
+} // namespace IncNS
 
 
 
