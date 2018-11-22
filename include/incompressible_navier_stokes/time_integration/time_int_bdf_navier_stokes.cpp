@@ -288,6 +288,48 @@ TimeIntBDF<dim, Number>::initialize_solution_oif_substepping(unsigned int i)
 
 template<int dim, typename Number>
 void
+TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl,
+                                                                 double const cfl_oif)
+{
+  /*
+   * the convective term is nonlinear, so we have to initialize the transport velocity
+   * and the discrete time instants that can be used for interpolation
+   *
+   *   time t
+   *  -------->   t_{n-2}   t_{n-1}   t_{n}     t_{n+1}
+   *  _______________|_________|________|___________|___________\
+   *                 |         |        |           |           /
+   *               sol[2]    sol[1]   sol[0]
+   */
+  unsigned int current_order = this->order;
+  if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
+  {
+    current_order = this->time_step_number;
+  }
+
+  AssertThrow(current_order > 0 && current_order <= this->order,
+              ExcMessage("Invalid parameter current_order"));
+
+  // fill vectors with previous velocity solutions and previous time instants
+  std::vector<VectorType const *> solutions(current_order);
+  std::vector<double>             times(current_order);
+
+  for(unsigned int i = 0; i < current_order; ++i)
+  {
+    solutions.at(i) = &get_velocity(i);
+    times.at(i)     = get_previous_time(i);
+  }
+
+  // this is only needed for transport with interpolated/extrapolated velocity
+  // as opposed to the standard nonlinear transport
+  this->convective_operator_OIF->set_solutions_and_times(solutions, times);
+
+  // call function implemented in base class for the actual OIF sub-stepping
+  TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);
+}
+
+template<int dim, typename Number>
+void
 TimeIntBDF<dim, Number>::update_sum_alphai_ui_oif_substepping(unsigned int i)
 {
   // calculate sum (alpha_i/dt * u_tilde_i)

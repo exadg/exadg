@@ -355,6 +355,13 @@ public:
     VectorType const & src,
     Number const       evaluation_time) const;
 
+  void
+  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+    VectorType &       dst,
+    VectorType const & src,
+    Number const       time,
+    VectorType const & solution_interpolated) const;
+
   // inverse velocity mass matrix
   void
   apply_inverse_mass_matrix(VectorType & dst, VectorType const & src) const;
@@ -1110,6 +1117,23 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
+DGNavierStokesBase<dim, degree_u, degree_p, Number>::
+  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+    VectorType &       dst,
+    VectorType const & src,
+    Number const       evaluation_time,
+    VectorType const & velocity_transport) const
+{
+  convective_operator.evaluate_linear_transport(dst, src, evaluation_time, velocity_transport);
+
+  // shift convective term to the rhs of the equation
+  dst *= -1.0;
+
+  inverse_mass_matrix_operator->apply(dst, dst);
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
 DGNavierStokesBase<dim, degree_u, degree_p, Number>::update_turbulence_model(
   VectorType const & velocity)
 {
@@ -1385,38 +1409,6 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::solve_projection(VectorType
 
   return n_iter;
 }
-
-
-/*
- *  Convective operator needed for OIF (operator-integration-factor) substepping.
- */
-template<typename Operator, typename Number>
-class ConvectiveOperatorNavierStokes
-{
-public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  ConvectiveOperatorNavierStokes(std::shared_ptr<Operator> operation_in)
-    : underlying_operator(operation_in)
-  {
-  }
-
-  void
-  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    underlying_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-      dst, src, evaluation_time);
-  }
-
-  void
-  initialize_dof_vector(VectorType & src) const
-  {
-    underlying_operator->initialize_vector_velocity(src);
-  }
-
-private:
-  std::shared_ptr<Operator> underlying_operator;
-};
 
 } // namespace IncNS
 

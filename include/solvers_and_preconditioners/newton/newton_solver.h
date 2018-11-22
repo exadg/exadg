@@ -40,7 +40,7 @@ public:
     double norm_r   = residual.l2_norm();
     double norm_r_0 = norm_r;
 
-    // reset average_linear_iterations
+    // Accumulated linear iterations
     linear_iterations = 0.0;
 
     // Newton iteration
@@ -56,12 +56,8 @@ public:
       residual *= -1.0;
 
       // solve linear problem
-      dst.update_ghost_values();
       linear_operator.set_solution_linearization(dst);
       linear_iterations += linear_solver.solve(increment, residual);
-
-      if(false) //(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-        std::cout << "  Number of linear solver iterations: " << linear_iterations << std::endl;
 
       // damped Newton scheme
       double       omega      = 1.0; // damping factor

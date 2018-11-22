@@ -120,7 +120,7 @@ protected:
   /*
    * This function implements the OIF sub-stepping algorithm.
    */
-  void
+  virtual void
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
 
   /*

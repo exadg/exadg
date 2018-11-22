@@ -362,7 +362,7 @@ MomentumOperator<dim, degree, Number>::calculate_inverse_diagonal(VectorType & d
 {
   calculate_diagonal(diagonal);
 
-  //   verify_calculation_of_diagonal(*this,diagonal);
+  // verify_calculation_of_diagonal(*this,diagonal);
 
   invert_diagonal(diagonal);
 }
@@ -466,7 +466,7 @@ MomentumOperator<dim, degree, Number>::update_block_diagonal_preconditioner() co
     // compute block matrices and add
     this->add_block_diagonal_matrices(matrices);
 
-    //    check_block_jacobi_matrices();
+    // check_block_jacobi_matrices();
 
     calculate_lu_factorization_block_jacobi(matrices);
   }
