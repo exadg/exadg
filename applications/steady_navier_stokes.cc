@@ -85,7 +85,7 @@ private:
 
   std::shared_ptr<Postprocessor> postprocessor;
 
-  typedef DriverSteadyProblems<dim, Number, DGCoupled> DriverSteady;
+  typedef DriverSteadyProblems<dim, Number> DriverSteady;
 
   std::shared_ptr<DriverSteady> driver_steady;
 };
@@ -135,7 +135,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   navier_stokes_operation.reset(new DGCoupled(triangulation, param, postprocessor));
 
   // initialize driver for steady state problem that depends on navier_stokes_operation
-  driver_steady.reset(new DriverSteady(navier_stokes_operation, param));
+  driver_steady.reset(new DriverSteady(navier_stokes_operation, navier_stokes_operation, param));
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>

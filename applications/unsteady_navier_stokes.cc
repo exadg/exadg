@@ -167,10 +167,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
-  bool use_adaptive_time_stepping = false;
-  if(param.calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
-    use_adaptive_time_stepping = true;
-
   AssertThrow(param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
@@ -187,11 +183,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
 
     navier_stokes_operation = navier_stokes_operation_coupled;
 
-    time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
-                                             navier_stokes_operation_coupled,
-                                             param,
-                                             refine_steps_time,
-                                             use_adaptive_time_stepping));
+    time_integrator.reset(new TimeIntCoupled(
+      navier_stokes_operation_coupled, navier_stokes_operation_coupled, param, refine_steps_time));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -203,8 +196,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
                                                    navier_stokes_operation_dual_splitting,
                                                    param,
-                                                   refine_steps_time,
-                                                   use_adaptive_time_stepping));
+                                                   refine_steps_time));
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -216,8 +208,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator.reset(new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
                                                         navier_stokes_operation_pressure_correction,
                                                         param,
-                                                        refine_steps_time,
-                                                        use_adaptive_time_stepping));
+                                                        refine_steps_time));
   }
   else
   {

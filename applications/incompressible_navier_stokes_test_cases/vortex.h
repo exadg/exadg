@@ -67,7 +67,8 @@ void InputParameters<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
+  adaptive_time_stepping = false;
   max_velocity = 1.4 * U_X_MAX;
   cfl = 0.1;
   cfl_oif = cfl/1.0;

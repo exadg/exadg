@@ -113,12 +113,11 @@ enum class TimeIntegratorRK
 enum class TimeStepCalculation
 {
   Undefined,
-  ConstTimeStepUserSpecified,
-  ConstTimeStepCFL,
-  AdaptiveTimeStepCFL,
-  ConstTimeStepDiffusion,
-  ConstTimeStepCFLAndDiffusion,
-  ConstTimeStepMaxEfficiency
+  UserSpecified,
+  CFL,
+  Diffusion,
+  CFLAndDiffusion,
+  MaxEfficiency
 };
 
 /**************************************************************************************/
@@ -222,6 +221,7 @@ public:
       start_with_low_order(true),
       treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
+      adaptive_time_stepping(false),
       adaptive_time_stepping_limiting_factor(1.2),
       time_step_size(-1.),
       max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
@@ -317,11 +317,45 @@ public:
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
                 ExcMessage("parameter must be defined"));
 
-    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
+    if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
       AssertThrow(time_step_size > 0.0, ExcMessage("parameter must be defined"));
 
-    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
+    if(calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
       AssertThrow(c_eff > 0., ExcMessage("parameter must be defined"));
+
+    if(calculation_of_time_step_size == TimeStepCalculation::CFL)
+    {
+      AssertThrow(
+        equation_type == EquationType::Convection ||
+          equation_type == EquationType::ConvectionDiffusion,
+        ExcMessage(
+          "Type of time step calculation CFL does not make sense for the specified equation type."));
+    }
+
+    if(calculation_of_time_step_size == TimeStepCalculation::Diffusion)
+    {
+      AssertThrow(
+        equation_type == EquationType::Diffusion ||
+          equation_type == EquationType::ConvectionDiffusion,
+        ExcMessage(
+          "Type of time step calculation Diffusion does not make sense for the specified equation type."));
+    }
+
+    if(calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
+    {
+      AssertThrow(
+        equation_type == EquationType::ConvectionDiffusion,
+        ExcMessage(
+          "Type of time step calculation CFLAndDiffusion does not make sense for the specified equation type."));
+    }
+
+    if(adaptive_time_stepping == true)
+    {
+      AssertThrow(calculation_of_time_step_size == TimeStepCalculation::CFL ||
+                    calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion,
+                  ExcMessage(
+                    "Adaptive time stepping can only be used in combination with CFL condition."));
+    }
 
     if(temporal_discretization == TemporalDiscretization::ExplRK)
     {
@@ -528,19 +562,16 @@ public:
       }
     }
 
-    std::string str_time_step_calc[] = {"Undefined",
-                                        "ConstTimeStepUserSpecified",
-                                        "ConstTimeStepCFL",
-                                        "AdaptiveTimeStepCFL",
-                                        "ConstTimeStepDiffusion",
-                                        "ConstTimeStepCFLAndDiffusion",
-                                        "ConstTimeStepMaxEfficiency"};
+    std::string str_time_step_calc[] = {
+      "Undefined", "UserSpecified", "CFL", "Diffusion", "CFLAndDiffusion", "MaxEfficiency"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
                     str_time_step_calc[(int)calculation_of_time_step_size]);
 
-    if(calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+    print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
+
+    if(adaptive_time_stepping)
     {
       print_parameter(pcout,
                       "Adaptive time stepping limiting factor",
@@ -718,6 +749,9 @@ public:
 
   // calculation of time step size
   TimeStepCalculation calculation_of_time_step_size;
+
+  // use adaptive time stepping?
+  bool adaptive_time_stepping;
 
   // This parameter defines by which factor the time step size is allowed to increase
   // or to decrease in case of adaptive time step, e.g., if one wants to avoid large

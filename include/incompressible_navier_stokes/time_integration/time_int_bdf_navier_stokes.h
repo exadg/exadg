@@ -41,8 +41,7 @@ public:
 
   TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
              InputParameters<dim> const &   param_in,
-             unsigned int const             n_refine_time_in,
-             bool const                     use_adaptive_time_stepping_in);
+             unsigned int const             n_refine_time_in);
 
   virtual ~TimeIntBDF()
   {
@@ -51,6 +50,9 @@ public:
 protected:
   virtual void
   update_time_integrator_constants();
+
+  bool
+  print_solver_info() const;
 
   InputParameters<dim> const & param;
 
@@ -83,7 +85,7 @@ private:
   calculate_time_step_size();
 
   double
-  recalculate_time_step();
+  recalculate_time_step_size() const;
 
   virtual void
   solve_steady_problem() = 0;
@@ -105,12 +107,6 @@ private:
 
   virtual void
   set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */) = 0;
-
-  void
-  output_solver_info_header() const;
-
-  void
-  output_remaining_time() const;
 
   void
   read_restart_vectors(boost::archive::binary_iarchive & ia);

@@ -48,7 +48,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   order_time_integrator = 4;
   start_with_low_order = true;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFLAndDiffusion;
+  calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
   time_step_size = 1.0e-2;
   cfl_number = 0.2;
   diffusion_number = 0.01;

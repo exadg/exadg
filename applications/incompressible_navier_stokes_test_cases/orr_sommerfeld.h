@@ -88,9 +88,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::ConstTimeStepCFL; //ConstTimeStepUserSpecified;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
   // approx. cfl_crit = 0.9 for BDF2 (and exponent = 1.5)
   // approx. cfl_crit = 0.4 for BDF3 (and exponent = 1.5)

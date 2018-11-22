@@ -43,8 +43,7 @@ public:
   TimeIntBDFDualSplitting(std::shared_ptr<InterfaceBase> operator_base_in,
                           std::shared_ptr<InterfacePDE>  pde_operator_in,
                           InputParameters<dim> const &   param_in,
-                          unsigned int const             n_refine_time_in,
-                          bool const                     use_adaptive_time_stepping_in);
+                          unsigned int const             n_refine_time_in);
 
   void
   analyze_computing_times() const;

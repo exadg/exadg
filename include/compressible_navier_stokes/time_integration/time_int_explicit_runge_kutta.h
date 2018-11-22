@@ -11,6 +11,8 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "time_integration/time_int_explicit_runge_kutta_base.h"
+
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/ssp_runge_kutta.h"
 
@@ -29,7 +31,7 @@ class Operator;
 }
 
 template<int dim, typename Number>
-class TimeIntExplRK
+class TimeIntExplRK : public TimeIntExplRKBase<Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -40,13 +42,10 @@ public:
                 InputParameters<dim> const & param_in,
                 unsigned int const           n_refine_time_in);
 
-  void
-  timeloop();
-
-  void
-  setup();
-
 private:
+  void
+  initialize_time_integrator();
+
   void
   initialize_vectors();
 
@@ -54,19 +53,22 @@ private:
   initialize_solution();
 
   void
-  detect_instabilities();
+  detect_instabilities() const;
 
   void
-  postprocessing();
+  postprocessing() const;
 
   void
   solve_timestep();
 
-  void
-  prepare_vectors_for_next_timestep();
+  bool
+  print_solver_info() const;
 
   void
-  calculate_timestep();
+  calculate_time_step_size();
+
+  double
+  recalculate_time_step_size() const;
 
   void
   analyze_computing_times() const;
@@ -93,24 +95,11 @@ private:
   InputParameters<dim> const & param;
 
   // timer
-  Timer  global_timer, timer_postprocessing;
-  double total_time;
-  double time_postprocessing;
-
-  // screen output
-  ConditionalOStream pcout;
+  mutable Timer  timer_postprocessing;
+  mutable double time_postprocessing;
 
   // monitor the L2-norm of the solution vector in order to detect instabilities
-  double l2_norm;
-
-  // DoF vectors for conserved variables: (rho, rho u, rho E)
-  VectorType solution_n, solution_np;
-
-  // current time and time step size
-  double time, time_step;
-
-  // the number of the current time step starting with time_step_number = 1
-  unsigned int time_step_number;
+  mutable double l2_norm;
 
   // time refinement steps
   unsigned int const n_refine_time;

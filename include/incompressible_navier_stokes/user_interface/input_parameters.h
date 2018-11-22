@@ -159,11 +159,10 @@ enum class TimeIntegratorOIF
 enum class TimeStepCalculation
 {
   Undefined,
-  ConstTimeStepUserSpecified,
-  ConstTimeStepCFL,
-  AdaptiveTimeStepCFL,
-  ConstTimeStepMaxEfficiency // only relevant for analytical test cases with optimal rates of
-                             // convergence in space
+  UserSpecified,
+  CFL,
+  MaxEfficiency // only relevant for analytical test cases with optimal rates of
+                // convergence in space
 };
 
 /*
@@ -656,6 +655,7 @@ public:
       treatment_of_convective_term(TreatmentOfConvectiveTerm::Undefined),
       time_integrator_oif(TimeIntegratorOIF::Undefined),
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
+      adaptive_time_stepping(false),
       adaptive_time_stepping_limiting_factor(1.2),
       max_velocity(-1.),
       cfl(-1.),
@@ -909,6 +909,25 @@ public:
     AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
                 ExcMessage("parameter must be defined"));
 
+    if(calculation_of_time_step_size == TimeStepCalculation::CFL)
+    {
+      AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
+      AssertThrow(max_velocity > 0., ExcMessage("parameter must be defined"));
+    }
+
+    if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
+      AssertThrow(time_step_size > 0., ExcMessage("parameter must be defined"));
+
+    if(calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
+      AssertThrow(c_eff > 0., ExcMessage("parameter must be defined"));
+
+    if(adaptive_time_stepping)
+    {
+      AssertThrow(calculation_of_time_step_size == TimeStepCalculation::CFL,
+                  ExcMessage(
+                    "Adaptive time stepping is only implemented for TimeStepCalculation::CFL."));
+    }
+
     if(problem_type == ProblemType::Unsteady)
     {
       AssertThrow(solver_type == SolverType::Unsteady,
@@ -933,17 +952,6 @@ public:
             "Hence, this approach cannot be used to solve the steady Navier-Stokes equations."));
       }
     }
-
-    if(calculation_of_time_step_size != TimeStepCalculation::ConstTimeStepUserSpecified)
-    {
-      AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
-      AssertThrow(max_velocity > 0., ExcMessage("parameter must be defined"));
-    }
-    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepUserSpecified)
-      AssertThrow(time_step_size > 0., ExcMessage("parameter must be defined"));
-    if(calculation_of_time_step_size == TimeStepCalculation::ConstTimeStepMaxEfficiency)
-      AssertThrow(c_eff > 0., ExcMessage("parameter must be defined"));
-
 
     // SPATIAL DISCRETIZATION
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
@@ -1232,17 +1240,15 @@ public:
     }
 
     // calculation of time step size
-    std::string str_calc_time_step[] = {"Undefined",
-                                        "Constant time step (user specified)",
-                                        "Constant time step (CFL condition)",
-                                        "Adaptive time step (CFL condition)",
-                                        "Constant time step (max. efficiency)"};
+    std::string str_calc_time_step[] = {"Undefined", "UserSpecified", "CFL", "MaxEfficiency"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
                     str_calc_time_step[(int)calculation_of_time_step_size]);
 
-    if(calculation_of_time_step_size == TimeStepCalculation::AdaptiveTimeStepCFL)
+    print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
+
+    if(adaptive_time_stepping)
     {
       print_parameter(pcout,
                       "Adaptive time stepping limiting factor",
@@ -1880,6 +1886,9 @@ public:
 
   // description: see enum declaration
   TimeStepCalculation calculation_of_time_step_size;
+
+  // use adaptive time stepping?
+  bool adaptive_time_stepping;
 
   // This parameter defines by which factor the time step size is allowed to increase
   // or to decrease in case of adaptive time step, e.g., if one wants to avoid large

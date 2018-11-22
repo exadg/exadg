@@ -39,8 +39,7 @@ public:
 
   TimeIntBDF(std::shared_ptr<Operator> operator_in,
              InputParameters const &   param_in,
-             unsigned int const        n_refine_time_in,
-             bool const                use_adaptive_time_stepping_in);
+             unsigned int const        n_refine_time_in);
 
 private:
   void
@@ -57,6 +56,9 @@ private:
 
   void
   calculate_time_step_size();
+
+  double
+  recalculate_time_step_size() const;
 
   void
   prepare_vectors_for_next_timestep();
@@ -80,20 +82,14 @@ private:
   do_timestep_oif_substepping_and_update_vectors(double const start_time,
                                                  double const time_step_size);
 
-  void
-  output_solver_info_header() const;
-
-  void
-  output_remaining_time() const;
+  bool
+  print_solver_info() const;
 
   void
   read_restart_vectors(boost::archive::binary_iarchive & ia);
 
   void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
-
-  double
-  recalculate_time_step();
 
   void
   postprocessing() const;

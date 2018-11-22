@@ -8,18 +8,14 @@
 #ifndef INCLUDE_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
 #define INCLUDE_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_
 
-#include <deal.II/base/conditional_ostream.h>
-#include <deal.II/base/timer.h>
+#include "time_integration/time_int_base.h"
 
 #include "time_integration/bdf_time_integration.h"
 #include "time_integration/extrapolation_scheme.h"
 
-#include "functionalities/restart_data.h"
-#include "time_integration/restart.h"
-
 using namespace dealii;
 
-class TimeIntBDFBase
+class TimeIntBDFBase : public TimeIntBase
 {
 public:
   /*
@@ -41,22 +37,10 @@ public:
   }
 
   /*
-   * Perform whole time loop from start time to end time.
-   */
-  void
-  timeloop();
-
-  /*
    * Pseudo-time-stepping for steady-state problems.
    */
   void
   timeloop_steady_problem();
-
-  /*
-   * Perform only one time step (which is used when coupling different solvers, equations, etc.).
-   */
-  bool
-  advance_one_timestep(bool write_final_output);
 
   /*
    * Setters and getters.
@@ -71,16 +55,13 @@ public:
   reset_time(double const & current_time);
 
   /*
-   * Get the current time t_{n}.
-   */
-  double
-  get_time() const;
-
-  /*
    * Get the time step size.
    */
   double
-  get_time_step_size(int const index = 0) const;
+  get_time_step_size() const;
+
+  double
+  get_time_step_size(int const index) const;
 
   /*
    * Set the time step size. Note that the push-back of time step sizes in case of adaptive time
@@ -89,7 +70,7 @@ public:
    * size.
    */
   void
-  set_time_step_size(double const & time_step);
+  set_time_step_size(double const & time_step_size);
 
   /*
    * Setup function where allocations/initializations are done. Calls another function
@@ -110,12 +91,6 @@ protected:
    */
   double
   get_previous_time(int const i /* t_{n-i} */) const;
-
-  /*
-   * Get the current time step number.
-   */
-  unsigned int
-  get_time_step_number() const;
 
   /*
    * Do one time step including different updates before and after the actual solution of the
@@ -149,26 +124,10 @@ protected:
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
 
   /*
-   * Read all relevant data from restart files to start the time integrator.
-   */
-  virtual void
-  read_restart();
-
-  /*
    * Calculate time step size.
    */
   virtual void
   calculate_time_step_size() = 0;
-
-  /*
-   * Start and end times.
-   */
-  double const start_time, end_time;
-
-  /*
-   * Maximum number of time steps.
-   */
-  unsigned int const max_number_of_time_steps;
 
   /*
    * Order of time integration scheme.
@@ -195,30 +154,9 @@ protected:
   bool const adaptive_time_stepping;
 
   /*
-   * Physical time.
-   */
-  double time;
-
-  /*
    * Vector with time step sizes.
    */
   std::vector<double> time_steps;
-
-  /*
-   * Computation time (wall clock time).
-   */
-  Timer  global_timer;
-  double total_time;
-
-  /*
-   * A small number which is much smaller than the time step size.
-   */
-  double const eps;
-
-  /*
-   * Output to screen.
-   */
-  ConditionalOStream pcout;
 
 private:
   /*
@@ -277,58 +215,42 @@ private:
   virtual void
   solve_steady_problem();
 
-
-  /*
-   * Output solver information before solving the time step
-   */
-  virtual void
-  output_solver_info_header() const = 0;
-
-  /*
-   * Output estimated computation time until completion of the simulation.
-   */
-  virtual void
-  output_remaining_time() const = 0;
-
   /*
    * Postprocessing of solution.
    */
   virtual void
-  postprocessing() const = 0;
-
-  virtual void
   postprocessing_steady_problem() const;
-
-  /*
-   * Analysis of computation times called after having performed the time loop.
-   */
-  virtual void
-  analyze_computing_times() const = 0;
 
   /*
    * Restart: read solution vectors (has to be implemented in derived classes).
    */
+  void
+  do_read_restart(std::ifstream & in);
+
+  void
+  read_restart_preamble(boost::archive::binary_iarchive & ia);
+
   virtual void
   read_restart_vectors(boost::archive::binary_iarchive & ia) = 0;
-
-  /*
-   * Restart: write solution vectors (has to be implemented in derived classes).
-   */
-  virtual void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
 
   /*
    * Write solution vectors to files so that the simulation can be restart from an intermediate
    * state.
    */
+  void
+  do_write_restart(std::string const & filename) const;
+
+  void
+  write_restart_preamble(boost::archive::binary_oarchive & oa) const;
+
   virtual void
-  write_restart() const;
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const = 0;
 
   /*
    * Recalculate the time step size after each time step in case of adaptive time stepping.
    */
   virtual double
-  recalculate_time_step() = 0;
+  recalculate_time_step_size() const = 0;
 
   /*
    * Initializes the solution for OIF sub-stepping at time t_{n-i}.
@@ -343,22 +265,13 @@ private:
   update_sum_alphai_ui_oif_substepping(unsigned int i);
 
   /*
-   * Perform one timestep for OIF sub-stepping and update the solution vectors (switch pointers).
+   * Perform one time step for OIF sub-stepping and update the solution vectors (switch pointers).
    */
   virtual void
   do_timestep_oif_substepping_and_update_vectors(double const start_time,
                                                  double const time_step_size);
 
 private:
-  /*
-   * The number of the current time step starting with time_step_number = 1.
-   */
-  unsigned int time_step_number;
-
-  /*
-   * Restart.
-   */
-  RestartData const restart_data;
 };
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */
