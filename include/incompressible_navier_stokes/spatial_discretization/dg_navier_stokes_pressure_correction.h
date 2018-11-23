@@ -52,7 +52,7 @@ public:
   }
 
   void
-  setup_solvers(double const & time_step_size, double const & scaling_factor_time_derivative_term);
+  setup_solvers(double const & scaling_factor_time_derivative_term);
 
   // momentum step: linear system of equations (Stokes equations or convective term treated
   // explicitly)
@@ -176,7 +176,6 @@ private:
 template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_solvers(
-  double const & time_step_size,
   double const & scaling_factor_time_derivative_term)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
@@ -184,7 +183,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_solvers
 
   setup_momentum_solver(scaling_factor_time_derivative_term);
 
-  this->setup_pressure_poisson_solver(time_step_size);
+  this->setup_pressure_poisson_solver();
 
   this->setup_projection_solver();
 

@@ -113,10 +113,6 @@ void InputParameters<dim>::set_input_parameters()
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-8;
 
-  // stability in the limit of small time steps
-  use_approach_of_ferrer = false;
-  deltat_ref = 1.e0;
-
   // projection step
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;

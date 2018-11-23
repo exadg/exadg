@@ -720,10 +720,6 @@ public:
       abs_tol_pressure(1.e-20),
       rel_tol_pressure(1.e-12),
 
-      // stability in the limit of small time steps and projection step
-      use_approach_of_ferrer(false),
-      deltat_ref(1.0),
-
       // projection step
       solver_projection(SolverProjection::PCG),
       preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
@@ -1426,11 +1422,6 @@ public:
 
     print_parameter(pcout, "Absolute solver tolerance", abs_tol_pressure);
     print_parameter(pcout, "Relative solver tolerance", rel_tol_pressure);
-
-    // small time steps stability
-    print_parameter(pcout, "Approach of Ferrer et al.", use_approach_of_ferrer);
-    if(use_approach_of_ferrer == true)
-      print_parameter(pcout, "Reference time step size (Ferrer)", deltat_ref);
   }
 
   void
@@ -2068,13 +2059,6 @@ public:
   // solver tolerances for pressure Poisson equation
   double abs_tol_pressure;
   double rel_tol_pressure;
-
-  // use approach of Ferrer et al. (increase penalty parameter when reducing
-  // the time step in order to improve stability in the limit of small time steps)
-  bool use_approach_of_ferrer;
-
-  // reference time step size that is used when use_approach_of_ferrer == true
-  double deltat_ref;
 
   // PROJECTION STEP
 

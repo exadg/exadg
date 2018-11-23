@@ -135,6 +135,9 @@ public:
         std::shared_ptr<FieldFunctions<dim>>      field_functions,
         std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution);
 
+  virtual void
+  setup_solvers(double const & scaling_factor_time_derivative_term) = 0;
+
   void
   apply_mass_matrix(VectorType & dst, VectorType const & src) const;
 

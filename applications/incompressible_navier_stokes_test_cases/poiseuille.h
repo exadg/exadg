@@ -37,7 +37,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Steady; //Unsteady;
+const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 const double MAX_VELOCITY = 1.0;
 const double VISCOSITY = 1.0e-1;
 
@@ -49,7 +49,7 @@ bool periodicBCs = false;
 bool symmetryBC = false;
 
 enum class InflowProfile { ConstantProfile, ParabolicProfile };
-const InflowProfile INFLOW_PROFILE = InflowProfile::ParabolicProfile; //ConstantProfile; //ParabolicProfile;
+const InflowProfile INFLOW_PROFILE = InflowProfile::ParabolicProfile;
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
@@ -58,6 +58,8 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  use_outflow_bc_convective_term = true;
   right_hand_side = periodicBCs; //prescribe body force in x-direction in case of perodic BC's
 
 
@@ -68,12 +70,13 @@ void InputParameters<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady; //Steady; //Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  calculation_of_time_step_size = TimeStepCalculation::CFL;
+  adaptive_time_stepping = true;
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
-  cfl = 1.0e-1;
+  cfl = 2.0e-1;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
@@ -88,6 +91,8 @@ void InputParameters<dim>::set_input_parameters()
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term - currently no parameters
+  if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
+    upwind_factor = 0.5;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -114,10 +119,6 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-20;
   rel_tol_pressure = 1.e-6;
-
-  // stability in the limit of small time steps
-  use_approach_of_ferrer = false;
-  deltat_ref = 1.e0;
 
   // projection step
   solver_projection = SolverProjection::PCG;
@@ -234,7 +235,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.output_folder = "output/poiseuille/vtu/";
   output_data.output_name = "poiseuille";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.output_interval_time = (end_time-start_time)/100;
   output_data.write_vorticity = true;
   output_data.write_divergence = true;
   output_data.write_velocity_magnitude = true;
@@ -248,11 +249,12 @@ void InputParameters<dim>::set_input_parameters()
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
-  if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
-    error_data.analytical_solution_available = false;
-  else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
+  if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
     error_data.analytical_solution_available = true;
+  else
+    error_data.analytical_solution_available = false;
 
+  error_data.calculate_relative_errors = false;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
@@ -332,8 +334,9 @@ double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
       const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
       if(component == 0)
       {
-        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
-//        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * std::sin(pi*t/T);
+//        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+
+        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * std::sin(pi*t/T);
       }
     }
   }
@@ -388,7 +391,7 @@ double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
     {
       // pressure decreases linearly in flow direction
       const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
-      result = (p[0]-4.0)*pressure_gradient;
+      result = (p[0]-L)*pressure_gradient;
     }
   }
   else if(PROBLEM_TYPE == ProblemType::Unsteady)
@@ -407,7 +410,7 @@ double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
       double T = 1.0e0;
       // note that this is the steady state solution that would correspond to a
       // steady velocity field at time t
-      result = (p[0]-4.0) * pressure_gradient * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+      result = (p[0]-L) * pressure_gradient * (t<T ? std::sin(pi/2.*t/T) : 1.0);
     }
   }
   return result;

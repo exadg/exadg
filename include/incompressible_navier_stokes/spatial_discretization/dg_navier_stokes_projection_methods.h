@@ -40,10 +40,6 @@ public:
   {
   }
 
-  virtual void
-  setup_solvers(double const & time_step_size,
-                double const & scaling_factor_time_derivative_term) = 0;
-
   // rhs viscous term (add)
   void
   do_rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
@@ -67,7 +63,7 @@ public:
 
 protected:
   virtual void
-  setup_pressure_poisson_solver(double const time_step_size);
+  setup_pressure_poisson_solver();
 
   // Pressure Poisson equation
   Poisson::LaplaceOperator<dim, degree_p, Number> laplace_operator;
@@ -79,8 +75,7 @@ protected:
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure_poisson_solver(
-  double const time_step_size)
+DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure_poisson_solver()
 {
   // setup Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
@@ -105,18 +100,6 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure
     // Hence, for reasons of robustness we also solve a transformed linear system of equations
     // in case of the pressure-correction scheme.
     laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
-  }
-
-  if(this->param.use_approach_of_ferrer == true)
-  {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout
-      << "Approach of Ferrer et al. is applied: IP_factor_pressure is scaled by time_step_size/time_step_size_ref!"
-      << std::endl;
-
-    // only makes sense in case of constant time step sizes
-    laplace_operator_data.IP_factor =
-      this->param.IP_factor_pressure / time_step_size * this->param.deltat_ref;
   }
 
   laplace_operator_data.bc = this->boundary_descriptor_laplace;

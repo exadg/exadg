@@ -61,11 +61,11 @@ write_output(OutputDataNavierStokes const &                     output_data,
     }
   }
 
+  data_out.build_patches(mapping, output_data.number_of_patches, DataOut<dim>::curved_inner_cells);
+
   std::ostringstream filename;
   filename << output_data.output_folder << output_data.output_name << "_Proc"
            << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) << "_" << output_counter << ".vtu";
-
-  data_out.build_patches(mapping, output_data.number_of_patches, DataOut<dim>::curved_inner_cells);
 
   std::ofstream output(filename.str().c_str());
   data_out.write_vtu(output);

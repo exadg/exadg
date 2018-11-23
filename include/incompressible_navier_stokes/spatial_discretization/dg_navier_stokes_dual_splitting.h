@@ -47,7 +47,7 @@ public:
   }
 
   void
-  setup_solvers(double const & time_step_size, double const & scaling_factor_time_derivative_term);
+  setup_solvers(double const & scaling_factor_time_derivative_term);
 
   /*
    *  implicit solution of convective step
@@ -182,7 +182,7 @@ private:
   setup_convective_solver();
 
   virtual void
-  setup_pressure_poisson_solver(double const time_step_size);
+  setup_pressure_poisson_solver();
 
   void
   setup_helmholtz_solver(double const & scaling_factor_time_derivative_term);
@@ -267,7 +267,6 @@ private:
 template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_solvers(
-  double const & time_step_size,
   double const & scaling_factor_time_derivative_term)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
@@ -280,7 +279,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_solvers(
     setup_convective_solver();
   }
 
-  this->setup_pressure_poisson_solver(time_step_size);
+  this->setup_pressure_poisson_solver();
 
   this->setup_projection_solver();
 
@@ -323,11 +322,10 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_convective_s
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_pressure_poisson_solver(
-  double const time_step_size)
+DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_pressure_poisson_solver()
 {
   // Call setup function of base class
-  PROJECTION_METHODS_BASE::setup_pressure_poisson_solver(time_step_size);
+  PROJECTION_METHODS_BASE::setup_pressure_poisson_solver();
 
   // RHS PPE: Velocity divergence term
   VelocityDivergenceConvectiveTermData<dim> velocity_divergence_convective_data;

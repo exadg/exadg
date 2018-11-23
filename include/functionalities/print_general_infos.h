@@ -30,8 +30,6 @@ print_grid_data(ConditionalOStream const &                        pcout,
 
   print_parameter(pcout, "Number of refinements", n_refine_space);
   print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
-  print_parameter(pcout, "Number of faces", triangulation.n_active_faces());
-  print_parameter(pcout, "Number of vertices", triangulation.n_vertices());
 }
 
 template<int dim>
@@ -48,8 +46,6 @@ print_grid_data(ConditionalOStream const &                        pcout,
 
   print_parameter(pcout, "Number of refinements", n_refine_space_1);
   print_parameter(pcout, "Number of cells", triangulation_1.n_global_active_cells());
-  print_parameter(pcout, "Number of faces", triangulation_1.n_active_faces());
-  print_parameter(pcout, "Number of vertices", triangulation_1.n_vertices());
 
   pcout << std::endl
         << "Generating grid for DOMAIN 2 for " << dim << "-dimensional problem:" << std::endl
@@ -57,8 +53,6 @@ print_grid_data(ConditionalOStream const &                        pcout,
 
   print_parameter(pcout, "Number of refinements", n_refine_space_2);
   print_parameter(pcout, "Number of cells", triangulation_2.n_global_active_cells());
-  print_parameter(pcout, "Number of faces", triangulation_2.n_active_faces());
-  print_parameter(pcout, "Number of vertices", triangulation_2.n_vertices());
 }
 
 #endif /* INCLUDE_FUNCTIONALITIES_PRINT_GENERAL_INFOS_H_ */

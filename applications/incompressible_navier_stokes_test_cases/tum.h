@@ -41,7 +41,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 const double L = 1.0;
 const double MAX_VELOCITY = 1.0;
-const double VISCOSITY = 1.0e-3;
+const double VISCOSITY = 1.0e-4; //TODO //1.0e-3;
 
 std::string OUTPUT_FOLDER = "output/tum/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
@@ -54,6 +54,8 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = PROBLEM_TYPE; // PROBLEM_TYPE is also needed somewhere else
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  use_outflow_bc_convective_term = true;
   right_hand_side = false;
 
 
@@ -64,16 +66,17 @@ void InputParameters<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady; //Steady; //Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
+  // best practice: use adaptive time stepping for this test case to avoid adjusting the CFL number
   adaptive_time_stepping = true;
   max_velocity = 1.0;
-  // typical CFL values for BDF2, exponent = 1.5, k_u = 2, MAX_VELOCITY = 1.0
+  // typical CFL values for BDF2 (constant time step size), exponent = 1.5, k_u = 2, MAX_VELOCITY = 1.0
   // Re = 1e3: cfl = 0.025
   // Re = 1e4: cfl = 0.0125 and 0.003125 (l=5)
-  cfl = 0.1; //TODO //0.025;
+  cfl = 0.25; //TODO // 0.1; //0.025;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 5.0e-2;
   max_number_of_time_steps = 1e8;
@@ -90,6 +93,7 @@ void InputParameters<dim>::set_input_parameters()
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term - currently no parameters
+  upwind_factor = 1.0;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -107,9 +111,14 @@ void InputParameters<dim>::set_input_parameters()
   // special case: pure DBC's
   pure_dirichlet_bc = false;
 
-  // div + conti penalty
-  use_divergence_penalty = true; //true; //false;
-  use_continuity_penalty = true; //true; //false;
+  // div-div and continuity penalty
+  use_divergence_penalty = true;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = true;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  continuity_penalty_factor = divergence_penalty_factor;
+  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
+  add_penalty_terms_to_monolithic_system = false;
 
   // PROJECTION METHODS
 
@@ -119,9 +128,6 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
-  // stability in the limit of small time steps
-  use_approach_of_ferrer = false;
-  deltat_ref = 1.e0;
 
   // projection step
   solver_projection = SolverProjection::PCG;
@@ -169,6 +175,10 @@ void InputParameters<dim>::set_input_parameters()
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
+  abs_tol_momentum_linear = 1.e-12;
+  rel_tol_momentum_linear = 1.e-2;
+  max_iter_momentum_linear = 1e4;
+
   solver_momentum = SolverMomentum::GMRES; //GMRES; //FGMRES;
   preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //InverseMassMatrix; //VelocityDiffusion; //VelocityConvectionDiffusion;
 //  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
@@ -178,9 +188,6 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_momentum.jacobi_smoother_data.number_of_smoothing_steps = 5;
   multigrid_data_momentum.jacobi_smoother_data.damping_factor = 0.7;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
-  abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-2;
-  max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
 
@@ -249,7 +256,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1; //1e3;
+  output_solver_info_every_timesteps = 1e2; //1e3;
 }
 
 /**************************************************************************************/

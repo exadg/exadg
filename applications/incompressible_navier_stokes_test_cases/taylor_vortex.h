@@ -31,12 +31,12 @@ unsigned int const FE_DEGREE_VELOCITY = 6;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = 5;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
+unsigned int const REFINE_STEPS_SPACE_MAX = 3;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_STEPS_TIME_MAX = 6; //REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.e-2;
@@ -48,25 +48,28 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
   right_hand_side = false;
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = 5.0;
+  end_time = 3.0;
   viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   max_velocity = 1.0;
-  cfl = 0.025;
+  cfl = 4.0;
+  cfl_oif = cfl/8.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-4;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -109,10 +112,6 @@ void InputParameters<dim>::set_input_parameters()
   abs_tol_pressure = 1.e-12;
   rel_tol_pressure = 1.e-6;
 
-  // stability in the limit of small time steps
-  use_approach_of_ferrer = false;
-  deltat_ref = 1.e0;
-
   // projection step
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
@@ -153,16 +152,16 @@ void InputParameters<dim>::set_input_parameters()
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum.abs_tol = 1.e-20;
+  newton_solver_data_momentum.abs_tol = 1.e-12;
   newton_solver_data_momentum.rel_tol = 1.e-6;
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //InverseMassMatrix; //VelocityConvectionDiffusion;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_momentum_linear = 1.e-20;
-  rel_tol_momentum_linear = 1.e-4;
+  abs_tol_momentum_linear = 1.e-12;
+  rel_tol_momentum_linear = 1.e-6;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
@@ -177,13 +176,13 @@ void InputParameters<dim>::set_input_parameters()
 
   // nonlinear solver (Newton solver)
   newton_solver_data_coupled.abs_tol = 1.e-12;
-  newton_solver_data_coupled.rel_tol = 1.e-4;
+  newton_solver_data_coupled.rel_tol = 1.e-6;
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-3;
+  rel_tol_linear = 1.e-6;
   max_iter_linear = 1e4;
 
   // preconditioning linear solver
@@ -194,7 +193,7 @@ void InputParameters<dim>::set_input_parameters()
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
  
-   momentum_preconditioner = MomentumPreconditioner::VelocityConvectionDiffusion; //InverseMassMatrix; //VelocityDiffusion;
+   momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix; //VelocityDiffusion;
   multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi; //Chebyshev; //GMRES;
 
   // Jacobi smoother data
@@ -214,7 +213,7 @@ void InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // print input parameters
-  print_input_parameters = true; //false; //true;
+  print_input_parameters = true;
 
 
   // write output for visualization of results
