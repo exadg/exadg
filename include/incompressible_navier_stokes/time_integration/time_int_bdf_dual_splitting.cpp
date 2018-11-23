@@ -378,11 +378,8 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   }
 
   // solve discrete temporal derivative term for intermediate velocity u_hat (if not STS approach)
-  if(this->param.small_time_steps_stability == false)
-  {
-    velocity_np.add(1.0, this->sum_alphai_ui);
-    velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
-  }
+  velocity_np.add(1.0, this->sum_alphai_ui);
+  velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
   if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
@@ -398,12 +395,10 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   }
   else // param.treatment_of_convective_term == Implicit
   {
-    AssertThrow(
-      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit &&
-        !(this->param.equation_type == EquationType::Stokes ||
-          this->param.small_time_steps_stability),
-      ExcMessage(
-        "Use TreatmentOfConvectiveTerm::Explicit when solving the Stokes equations or when using the STS approach."));
+    AssertThrow(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit &&
+                  this->param.equation_type != EquationType::Stokes,
+                ExcMessage(
+                  "Use TreatmentOfConvectiveTerm::Explicit when solving the Stokes equations."));
 
     // calculate Sum_i (alpha_i/dt * u_i)
     this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
@@ -507,10 +502,7 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure()
   // homogeneous part of velocity divergence operator
   pde_operator->apply_velocity_divergence_term(rhs_vec_pressure, velocity_np);
 
-  if(this->param.small_time_steps_stability == true)
-    rhs_vec_pressure *= -1.0;
-  else
-    rhs_vec_pressure *= -this->bdf.get_gamma0() / this->get_time_step_size();
+  rhs_vec_pressure *= -this->bdf.get_gamma0() / this->get_time_step_size();
 
   // inhomogeneous parts of boundary face integrals of velocity divergence operator
   if(this->param.divu_integrated_by_parts == true)
@@ -597,14 +589,6 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
 {
   Timer timer;
   timer.restart();
-
-  // when using the STS stability approach vector updates have to be performed to obtain the
-  // intermediate velocity u_hat which is used to calculate the rhs of the projection step
-  if(this->param.small_time_steps_stability == true)
-  {
-    velocity_np.add(1.0, this->sum_alphai_ui);
-    velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
-  }
 
   // compute right-hand-side vector
   rhs_projection();
