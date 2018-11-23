@@ -742,9 +742,6 @@ public:
       use_right_preconditioning_convective(true),
       max_n_tmp_vectors_convective(30),
 
-      // stability in the limit of small time steps and projection step
-      small_time_steps_stability(false),
-
       // viscous step
       solver_viscous(SolverViscous::PCG),
       preconditioner_viscous(PreconditionerViscous::InverseMassMatrix),
@@ -1500,8 +1497,6 @@ public:
     // small time steps stability
     pcout << std::endl << "  Small time steps stability:" << std::endl;
 
-    print_parameter(pcout, "STS stability approach", small_time_steps_stability);
-
     // projection method
     print_parameters_pressure_poisson(pcout);
 
@@ -2110,11 +2105,6 @@ public:
 
   // defines the maximum size of the Krylov subspace before restart
   unsigned int max_n_tmp_vectors_convective;
-
-
-  // SMALL TIME STEPS: use small time steps stability approach
-  // (similar to approach of Leriche et al.)
-  bool small_time_steps_stability;
 
   // VISCOUS STEP
 

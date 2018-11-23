@@ -174,9 +174,6 @@ void InputParameters<dim>::set_input_parameters()
   use_right_preconditioning_convective = true;
   max_n_tmp_vectors_convective = 100;
 
-  // stability in the limit of small time steps and projection step
-  small_time_steps_stability = false;
-
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
