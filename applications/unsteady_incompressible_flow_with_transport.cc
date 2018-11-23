@@ -74,25 +74,25 @@ public:
   setup(bool const do_restart);
 
   void
-  solve();
+  solve() const;
 
 private:
   // GENERAL (FLUID + TRANSPORT)
   void
-  print_header();
+  print_header() const;
 
   void
-  run_timeloop();
+  run_timeloop() const;
 
   void
-  set_start_time();
+  set_start_time() const;
 
   void
-  synchronize_time_step_size();
+  synchronize_time_step_size() const;
 
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation;
+  parallel::distributed::Triangulation<dim> triangulation, triangulation_scalar;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
@@ -104,15 +104,6 @@ private:
   void
   setup_navier_stokes(bool const do_restart);
 
-  void
-  setup_navier_stokes_operation();
-
-  void
-  setup_navier_stokes_time_integrator(bool const do_restart);
-
-  void
-  setup_navier_stokes_solvers();
-
   std::shared_ptr<IncNS::FieldFunctions<dim>>      fluid_field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> fluid_boundary_descriptor_velocity;
   std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> fluid_boundary_descriptor_pressure;
@@ -120,22 +111,13 @@ private:
 
   IncNS::InputParameters<dim> fluid_param;
 
-  typedef IncNS::DGNavierStokesBase<dim, degree_u, degree_p, Number> DGBase;
-
-  typedef IncNS::DGNavierStokesCoupled<dim, degree_u, degree_p, Number> DGCoupled;
-
+  typedef IncNS::DGNavierStokesBase<dim, degree_u, degree_p, Number>          DGBase;
+  typedef IncNS::DGNavierStokesCoupled<dim, degree_u, degree_p, Number>       DGCoupled;
   typedef IncNS::DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number> DGDualSplitting;
-
   typedef IncNS::DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>
     DGPressureCorrection;
 
   std::shared_ptr<DGBase> navier_stokes_operation;
-
-  std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
-
-  std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
-
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
 
   typedef IncNS::PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
 
@@ -174,6 +156,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
                   parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
+    triangulation_scalar(MPI_COMM_WORLD,
+                         dealii::Triangulation<dim>::none,
+                         parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(refine_steps_space),
     use_adaptive_time_stepping(false)
 {
@@ -202,14 +187,6 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
   fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
 
-  if(fluid_param.adaptive_time_stepping == true)
-  {
-    AssertThrow(
-      scalar_param.adaptive_time_stepping == true,
-      ExcMessage(
-        "Adaptive time stepping has to be used for both fluid and scalar transport solvers."));
-  }
-
   AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
@@ -220,6 +197,8 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   // initialize navier_stokes_operation
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
+    std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
+
     navier_stokes_operation_coupled.reset(
       new DGCoupled(triangulation, fluid_param, fluid_postprocessor));
 
@@ -233,6 +212,8 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
   {
+    std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
+
     navier_stokes_operation_dual_splitting.reset(
       new DGDualSplitting(triangulation, fluid_param, fluid_postprocessor));
 
@@ -246,6 +227,8 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
   {
+    std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
+
     navier_stokes_operation_pressure_correction.reset(
       new DGPressureCorrection(triangulation, fluid_param, fluid_postprocessor));
 
@@ -286,7 +269,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   scalar_postprocessor.reset(new ConvDiff::PostProcessor<dim, degree_s>());
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(triangulation,
+  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(triangulation_scalar,
                                                                             scalar_param,
                                                                             scalar_postprocessor));
 
@@ -307,11 +290,21 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
                   scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
                 ExcMessage("Specified time integration scheme is not implemented!"));
   }
+
+  if(fluid_param.adaptive_time_stepping == true)
+  {
+    AssertThrow(
+      scalar_param.adaptive_time_stepping == true,
+      ExcMessage(
+        "Adaptive time stepping has to be used for both fluid and scalar transport solvers."));
+
+    use_adaptive_time_stepping = true;
+  }
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::print_header()
+Problem<dim, degree_u, degree_p, degree_s, Number>::print_header() const
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -339,64 +332,20 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes(bool con
 
   print_grid_data(pcout, n_refine_space, triangulation);
 
-  setup_navier_stokes_operation();
-
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
-  setup_navier_stokes_time_integrator(do_restart);
-
-  setup_navier_stokes_solvers();
-}
-
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
-void
-Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes_operation()
-{
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
-
   navier_stokes_operation->setup(periodic_faces,
                                  fluid_boundary_descriptor_velocity,
                                  fluid_boundary_descriptor_pressure,
                                  fluid_field_functions,
                                  fluid_analytical_solution);
-}
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
-void
-Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes_time_integrator(
-  bool const do_restart)
-{
+  // setup time integrator before calling setup_solvers
+  // (this is necessary since the setup of the solvers
+  // depends on quantities such as the time_step_size or gamma0!!!)
   fluid_time_integrator->setup(do_restart);
-}
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
-void
-Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes_solvers()
-{
-  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    navier_stokes_operation_coupled->setup_solvers(
-      fluid_time_integrator->get_scaling_factor_time_derivative_term());
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    navier_stokes_operation_dual_splitting->setup_solvers(
-      fluid_time_integrator->get_time_step_size(),
-      fluid_time_integrator->get_scaling_factor_time_derivative_term());
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    navier_stokes_operation_pressure_correction->setup_solvers(
-      fluid_time_integrator->get_time_step_size(),
-      fluid_time_integrator->get_scaling_factor_time_derivative_term());
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  navier_stokes_operation->setup_solvers(
+    fluid_time_integrator->get_scaling_factor_time_derivative_term());
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -406,12 +355,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
-  parallel::distributed::Triangulation<dim> triangulation_dummy(
-    MPI_COMM_WORLD,
-    dealii::Triangulation<dim>::none,
-    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy);
-
-  ConvDiff::create_grid_and_set_boundary_conditions(triangulation_dummy,
+  ConvDiff::create_grid_and_set_boundary_conditions(triangulation_scalar,
                                                     n_refine_space,
                                                     scalar_boundary_descriptor);
 
@@ -434,7 +378,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time()
+Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
   double fluid_time = fluid_param.start_time, scalar_time = scalar_param.start_time;
@@ -452,7 +396,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time()
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
+Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size() const
 {
   double const EPSILON = 1.e-10;
 
@@ -476,8 +420,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
     time_step_size = (fluid_param.end_time - fluid_param.start_time) /
                      (1 + int((fluid_param.end_time - fluid_param.start_time) / time_step_size));
 
-    pcout << std::endl
-          << "Combined time step size for both domains: " << time_step_size << std::endl;
+    pcout << std::endl << "Combined time step size dt = " << time_step_size << std::endl;
   }
 
   // Set the same time step size for both solvers
@@ -491,8 +434,11 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop()
+Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop() const
 {
+  AssertThrow(scalar_param.type_velocity_field == ConvDiff::TypeVelocityField::Numerical,
+              ExcMessage("Type of velocity field has to be TypeVelocityField::Numerical."));
+
   bool finished_fluid = false, finished_scalar = false;
 
   set_start_time();
@@ -501,34 +447,35 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop()
 
   while(!finished_fluid || !finished_scalar)
   {
+    // We need to communicate between fluid solver and scalar transport solver, i.e.,
+    // ask the fluid solver for the velocity field and hand it over to the scalar transport solver
+
+    if(scalar_param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Explicit)
+    {
+      // get velocity at time t_{n}
+      conv_diff_operator->set_velocity(fluid_time_integrator->get_velocity());
+    }
+    else if(scalar_param.treatment_of_convective_term ==
+            ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
+    {
+      std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
+      std::vector<double>                                             times;
+
+      fluid_time_integrator->get_velocities_and_times(velocities, times);
+
+      conv_diff_operator->set_velocities_and_times(velocities, times);
+    }
+
     // fluid: advance one time step
     finished_fluid = fluid_time_integrator->advance_one_timestep(!finished_fluid);
 
-    // Communicate between fluid solver and scalar transport solver, i.e., ask the fluid solver
-    // for the velocity field and hand it over to the scalar transport solver
-
-    // TODO
-    //    LinearAlgebra::distributed::Vector<Number> velocity;
-    //    if(fluid_param.temporal_discretization ==
-    //    IncNS::TemporalDiscretization::BDFCoupledSolution)
-    //    {
-    //      velocity = time_integrator_coupled->get_velocity();
-    //    }
-    //    else if(fluid_param.temporal_discretization ==
-    //            IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-    //    {
-    //      velocity = time_integrator_dual_splitting->get_velocity();
-    //    }
-    //    else if(fluid_param.temporal_discretization ==
-    //            IncNS::TemporalDiscretization::BDFPressureCorrection)
-    //    {
-    //      velocity = time_integrator_pressure_correction->get_velocity();
-    //    }
-    //    else
-    //    {
-    //      AssertThrow(false, ExcMessage("Not implemented."));
-    //    }
-
+    // in case of an implicit treatment we first have to solve the fluid before sending the
+    // velocity field to the scalar convection-diffusion solver
+    if(scalar_param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+    {
+      // get velocity at time t_{n+1}
+      conv_diff_operator->set_velocity(fluid_time_integrator->get_velocity());
+    }
 
     // scalar transport: advance one time step
     finished_scalar = scalar_time_integrator->advance_one_timestep(!finished_scalar);
@@ -548,6 +495,16 @@ template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
 Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
 {
+  // The parameter start_with_low_order has to be true.
+  // This is due to the fact that the setup function of the time integrator initializes
+  // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
+  // start_with_low_order == false. However, the combined time step size
+  // is not known at this point since we have to first communicate the time step size
+  // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
+  // inconsistencies is to preclude the case start_with_low_order == false.
+  AssertThrow(fluid_param.start_with_low_order == true && scalar_param.start_with_low_order == true,
+              ExcMessage("start_with_low_order has to be true for this solver."));
+
   setup_navier_stokes(do_restart);
 
   setup_convection_diffusion(do_restart);
@@ -555,7 +512,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::solve()
+Problem<dim, degree_u, degree_p, degree_s, Number>::solve() const
 {
   run_timeloop();
 }

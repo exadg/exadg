@@ -153,8 +153,6 @@ print_grid_data(ConditionalOStream &                        pcout,
 
   pcout << "Number of refinements: " << n_refine_space << std::endl;
   pcout << "Number of cells:       " << triangulation.n_global_active_cells() << std::endl;
-  pcout << "Number of faces:       " << triangulation.n_active_faces() << std::endl;
-  pcout << "Number of vertices:    " << triangulation.n_vertices() << std::endl;
 }
 
 

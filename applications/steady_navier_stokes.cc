@@ -36,8 +36,8 @@ using namespace IncNS;
 
 // 2D Navier-Stokes flow
 //#include "incompressible_navier_stokes_test_cases/couette.h"
-#include "incompressible_navier_stokes_test_cases/poiseuille.h"
-//#include "incompressible_navier_stokes_test_cases/cavity.h"
+//#include "incompressible_navier_stokes_test_cases/poiseuille.h"
+#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
 
 // 2D/3D Navier-Stokes flow
@@ -52,14 +52,14 @@ public:
                       const unsigned int refine_steps_time = 0);
 
   void
-  solve_problem();
+  setup();
+
+  void
+  solve() const;
 
 private:
   void
-  print_header();
-
-  void
-  setup_navier_stokes_operation();
+  print_header() const;
 
   ConditionalOStream pcout;
 
@@ -140,7 +140,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -156,20 +156,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header()
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_navier_stokes_operation()
-{
-  AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
-
-  navier_stokes_operation->setup(periodic_faces,
-                                 boundary_descriptor_velocity,
-                                 boundary_descriptor_pressure,
-                                 field_functions,
-                                 analytical_solution);
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::solve_problem()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::setup()
 {
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
@@ -181,12 +168,23 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::solve_problem()
 
   print_grid_data(pcout, n_refine_space, triangulation);
 
-  setup_navier_stokes_operation();
+  AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
+
+  navier_stokes_operation->setup(periodic_faces,
+                                 boundary_descriptor_velocity,
+                                 boundary_descriptor_pressure,
+                                 field_functions,
+                                 analytical_solution);
 
   driver_steady->setup();
 
   navier_stokes_operation->setup_solvers();
+}
 
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
+{
   driver_steady->solve_steady_problem();
 }
 
@@ -216,10 +214,12 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, VALUE_TYPE>
-          navier_stokes_problem(refine_steps_space, refine_steps_time);
+        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, VALUE_TYPE> problem(
+          refine_steps_space, refine_steps_time);
 
-        navier_stokes_problem.solve_problem();
+        problem.setup();
+
+        problem.solve();
       }
     }
   }

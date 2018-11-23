@@ -26,7 +26,7 @@
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
-// Paramters, BCs, etc.
+// Parameters, BCs, etc.
 #include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
@@ -52,29 +52,20 @@ public:
                       unsigned int const refine_steps_time = 0);
 
   void
-  solve_problem(bool const do_restart);
+  setup(bool const do_restart);
+
+  void
+  solve() const;
 
 private:
   void
-  print_header();
+  print_header() const;
 
   void
-  setup_navier_stokes_operation();
+  set_start_time() const;
 
   void
-  setup_time_integrator(bool const do_restart);
-
-  void
-  set_start_time();
-
-  void
-  synchronize_time_step_size();
-
-  void
-  setup_solvers();
-
-  void
-  run_timeloop();
+  synchronize_time_step_size() const;
 
   ConditionalOStream pcout;
 
@@ -96,23 +87,12 @@ private:
 
   InputParameters<dim> param_1, param_2;
 
-  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> DGBase;
-
-  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number> DGCoupled;
-
-  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number> DGDualSplitting;
-
+  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number>               DGBase;
+  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number>            DGCoupled;
+  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>      DGDualSplitting;
   typedef DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number> DGPressureCorrection;
 
   std::shared_ptr<DGBase> navier_stokes_operation_1, navier_stokes_operation_2;
-
-  std::shared_ptr<DGCoupled> navier_stokes_operation_coupled_1, navier_stokes_operation_coupled_2;
-
-  std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting_1,
-    navier_stokes_operation_dual_splitting_2;
-
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction_1,
-    navier_stokes_operation_pressure_correction_2;
 
   typedef PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
 
@@ -201,6 +181,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   // initialize navier_stokes_operation_1 (DOMAIN 1)
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
+    std::shared_ptr<DGCoupled> navier_stokes_operation_coupled_1;
+
     navier_stokes_operation_coupled_1.reset(
       new DGCoupled(triangulation_1, param_1, postprocessor_1));
 
@@ -213,6 +195,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
+    std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting_1;
+
     navier_stokes_operation_dual_splitting_1.reset(
       new DGDualSplitting(triangulation_1, param_1, postprocessor_1));
 
@@ -225,6 +209,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
+    std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction_1;
+
     navier_stokes_operation_pressure_correction_1.reset(
       new DGPressureCorrection(triangulation_1, param_1, postprocessor_1));
 
@@ -244,6 +230,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   // initialize navier_stokes_operation_2 (DOMAIN 2)
   if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
+    std::shared_ptr<DGCoupled> navier_stokes_operation_coupled_2;
+
     navier_stokes_operation_coupled_2.reset(
       new DGCoupled(triangulation_2, param_2, postprocessor_2));
 
@@ -256,6 +244,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
+    std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting_2;
+
     navier_stokes_operation_dual_splitting_2.reset(
       new DGDualSplitting(triangulation_2, param_2, postprocessor_2));
 
@@ -268,6 +258,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
+    std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction_2;
+
     navier_stokes_operation_pressure_correction_2.reset(
       new DGPressureCorrection(triangulation_2, param_2, postprocessor_2));
 
@@ -287,7 +279,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -303,47 +295,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header()
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_navier_stokes_operation()
-{
-  AssertThrow(navier_stokes_operation_1.get() != 0, ExcMessage("Not initialized."));
-  AssertThrow(navier_stokes_operation_2.get() != 0, ExcMessage("Not initialized."));
-
-  navier_stokes_operation_1->setup(periodic_faces_1,
-                                   boundary_descriptor_velocity_1,
-                                   boundary_descriptor_pressure_1,
-                                   field_functions_1,
-                                   analytical_solution_1);
-
-  navier_stokes_operation_2->setup(periodic_faces_2,
-                                   boundary_descriptor_velocity_2,
-                                   boundary_descriptor_pressure_2,
-                                   field_functions_2,
-                                   analytical_solution_2);
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_time_integrator(bool const do_restart)
-{
-  // Setup time integrator
-
-  // For the two-domain solver the parameter start_with_low_order has to be true.
-  // This is due to the fact that the setup function of the time integrator initializes
-  // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
-  // start_with_low_order == false. However, the combined time step size
-  // is not known at this point since the two domains have to first communicate with each other
-  // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
-  // inconsistencies is to preclude the case start_with_low_order == false.
-  AssertThrow(param_1.start_with_low_order == true && param_2.start_with_low_order == true,
-              ExcMessage("start_with_low_order has to be true for two-domain solver."));
-
-  time_integrator_1->setup(do_restart);
-  time_integrator_2->setup(do_restart);
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
   double time_1 = param_1.start_time, time_2 = param_2.start_time;
@@ -357,7 +309,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time()
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size() const
 {
   double const EPSILON = 1.e-10;
 
@@ -393,59 +345,76 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup_solvers()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restart)
 {
-  // DOMAIN 1
-  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    navier_stokes_operation_coupled_1->setup_solvers(
-      time_integrator_1->get_scaling_factor_time_derivative_term());
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    navier_stokes_operation_dual_splitting_1->setup_solvers(
-      time_integrator_1->get_time_step_size(),
-      time_integrator_1->get_scaling_factor_time_derivative_term());
-  }
-  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    navier_stokes_operation_pressure_correction_1->setup_solvers(
-      time_integrator_1->get_time_step_size(),
-      time_integrator_1->get_scaling_factor_time_derivative_term());
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  // create grid
 
-  // DOMAIN 2
-  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    navier_stokes_operation_coupled_2->setup_solvers(
-      time_integrator_2->get_scaling_factor_time_derivative_term());
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    navier_stokes_operation_dual_splitting_2->setup_solvers(
-      time_integrator_2->get_time_step_size(),
-      time_integrator_2->get_scaling_factor_time_derivative_term());
-  }
-  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    navier_stokes_operation_pressure_correction_2->setup_solvers(
-      time_integrator_2->get_time_step_size(),
-      time_integrator_2->get_scaling_factor_time_derivative_term());
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  // this function has to be defined in the header file that implements all problem specific things
+  // like parameters, geometry, boundary conditions, etc.
+  create_grid_and_set_boundary_conditions_1(triangulation_1,
+                                            n_refine_space_domain1,
+                                            boundary_descriptor_velocity_1,
+                                            boundary_descriptor_pressure_1,
+                                            periodic_faces_1);
+
+  create_grid_and_set_boundary_conditions_2(triangulation_2,
+                                            n_refine_space_domain2,
+                                            boundary_descriptor_velocity_2,
+                                            boundary_descriptor_pressure_2,
+                                            periodic_faces_2);
+
+  print_grid_data(
+    pcout, n_refine_space_domain1, triangulation_1, n_refine_space_domain2, triangulation_2);
+
+  // setup navier_stokes_operation
+
+  AssertThrow(navier_stokes_operation_1.get() != 0, ExcMessage("Not initialized."));
+  AssertThrow(navier_stokes_operation_2.get() != 0, ExcMessage("Not initialized."));
+
+  navier_stokes_operation_1->setup(periodic_faces_1,
+                                   boundary_descriptor_velocity_1,
+                                   boundary_descriptor_pressure_1,
+                                   field_functions_1,
+                                   analytical_solution_1);
+
+  navier_stokes_operation_2->setup(periodic_faces_2,
+                                   boundary_descriptor_velocity_2,
+                                   boundary_descriptor_pressure_2,
+                                   field_functions_2,
+                                   analytical_solution_2);
+
+  // Setup time integrator
+
+  // For the two-domain solver the parameter start_with_low_order has to be true.
+  // This is due to the fact that the setup function of the time integrator initializes
+  // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
+  // start_with_low_order == false. However, the combined time step size
+  // is not known at this point since the two domains have to first communicate with each other
+  // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
+  // inconsistencies is to preclude the case start_with_low_order == false.
+  AssertThrow(param_1.start_with_low_order == true && param_2.start_with_low_order == true,
+              ExcMessage("start_with_low_order has to be true for two-domain solver."));
+
+  // setup time integrator before calling setup_solvers (this is necessary since the setup of the
+  // solvers depends on quantities such as the time_step_size or gamma0!!!)
+  time_integrator_1->setup(do_restart);
+  time_integrator_2->setup(do_restart);
+
+  // setup solvers
+
+  navier_stokes_operation_1->setup_solvers(
+    time_integrator_1->get_scaling_factor_time_derivative_term());
+
+  navier_stokes_operation_2->setup_solvers(
+    time_integrator_2->get_scaling_factor_time_derivative_term());
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::run_timeloop()
+NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
 {
+  // run time loop
+
   bool finished_1 = false, finished_2 = false;
 
   set_start_time();
@@ -472,38 +441,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::run_timeloop()
       synchronize_time_step_size();
     }
   }
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::solve_problem(bool const do_restart)
-{
-  // this function has to be defined in the header file that implements all problem specific things
-  // like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions_1(triangulation_1,
-                                            n_refine_space_domain1,
-                                            boundary_descriptor_velocity_1,
-                                            boundary_descriptor_pressure_1,
-                                            periodic_faces_1);
-
-  create_grid_and_set_boundary_conditions_2(triangulation_2,
-                                            n_refine_space_domain2,
-                                            boundary_descriptor_velocity_2,
-                                            boundary_descriptor_pressure_2,
-                                            periodic_faces_2);
-
-  print_grid_data(
-    pcout, n_refine_space_domain1, triangulation_1, n_refine_space_domain2, triangulation_2);
-
-  setup_navier_stokes_operation();
-
-  // setup time integrator before calling setup_solvers (this is necessary since the setup of the
-  // solvers depends on quantities such as the time_step_size or gamma0!!!)
-  setup_time_integrator(do_restart);
-
-  setup_solvers();
-
-  run_timeloop();
 }
 
 int
@@ -541,12 +478,12 @@ main(int argc, char ** argv)
         refine_steps_time <= REFINE_STEPS_TIME_MAX;
         ++refine_steps_time)
     {
-      NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, VALUE_TYPE>
-        navier_stokes_problem(REFINE_STEPS_SPACE_DOMAIN1,
-                              REFINE_STEPS_SPACE_DOMAIN2,
-                              refine_steps_time);
+      NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, VALUE_TYPE> problem(
+        REFINE_STEPS_SPACE_DOMAIN1, REFINE_STEPS_SPACE_DOMAIN2, refine_steps_time);
 
-      navier_stokes_problem.solve_problem(do_restart);
+      problem.setup(do_restart);
+
+      problem.solve();
     }
   }
   catch(std::exception & exc)
