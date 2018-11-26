@@ -29,7 +29,7 @@ TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
     param(param_in),
     time_step_diff(1.0),
     n_refine_time(n_refine_time_in),
-    cfl(param.cfl_number / std::pow(2.0, n_refine_time)),
+    cfl(param.cfl / std::pow(2.0, n_refine_time)),
     diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time))
 {
 }

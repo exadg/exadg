@@ -8,16 +8,15 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_
 
-#include "dg_navier_stokes_projection_methods.h"
-#include "velocity_convection_diffusion_operator.h"
-
 #include "../preconditioners/multigrid_preconditioner_navier_stokes.h"
+#include "dg_navier_stokes_projection_methods.h"
 
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 
 #include "../interface_space_time/operator.h"
+#include "momentum_operator.h"
 
 namespace IncNS
 {

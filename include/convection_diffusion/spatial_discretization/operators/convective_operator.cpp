@@ -1,4 +1,4 @@
-#include "convection_operator.h"
+#include "convective_operator.h"
 
 #include "verify_boundary_conditions.h"
 
@@ -10,11 +10,10 @@ template<int dim, int degree, typename Number>
 void
 ConvectiveOperator<dim, degree, Number>::initialize(
   MatrixFree<dim, Number> const &     mf_data,
-  ConvectiveOperatorData<dim> const & operator_data_in,
-  unsigned int                        level_mg_handler)
+  ConvectiveOperatorData<dim> const & operator_data)
 {
   AffineConstraints<double> constraint_matrix;
-  Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
+  Base::reinit(mf_data, constraint_matrix, operator_data, numbers::invalid_unsigned_int);
 }
 
 template<int dim, int degree, typename Number>
@@ -22,10 +21,10 @@ void
 ConvectiveOperator<dim, degree, Number>::initialize(
   MatrixFree<dim, Number> const &     mf_data,
   AffineConstraints<double> const &   constraint_matrix,
-  ConvectiveOperatorData<dim> const & operator_data_in,
+  ConvectiveOperatorData<dim> const & operator_data,
   unsigned int                        level_mg_handler)
 {
-  Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
+  Base::reinit(mf_data, constraint_matrix, operator_data, level_mg_handler);
 }
 
 /*
@@ -34,9 +33,10 @@ ConvectiveOperator<dim, degree, Number>::initialize(
 template<int dim, int degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  ConvectiveOperator<dim, degree, Number>::calculate_central_flux(scalar & value_m,
-                                                                  scalar & value_p,
-                                                                  scalar & normal_velocity) const
+  ConvectiveOperator<dim, degree, Number>::calculate_central_flux(
+    scalar const & value_m,
+    scalar const & value_p,
+    scalar const & normal_velocity) const
 {
   scalar average_value = 0.5 * (value_m + value_p);
 
@@ -50,9 +50,9 @@ template<int dim, int degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   ConvectiveOperator<dim, degree, Number>::calculate_lax_friedrichs_flux(
-    scalar & value_m,
-    scalar & value_p,
-    scalar & normal_velocity) const
+    scalar const & value_m,
+    scalar const & value_p,
+    scalar const & normal_velocity) const
 {
   scalar average_value = 0.5 * (value_m + value_p);
   scalar jump_value    = value_m - value_p;
@@ -70,8 +70,8 @@ inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   ConvectiveOperator<dim, degree, Number>::calculate_flux(unsigned int const q,
                                                           FEEvalFace &       fe_eval,
-                                                          scalar &           value_m,
-                                                          scalar &           value_p) const
+                                                          scalar const &     value_m,
+                                                          scalar const &     value_p) const
 {
   scalar flux = make_vectorized_array<Number>(0.0);
 
@@ -275,4 +275,4 @@ ConvectiveOperator<dim, degree, Number>::do_verify_boundary_conditions(
 
 } // namespace ConvDiff
 
-#include "convection_operator.hpp"
+#include "convective_operator.hpp"

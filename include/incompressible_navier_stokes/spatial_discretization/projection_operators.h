@@ -14,6 +14,10 @@
 
 #include "operators/matrix_operator_base.h"
 
+#include "operators/elementwise_operator.h"
+#include "solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
+#include "solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
+
 namespace IncNS
 {
 /*

@@ -14,7 +14,6 @@
 #include "../../incompressible_navier_stokes/preconditioners/compatible_laplace_operator.h"
 #include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/preconditioners/pressure_convection_diffusion_operator.h"
-#include "../../incompressible_navier_stokes/spatial_discretization/velocity_convection_diffusion_operator.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
@@ -22,6 +21,9 @@
 #include "../../functionalities/set_zero_mean_value.h"
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
+
+#include "../../convection_diffusion/spatial_discretization/operators/convective_operator_discontinuous_velocity.h"
+#include "../spatial_discretization/momentum_operator.h"
 
 
 // forward declaration
@@ -809,11 +811,13 @@ private:
     diffusive_operator_data.diffusivity = underlying_operator->get_viscosity();
 
     // c) convective operator
-    ConvDiff::ConvectiveOperatorDataDiscontinuousVelocity<dim> convective_operator_data;
+    ConvDiff::ConvectiveOperatorDisVelData<dim> convective_operator_data;
     convective_operator_data.dof_index          = underlying_operator->get_dof_index_pressure();
     convective_operator_data.dof_index_velocity = underlying_operator->get_dof_index_velocity();
     convective_operator_data.quad_index         = underlying_operator->get_quad_index_pressure();
-    convective_operator_data.bc                 = boundary_descriptor;
+    convective_operator_data.numerical_flux_formulation =
+      ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+    convective_operator_data.bc = boundary_descriptor;
 
     PressureConvectionDiffusionOperatorData<dim> pressure_convection_diffusion_operator_data;
     pressure_convection_diffusion_operator_data.mass_matrix_operator_data =
@@ -1040,10 +1044,15 @@ private:
 
       // II. pressure convection diffusion operator A_p
       if(underlying_operator->nonlinear_problem_has_to_be_solved() == true)
+      {
         pressure_convection_diffusion_operator->apply(
-          dst, tmp_scp_pressure, &underlying_operator->get_velocity_linearization());
+          dst, tmp_scp_pressure, underlying_operator->get_velocity_linearization());
+      }
       else
-        pressure_convection_diffusion_operator->apply(dst, tmp_scp_pressure, nullptr);
+      {
+        VectorType dummy;
+        pressure_convection_diffusion_operator->apply(dst, tmp_scp_pressure, dummy);
+      }
 
       // III. inverse pressure mass matrix M_p^{-1}
       inv_mass_matrix_preconditioner_schur_complement->vmult(dst, dst);

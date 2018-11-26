@@ -20,7 +20,7 @@ class KineticEnergyCalculator
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  KineticEnergyCalculator() : clear_files(true), counter(0), matrix_free_data(nullptr)
+  KineticEnergyCalculator() : clear_files(true), matrix_free_data(nullptr)
   {
   }
 
@@ -205,8 +205,7 @@ protected:
     dst.at(3) += dissipation;
   }
 
-  bool         clear_files;
-  unsigned int counter;
+  bool clear_files;
 
   MatrixFree<dim, Number> const * matrix_free_data;
   DofQuadIndexData                dof_quad_index_data;

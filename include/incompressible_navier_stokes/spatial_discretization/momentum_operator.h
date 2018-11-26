@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VELOCITY_CONVECTION_DIFFUSION_OPERATOR_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VELOCITY_CONVECTION_DIFFUSION_OPERATOR_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_
 
 #include <deal.II/matrix_free/fe_evaluation.h>
 
@@ -19,10 +19,12 @@
 
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/matrix_operator_base.h"
+#include "../../operators/multigrid_operator_base.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
-#include "../../operators/multigrid_operator_base.h"
+#include "solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
+#include "solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
 
 #include <navierstokes/config.h>
 
@@ -349,7 +351,7 @@ private:
 
 } // namespace IncNS
 
-#include "velocity_convection_diffusion_operator.cpp"
+#include "momentum_operator.cpp"
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_VELOCITY_CONVECTION_DIFFUSION_OPERATOR_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_ \
         */

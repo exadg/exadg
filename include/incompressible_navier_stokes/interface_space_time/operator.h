@@ -10,6 +10,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "time_integration/interpolate.h"
+
 using namespace dealii;
 
 namespace IncNS
@@ -348,40 +350,12 @@ public:
 
   // OIF splitting (transport with interpolated velocity)
   void
-  set_solutions_and_times(std::vector<VectorType const *> & solutions_in,
-                          std::vector<double> &             times_in)
+  set_solutions_and_times(std::vector<VectorType const *> const & solutions_in,
+                          std::vector<double> const &             times_in)
   {
     solutions = solutions_in;
     times     = times_in;
   }
-
-  // OIF splitting (transport with interpolated velocity)
-  void
-  interpolate(VectorType &                          dst,
-              double const                          evaluation_time,
-              std::vector<VectorType const *> const solutions,
-              std::vector<double> const             times) const
-  {
-    dst = 0;
-
-    // loop over all interpolation points
-    for(unsigned int k = 0; k < solutions.size(); ++k)
-    {
-      // evaluate Lagrange polynomial l_k
-      double l_k = 1.0;
-
-      for(unsigned int j = 0; j < solutions.size(); ++j)
-      {
-        if(j != k)
-        {
-          l_k *= (evaluation_time - times[j]) / (times[k] - times[j]);
-        }
-      }
-
-      dst.add(l_k, *solutions[k]);
-    }
-  }
-
 
   void
   evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
@@ -390,7 +364,6 @@ public:
     {
       interpolate(solution_interpolated, evaluation_time, solutions, times);
 
-      solution_interpolated.update_ghost_values();
       pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
         dst, src, evaluation_time, solution_interpolated);
     }

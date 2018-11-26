@@ -16,7 +16,6 @@ public:
 
   PerturbationEnergyCalculator()
     : clear_files(true),
-      counter(0),
       initial_perturbation_energy_has_been_calculated(false),
       initial_perturbation_energy(1.0),
       matrix_free_data(nullptr)
@@ -46,10 +45,9 @@ public:
   }
 
 private:
-  bool         clear_files;
-  unsigned int counter;
-  bool         initial_perturbation_energy_has_been_calculated;
-  Number       initial_perturbation_energy;
+  bool   clear_files;
+  bool   initial_perturbation_energy_has_been_calculated;
+  Number initial_perturbation_energy;
 
   MatrixFree<dim, Number> const * matrix_free_data;
   DofQuadIndexData                dof_quad_index_data;

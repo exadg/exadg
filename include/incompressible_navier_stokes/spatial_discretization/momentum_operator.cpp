@@ -1,6 +1,4 @@
-#include "velocity_convection_diffusion_operator.h"
-
-//#include <navierstokes/config.h>
+#include "momentum_operator.h"
 
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 

@@ -347,6 +347,10 @@ TimeIntBDFBase::read_restart_preamble(boost::archive::binary_iarchive & ia)
   // 2. time
   ia & time;
 
+  // Note that start_time has to be set to the new start_time (since param.start_time might still be
+  // the original start time).
+  this->start_time = time;
+
   // 3. order
   unsigned int old_order = 1;
   ia &         old_order;

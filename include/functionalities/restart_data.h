@@ -47,7 +47,7 @@ struct RestartData
   {
     // After a restart, the counter is reset to 1. If the restart is controlled by
     // the variable interval_time, we have to reinitialize the counter because the variable time
-    // is the physical time which is not reset to start_time after a restart. Otherwise,
+    // is time-start_time which does not necessarily start with zero after a restart. Otherwise,
     // we would repeat all the restarts that have been written before. There is nothing to do
     // if the restart is controlled by the wall time or the time_step_number because these
     // variables are reinitialized after a restart anyway.

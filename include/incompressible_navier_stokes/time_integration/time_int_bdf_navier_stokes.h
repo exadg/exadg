@@ -50,6 +50,10 @@ public:
   virtual VectorType const &
   get_velocity() const = 0;
 
+  void
+  get_velocities_and_times(std::vector<VectorType const *> & velocities,
+                           std::vector<double> &             times) const;
+
 protected:
   virtual void
   update_time_integrator_constants();
