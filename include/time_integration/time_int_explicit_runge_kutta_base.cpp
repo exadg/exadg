@@ -161,6 +161,10 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   // 2. time
   ia & time;
 
+  // Note that start_time has to be set to the new start_time (since param.start_time might still be
+  // the original start time).
+  this->start_time = time;
+
   // 3. time step size
   ia & time_step;
 

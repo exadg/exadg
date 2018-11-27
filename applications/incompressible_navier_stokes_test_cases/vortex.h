@@ -52,7 +52,7 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   right_hand_side = false;
 
 
@@ -66,7 +66,7 @@ void InputParameters<dim>::set_input_parameters()
   solver_type = SolverType::Unsteady;
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
+  time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping = false;
   max_velocity = 1.4 * U_X_MAX;
@@ -85,6 +85,7 @@ void InputParameters<dim>::set_input_parameters()
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term - currently no parameters
+  upwind_factor = 1.0;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -121,8 +122,8 @@ void InputParameters<dim>::set_input_parameters()
   turbulence_model_constant = 0.5;
 
   // NUMERICAL PARAMETERS
-  implement_block_diagonal_preconditioner_matrix_free = true;
-  use_cell_based_face_loops = true;
+  implement_block_diagonal_preconditioner_matrix_free = false;
+  use_cell_based_face_loops = false;
 
   // PROJECTION METHODS
 
@@ -131,11 +132,7 @@ void InputParameters<dim>::set_input_parameters()
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-12;
-
-  // stability in the limit of small time steps
-  use_approach_of_ferrer = false;
-  deltat_ref = 1.e-1;
+  rel_tol_pressure = 1.e-6;
 
   // projection step
   solver_projection = SolverProjection::PCG;
@@ -143,7 +140,7 @@ void InputParameters<dim>::set_input_parameters()
   preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
   solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2);
   abs_tol_projection = 1.e-12;
-  rel_tol_projection = 1.e-12;
+  rel_tol_projection = 1.e-6;
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -164,15 +161,12 @@ void InputParameters<dim>::set_input_parameters()
   use_right_preconditioning_convective = true;
   max_n_tmp_vectors_convective = 100;
 
-  // stability in the limit of small time steps and projection step
-  small_time_steps_stability = false;
-
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-12;
+  rel_tol_viscous = 1.e-6;
   update_preconditioner_viscous = true;
 
 
@@ -197,7 +191,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::BlockJacobi;
+  preconditioner_momentum = MomentumPreconditioner::BlockJacobi; //InverseMassMatrix;
   multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
 
   // Jacobi smoother data
@@ -244,7 +238,7 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.damping_factor = 0.7;
 
   // GMRES smoother data
-    multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
+  multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
 
   // coarse grid solver
   multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
@@ -305,7 +299,7 @@ void InputParameters<dim>::set_input_parameters()
   output_solver_info_every_timesteps = 1e5;
 
   // restart
-  restart_data.write_restart = true;
+  restart_data.write_restart = false;
   restart_data.interval_time = 0.75;
   restart_data.interval_wall_time = 1.e6;
   restart_data.interval_time_steps = 1e8;

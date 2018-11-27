@@ -78,6 +78,9 @@ public:
                           double const cfl,
                           double const exponent_fe_degree) const = 0;
 
+  virtual double
+  calculate_time_step_cfl(double const cfl, double const exponent_fe_degree) const = 0;
+
   // needed for time step calculation
   virtual double
   calculate_maximum_velocity(double const time) const = 0;

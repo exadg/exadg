@@ -26,7 +26,8 @@ struct ConvectiveOperatorData : public OperatorBaseData<dim>
   }
 
   NumericalFluxConvectiveOperator numerical_flux_formulation;
-  std::shared_ptr<Function<dim>>  velocity;
+
+  std::shared_ptr<Function<dim>> velocity;
 
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
@@ -37,24 +38,23 @@ class ConvectiveOperator : public OperatorBase<dim, degree, Number, ConvectiveOp
 public:
   typedef ConvectiveOperator<dim, degree, Number> This;
 
-  typedef OperatorBase<dim, degree, Number, ConvectiveOperatorData<dim>> Parent;
+  typedef OperatorBase<dim, degree, Number, ConvectiveOperatorData<dim>> Base;
 
-  typedef typename Parent::FEEvalCell FEEvalCell;
-  typedef typename Parent::FEEvalFace FEEvalFace;
-  typedef typename Parent::VectorType VectorType;
+  typedef typename Base::FEEvalCell FEEvalCell;
+  typedef typename Base::FEEvalFace FEEvalFace;
+  typedef typename Base::VectorType VectorType;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
   void
   initialize(MatrixFree<dim, Number> const &     mf_data,
-             ConvectiveOperatorData<dim> const & operator_data_in,
-             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
+             ConvectiveOperatorData<dim> const & operator_data);
 
   void
   initialize(MatrixFree<dim, Number> const &     mf_data,
              AffineConstraints<double> const &   constraint_matrix,
-             ConvectiveOperatorData<dim> const & operator_data_in,
+             ConvectiveOperatorData<dim> const & operator_data,
              unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
 
 private:
@@ -63,16 +63,18 @@ private:
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_central_flux(scalar & value_m, scalar & value_p, scalar & normal_velocity) const;
+    calculate_central_flux(scalar const & value_m,
+                           scalar const & value_p,
+                           scalar const & normal_velocity) const;
 
   /*
    * This function calculates the numerical flux using the Lax-Friedrichs flux.
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_lax_friedrichs_flux(scalar & value_m,
-                                  scalar & value_p,
-                                  scalar & normal_velocity) const;
+    calculate_lax_friedrichs_flux(scalar const & value_m,
+                                  scalar const & value_p,
+                                  scalar const & normal_velocity) const;
 
   /*
    * This function calculates the numerical flux where the type of the numerical flux depends on the
@@ -82,8 +84,8 @@ private:
     scalar
     calculate_flux(unsigned int const q,
                    FEEvalFace &       fe_eval_m,
-                   scalar &           value_m,
-                   scalar &           value_p) const;
+                   scalar const &     value_m,
+                   scalar const &     value_p) const;
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar

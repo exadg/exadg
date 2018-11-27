@@ -1,4 +1,4 @@
-#include "convection_operator.h"
+#include "convective_operator.h"
 
 #include <navierstokes/config.h>
 

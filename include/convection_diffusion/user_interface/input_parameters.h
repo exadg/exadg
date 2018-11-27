@@ -47,6 +47,19 @@ enum class EquationType
   ConvectionDiffusion
 };
 
+/*
+ * This parameter describes the type of velocity field for the convective term.
+ * Analytical means that an analytical velocity field is prescribed, while Numerical
+ * means that a discrete (potentially discontinuous) velocity field is prescribed that
+ * is the result of numerical computations, e.g., the velocity field obtained as the
+ * solution of the incompressible Navier-Stokes equations.
+ */
+enum class TypeVelocityField
+{
+  Analytical,
+  Numerical
+};
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 PHYSICAL QUANTITIES                                */
@@ -207,6 +220,7 @@ public:
     : // MATHEMATICAL MODEL
       problem_type(ProblemType::Undefined),
       equation_type(EquationType::Undefined),
+      type_velocity_field(TypeVelocityField::Analytical),
       right_hand_side(false),
 
       // PHYSICAL QUANTITIES
@@ -225,7 +239,8 @@ public:
       adaptive_time_stepping_limiting_factor(1.2),
       time_step_size(-1.),
       max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
-      cfl_number(-1.),
+      cfl(-1.),
+      max_velocity(std::numeric_limits<double>::min()),
       time_integrator_oif(TimeIntegratorRK::Undefined),
       cfl_oif(-1.),
       diffusion_number(-1.),
@@ -287,7 +302,6 @@ public:
     AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
 
     AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
-
 
     // PHYSICAL QUANTITIES
     AssertThrow(end_time > start_time, ExcMessage("parameter must be defined"));
@@ -364,7 +378,7 @@ public:
 
       // for the explicit RK method both the convective and the diffusive term are
       // treated explicitly -> one has to specify both the CFL-number and the Diffusion-number
-      AssertThrow(cfl_number > 0., ExcMessage("parameter must be defined"));
+      AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
       AssertThrow(diffusion_number > 0., ExcMessage("parameter must be defined"));
     }
 
@@ -378,7 +392,7 @@ public:
         AssertThrow(time_integrator_oif != TimeIntegratorRK::Undefined,
                     ExcMessage("parameter must be defined"));
 
-        AssertThrow(cfl_number > 0., ExcMessage("parameter must be defined"));
+        AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
         AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
       }
     }
@@ -466,6 +480,11 @@ public:
                                        "ConvectionDiffusion"};
 
     print_parameter(pcout, "Equation type", str_equation_type[(int)equation_type]);
+
+    // type of velocity field
+    std::string str_type_velocity[] = {"Analytical", "Numerical"};
+
+    print_parameter(pcout, "Type of velocity field", str_type_velocity[(int)type_velocity_field]);
 
     // right hand side
     print_parameter(pcout, "Right-hand side", right_hand_side);
@@ -579,7 +598,7 @@ public:
     }
 
 
-    // here we do not print quantities such as  cfl_number, diffusion_number, time_step_size
+    // here we do not print quantities such as  cfl, diffusion_number, time_step_size
     // because this is done by the time integration scheme (or the functions that
     // calculate the time step size)
   }
@@ -706,6 +725,9 @@ public:
   // description: see enum declaration
   EquationType equation_type;
 
+  // description: see enum declaration
+  TypeVelocityField type_velocity_field;
+
   // if the rhs f is unequal zero, set right_hand_side = true
   bool right_hand_side;
 
@@ -770,7 +792,10 @@ public:
 
   // cfl number ("global" CFL number, can be larger than critical CFL in case
   // of operator-integration-factor splitting)
-  double cfl_number;
+  double cfl;
+
+  // estimation of maximum velocity required for CFL condition
+  double max_velocity;
 
   // specify the time integration scheme that is used for the OIF substepping of the
   // convective term (only relevant for BDF time integration)

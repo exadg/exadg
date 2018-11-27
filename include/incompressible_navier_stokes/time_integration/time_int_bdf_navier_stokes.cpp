@@ -288,8 +288,8 @@ TimeIntBDF<dim, Number>::initialize_solution_oif_substepping(unsigned int i)
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl,
-                                                                 double const cfl_oif)
+TimeIntBDF<dim, Number>::get_velocities_and_times(std::vector<VectorType const *> & velocities,
+                                                  std::vector<double> &             times) const
 {
   /*
    * the convective term is nonlinear, so we have to initialize the transport velocity
@@ -310,19 +310,29 @@ TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(double const cf
   AssertThrow(current_order > 0 && current_order <= this->order,
               ExcMessage("Invalid parameter current_order"));
 
-  // fill vectors with previous velocity solutions and previous time instants
-  std::vector<VectorType const *> solutions(current_order);
-  std::vector<double>             times(current_order);
+  velocities.resize(current_order);
+  times.resize(current_order);
 
   for(unsigned int i = 0; i < current_order; ++i)
   {
-    solutions.at(i) = &get_velocity(i);
-    times.at(i)     = get_previous_time(i);
+    velocities.at(i) = &get_velocity(i);
+    times.at(i)      = get_previous_time(i);
   }
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl,
+                                                                 double const cfl_oif)
+{
+  std::vector<VectorType const *> velocities;
+  std::vector<double>             times;
+
+  this->get_velocities_and_times(velocities, times);
 
   // this is only needed for transport with interpolated/extrapolated velocity
   // as opposed to the standard nonlinear transport
-  this->convective_operator_OIF->set_solutions_and_times(solutions, times);
+  this->convective_operator_OIF->set_solutions_and_times(velocities, times);
 
   // call function implemented in base class for the actual OIF sub-stepping
   TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);

@@ -58,11 +58,10 @@
 
 using namespace dealii;
 
-// Navier-Stokes test case
-#include "incompressible_navier_stokes_test_cases/cavity.h"
+// select the test case
+#include "incompressible_flow_with_transport_test_cases/cavity.h"
 
-// convection-diffusion test case
-#include "convection_diffusion_test_cases/cavity.h"
+
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number = double>
 class Problem
@@ -92,7 +91,7 @@ private:
 
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation, triangulation_scalar;
+  parallel::distributed::Triangulation<dim> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
@@ -156,9 +155,6 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
                   parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-    triangulation_scalar(MPI_COMM_WORLD,
-                         dealii::Triangulation<dim>::none,
-                         parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(refine_steps_space),
     use_adaptive_time_stepping(false)
 {
@@ -269,7 +265,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   scalar_postprocessor.reset(new ConvDiff::PostProcessor<dim, degree_s>());
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(triangulation_scalar,
+  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(triangulation,
                                                                             scalar_param,
                                                                             scalar_postprocessor));
 
@@ -322,13 +318,8 @@ template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
 Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes(bool const do_restart)
 {
-  // this function has to be defined in the header file that implements all
-  // problem specific things like parameters, geometry, boundary conditions, etc.
-  IncNS::create_grid_and_set_boundary_conditions(triangulation,
-                                                 n_refine_space,
-                                                 fluid_boundary_descriptor_velocity,
-                                                 fluid_boundary_descriptor_pressure,
-                                                 periodic_faces);
+  IncNS::set_boundary_conditions(fluid_boundary_descriptor_velocity,
+                                 fluid_boundary_descriptor_pressure);
 
   print_grid_data(pcout, n_refine_space, triangulation);
 
@@ -353,11 +344,7 @@ void
 Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(
   bool const do_restart)
 {
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
-  ConvDiff::create_grid_and_set_boundary_conditions(triangulation_scalar,
-                                                    n_refine_space,
-                                                    scalar_boundary_descriptor);
+  ConvDiff::set_boundary_conditions(scalar_boundary_descriptor);
 
   conv_diff_operator->setup(periodic_faces,
                             scalar_boundary_descriptor,
@@ -381,9 +368,10 @@ void
 Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
-  double fluid_time = fluid_param.start_time, scalar_time = scalar_param.start_time;
+  double const fluid_time  = fluid_time_integrator->get_time(),
+               scalar_time = scalar_time_integrator->get_time();
 
-  double time = std::min(fluid_time, scalar_time);
+  double const time = std::min(fluid_time, scalar_time);
 
   // Set the same start time for both solvers
 
@@ -482,8 +470,6 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop() const
 
     if(use_adaptive_time_stepping == true)
     {
-      AssertThrow(false, ExcMessage("Adaptive time stepping is not implemented."));
-
       // Both solvers have already calculated the new, adaptive time step size individually in
       // function advance_one_timestep(). Here, we only have to synchronize the time step size.
       synchronize_time_step_size();
@@ -504,6 +490,8 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
   // inconsistencies is to preclude the case start_with_low_order == false.
   AssertThrow(fluid_param.start_with_low_order == true && scalar_param.start_with_low_order == true,
               ExcMessage("start_with_low_order has to be true for this solver."));
+
+  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
 
   setup_navier_stokes(do_restart);
 
@@ -537,37 +525,12 @@ main(int argc, char ** argv)
     if(argc > 1)
     {
       do_restart = std::atoi(argv[1]);
-      if(do_restart)
-      {
-        AssertThrow(false, ExcMessage("Not implemented"));
-      }
     }
 
-    AssertThrow(IncNS::REFINE_STEPS_SPACE_MIN == IncNS::REFINE_STEPS_SPACE_MAX,
-                ExcMessage("Invalid parameters!"));
-    AssertThrow(IncNS::REFINE_STEPS_TIME_MIN == IncNS::REFINE_STEPS_TIME_MAX,
-                ExcMessage("Invalid parameters!"));
+    AssertThrow(FE_DEGREE_VELOCITY == FE_DEGREE_SCALAR, ExcMessage("Invalid parameters!"));
 
-    AssertThrow(ConvDiff::REFINE_STEPS_SPACE_MIN == ConvDiff::REFINE_STEPS_SPACE_MAX,
-                ExcMessage("Invalid parameters!"));
-    AssertThrow(ConvDiff::REFINE_STEPS_TIME_MIN == ConvDiff::REFINE_STEPS_TIME_MAX,
-                ExcMessage("Invalid parameters!"));
-
-    AssertThrow(ConvDiff::REFINE_STEPS_SPACE_MIN == IncNS::REFINE_STEPS_SPACE_MIN,
-                ExcMessage("Invalid parameters!"));
-    AssertThrow(ConvDiff::REFINE_STEPS_TIME_MIN == IncNS::REFINE_STEPS_TIME_MIN,
-                ExcMessage("Invalid parameters!"));
-
-    // currently, no refinement tests in space or time possible
-    unsigned int refine_steps_space = IncNS::REFINE_STEPS_SPACE_MIN;
-    unsigned int refine_steps_time  = IncNS::REFINE_STEPS_TIME_MIN;
-
-    Problem<IncNS::DIMENSION,
-            IncNS::FE_DEGREE_VELOCITY,
-            IncNS::FE_DEGREE_PRESSURE,
-            ConvDiff::FE_DEGREE,
-            IncNS::VALUE_TYPE>
-      problem(refine_steps_space, refine_steps_time);
+    Problem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_SCALAR, VALUE_TYPE>
+      problem(REFINE_STEPS_SPACE);
 
     problem.setup(do_restart);
 

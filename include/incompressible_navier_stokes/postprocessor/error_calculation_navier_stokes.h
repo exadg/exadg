@@ -25,7 +25,8 @@ public:
     : clear_files_velocity(true),
       clear_files_pressure(true),
       clear_files_velocity_H1_seminorm(true),
-      counter(0)
+      counter(0),
+      reset_counter(true)
   {
   }
 
@@ -79,22 +80,19 @@ public:
   }
 
 private:
-  bool         clear_files_velocity, clear_files_pressure;
-  bool         clear_files_velocity_H1_seminorm;
-  unsigned int counter;
-
-  SmartPointer<DoFHandler<dim> const> dof_handler_velocity;
-  SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
-  SmartPointer<Mapping<dim> const>    mapping;
-
-  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
-
-  ErrorCalculationData error_data;
-
   bool
   error_has_to_be_calculated(double const & time, int const & time_step_number)
   {
-    double const EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+    // small number which is much smaller than the time step size
+    double const EPSILON = 1.0e-10;
+
+    if(reset_counter)
+    {
+      counter += int((time - error_data.error_calc_start_time + EPSILON) /
+                     error_data.error_calc_interval_time);
+      reset_counter = false;
+    }
+
     if((time > (error_data.error_calc_start_time + counter * error_data.error_calc_interval_time -
                 EPSILON)))
     {
@@ -268,6 +266,20 @@ private:
       }
     }
   }
+
+  bool clear_files_velocity, clear_files_pressure;
+  bool clear_files_velocity_H1_seminorm;
+
+  unsigned int counter;
+  bool         reset_counter;
+
+  SmartPointer<DoFHandler<dim> const> dof_handler_velocity;
+  SmartPointer<DoFHandler<dim> const> dof_handler_pressure;
+  SmartPointer<Mapping<dim> const>    mapping;
+
+  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
+
+  ErrorCalculationData error_data;
 };
 
 } // namespace IncNS

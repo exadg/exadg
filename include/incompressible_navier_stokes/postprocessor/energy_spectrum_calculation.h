@@ -60,7 +60,7 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   KineticEnergySpectrumCalculator()
-    : clear_files(true), deal_spectrum_wrapper(false, true), counter(0)
+    : clear_files(true), deal_spectrum_wrapper(false, true), counter(0), reset_counter(true)
   {
   }
 
@@ -122,7 +122,17 @@ private:
     }
     else if(data.calculate_every_time_interval > 0.0)
     {
-      const double EPSILON = 1.0e-10; // small number which is much smaller than the time step size
+      // small number which is much smaller than the time step size
+      const double EPSILON = 1.0e-10;
+
+      // The current time might be larger than output_start_time. In that case, we first have to
+      // reset the counter in order to avoid that output is written every time step.
+      if(reset_counter)
+      {
+        counter += int((time - data.start_time + EPSILON) / data.calculate_every_time_interval);
+        reset_counter = false;
+      }
+
       if((time > (data.start_time + counter * data.calculate_every_time_interval - EPSILON)))
       {
         evaluate = true;
@@ -204,6 +214,7 @@ private:
   dealspectrum::DealSpectrumWrapper deal_spectrum_wrapper;
   KineticEnergySpectrumData         data;
   unsigned int                      counter;
+  bool                              reset_counter;
   const unsigned int                precision = 12;
 };
 

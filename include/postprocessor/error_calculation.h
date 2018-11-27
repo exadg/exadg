@@ -17,7 +17,7 @@ class ErrorCalculator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  ErrorCalculator() : error_counter(0)
+  ErrorCalculator() : error_counter(0), reset_counter(true)
   {
   }
 
@@ -42,8 +42,18 @@ public:
     {
       if(time_step_number >= 0) // unsteady problem
       {
-        const double EPSILON =
-          1.0e-10; // small number which is much smaller than the time step size
+        // small number which is much smaller than the time step size
+        const double EPSILON = 1.0e-10;
+
+        // The current time might be larger than output_start_time. In that case, we first have to
+        // reset the counter in order to avoid that output is written every time step.
+        if(reset_counter)
+        {
+          error_counter += int((time - error_data.error_calc_start_time + EPSILON) /
+                               error_data.error_calc_interval_time);
+          reset_counter = false;
+        }
+
         if((time > (error_data.error_calc_start_time +
                     error_counter * error_data.error_calc_interval_time - EPSILON)))
         {
@@ -71,6 +81,7 @@ public:
 
 private:
   unsigned int error_counter;
+  bool         reset_counter;
 
   SmartPointer<DoFHandler<dim> const> dof_handler;
   SmartPointer<Mapping<dim> const>    mapping;

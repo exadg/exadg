@@ -98,7 +98,7 @@ class OutputGenerator
 public:
   typedef LinearAlgebra::distributed::Vector<double> VectorType;
 
-  OutputGenerator() : output_counter(0)
+  OutputGenerator() : output_counter(0), reset_counter(true)
   {
   }
 
@@ -129,6 +129,17 @@ public:
       {
         // small number which is much smaller than the time step size
         const double EPSILON = 1.0e-10;
+
+        // The current time might be larger than output_start_time. In that case, we first have to
+        // reset the counter in order to avoid that output is written every time step.
+        if(reset_counter)
+        {
+          output_counter += int((time - output_data.output_start_time + EPSILON) /
+                                output_data.output_interval_time);
+          reset_counter = false;
+        }
+
+
         if(time > (output_data.output_start_time +
                    output_counter * output_data.output_interval_time - EPSILON))
         {
@@ -166,6 +177,7 @@ public:
 
 private:
   unsigned int output_counter;
+  bool         reset_counter;
 
   SmartPointer<DoFHandler<dim> const> dof_handler;
   SmartPointer<Mapping<dim> const>    mapping;

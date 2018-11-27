@@ -137,7 +137,7 @@ protected:
   /*
    * Start and end times.
    */
-  double const start_time, end_time;
+  double start_time, end_time;
 
   /*
    * Physical time.
