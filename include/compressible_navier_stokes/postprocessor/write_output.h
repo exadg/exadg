@@ -25,6 +25,10 @@ write_output(CompNS::OutputDataCompNavierStokes const &      output_data,
 {
   DataOut<dim> data_out;
 
+  DataOutBase::VtkFlags flags;
+  flags.write_higher_order_cells = true;
+  data_out.set_flags(flags);
+
   // conserved variables
   std::vector<std::string> solution_names_conserved(dim + 2, "rho_u");
   solution_names_conserved[0]       = "rho";

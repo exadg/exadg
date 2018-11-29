@@ -316,11 +316,11 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup()
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    navier_stokes_operation_dual_splitting->setup_solvers(1.0, 1.0);
+    navier_stokes_operation_dual_splitting->setup_solvers(1.0);
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    navier_stokes_operation_pressure_correction->setup_solvers(1.0, 1.0);
+    navier_stokes_operation_pressure_correction->setup_solvers(1.0);
   }
   else
   {
