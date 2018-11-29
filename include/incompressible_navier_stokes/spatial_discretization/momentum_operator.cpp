@@ -1,5 +1,7 @@
 #include "momentum_operator.h"
 
+#include "functionalities/categorization.h"
+
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 
 namespace IncNS
@@ -70,27 +72,33 @@ MomentumOperator<dim, degree, Number>::reinit_multigrid(
     QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
 
   // additional data
-  typename MatrixFree<dim, Number>::AdditionalData addit_data;
-  addit_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
+  typename MatrixFree<dim, Number>::AdditionalData additional_data;
+  additional_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
 
-  addit_data.mapping_update_flags =
+  additional_data.mapping_update_flags =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
      update_values);
 
-  addit_data.mapping_update_flags_inner_faces =
+  additional_data.mapping_update_flags_inner_faces =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
      update_values);
 
-  addit_data.mapping_update_flags_boundary_faces =
+  additional_data.mapping_update_flags_boundary_faces =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
      update_values);
 
+  additional_data.level_mg_handler = level;
 
-  addit_data.level_mg_handler = level;
+  if(operator_data.use_cell_based_loops)
+  {
+    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+      &dof_handler.get_triangulation());
+    Categorization::do_cell_based_loops(*tria, additional_data);
+  }
 
   // reinit
   own_matrix_free_storage.reinit(
-    mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
+    mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
 
 
   // setup own mass matrix operator
