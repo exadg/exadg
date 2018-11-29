@@ -20,7 +20,6 @@
 #include "../../functionalities/set_zero_mean_value.h"
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
-#include "../../poisson/spatial_discretization/multigrid_laplace_operator.h"
 
 #include "../../convection_diffusion/spatial_discretization/operators/convective_operator_discontinuous_velocity.h"
 #include "../spatial_discretization/momentum_operator.h"

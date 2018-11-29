@@ -43,7 +43,6 @@
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
-#include "../../poisson/spatial_discretization/multigrid_laplace_operator.h"
 
 #include "projection_operators.h"
 #include "projection_solvers.h"

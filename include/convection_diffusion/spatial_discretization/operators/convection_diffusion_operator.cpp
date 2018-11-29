@@ -72,7 +72,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid(
     auto & op_data     = this->operator_data.diffusive_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    diffusive_operator.own().init_multigrid(
+    diffusive_operator.own().reinit_multigrid(
       mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
 

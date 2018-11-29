@@ -47,11 +47,11 @@ public:
          DiffusiveOperatorData<dim> const & operator_data);
 
   void
-  init_multigrid(Mapping<dim> const &               mapping,
-                 MatrixFree<dim, Number> const &    mf_data,
-                 AffineConstraints<double> const &  constraint_matrx,
-                 DiffusiveOperatorData<dim> const & operator_data,
-                 unsigned int                       level);
+  reinit_multigrid(Mapping<dim> const &               mapping,
+                   MatrixFree<dim, Number> const &    mf_data,
+                   AffineConstraints<double> const &  constraint_matrx,
+                   DiffusiveOperatorData<dim> const & operator_data,
+                   unsigned int                       level);
 
   void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;

@@ -30,7 +30,7 @@ DiffusiveOperator<dim, degree, Number>::reinit(Mapping<dim> const &             
 
 template<int dim, int degree, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::init_multigrid(
+DiffusiveOperator<dim, degree, Number>::reinit_multigrid(
   Mapping<dim> const &               mapping,
   MatrixFree<dim, Number> const &    mf_data,
   AffineConstraints<double> const &  constraint_matrix,
