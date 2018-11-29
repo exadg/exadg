@@ -25,6 +25,10 @@ write_output(OutputData const &      output_data,
 {
   DataOut<dim> data_out;
 
+  DataOutBase::VtkFlags flags;
+  flags.write_higher_order_cells = true;
+  data_out.set_flags(flags);
+
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution_vector, "solution");
   data_out.build_patches(output_data.number_of_patches);
