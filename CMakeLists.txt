@@ -42,7 +42,7 @@ SET( TARGET_SRC
      include/time_integration/time_int_bdf_base.cpp
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp     
-     include/convection_diffusion/spatial_discretization/operators/convection_operator.cpp
+     include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
