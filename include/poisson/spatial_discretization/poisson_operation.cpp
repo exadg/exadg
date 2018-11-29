@@ -1,7 +1,7 @@
 #include "poisson_operation.h"
 
 
-#include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_dg.h"
+#include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 
 namespace Poisson
 {
@@ -9,7 +9,11 @@ template<int dim, int degree, typename Number>
 DGOperation<dim, degree, Number>::DGOperation(
   parallel::distributed::Triangulation<dim> const & triangulation,
   Poisson::InputParameters const &                  param_in)
-  : fe(degree), mapping(param_in.degree_mapping), dof_handler(triangulation), param(param_in)
+  : dealii::Subscriptor(),
+    fe(degree),
+    mapping(param_in.degree_mapping),
+    dof_handler(triangulation),
+    param(param_in)
 {
 }
 
@@ -17,16 +21,16 @@ template<int dim, int degree, typename Number>
 void
 DGOperation<dim, degree, Number>::setup(
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs,
+                                                    periodic_face_pairs_in,
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
   std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Poisson operation ..." << std::endl;
 
-  this->periodic_face_pairs = periodic_face_pairs;
-  boundary_descriptor       = boundary_descriptor_in;
-  field_functions           = field_functions_in;
+  periodic_face_pairs = periodic_face_pairs_in;
+  boundary_descriptor = boundary_descriptor_in;
+  field_functions     = field_functions_in;
 
   create_dofs();
 
@@ -63,12 +67,12 @@ DGOperation<dim, degree, Number>::setup_solver()
 
     typedef float MultigridNumber;
 
-    typedef MyMultigridPreconditionerDG<dim,
-                                        Number,
-                                        Poisson::LaplaceOperator<dim, degree, MultigridNumber>>
-      MULTIGRID;
+    typedef MultigridOperatorBase<dim, MultigridNumber>               MG_BASE;
+    typedef Poisson::LaplaceOperator<dim, degree, MultigridNumber>    MG_OPERATOR;
+    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
 
-    preconditioner.reset(new MULTIGRID());
+    preconditioner.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
+
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
     mg_preconditioner->initialize(mg_data,
@@ -228,13 +232,13 @@ DGOperation<dim, degree, Number>::setup_operators()
   laplace_operator_data.bc                         = boundary_descriptor;
   laplace_operator_data.periodic_face_pairs_level0 = periodic_face_pairs;
   laplace_operator_data.use_cell_based_loops       = param.enable_cell_based_face_loops;
-  laplace_operator.initialize(mapping, data, laplace_operator_data);
+  laplace_operator.reinit(mapping, data, laplace_operator_data);
 
   // rhs operator
   ConvDiff::RHSOperatorData<dim> rhs_operator_data;
   rhs_operator_data.dof_index  = 0;
   rhs_operator_data.quad_index = 0;
   rhs_operator_data.rhs        = field_functions->right_hand_side;
-  rhs_operator.initialize(data, rhs_operator_data);
+  rhs_operator.reinit(data, rhs_operator_data);
 }
 } // namespace Poisson

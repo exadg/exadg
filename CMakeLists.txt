@@ -42,7 +42,7 @@ SET( TARGET_SRC
      include/time_integration/time_int_bdf_base.cpp
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp     
-     include/convection_diffusion/spatial_discretization/operators/convection_operator.cpp
+     include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
@@ -65,7 +65,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/postprocessor/statistics_manager.cpp 
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/compressible_navier_stokes/interface_space_time/operator.cpp
-     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_adapter_base.cpp     
+     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp     
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
      include/solvers_and_preconditioners/mg_coarse/mg_coarse_ml.cpp
      include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.cpp

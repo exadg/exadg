@@ -14,7 +14,6 @@
 #include <deal.II/numerics/vector_tools.h>
 
 #include "../../operators/inverse_mass_matrix.h"
-#include "../../operators/matrix_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
@@ -23,12 +22,13 @@
 #include "../user_interface/input_parameters.h"
 
 #include "../../convection_diffusion/spatial_discretization/operators/rhs_operator.h"
+#include "../../operators/linear_operator_base.h"
 #include "laplace_operator.h"
 
 namespace Poisson
 {
 template<int dim, int degree, typename Number>
-class DGOperation : public MatrixOperatorBase
+class DGOperation : public dealii::Subscriptor
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;

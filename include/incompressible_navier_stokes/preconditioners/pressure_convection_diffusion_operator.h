@@ -48,11 +48,11 @@ public:
     // initialize MassMatrixOperator
     if(operator_data.unsteady_problem == true)
     {
-      mass_matrix_operator.initialize(matrix_free_data, operator_data.mass_matrix_operator_data);
+      mass_matrix_operator.reinit(matrix_free_data, operator_data.mass_matrix_operator_data);
     }
 
     // initialize DiffusiveOperator
-    diffusive_operator.initialize(mapping, matrix_free_data, operator_data.diffusive_operator_data);
+    diffusive_operator.reinit(mapping, matrix_free_data, operator_data.diffusive_operator_data);
 
     // initialize ConvectiveOperator
     if(operator_data.convective_problem == true)

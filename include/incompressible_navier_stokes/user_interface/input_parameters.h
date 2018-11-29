@@ -277,6 +277,17 @@ enum class PreconditionerBlockDiagonal
   InverseMassMatrix
 };
 
+/*
+ * Specify the operator type to be used for multigrid (which can differ from the
+ * equation type)
+ */
+enum class MultigridOperatorType
+{
+  Undefined,
+  ReactionDiffusion,
+  ReactionConvectionDiffusion
+};
+
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -410,7 +421,7 @@ enum class PreconditionerLinearizedNavierStokes
 };
 
 /*
- *  preconditioner for (1,1) velocity/momentum block in case of block preconditioning
+ *  preconditioner for velocity/momentum operator
  */
 enum class MomentumPreconditioner
 {
@@ -419,8 +430,7 @@ enum class MomentumPreconditioner
   PointJacobi,
   BlockJacobi,
   InverseMassMatrix,
-  VelocityDiffusion,
-  VelocityConvectionDiffusion
+  Multigrid
 };
 
 
@@ -757,6 +767,7 @@ public:
       solver_momentum(SolverMomentum::GMRES),
       preconditioner_momentum(MomentumPreconditioner::Undefined),
       multigrid_data_momentum(MultigridData()),
+      multigrid_operator_type_momentum(MultigridOperatorType::Undefined),
       abs_tol_momentum_linear(1.e-20),
       rel_tol_momentum_linear(1.e-12),
       max_iter_momentum_linear(std::numeric_limits<unsigned int>::max()),
@@ -791,6 +802,7 @@ public:
 
       // preconditioner velocity/momentum block
       momentum_preconditioner(MomentumPreconditioner::Undefined),
+      momentum_multigrid_operator_type(MultigridOperatorType::Undefined),
       multigrid_data_momentum_preconditioner(MultigridData()),
       exact_inversion_of_momentum_block(false),
       rel_tol_solver_momentum_preconditioner(1.e-12),
@@ -1004,12 +1016,17 @@ public:
       AssertThrow(preconditioner_momentum != MomentumPreconditioner::Undefined,
                   ExcMessage("parameter must be defined"));
 
+      if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
+      {
+        AssertThrow(multigrid_operator_type_momentum != MultigridOperatorType::Undefined,
+                    ExcMessage("Parameter must be defined"));
+      }
+
       if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
-        AssertThrow(
-          preconditioner_momentum != MomentumPreconditioner::VelocityConvectionDiffusion,
-          ExcMessage(
-            "Use VelocityConvectionDiffusion preconditioner only if convective term is treated implicitly."));
+        AssertThrow(multigrid_operator_type_momentum !=
+                      MultigridOperatorType::ReactionConvectionDiffusion,
+                    ExcMessage("Invalid parameter. Convective term is treated explicitly."));
       }
     }
 
@@ -1026,12 +1043,17 @@ public:
       AssertThrow(momentum_preconditioner != MomentumPreconditioner::Undefined,
                   ExcMessage("parameter must be defined"));
 
+      if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
+      {
+        AssertThrow(momentum_multigrid_operator_type != MultigridOperatorType::Undefined,
+                    ExcMessage("Parameter must be defined"));
+      }
+
       if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
-        AssertThrow(
-          momentum_preconditioner != MomentumPreconditioner::VelocityConvectionDiffusion,
-          ExcMessage(
-            "Use VelocityConvectionDiffusion preconditioner only if convective term is treated implicitly."));
+        AssertThrow(momentum_multigrid_operator_type !=
+                      MultigridOperatorType::ReactionConvectionDiffusion,
+                    ExcMessage("Invalid parameter. Convective term is treated explicitly."));
       }
 
       AssertThrow(schur_complement_preconditioner != SchurComplementPreconditioner::Undefined,
@@ -1571,6 +1593,19 @@ public:
                     "Preconditioner linear(ized) problem",
                     str_precon_momentum[(int)preconditioner_momentum]);
 
+    if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
+    {
+      std::string str_operator_type[] = {"Undefined",
+                                         "ReactionDiffusion",
+                                         "ReactionConvectionDiffusion"};
+
+      print_parameter(pcout,
+                      "Multigrid operator type",
+                      str_operator_type[(int)multigrid_operator_type_momentum]);
+
+      multigrid_data_momentum.print(pcout);
+    }
+
     print_parameter(pcout, "Absolute solver tolerance", abs_tol_momentum_linear);
     print_parameter(pcout, "Relative solver tolerance", rel_tol_momentum_linear);
     print_parameter(pcout, "Maximum number of iterations", max_iter_momentum_linear);
@@ -1666,9 +1701,16 @@ public:
                     "Preconditioner momentum block",
                     str_momentum_precon[(int)momentum_preconditioner]);
 
-    if(momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion ||
-       momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion)
+    if(momentum_preconditioner == MomentumPreconditioner::Multigrid)
     {
+      std::string str_operator_type[] = {"Undefined",
+                                         "ReactionDiffusion",
+                                         "ReactionConvectionDiffusion"};
+
+      print_parameter(pcout,
+                      "Multigrid operator type",
+                      str_operator_type[(int)momentum_multigrid_operator_type]);
+
       multigrid_data_momentum_preconditioner.print(pcout);
 
       print_parameter(pcout,
@@ -2143,6 +2185,8 @@ public:
   // description: see declaration of MultigridData
   MultigridData multigrid_data_momentum;
 
+  MultigridOperatorType multigrid_operator_type_momentum;
+
   // linear solver tolerances for momentum equation
   double       abs_tol_momentum_linear;
   double       rel_tol_momentum_linear;
@@ -2206,6 +2250,9 @@ public:
 
   // description: see enum declaration
   MomentumPreconditioner momentum_preconditioner;
+
+  // description: see enum declaration
+  MultigridOperatorType momentum_multigrid_operator_type;
 
   // description: see declaration
   MultigridData multigrid_data_momentum_preconditioner;

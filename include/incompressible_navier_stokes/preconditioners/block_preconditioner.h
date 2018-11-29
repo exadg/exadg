@@ -1,18 +1,17 @@
 /*
- * preconditioner_navier_stokes.h
+ * block_preconditioner.h
  *
  *  Created on: Jun 30, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRECONDITIONER_NAVIER_STOKES_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRECONDITIONER_NAVIER_STOKES_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_BLOCK_PRECONDITIONER_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_BLOCK_PRECONDITIONER_H_
 
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
 #include "../../incompressible_navier_stokes/preconditioners/compatible_laplace_operator.h"
-#include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/preconditioners/pressure_convection_diffusion_operator.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
@@ -21,9 +20,11 @@
 #include "../../functionalities/set_zero_mean_value.h"
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
+#include "../../poisson/spatial_discretization/multigrid_laplace_operator.h"
 
 #include "../../convection_diffusion/spatial_discretization/operators/convective_operator_discontinuous_velocity.h"
 #include "../spatial_discretization/momentum_operator.h"
+#include "multigrid_preconditioner.h"
 
 
 // forward declaration
@@ -220,7 +221,6 @@ public:
     if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::PointJacobi)
     {
       // Point Jacobi preconditioner
-      // TODO
       preconditioner_momentum.reset(
         new JacobiPreconditioner<MomentumOperator<dim, fe_degree, value_type>>(
           underlying_operator->momentum_operator));
@@ -228,7 +228,6 @@ public:
     else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::BlockJacobi)
     {
       // Block Jacobi preconditioner
-      // TODO
       preconditioner_momentum.reset(
         new BlockJacobiPreconditioner<MomentumOperator<dim, fe_degree, value_type>>(
           underlying_operator->momentum_operator));
@@ -243,10 +242,7 @@ public:
           underlying_operator->get_dof_index_velocity(),
           underlying_operator->get_quad_index_velocity_linear()));
     }
-    else if(preconditioner_data.momentum_preconditioner ==
-              MomentumPreconditioner::VelocityDiffusion ||
-            preconditioner_data.momentum_preconditioner ==
-              MomentumPreconditioner::VelocityConvectionDiffusion)
+    else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::Multigrid)
     {
       // multigrid preconditioner for Helmholtz operator (unsteady case) or viscous operator (steady
       // case)
@@ -256,6 +252,11 @@ public:
       {
         setup_iterative_solver_momentum();
       }
+    }
+    else
+    {
+      AssertThrow(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::None,
+                  ExcNotImplemented());
     }
     /********** preconditioner velocity/momentum block ************/
 
@@ -365,6 +366,12 @@ public:
 
       // initialize tmp vector
       underlying_operator->initialize_vector_pressure(tmp_scp_pressure);
+    }
+    else
+    {
+      AssertThrow(preconditioner_data.schur_complement_preconditioner ==
+                    SchurComplementPreconditioner::None,
+                  ExcNotImplemented());
     }
     /****** preconditioner pressure/Schur-complement block ********/
   }
@@ -509,13 +516,7 @@ public:
     }
     else
     {
-      // clang-format off
-      AssertThrow(
-        preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockDiagonal ||
-          preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangular ||
-          preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockTriangularFactorization,
-        ExcMessage("Specified preconditioner for linearized Navier-Stokes problem is not implemented."));
-      // clang-format on
+      AssertThrow(false, ExcNotImplemented());
     }
   }
 
@@ -523,59 +524,19 @@ private:
   void
   setup_multigrid_preconditioner_momentum()
   {
-    MultigridData mg_data = preconditioner_data.multigrid_data_momentum_preconditioner;
+    typedef MultigridPreconditioner<dim, fe_degree, value_type, MultigridNumber> MULTIGRID;
 
-    if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion)
-    {
-      // Geometric multigrid for Helmholtz operator (for steady problems only the viscous term of
-      // the Helmholtz operator is evaluated) use VelocityConvDiffOperator as underlying operator
-      typedef MyMultigridPreconditionerVelocityDiffusion<
-        dim,
-        value_type,
-        MomentumOperator<dim, fe_degree, MultigridNumber>,
-        MomentumOperator<dim, fe_degree, value_type>>
-        MULTIGRID;
+    preconditioner_momentum.reset(new MULTIGRID());
 
-      preconditioner_momentum.reset(new MULTIGRID());
+    std::shared_ptr<MULTIGRID> mg_preconditioner =
+      std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
-      std::shared_ptr<MULTIGRID> mg_preconditioner =
-        std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
-
-      // get operator data
-      momentum_operator_data_multigrid = underlying_operator->momentum_operator.get_operator_data();
-      // multgrid is only applied to reaction-diffusion operator so the convective term has to be
-      // deactivated
-      momentum_operator_data_multigrid.convective_problem = false;
-
-      mg_preconditioner->initialize(
-        mg_data,
-        underlying_operator->get_dof_handler_u(),
-        underlying_operator->get_mapping(),
-        /*underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
-        (void *)&momentum_operator_data_multigrid);
-    }
-    else if(preconditioner_data.momentum_preconditioner ==
-            MomentumPreconditioner::VelocityConvectionDiffusion)
-    {
-      typedef MyMultigridPreconditionerVelocityConvectionDiffusion<
-        dim,
-        value_type,
-        MomentumOperator<dim, fe_degree, MultigridNumber>,
-        MomentumOperator<dim, fe_degree, value_type>>
-        MULTIGRID;
-
-      preconditioner_momentum.reset(new MULTIGRID());
-
-      std::shared_ptr<MULTIGRID> mg_preconditioner =
-        std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
-
-      mg_preconditioner->initialize(
-        mg_data,
-        underlying_operator->get_dof_handler_u(),
-        underlying_operator->get_mapping(),
-        /*underlying_operator->velocity_conv_diff_operator.get_operator_data().bc->dirichlet_bc,*/
-        (void *)&underlying_operator->momentum_operator.get_operator_data());
-    }
+    mg_preconditioner->initialize(
+      preconditioner_data.multigrid_data_momentum_preconditioner,
+      underlying_operator->get_dof_handler_u(),
+      underlying_operator->get_mapping(),
+      /*underlying_operator->momentum_operator.get_operator_data().bc->dirichlet_bc,*/
+      (void *)&underlying_operator->momentum_operator.get_operator_data());
   }
 
   void
@@ -631,13 +592,13 @@ private:
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
       // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible
       // Laplace operator
-      typedef MyMultigridPreconditionerDG<
-        dim,
-        value_type,
-        CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, MultigridNumber>>
-        MULTIGRID;
+      typedef MultigridOperatorBase<dim, MultigridNumber>                             MG_BASE;
+      typedef CompatibleLaplaceOperator<dim, fe_degree, fe_degree_p, MultigridNumber> MG_OPERATOR;
 
-      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+      typedef MultigridPreconditionerBase<dim, value_type, MultigridNumber> MULTIGRID;
+
+      multigrid_preconditioner_schur_complement.reset(
+        new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR())));
 
       std::shared_ptr<MULTIGRID> mg_preconditioner =
         std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
@@ -664,11 +625,13 @@ private:
 
       MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-      typedef MyMultigridPreconditionerDG<dim,
-                                          value_type,
-                                          Poisson::LaplaceOperator<dim, fe_degree, MultigridNumber>>
-        MULTIGRID;
-      multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+      typedef MultigridOperatorBase<dim, MultigridNumber>               MG_BASE;
+      typedef Poisson::LaplaceOperator<dim, fe_degree, MultigridNumber> MG_OPERATOR;
+
+      typedef MultigridPreconditionerBase<dim, value_type, MultigridNumber> MULTIGRID;
+
+      multigrid_preconditioner_schur_complement.reset(
+        new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR())));
 
       std::shared_ptr<MULTIGRID> mg_preconditioner =
         std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
@@ -713,9 +676,9 @@ private:
 
       laplace_operator_classical.reset(
         new Poisson::LaplaceOperator<dim, fe_degree_p, value_type>());
-      laplace_operator_classical->initialize(underlying_operator->get_mapping(),
-                                             underlying_operator->get_data(),
-                                             laplace_operator_data);
+      laplace_operator_classical->reinit(underlying_operator->get_mapping(),
+                                         underlying_operator->get_data(),
+                                         laplace_operator_data);
 
       solver_pressure_block.reset(
         new CGSolver<Poisson::LaplaceOperator<dim, fe_degree_p, value_type>,
@@ -879,10 +842,7 @@ private:
       dst *= 1. / underlying_operator->momentum_operator.get_scaling_factor_time_derivative_term();
       // clang-format on
     }
-    else if(preconditioner_data.momentum_preconditioner ==
-              MomentumPreconditioner::VelocityDiffusion ||
-            preconditioner_data.momentum_preconditioner ==
-              MomentumPreconditioner::VelocityConvectionDiffusion)
+    else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::Multigrid)
     {
       if(preconditioner_data.exact_inversion_of_momentum_block == false)
       {
@@ -921,16 +881,7 @@ private:
     }
     else
     {
-      // clang-format off
-      AssertThrow(
-        preconditioner_data.momentum_preconditioner == MomentumPreconditioner::None ||
-          preconditioner_data.momentum_preconditioner == MomentumPreconditioner::PointJacobi ||
-          preconditioner_data.momentum_preconditioner == MomentumPreconditioner::BlockJacobi ||
-          preconditioner_data.momentum_preconditioner == MomentumPreconditioner::InverseMassMatrix ||
-          preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityDiffusion ||
-          preconditioner_data.momentum_preconditioner == MomentumPreconditioner::VelocityConvectionDiffusion,
-        ExcMessage("Specified preconditioner for velocity/momentum block is not implemented."));
-      // clang-format on
+      AssertThrow(false, ExcNotImplemented());
     }
   }
 
@@ -1059,16 +1010,7 @@ private:
     }
     else
     {
-      // clang-format off
-      AssertThrow(
-        preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::None ||
-          preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::InverseMassMatrix ||
-          preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::LaplaceOperator ||
-          preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::CahouetChabard ||
-          preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::Elman ||
-          preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::PressureConvectionDiffusion,
-        ExcMessage("Specified preconditioner for pressure/Schur complement block is not implemented."));
-      // clang-format on
+      AssertThrow(false, ExcNotImplemented());
     }
 
     // scaling_factor_continuity: Since the Schur complement includes both the velocity divergence
@@ -1111,7 +1053,6 @@ private:
     }
   }
 
-private:
   DGNavierStokesCoupled<dim, fe_degree, fe_degree_p, value_type> * underlying_operator;
 
   BlockPreconditionerData preconditioner_data;
@@ -1156,4 +1097,4 @@ private:
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_PRECONDITIONER_NAVIER_STOKES_H_ */
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_BLOCK_PRECONDITIONER_H_ */

@@ -35,69 +35,83 @@ public:
 };
 
 template<int dim, int degree, typename Number>
-class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
+class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>,
+                        public MultigridOperatorBase<dim, Number>
 {
 public:
-  typedef LaplaceOperator<dim, degree, Number>                        This;
-  typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Parent;
-  typedef typename Parent::FEEvalCell                                 FEEvalCell;
-  typedef typename Parent::FEEvalFace                                 FEEvalFace;
+  typedef Number value_type;
 
-  typedef typename Parent::VectorType VectorType;
+private:
+  typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Base;
+
+  typedef typename Base::FEEvalCell FEEvalCell;
+  typedef typename Base::FEEvalFace FEEvalFace;
+
+  typedef typename Base::VectorType VectorType;
 
   typedef VectorizedArray<Number> scalar;
 
-  // static constants
-  static const int DIM = Parent::DIM;
+  static const int DIM = Base::DIM;
 
+public:
   LaplaceOperator();
 
   void
-  initialize(Mapping<dim> const &             mapping,
-             MatrixFree<dim, Number> const &  mf_data,
-             LaplaceOperatorData<dim> const & operator_data)
-  {
-    AffineConstraints<double> constraint_matrix;
-
-    Parent::reinit(mf_data, constraint_matrix, operator_data);
-
-    // calculate penalty parameters
-    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                         *this->data,
-                                                         mapping,
-                                                         this->operator_data.dof_index);
-  }
+  reinit(Mapping<dim> const &             mapping,
+         MatrixFree<dim, Number> const &  mf_data,
+         LaplaceOperatorData<dim> const & operator_data);
 
   void
-  initialize(Mapping<dim> const &             mapping,
-             MatrixFree<dim, Number> &        mf_data,
-             AffineConstraints<double> &      constraint_matrix,
-             LaplaceOperatorData<dim> const & operator_data)
-  {
-    Parent::reinit(mf_data, constraint_matrix, operator_data);
-
-    // calculate penalty parameters
-    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                         *this->data,
-                                                         mapping,
-                                                         this->operator_data.dof_index);
-  }
+  reinit_multigrid(DoFHandler<dim> const &   dof_handler,
+                   Mapping<dim> const &      mapping,
+                   void *                    operator_data,
+                   MGConstrainedDoFs const & mg_constrained_dofs,
+                   unsigned int const        level);
 
   void
-  reinit(DoFHandler<dim> const &   dof_handler,
-         Mapping<dim> const &      mapping,
-         void *                    operator_data,
-         MGConstrainedDoFs const & mg_constrained_dofs,
-         unsigned int const        level)
-  {
-    Parent::reinit(dof_handler, mapping, operator_data, mg_constrained_dofs, level);
+  vmult(VectorType & dst, VectorType const & src) const;
 
-    // calculate penalty parameters
-    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                         *this->data,
-                                                         mapping,
-                                                         this->operator_data.dof_index);
+  void
+  vmult_add(VectorType & dst, VectorType const & src) const;
+
+  MatrixFree<dim, Number> const &
+  get_data() const;
+
+  unsigned int
+  get_dof_index() const;
+
+  void
+  calculate_inverse_diagonal(VectorType & diagonal) const;
+
+  // apply the inverse block diagonal operator (for matrix-based and matrix-free variants)
+  void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
+
+  void
+  update_block_diagonal_preconditioner() const;
+
+  /*
+   * Returns whether the operator is singular, e.g., in case of pure Neumann boundary conditions.
+   */
+  bool
+  is_singular() const;
+
+#ifdef DEAL_II_WITH_TRILINOS
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_init_system_matrix(system_matrix);
   }
+
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_calculate_system_matrix(system_matrix);
+  }
+#endif
+
+  MultigridOperatorBase<dim, Number> *
+  get_new(unsigned int deg) const;
 
 private:
   inline DEAL_II_ALWAYS_INLINE //
@@ -157,9 +171,6 @@ private:
   do_boundary_integral(FEEvalFace &               fe_eval,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
-
-  MultigridOperatorBase<dim, Number> *
-  get_new(unsigned int deg) const;
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,

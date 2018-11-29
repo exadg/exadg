@@ -18,7 +18,7 @@
 #include "operators/viscous_operator.h"
 
 #include "../../operators/elementwise_operator.h"
-#include "../../operators/matrix_operator_base.h"
+#include "../../operators/linear_operator_base.h"
 #include "../../operators/multigrid_operator_base.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
@@ -42,7 +42,8 @@ struct MomentumOperatorData
       implement_block_diagonal_preconditioner_matrix_free(false),
       use_cell_based_loops(false),
       preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
-      block_jacobi_solver_data(SolverData(100, 1.e-12, 1.e-2))
+      block_jacobi_solver_data(SolverData(100, 1.e-12, 1.e-2)),
+      mg_operator_type(MultigridOperatorType::Undefined)
   {
   }
 
@@ -68,6 +69,9 @@ struct MomentumOperatorData
   // elementwise iterative solution of block Jacobi problems
   PreconditionerBlockDiagonal preconditioner_block_jacobi;
   SolverData                  block_jacobi_solver_data;
+
+  // Multigrid
+  MultigridOperatorType mg_operator_type;
 };
 
 template<int dim, int degree, typename Number = double>
@@ -90,25 +94,22 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &                 data_in,
-             MomentumOperatorData<dim> const &               operator_data_in,
-             MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
-             ViscousOperator<dim, degree, Number> const &    viscous_operator_in,
-             ConvectiveOperator<dim, degree, Number> const & convective_operator_in);
+  reinit(MatrixFree<dim, Number> const &                 data,
+         MomentumOperatorData<dim> const &               operator_data,
+         MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
+         ViscousOperator<dim, degree, Number> const &    viscous_operator,
+         ConvectiveOperator<dim, degree, Number> const & convective_operator);
 
   /*
    *  This function is called by the multigrid algorithm to initialize the
-   *  matrices on all levels. To construct the matrices, and object of
-   *  type UnderlyingOperator is used that provides all the information for
-   *  the setup, i.e., the information that is needed to call the
-   *  member function initialize(...).
+   *  multigrid operators on all levels.
    */
   void
-  reinit(const DoFHandler<dim> & dof_handler,
-         const Mapping<dim> &    mapping,
-         void *                  operator_data_in,
-         const MGConstrainedDoFs & /*mg_constrained_dofs*/,
-         const unsigned int level);
+  reinit_multigrid(DoFHandler<dim> const & dof_handler,
+                   Mapping<dim> const &    mapping,
+                   void *                  operator_data,
+                   MGConstrainedDoFs const & /*mg_constrained_dofs*/,
+                   unsigned int const level);
 
   /*
    * Setters and getters.
@@ -145,7 +146,7 @@ public:
    *  Evaluation time that is needed for evaluation of linearized convective operator.
    */
   void
-  set_evaluation_time(double const & evaluation_time_in);
+  set_evaluation_time(double const & time);
 
   double
   get_evaluation_time() const;
@@ -169,21 +170,6 @@ public:
   get_viscous_operator_data() const;
 
   /*
-   *  Other function needed in order to apply geometric multigrid to this operator
-   */
-  void
-  vmult_interface_down(VectorType & dst, VectorType const & src) const;
-
-  void
-  vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
-
-  types::global_dof_index
-  m() const;
-
-  Number
-  el(const unsigned int, const unsigned int) const;
-
-  /*
    *  This function applies the matrix vector multiplication.
    */
   void
@@ -202,12 +188,6 @@ public:
    */
   void
   vmult_block_jacobi(VectorType & dst, VectorType const & src) const;
-
-  /*
-   *  This function initializes a global dof-vector.
-   */
-  void
-  initialize_dof_vector(VectorType & vector) const;
 
   /*
    *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
@@ -236,6 +216,9 @@ public:
                                        VectorizedArray<Number> * const       dst,
                                        VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size = 1) const;
+
+  virtual MultigridOperatorBase<dim, Number> *
+  get_new(unsigned int deg) const;
 
 private:
   /*
@@ -282,9 +265,6 @@ private:
                                  VectorType &                                  dst,
                                  VectorType const &                            src,
                                  std::pair<unsigned int, unsigned int> const & cell_range) const;
-
-  virtual MultigridOperatorBase<dim, Number> *
-  get_new(unsigned int deg) const;
 
   MomentumOperatorData<dim> operator_data;
 

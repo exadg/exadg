@@ -8,15 +8,17 @@
 namespace ConvDiff
 {
 template<int dim, int degree, typename Number>
-void
-DiffusiveOperator<dim, degree, Number>::initialize(
-  Mapping<dim> const &               mapping,
-  MatrixFree<dim, Number> const &    mf_data,
-  DiffusiveOperatorData<dim> const & operator_data_in,
-  unsigned int                       level_mg_handler)
+DiffusiveOperator<dim, degree, Number>::DiffusiveOperator() : diffusivity(-1.0)
 {
-  AffineConstraints<double> constraint_matrix;
-  Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
+}
+
+template<int dim, int degree, typename Number>
+void
+DiffusiveOperator<dim, degree, Number>::reinit(Mapping<dim> const &               mapping,
+                                               MatrixFree<dim, Number> const &    mf_data,
+                                               DiffusiveOperatorData<dim> const & operator_data)
+{
+  Base::reinit(mf_data, operator_data);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,
@@ -25,16 +27,17 @@ DiffusiveOperator<dim, degree, Number>::initialize(
 
   diffusivity = this->operator_data.diffusivity;
 }
+
 template<int dim, int degree, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::initialize(
+DiffusiveOperator<dim, degree, Number>::init_multigrid(
   Mapping<dim> const &               mapping,
   MatrixFree<dim, Number> const &    mf_data,
   AffineConstraints<double> const &  constraint_matrix,
-  DiffusiveOperatorData<dim> const & operator_data_in,
-  unsigned int                       level_mg_handler)
+  DiffusiveOperatorData<dim> const & operator_data,
+  unsigned int                       level)
 {
-  Parent::reinit(mf_data, constraint_matrix, operator_data_in, level_mg_handler);
+  Base::reinit_multigrid(mf_data, constraint_matrix, operator_data, level);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,
@@ -49,7 +52,7 @@ void
 DiffusiveOperator<dim, degree, Number>::apply_add(VectorType & dst, VectorType const & src) const
 {
   AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
-  Parent::apply_add(dst, src);
+  Base::apply_add(dst, src);
 }
 
 template<int dim, int degree, typename Number>

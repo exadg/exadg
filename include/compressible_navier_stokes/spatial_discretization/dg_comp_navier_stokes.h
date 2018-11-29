@@ -23,10 +23,9 @@
 #include "../../compressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../compressible_navier_stokes/user_interface/field_functions.h"
 #include "../../compressible_navier_stokes/user_interface/input_parameters.h"
+#include "../../operators/linear_operator_base.h"
 #include "comp_navier_stokes_calculators.h"
 #include "operators/inverse_mass_matrix.h"
-#include "operators/matrix_operator_base.h"
-
 #include "time_integration/time_step_calculation.h"
 
 #include "../interface_space_time/operator.h"
@@ -34,7 +33,7 @@
 namespace CompNS
 {
 template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
-class DGOperator : public MatrixOperatorBase, public Interface::Operator<Number>
+class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 public:
   enum class DofHandlerSelector
@@ -87,7 +86,8 @@ public:
   DGOperator(parallel::distributed::Triangulation<dim> const & triangulation,
              InputParameters<dim> const &                      param_in,
              std::shared_ptr<Postprocessor>                    postprocessor_in)
-    : fe(new FESystem<dim>(FE_DGQ<dim>(degree), dim + 2)),
+    : dealii::Subscriptor(),
+      fe(new FESystem<dim>(FE_DGQ<dim>(degree), dim + 2)),
       fe_vector(new FESystem<dim>(FE_DGQ<dim>(degree), dim)),
       fe_scalar(degree),
       mapping(param_in.degree_mapping),

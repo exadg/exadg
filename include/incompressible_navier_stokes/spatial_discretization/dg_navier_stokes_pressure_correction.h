@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_
 
-#include "../preconditioners/multigrid_preconditioner_navier_stokes.h"
+#include "../preconditioners/multigrid_preconditioner.h"
 #include "dg_navier_stokes_projection_methods.h"
 
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
@@ -151,9 +151,6 @@ private:
   // momentum equation
   MomentumOperator<dim, degree_u, Number> momentum_operator;
 
-  // required for multigrid (if multigrid is applied to HelmholtzOperator only)
-  MomentumOperatorData<dim> multigrid_operator_data;
-
   std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;
 
@@ -218,19 +215,20 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
   momentum_operator_data.dof_index      = this->get_dof_index_velocity();
   momentum_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
 
-  momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.implement_block_diagonal_preconditioner_matrix_free;
-
   momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
   momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
   momentum_operator_data.convective_operator_data  = this->convective_operator_data;
 
-  momentum_operator.initialize(this->get_data(),
-                               momentum_operator_data,
-                               this->mass_matrix_operator,
-                               this->viscous_operator,
-                               this->convective_operator);
+  momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+  momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+    this->param.implement_block_diagonal_preconditioner_matrix_free;
+  momentum_operator_data.mg_operator_type = this->param.multigrid_operator_type_momentum;
+
+  momentum_operator.reinit(this->get_data(),
+                           momentum_operator_data,
+                           this->mass_matrix_operator,
+                           this->viscous_operator,
+                           this->convective_operator);
 
 
   // setup preconditioner for momentum equation
@@ -249,44 +247,11 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     momentum_preconditioner.reset(
       new BlockJacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(momentum_operator));
   }
-  else if(this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion)
+  else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
     typedef float MultigridNumber;
 
-    typedef MyMultigridPreconditionerVelocityDiffusion<
-      dim,
-      Number,
-      MomentumOperator<dim, degree_u, MultigridNumber>,
-      MomentumOperator<dim, degree_u, Number>>
-      MULTIGRID;
-
-    momentum_preconditioner.reset(new MULTIGRID());
-
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
-
-    multigrid_operator_data = momentum_operator.get_operator_data();
-    // multgrid is only applied to reaction-diffusion operator so the convective term has to be
-    // deactivated
-    multigrid_operator_data.convective_problem = false;
-
-    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
-                                  this->dof_handler_u,
-                                  this->mapping,
-                                  /*momentum_operator.get_operator_data().bc->dirichlet_bc,*/
-                                  (void *)&multigrid_operator_data);
-  }
-  else if(this->param.preconditioner_momentum ==
-          MomentumPreconditioner::VelocityConvectionDiffusion)
-  {
-    typedef float MultigridNumber;
-
-    typedef MyMultigridPreconditionerVelocityConvectionDiffusion<
-      dim,
-      Number,
-      MomentumOperator<dim, degree_u, MultigridNumber>,
-      MomentumOperator<dim, degree_u, Number>>
-      MULTIGRID;
+    typedef MultigridPreconditioner<dim, degree_u, Number, MultigridNumber> MULTIGRID;
 
     momentum_preconditioner.reset(new MULTIGRID());
 
@@ -299,6 +264,11 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
                                   /*momentum_operator.get_operator_data().bc->dirichlet_bc,*/
                                   (void *)&momentum_operator.get_operator_data());
   }
+  else
+  {
+    AssertThrow(this->param.preconditioner_momentum == MomentumPreconditioner::None,
+                ExcNotImplemented());
+  }
 
   // setup linear solver for momentum equation
   if(this->param.solver_momentum == SolverMomentum::PCG)
@@ -308,15 +278,8 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     solver_data.solver_tolerance_abs = this->param.abs_tol_momentum_linear;
     solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
     solver_data.max_iter             = this->param.max_iter_momentum_linear;
-
-    if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
-    {
+    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
-    }
     solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     // setup solver
@@ -334,15 +297,8 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     solver_data.right_preconditioning = this->param.use_right_preconditioning_momentum;
     solver_data.max_n_tmp_vectors     = this->param.max_n_tmp_vectors_momentum;
     solver_data.compute_eigenvalues   = false;
-
-    if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
-    {
+    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
-    }
     solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     // setup solver
@@ -358,15 +314,8 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
     solver_data.solver_tolerance_abs = this->param.abs_tol_momentum_linear;
     solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
     solver_data.max_n_tmp_vectors    = this->param.max_n_tmp_vectors_momentum;
-
-    if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityDiffusion ||
-       this->param.preconditioner_momentum == MomentumPreconditioner::VelocityConvectionDiffusion)
-    {
+    if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
-    }
     solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     momentum_linear_solver.reset(
@@ -376,11 +325,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::setup_momentu
   }
   else
   {
-    AssertThrow(this->param.solver_momentum == SolverMomentum::PCG ||
-                  this->param.solver_momentum == SolverMomentum::GMRES ||
-                  this->param.solver_momentum == SolverMomentum::FGMRES,
-                ExcMessage(
-                  "Specified Viscous Solver not implemented - possibilities are PCG and GMRES"));
+    AssertThrow(false, ExcNotImplemented());
   }
 
 

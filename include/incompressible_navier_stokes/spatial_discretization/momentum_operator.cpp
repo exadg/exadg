@@ -18,31 +18,33 @@ MomentumOperator<dim, degree, Number>::MomentumOperator()
 
 template<int dim, int degree, typename Number>
 void
-MomentumOperator<dim, degree, Number>::initialize(
-  MatrixFree<dim, Number> const &                 data_in,
-  MomentumOperatorData<dim> const &               operator_data_in,
-  MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
-  ViscousOperator<dim, degree, Number> const &    viscous_operator_in,
-  ConvectiveOperator<dim, degree, Number> const & convective_operator_in)
+MomentumOperator<dim, degree, Number>::reinit(
+  MatrixFree<dim, Number> const &                 data,
+  MomentumOperatorData<dim> const &               operator_data,
+  MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
+  ViscousOperator<dim, degree, Number> const &    viscous_operator,
+  ConvectiveOperator<dim, degree, Number> const & convective_operator)
 {
   // copy parameters into element variables
-  this->data                 = &data_in;
-  this->operator_data        = operator_data_in;
-  this->mass_matrix_operator = &mass_matrix_operator_in;
-  this->viscous_operator     = &viscous_operator_in;
-  this->convective_operator  = &convective_operator_in;
+  this->data                 = &data;
+  this->operator_data        = operator_data;
+  this->mass_matrix_operator = &mass_matrix_operator;
+  this->viscous_operator     = &viscous_operator;
+  this->convective_operator  = &convective_operator;
 
-  // mass matrix term: set scaling factor time derivative term
+  // mass matrix term: set scaling factor time derivative term (initialization only, has to be
+  // updated in case of time-dependent coefficients)
   set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
 }
 
 template<int dim, int degree, typename Number>
 void
-MomentumOperator<dim, degree, Number>::reinit(const DoFHandler<dim> & dof_handler,
-                                              const Mapping<dim> &    mapping,
-                                              void *                  operator_data_in,
-                                              const MGConstrainedDoFs & /*mg_constrained_dofs*/,
-                                              const unsigned int level)
+MomentumOperator<dim, degree, Number>::reinit_multigrid(
+  DoFHandler<dim> const & dof_handler,
+  Mapping<dim> const &    mapping,
+  void *                  operator_data_in,
+  MGConstrainedDoFs const & /*mg_constrained_dofs*/,
+  unsigned int const level)
 {
   auto operator_data = *static_cast<MomentumOperatorData<dim> *>(operator_data_in);
 
@@ -113,31 +115,38 @@ MomentumOperator<dim, degree, Number>::reinit(const DoFHandler<dim> & dof_handle
   convective_operator_data.quad_index = 1;
   own_convective_operator_storage.initialize(own_matrix_free_storage, convective_operator_data);
 
-  // setup velocity convection diffusion operator
-  initialize(own_matrix_free_storage,
-             operator_data,
-             own_mass_matrix_operator_storage,
-             own_viscous_operator_storage,
-             own_convective_operator_storage);
+  // When solving the reaction-convection-diffusion problem, it might be possible
+  // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
+  // operator (which is symmetric, Chebyshev smoother, etc.) instead of the non-symmetric
+  // reaction-convection-diffusion operator. Accordingly, we have to reset which
+  // operators should be "active" for the multigrid preconditioner, independently of
+  // the actual equation type that is solved.
+  AssertThrow(operator_data.mg_operator_type != MultigridOperatorType::Undefined,
+              ExcMessage("Invalid parameter mg_operator_type."));
 
-  // Initialize other variables:
+  if(operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+  {
+    // deactivate convective term for multigrid preconditioner
+    operator_data.convective_problem = false;
+  }
+  else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+  {
+    AssertThrow(operator_data.convective_problem == true, ExcMessage("Invalid parameter."));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 
-  // mass matrix term: set scaling factor time derivative term
-  set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
+  reinit(own_matrix_free_storage,
+         operator_data,
+         own_mass_matrix_operator_storage,
+         own_viscous_operator_storage,
+         own_convective_operator_storage);
 
-  // convective term: evaluation_time and velocity_linearization
-  // Note that velocity_linearization has already
-  // been initialized in function initialize().
-  // These variables are not set here. If the convective term
-  // is considered, these variables have to be updated anyway,
-  // which is done somewhere else.
-
-  // viscous term:
-
-  // initialize temp_vector: this is done in this function because
-  // temp_vector is only used in the function vmult_add(), i.e.,
-  // when using the multigrid preconditioner
-  initialize_dof_vector(temp_vector);
+  // initialize temp_vector: this is done in this function because temp_vector is only used in the
+  // function vmult_add(), i.e., when using the multigrid preconditioner
+  this->initialize_dof_vector(temp_vector);
 }
 
 template<int dim, int degree, typename Number>
@@ -217,37 +226,6 @@ ViscousOperatorData<dim> const &
 MomentumOperator<dim, degree, Number>::get_viscous_operator_data() const
 {
   return viscous_operator->get_operator_data();
-}
-
-template<int dim, int degree, typename Number>
-void
-MomentumOperator<dim, degree, Number>::vmult_interface_down(VectorType &       dst,
-                                                            VectorType const & src) const
-{
-  vmult(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-void
-MomentumOperator<dim, degree, Number>::vmult_add_interface_up(VectorType &       dst,
-                                                              VectorType const & src) const
-{
-  vmult_add(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-types::global_dof_index
-MomentumOperator<dim, degree, Number>::m() const
-{
-  return data->get_vector_partitioner(get_dof_index())->size();
-}
-
-template<int dim, int degree, typename Number>
-Number
-MomentumOperator<dim, degree, Number>::el(const unsigned int, const unsigned int) const
-{
-  AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
-  return Number();
 }
 
 template<int dim, int degree, typename Number>
@@ -345,13 +323,6 @@ unsigned int
 MomentumOperator<dim, degree, Number>::get_quad_index() const
 {
   return operator_data.quad_index_std;
-}
-
-template<int dim, int degree, typename Number>
-void
-MomentumOperator<dim, degree, Number>::initialize_dof_vector(VectorType & vector) const
-{
-  data->initialize_dof_vector(vector, get_dof_index());
 }
 
 template<int dim, int degree, typename Number>

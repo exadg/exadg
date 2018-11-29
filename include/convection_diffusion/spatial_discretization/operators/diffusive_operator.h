@@ -36,32 +36,22 @@ template<int dim, int degree, typename Number>
 class DiffusiveOperator : public OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>>
 {
 public:
-  typedef DiffusiveOperator<dim, degree, Number> This;
+  typedef OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>> Base;
+  typedef typename Base::VectorType                                     VectorType;
 
-  typedef OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>> Parent;
-
-  typedef typename Parent::FEEvalCell FEEvalCell;
-  typedef typename Parent::FEEvalFace FEEvalFace;
-  typedef typename Parent::VectorType VectorType;
-
-  typedef VectorizedArray<Number> scalar;
-
-  DiffusiveOperator() : diffusivity(-1.0)
-  {
-  }
+  DiffusiveOperator();
 
   void
-  initialize(Mapping<dim> const &               mapping,
-             MatrixFree<dim, Number> const &    mf_data,
-             DiffusiveOperatorData<dim> const & operator_data_in,
-             unsigned int                       level_mg_handler = numbers::invalid_unsigned_int);
+  reinit(Mapping<dim> const &               mapping,
+         MatrixFree<dim, Number> const &    mf_data,
+         DiffusiveOperatorData<dim> const & operator_data);
 
   void
-  initialize(Mapping<dim> const &               mapping,
-             MatrixFree<dim, Number> const &    mf_data,
-             AffineConstraints<double> const &  constraint_matrx,
-             DiffusiveOperatorData<dim> const & operator_data_in,
-             unsigned int                       level_mg_handler = numbers::invalid_unsigned_int);
+  init_multigrid(Mapping<dim> const &               mapping,
+                 MatrixFree<dim, Number> const &    mf_data,
+                 AffineConstraints<double> const &  constraint_matrx,
+                 DiffusiveOperatorData<dim> const & operator_data,
+                 unsigned int                       level);
 
   void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
@@ -70,6 +60,11 @@ public:
   apply_add(VectorType & dst, VectorType const & src) const;
 
 private:
+  typedef typename Base::FEEvalCell FEEvalCell;
+  typedef typename Base::FEEvalFace FEEvalFace;
+
+  typedef VectorizedArray<Number> scalar;
+
   /*
    *  Calculation of "value_flux".
    */

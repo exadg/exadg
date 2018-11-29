@@ -35,9 +35,7 @@ struct ConvectiveOperatorData : public OperatorBaseData<dim>
 template<int dim, int degree, typename Number>
 class ConvectiveOperator : public OperatorBase<dim, degree, Number, ConvectiveOperatorData<dim>>
 {
-public:
-  typedef ConvectiveOperator<dim, degree, Number> This;
-
+private:
   typedef OperatorBase<dim, degree, Number, ConvectiveOperatorData<dim>> Base;
 
   typedef typename Base::FEEvalCell FEEvalCell;
@@ -47,17 +45,6 @@ public:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
-  void
-  initialize(MatrixFree<dim, Number> const &     mf_data,
-             ConvectiveOperatorData<dim> const & operator_data);
-
-  void
-  initialize(MatrixFree<dim, Number> const &     mf_data,
-             AffineConstraints<double> const &   constraint_matrix,
-             ConvectiveOperatorData<dim> const & operator_data,
-             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
-
-private:
   /*
    * This function calculates the numerical flux using the central flux.
    */

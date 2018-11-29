@@ -1,5 +1,5 @@
 /*
- * Preconditioner.h
+ * multigrid_algorithm.h
  *
  *  Created on: May 17, 2016
  *      Author: fehn
@@ -8,16 +8,18 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
-#include <deal.II/lac/la_parallel_vector.h>
-
 #include <deal.II/base/function_lib.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_tools.h>
-#include <deal.II/multigrid/mg_transfer_matrix_free.h>
 #include <deal.II/multigrid/multigrid.h>
 
-#include "../../operators/multigrid_operator_base.h"
+using namespace dealii;
+
+/*
+ * Activate timings if desired.
+ */
 
 //#define ENABLE_TIMING true
 
@@ -25,73 +27,11 @@
 #  define ENABLE_TIMING false
 #endif
 
-using namespace dealii;
 
-// Specialized matrix-free implementation that overloads the copy_to_mg
-// function for proper initialization of the vectors in matrix-vector products.
-template<int dim, typename Number>
-class MGTransferMF : public MGTransferMatrixFree<dim, Number>
-{
-public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  MGTransferMF(std::map<unsigned int, unsigned int> level_to_triangulation_level_map)
-    : underlying_operator(0), level_to_triangulation_level_map(level_to_triangulation_level_map)
-  {
-  }
-
-  void
-  set_operator(
-    const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> & operator_in)
-  {
-    underlying_operator = &operator_in;
-  }
-
-  virtual void
-  prolongate(unsigned int const to_level, VectorType & dst, VectorType const & src) const
-  {
-    MGTransferMatrixFree<dim, Number>::prolongate(level_to_triangulation_level_map[to_level],
-                                                  dst,
-                                                  src);
-  }
-
-  virtual void
-  restrict_and_add(unsigned int const from_level, VectorType & dst, VectorType const & src) const
-  {
-    MGTransferMatrixFree<dim, Number>::restrict_and_add(
-      level_to_triangulation_level_map[from_level], dst, src);
-  }
-
-  /**
-   * Overload copy_to_mg from MGTransferMatrixFree
-   */
-  template<class InVector, int spacedim>
-  void
-  copy_to_mg(const DoFHandler<dim, spacedim> & mg_dof,
-             MGLevelObject<VectorType> &       dst,
-             const InVector &                  src) const
-  {
-    AssertThrow(underlying_operator != 0, ExcNotInitialized());
-
-    for(unsigned int level = dst.min_level(); level <= dst.max_level(); ++level)
-      (*underlying_operator)[level]->initialize_dof_vector(dst[level]);
-
-    MGLevelGlobalTransfer<VectorType>::copy_to_mg(mg_dof, dst, src);
-  }
-
-private:
-  const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> * underlying_operator;
-
-  // this map converts the multigrid level as used in the V-cycle to an actual
-  // level in the triangulation (this is necessary since both numbers might not
-  // equal e.g. in the case of hp-MG multiple (p-)levels
-  // are on the zeroth triangulation level)
-  mutable std::map<unsigned int, unsigned int> level_to_triangulation_level_map;
-};
-
-// re-implement the multigrid preconditioner in order to have more direct
-// control over its individual components and avoid inner products and other
-// expensive stuff
+/*
+ * Re-implementation of multigrid preconditioner (V-cycle) in order to have more direct control over
+ * its individual components and avoid inner products and other expensive stuff.
+ */
 template<typename VectorType,
          typename MatrixType,
          typename TransferType,
@@ -176,8 +116,54 @@ public:
 #endif
   }
 
-
 private:
+  /**
+   * Implements the V-cycle
+   */
+  void
+  v_cycle(const unsigned int level) const
+  {
+#if ENABLE_TIMING
+    timer[level].restart();
+#endif
+
+    // call coarse grid solver
+    if(level == minlevel)
+    {
+      (*coarse)(level, solution[level], defect[level]);
+
+#if ENABLE_TIMING
+      wall_time[level] += timer[level].wall_time();
+#endif
+      return;
+    }
+
+    // smoothing
+    (*smooth)[level]->vmult(solution[level], defect[level]);
+    (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
+    t[level].sadd(-1.0, 1.0, defect[level]);
+
+    // transfer to next level
+    (*transfer)[level]->restrict_and_add(level, defect[level - 1], t[level]);
+
+    // coarse grid correction
+    v_cycle(level - 1);
+
+    // prolongate
+    (*transfer)[level]->prolongate(level, t[level], solution[level - 1]);
+    solution[level] += t[level];
+
+    // smooth on the negative part of the residual
+    defect[level] *= -1.0;
+    (*matrix)[level]->vmult_add_interface_up(defect[level], solution[level]);
+    (*smooth)[level]->vmult(t[level], defect[level]);
+    solution[level] -= t[level];
+
+#if ENABLE_TIMING
+    wall_time[level] += timer[level].wall_time();
+#endif
+  }
+
   /**
    * Lowest level of cells.
    */
@@ -236,48 +222,6 @@ private:
   // measures time on the level (including the coarser levels)
   mutable MGLevelObject<double> wall_time;
 #endif
-
-  /**
-   * Implements the V-cycle
-   */
-  void
-  v_cycle(const unsigned int level) const
-  {
-#if ENABLE_TIMING
-    timer[level].restart();
-#endif
-
-    if(level == minlevel)
-    {
-      (*coarse)(level, solution[level], defect[level]);
-
-#if ENABLE_TIMING
-      wall_time[level] += timer[level].wall_time();
-#endif
-      return;
-    }
-
-    (*smooth)[level]->vmult(solution[level], defect[level]);
-    (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
-    t[level].sadd(-1.0, 1.0, defect[level]);
-
-    // transfer to next level
-    (*transfer)[level]->restrict_and_add(level, defect[level - 1], t[level]);
-
-    v_cycle(level - 1);
-
-    (*transfer)[level]->prolongate(level, t[level], solution[level - 1]);
-    solution[level] += t[level];
-    // smooth on the negative part of the residual
-    defect[level] *= -1.0;
-    (*matrix)[level]->vmult_add_interface_up(defect[level], solution[level]);
-    (*smooth)[level]->vmult(t[level], defect[level]);
-    solution[level] -= t[level];
-
-#if ENABLE_TIMING
-    wall_time[level] += timer[level].wall_time();
-#endif
-  }
 };
 
 

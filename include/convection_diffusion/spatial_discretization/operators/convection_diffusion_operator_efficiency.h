@@ -11,16 +11,15 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
+#include "../../../operators/linear_operator_base.h"
 #include "convection_diffusion/user_interface/boundary_descriptor.h"
 #include "convection_diffusion/user_interface/input_parameters.h"
 
 #include "convection_diffusion/spatial_discretization/operators/diffusive_operator.h"
 #include "convection_diffusion/spatial_discretization/operators/rhs_operator.h"
 #include "convective_operator.h"
-#include "operators/interior_penalty_parameter.h"
-#include "operators/matrix_operator_base.h"
-
 #include "functionalities/evaluate_functions.h"
+#include "operators/interior_penalty_parameter.h"
 
 namespace ConvDiff
 {

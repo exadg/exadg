@@ -39,12 +39,12 @@ struct OperatorBaseData
       cell_integrate(cell_integrate_values, cell_integrate_gradients, cell_integrate_hessians),
       face_evaluate(face_evaluate_values, face_evaluate_gradients),
       face_integrate(face_integrate_values, face_integrate_gradients),
-      use_cell_based_loops(false),
       evaluate_face_integrals(face_evaluate.do_eval() || face_integrate.do_eval()),
       operator_is_singular(false),
       mapping_update_flags(update_default),
       mapping_update_flags_inner_faces(update_default),
       mapping_update_flags_boundary_faces(update_default),
+      use_cell_based_loops(false),
       implement_block_diagonal_preconditioner_matrix_free(false)
   {
   }
@@ -91,8 +91,6 @@ struct OperatorBaseData
   Face face_evaluate;
   Face face_integrate;
 
-  bool use_cell_based_loops;
-
   bool evaluate_face_integrals;
 
   bool operator_is_singular;
@@ -104,16 +102,17 @@ struct OperatorBaseData
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs_level0;
 
+  bool use_cell_based_loops;
   bool implement_block_diagonal_preconditioner_matrix_free;
 };
 
 template<int dim, int degree, typename Number, typename AdditionalData>
-class OperatorBase : public MultigridOperatorBase<dim, Number>
+class OperatorBase
 {
 public:
   static const int DIM = dim;
 
-  typedef typename MultigridOperatorBase<dim, Number>::VectorType VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef OperatorBase<dim, degree, Number, AdditionalData> This;
 
@@ -138,22 +137,27 @@ public:
   {
   }
 
-  /*
-   * If this method is called without the forth argument `level_mg_handler`, this operator is
-   * initialized for level -1, i.e. the finest grid.
-   */
+  void
+  reinit(MatrixFree<dim, Number> const & matrix_free, AdditionalData const & operator_data) const;
+
+
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         AdditionalData const &            operator_data,
-         unsigned int                      level_mg_handler = numbers::invalid_unsigned_int) const;
+         AdditionalData const &            operator_data) const;
 
-  virtual void
-  reinit(DoFHandler<dim> const &   dof_handler,
-         Mapping<dim> const &      mapping,
-         void *                    operator_data,
-         MGConstrainedDoFs const & mg_constrained_dofs,
-         unsigned int const        level_mg_handler);
+  void
+  reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
+                   AffineConstraints<double> const & constraint_matrix,
+                   AdditionalData const &            operator_data,
+                   unsigned int                      level) const;
+
+  void
+  do_reinit_multigrid(DoFHandler<dim> const &   dof_handler,
+                      Mapping<dim> const &      mapping,
+                      void *                    operator_data,
+                      MGConstrainedDoFs const & mg_constrained_dofs,
+                      unsigned int const        level);
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
@@ -161,29 +165,14 @@ public:
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
    * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
-  virtual void
+  void
   apply(VectorType & dst, VectorType const & src) const;
 
-  virtual void
+  void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
-  virtual void
+  void
   apply_add(VectorType & dst, VectorType const & src) const;
-
-  virtual void
-  vmult(VectorType & dst, VectorType const & src) const;
-
-  virtual void
-  vmult_add(VectorType & dst, VectorType const & src) const;
-
-  /*
-   * Multigrid specific vmult_...() functions
-   */
-  void
-  vmult_interface_down(VectorType & dst, VectorType const & src) const;
-
-  void
-  vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
   /*
    * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
@@ -225,14 +214,11 @@ public:
   virtual void
   add_diagonal(VectorType & diagonal, Number const time) const;
 
-  void
-  calculate_inverse_diagonal(VectorType & diagonal) const;
-
   /*
    * block Jacobi preconditioner (block-diagonal)
    */
   virtual void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
+  apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
 
   // apply block diagonal elementwise: matrix-free implementation
   void
@@ -254,8 +240,8 @@ public:
   // Update block diagonal preconditioner: initialize everything related to block diagonal
   // preconditioner when this function is called the first time. Recompute block matrices in case of
   // matrix-based implementation.
-  virtual void
-  update_block_diagonal_preconditioner() const;
+  void
+  do_update_block_diagonal_preconditioner() const;
 
   // This function has to initialize everything related to the block diagonal preconditioner when
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
@@ -263,10 +249,9 @@ public:
   virtual void
   initialize_block_diagonal_preconditioner_matrix_free() const
   {
-    AssertThrow(
-      false,
-      ExcMessage(
-        "Should not arrive here. Function initialize_block_diagonal_preconditioner_matrix_free() has to be implemented by derived classes."));
+    AssertThrow(false,
+                ExcMessage(
+                  "Not implemented. This function has to be implemented by derived classes."));
   }
 
   virtual void
@@ -276,46 +261,22 @@ public:
   add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
   /*
-   * sparse matrix (Trilinos) methods
+   * Algebraic multigrid (AMG): sparse matrix (Trilinos) methods
    */
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  init_system_matrix(SparseMatrix & system_matrix) const;
+  do_init_system_matrix(SparseMatrix & system_matrix) const;
 
-  virtual void
-  calculate_system_matrix(SparseMatrix & system_matrix) const;
+  void
+  do_calculate_system_matrix(SparseMatrix & system_matrix) const;
 
-  virtual void
-  calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
+  void
+  do_calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
 #endif
-
-  /*
-   * Utility functions required by deal.II as interfaces.
-   */
-  types::global_dof_index
-  m() const;
-
-  types::global_dof_index
-  n() const;
-
-  Number
-  el(unsigned int const, unsigned int const) const;
-
-  bool
-  is_empty_locally() const;
 
   /*
    *  Getters and setters.
    */
-  const MatrixFree<dim, Number> &
-  get_data() const;
-
-  unsigned int
-  get_dof_index() const;
-
-  unsigned int
-  get_quad_index() const;
-
   AdditionalData const &
   get_operator_data() const;
 
@@ -332,17 +293,11 @@ public:
   get_constraint_matrix() const;
 
   /*
-   * Initializes a dof-vector.
-   */
-  void
-  initialize_dof_vector(VectorType & vector) const;
-
-  /*
    * Returns whether the operator is singular, e.g., the Laplace operator with pure Neumann boundary
    * conditions is singular.
    */
   bool
-  is_singular() const;
+  operator_is_singular() const;
 
 protected:
   /*
@@ -563,10 +518,10 @@ private:
    * should have already been performed with the method update_inverse_block_diagonal())
    */
   void
-  cell_loop_apply_inverse_block_diagonal(MatrixFree<dim, Number> const & data,
-                                         VectorType &                    dst,
-                                         VectorType const &              src,
-                                         Range const &                   cell_range) const;
+  cell_loop_apply_inverse_block_diagonal_matrix_based(MatrixFree<dim, Number> const & data,
+                                                      VectorType &                    dst,
+                                                      VectorType const &              src,
+                                                      Range const & cell_range) const;
 
 #ifdef DEAL_II_WITH_TRILINOS
   /*

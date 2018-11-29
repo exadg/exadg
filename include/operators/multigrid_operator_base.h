@@ -5,23 +5,28 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
-#include "matrix_operator_base.h"
+#include "linear_operator_base.h"
 
 using namespace dealii;
 
 template<int dim, typename Number = double>
-class MultigridOperatorBase : public MatrixOperatorBase
+class MultigridOperatorBase : public LinearOperatorBase
 {
 public:
-  typedef Number   value_type;
+  typedef Number value_type;
+
   static const int DIM = dim;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   virtual void
-  clear()
+  reinit_multigrid(const DoFHandler<dim> & /*dof_handler*/,
+                   const Mapping<dim> & /*mapping*/,
+                   void * /*operator_data*/,
+                   const MGConstrainedDoFs & /*mg_constrained_dofs*/,
+                   const unsigned int /*level*/ = numbers::invalid_unsigned_int)
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::clear should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::reinit should be overwritten!"));
   }
 
   virtual void
@@ -36,46 +41,54 @@ public:
     AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult_add should be overwritten!"));
   }
 
-  virtual void
-  vmult_interface_down(VectorType & /*dst*/, VectorType const & /*src*/) const
+  void
+  vmult_interface_down(VectorType & dst, VectorType const & src) const
   {
-    AssertThrow(false,
-                ExcMessage("MultigridOperatorBase::vmult_interface_down should be overwritten!"));
+    vmult(dst, src);
   }
 
-  virtual void
-  vmult_add_interface_up(VectorType & /*dst*/, VectorType const & /*src*/) const
+  void
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
   {
-    AssertThrow(false,
-                ExcMessage("MultigridOperatorBase::vmult_add_interface_up should be overwritten!"));
+    vmult_add(dst, src);
   }
 
-  virtual types::global_dof_index
+  types::global_dof_index
   m() const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::m should be overwritten!"));
-    return 0;
+    return n();
   }
 
-  virtual types::global_dof_index
+  types::global_dof_index
   n() const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::n should be overwritten!"));
-    return 0;
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    return data.get_vector_partitioner(dof_index)->size();
   }
 
-  virtual Number
+  Number
   el(const unsigned int, const unsigned int) const
   {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::el should be overwritten!"));
-    return 0;
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
   }
 
-  virtual void
-  initialize_dof_vector(VectorType & /*vector*/) const
+  bool
+  is_empty_locally() const
   {
-    AssertThrow(false,
-                ExcMessage("MultigridOperatorBase::initialize_dof_vector should be overwritten!"));
+    MatrixFree<dim, Number> const & data = get_data();
+    return (data->n_macro_cells() == 0);
+  }
+
+  void
+  initialize_dof_vector(VectorType & vector) const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    data.initialize_dof_vector(vector, dof_index);
   }
 
   virtual void
@@ -103,14 +116,6 @@ public:
         "MultigridOperatorBase::update_block_diagonal_preconditioner should be overwritten!"));
   }
 
-  virtual bool
-  is_empty_locally() const
-  {
-    AssertThrow(false,
-                ExcMessage("MultigridOperatorBase::is_empty_locally should be overwritten!"));
-    return 0;
-  }
-
   virtual const MatrixFree<dim, Number> &
   get_data() const
   {
@@ -136,7 +141,7 @@ public:
   is_singular() const
   {
     // per default the operator is not singular
-    // if an operator can be singular, you have to overwrite this method
+    // if an operator can be singular, this method has to be overwritten
     return false;
   }
 
@@ -155,16 +160,6 @@ public:
       false, ExcMessage("MultigridOperatorBase::calculate_system_matrix should be overwritten!"));
   }
 #endif
-
-  virtual void
-  reinit(const DoFHandler<dim> & /*dof_handler*/,
-         const Mapping<dim> & /*mapping*/,
-         void * /*operator_data*/,
-         const MGConstrainedDoFs & /*mg_constrained_dofs*/,
-         const unsigned int /*level*/ = numbers::invalid_unsigned_int)
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::reinit should be overwritten!"));
-  }
 };
 
 #endif
