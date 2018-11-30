@@ -12,7 +12,7 @@
 
 #include "./preconditioner_base.h"
 
-#include "../../operators/matrix_operator_base.h"
+#include "../../operators/linear_operator_base.h"
 
 template<typename Operator>
 class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
@@ -33,7 +33,7 @@ public:
    *  when calling this function.
    */
   void
-  update(MatrixOperatorBase const * /*matrix_operator*/)
+  update(LinearOperatorBase const * /*linear_operator*/)
   {
     underlying_operator.update_block_diagonal_preconditioner();
   }

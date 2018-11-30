@@ -102,10 +102,13 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure
     laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
   }
 
-  laplace_operator_data.bc = this->boundary_descriptor_laplace;
-
+  laplace_operator_data.bc                         = this->boundary_descriptor_laplace;
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
-  laplace_operator.initialize(this->mapping, this->data, laplace_operator_data);
+  laplace_operator_data.use_cell_based_loops       = this->param.use_cell_based_face_loops;
+  laplace_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+    this->param.implement_block_diagonal_preconditioner_matrix_free;
+
+  laplace_operator.reinit(this->mapping, this->data, laplace_operator_data);
 
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
@@ -122,12 +125,12 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure
     // use single precision for multigrid
     typedef float MultigridNumber;
 
-    typedef MyMultigridPreconditionerDG<dim,
-                                        Number,
-                                        Poisson::LaplaceOperator<dim, degree_p, MultigridNumber>>
-      MULTIGRID;
+    typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
+    typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber> MG_OPERATOR;
 
-    preconditioner_pressure_poisson.reset(new MULTIGRID());
+    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+
+    preconditioner_pressure_poisson.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);

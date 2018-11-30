@@ -8,19 +8,26 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 #define INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 
-#include "solvers_and_preconditioners/multigrid/multigrid_preconditioner_dg.h"
+#include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
+#include "../spatial_discretization/operators/convection_diffusion_operator.h"
 
 namespace ConvDiff
 {
 /*
- *  Multigrid preconditioner for (reaction-)convection-diffusion
- *  operator of the scalar (reaction-)convection-diffusion equation.
+ *  Multigrid preconditioner for scalar (reaction-)convection-diffusion operator.
  */
-template<int dim, typename value_type, typename Operator, typename UnderlyingOperator>
-class MultigridPreconditioner : public MyMultigridPreconditionerDG<dim, value_type, Operator>
+template<int dim, int degree, typename Number, typename MultigridNumber>
+class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
+  typedef MultigridOperatorBase<dim, MultigridNumber> MG_OPERATOR_BASE;
+
+  typedef ConvectionDiffusionOperator<dim, degree, Number>          PDEOperator;
+  typedef ConvectionDiffusionOperator<dim, degree, MultigridNumber> MultigridOperator;
+
   MultigridPreconditioner()
+    : MultigridPreconditionerBase<dim, Number, MultigridNumber>(
+        std::shared_ptr<MG_OPERATOR_BASE>(new MultigridOperator()))
   {
   }
 
@@ -30,18 +37,15 @@ public:
    *  This function updates the multigrid preconditioner.
    */
   virtual void
-  update(MatrixOperatorBase const * matrix_operator)
+  update(LinearOperatorBase const * matrix_operator)
   {
-    UnderlyingOperator const * underlying_operator =
-      dynamic_cast<UnderlyingOperator const *>(matrix_operator);
+    PDEOperator const * pde_operator = dynamic_cast<PDEOperator const *>(matrix_operator);
 
-    AssertThrow(
-      underlying_operator != nullptr,
-      ExcMessage(
-        "Multigrid preconditioner: UnderlyingOperator and MatrixOperator are not compatible!"));
+    AssertThrow(pde_operator != nullptr,
+                ExcMessage("PDEOperator and MatrixOperator are not compatible!"));
 
-    update_mg_matrices(underlying_operator->get_evaluation_time(),
-                       underlying_operator->get_scaling_factor_time_derivative_term());
+    update_mg_matrices(pde_operator->get_evaluation_time(),
+                       pde_operator->get_scaling_factor_time_derivative_term());
     update_smoothers();
     this->update_coarse_solver();
   }
@@ -75,7 +79,8 @@ private:
       // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
-      dynamic_cast<Operator *>(&*this->mg_matrices[level])->set_evaluation_time(evaluation_time);
+      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
+        ->set_evaluation_time(evaluation_time);
     }
   }
 
@@ -93,7 +98,7 @@ private:
       // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
-      dynamic_cast<Operator *>(&*this->mg_matrices[level])
+      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
         ->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
     }
   }

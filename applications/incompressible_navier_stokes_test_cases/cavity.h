@@ -32,15 +32,15 @@ unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = 3; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 6;
+unsigned int const REFINE_STEPS_SPACE_MAX = 6; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Steady;
+const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 const double L = 1.0;
 
 std::string OUTPUT_FOLDER = "output/cavity/";
@@ -60,21 +60,26 @@ void InputParameters<dim>::set_input_parameters()
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = 1.0; //TODO //5.0e2;
-  viscosity = 1.0e-1; //TODO //1.0e-3;
+  end_time = 10.0;
+  viscosity = 1.0e-5;
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady; //Steady; //Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFPressureCorrection; //BDFDualSplittingScheme; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Implicit;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
+  adaptive_time_stepping = false;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   max_velocity = 1.0;
-  cfl = 0.3;
+  cfl_exponent_fe_degree_velocity = 1.5;
+  // Explicit: CFL_crit = 0.35 (0.4 unstable), ExplicitOIF: CFL_crit,oif = 3.0 (3.5 unstable)
+  cfl_oif = 3.0;
+  cfl = cfl_oif * 1.0;
   time_step_size = 1.0e-1;
   max_number_of_time_steps = 1e8;
-  order_time_integrator = 2; // 1; // 2; // 3;
-  start_with_low_order = true; // true; // false;
+  order_time_integrator = 2;
+  start_with_low_order = true;
 
   // pseudo-timestepping for steady-state problems
   convergence_criterion_steady_problem = ConvergenceCriterionSteadyProblem::ResidualSteadyNavierStokes;
@@ -87,7 +92,8 @@ void InputParameters<dim>::set_input_parameters()
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term - currently no parameters
-  upwind_factor = 0.5;
+  if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
+    upwind_factor = 0.5;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -104,6 +110,16 @@ void InputParameters<dim>::set_input_parameters()
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
+
+  // div-div and continuity penalty
+  use_divergence_penalty = true;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = true;
+  continuity_penalty_factor = divergence_penalty_factor;
+  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
+  add_penalty_terms_to_monolithic_system = false;
+
 
   // PROJECTION METHODS
 
@@ -152,14 +168,13 @@ void InputParameters<dim>::set_input_parameters()
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum.abs_tol = 1.e-10;
-  newton_solver_data_momentum.rel_tol = 1.e-8;
+  newton_solver_data_momentum.abs_tol = 1.e-12;
+  newton_solver_data_momentum.rel_tol = 1.e-6;
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES; //FGMRES;
   preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-//  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   update_preconditioner_momentum = true;
   multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
   multigrid_data_momentum.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
@@ -167,7 +182,7 @@ void InputParameters<dim>::set_input_parameters()
   multigrid_data_momentum.jacobi_smoother_data.damping_factor = 0.7;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
   abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-2; //1.e-8; //TODO
+  rel_tol_momentum_linear = 1.e-2;
   max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
@@ -196,7 +211,7 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::Multigrid;
   multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
 
   // GMRES smoother data
@@ -234,6 +249,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.output_interval_time = (end_time-start_time)/100;
   output_data.write_divergence = true;
   output_data.write_streamfunction = false;
+  output_data.write_processor_id = true;
   output_data.number_of_patches = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -242,7 +258,7 @@ void InputParameters<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e0;
+  output_solver_info_every_timesteps = 1e2;
 
   // line plot data
   line_plot_data.write_output = false;

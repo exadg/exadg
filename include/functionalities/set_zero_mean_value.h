@@ -3,6 +3,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+using namespace dealii;
+
 template<typename Number>
 void
 set_zero_mean_value(LinearAlgebra::distributed::Vector<Number> & vector)

@@ -12,6 +12,100 @@ LaplaceOperator<dim, degree, Number>::LaplaceOperator()
 }
 
 template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &             mapping,
+                                             MatrixFree<dim, Number> const &  mf_data,
+                                             LaplaceOperatorData<dim> const & operator_data)
+{
+  Base::reinit(mf_data, operator_data);
+
+  // calculate penalty parameters
+  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
+                                                       *this->data,
+                                                       mapping,
+                                                       this->operator_data.dof_index);
+}
+
+template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::reinit_multigrid(
+  DoFHandler<dim> const &   dof_handler,
+  Mapping<dim> const &      mapping,
+  void *                    operator_data,
+  MGConstrainedDoFs const & mg_constrained_dofs,
+  unsigned int const        level)
+{
+  Base::do_reinit_multigrid(dof_handler, mapping, operator_data, mg_constrained_dofs, level);
+
+  // calculate penalty parameters
+  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
+                                                       *this->data,
+                                                       mapping,
+                                                       this->operator_data.dof_index);
+}
+
+template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::vmult(VectorType & dst, VectorType const & src) const
+{
+  this->apply(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::vmult_add(VectorType & dst, VectorType const & src) const
+{
+  this->apply_add(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+MatrixFree<dim, Number> const &
+LaplaceOperator<dim, degree, Number>::get_data() const
+{
+  return *this->data;
+}
+
+template<int dim, int degree, typename Number>
+unsigned int
+LaplaceOperator<dim, degree, Number>::get_dof_index() const
+{
+  return this->operator_data.dof_index;
+}
+
+template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::calculate_inverse_diagonal(VectorType & diagonal) const
+{
+  this->calculate_diagonal(diagonal);
+  invert_diagonal(diagonal);
+}
+
+template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::apply_inverse_block_diagonal(VectorType &       dst,
+                                                                   VectorType const & src) const
+{
+  AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
+              ExcMessage("Not implemented."));
+
+  this->apply_inverse_block_diagonal_matrix_based(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::update_block_diagonal_preconditioner() const
+{
+  this->do_update_block_diagonal_preconditioner();
+}
+
+template<int dim, int degree, typename Number>
+bool
+LaplaceOperator<dim, degree, Number>::is_singular() const
+{
+  return this->operator_is_singular();
+}
+
+template<int dim, int degree, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   LaplaceOperator<dim, degree, Number>::calculate_value_flux(scalar const & jump_value) const

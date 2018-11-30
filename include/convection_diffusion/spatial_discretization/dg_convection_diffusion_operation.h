@@ -16,7 +16,7 @@
 #include <deal.II/numerics/vector_tools.h>
 
 #include "../../operators/inverse_mass_matrix.h"
-#include "../../operators/matrix_operator_base.h"
+#include "../../operators/linear_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
@@ -37,7 +37,7 @@
 namespace ConvDiff
 {
 template<int dim, int degree, typename Number>
-class DGOperation : public MatrixOperatorBase, public Interface::Operator<Number>
+class DGOperation : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -45,7 +45,8 @@ public:
   DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
               InputParameters const &                           param_in,
               std::shared_ptr<PostProcessor<dim, degree>>       postprocessor_in)
-    : fe(degree),
+    : dealii::Subscriptor(),
+      fe(degree),
       mapping(param_in.degree_mapping),
       dof_handler(triangulation),
       param(param_in),
@@ -137,9 +138,8 @@ public:
 
     conv_diff_operator_data.dof_index        = 0;
     conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
-    conv_diff_operator_data.bc               = boundary_descriptor;
 
-    conv_diff_operator.initialize(
+    conv_diff_operator.reinit(
       data, conv_diff_operator_data, mass_matrix_operator, convective_operator, diffusive_operator);
   }
 
@@ -169,11 +169,7 @@ public:
 
       typedef float MultigridNumber;
 
-      typedef MultigridPreconditioner<dim,
-                                      Number,
-                                      ConvectionDiffusionOperator<dim, degree, MultigridNumber>,
-                                      ConvectionDiffusionOperator<dim, degree, Number>>
-        MULTIGRID;
+      typedef MultigridPreconditioner<dim, degree, Number, MultigridNumber> MULTIGRID;
 
       preconditioner.reset(new MULTIGRID());
       std::shared_ptr<MULTIGRID> mg_preconditioner =
@@ -181,7 +177,7 @@ public:
       mg_preconditioner->initialize(mg_data,
                                     dof_handler,
                                     mapping,
-                                    conv_diff_operator.get_operator_data().bc->dirichlet_bc,
+                                    conv_diff_operator.get_boundary_descriptor()->dirichlet_bc,
                                     (void *)&conv_diff_operator.get_operator_data());
     }
     else
@@ -630,7 +626,9 @@ private:
     mass_matrix_operator_data.dof_index            = 0;
     mass_matrix_operator_data.quad_index           = 0;
     mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-    mass_matrix_operator.initialize(data, mass_matrix_operator_data);
+    mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    mass_matrix_operator.reinit(data, mass_matrix_operator_data);
 
     // inverse mass matrix operator
     // dof_index = 0, quad_index = 0
@@ -644,7 +642,9 @@ private:
     convective_operator_data.bc                         = boundary_descriptor;
     convective_operator_data.velocity                   = field_functions->velocity;
     convective_operator_data.use_cell_based_loops       = param.use_cell_based_face_loops;
-    convective_operator.initialize(data, convective_operator_data);
+    convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    convective_operator.reinit(data, convective_operator_data);
 
     if(param.type_velocity_field == TypeVelocityField::Numerical)
     {
@@ -670,14 +670,16 @@ private:
     diffusive_operator_data.diffusivity          = param.diffusivity;
     diffusive_operator_data.bc                   = boundary_descriptor;
     diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-    diffusive_operator.initialize(mapping, data, diffusive_operator_data);
+    diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    diffusive_operator.reinit(mapping, data, diffusive_operator_data);
 
     // rhs operator
     RHSOperatorData<dim> rhs_operator_data;
     rhs_operator_data.dof_index  = 0;
     rhs_operator_data.quad_index = 0;
     rhs_operator_data.rhs        = field_functions->right_hand_side;
-    rhs_operator.initialize(data, rhs_operator_data);
+    rhs_operator.reinit(data, rhs_operator_data);
 
     // convection-diffusion operator (efficient implementation, only for explicit time integration,
     // includes also rhs operator)
@@ -689,13 +691,13 @@ private:
   }
 
   void
-  setup_postprocessor(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution_in)
+  setup_postprocessor(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
   {
     PostProcessorData pp_data;
     pp_data.output_data = param.output_data;
     pp_data.error_data  = param.error_data;
 
-    postprocessor->setup(pp_data, dof_handler, mapping, data, analytical_solution_in);
+    postprocessor->setup(pp_data, dof_handler, mapping, data, analytical_solution);
   }
 
 

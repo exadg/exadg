@@ -8,11 +8,11 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 
-#include "../../incompressible_navier_stokes/preconditioners/preconditioner_navier_stokes.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include "solvers_and_preconditioners/newton/newton_solver.h"
 
 #include "../interface_space_time/operator.h"
+#include "../preconditioners/block_preconditioner.h"
 
 namespace IncNS
 {
@@ -423,12 +423,13 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup_velocity_conv_diff
   momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
   momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
+  momentum_operator_data.mg_operator_type = this->param.momentum_multigrid_operator_type;
 
-  momentum_operator.initialize(this->get_data(),
-                               momentum_operator_data,
-                               this->mass_matrix_operator,
-                               this->viscous_operator,
-                               this->convective_operator);
+  momentum_operator.reinit(this->get_data(),
+                           momentum_operator_data,
+                           this->mass_matrix_operator,
+                           this->viscous_operator,
+                           this->convective_operator);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>

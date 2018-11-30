@@ -6,27 +6,6 @@
 
 namespace ConvDiff
 {
-template<int dim, int degree, typename Number>
-void
-ConvectiveOperator<dim, degree, Number>::initialize(
-  MatrixFree<dim, Number> const &     mf_data,
-  ConvectiveOperatorData<dim> const & operator_data)
-{
-  AffineConstraints<double> constraint_matrix;
-  Base::reinit(mf_data, constraint_matrix, operator_data, numbers::invalid_unsigned_int);
-}
-
-template<int dim, int degree, typename Number>
-void
-ConvectiveOperator<dim, degree, Number>::initialize(
-  MatrixFree<dim, Number> const &     mf_data,
-  AffineConstraints<double> const &   constraint_matrix,
-  ConvectiveOperatorData<dim> const & operator_data,
-  unsigned int                        level_mg_handler)
-{
-  Base::reinit(mf_data, constraint_matrix, operator_data, level_mg_handler);
-}
-
 /*
  *  This function calculates the numerical flux using the central flux.
  */

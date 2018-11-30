@@ -237,15 +237,14 @@ private:
 
 
 template<typename Vector, typename InverseOperator>
-class MGCoarseInverseOperator : public MGCoarseGridBase<Vector>
+class MGCoarseChebyshev : public MGCoarseGridBase<Vector>
 {
 public:
-  MGCoarseInverseOperator(std::shared_ptr<InverseOperator const> inverse_coarse_grid_operator)
-    : inverse_operator(inverse_coarse_grid_operator)
+  MGCoarseChebyshev(std::shared_ptr<InverseOperator const> inverse) : inverse_operator(inverse)
   {
   }
 
-  virtual ~MGCoarseInverseOperator()
+  virtual ~MGCoarseChebyshev()
   {
   }
 
@@ -253,7 +252,7 @@ public:
   operator()(const unsigned int level, Vector & dst, const Vector & src) const
   {
     AssertThrow(inverse_operator.get() != 0,
-                ExcMessage("InverseOperator of multigrid coarse grid solver is uninitialized!"));
+                ExcMessage("MGCoarseChebyshev: inverse_operator is not initialized."));
 
     AssertThrow(level == 0, ExcNotImplemented());
 

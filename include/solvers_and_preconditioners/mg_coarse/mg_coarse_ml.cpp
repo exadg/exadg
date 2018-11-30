@@ -51,7 +51,7 @@ MGCoarseML<Operator, Number>::reinit(int level, MGCoarseMLData data_in)
 
 template<typename Operator, typename Number>
 void
-MGCoarseML<Operator, Number>::update(MatrixOperatorBase const * /*matrix_operator*/)
+MGCoarseML<Operator, Number>::update(LinearOperatorBase const * /*linear_operator*/)
 {
 }
 
@@ -157,7 +157,7 @@ MGCoarseML<Operator, Number>::reinit(int, MGCoarseMLData)
 
 template<typename Operator, typename Number>
 void
-MGCoarseML<Operator, Number>::update(MatrixOperatorBase const *)
+MGCoarseML<Operator, Number>::update(LinearOperatorBase const *)
 {
   AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 }

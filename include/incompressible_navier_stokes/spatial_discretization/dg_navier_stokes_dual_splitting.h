@@ -382,16 +382,18 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
   momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
   momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
+  // dual splitting scheme: We don't have a choice here!
+  momentum_operator_data.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
 
   momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
   momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
   momentum_operator_data.convective_operator_data  = this->convective_operator_data;
 
-  helmholtz_operator.initialize(this->get_data(),
-                                momentum_operator_data,
-                                this->mass_matrix_operator,
-                                this->viscous_operator,
-                                this->convective_operator);
+  helmholtz_operator.reinit(this->get_data(),
+                            momentum_operator_data,
+                            this->mass_matrix_operator,
+                            this->viscous_operator,
+                            this->convective_operator);
 
   // 2. Setup Helmholtz preconditioner
 
@@ -412,27 +414,19 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_helmholtz_so
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
   {
-    MultigridData mg_data;
-    mg_data = this->param.multigrid_data_viscous;
-
     // use single precision for multigrid
     typedef float MultigridNumber;
 
-    typedef MyMultigridPreconditionerVelocityDiffusion<
-      dim,
-      Number,
-      MomentumOperator<dim, degree_u, MultigridNumber>,
-      MomentumOperator<dim, degree_u, Number>>
-      MULTIGRID;
+    typedef MultigridPreconditioner<dim, degree_u, Number, MultigridNumber> MULTIGRID;
 
     helmholtz_preconditioner.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
 
-    mg_preconditioner->initialize(mg_data,
-                                  this->dof_handler_u,
-                                  this->mapping,
+    mg_preconditioner->initialize(this->param.multigrid_data_viscous,
+                                  this->get_dof_handler_u(),
+                                  this->get_mapping(),
                                   /*helmholtz_operator.get_operator_data().bc->dirichlet_bc,*/
                                   (void *)&helmholtz_operator.get_operator_data());
   }

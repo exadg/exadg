@@ -22,30 +22,11 @@ struct MassMatrixOperatorData : public OperatorBaseData<dim>
 template<int dim, int degree, typename Number>
 class MassMatrixOperator : public OperatorBase<dim, degree, Number, MassMatrixOperatorData<dim>>
 {
-public:
-  typedef MassMatrixOperator<dim, degree, Number> This;
-
-  typedef OperatorBase<dim, degree, Number, MassMatrixOperatorData<dim>> Parent;
-
-  typedef typename Parent::FEEvalCell FEEvalCell;
-  typedef typename Parent::FEEvalFace FEEvalFace;
-
-  MassMatrixOperator()
-  {
-  }
-
-  void
-  initialize(MatrixFree<dim, Number> const &     mf_data,
-             MassMatrixOperatorData<dim> const & mass_matrix_operator_data,
-             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
-
-  void
-  initialize(MatrixFree<dim, Number> const &     mf_data,
-             AffineConstraints<double> const &   constraint_matrix,
-             MassMatrixOperatorData<dim> const & mass_matrix_operator_data,
-             unsigned int                        level_mg_handler = numbers::invalid_unsigned_int);
-
 private:
+  typedef OperatorBase<dim, degree, Number, MassMatrixOperatorData<dim>> Base;
+
+  typedef typename Base::FEEvalCell FEEvalCell;
+
   void
   do_cell_integral(FEEvalCell & fe_eval) const;
 };

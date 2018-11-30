@@ -52,7 +52,7 @@ void InputParameters<dim>::set_input_parameters()
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
   right_hand_side = false;
 
 
@@ -64,13 +64,13 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping = false;
   max_velocity = 1.4 * U_X_MAX;
-  cfl = 0.1;
+  cfl = 2.0; //0.1;
   cfl_oif = cfl/1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   c_eff = 8.0;
@@ -163,7 +163,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
+  preconditioner_viscous = PreconditionerViscous::GeometricMultigrid; //InverseMassMatrix; //GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
   rel_tol_viscous = 1.e-6;
@@ -190,8 +190,9 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner_momentum = true;
 
   // linear solver
-  solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::BlockJacobi; //InverseMassMatrix;
+  solver_momentum = SolverMomentum::FGMRES;
+  preconditioner_momentum = MomentumPreconditioner::Multigrid; //BlockJacobi; //InverseMassMatrix;
+  multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
   multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
 
   // Jacobi smoother data
@@ -217,7 +218,7 @@ void InputParameters<dim>::set_input_parameters()
   newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES; //FGMRES; //GMRES;
+  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::FGMRES; //FGMRES; //GMRES;
   abs_tol_linear = 1.e-12;
   rel_tol_linear = 1.e-6;
   max_iter_linear = 1e4;
@@ -229,8 +230,9 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner = true;
 
   // preconditioner momentum block
-  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix;
-  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::GMRES; //Jacobi; //Jacobi; //Chebyshev; //GMRES;
+  momentum_preconditioner = MomentumPreconditioner::Multigrid; //InverseMassMatrix;
+  momentum_multigrid_operator_type = MultigridOperatorType::ReactionDiffusion;
+  multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
 
   // Jacobi smoother data
   multigrid_data_momentum_preconditioner.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;

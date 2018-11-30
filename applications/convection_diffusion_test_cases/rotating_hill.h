@@ -22,11 +22,11 @@
 const unsigned int DIMENSION = 2;
 
 // set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 6;
+const unsigned int FE_DEGREE = 5;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+const unsigned int REFINE_STEPS_SPACE_MIN = 2;
+const unsigned int REFINE_STEPS_SPACE_MAX = 2;
 
 // set the number of refine levels for temporal convergence tests
 const unsigned int REFINE_STEPS_TIME_MIN = 0;
@@ -46,7 +46,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
+  temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
 
   // Explicit RK
   time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -54,14 +54,14 @@ void ConvDiff::InputParameters::set_input_parameters()
   // BDF
   order_time_integrator = 2; // instabilities for BDF 3 and 4
   start_with_low_order = false;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF;
-  time_integrator_oif = TimeIntegratorRK::ExplRK4Stage8Reg2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //ExplicitOIF;
+  time_integrator_oif = TimeIntegratorRK::ExplRK2Stage2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
 
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping = false;
   time_step_size = 1.e-2;
-  cfl_oif = 0.2;
-  cfl_number = cfl_oif * 1.0;
+  cfl_oif = 0.5;
+  cfl = cfl_oif * 1.0;
   diffusion_number = 0.01;
   exponent_fe_degree_convection = 2.0;
   exponent_fe_degree_diffusion = 3.0;
@@ -80,7 +80,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   rel_tol = 1.e-8;
   max_iter = 1e3;
   max_n_tmp_vectors = 100;
-  preconditioner = Preconditioner::BlockJacobi; //None; //InverseMassMatrix; //PointJacobi; //BlockJacobi; //Multigrid;
+  preconditioner = Preconditioner::Multigrid; //None; //InverseMassMatrix; //PointJacobi; //BlockJacobi; //Multigrid;
   update_preconditioner = true;
 
   // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
@@ -108,7 +108,6 @@ void ConvDiff::InputParameters::set_input_parameters()
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
 
 
-
   // NUMERICAL PARAMETERS
   use_cell_based_face_loops = true;
   runtime_optimization = false;
@@ -123,13 +122,14 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.number_of_patches = FE_DEGREE;
 
   error_data.analytical_solution_available = true;
+  error_data.calculate_relative_errors = true;
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   output_solver_info_every_timesteps = 1e6;
 
   // restart
-  restart_data.write_restart = true;
+  restart_data.write_restart = false;
   restart_data.filename = "output_conv_diff/rotating_hill";
   restart_data.interval_time = 0.4;
 }

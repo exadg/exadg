@@ -27,8 +27,6 @@ class RHSOperator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number> scalar;
-
   typedef RHSOperator<dim, degree, Number> This;
 
   RHSOperator() : data(nullptr), eval_time(0.0)
@@ -36,7 +34,7 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const & mf_data, RHSOperatorData<dim> const & operator_data_in)
+  reinit(MatrixFree<dim, Number> const & mf_data, RHSOperatorData<dim> const & operator_data_in)
   {
     this->data          = &mf_data;
     this->operator_data = operator_data_in;
@@ -94,6 +92,8 @@ private:
       fe_eval.distribute_local_to_global(dst);
     }
   }
+
+  typedef VectorizedArray<Number> scalar;
 
   MatrixFree<dim, Number> const * data;
 

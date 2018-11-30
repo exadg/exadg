@@ -56,45 +56,41 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
   SolverData                  block_jacobi_solver_data;
 
   MultigridOperatorType mg_operator_type;
-
-  // TODO: do we really need this here because the convective and diffusive operators already have
-  // it
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, int degree, typename Number = double>
 class ConvectionDiffusionOperator
-  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>
+  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>,
+    public MultigridOperatorBase<dim, Number>
 {
 public:
-  // TODO: Issue#2
   static const int DIM = dim;
 
   typedef Number value_type;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+private:
+  typedef OperatorBase<dim, degree, value_type, ConvectionDiffusionOperatorData<dim>> Base;
+  typedef ConvectionDiffusionOperator<dim, degree, Number>                            This;
 
-  typedef ConvectionDiffusionOperator<dim, degree, Number> This;
+  typedef typename Base::FEEvalCell FEEvalCell;
+  typedef typename Base::FEEvalFace FEEvalFace;
 
-  typedef OperatorBase<dim, degree, value_type, ConvectionDiffusionOperatorData<dim>> Parent;
-
-  typedef typename Parent::FEEvalCell FEEvalCell;
-  typedef typename Parent::FEEvalFace FEEvalFace;
-
-  typedef typename Parent::BlockMatrix BlockMatrix;
+  typedef typename Base::BlockMatrix BlockMatrix;
+  typedef typename Base::VectorType  VectorType;
 
 #ifdef DEAL_II_WITH_TRILINOS
-  typedef typename Parent::SparseMatrix SparseMatrix;
+  typedef typename Base::SparseMatrix SparseMatrix;
 #endif
 
+public:
   ConvectionDiffusionOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &                 mf_data_in,
-             ConvectionDiffusionOperatorData<dim> const &    operator_data_in,
-             MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
-             ConvectiveOperator<dim, degree, Number> const & convective_operator_in,
-             DiffusiveOperator<dim, degree, Number> const &  diffusive_operator_in);
+  reinit(MatrixFree<dim, Number> const &                 mf_data,
+         ConvectionDiffusionOperatorData<dim> const &    operator_data,
+         MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
+         ConvectiveOperator<dim, degree, Number> const & convective_operator,
+         DiffusiveOperator<dim, degree, Number> const &  diffusive_operator);
 
 
   /*
@@ -103,11 +99,11 @@ public:
    *  created.
    */
   void
-  reinit(DoFHandler<dim> const &   dof_handler,
-         Mapping<dim> const &      mapping,
-         void *                    operator_data_in,
-         MGConstrainedDoFs const & mg_constrained_dofs,
-         unsigned int const        level);
+  reinit_multigrid(DoFHandler<dim> const &   dof_handler,
+                   Mapping<dim> const &      mapping,
+                   void *                    operator_data,
+                   MGConstrainedDoFs const & mg_constrained_dofs,
+                   unsigned int const        level);
 
   /*
    *  Scaling factor of time derivative term (mass matrix term)
@@ -118,17 +114,17 @@ public:
   double
   get_scaling_factor_time_derivative_term() const;
 
-  /*
-   *  Operator data of basic operators: mass matrix, convective operator, diffusive operator
-   */
-  MassMatrixOperatorData<dim> const &
-  get_mass_matrix_operator_data() const;
+  MatrixFree<dim, Number> const &
+  get_data() const;
 
-  ConvectiveOperatorData<dim> const &
-  get_convective_operator_data() const;
+  unsigned int
+  get_dof_index() const;
 
-  DiffusiveOperatorData<dim> const &
-  get_diffusive_operator_data() const;
+  unsigned int
+  get_quad_index() const;
+
+  std::shared_ptr<BoundaryDescriptor<dim>>
+  get_boundary_descriptor() const;
 
   // Apply matrix-vector multiplication.
   void
@@ -138,16 +134,23 @@ public:
   vmult_add(VectorType & dst, VectorType const & src) const;
 
 #ifdef DEAL_II_WITH_TRILINOS
-  virtual void
+  void
+  init_system_matrix(SparseMatrix & system_matrix) const;
+
+  void
   calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
 
-  virtual void
+  void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
   /*
-   * This function calculates the diagonal.
+   * Diagonal preconditioner.
    */
+
+  void
+  calculate_inverse_diagonal(VectorType & inverse_diagonal) const;
+
   void
   calculate_diagonal(VectorType & diagonal) const;
 
@@ -165,6 +168,12 @@ public:
                                        VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size = 1) const;
 
+  void
+  update_block_diagonal_preconditioner() const;
+
+  MultigridOperatorBase<dim, Number> *
+  get_new(unsigned int deg) const;
+
 private:
   /*
    * This function calculates the block Jacobi matrices and adds the result to matrices. This is
@@ -179,19 +188,19 @@ private:
   void
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
-  MultigridOperatorBase<dim, Number> *
-  get_new(unsigned int deg) const;
-
   mutable lazy_ptr<MassMatrixOperator<dim, degree, Number>> mass_matrix_operator;
   mutable lazy_ptr<ConvectiveOperator<dim, degree, Number>> convective_operator;
   mutable lazy_ptr<DiffusiveOperator<dim, degree, Number>>  diffusive_operator;
 
   mutable VectorType temp;
-  double             scaling_factor_time_derivative_term;
+
+  double scaling_factor_time_derivative_term;
 
   // Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
-  typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
+  typedef Elementwise::OperatorBase<dim, Number, This> ELEMENTWISE_OPERATOR;
+
   typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PRECONDITIONER_BASE;
+
   typedef Elementwise::IterativeSolver<dim,
                                        1 /*scalar equation*/,
                                        degree,

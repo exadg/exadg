@@ -8,11 +8,10 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_H_
 
+#include "../../operators/linear_operator_base.h"
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
-
-#include "operators/matrix_operator_base.h"
 
 #include "operators/elementwise_operator.h"
 #include "solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
@@ -115,7 +114,7 @@ struct ProjectionOperatorData
 };
 
 template<int dim, int degree, typename Number>
-class ProjectionOperator : public MatrixOperatorBase
+class ProjectionOperator : public LinearOperatorBase
 {
 public:
   typedef ProjectionOperator<dim, degree, Number> This;

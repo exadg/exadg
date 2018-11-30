@@ -12,18 +12,17 @@ ConvectionDiffusionOperator<dim, degree, Number>::ConvectionDiffusionOperator()
 
 template<int dim, int degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, degree, Number>::initialize(
-  MatrixFree<dim, Number> const &                 mf_data_in,
-  ConvectionDiffusionOperatorData<dim> const &    operator_data_in,
-  MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator_in,
-  ConvectiveOperator<dim, degree, Number> const & convective_operator_in,
-  DiffusiveOperator<dim, degree, Number> const &  diffusive_operator_in)
+ConvectionDiffusionOperator<dim, degree, Number>::reinit(
+  MatrixFree<dim, Number> const &                 mf_data,
+  ConvectionDiffusionOperatorData<dim> const &    operator_data,
+  MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
+  ConvectiveOperator<dim, degree, Number> const & convective_operator,
+  DiffusiveOperator<dim, degree, Number> const &  diffusive_operator)
 {
-  AffineConstraints<double> constraint_matrix;
-  Parent::reinit(mf_data_in, constraint_matrix, operator_data_in);
-  this->mass_matrix_operator.reinit(mass_matrix_operator_in);
-  this->convective_operator.reinit(convective_operator_in);
-  this->diffusive_operator.reinit(diffusive_operator_in);
+  Base::reinit(mf_data, operator_data);
+  this->mass_matrix_operator.reinit(mass_matrix_operator);
+  this->convective_operator.reinit(convective_operator);
+  this->diffusive_operator.reinit(diffusive_operator);
 
   // mass matrix term: set scaling factor time derivative term
   this->scaling_factor_time_derivative_term =
@@ -32,14 +31,14 @@ ConvectionDiffusionOperator<dim, degree, Number>::initialize(
 
 template<int dim, int degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, degree, Number>::reinit(
+ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid(
   DoFHandler<dim> const &   dof_handler,
   Mapping<dim> const &      mapping,
-  void *                    operator_data_in,
+  void *                    operator_data,
   MGConstrainedDoFs const & mg_constrained_dofs,
   unsigned int const        level)
 {
-  Parent::reinit(dof_handler, mapping, operator_data_in, mg_constrained_dofs, level);
+  Base::do_reinit_multigrid(dof_handler, mapping, operator_data, mg_constrained_dofs, level);
 
   // use own operators
   mass_matrix_operator.reset();
@@ -51,10 +50,10 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
     auto & op_data     = this->operator_data.mass_matrix_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    mass_matrix_operator.own().initialize(this->get_data(),
-                                          this->get_constraint_matrix(),
-                                          op_data,
-                                          level);
+    mass_matrix_operator.own().reinit_multigrid(this->get_data(),
+                                                this->get_constraint_matrix(),
+                                                op_data,
+                                                level);
   }
 
   // setup own convective operator
@@ -62,10 +61,10 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
     auto & op_data     = this->operator_data.convective_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    convective_operator.own().initialize(this->get_data(),
-                                         this->get_constraint_matrix(),
-                                         op_data,
-                                         level);
+    convective_operator.own().reinit_multigrid(this->get_data(),
+                                               this->get_constraint_matrix(),
+                                               op_data,
+                                               level);
   }
 
   // setup own viscous operator
@@ -73,7 +72,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
     auto & op_data     = this->operator_data.diffusive_operator_data;
     op_data.dof_index  = 0;
     op_data.quad_index = 0;
-    diffusive_operator.own().initialize(
+    diffusive_operator.own().reinit_multigrid(
       mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
 
@@ -109,22 +108,11 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  // Initialize other variables:
-
   // mass matrix term: set scaling factor time derivative term
   this->scaling_factor_time_derivative_term =
     this->operator_data.scaling_factor_time_derivative_term;
 
-  // convective term: evaluation_time
-  // This variables is not set here. If the convective term
-  // is considered, this variables has to be updated anyway,
-  // which is done somewhere else.
-
-  // viscous term: nothing to do
-
-
-
-  // initialize temp vector: this is done in this function because
+  // initialize temp-vector: this is done in this function because
   // the vector temp is only used in the function vmult_add(), i.e.,
   // when using the multigrid preconditioner
   this->initialize_dof_vector(temp);
@@ -146,24 +134,31 @@ ConvectionDiffusionOperator<dim, degree, Number>::get_scaling_factor_time_deriva
 }
 
 template<int dim, int degree, typename Number>
-MassMatrixOperatorData<dim> const &
-ConvectionDiffusionOperator<dim, degree, Number>::get_mass_matrix_operator_data() const
+MatrixFree<dim, Number> const &
+ConvectionDiffusionOperator<dim, degree, Number>::get_data() const
 {
-  return mass_matrix_operator->get_operator_data(); // TODO: get it from data
+  return *this->data;
 }
 
 template<int dim, int degree, typename Number>
-ConvectiveOperatorData<dim> const &
-ConvectionDiffusionOperator<dim, degree, Number>::get_convective_operator_data() const
+unsigned int
+ConvectionDiffusionOperator<dim, degree, Number>::get_dof_index() const
 {
-  return convective_operator->get_operator_data(); // TODO: get it from data
+  return this->operator_data.dof_index;
 }
 
 template<int dim, int degree, typename Number>
-DiffusiveOperatorData<dim> const &
-ConvectionDiffusionOperator<dim, degree, Number>::get_diffusive_operator_data() const
+unsigned int
+ConvectionDiffusionOperator<dim, degree, Number>::get_quad_index() const
 {
-  return diffusive_operator->get_operator_data(); // TODO: get it from data
+  return this->operator_data.quad_index;
+}
+
+template<int dim, int degree, typename Number>
+std::shared_ptr<BoundaryDescriptor<dim>>
+ConvectionDiffusionOperator<dim, degree, Number>::get_boundary_descriptor() const
+{
+  return diffusive_operator->get_operator_data().bc;
 }
 
 template<int dim, int degree, typename Number>
@@ -226,11 +221,20 @@ ConvectionDiffusionOperator<dim, degree, Number>::vmult_add(VectorType &       d
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, int degree, typename Number>
 void
+ConvectionDiffusionOperator<dim, degree, Number>::init_system_matrix(
+  SparseMatrix & system_matrix) const
+{
+  this->do_init_system_matrix(system_matrix);
+}
+
+template<int dim, int degree, typename Number>
+void
 ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
   SparseMatrix & system_matrix,
   Number const   time) const
 {
-  Parent::calculate_system_matrix(system_matrix, time);
+  this->eval_time = time;
+  calculate_system_matrix(system_matrix);
 }
 
 template<int dim, int degree, typename Number>
@@ -248,7 +252,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
       ExcMessage(
         "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
-    mass_matrix_operator->calculate_system_matrix(system_matrix);
+    mass_matrix_operator->do_calculate_system_matrix(system_matrix);
     system_matrix *= scaling_factor_time_derivative_term;
   }
   else
@@ -258,15 +262,24 @@ ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
 
   if(this->operator_data.diffusive_problem == true)
   {
-    diffusive_operator->calculate_system_matrix(system_matrix);
+    diffusive_operator->do_calculate_system_matrix(system_matrix);
   }
 
   if(this->operator_data.convective_problem == true)
   {
-    convective_operator->calculate_system_matrix(system_matrix, this->eval_time);
+    convective_operator->do_calculate_system_matrix(system_matrix, this->eval_time);
   }
 }
 #endif
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::calculate_inverse_diagonal(
+  VectorType & inverse_diagonal) const
+{
+  calculate_diagonal(inverse_diagonal);
+  invert_diagonal(inverse_diagonal);
+}
 
 template<int dim, int degree, typename Number>
 void
@@ -315,7 +328,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::apply_inverse_block_diagonal(
   {
     // Simply apply inverse of block matrices (using the LU factorization that has been computed
     // before).
-    Parent::apply_inverse_block_diagonal(dst, src);
+    Base::apply_inverse_block_diagonal_matrix_based(dst, src);
   }
 }
 
@@ -353,6 +366,13 @@ ConvectionDiffusionOperator<dim, degree, Number>::
     *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
     *std::dynamic_pointer_cast<PRECONDITIONER_BASE>(elementwise_preconditioner),
     iterative_solver_data));
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::update_block_diagonal_preconditioner() const
+{
+  this->do_update_block_diagonal_preconditioner();
 }
 
 template<int dim, int degree, typename Number>

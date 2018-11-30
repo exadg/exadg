@@ -32,17 +32,18 @@
 
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/inverse_mass_matrix.h"
-#include "../../operators/matrix_operator_base.h"
+#include "../../operators/linear_operator_base.h"
 
 #include "turbulence_model.h"
 
-#include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner_navier_stokes.h"
+#include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
+
 #include "projection_operators.h"
 #include "projection_solvers.h"
 
@@ -55,12 +56,14 @@ using namespace dealii;
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
-class DGNavierStokesBase : public MatrixOperatorBase, public Interface::OperatorBase<Number>
+class DGNavierStokesBase : public LinearOperatorBase, public Interface::OperatorBase<Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
+
+  typedef float MultigridNumber;
 
   enum class DofHandlerSelector
   {
@@ -1013,7 +1016,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
 
   Poisson::LaplaceOperator<dim, degree_u, Number> laplace_operator;
-  laplace_operator.initialize(this->mapping, this->data, laplace_operator_data);
+  laplace_operator.reinit(this->mapping, this->data, laplace_operator_data);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
@@ -1021,14 +1024,12 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   // use multigrid preconditioner with Chebyshev smoother
   MultigridData mg_data;
 
-  // use single precision for multigrid
-  typedef float MultigridNumber;
-  typedef MyMultigridPreconditionerDG<dim,
-                                      Number,
-                                      Poisson::LaplaceOperator<dim, degree_u, MultigridNumber>>
-    MULTIGRID;
+  typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
+  typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber> MG_OPERATOR;
 
-  preconditioner.reset(new MULTIGRID());
+  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+
+  preconditioner.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner);

@@ -238,7 +238,7 @@ struct MultigridData
   // Configuration of AMG settings
   MGCoarseMLData coarse_ml_data;
 
-  // Multigrid type: p-GMG vs. h-GMG
+  // Multigrid type: p-MG vs. h-MG
   MultigridType type;
 };
 

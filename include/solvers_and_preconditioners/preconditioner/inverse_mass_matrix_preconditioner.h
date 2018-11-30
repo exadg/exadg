@@ -10,9 +10,9 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../../operators/linear_operator_base.h"
 #include "../preconditioner/preconditioner_base.h"
 #include "operators/inverse_mass_matrix.h"
-#include "operators/matrix_operator_base.h"
 
 template<int dim, int degree, typename Number, int n_components>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<Number>
@@ -34,7 +34,7 @@ public:
   }
 
   void
-  update(MatrixOperatorBase const * /*matrix_operator*/)
+  update(LinearOperatorBase const * /*linear_operator*/)
   {
     // do nothing
   }

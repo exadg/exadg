@@ -142,7 +142,7 @@ public:
   reinit(int level = 0, MGCoarseMLData data = MGCoarseMLData());
 
   virtual void
-  update(MatrixOperatorBase const * /*matrix_operator*/);
+  update(LinearOperatorBase const * /*linear_operator*/);
 
   /**
    *  Solve Ax = b with Trilinos's AMG (default settings)
@@ -208,7 +208,7 @@ public:
   reinit(int level = 0, MGCoarseMLData data = MGCoarseMLData());
 
   virtual void
-  update(MatrixOperatorBase const * /*matrix_operator*/);
+  update(LinearOperatorBase const * /*matrix_operator*/);
 
   /**
    *  Solve Ax = b with Trilinos's AMG (default settings)
