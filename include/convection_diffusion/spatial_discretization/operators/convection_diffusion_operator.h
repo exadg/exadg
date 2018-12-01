@@ -5,13 +5,13 @@
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
 
+#include "convective_operator.h"
 #include "diffusive_operator.h"
 #include "mass_operator.h"
 
 #include "../../../operators/elementwise_operator.h"
 #include "../../../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
 #include "../../../solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
-#include "convective_operator.h"
 
 namespace ConvDiff
 {
@@ -23,6 +23,8 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
       unsteady_problem(true),
       convective_problem(true),
       diffusive_problem(true),
+      dof_index_velocity(1),
+      type_velocity_field(TypeVelocityField::Analytical),
       scaling_factor_time_derivative_term(-1.0),
       preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
       block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2)),
@@ -44,6 +46,10 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
   bool unsteady_problem;
   bool convective_problem;
   bool diffusive_problem;
+
+  // only relevant for TypeVelocityField::Numerical
+  unsigned int      dof_index_velocity;
+  TypeVelocityField type_velocity_field;
 
   double scaling_factor_time_derivative_term;
 
@@ -86,11 +92,11 @@ public:
   ConvectionDiffusionOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &                 mf_data,
-         ConvectionDiffusionOperatorData<dim> const &    operator_data,
-         MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
-         ConvectiveOperator<dim, degree, Number> const & convective_operator,
-         DiffusiveOperator<dim, degree, Number> const &  diffusive_operator);
+  reinit(MatrixFree<dim, Number> const &                         mf_data,
+         ConvectionDiffusionOperatorData<dim> const &            operator_data,
+         MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
+         ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
+         DiffusiveOperator<dim, degree, Number> const &          diffusive_operator);
 
 
   /*
@@ -99,11 +105,12 @@ public:
    *  created.
    */
   void
-  reinit_multigrid(DoFHandler<dim> const &   dof_handler,
-                   Mapping<dim> const &      mapping,
-                   void *                    operator_data,
-                   MGConstrainedDoFs const & mg_constrained_dofs,
-                   unsigned int const        level);
+  reinit_multigrid_add_dof_handler(DoFHandler<dim> const &   dof_handler,
+                                   Mapping<dim> const &      mapping,
+                                   void *                    operator_data,
+                                   MGConstrainedDoFs const & mg_constrained_dofs,
+                                   unsigned int const        level,
+                                   DoFHandler<dim> const *   add_dof_handler);
 
   /*
    *  Scaling factor of time derivative term (mass matrix term)
@@ -125,6 +132,12 @@ public:
 
   std::shared_ptr<BoundaryDescriptor<dim>>
   get_boundary_descriptor() const;
+
+  LinearAlgebra::distributed::Vector<Number> const &
+  get_velocity() const;
+
+  void
+  set_velocity(VectorType const & velocity) const;
 
   // Apply matrix-vector multiplication.
   void
@@ -188,9 +201,9 @@ private:
   void
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
-  mutable lazy_ptr<MassMatrixOperator<dim, degree, Number>> mass_matrix_operator;
-  mutable lazy_ptr<ConvectiveOperator<dim, degree, Number>> convective_operator;
-  mutable lazy_ptr<DiffusiveOperator<dim, degree, Number>>  diffusive_operator;
+  mutable lazy_ptr<MassMatrixOperator<dim, degree, Number>>         mass_matrix_operator;
+  mutable lazy_ptr<ConvectiveOperator<dim, degree, degree, Number>> convective_operator;
+  mutable lazy_ptr<DiffusiveOperator<dim, degree, Number>>          diffusive_operator;
 
   mutable VectorType temp;
 

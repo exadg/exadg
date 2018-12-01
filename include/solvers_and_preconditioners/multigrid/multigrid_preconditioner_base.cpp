@@ -30,7 +30,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   MultigridData const &   mg_data,
   DoFHandler<dim> const & dof_handler,
   Mapping<dim> const &    mapping,
-  void *                  operator_data)
+  void *                  operator_data,
+  DoFHandler<dim> const * add_dof_handler)
 {
   AssertThrow(mg_data.coarse_solver != MultigridCoarseGridSolver::AMG_ML,
               ExcMessage("You have to provide Dirichlet BCs if you want to use AMG!"));
@@ -38,7 +39,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   // create emty vector for Dirichlet BC so that we can use the more general
   //  method which is written for continuous and discontinuous Galerkin methods
   Map dirichlet_bc;
-  this->initialize(mg_data, dof_handler, mapping, dirichlet_bc, operator_data);
+  this->initialize(mg_data, dof_handler, mapping, dirichlet_bc, operator_data, add_dof_handler);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -48,7 +49,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   DoFHandler<dim> const & dof_handler,
   Mapping<dim> const &    mapping,
   Map const &             dirichlet_bc,
-  void *                  operator_data)
+  void *                  operator_data,
+  DoFHandler<dim> const * add_dof_handler)
 {
   this->mg_data = mg_data;
 
@@ -68,7 +70,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->initialize_mg_dof_handler_and_constraints(
     dof_handler, tria, global_levels, p_levels, dirichlet_bc, degree);
 
-  this->initialize_mg_matrices(global_levels, mapping, operator_data);
+  this->initialize_mg_matrices(global_levels, mapping, operator_data, add_dof_handler);
 
   if(mg_data.coarse_solver == MultigridCoarseGridSolver::AMG_ML) // TODO: will be removed
     this->initialize_auxiliary_space(tria, global_levels, dirichlet_bc, mapping, operator_data);
@@ -290,9 +292,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices(
-  Levels const &       global_levels,
-  Mapping<dim> const & mapping,
-  void *               operator_data)
+  Levels const &          global_levels,
+  Mapping<dim> const &    mapping,
+  void *                  operator_data,
+  DoFHandler<dim> const * add_dof_handler)
 {
   this->mg_matrices.resize(0, this->n_global_levels - 1);
 
@@ -300,12 +303,24 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrice
   for(unsigned int i = 0; i < this->n_global_levels; i++)
   {
     auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].second));
-    matrix->reinit_multigrid(*mg_dofhandler[i],
-                             mapping,
-                             operator_data,
-                             *this->mg_constrained_dofs[i],
-                             global_levels[i].first);
 
+    if(add_dof_handler != nullptr)
+    {
+      matrix->reinit_multigrid_add_dof_handler(*mg_dofhandler[i],
+                                               mapping,
+                                               operator_data,
+                                               *this->mg_constrained_dofs[i],
+                                               global_levels[i].first,
+                                               add_dof_handler);
+    }
+    else
+    {
+      matrix->reinit_multigrid(*mg_dofhandler[i],
+                               mapping,
+                               operator_data,
+                               *this->mg_constrained_dofs[i],
+                               global_levels[i].first);
+    }
     mg_matrices[i].reset(matrix);
   }
 }

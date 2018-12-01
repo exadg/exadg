@@ -12,6 +12,8 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../spatial_discretization/momentum_operator.h"
 
+#include "../../solvers_and_preconditioners/util/restrict_vector_to_coarser_level.h"
+
 namespace IncNS
 {
 /*
@@ -132,6 +134,7 @@ private:
         VectorTypeMG const & vector_fine_level =
           dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level + 1])
             ->get_solution_linearization();
+
         VectorTypeMG vector_coarse_level =
           dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
             ->get_solution_linearization();
@@ -146,58 +149,10 @@ private:
             ->get_data()
             .get_dof_handler(dof_index_velocity);
 
-        unsigned int dofs_per_cell = dof_handler_velocity.get_fe().dofs_per_cell;
-
-        IndexSet relevant_dofs;
-        DoFTools::extract_locally_relevant_level_dofs(dof_handler_velocity,
-                                                      level + 1,
-                                                      relevant_dofs);
-
-        VectorTypeMG ghosted_vector(dof_handler_velocity.locally_owned_mg_dofs(level + 1),
-                                    relevant_dofs,
-                                    MPI_COMM_WORLD);
-
-        ghosted_vector = vector_fine_level;
-        ghosted_vector.update_ghost_values();
-
-        Vector<MultigridNumber>              dof_values_fine(dofs_per_cell);
-        Vector<MultigridNumber>              tmp(dofs_per_cell);
-        std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
-        std::vector<MultigridNumber>         dof_values_coarse(dofs_per_cell);
-
-        typename DoFHandler<dim>::cell_iterator cell = dof_handler_velocity.begin(level);
-        typename DoFHandler<dim>::cell_iterator endc = dof_handler_velocity.end(level);
-        for(; cell != endc; ++cell)
-        {
-          if(cell->is_locally_owned_on_level())
-          {
-            Assert(cell->has_children(), ExcNotImplemented());
-            std::fill(dof_values_coarse.begin(), dof_values_coarse.end(), 0.);
-
-            for(unsigned int child = 0; child < cell->n_children(); ++child)
-            {
-              cell->child(child)->get_mg_dof_indices(dof_indices);
-              for(unsigned int i = 0; i < dofs_per_cell; ++i)
-                dof_values_fine(i) = ghosted_vector(dof_indices[i]);
-
-              dof_handler_velocity.get_fe()
-                .get_restriction_matrix(child, cell->refinement_case())
-                .vmult(tmp, dof_values_fine);
-
-              for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              {
-                if(dof_handler_velocity.get_fe().restriction_is_additive(i)) // discontinuous case
-                  dof_values_coarse[i] += tmp[i];
-                else if(tmp[i] != 0.) // continuous case
-                  dof_values_coarse[i] = tmp[i];
-              }
-            }
-            cell->get_mg_dof_indices(dof_indices);
-            for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              vector_coarse_level(dof_indices[i]) = dof_values_coarse[i];
-          }
-        }
-        vector_coarse_level.compress(VectorOperation::insert); // continuous case
+        restrict_to_coarser_level<dim, MultigridNumber, VectorTypeMG>(vector_coarse_level,
+                                                                      vector_fine_level,
+                                                                      dof_handler_velocity,
+                                                                      level);
 
         // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
         // so we have to dereference the shared_ptr, get the reference to it and

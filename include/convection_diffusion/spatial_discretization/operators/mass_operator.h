@@ -28,7 +28,7 @@ private:
   typedef typename Base::FEEvalCell FEEvalCell;
 
   void
-  do_cell_integral(FEEvalCell & fe_eval) const;
+  do_cell_integral(FEEvalCell & fe_eval, unsigned int const /*cell*/) const;
 };
 } // namespace ConvDiff
 

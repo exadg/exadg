@@ -2,6 +2,8 @@
 
 #include <navierstokes/config.h>
 
+#include "solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
+
 namespace ConvDiff
 {
 template<int dim, int degree, typename Number>
@@ -13,11 +15,11 @@ ConvectionDiffusionOperator<dim, degree, Number>::ConvectionDiffusionOperator()
 template<int dim, int degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, degree, Number>::reinit(
-  MatrixFree<dim, Number> const &                 mf_data,
-  ConvectionDiffusionOperatorData<dim> const &    operator_data,
-  MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
-  ConvectiveOperator<dim, degree, Number> const & convective_operator,
-  DiffusiveOperator<dim, degree, Number> const &  diffusive_operator)
+  MatrixFree<dim, Number> const &                         mf_data,
+  ConvectionDiffusionOperatorData<dim> const &            operator_data,
+  MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
+  ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
+  DiffusiveOperator<dim, degree, Number> const &          diffusive_operator)
 {
   Base::reinit(mf_data, operator_data);
   this->mass_matrix_operator.reinit(mass_matrix_operator);
@@ -31,14 +33,114 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
 
 template<int dim, int degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid(
-  DoFHandler<dim> const &   dof_handler,
-  Mapping<dim> const &      mapping,
-  void *                    operator_data,
-  MGConstrainedDoFs const & mg_constrained_dofs,
-  unsigned int const        level)
+ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handler(
+  DoFHandler<dim> const & dof_handler,
+  Mapping<dim> const &    mapping,
+  void *                  operator_data_in,
+  MGConstrainedDoFs const & /*mg_constrained_dofs*/,
+  unsigned int const      level,
+  DoFHandler<dim> const * add_dof_handler)
 {
-  Base::do_reinit_multigrid(dof_handler, mapping, operator_data, mg_constrained_dofs, level);
+  // create copy of data and ...
+  auto operator_data = *static_cast<ConvectionDiffusionOperatorData<dim> *>(operator_data_in);
+  // set dof_index and quad_index to 0 since we only consider a subset
+  //  operator_data.dof_index          = 0;
+  //  operator_data.quad_index         = 0;
+  //  operator_data.dof_index_velocity = 1;
+
+  // check if DG or CG (for explanation: see above)
+  bool is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
+
+  // setup MatrixFree::AdditionalData
+  typename MatrixFree<dim, Number>::AdditionalData additional_data;
+
+  additional_data.level_mg_handler = level;
+
+  //  additional_data.mapping_update_flags = operator_data.mapping_update_flags;
+  //  if(is_dg)
+  //  {
+  //    additional_data.mapping_update_flags_inner_faces =
+  //      operator_data.mapping_update_flags_inner_faces;
+  //    additional_data.mapping_update_flags_boundary_faces =
+  //      operator_data.mapping_update_flags_boundary_faces;
+  //  }
+
+  //  additional_data.tasks_parallel_scheme =
+  //     MatrixFree<dim, Number>::AdditionalData::partition_partition;
+  additional_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
+  additional_data.mapping_update_flags =
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
+
+  additional_data.mapping_update_flags_inner_faces =
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
+
+  additional_data.mapping_update_flags_boundary_faces =
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values);
+
+  if(operator_data.use_cell_based_loops && is_dg)
+  {
+    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+      &dof_handler.get_triangulation());
+    Categorization::do_cell_based_loops(*tria, additional_data, level);
+  }
+
+  auto & data_own = this->data.own();
+
+  if(operator_data.type_velocity_field == TypeVelocityField::Analytical)
+  {
+    AffineConstraints<double> constraint_dummy;
+    constraint_dummy.close();
+
+    // quadrature formula used to perform integrals
+    QGauss<1> quadrature(dof_handler.get_fe().degree + 1);
+
+    data_own.reinit(mapping, dof_handler, constraint_dummy, quadrature, additional_data);
+  }
+  // we need two dof-handlers in case the velocity field comes from the fluid solver.
+  else if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    std::vector<const DoFHandler<dim> *> dof_handler_vec;
+    dof_handler_vec.resize(2);
+    dof_handler_vec[0] = &dof_handler;
+    dof_handler_vec[1] = add_dof_handler;
+
+    std::vector<const AffineConstraints<double> *> constraint_vec;
+    constraint_vec.resize(2);
+    AffineConstraints<double> constraint_dummy;
+    constraint_dummy.close();
+    constraint_vec[0] = &constraint_dummy;
+    constraint_vec[1] = &constraint_dummy;
+
+    std::vector<Quadrature<1>> quadrature_vec;
+    quadrature_vec.resize(1);
+    quadrature_vec[0] = QGauss<1>(dof_handler.get_fe().degree + 1);
+
+    data_own.reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  // TODO
+
+  //  auto & constraint_own = this->constraint.own();
+  //
+  //  // setup constraint matrix for CG
+  //  if(!is_dg)
+  //  {
+  //    this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_data,
+  //    level);
+  //  }
+  //
+  //  constraint_own.close();
+
+  AffineConstraints<double> constraint_own;
+  constraint_own.close();
+  Base::reinit_multigrid(data_own, constraint_own, operator_data, level);
 
   // use own operators
   mass_matrix_operator.reset();
@@ -47,9 +149,9 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid(
 
   // setup own mass matrix operator
   {
-    auto & op_data     = this->operator_data.mass_matrix_operator_data;
-    op_data.dof_index  = 0;
-    op_data.quad_index = 0;
+    auto & op_data = this->operator_data.mass_matrix_operator_data;
+    //    op_data.dof_index  = 0;
+    //    op_data.quad_index = 0;
     mass_matrix_operator.own().reinit_multigrid(this->get_data(),
                                                 this->get_constraint_matrix(),
                                                 op_data,
@@ -58,9 +160,10 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid(
 
   // setup own convective operator
   {
-    auto & op_data     = this->operator_data.convective_operator_data;
-    op_data.dof_index  = 0;
-    op_data.quad_index = 0;
+    auto & op_data = this->operator_data.convective_operator_data;
+    //    op_data.dof_index          = 0;
+    //    op_data.quad_index         = 0;
+    //    op_data.dof_index_velocity = 1;
     convective_operator.own().reinit_multigrid(this->get_data(),
                                                this->get_constraint_matrix(),
                                                op_data,
@@ -69,9 +172,9 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid(
 
   // setup own viscous operator
   {
-    auto & op_data     = this->operator_data.diffusive_operator_data;
-    op_data.dof_index  = 0;
-    op_data.quad_index = 0;
+    auto & op_data = this->operator_data.diffusive_operator_data;
+    //    op_data.dof_index  = 0;
+    //    op_data.quad_index = 0;
     diffusive_operator.own().reinit_multigrid(
       mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
@@ -159,6 +262,20 @@ std::shared_ptr<BoundaryDescriptor<dim>>
 ConvectionDiffusionOperator<dim, degree, Number>::get_boundary_descriptor() const
 {
   return diffusive_operator->get_operator_data().bc;
+}
+
+template<int dim, int degree, typename Number>
+LinearAlgebra::distributed::Vector<Number> const &
+ConvectionDiffusionOperator<dim, degree, Number>::get_velocity() const
+{
+  return convective_operator->get_velocity();
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::set_velocity(VectorType const & velocity) const
+{
+  convective_operator->set_velocity(velocity);
 }
 
 template<int dim, int degree, typename Number>
@@ -278,6 +395,9 @@ ConvectionDiffusionOperator<dim, degree, Number>::calculate_inverse_diagonal(
   VectorType & inverse_diagonal) const
 {
   calculate_diagonal(inverse_diagonal);
+
+  //   verify_calculation_of_diagonal(*this,inverse_diagonal);
+
   invert_diagonal(inverse_diagonal);
 }
 
@@ -402,6 +522,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::apply_add_block_diagonal_eleme
   if(this->operator_data.convective_problem == true)
   {
     Number const time = this->get_evaluation_time();
+
     convective_operator->apply_add_block_diagonal_elementwise(cell, dst, src, time);
   }
 }
@@ -445,6 +566,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::add_block_diagonal_matrices(
   if(this->operator_data.convective_problem == true)
   {
     Number const time = this->get_evaluation_time();
+
     convective_operator->add_block_diagonal_matrices(matrices, time);
   }
 }

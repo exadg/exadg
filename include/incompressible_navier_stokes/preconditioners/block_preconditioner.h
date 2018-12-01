@@ -21,7 +21,6 @@
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 
-#include "../../convection_diffusion/spatial_discretization/operators/convective_operator_discontinuous_velocity.h"
 #include "../spatial_discretization/momentum_operator.h"
 #include "multigrid_preconditioner.h"
 
@@ -773,10 +772,11 @@ private:
     diffusive_operator_data.diffusivity = underlying_operator->get_viscosity();
 
     // c) convective operator
-    ConvDiff::ConvectiveOperatorDisVelData<dim> convective_operator_data;
-    convective_operator_data.dof_index          = underlying_operator->get_dof_index_pressure();
-    convective_operator_data.dof_index_velocity = underlying_operator->get_dof_index_velocity();
-    convective_operator_data.quad_index         = underlying_operator->get_quad_index_pressure();
+    ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
+    convective_operator_data.dof_index           = underlying_operator->get_dof_index_pressure();
+    convective_operator_data.dof_index_velocity  = underlying_operator->get_dof_index_velocity();
+    convective_operator_data.quad_index          = underlying_operator->get_quad_index_pressure();
+    convective_operator_data.type_velocity_field = ConvDiff::TypeVelocityField::Numerical;
     convective_operator_data.numerical_flux_formulation =
       ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
     convective_operator_data.bc = boundary_descriptor;

@@ -40,10 +40,10 @@ double const END_TIME = 10.0;
 
 // Explicit: CFL_crit = 0.35 (0.4 unstable) for BDF2, CFL_crit = 0.32 (0.33 unstable) for adaptive time stepping
 // ExplicitOIF: CFL_crit,oif = 3.0 (3.5 unstable) for ExplRK3Stage7Reg2
-double const CFL_OIF = 0.35;
+double const CFL_OIF = 0.32;
 double const CFL = CFL_OIF;
 double const MAX_VELOCITY = 1.0;
-bool const ADAPTIVE_TIME_STEPPING = false;
+bool const ADAPTIVE_TIME_STEPPING = true;
 
 // output
 bool const WRITE_OUTPUT = true;
@@ -58,7 +58,7 @@ unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 100;
 
 // restart
 bool const WRITE_RESTART = false;
-double const RESTART_INTERVAL_TIME = 7.0;
+double const RESTART_INTERVAL_TIME = 10.0;
 
 template<int dim>
 void IncNS::InputParameters<dim>::set_input_parameters()
@@ -127,6 +127,9 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
   add_penalty_terms_to_monolithic_system = false;
 
+  // NUMERICAL PARAMETERS
+  implement_block_diagonal_preconditioner_matrix_free = true;
+  use_cell_based_face_loops = true;
 
   // PROJECTION METHODS
 
@@ -171,17 +174,19 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
-  solver_momentum = SolverMomentum::GMRES; //FGMRES;
+  abs_tol_momentum_linear = 1.e-12;
+  rel_tol_momentum_linear = 1.e-2;
+  max_iter_momentum_linear = 1e4;
+
+  solver_momentum = SolverMomentum::GMRES;
   preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+  multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
   update_preconditioner_momentum = true;
   multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
   multigrid_data_momentum.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
   multigrid_data_momentum.jacobi_smoother_data.number_of_smoothing_steps = 5;
   multigrid_data_momentum.jacobi_smoother_data.damping_factor = 0.7;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
-  abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-2;
-  max_iter_momentum_linear = 1e4;
   use_right_preconditioning_momentum = true;
   max_n_tmp_vectors_momentum = 100;
 
@@ -222,7 +227,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   output_data.output_start_time = OUTPUT_START_TIME;
   output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
   output_data.write_processor_id = true;
-  output_data.number_of_patches = FE_DEGREE_VELOCITY;
+  output_data.number_of_patches = 1; // FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = false;
@@ -253,7 +258,7 @@ void ConvDiff::InputParameters::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDF;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
   order_time_integrator = 2;
   time_integrator_oif = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -275,14 +280,15 @@ void ConvDiff::InputParameters::set_input_parameters()
 
   // SOLVER
   solver = Solver::GMRES;
-  abs_tol = 1.e-20;
-  rel_tol = 1.e-8;
+  abs_tol = 1.e-12;
+  rel_tol = 1.e-6;
   max_iter = 1e4;
-  preconditioner = Preconditioner::InverseMassMatrix; //Multigrid;
-  update_preconditioner = false;
+  preconditioner = Preconditioner::InverseMassMatrix; //InverseMassMatrix; //Multigrid;
+  implement_block_diagonal_preconditioner_matrix_free = true;
+  use_cell_based_face_loops = true;
+  update_preconditioner = true;
 
   multigrid_data.type = MultigridType::hMG;
-  use_cell_based_face_loops = true;
   mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Jacobi;
@@ -291,7 +297,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 5;
 
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
+  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_PointJacobi;
 
   // NUMERICAL PARAMETERS
   runtime_optimization = false;
@@ -303,7 +309,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.output_name = OUTPUT_NAME + "_scalar";
   output_data.output_start_time = OUTPUT_START_TIME;
   output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  output_data.number_of_patches = FE_DEGREE_SCALAR;
+  output_data.number_of_patches = 1; //FE_DEGREE_SCALAR;
 
   output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 

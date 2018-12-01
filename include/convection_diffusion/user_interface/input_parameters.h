@@ -420,9 +420,24 @@ public:
       {
         AssertThrow(mg_operator_type != MultigridOperatorType::Undefined,
                     ExcMessage("parameter must be defined"));
+
+        if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+        {
+          AssertThrow(mg_operator_type != MultigridOperatorType::ReactionConvection &&
+                        mg_operator_type != MultigridOperatorType::ReactionConvectionDiffusion,
+                      ExcMessage(
+                        "Invalid solver parameters. The convective term is treated explicitly."));
+        }
       }
     }
 
+    if(implement_block_diagonal_preconditioner_matrix_free)
+    {
+      AssertThrow(
+        use_cell_based_face_loops == true,
+        ExcMessage(
+          "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
+    }
 
     // NUMERICAL PARAMETERS
 
