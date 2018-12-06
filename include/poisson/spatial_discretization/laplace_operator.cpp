@@ -271,16 +271,18 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, int degree, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_cell_integral(FEEvalCell & p) const
+LaplaceOperator<dim, degree, Number>::do_cell_integral(FEEvalCell & fe_eval,
+                                                       unsigned int const /*cell*/) const
 {
-  for(unsigned int q = 0; q < p.n_q_points; ++q)
-    p.submit_gradient(p.get_gradient(q), q);
+  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    fe_eval.submit_gradient(fe_eval.get_gradient(q), q);
 }
 
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::do_face_integral(FEEvalFace & fe_eval,
-                                                       FEEvalFace & fe_eval_neighbor) const
+                                                       FEEvalFace & fe_eval_neighbor,
+                                                       unsigned int const /*face*/) const
 {
   scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
                            fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
@@ -307,7 +309,8 @@ LaplaceOperator<dim, degree, Number>::do_face_integral(FEEvalFace & fe_eval,
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                           FEEvalFace & fe_eval_neighbor) const
+                                                           FEEvalFace & fe_eval_neighbor,
+                                                           unsigned int const /*face*/) const
 {
   scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
                            fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
@@ -333,7 +336,8 @@ LaplaceOperator<dim, degree, Number>::do_face_int_integral(FEEvalFace & fe_eval,
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
-                                                           FEEvalFace & fe_eval_neighbor) const
+                                                           FEEvalFace & fe_eval_neighbor,
+                                                           unsigned int const /*face*/) const
 {
   scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
                            fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
@@ -360,10 +364,10 @@ LaplaceOperator<dim, degree, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
 
 template<int dim, int degree, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_boundary_integral(
-  FEEvalFace &               fe_eval,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+LaplaceOperator<dim, degree, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
+                                                           OperatorType const &       operator_type,
+                                                           types::boundary_id const & boundary_id,
+                                                           unsigned int const /*face*/) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 

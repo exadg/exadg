@@ -16,7 +16,7 @@
  *  the result is compared to a naive calculation that simply applies the
  *  whole matrix-vector product N_dofs times. Accordingly, to call this
  *  function the Operator passed to this function has to implement a
- *  function called apply() that calculates the matrix-vector product.
+ *  function called vmult() that calculates the matrix-vector product.
  */
 template<typename Operator, typename value_type>
 void

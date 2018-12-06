@@ -110,21 +110,28 @@ private:
                                        types::boundary_id const boundary_id) const;
 
   void
-  do_cell_integral(FEEvalCell & fe_eval) const;
+  do_cell_integral(FEEvalCell & fe_eval, unsigned int const /*cell*/) const;
 
   void
-  do_face_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+  do_face_integral(FEEvalFace & fe_eval,
+                   FEEvalFace & fe_eval_neighbor,
+                   unsigned int const /*face*/) const;
 
   void
-  do_face_int_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+  do_face_int_integral(FEEvalFace & fe_eval,
+                       FEEvalFace & fe_eval_neighbor,
+                       unsigned int const /*face*/) const;
 
   void
-  do_face_ext_integral(FEEvalFace & fe_eval, FEEvalFace & fe_eval_neighbor) const;
+  do_face_ext_integral(FEEvalFace & fe_eval,
+                       FEEvalFace & fe_eval_neighbor,
+                       unsigned int const /*face*/) const;
 
   void
   do_boundary_integral(FEEvalFace &               fe_eval,
                        OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const;
+                       types::boundary_id const & boundary_id,
+                       unsigned int const /*face*/) const;
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,

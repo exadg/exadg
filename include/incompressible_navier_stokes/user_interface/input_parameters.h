@@ -1020,13 +1020,13 @@ public:
       {
         AssertThrow(multigrid_operator_type_momentum != MultigridOperatorType::Undefined,
                     ExcMessage("Parameter must be defined"));
-      }
 
-      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-      {
-        AssertThrow(multigrid_operator_type_momentum !=
-                      MultigridOperatorType::ReactionConvectionDiffusion,
-                    ExcMessage("Invalid parameter. Convective term is treated explicitly."));
+        if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+        {
+          AssertThrow(multigrid_operator_type_momentum !=
+                        MultigridOperatorType::ReactionConvectionDiffusion,
+                      ExcMessage("Invalid parameter. Convective term is treated explicitly."));
+        }
       }
     }
 
@@ -1047,13 +1047,13 @@ public:
       {
         AssertThrow(momentum_multigrid_operator_type != MultigridOperatorType::Undefined,
                     ExcMessage("Parameter must be defined"));
-      }
 
-      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-      {
-        AssertThrow(momentum_multigrid_operator_type !=
-                      MultigridOperatorType::ReactionConvectionDiffusion,
-                    ExcMessage("Invalid parameter. Convective term is treated explicitly."));
+        if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+        {
+          AssertThrow(momentum_multigrid_operator_type !=
+                        MultigridOperatorType::ReactionConvectionDiffusion,
+                      ExcMessage("Invalid parameter. Convective term is treated explicitly."));
+        }
       }
 
       AssertThrow(schur_complement_preconditioner != SchurComplementPreconditioner::Undefined,
@@ -1078,6 +1078,16 @@ public:
       AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
       AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
     }
+
+    // NUMERICAL PARAMETERS
+    if(implement_block_diagonal_preconditioner_matrix_free)
+    {
+      AssertThrow(
+        use_cell_based_face_loops == true,
+        ExcMessage(
+          "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
+    }
+
 
     // TURBULENCE
     if(use_turbulence_model)

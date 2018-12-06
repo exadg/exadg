@@ -150,7 +150,7 @@ public:
   reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
                    AffineConstraints<double> const & constraint_matrix,
                    AdditionalData const &            operator_data,
-                   unsigned int                      level) const;
+                   unsigned int const                level) const;
 
   void
   do_reinit_multigrid(DoFHandler<dim> const &   dof_handler,
@@ -305,26 +305,45 @@ protected:
    * operator-specific and define how the operator looks like.
    */
   virtual void
-  do_cell_integral(FEEvalCell & /*fe_eval*/) const
+  do_cell_integral(FEEvalCell & /*fe_eval*/, unsigned int const /*cell*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral() has not been implemented!"));
   }
 
   virtual void
-  do_face_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
+  do_face_integral(FEEvalFace & /*fe_eval_m*/,
+                   FEEvalFace & /*fe_eval_p*/,
+                   unsigned int const /*face*/) const
   {
     AssertThrow(false, ExcMessage("OperatorBase::do_face_integral() has not been implemented!"));
   }
 
   virtual void
-  do_face_int_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
+  do_face_int_integral(FEEvalFace & /*fe_eval_m*/,
+                       FEEvalFace & /*fe_eval_p*/,
+                       unsigned int const /*face*/) const
   {
     AssertThrow(false,
                 ExcMessage("OperatorBase::do_face_int_integral() has not been implemented!"));
   }
 
+  // This function has to be overwritten by derived class in case that the indices cell and face are
+  // relevant for a specific operator. We implement this function here to avoid the need that
+  // every derived class has to implement this function.
   virtual void
-  do_face_ext_integral(FEEvalFace & /*fe_eval_m*/, FEEvalFace & /*fe_eval_p*/) const
+  do_face_int_integral_cell_based(FEEvalFace & fe_eval_m,
+                                  FEEvalFace & fe_eval_p,
+                                  unsigned int const /*cell*/,
+                                  unsigned int const /*face*/) const
+  {
+    unsigned int const dummy = 1;
+    do_face_int_integral(fe_eval_m, fe_eval_p, dummy);
+  }
+
+  virtual void
+  do_face_ext_integral(FEEvalFace & /*fe_eval_m*/,
+                       FEEvalFace & /*fe_eval_p*/,
+                       unsigned int const /*face*/) const
   {
     AssertThrow(false,
                 ExcMessage("OperatorBase::do_face_ext_integral() has not been implemented!"));
@@ -333,10 +352,24 @@ protected:
   virtual void
   do_boundary_integral(FEEvalFace & /*fe_eval*/,
                        OperatorType const & /*operator_type*/,
-                       types::boundary_id const & /*boundary_id*/) const
+                       types::boundary_id const & /*boundary_id*/,
+                       unsigned int const /*face*/) const
   {
     AssertThrow(false,
                 ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
+  }
+
+  // This function has to be overwritten by derived class in case that the indices cell and face are
+  // relevant for a specific operator.
+  virtual void
+  do_boundary_integral_cell_based(FEEvalFace &               fe_eval,
+                                  OperatorType const &       operator_type,
+                                  types::boundary_id const & boundary_id,
+                                  unsigned int const /*cell*/,
+                                  unsigned int const /*face*/) const
+  {
+    unsigned int const dummy = 1;
+    do_boundary_integral(fe_eval, operator_type, boundary_id, dummy);
   }
 
   virtual void

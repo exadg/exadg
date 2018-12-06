@@ -79,7 +79,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit_multigrid(
   MatrixFree<dim, Number> const &   matrix_free,
   AffineConstraints<double> const & constraint_matrix,
   AdditionalData const &            operator_data,
-  unsigned int                      level) const
+  unsigned int const                level) const
 {
   // set multigrid level
   this->level_mg_handler = level;
@@ -114,10 +114,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_reinit_multigrid(
   // setup MatrixFree::AdditionalData
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
 
-  // ... level of this mg level
   additional_data.level_mg_handler = level;
 
-  // ... update flags
   additional_data.mapping_update_flags = operator_data.mapping_update_flags;
 
   if(is_dg)
@@ -135,9 +133,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_reinit_multigrid(
     Categorization::do_cell_based_loops(*tria, additional_data, level);
   }
 
-  // ... on each level
   auto & constraint_own = constraint.own();
-  auto & data_own       = data.own();
 
   // setup constraint matrix for CG
   if(!is_dg)
@@ -145,12 +141,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_reinit_multigrid(
     this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_data, level);
   }
 
-  // ...finalize constraint matrix
   constraint_own.close();
 
   QGauss<1> const quad(dof_handler.get_fe().degree + 1);
-  data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
 
+  auto & data_own = data.own();
+  data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
 
   reinit_multigrid(data_own, constraint_own, operator_data, level);
 }
@@ -374,7 +370,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elem
                     this->operator_data.cell_evaluate.gradient,
                     this->operator_data.cell_evaluate.hessians);
 
-  this->do_cell_integral(*fe_eval);
+  this->do_cell_integral(*fe_eval, cell);
 
   fe_eval->integrate(this->operator_data.cell_integrate.value,
                      this->operator_data.cell_integrate.gradient);
@@ -402,9 +398,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elem
       auto bids = (*data).get_faces_by_cells_boundary_id(cell, face);
       auto bid  = bids[0];
       if(bid == numbers::internal_face_boundary_id) // internal face
-        this->do_face_int_integral(*fe_eval_m, *fe_eval_p);
+        this->do_face_int_integral_cell_based(*fe_eval_m, *fe_eval_p, cell, face);
       else // boundary face
-        this->do_boundary_integral(*fe_eval_m, OperatorType::homogeneous, bid);
+        this->do_boundary_integral_cell_based(
+          *fe_eval_m, OperatorType::homogeneous, bid, cell, face);
 
       fe_eval_m->integrate(this->operator_data.face_integrate.value,
                            this->operator_data.face_integrate.gradient);
@@ -697,7 +694,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop(MatrixFree<dim, Num
                             this->operator_data.cell_evaluate.gradient,
                             this->operator_data.cell_evaluate.hessians);
 
-    this->do_cell_integral(fe_eval);
+    this->do_cell_integral(fe_eval, cell);
 
     fe_eval.integrate_scatter(this->operator_data.cell_integrate.value,
                               this->operator_data.cell_integrate.gradient,
@@ -727,7 +724,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop(MatrixFree<dim, Num
                               this->operator_data.face_evaluate.value,
                               this->operator_data.face_evaluate.gradient);
 
-    this->do_face_integral(fe_eval_m, fe_eval_p);
+    this->do_face_integral(fe_eval_m, fe_eval_p, face);
 
     fe_eval_m.integrate_scatter(this->operator_data.face_integrate.value,
                                 this->operator_data.face_integrate.gradient,
@@ -756,7 +753,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_hom_operat
                             this->operator_data.face_evaluate.value,
                             this->operator_data.face_evaluate.gradient);
 
-    do_boundary_integral(fe_eval, OperatorType::homogeneous, data.get_boundary_id(face));
+    do_boundary_integral(fe_eval, OperatorType::homogeneous, data.get_boundary_id(face), face);
 
     fe_eval.integrate_scatter(this->operator_data.face_integrate.value,
                               this->operator_data.face_integrate.gradient,
@@ -781,7 +778,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_inhom_oper
     // note: no gathering/evaluation is necessary when calculating the
     //       inhomogeneous part of boundary face integrals
 
-    do_boundary_integral(fe_eval, OperatorType::inhomogeneous, data.get_boundary_id(face));
+    do_boundary_integral(fe_eval, OperatorType::inhomogeneous, data.get_boundary_id(face), face);
 
     fe_eval.integrate_scatter(this->operator_data.face_integrate.value,
                               this->operator_data.face_integrate.gradient,
@@ -807,7 +804,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_full_opera
                             this->operator_data.face_evaluate.value,
                             this->operator_data.face_evaluate.gradient);
 
-    do_boundary_integral(fe_eval, OperatorType::full, data.get_boundary_id(face));
+    do_boundary_integral(fe_eval, OperatorType::full, data.get_boundary_id(face), face);
 
     fe_eval.integrate_scatter(this->operator_data.face_integrate.value,
                               this->operator_data.face_integrate.gradient,
@@ -841,7 +838,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_diagonal(
                        this->operator_data.cell_evaluate.gradient,
                        this->operator_data.cell_evaluate.hessians);
 
-      this->do_cell_integral(fe_eval);
+      this->do_cell_integral(fe_eval, cell);
 
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
@@ -869,12 +866,12 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_diagonal(
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_data.dof_index, operator_data.quad_index);
 
-  for(auto cell = range.first; cell < range.second; ++cell)
+  for(auto face = range.first; face < range.second; ++face)
   {
     VectorizedArray<Number> local_diag[dofs_per_cell];
 
-    fe_eval_m.reinit(cell);
-    fe_eval_p.reinit(cell);
+    fe_eval_m.reinit(face);
+    fe_eval_p.reinit(face);
 
     // interior face
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -884,7 +881,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_diagonal(
       fe_eval_m.evaluate(this->operator_data.face_evaluate.value,
                          this->operator_data.face_evaluate.gradient);
 
-      this->do_face_int_integral(fe_eval_m, fe_eval_p);
+      this->do_face_int_integral(fe_eval_m, fe_eval_p, face);
 
       fe_eval_m.integrate(this->operator_data.face_integrate.value,
                           this->operator_data.face_integrate.gradient);
@@ -905,7 +902,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_diagonal(
       fe_eval_p.evaluate(this->operator_data.face_evaluate.value,
                          this->operator_data.face_evaluate.gradient);
 
-      this->do_face_ext_integral(fe_eval_m, fe_eval_p);
+      this->do_face_ext_integral(fe_eval_m, fe_eval_p, face);
 
       fe_eval_p.integrate(this->operator_data.face_integrate.value,
                           this->operator_data.face_integrate.gradient);
@@ -945,7 +942,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_diagonal(
       fe_eval.evaluate(this->operator_data.face_evaluate.value,
                        this->operator_data.face_evaluate.gradient);
 
-      this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
+      this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid, face);
 
       fe_eval.integrate(this->operator_data.face_integrate.value,
                         this->operator_data.face_integrate.gradient);
@@ -986,7 +983,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_diagonal(
                        this->operator_data.cell_evaluate.gradient,
                        this->operator_data.cell_evaluate.hessians);
 
-      this->do_cell_integral(fe_eval);
+      this->do_cell_integral(fe_eval, cell);
 
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
@@ -1017,9 +1014,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_diagonal(
                            this->operator_data.face_evaluate.gradient);
 
         if(bid == numbers::internal_face_boundary_id) // internal face
-          this->do_face_int_integral(fe_eval_m, fe_eval_p);
+          this->do_face_int_integral_cell_based(fe_eval_m, fe_eval_p, cell, face);
         else // boundary face
-          this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
+          this->do_boundary_integral_cell_based(
+            fe_eval_m, OperatorType::homogeneous, bid, cell, face);
 
         fe_eval_m.integrate(this->operator_data.face_integrate.value,
                             this->operator_data.face_integrate.gradient);
@@ -1124,7 +1122,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_block_diagonal(
                        this->operator_data.cell_evaluate.gradient,
                        this->operator_data.cell_evaluate.hessians);
 
-      this->do_cell_integral(fe_eval);
+      this->do_cell_integral(fe_eval, cell);
 
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
@@ -1162,7 +1160,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_block_diagonal(
       fe_eval_m.evaluate(this->operator_data.face_evaluate.value,
                          this->operator_data.face_evaluate.gradient);
 
-      this->do_face_int_integral(fe_eval_m, fe_eval_p);
+      this->do_face_int_integral(fe_eval_m, fe_eval_p, face);
 
       fe_eval_m.integrate(this->operator_data.face_integrate.value,
                           this->operator_data.face_integrate.gradient);
@@ -1183,7 +1181,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_block_diagonal(
       fe_eval_p.evaluate(this->operator_data.face_evaluate.value,
                          this->operator_data.face_evaluate.gradient);
 
-      this->do_face_ext_integral(fe_eval_m, fe_eval_p);
+      this->do_face_ext_integral(fe_eval_m, fe_eval_p, face);
 
       fe_eval_p.integrate(this->operator_data.face_integrate.value,
                           this->operator_data.face_integrate.gradient);
@@ -1221,7 +1219,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_block_diag
       fe_eval.evaluate(this->operator_data.face_evaluate.value,
                        this->operator_data.face_evaluate.gradient);
 
-      this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
+      this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid, face);
 
       fe_eval.integrate(this->operator_data.face_integrate.value,
                         this->operator_data.face_integrate.gradient);
@@ -1263,7 +1261,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_block_diagona
                        this->operator_data.cell_evaluate.gradient,
                        this->operator_data.cell_evaluate.hessians);
 
-      this->do_cell_integral(fe_eval);
+      this->do_cell_integral(fe_eval, cell);
 
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
@@ -1296,9 +1294,10 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_block_diagona
                            this->operator_data.face_evaluate.gradient);
 
         if(bid == numbers::internal_face_boundary_id) // internal face
-          this->do_face_int_integral(fe_eval_m, fe_eval_p);
+          this->do_face_int_integral_cell_based(fe_eval_m, fe_eval_p, cell, face);
         else // boundary face
-          this->do_boundary_integral(fe_eval_m, OperatorType::homogeneous, bid);
+          this->do_boundary_integral_cell_based(
+            fe_eval_m, OperatorType::homogeneous, bid, cell, face);
 
         fe_eval_m.integrate(this->operator_data.face_integrate.value,
                             this->operator_data.face_integrate.gradient);
@@ -1342,7 +1341,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_calculate_system_ma
                        this->operator_data.cell_evaluate.gradient,
                        this->operator_data.cell_evaluate.hessians);
 
-      this->do_cell_integral(fe_eval);
+      this->do_cell_integral(fe_eval, cell);
 
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
@@ -1425,7 +1424,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_calculate_system_ma
       fe_eval_p.evaluate(this->operator_data.face_evaluate.value,
                          this->operator_data.face_evaluate.gradient);
 
-      this->do_face_integral(fe_eval_m, fe_eval_p);
+      this->do_face_integral(fe_eval_m, fe_eval_p, face);
 
       fe_eval_m.integrate(this->operator_data.face_integrate.value,
                           this->operator_data.face_integrate.gradient);
@@ -1486,7 +1485,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_calculate_system_ma
       fe_eval_p.evaluate(this->operator_data.face_evaluate.value,
                          this->operator_data.face_evaluate.gradient);
 
-      this->do_face_integral(fe_eval_m, fe_eval_p);
+      this->do_face_integral(fe_eval_m, fe_eval_p, face);
 
       fe_eval_m.integrate(this->operator_data.face_integrate.value,
                           this->operator_data.face_integrate.gradient);
@@ -1565,7 +1564,7 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_calculate_
       fe_eval.evaluate(this->operator_data.face_evaluate.value,
                        this->operator_data.face_evaluate.gradient);
 
-      this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid);
+      this->do_boundary_integral(fe_eval, OperatorType::homogeneous, bid, face);
 
       fe_eval.integrate(this->operator_data.face_integrate.value,
                         this->operator_data.face_integrate.gradient);

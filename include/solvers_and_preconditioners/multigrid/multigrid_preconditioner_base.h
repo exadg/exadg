@@ -57,7 +57,8 @@ public:
   initialize(MultigridData const &   mg_data,
              DoFHandler<dim> const & dof_handler,
              Mapping<dim> const &    mapping,
-             void *                  operator_data);
+             void *                  operator_data,
+             DoFHandler<dim> const * add_dof_handler = nullptr);
 
   /*
    * Initialization function for both discontinuous and continuous Galerkin methods (and for DG with
@@ -68,7 +69,8 @@ public:
              DoFHandler<dim> const & dof_handler,
              Mapping<dim> const &    mapping,
              Map const &             dirichlet_bc,
-             void *                  operator_data);
+             void *                  operator_data,
+             DoFHandler<dim> const * add_dof_handler = nullptr);
 
   /*
    * Update of multigrid preconditioner including mg_matrices, smoothers, etc. (e.g. for problems
@@ -150,9 +152,10 @@ private:
    * Multigrid operators on each multigrid level.
    */
   void
-  initialize_mg_matrices(Levels const &       global_levels,
-                         Mapping<dim> const & mapping,
-                         void *               operator_data);
+  initialize_mg_matrices(Levels const &          global_levels,
+                         Mapping<dim> const &    mapping,
+                         void *                  operator_data,
+                         DoFHandler<dim> const * add_dof_handler = nullptr);
 
   /*
    * Multigrid transfer operators.

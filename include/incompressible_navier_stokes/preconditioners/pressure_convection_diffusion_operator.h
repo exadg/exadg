@@ -10,7 +10,7 @@
 
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 
-#include "../../convection_diffusion/spatial_discretization/operators/convective_operator_discontinuous_velocity.h"
+#include "../../convection_diffusion/spatial_discretization/operators/convective_operator.h"
 #include "../../convection_diffusion/spatial_discretization/operators/diffusive_operator.h"
 #include "../../convection_diffusion/spatial_discretization/operators/mass_operator.h"
 
@@ -26,9 +26,9 @@ struct PressureConvectionDiffusionOperatorData
   bool unsteady_problem;
   bool convective_problem;
 
-  ConvDiff::MassMatrixOperatorData<dim>       mass_matrix_operator_data;
-  ConvDiff::DiffusiveOperatorData<dim>        diffusive_operator_data;
-  ConvDiff::ConvectiveOperatorDisVelData<dim> convective_operator_data;
+  ConvDiff::MassMatrixOperatorData<dim> mass_matrix_operator_data;
+  ConvDiff::DiffusiveOperatorData<dim>  diffusive_operator_data;
+  ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
 };
 
 template<int dim, int fe_degree, int fe_degree_velocity, typename value_type>
@@ -57,7 +57,7 @@ public:
     // initialize ConvectiveOperator
     if(operator_data.convective_problem == true)
     {
-      convective_operator.initialize(matrix_free_data, operator_data.convective_operator_data);
+      convective_operator.reinit(matrix_free_data, operator_data.convective_operator_data);
     }
   }
 
@@ -87,7 +87,8 @@ public:
     // convective term
     if(operator_data.convective_problem == true)
     {
-      convective_operator.apply_add(dst, src, velocity_vector);
+      convective_operator.set_velocity(velocity_vector);
+      convective_operator.apply_add(dst, src);
     }
   }
 
@@ -101,10 +102,9 @@ private:
   MatrixFree<dim, value_type> const &          matrix_free_data;
   PressureConvectionDiffusionOperatorData<dim> operator_data;
 
-  ConvDiff::MassMatrixOperator<dim, fe_degree, value_type> mass_matrix_operator;
-  ConvDiff::DiffusiveOperator<dim, fe_degree, value_type>  diffusive_operator;
-  ConvDiff::ConvectiveOperatorDisVel<dim, fe_degree, fe_degree_velocity, value_type>
-    convective_operator;
+  ConvDiff::MassMatrixOperator<dim, fe_degree, value_type>                     mass_matrix_operator;
+  ConvDiff::DiffusiveOperator<dim, fe_degree, value_type>                      diffusive_operator;
+  ConvDiff::ConvectiveOperator<dim, fe_degree, fe_degree_velocity, value_type> convective_operator;
 
   double scaling_factor_time_derivative_term;
 };

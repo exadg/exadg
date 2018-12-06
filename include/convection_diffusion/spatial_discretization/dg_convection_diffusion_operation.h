@@ -27,7 +27,6 @@
 #include "../user_interface/input_parameters.h"
 #include "operators/convection_diffusion_operator.h"
 #include "operators/convection_diffusion_operator_efficiency.h"
-#include "operators/convective_operator_discontinuous_velocity.h"
 
 #include "time_integration/interpolate.h"
 #include "time_integration/time_step_calculation.h"
@@ -40,6 +39,8 @@ template<int dim, int degree, typename Number>
 class DGOperation : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 public:
+  typedef float MultigridNumber;
+
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
@@ -125,9 +126,6 @@ public:
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
     {
       conv_diff_operator_data.convective_problem = true;
-
-      AssertThrow(param.type_velocity_field == TypeVelocityField::Analytical,
-                  ExcMessage("Not implemented."));
     }
     else
     {
@@ -136,8 +134,10 @@ public:
 
     conv_diff_operator_data.update_mapping_update_flags();
 
-    conv_diff_operator_data.dof_index        = 0;
-    conv_diff_operator_data.mg_operator_type = param.mg_operator_type;
+    conv_diff_operator_data.dof_index           = 0;
+    conv_diff_operator_data.dof_index_velocity  = 1;
+    conv_diff_operator_data.type_velocity_field = param.type_velocity_field;
+    conv_diff_operator_data.mg_operator_type    = param.mg_operator_type;
 
     conv_diff_operator.reinit(
       data, conv_diff_operator_data, mass_matrix_operator, convective_operator, diffusive_operator);
@@ -164,10 +164,19 @@ public:
     }
     else if(param.preconditioner == Preconditioner::Multigrid)
     {
+      if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      {
+        AssertThrow(param.mg_operator_type != MultigridOperatorType::ReactionConvection &&
+                      param.mg_operator_type != MultigridOperatorType::ReactionConvectionDiffusion,
+                    ExcMessage(
+                      "Invalid solver parameters. The convective term is treated explicitly."));
+      }
+
+      AssertThrow(dof_handler_velocity.get() != 0,
+                  ExcMessage("dof_handler_velocity is not initialized."));
+
       MultigridData mg_data;
       mg_data = param.multigrid_data;
-
-      typedef float MultigridNumber;
 
       typedef MultigridPreconditioner<dim, degree, Number, MultigridNumber> MULTIGRID;
 
@@ -178,7 +187,8 @@ public:
                                     dof_handler,
                                     mapping,
                                     conv_diff_operator.get_boundary_descriptor()->dirichlet_bc,
-                                    (void *)&conv_diff_operator.get_operator_data());
+                                    (void *)&conv_diff_operator.get_operator_data(),
+                                    &(*dof_handler_velocity));
     }
     else
     {
@@ -294,22 +304,14 @@ public:
       if(param.equation_type == EquationType::Convection ||
          param.equation_type == EquationType::ConvectionDiffusion)
       {
-        if(param.type_velocity_field == TypeVelocityField::Analytical)
-        {
-          convective_operator.evaluate_add(dst, src, evaluation_time);
-        }
-        else if(param.type_velocity_field == TypeVelocityField::Numerical)
+        if(param.type_velocity_field == TypeVelocityField::Numerical)
         {
           // We first have to interpolate the velocity field so that it is evaluated at the correct
           // time.
           interpolate(velocity, evaluation_time, velocities, times);
-          convective_operator_discontinuous.set_velocity(velocity);
-          convective_operator_discontinuous.evaluate_add(dst, src, evaluation_time);
+          convective_operator.set_velocity(velocity);
         }
-        else
-        {
-          AssertThrow(false, ExcMessage("Not implemented."));
-        }
+        convective_operator.evaluate_add(dst, src, evaluation_time);
       }
 
       // shift diffusive and convective term to the rhs of the equation
@@ -332,7 +334,10 @@ public:
   void
   set_velocity(VectorType const & velocity) const
   {
-    convective_operator_discontinuous.set_velocity(velocity);
+    AssertThrow(param.type_velocity_field == TypeVelocityField::Numerical,
+                ExcMessage("Invalid parameter type_velocity_field."));
+
+    convective_operator.set_velocity(velocity);
   }
 
   void
@@ -348,12 +353,7 @@ public:
                            VectorType const & src,
                            double const       evaluation_time) const
   {
-    if(param.type_velocity_field == TypeVelocityField::Analytical)
-      convective_operator.evaluate(dst, src, evaluation_time);
-    else if(param.type_velocity_field == TypeVelocityField::Numerical)
-      convective_operator_discontinuous.evaluate(dst, src, evaluation_time);
-    else
-      AssertThrow(false, ExcMessage("Not implemented."));
+    convective_operator.evaluate(dst, src, evaluation_time);
   }
 
   /*
@@ -365,22 +365,14 @@ public:
     VectorType const & src,
     double const       evaluation_time) const
   {
-    if(param.type_velocity_field == TypeVelocityField::Analytical)
-    {
-      convective_operator.evaluate(dst, src, evaluation_time);
-    }
-    else if(param.type_velocity_field == TypeVelocityField::Numerical)
+    if(param.type_velocity_field == TypeVelocityField::Numerical)
     {
       // We first have to interpolate the velocity field so that it is evaluated at the correct
       // time.
       interpolate(velocity, evaluation_time, velocities, times);
-      convective_operator_discontinuous.set_velocity(velocity);
-      convective_operator_discontinuous.evaluate(dst, src, evaluation_time);
+      convective_operator.set_velocity(velocity);
     }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    convective_operator.evaluate(dst, src, evaluation_time);
 
     // shift convective term to the rhs of the equation
     dst *= -1.0;
@@ -419,12 +411,7 @@ public:
          (param.problem_type == ProblemType::Unsteady &&
           param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
       {
-        if(param.type_velocity_field == TypeVelocityField::Analytical)
-          convective_operator.rhs_add(dst, evaluation_time);
-        else if(param.type_velocity_field == TypeVelocityField::Numerical)
-          convective_operator_discontinuous.rhs_add(dst, evaluation_time);
-        else
-          AssertThrow(false, ExcMessage("Not implemented."));
+        convective_operator.rhs_add(dst, evaluation_time);
       }
     }
 
@@ -494,7 +481,12 @@ public:
   calculate_time_step_cfl(double const cfl, double const exponent_degree) const
   {
     return calculate_time_step_cfl_local<dim, degree /* = degree_velocity */, Number>(
-      data, /*dof_index_velocity = */ 1, /*quad_index = */ 0, velocity, cfl, exponent_degree);
+      data,
+      /*dof_index_velocity = */ 1,
+      /*quad_index = */ 0,
+      convective_operator.get_velocity(),
+      cfl,
+      exponent_degree);
   }
 
   // use analytical velocity field
@@ -638,29 +630,21 @@ private:
     ConvectiveOperatorData<dim> convective_operator_data;
     convective_operator_data.dof_index                  = 0;
     convective_operator_data.quad_index                 = 0;
+    convective_operator_data.type_velocity_field        = param.type_velocity_field;
+    convective_operator_data.dof_index_velocity         = 1;
     convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
     convective_operator_data.bc                         = boundary_descriptor;
     convective_operator_data.velocity                   = field_functions->velocity;
     convective_operator_data.use_cell_based_loops       = param.use_cell_based_face_loops;
     convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
       param.implement_block_diagonal_preconditioner_matrix_free;
+
     convective_operator.reinit(data, convective_operator_data);
 
     if(param.type_velocity_field == TypeVelocityField::Numerical)
     {
-      ConvectiveOperatorDisVelData<dim> operator_data;
-
-      operator_data.dof_index                  = 0;
-      operator_data.dof_index_velocity         = 1;
-      operator_data.quad_index                 = 0;
-      operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
-      operator_data.bc                         = boundary_descriptor;
-
-      convective_operator_discontinuous.initialize(data, operator_data);
-
-      data.initialize_dof_vector(velocity, operator_data.dof_index_velocity);
+      data.initialize_dof_vector(velocity, convective_operator_data.dof_index_velocity);
     }
-
 
     // diffusive operator
     DiffusiveOperatorData<dim> diffusive_operator_data;
@@ -721,11 +705,9 @@ private:
 
   MassMatrixOperator<dim, degree, Number>           mass_matrix_operator;
   InverseMassMatrixOperator<dim, degree, Number, 1> inverse_mass_matrix_operator;
-  ConvectiveOperator<dim, degree, Number>           convective_operator;
+  ConvectiveOperator<dim, degree, degree, Number>   convective_operator;
   DiffusiveOperator<dim, degree, Number>            diffusive_operator;
   RHSOperator<dim, degree, Number>                  rhs_operator;
-
-  ConvectiveOperatorDisVel<dim, degree, degree, Number> convective_operator_discontinuous;
 
   mutable std::vector<VectorType const *> velocities;
   mutable std::vector<double>             times;
