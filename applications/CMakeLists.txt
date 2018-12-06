@@ -22,7 +22,7 @@ SET( SOURCE_FILES
      
      # Poisson
      poisson.cc
-     #laplace_operator_matrix_free.cc
+     laplace_operator_matrix_free.cc
      #multigrid_solver.cc
 
      # Scalar reaction-convection-diffusion

@@ -28,7 +28,7 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
-#include <deal.II/lac/parallel_vector.h>
+#include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/tensor_product_kernels.h>
 
@@ -221,27 +221,27 @@ public:
 
   // Performs matrix-vector multiplication
   void
-  vmult(parallel::distributed::Vector<Number> &       dst,
-        const parallel::distributed::Vector<Number> & src) const;
+  vmult(LinearAlgebra::distributed::Vector<Number> &       dst,
+        const LinearAlgebra::distributed::Vector<Number> & src) const;
 
   // Performs cell loop manually
   void
-  cell_loop_manual_1(parallel::distributed::Vector<Number> &       dst,
-                     const parallel::distributed::Vector<Number> & src) const;
+  cell_loop_manual_1(LinearAlgebra::distributed::Vector<Number> &       dst,
+                     const LinearAlgebra::distributed::Vector<Number> & src) const;
   // Performs cell loop manually
   void
-  cell_loop_manual_2(parallel::distributed::Vector<Number> &       dst,
-                     const parallel::distributed::Vector<Number> & src) const;
+  cell_loop_manual_2(LinearAlgebra::distributed::Vector<Number> &       dst,
+                     const LinearAlgebra::distributed::Vector<Number> & src) const;
   // Performs cell loop manually
   void
-  cell_loop_manual_3(parallel::distributed::Vector<Number> &       dst,
-                     const parallel::distributed::Vector<Number> & src) const;
+  cell_loop_manual_3(LinearAlgebra::distributed::Vector<Number> &       dst,
+                     const LinearAlgebra::distributed::Vector<Number> & src) const;
 
   // Performs a matrix-vector multiplication, adding the result in
   // the previous content of dst
   void
-  vmult_add(parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src) const;
+  vmult_add(LinearAlgebra::distributed::Vector<Number> &       dst,
+            const LinearAlgebra::distributed::Vector<Number> & src) const;
 
   // Returns a reference to the ratio between the element surface and the
   // element volume for the symmetric interior penalty method (only available
@@ -264,28 +264,28 @@ private:
   // Runs the loop over all cells and faces for use in matrix-vector
   // multiplication, adding the result in the previous content of dst
   void
-  run_vmult_loop(parallel::distributed::Vector<Number> &       dst,
-                 const parallel::distributed::Vector<Number> & src) const;
+  run_vmult_loop(LinearAlgebra::distributed::Vector<Number> &       dst,
+                 const LinearAlgebra::distributed::Vector<Number> & src) const;
 
   // cell loop: volume integrals
   void
   cell_loop(const MatrixFree<dim, Number> &               data,
-            parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src,
+            LinearAlgebra::distributed::Vector<Number> &       dst,
+            const LinearAlgebra::distributed::Vector<Number> & src,
             const std::pair<unsigned int, unsigned int> & cell_range) const;
 
   // face loop: face integrals for interior faces
   void
   face_loop(const MatrixFree<dim, Number> &               data,
-            parallel::distributed::Vector<Number> &       dst,
-            const parallel::distributed::Vector<Number> & src,
+            LinearAlgebra::distributed::Vector<Number> &       dst,
+            const LinearAlgebra::distributed::Vector<Number> & src,
             const std::pair<unsigned int, unsigned int> & face_range) const;
 
   // boundary face loop: face integrals for boundary faces
   void
   boundary_face_loop(const MatrixFree<dim, Number> &               data,
-                     parallel::distributed::Vector<Number> &       dst,
-                     const parallel::distributed::Vector<Number> & src,
+                     LinearAlgebra::distributed::Vector<Number> &       dst,
+                     const LinearAlgebra::distributed::Vector<Number> & src,
                      const std::pair<unsigned int, unsigned int> & face_range) const;
 
   MatrixFree<dim, Number> const * data;
@@ -318,8 +318,8 @@ LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &  mf
 
 template<int dim, int degree, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::vmult(parallel::distributed::Vector<Number> &       dst,
-                                            parallel::distributed::Vector<Number> const & src) const
+LaplaceOperator<dim, degree, Number>::vmult(LinearAlgebra::distributed::Vector<Number> &       dst,
+                                            LinearAlgebra::distributed::Vector<Number> const & src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -328,8 +328,8 @@ LaplaceOperator<dim, degree, Number>::vmult(parallel::distributed::Vector<Number
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::vmult_add(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  LinearAlgebra::distributed::Vector<Number> const & src) const
 {
   run_vmult_loop(dst, src);
 }
@@ -368,7 +368,7 @@ LaplaceOperator<dim, degree, Number>::compute_array_penalty_parameter(const Mapp
   }
 
   // Compute penalty parameter for each cell
-  array_penalty_parameter.resize(data->n_macro_cells() + data->n_macro_ghost_cells());
+  array_penalty_parameter.resize(data->n_cell_batches() + data->n_ghost_cell_batches());
   QGauss<dim>       quadrature(degree + 1);
   FEValues<dim>     fe_values(mapping,
                           data->get_dof_handler(operator_data.laplace_dof_index).get_fe(),
@@ -380,7 +380,7 @@ LaplaceOperator<dim, degree, Number>::compute_array_penalty_parameter(const Mapp
                                    face_quadrature,
                                    update_JxW_values);
 
-  for(unsigned int i = 0; i < data->n_macro_cells() + data->n_macro_ghost_cells(); ++i)
+  for(unsigned int i = 0; i < data->n_cell_batches() + data->n_ghost_cell_batches(); ++i)
   {
     for(unsigned int v = 0; v < data->n_components_filled(i); ++v)
     {
@@ -410,8 +410,8 @@ LaplaceOperator<dim, degree, Number>::compute_array_penalty_parameter(const Mapp
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::run_vmult_loop(
-  parallel::distributed::Vector<Number> &       dst,
-  parallel::distributed::Vector<Number> const & src) const
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  LinearAlgebra::distributed::Vector<Number> const & src) const
 {
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_START(("cell_loop_basic_p" + std::to_string(degree)).c_str());
@@ -426,8 +426,9 @@ LaplaceOperator<dim, degree, Number>::run_vmult_loop(
                this,
                dst,
                src,
-               MatrixFree<dim, Number>::values_and_gradients,
-               MatrixFree<dim, Number>::values_and_gradients);
+               true,
+               MatrixFree<dim, Number>::DataAccessOnFaces::gradients,
+               MatrixFree<dim, Number>::DataAccessOnFaces::gradients);
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_STOP(("cell_loop_basic_p" + std::to_string(degree)).c_str());
@@ -438,8 +439,8 @@ template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::cell_loop(
   const MatrixFree<dim, Number> &               data,
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src,
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  const LinearAlgebra::distributed::Vector<Number> & src,
   const std::pair<unsigned int, unsigned int> & cell_range) const
 {
   if(this->operator_data.compute_cell_integrals == true)
@@ -471,8 +472,8 @@ template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::face_loop(
   const MatrixFree<dim, Number> &               data,
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src,
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  const LinearAlgebra::distributed::Vector<Number> & src,
   const std::pair<unsigned int, unsigned int> & face_range) const
 {
   if(this->operator_data.compute_face_integrals == true)
@@ -506,11 +507,11 @@ LaplaceOperator<dim, degree, Number>::face_loop(
 
         VectorizedArray<Number> jump_value = valueM - valueP;
         VectorizedArray<Number> average_gradient =
-          (fe_eval.get_normal_gradient(q) + fe_eval_neighbor.get_normal_gradient(q)) * 0.5;
+          (fe_eval.get_normal_derivative(q) + fe_eval_neighbor.get_normal_derivative(q)) * 0.5;
         average_gradient = average_gradient - jump_value * sigmaF;
 
-        fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
-        fe_eval_neighbor.submit_normal_gradient(-0.5 * jump_value, q);
+        fe_eval.submit_normal_derivative(-0.5 * jump_value, q);
+        fe_eval_neighbor.submit_normal_derivative(-0.5 * jump_value, q);
         fe_eval.submit_value(-average_gradient, q);
         fe_eval_neighbor.submit_value(average_gradient, q);
       }
@@ -526,8 +527,8 @@ template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::boundary_face_loop(
   const MatrixFree<dim, Number> &               data,
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src,
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  const LinearAlgebra::distributed::Vector<Number> & src,
   const std::pair<unsigned int, unsigned int> & face_range) const
 {
   if(this->operator_data.compute_face_integrals == true)
@@ -556,10 +557,10 @@ LaplaceOperator<dim, degree, Number>::boundary_face_loop(
           VectorizedArray<Number> valueM = fe_eval.get_value(q);
 
           VectorizedArray<Number> jump_value       = 2.0 * valueM;
-          VectorizedArray<Number> average_gradient = fe_eval.get_normal_gradient(q);
+          VectorizedArray<Number> average_gradient = fe_eval.get_normal_derivative(q);
           average_gradient                         = average_gradient - jump_value * sigmaF;
 
-          fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+          fe_eval.submit_normal_derivative(-0.5 * jump_value, q);
           fe_eval.submit_value(-average_gradient, q);
         }
         it = operator_data.bc->neumann.find(boundary_id);
@@ -570,7 +571,7 @@ LaplaceOperator<dim, degree, Number>::boundary_face_loop(
           VectorizedArray<Number> average_gradient = make_vectorized_array<Number>(0.0);
           average_gradient                         = average_gradient - jump_value * sigmaF;
 
-          fe_eval.submit_normal_gradient(-0.5 * jump_value, q);
+          fe_eval.submit_normal_derivative(-0.5 * jump_value, q);
           fe_eval.submit_value(-average_gradient, q);
         }
       }
@@ -586,8 +587,8 @@ LaplaceOperator<dim, degree, Number>::boundary_face_loop(
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::cell_loop_manual_1(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  const LinearAlgebra::distributed::Vector<Number> & src) const
 {
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_START(("cell_loop_1_p" + std::to_string(degree)).c_str());
@@ -597,7 +598,7 @@ LaplaceOperator<dim, degree, Number>::cell_loop_manual_1(
   // exchange and that the loop below takes care of the zeroing
 
   // global data structures
-  const unsigned int dofs_per_cell = Utilities::fixed_int_power<degree + 1, dim>::value;
+  const unsigned int dofs_per_cell = Utilities::pow(degree + 1, dim);
   AlignedVector<VectorizedArray<Number>> * scratch_data_array = data->acquire_scratch_data();
   scratch_data_array->resize_fast((dim + 2) * dofs_per_cell);
   VectorizedArray<Number> * __restrict data_ptr = scratch_data_array->begin();
@@ -767,8 +768,8 @@ LaplaceOperator<dim, degree, Number>::cell_loop_manual_1(
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::cell_loop_manual_2(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  const LinearAlgebra::distributed::Vector<Number> & src) const
 {
   if(dim != 3 || degree < 1)
     return;
@@ -784,7 +785,7 @@ LaplaceOperator<dim, degree, Number>::cell_loop_manual_2(
   // exchange and that the loop below takes care of the zeroing
 
   // global data structures
-  const unsigned int dofs_per_cell = Utilities::fixed_int_power<degree + 1, dim>::value;
+  const unsigned int dofs_per_cell = Utilities::pow(degree + 1, dim);
   AlignedVector<VectorizedArray<Number>> * scratch_data_array = data->acquire_scratch_data();
   scratch_data_array->resize((dim + 1) * dofs_per_cell);
   VectorizedArray<Number> * __restrict data_ptr = scratch_data_array->begin();
@@ -1307,8 +1308,8 @@ LaplaceOperator<dim, degree, Number>::cell_loop_manual_2(
 template<int dim, int degree, typename Number>
 void
 LaplaceOperator<dim, degree, Number>::cell_loop_manual_3(
-  parallel::distributed::Vector<Number> &       dst,
-  const parallel::distributed::Vector<Number> & src) const
+  LinearAlgebra::distributed::Vector<Number> &       dst,
+  const LinearAlgebra::distributed::Vector<Number> & src) const
 {
   if(dim != 3 || degree < 1)
     return;
@@ -1323,7 +1324,7 @@ LaplaceOperator<dim, degree, Number>::cell_loop_manual_3(
   // exchange and that the loop below takes care of the zeroing
 
   // global data structures
-  const unsigned int dofs_per_cell = Utilities::fixed_int_power<degree + 1, dim>::value;
+  const unsigned int dofs_per_cell = Utilities::pow(degree + 1, dim);
   AlignedVector<VectorizedArray<Number>> * scratch_data_array = data->acquire_scratch_data();
   scratch_data_array->resize(2 * dofs_per_cell);
   VectorizedArray<Number> my_array[degree < 9 ? 2 * dofs_per_cell : 1];
@@ -1497,7 +1498,7 @@ LaplaceOperator<dim, degree, Number>::cell_loop_manual_3(
     const Tensor<2, dim, VectorizedArray<Number>> * __restrict jac_ptr =
       data->get_mapping_info().cell_data[0].jacobians[0].begin() +
       data->get_mapping_info().cell_data[0].data_index_offsets[cell];
-    const internal::MatrixFreeFunctions::CellType cell_type =
+    const internal::MatrixFreeFunctions::GeometryType cell_type =
       data->get_mapping_info().cell_type[cell];
     if(cell_type == internal::MatrixFreeFunctions::cartesian)
       for(unsigned int d = 0; d < dim; ++d)
@@ -1915,7 +1916,7 @@ public:
     pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
     // initialize vectors
-    parallel::distributed::Vector<Number> dst, src;
+    LinearAlgebra::distributed::Vector<Number> dst, src;
     matrix_free_data.initialize_dof_vector(src);
     matrix_free_data.initialize_dof_vector(dst);
     for(unsigned int i = 0; i < src.local_size(); ++i)
@@ -1963,7 +1964,7 @@ public:
 
     if(COMPUTE_FACE_INTEGRALS == false)
     {
-      parallel::distributed::Vector<Number> dst2;
+      LinearAlgebra::distributed::Vector<Number> dst2;
       matrix_free_data.initialize_dof_vector(dst2);
       wall_time = 0.0;
 
@@ -2072,7 +2073,7 @@ private:
 
     pcout << std::endl << "Discontinuous Galerkin finite element discretization:" << std::endl;
 
-    const unsigned int dofs_per_cell = Utilities::fixed_int_power<fe_degree + 1, dim>::value;
+    const unsigned int dofs_per_cell = Utilities::pow(fe_degree + 1, dim);
     pcout << std::endl
           << std::fixed << "degree of 1D polynomials: " << fe_degree << std::endl
           << "number of dofs per cell:  " << dofs_per_cell << std::endl
@@ -2091,13 +2092,18 @@ private:
     typename MatrixFree<dim, Number>::AdditionalData additional_data;
     additional_data.tasks_parallel_scheme =
       MatrixFree<dim, Number>::AdditionalData::partition_partition;
-    additional_data.build_face_info = true;
     additional_data.mapping_update_flags =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+    additional_data.mapping_update_flags_inner_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+    additional_data.mapping_update_flags_boundary_faces =
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);
 
     // constraints
-    ConstraintMatrix dummy;
+    AffineConstraints<double> dummy;
     dummy.close();
 
     matrix_free_data.reinit(mapping, dof_handler, dummy, quadrature, additional_data);
