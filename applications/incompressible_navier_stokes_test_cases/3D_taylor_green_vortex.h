@@ -196,7 +196,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::Multigrid; //InverseMassMatrix;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   abs_tol_momentum_linear = 1.e-12;
@@ -230,7 +230,7 @@ void InputParameters<dim>::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::Multigrid;
   multigrid_data_momentum_preconditioner.chebyshev_smoother_data.smoother_poly_degree = 5;
   multigrid_data_momentum_preconditioner.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
