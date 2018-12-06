@@ -46,7 +46,7 @@ public:
 
   void
   setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs,
+                                                        periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
         std::shared_ptr<FieldFunctions<dim>> const      field_functions,

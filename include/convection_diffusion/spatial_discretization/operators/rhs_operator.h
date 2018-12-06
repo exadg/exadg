@@ -65,7 +65,8 @@ private:
   do_cell_integral(FEEvaluation & fe_eval) const;
 
   /*
-   * The right-hand side operator involves only cell integrals so we only need a function looping over all cells and computing the cell integrals.
+   * The right-hand side operator involves only cell integrals so we only need a function looping
+   * over all cells and computing the cell integrals.
    */
   void
   cell_loop(MatrixFree<dim, Number> const & data,

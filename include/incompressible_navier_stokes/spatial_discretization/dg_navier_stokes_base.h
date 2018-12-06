@@ -24,11 +24,11 @@
 #include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
 
 // calculators
-#include "../../incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.h"
-#include "../../incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.h"
+#include "../../incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.h"
+#include "../../incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h"
 
 // operators
 #include "operators/body_force_operator.h"
@@ -44,10 +44,10 @@
 
 // preconditioners and solvers
 #include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../../solvers_and_preconditioners/newton/newton_solver.h"
 
 #include "projection_solvers.h"
 

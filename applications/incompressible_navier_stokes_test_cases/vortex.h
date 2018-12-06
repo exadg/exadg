@@ -64,8 +64,8 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping = false;
@@ -122,8 +122,8 @@ void InputParameters<dim>::set_input_parameters()
   turbulence_model_constant = 0.5;
 
   // NUMERICAL PARAMETERS
-  implement_block_diagonal_preconditioner_matrix_free = false;
-  use_cell_based_face_loops = false;
+  implement_block_diagonal_preconditioner_matrix_free = true;
+  use_cell_based_face_loops = true;
 
   // PROJECTION METHODS
 
@@ -136,7 +136,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // projection step
   solver_projection = SolverProjection::PCG;
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //None; //Jacobi; //InverseMassMatrix;
+  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
   solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2);
   abs_tol_projection = 1.e-12;

@@ -60,12 +60,12 @@ private:
 
 template<int dim, int fe_degree>
 void
-PostProcessor<dim, fe_degree>::
-setup(PostProcessorData const & postprocessor_data,
-      DoFHandler<dim> const &   dof_handler_in,
-      Mapping<dim> const &      mapping_in,
-      MatrixFree<dim, double> const & /*matrix_free_data_in*/,
-      std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> const analytical_solution_in)
+PostProcessor<dim, fe_degree>::setup(
+  PostProcessorData const & postprocessor_data,
+  DoFHandler<dim> const &   dof_handler_in,
+  Mapping<dim> const &      mapping_in,
+  MatrixFree<dim, double> const & /*matrix_free_data_in*/,
+  std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> const analytical_solution_in)
 {
   error_calculator.setup(dof_handler_in,
                          mapping_in,

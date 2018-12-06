@@ -9,6 +9,7 @@
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COMP_NAVIER_STOKES_H_
 
 // deal.II
+#include <deal.II/base/timer.h>
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
@@ -16,19 +17,21 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/numerics/vector_tools.h>
 
-// timer
-#include <deal.II/base/timer.h>
-
-#include "../../compressible_navier_stokes/spatial_discretization/comp_navier_stokes_operators.h"
+// user interface
 #include "../../compressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../compressible_navier_stokes/user_interface/field_functions.h"
 #include "../../compressible_navier_stokes/user_interface/input_parameters.h"
-#include "../../operators/linear_operator_base.h"
+
+// operators
+#include "../../compressible_navier_stokes/spatial_discretization/comp_navier_stokes_operators.h"
 #include "comp_navier_stokes_calculators.h"
 #include "operators/inverse_mass_matrix.h"
-#include "time_integration/time_step_calculation.h"
 
+// interface space-time
 #include "../interface_space_time/operator.h"
+
+// time integration
+#include "time_integration/time_step_calculation.h"
 
 namespace CompNS
 {

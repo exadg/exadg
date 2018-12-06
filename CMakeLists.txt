@@ -45,7 +45,9 @@ SET( TARGET_SRC
      include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
+     include/convection_diffusion/spatial_discretization/operators/rhs_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
+     include/convection_diffusion/spatial_discretization/dg_convection_diffusion_operation.cpp
      include/convection_diffusion/interface_space_time/operator.cpp
      include/convection_diffusion/time_integration/time_int_bdf.cpp
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
@@ -56,6 +58,22 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.cpp
      include/incompressible_navier_stokes/spatial_discretization/operators/body_force_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/calculators/q_criterion_calculator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/calculators/streamfunction_calculator_rhs_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/momentum_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/projection_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/turbulence_model.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/boundary_conditions_dual_splitting/pressure_neumann_bc_convective_term.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/boundary_conditions_dual_splitting/pressure_neumann_bc_viscous_term.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/boundary_conditions_dual_splitting/velocity_divergence_convective_term.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_projection_methods.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.cpp
      include/incompressible_navier_stokes/interface_space_time/operator.cpp 
      include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
