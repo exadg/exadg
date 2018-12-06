@@ -8,7 +8,12 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_UTIL_RESTRICT_VECTOR_TO_COARSER_LEVEL_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_UTIL_RESTRICT_VECTOR_TO_COARSER_LEVEL_H_
 
-
+/*
+ * Note: this operation has O(k^6) complexity due to the restriction matrix used for the transfer.
+ *
+ * TODO: implement this functionality using sum-factorization techniques and matrix-free
+ * functionalities.
+ */
 template<int dim, typename MultigridNumber, typename VectorType>
 void
 restrict_to_coarser_level(VectorType &            vector_coarse_level,
