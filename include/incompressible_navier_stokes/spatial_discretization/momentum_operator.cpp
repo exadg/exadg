@@ -1,5 +1,7 @@
 #include "momentum_operator.h"
 
+#include <deal.II/distributed/tria.h>
+
 #include "functionalities/categorization.h"
 
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
@@ -566,7 +568,7 @@ void
 MomentumOperator<dim, degree, Number>::check_block_jacobi_matrices() const
 {
   VectorType src;
-  initialize_dof_vector(src);
+  this->initialize_dof_vector(src);
 
   // fill vector with values unequal zero
   for(unsigned int i = 0; i < src.local_size(); ++i)
@@ -642,3 +644,5 @@ MomentumOperator<dim, degree, Number>::get_new(unsigned int deg) const
 }
 
 } // namespace IncNS
+
+#include "momentum_operator.hpp"

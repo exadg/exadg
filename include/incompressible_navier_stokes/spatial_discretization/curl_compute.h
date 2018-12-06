@@ -1,5 +1,5 @@
 /*
- * CurlCompute.h
+ * curl_compute.h
  *
  *  Created on: Jun 28, 2016
  *      Author: fehn
@@ -8,6 +8,10 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CURL_COMPUTE_H_
 
+#include <deal.II/base/tensor.h>
+#include <deal.II/base/vectorization.h>
+
+using namespace dealii;
 
 template<int dim, typename FEEval>
 struct CurlCompute

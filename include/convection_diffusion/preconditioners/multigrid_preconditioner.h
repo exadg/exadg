@@ -1,5 +1,5 @@
 /*
- * MultigridPreconditionerScalarConvDiff.h
+ * multigrid_preconditioner.h
  *
  *  Created on: Nov 23, 2016
  *      Author: fehn
