@@ -42,7 +42,7 @@ struct MomentumOperatorData
       implement_block_diagonal_preconditioner_matrix_free(false),
       use_cell_based_loops(false),
       preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
-      block_jacobi_solver_data(SolverData(100, 1.e-12, 1.e-2)),
+      block_jacobi_solver_data(SolverData(100, 1.e-12, 1.e-1)), // TODO // 1.e-2)),
       mg_operator_type(MultigridOperatorType::Undefined)
   {
   }
@@ -330,8 +330,6 @@ private:
 
 
 } // namespace IncNS
-
-#include "momentum_operator.cpp"
 
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_ \
         */

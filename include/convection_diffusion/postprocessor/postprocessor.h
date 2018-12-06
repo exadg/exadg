@@ -37,27 +37,16 @@ struct PostProcessorData
 template<int dim, int fe_degree>
 class PostProcessor
 {
-public:
+private:
   typedef LinearAlgebra::distributed::Vector<double> VectorType;
 
-  PostProcessor()
-  {
-  }
-
+public:
   void
   setup(PostProcessorData const & postprocessor_data,
         DoFHandler<dim> const &   dof_handler_in,
         Mapping<dim> const &      mapping_in,
         MatrixFree<dim, double> const & /*matrix_free_data_in*/,
-        std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution_in)
-  {
-    error_calculator.setup(dof_handler_in,
-                           mapping_in,
-                           analytical_solution_in->solution,
-                           postprocessor_data.error_data);
-
-    output_generator.setup(dof_handler_in, mapping_in, postprocessor_data.output_data);
-  }
+        std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> const analytical_solution_in);
 
   void
   do_postprocessing(VectorType const & solution,
@@ -68,6 +57,23 @@ private:
   ConvDiff::OutputGenerator<dim> output_generator;
   ErrorCalculator<dim, double>   error_calculator;
 };
+
+template<int dim, int fe_degree>
+void
+PostProcessor<dim, fe_degree>::setup(
+  PostProcessorData const & postprocessor_data,
+  DoFHandler<dim> const &   dof_handler_in,
+  Mapping<dim> const &      mapping_in,
+  MatrixFree<dim, double> const & /*matrix_free_data_in*/,
+  std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> const analytical_solution_in)
+{
+  error_calculator.setup(dof_handler_in,
+                         mapping_in,
+                         analytical_solution_in->solution,
+                         postprocessor_data.error_data);
+
+  output_generator.setup(dof_handler_in, mapping_in, postprocessor_data.output_data);
+}
 
 template<int dim, int fe_degree>
 void

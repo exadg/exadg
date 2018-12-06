@@ -38,9 +38,10 @@ double const L = 1.0; // Length of cavity
 double const START_TIME = 0.0;
 double const END_TIME = 10.0;
 
-// Explicit: CFL_crit = 0.35 (0.4 unstable) for BDF2, CFL_crit = 0.32 (0.33 unstable) for adaptive time stepping
+// Explicit: CFL_crit = 0.35-0.4 unstable (DivergenceFormulation, upwind_factor=0.5) for BDF2 with constant time steps
+//           CFL_crit = 0.32-0.33 (DivergenceFormulation, upwind_factor=0.5!), 0.5-0.6 (ConvectiveFormulation) for BDF2 with adaptive time stepping
 // ExplicitOIF: CFL_crit,oif = 3.0 (3.5 unstable) for ExplRK3Stage7Reg2
-double const CFL_OIF = 0.32;
+double const CFL_OIF = 0.5; //0.32;
 double const CFL = CFL_OIF;
 double const MAX_VELOCITY = 1.0;
 bool const ADAPTIVE_TIME_STEPPING = true;
@@ -67,7 +68,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   right_hand_side = false;
 
 
@@ -79,7 +80,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
@@ -100,7 +101,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
 
   // convective term - currently no parameters
   if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
-    upwind_factor = 0.5;
+    upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -138,13 +139,13 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-8;
+  rel_tol_pressure = 1.e-6;
 
   // projection step
   solver_projection = SolverProjection::PCG;
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   abs_tol_projection = 1.e-12;
-  rel_tol_projection = 1.e-8;
+  rel_tol_projection = 1.e-6;
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -157,7 +158,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-8;
+  rel_tol_viscous = 1.e-6;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -175,11 +176,11 @@ void IncNS::InputParameters<dim>::set_input_parameters()
 
   // linear solver
   abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-2;
+  rel_tol_momentum_linear = 1.e-6; //1.e-1; //1.0e-2;
   max_iter_momentum_linear = 1e4;
 
-  solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+  solver_momentum = SolverMomentum::FGMRES; // use FGMRES for matrix-free BlockJacobi or Multigrid with Krylov methods as smoother/coarse grid solver
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
   multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
   update_preconditioner_momentum = true;
   multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
@@ -201,7 +202,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   // linear solver
   solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES; //FGMRES;
   abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-2;
+  rel_tol_linear = 1.e-6;
   max_iter_linear = 1e3;
   max_n_tmp_vectors = 100;
 
@@ -210,7 +211,8 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   update_preconditioner = false;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix;
+  momentum_preconditioner = MomentumPreconditioner::Multigrid;
+  momentum_multigrid_operator_type = MultigridOperatorType::ReactionDiffusion;
 
   // preconditioner Schur-complement block
   schur_complement_preconditioner = SchurComplementPreconditioner::PressureConvectionDiffusion;
@@ -258,7 +260,7 @@ void ConvDiff::InputParameters::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDF;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
   order_time_integrator = 2;
   time_integrator_oif = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -283,7 +285,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   abs_tol = 1.e-12;
   rel_tol = 1.e-6;
   max_iter = 1e4;
-  preconditioner = Preconditioner::InverseMassMatrix; //InverseMassMatrix; //Multigrid;
+  preconditioner = Preconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
   implement_block_diagonal_preconditioner_matrix_free = true;
   use_cell_based_face_loops = true;
   update_preconditioner = true;
@@ -309,7 +311,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.output_name = OUTPUT_NAME + "_scalar";
   output_data.output_start_time = OUTPUT_START_TIME;
   output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  output_data.number_of_patches = 1; //FE_DEGREE_SCALAR;
+  output_data.number_of_patches = FE_DEGREE_SCALAR;
 
   output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 
@@ -369,13 +371,19 @@ public:
     Function<dim>(n_components, time)
   {}
 
-  double value (const Point<dim>    &/*p*/,
+  double value (const Point<dim>    &p,
                 const unsigned int  component = 0) const
   {
     double result = 0.0;
+    (void)p;
 
     if(component == 0)
+    {
+      // Variation of boundary condition: avoid velocity jumps in corners (reduces Newton iterations considerably for convection-dominated problems)
+//      result = 4./(L*L) * (-(p[0]-L/2.0)*(p[0]-L/2.0) + L*L/4.0);
+
       result = 1.0;
+    }
 
     return result;
   }

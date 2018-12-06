@@ -1,12 +1,14 @@
 /*
- * projection_operators.h
+ * projection_operator.h
  *
  *  Created on: Jun 17, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATOR_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATOR_H_
+
+#include "../user_interface/input_parameters.h"
 
 #include "../../operators/linear_operator_base.h"
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
@@ -16,6 +18,8 @@
 #include "operators/elementwise_operator.h"
 #include "solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
 #include "solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
+
+using namespace dealii;
 
 namespace IncNS
 {
@@ -116,7 +120,7 @@ struct ProjectionOperatorData
 template<int dim, int degree, typename Number>
 class ProjectionOperator : public LinearOperatorBase
 {
-public:
+private:
   typedef ProjectionOperator<dim, degree, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -126,10 +130,11 @@ public:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef Number value_type;
-
   typedef FEEvaluation<dim, degree, degree + 1, dim, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, dim, Number> FEEvalFace;
+
+public:
+  typedef Number value_type;
 
   ProjectionOperator(MatrixFree<dim, Number> const & data_in,
                      unsigned int const              dof_index_in,
@@ -1291,5 +1296,5 @@ private:
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATORS_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATOR_H_ \
         */

@@ -450,7 +450,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::apply_operator()
       else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
       {
         if(OPERATOR == Operator::VelocityConvDiffOperator)
-          navier_stokes_operation_pressure_correction->apply_velocity_conv_diff_operator(dst2,src2,src2);
+          navier_stokes_operation_pressure_correction->apply_momentum_operator(dst2,src2,src2);
         else if(OPERATOR == Operator::ConvectiveOperator)
           navier_stokes_operation_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR == Operator::ProjectionOperator)

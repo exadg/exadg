@@ -7,7 +7,7 @@ namespace Poisson
 #if DIM_2 && DEGREE_0 && (OP_FLOAT || MG_FLOAT)
 template class LaplaceOperator<2, 0, float>;
 #endif
-#if DIM_2 && DEGREE_10 && (OP_DOUBLE || MG_DOUBLE)
+#if DIM_2 && DEGREE_0 && (OP_DOUBLE || MG_DOUBLE)
 template class LaplaceOperator<2, 0, double>;
 #endif
 
