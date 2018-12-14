@@ -677,17 +677,19 @@ public:
       order_time_integrator(1),
       start_with_low_order(true),
 
-      // pseudo-timestepping
+      // pseudo time-stepping
       convergence_criterion_steady_problem(ConvergenceCriterionSteadyProblem::Undefined),
       abs_tol_steady(1.e-20),
       rel_tol_steady(1.e-12),
 
       // SPATIAL DISCRETIZATION
+
+      // mapping
       degree_mapping(1),
+
+      // convective term
       upwind_factor(1.0),
       type_dirichlet_bc_convective(TypeDirichletBCs::Mirror),
-
-      // convective term - currently no parameters
 
       // viscous term
       IP_formulation_viscous(InteriorPenaltyFormulation::Undefined),
@@ -695,24 +697,24 @@ public:
       IP_factor_viscous(1.),
 
       // gradient term
-      gradp_integrated_by_parts(false),
-      gradp_use_boundary_data(false),
+      gradp_integrated_by_parts(true),
+      gradp_use_boundary_data(true),
 
       // divergence term
-      divu_integrated_by_parts(false),
-      divu_use_boundary_data(false),
+      divu_integrated_by_parts(true),
+      divu_use_boundary_data(true),
 
       // special case: pure DBC's
       pure_dirichlet_bc(false),
       adjust_pressure_level(AdjustPressureLevel::ApplyZeroMeanValue),
 
-      // div-div and continuity penalty
-      use_divergence_penalty(false),
+      // div-div and continuity penalty terms
+      use_divergence_penalty(true),
       divergence_penalty_factor(1.),
-      use_continuity_penalty(false),
-      continuity_penalty_components(ContinuityPenaltyComponents::Undefined),
+      use_continuity_penalty(true),
+      continuity_penalty_components(ContinuityPenaltyComponents::Normal),
       continuity_penalty_factor(1.),
-      type_penalty_parameter(TypePenaltyParameter::Undefined),
+      type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
       add_penalty_terms_to_monolithic_system(false),
 
       // NUMERICAL PARAMETERS
@@ -885,6 +887,8 @@ public:
   void
   check_input_parameters()
   {
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+
     // MATHEMATICAL MODEL
     AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
     AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
@@ -999,10 +1003,19 @@ public:
 
       if(order_extrapolation_pressure_nbc > 2)
       {
-        std::cout
+        pcout
           << "WARNING:" << std::endl
-          << "Order of extrapolation of viscous term and convective term in pressure NBC larger than 2 leads to a conditionally stable scheme."
+          << "Order of extrapolation of viscous and convective terms in pressure Neumann boundary "
+          << "condition is larger than 2 which leads to a conditionally stable scheme."
           << std::endl;
+      }
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      {
+        pcout << "WARNING:" << std::endl
+              << "An implicit treatment of the convective term in combination with the "
+              << "dual splitting projection scheme is only first order accurate in time."
+              << std::endl;
       }
     }
 
