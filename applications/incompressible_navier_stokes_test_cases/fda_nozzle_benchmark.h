@@ -311,43 +311,27 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   cfl = 4.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
-  max_number_of_time_steps = 1e8;
   order_time_integrator = 2;
   start_with_low_order = true;
 
 
   // SPATIAL DISCRETIZATION
 
+  // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
-  // convective term - currently no parameters
+  // convective term
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
 
-  // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
-
-  // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
-
   // special case: pure DBC's
   if(domain_id == 1)
     pure_dirichlet_bc = true;
   else if(domain_id == 2)
     pure_dirichlet_bc = false;
-
-  // div-div and continuity penalty
-  use_divergence_penalty = true;
-  divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = true;
-  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  continuity_penalty_factor = divergence_penalty_factor;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -480,7 +464,7 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.mean_velocity.sample_start_time = SAMPLE_START_TIME;
     output_data.mean_velocity.sample_end_time = SAMPLE_END_TIME;
     output_data.mean_velocity.sample_every_timesteps = 1;
-    output_data.number_of_patches = FE_DEGREE_VELOCITY;
+    output_data.degree = FE_DEGREE_VELOCITY;
 
     // inflow data
     // prescribe solution at the right boundary of the precursor domain
@@ -516,7 +500,7 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.mean_velocity.sample_start_time = SAMPLE_START_TIME;
     output_data.mean_velocity.sample_end_time = SAMPLE_END_TIME;
     output_data.mean_velocity.sample_every_timesteps = 1;
-    output_data.number_of_patches = FE_DEGREE_VELOCITY;
+    output_data.degree = FE_DEGREE_VELOCITY;
 
     // evaluation of quantities along lines
     line_plot_data.write_output = true;
@@ -664,58 +648,52 @@ public:
     srand(0); // initialize rand() to obtain reproducible results
   }
 
-  virtual ~InitialSolutionVelocity(){};
-
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
-};
-
-template<int dim>
-double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
-                                           const unsigned int component) const
-{
-  AssertThrow(dim==3, ExcMessage("Dimension has to be dim==3."));
-
-  double result = 0.0;
-
-  // flow in z-direction
-  if(component == 2)
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
   {
-    double radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
+    AssertThrow(dim==3, ExcMessage("Dimension has to be dim==3."));
 
-    // assume parabolic profile u(r) = u_max * [1-(r/R)^2]
-    //  -> u_max = 2 * u_mean = 2 * flow_rate / area
-    double const RADIUS = radius_function(p[2]);
-    if(radius > RADIUS)
-      radius = RADIUS;
+    double result = 0.0;
 
-    // parabolic velocity profile
-    double const max_velocity_z = MAX_VELOCITY * std::pow(R_OUTER/RADIUS,2.0);
-    result = max_velocity_z*(1.0-pow(radius/RADIUS,2.0));
-
-    // Add perturbation (sine + random) for the precursor to initiate
-    // a turbulent flow in case the Reynolds number is large enough
-    // (otherwise, the perturbations will be damped and the flow becomes laminar).
-    // According to first numerical results, the perturbed flow returns to a laminar
-    // steady state in the precursor domain for Reynolds numbers Re_t = 500, 2000,
-    // 3500, 5000, and 6500.
-    if(p[2] <= Z2_PRECURSOR)
+    // flow in z-direction
+    if(component == 2)
     {
-      double const phi = std::atan2(p[1],p[0]);
-      double const factor = 0.5;
-      double perturbation = factor * max_velocity_z * std::sin(4.0*phi) * std::sin(8.0*numbers::PI*p[2]/LENGTH_PRECURSOR)
-                            + factor * max_velocity_z * ((double)rand()/RAND_MAX-0.5)/0.5;
+      double radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
 
-      // the perturbations should fulfill the Dirichlet boundary conditions
-      perturbation *= (1.0-pow(radius/RADIUS,6.0));
+      // assume parabolic profile u(r) = u_max * [1-(r/R)^2]
+      //  -> u_max = 2 * u_mean = 2 * flow_rate / area
+      double const RADIUS = radius_function(p[2]);
+      if(radius > RADIUS)
+        radius = RADIUS;
 
-      result += perturbation;
+      // parabolic velocity profile
+      double const max_velocity_z = MAX_VELOCITY * std::pow(R_OUTER/RADIUS,2.0);
+      result = max_velocity_z*(1.0-pow(radius/RADIUS,2.0));
+
+      // Add perturbation (sine + random) for the precursor to initiate
+      // a turbulent flow in case the Reynolds number is large enough
+      // (otherwise, the perturbations will be damped and the flow becomes laminar).
+      // According to first numerical results, the perturbed flow returns to a laminar
+      // steady state in the precursor domain for Reynolds numbers Re_t = 500, 2000,
+      // 3500, 5000, and 6500.
+      if(p[2] <= Z2_PRECURSOR)
+      {
+        double const phi = std::atan2(p[1],p[0]);
+        double const factor = 0.5;
+        double perturbation = factor * max_velocity_z * std::sin(4.0*phi) * std::sin(8.0*numbers::PI*p[2]/LENGTH_PRECURSOR)
+                              + factor * max_velocity_z * ((double)rand()/RAND_MAX-0.5)/0.5;
+
+        // the perturbations should fulfill the Dirichlet boundary conditions
+        perturbation *= (1.0-pow(radius/RADIUS,6.0));
+
+        result += perturbation;
+      }
+
     }
 
+    return result;
   }
-
-  return result;
-}
+};
 
 #include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
 
@@ -732,10 +710,8 @@ public:
     initialize_velocity_values();
   }
 
-  virtual ~InflowProfile(){};
-
-  virtual double value (const Point<dim>   &p,
-                        const unsigned int component = 0) const
+  double value (const Point<dim>   &p,
+                const unsigned int component = 0) const
   {
     // compute polar coordinates (r, phi) from point p
     // given in Cartesian coordinates (x, y) = inflow plane
@@ -768,10 +744,8 @@ public:
      Function<dim>(dim, time)
    {}
 
-   virtual ~RightHandSide(){};
-
-   virtual double value (const Point<dim>    & /*p*/,
-                         const unsigned int  component = 0) const
+   double value (const Point<dim>    & /*p*/,
+                 const unsigned int  component = 0) const
    {
      double result = 0.0;
 
@@ -896,17 +870,15 @@ void create_grid_and_set_boundary_conditions_1(
   /*
    *  FILL BOUNDARY DESCRIPTORS
    */
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
   // fill boundary descriptor velocity
   // no slip boundaries at lower and upper wall with ID=0
-  std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_velocity));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 
   // fill boundary descriptor pressure
   // no slip boundaries at lower and upper wall with ID=0
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 }
 
 /*
@@ -1220,36 +1192,30 @@ void create_grid_and_set_boundary_conditions_2(
   /*
    *  FILL BOUNDARY DESCRIPTORS
    */
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
   // fill boundary descriptor velocity
   // no slip boundaries at the upper and lower wall with ID=0
-  std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_velocity));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 
   // inflow boundary condition at left boundary with ID=1: prescribe velocity profile which
   // is obtained as the results of the simulation on DOMAIN 1
-  std::shared_ptr<Function<dim> > inflow_profile;
-  inflow_profile.reset(new InflowProfile<dim>(dim));
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,inflow_profile));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(1,new InflowProfile<dim>(dim)));
 
   // outflow boundary condition at right boundary with ID=2
-  boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_velocity));
+  boundary_descriptor_velocity->neumann_bc.insert(pair(2,new Functions::ZeroFunction<dim>(dim)));
 
   // fill boundary descriptor pressure
   // no slip boundaries at the upper and lower wall with ID=0
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 
   // inflow boundary condition at left boundary with ID=1
   // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
   // we assume that this is negligible when using the dual splitting scheme
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(dim)));
 
   // outflow boundary condition at right boundary with ID=2: set pressure to zero
-  std::shared_ptr<Function<dim> > zero_function_pressure;
-  zero_function_pressure.reset(new Functions::ZeroFunction<dim>(1));
-  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_pressure));
+  boundary_descriptor_pressure->dirichlet_bc.insert(pair(2,new Functions::ZeroFunction<dim>(1)));
 }
 
 template<int dim>
@@ -1272,42 +1238,20 @@ void create_grid_and_set_boundary_conditions(
 template<int dim>
 void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-  std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-
-  // prescribe body force for the turbulent channel (DOMAIN 1) to
-  // adjust the desired flow rate
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->initial_solution_velocity = initial_solution_velocity;
-  field_functions->initial_solution_pressure = initial_solution_pressure;
-  // This function will not be used since no analytical solution is available for this flow problem
-  field_functions->analytical_solution_pressure = initial_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  // prescribe body force for the turbulent channel (DOMAIN 1) to adjust the desired flow rate
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
 template<int dim>
 void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-  std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-
-  // no body forces for the second domain
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
-  field_functions->initial_solution_velocity = initial_solution_velocity;
-  field_functions->initial_solution_pressure = initial_solution_pressure;
-  // This function will not be used since no analytical solution is available for this flow problem
-  field_functions->analytical_solution_pressure = initial_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
 template<int dim>

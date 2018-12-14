@@ -158,7 +158,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   output_data.output_name = FILENAME;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.number_of_patches = FE_DEGREE;
+  output_data.degree = FE_DEGREE;
 
   // kinetic energy
   kinetic_energy_data.calculate = true;

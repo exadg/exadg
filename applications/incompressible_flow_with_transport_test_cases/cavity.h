@@ -41,7 +41,7 @@ double const END_TIME = 10.0;
 // Explicit: CFL_crit = 0.35-0.4 unstable (DivergenceFormulation, upwind_factor=0.5) for BDF2 with constant time steps
 //           CFL_crit = 0.32-0.33 (DivergenceFormulation, upwind_factor=0.5!), 0.5-0.6 (ConvectiveFormulation) for BDF2 with adaptive time stepping
 // ExplicitOIF: CFL_crit,oif = 3.0 (3.5 unstable) for ExplRK3Stage7Reg2
-double const CFL_OIF = 0.5; //0.32;
+double const CFL_OIF = 0.3; //0.32;
 double const CFL = CFL_OIF;
 double const MAX_VELOCITY = 1.0;
 bool const ADAPTIVE_TIME_STEPPING = true;
@@ -80,7 +80,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
@@ -90,16 +90,16 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   cfl_oif = CFL_OIF;
   cfl = CFL;
   time_step_size = 1.0e-1;
-  max_number_of_time_steps = 1e8;
   order_time_integrator = 2;
   start_with_low_order = true;
 
 
   // SPATIAL DISCRETIZATION
 
+  // mappping
   degree_mapping = FE_DEGREE_VELOCITY;
 
-  // convective term - currently no parameters
+  // convective term
   if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
     upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
 
@@ -108,25 +108,9 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   IP_factor_viscous = 1.0;
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized;
 
-  // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
-
-  // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
-
   // special case: pure DBC's
   pure_dirichlet_bc = true;
 
-  // div-div and continuity penalty
-  use_divergence_penalty = true;
-  divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = true;
-  continuity_penalty_factor = divergence_penalty_factor;
-  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  add_penalty_terms_to_monolithic_system = false;
 
   // NUMERICAL PARAMETERS
   implement_block_diagonal_preconditioner_matrix_free = true;
@@ -229,7 +213,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   output_data.output_start_time = OUTPUT_START_TIME;
   output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
   output_data.write_processor_id = true;
-  output_data.number_of_patches = 1; // FE_DEGREE_VELOCITY;
+  output_data.degree = FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = false;
@@ -311,7 +295,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.output_name = OUTPUT_NAME + "_scalar";
   output_data.output_start_time = OUTPUT_START_TIME;
   output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  output_data.number_of_patches = FE_DEGREE_SCALAR;
+  output_data.degree = FE_DEGREE_SCALAR;
 
   output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 

@@ -63,28 +63,20 @@ void InputParameters<dim>::set_input_parameters()
   max_velocity = 3.5;
   cfl = 1.0e-1;
   time_step_size = 1.0e-3; // 1.0e-4;
-  max_number_of_time_steps = 1e8;
   order_time_integrator = 3; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
 
 
   // SPATIAL DISCRETIZATION
 
+  // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
-  // convective term - currently no parameters
+  // convective term
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
-
-  // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
-
-  // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
@@ -110,19 +102,6 @@ void InputParameters<dim>::set_input_parameters()
   // formulations
   order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
 
-  // convective step
-
-  // nonlinear solver
-  newton_solver_data_convective.abs_tol = 1.e-20;
-  newton_solver_data_convective.rel_tol = 1.e-6;
-  newton_solver_data_convective.max_iter = 100;
-  // linear solver
-  abs_tol_linear_convective = 1.e-20;
-  rel_tol_linear_convective = 1.e-3;
-  max_iter_linear_convective = 1e4;
-  use_right_preconditioning_convective = true;
-  max_n_tmp_vectors_convective = 100;
-
   // viscous step
   solver_viscous = SolverViscous::PCG;
   preconditioner_viscous = PreconditionerViscous::GeometricMultigrid;
@@ -141,7 +120,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
-  preconditioner_momentum = MomentumPreconditioner::VelocityDiffusion; //InverseMassMatrix; //VelocityConvectionDiffusion;
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   abs_tol_momentum_linear = 1.e-12;
   rel_tol_momentum_linear = 1.e-8;
@@ -174,7 +153,7 @@ void InputParameters<dim>::set_input_parameters()
   preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::Multigrid;
   exact_inversion_of_momentum_block = false;
   rel_tol_solver_momentum_preconditioner = 1.e-6;
   max_n_tmp_vectors_solver_momentum_preconditioner = 100;
@@ -198,7 +177,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/10;
   output_data.write_divergence = false;
-  output_data.number_of_patches = FE_DEGREE_VELOCITY;
+  output_data.degree = FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = true;
@@ -215,16 +194,6 @@ void InputParameters<dim>::set_input_parameters()
 /*                                                                                    */
 /**************************************************************************************/
 
-/*
- *  Analytical solution velocity:
- *
- *  - This function is used to calculate the L2 error
- *
- *  - This function can be used to prescribe initial conditions for the velocity field
- *
- *  - Moreover, this function can be used (if possible for simple geometries)
- *    to prescribe Dirichlet BC's for the velocity field on Dirichlet boundaries
- */
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -235,46 +204,27 @@ public:
     Function<dim>(n_components, time)
   {}
 
-  virtual ~AnalyticalSolutionVelocity(){};
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
+    const double pi = numbers::PI;
+    const double a = 0.25*pi;
+    const double d = 2*a;
+    if (component == 0)
+      result = -a*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 1)
+      result = -a*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 2)
+      result = -a*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
+
+
+    return result;
+  }
 };
 
-template<int dim>
-double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
-                                              const unsigned int component) const
-{
-  double t = this->get_time();
-  double result = 0.0;
-
-  const double pi = numbers::PI;
-  const double a = 0.25*pi;
-  const double d = 2*a;
-  if (component == 0)
-    result = -a*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
-  else if (component == 1)
-    result = -a*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
-  else if (component == 2)
-    result = -a*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
-
-
-  return result;
-}
-
-/*
- *  Analytical solution pressure
- *
- *  - It is used to calculate the L2 error
- *
- *  - It is used to adjust the pressure level in case of pure Dirichlet BC's
- *    (where the pressure is only defined up to an additive constant)
- *
- *  - This function can be used to prescribe initial conditions for the pressure field
- *
- *  - Moreover, this function can be used (if possible for simple geometries)
- *    to prescribe Dirichlet BC's for the pressure field on Neumann boundaries
- */
 template<int dim>
 class AnalyticalSolutionPressure : public Function<dim>
 {
@@ -284,76 +234,24 @@ public:
     Function<dim>(1 /*n_components*/, time)
   {}
 
-  virtual ~AnalyticalSolutionPressure(){};
+  double value (const Point<dim>   &p,
+                const unsigned int /*component*/) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
 
-  virtual double value (const Point<dim>   &p,
-                        const unsigned int component = 0) const;
+    const double pi = numbers::PI;
+    const double a = 0.25*pi;
+    const double d = 2*a;
+    result = -a*a*0.5*(std::exp(2*a*p[0]) + std::exp(2*a*p[1]) + std::exp(2*a*p[2]) +
+                       2*std::sin(a*p[0]+d*p[1])*std::cos(a*p[2]+d*p[0])*std::exp(a*(p[1]+p[2])) +
+                       2*std::sin(a*p[1]+d*p[2])*std::cos(a*p[0]+d*p[1])*std::exp(a*(p[2]+p[0])) +
+                       2*std::sin(a*p[2]+d*p[0])*std::cos(a*p[1]+d*p[2])*std::exp(a*(p[0]+p[1]))) * std::exp(-2*VISCOSITY*d*d*t);
+
+    return result;
+  }
 };
 
-template<int dim>
-double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
-                                              const unsigned int  /* component */) const
-{
-  double t = this->get_time();
-  double result = 0.0;
-
-  const double pi = numbers::PI;
-  const double a = 0.25*pi;
-  const double d = 2*a;
-  result = -a*a*0.5*(std::exp(2*a*p[0]) + std::exp(2*a*p[1]) + std::exp(2*a*p[2]) +
-                     2*std::sin(a*p[0]+d*p[1])*std::cos(a*p[2]+d*p[0])*std::exp(a*(p[1]+p[2])) +
-                     2*std::sin(a*p[1]+d*p[2])*std::cos(a*p[0]+d*p[1])*std::exp(a*(p[2]+p[0])) +
-                     2*std::sin(a*p[2]+d*p[0])*std::cos(a*p[1]+d*p[2])*std::exp(a*(p[0]+p[1]))) * std::exp(-2*VISCOSITY*d*d*t);
-
-  return result;
-}
-
-
-/*
- *  Neumann boundary conditions for velocity
- *
- *  - Laplace formulation of viscous term
- *    -> prescribe velocity gradient (grad U)*n on Gamma_N
- *
- *  - Divergence formulation of viscous term
- *    -> prescribe (grad U + (grad U) ^T)*n on Gamma_N
- */
-template<int dim>
-class NeumannBoundaryVelocity : public Function<dim>
-{
-public:
-  NeumannBoundaryVelocity (const double time = 0.)
-    :
-    Function<dim>(dim, time)
-  {}
-
-  virtual ~NeumannBoundaryVelocity(){};
-
-  virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
-};
-
-template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> &p,const unsigned int component) const
-{
-  double result = 0.0;
-  return result;
-}
-
-/*
- *  PressureBC_dudt:
- *
- *  This functions is only used when applying the high-order dual splitting scheme and
- *  is evaluated on Dirichlet boundaries (where the velocity is prescribed).
- *  Hence, this is the function that is set in the dirichlet_bc map of boundary_descriptor_pressure.
- *
- *  Note:
- *    When using a couples solution approach we do not have to evaluate something like
- *    pressure Neumann BC's on Dirichlet boundaries (we only have p⁺ = p⁻ on Dirichlet boundaries,
- *    i.e., no boundary data used). So it doesn't matter when writing this function into the
- *    dirichlet_bc map of boundary_descriptor_pressure because this function will never be evaluated
- *    in case of a coupled solution approach.
- *
- */
 template<int dim>
 class PressureBC_dudt : public Function<dim>
 {
@@ -363,58 +261,25 @@ public:
     Function<dim>(dim, time)
   {}
 
-  virtual ~PressureBC_dudt(){};
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
+    const double pi = numbers::PI;
+    const double a = 0.25*pi;
+    const double d = 2*a;
+    if (component == 0)
+      result = a*VISCOSITY*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 1)
+      result = a*VISCOSITY*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
+    else if (component == 2)
+      result = a*VISCOSITY*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
+
+    return result;
+  }
 };
-
-template<int dim>
-double PressureBC_dudt<dim>::value(const Point<dim>   &p,
-                                   const unsigned int component) const
-{
-  double t = this->get_time();
-  double result = 0.0;
-
-  const double pi = numbers::PI;
-  const double a = 0.25*pi;
-  const double d = 2*a;
-  if (component == 0)
-    result = a*VISCOSITY*d*d*(std::exp(a*p[0])*std::sin(a*p[1]+d*p[2]) + std::exp(a*p[2])*std::cos(a*p[0]+d*p[1]))*std::exp(-VISCOSITY*d*d*t);
-  else if (component == 1)
-    result = a*VISCOSITY*d*d*(std::exp(a*p[1])*std::sin(a*p[2]+d*p[0]) + std::exp(a*p[0])*std::cos(a*p[1]+d*p[2]))*std::exp(-VISCOSITY*d*d*t);
-  else if (component == 2)
-    result = a*VISCOSITY*d*d*(std::exp(a*p[2])*std::sin(a*p[0]+d*p[1]) + std::exp(a*p[1])*std::cos(a*p[2]+d*p[0]))*std::exp(-VISCOSITY*d*d*t);
-
-  return result;
-}
-
-/*
- *  Right-hand side function: Implements the body force vector occuring on the
- *  right-hand side of the momentum equation of the Navier-Stokes equations
- */
-template<int dim>
- class RightHandSide : public Function<dim>
- {
- public:
-   RightHandSide (const double time = 0.)
-     :
-     Function<dim>(dim, time)
-   {}
-
-   virtual ~RightHandSide(){};
-
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
-
- template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
-                                  const unsigned int /*component*/) const
- {
-   double result = 0.0;
-   return result;
- }
 
 
 /**************************************************************************************/
@@ -439,38 +304,23 @@ void create_grid_and_set_boundary_conditions(
   // test case with pure Dirichlet BC
   // all boundaries have ID = 0 by default
 
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
   // fill boundary descriptor velocity
-  std::shared_ptr<Function<dim> > analytical_solution_velocity;
-  analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  // Dirichlet boundaries: ID = 0
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                    (0,analytical_solution_velocity));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new AnalyticalSolutionVelocity<dim>()));
 
   // fill boundary descriptor pressure
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-  // Neumann boundaries: ID = 0
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                    (0,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new PressureBC_dudt<dim>()));
 }
 
 
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > analytical_solution_velocity;
-  analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  std::shared_ptr<Function<dim> > analytical_solution_pressure;
-  analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->initial_solution_velocity = analytical_solution_velocity;
-  field_functions->initial_solution_pressure = analytical_solution_pressure;
-  field_functions->analytical_solution_pressure = analytical_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
+  field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
 template<int dim>

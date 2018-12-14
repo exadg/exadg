@@ -85,7 +85,6 @@ void InputParameters<dim>::set_input_parameters()
   cfl = cfl_oif * 1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3; // 1.0e-4;
-  max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
@@ -95,26 +94,20 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // mapping
   if(MESH_TYPE == MeshType::Cartesian)
     degree_mapping = 1;
   else
     degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term
-  upwind_factor = 0.5;
+  if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
+    upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
-
-  // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
-
-  // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
 
   // special case: pure DBC's (only periodic BCs -> pure_dirichlet_bc = true)
   pure_dirichlet_bc = true;
@@ -124,8 +117,6 @@ void InputParameters<dim>::set_input_parameters()
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
   continuity_penalty_factor = divergence_penalty_factor;
-  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
   add_penalty_terms_to_monolithic_system = false;
 
   // TURBULENCE
@@ -160,19 +151,6 @@ void InputParameters<dim>::set_input_parameters()
 
   // formulations
   order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
-
-  // convective step
-
-  // nonlinear solver
-  newton_solver_data_convective.abs_tol = 1.e-20;
-  newton_solver_data_convective.rel_tol = 1.e-6;
-  newton_solver_data_convective.max_iter = 100;
-  // linear solver
-  abs_tol_linear_convective = 1.e-20;
-  rel_tol_linear_convective = 1.e-3;
-  max_iter_linear_convective = 1e4;
-  use_right_preconditioning_convective = true;
-  max_n_tmp_vectors_convective = 100;
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
@@ -262,7 +240,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.write_vorticity_magnitude = true;
   output_data.write_q_criterion = true;
   output_data.write_processor_id = true;
-  output_data.number_of_patches = FE_DEGREE_VELOCITY;
+  output_data.degree = FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = false;
@@ -310,31 +288,22 @@ public:
     Function<dim>(n_components, time)
   {}
 
-  virtual ~InitialSolutionVelocity(){};
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
+    if (component == 0)
+      result = V_0*std::sin(p[0]/L)*std::cos(p[1]/L)*std::cos(p[2]/L);
+    else if (component == 1)
+      result = -V_0*std::cos(p[0]/L)*std::sin(p[1]/L)*std::cos(p[2]/L);
+    else if (component == 2)
+      result = 0.0;
+
+    return result;
+  }
 };
 
-template<int dim>
-double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
-                                           const unsigned int component) const
-{
-  double result = 0.0;
-
-  if (component == 0)
-    result = V_0*std::sin(p[0]/L)*std::cos(p[1]/L)*std::cos(p[2]/L);
-  else if (component == 1)
-    result = -V_0*std::cos(p[0]/L)*std::sin(p[1]/L)*std::cos(p[2]/L);
-  else if (component == 2)
-    result = 0.0;
-
-  return result;
-}
-
-/*
- *  This function is used to prescribe initial conditions for the pressure field
- */
 template<int dim>
 class InitialSolutionPressure : public Function<dim>
 {
@@ -344,49 +313,16 @@ public:
     Function<dim>(1 /*n_components*/, time)
   {}
 
-  virtual ~InitialSolutionPressure(){};
+  double value (const Point<dim>   &p,
+                const unsigned int /*component*/) const
+  {
+    double result = 0.0;
 
-  virtual double value (const Point<dim>   &p,
-                        const unsigned int component = 0) const;
+    result = p_0 + V_0 * V_0 / 16.0 * (std::cos(2.0*p[0]/L) + std::cos(2.0*p[1]/L)) * (std::cos(2.0*p[2]/L) + 2.0);
+
+    return result;
+  }
 };
-
-template<int dim>
-double InitialSolutionPressure<dim>::value(const Point<dim>    &p,
-                                           const unsigned int  /* component */) const
-{
-  double result = 0.0;
-
-  result = p_0 + V_0 * V_0 / 16.0 * (std::cos(2.0*p[0]/L) + std::cos(2.0*p[1]/L)) * (std::cos(2.0*p[2]/L) + 2.0);
-
-  return result;
-}
-
-/*
- *  Right-hand side function: Implements the body force vector occuring on the
- *  right-hand side of the momentum equation of the Navier-Stokes equations
- */
-template<int dim>
- class RightHandSide : public Function<dim>
- {
- public:
-   RightHandSide (const double time = 0.)
-     :
-     Function<dim>(dim, time)
-   {}
-
-   virtual ~RightHandSide(){};
-
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
-
- template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
-                                  const unsigned int /*component*/) const
- {
-   double result = 0.0;
-   return result;
- }
 
 
 /**************************************************************************************/
@@ -433,28 +369,28 @@ void create_grid_and_set_boundary_conditions(
 
   AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
-   typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
-   for(;cell!=endc;++cell)
+  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  for(;cell!=endc;++cell)
+  {
+   for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
    {
-     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-     {
-       // x-direction
-       if((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (0);
-       else if((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (1);
-       // y-direction
-       else if((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (2);
-       else if((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (3);
-       // z-direction
-       else if((std::fabs(cell->face(face_number)->center()(2) - left)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (4);
-       else if((std::fabs(cell->face(face_number)->center()(2) - right)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (5);
-     }
+     // x-direction
+     if((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (0);
+     else if((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (1);
+     // y-direction
+     else if((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (2);
+     else if((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (3);
+     // z-direction
+     else if((std::fabs(cell->face(face_number)->center()(2) - left)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (4);
+     else if((std::fabs(cell->face(face_number)->center()(2) - right)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (5);
    }
+  }
   GridTools::collect_periodic_faces(triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
   GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
   GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
@@ -472,20 +408,10 @@ void create_grid_and_set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-  std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
-
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->initial_solution_velocity = initial_solution_velocity;
-  field_functions->initial_solution_pressure = initial_solution_pressure;
-  // This function will not be used since no analytical solution is available for this flow problem
-  field_functions->analytical_solution_pressure = initial_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
+  field_functions->analytical_solution_pressure.reset(new InitialSolutionPressure<dim>());
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
 template<int dim>

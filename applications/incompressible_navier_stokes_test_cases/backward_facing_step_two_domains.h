@@ -179,16 +179,18 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   cfl = 0.5;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
-  max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true;
 
 
   // SPATIAL DISCRETIZATION
 
+  // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term
+  if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
+    upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
 
   // variant Direct allows to use larger time step
   // sizes due to CFL condition at inflow boundary
@@ -199,27 +201,11 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   IP_factor_viscous = 1.0;
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
 
-  // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
-
-  // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
-
   // special case: pure DBC's
   if(domain_id == 1)
     pure_dirichlet_bc = true;
   else if(domain_id == 2)
     pure_dirichlet_bc = false;
-
-  // div-div and continuity penalty
-  use_divergence_penalty = true;
-  divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = true;
-  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  continuity_penalty_factor = divergence_penalty_factor;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -256,19 +242,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
   // formulations
   order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
-
-  // convective step
-
-  // nonlinear solver
-  newton_solver_data_convective.abs_tol = 1.e-12;
-  newton_solver_data_convective.rel_tol = 1.e-6;
-  newton_solver_data_convective.max_iter = 100;
-  // linear solver
-  abs_tol_linear_convective = 1.e-12;
-  rel_tol_linear_convective = 1.e-6;
-  max_iter_linear_convective = 1e4;
-  use_right_preconditioning_convective = true;
-  max_n_tmp_vectors_convective = 100;
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
@@ -346,7 +319,7 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.output_interval_time = (END_TIME-START_TIME)/60;
     output_data.write_divergence = true;
     output_data.write_q_criterion = true;
-    output_data.number_of_patches = FE_DEGREE_VELOCITY;
+    output_data.degree = FE_DEGREE_VELOCITY;
 
     // output of solver information
     output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
@@ -380,7 +353,7 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.output_interval_time = (END_TIME-START_TIME)/60;
     output_data.write_divergence = true;
     output_data.write_q_criterion = true;
-    output_data.number_of_patches = FE_DEGREE_VELOCITY;
+    output_data.degree = FE_DEGREE_VELOCITY;
 
     // output of solver information
     output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
@@ -556,53 +529,48 @@ public:
   {
   }
 
-  virtual ~InitialSolutionVelocity(){};
-
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
-};
-
-template<int dim>
-double InitialSolutionVelocity<dim>::value(const Point<dim>   &p,
-                                           const unsigned int component) const
-{
-  double result = 0.0;
-  double const y = (p[1] - HEIGHT_CHANNEL/2.0)/(HEIGHT_CHANNEL/2.0);
-
-  if(dim==3)
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
   {
-    if(component == 0)
-    {
-      double factor = 0.5;
+    double result = 0.0;
+    double const y = (p[1] - HEIGHT_CHANNEL/2.0)/(HEIGHT_CHANNEL/2.0);
 
-      if(std::abs(y)<1.0)
-        result = -MAX_VELOCITY*(pow(y,6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
-      else
-        result = 0.0;
+    if(dim==3)
+    {
+      if(component == 0)
+      {
+        double factor = 0.5;
+
+        if(std::abs(y)<1.0)
+          result = -MAX_VELOCITY*(pow(y,6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
+        else
+          result = 0.0;
+      }
+
+  //    double factor = 0.5;
+  //    double const x = p[0]/LENGTH_CHANNEL;
+  //    double const z = p[2]/WIDTH_CHANNEL;
+  //
+  //    if(component == 0)
+  //    {
+  //      if(std::abs(y)<1.0)
+  //        result = -MAX_VELOCITY*(pow(y,6.0)-1.0)*(1.0 + (((double)rand()/RAND_MAX-1.0) + std::sin(z*8.)*0.5)*factor);
+  //    }
+  //    if(component == 2)
+  //    {
+  //      if(std::abs(y)<1.0)
+  //        result = -MAX_VELOCITY*(pow(y,6.0)-1.0)*std::sin(x*8.)*0.5*factor;
+  //    }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Dimension has to be dim==3."));
     }
 
-//    double factor = 0.5;
-//    double const x = p[0]/LENGTH_CHANNEL;
-//    double const z = p[2]/WIDTH_CHANNEL;
-//
-//    if(component == 0)
-//    {
-//      if(std::abs(y)<1.0)
-//        result = -MAX_VELOCITY*(pow(y,6.0)-1.0)*(1.0 + (((double)rand()/RAND_MAX-1.0) + std::sin(z*8.)*0.5)*factor);
-//    }
-//    if(component == 2)
-//    {
-//      if(std::abs(y)<1.0)
-//        result = -MAX_VELOCITY*(pow(y,6.0)-1.0)*std::sin(x*8.)*0.5*factor;
-//    }
+    return result;
   }
-  else
-  {
-    AssertThrow(false, ExcMessage("Dimension has to be dim==3."));
-  }
+};
 
-  return result;
-}
 
 #include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
 
@@ -619,126 +587,38 @@ public:
     initialize_velocity_values();
   }
 
-  virtual ~InflowProfile(){};
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double result = linear_interpolation_2d_cartesian(p,Y_VALUES,Z_VALUES,VELOCITY_VALUES,component);
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
+    return result;
+  }
 };
 
 template<int dim>
-double InflowProfile<dim>::value(const Point<dim>   &p,
-                                 const unsigned int component) const
-{
-  double result = linear_interpolation_2d_cartesian(p,Y_VALUES,Z_VALUES,VELOCITY_VALUES,component);
-
-  return result;
-}
-
-
-/*
- *  Neumann boundary conditions for velocity
- *
- *  - Laplace formulation of viscous term
- *    -> prescribe velocity gradient (grad U)*n on Gamma_N
- *
- *  - Divergence formulation of viscous term
- *    -> prescribe (grad U + (grad U)^T)*n on Gamma_N
- */
-template<int dim>
-class NeumannBoundaryVelocity : public Function<dim>
+class RightHandSide : public Function<dim>
 {
 public:
-  NeumannBoundaryVelocity (const double time = 0.)
+  RightHandSide (const double time = 0.)
     :
     Function<dim>(dim, time)
   {}
 
-  virtual ~NeumannBoundaryVelocity(){};
+  double value (const Point<dim>    &/*p*/,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
 
-  virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
+    //channel flow with periodic bc
+    if(component==0)
+      return 0.2844518;
+    else
+      return 0.0;
+
+    return result;
+  }
 };
-
-template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> &/* p */,const unsigned int /* component */) const
-{
-  double result = 0.0;
-  return result;
-}
-
-/*
- *  PressureBC_dudt:
- *
- *  This functions is only used when applying the high-order dual splitting scheme and
- *  is evaluated on Dirichlet boundaries (where the velocity is prescribed).
- *  Hence, this is the function that is set in the dirichlet_bc map of boundary_descriptor_pressure.
- *
- *  Note:
- *    When using a couples solution approach we do not have to evaluate something like
- *    pressure Neumann BC's on Dirichlet boundaries (we only have p⁺ = p⁻ on Dirichlet boundaries,
- *    i.e., no boundary data used). So it doesn't matter when writing this function into the
- *    dirichlet_bc map of boundary_descriptor_pressure because this function will never be evaluated
- *    in case of a coupled solution approach.
- *
- */
-
-template<int dim>
-class PressureBC_dudt : public Function<dim>
-{
-public:
-  PressureBC_dudt (const double time = 0.)
-    :
-    Function<dim>(dim, time)
-  {}
-
-  virtual ~PressureBC_dudt(){};
-
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
-};
-
-template<int dim>
-double PressureBC_dudt<dim>::value(const Point<dim>   &/* p */,
-                                   const unsigned int /* component */) const
-{
-  double result = 0.0;
-
-  return result;
-}
-
-/*
- *  Right-hand side function: Implements the body force vector occuring on the
- *  right-hand side of the momentum equation of the Navier-Stokes equations
- */
-template<int dim>
- class RightHandSide : public Function<dim>
- {
- public:
-   RightHandSide (const double time = 0.)
-     :
-     Function<dim>(dim, time)
-   {}
-
-   virtual ~RightHandSide(){};
-
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
-
- template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &/* p */,
-                                  const unsigned int component) const
- {
-   double result = 0.0;
-
-   //channel flow with periodic bc
-   if(component==0)
-     return 0.2844518;
-   else
-     return 0.0;
-
-   return result;
- }
-
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -749,57 +629,57 @@ template<int dim>
 /*
  *  maps eta in [-H, 2*H] --> y in [-H,2*H]
  */
- double grid_transform_y(const double &eta)
- {
-    double y = 0.0;
-    double gamma, xi;
-    if (eta < 0.0)
-    {
-      gamma = GAMMA_LOWER;
-      xi = -0.5*H;
-    }
-    else
-    {
-      gamma = GAMMA_UPPER;
-      xi = H;
-    }
-    y = xi * (1.0 - (std::tanh(gamma*(xi-eta))/std::tanh(gamma*xi)));
-    return y;
- }
+double grid_transform_y(const double &eta)
+{
+  double y = 0.0;
+  double gamma, xi;
+  if (eta < 0.0)
+  {
+    gamma = GAMMA_LOWER;
+    xi = -0.5*H;
+  }
+  else
+  {
+    gamma = GAMMA_UPPER;
+    xi = H;
+  }
+  y = xi * (1.0 - (std::tanh(gamma*(xi-eta))/std::tanh(gamma*xi)));
+  return y;
+}
 
- /*
-  *  grid transform function for turbulent channel statistics
-  *  requires that the input parameter is 0 < xi < 1
-  */
- double grid_transform_turb_channel(const double &xi)
- {
-   // map xi in [0,1] --> eta in [0, 2H]
-   double eta = HEIGHT_CHANNEL * xi;
-   return grid_transform_y(eta);
- }
+/*
+ *  grid transform function for turbulent channel statistics
+ *  requires that the input parameter is 0 < xi < 1
+ */
+double grid_transform_turb_channel(const double &xi)
+{
+  // map xi in [0,1] --> eta in [0, 2H]
+  double eta = HEIGHT_CHANNEL * xi;
+  return grid_transform_y(eta);
+}
 
- /*
-  * inverse mapping:
-  *
-  *  maps y in [-H,2*H] --> eta in [-H,2*H]
-  */
- double inverse_grid_transform_y(const double &y)
- {
-   double eta = 0.0;
-   double gamma, xi;
-   if (y < 0.0)
-   {
-     gamma = GAMMA_LOWER;
-     xi = -0.5*H;
-   }
-   else
-   {
-     gamma = GAMMA_UPPER;
-     xi = H;
-   }
-   eta = xi - (1.0/gamma)*std::atanh((1.0-y/xi)*std::tanh(gamma*xi));
-   return eta;
- }
+/*
+ * inverse mapping:
+ *
+ *  maps y in [-H,2*H] --> eta in [-H,2*H]
+ */
+double inverse_grid_transform_y(const double &y)
+{
+  double eta = 0.0;
+  double gamma, xi;
+  if (y < 0.0)
+  {
+    gamma = GAMMA_LOWER;
+    xi = -0.5*H;
+  }
+  else
+  {
+    gamma = GAMMA_UPPER;
+    xi = H;
+  }
+  eta = xi - (1.0/gamma)*std::atanh((1.0-y/xi)*std::tanh(gamma*xi));
+  return eta;
+}
 
 #include <deal.II/grid/manifold_lib.h>
 
@@ -910,19 +790,15 @@ void create_grid_and_set_boundary_conditions_1(
   // perform global refinements: use one level finer for the channel
   triangulation.refine_global(n_refine_space);
 
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
   // fill boundary descriptor velocity
   // no slip boundaries at lower and upper wall with ID=0
-  std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (0,zero_function_velocity));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 
   // fill boundary descriptor pressure
   // no slip boundaries at lower and upper wall with ID=0
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (0,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 }
 
 template<int dim>
@@ -1009,84 +885,52 @@ void create_grid_and_set_boundary_conditions_2(
   // perform global refinements
   triangulation.refine_global(n_refine_space);
 
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
   // fill boundary descriptor velocity
   // no slip boundaries at the upper and lower wall with ID=0
-  std::shared_ptr<Function<dim> > zero_function_velocity;
-  zero_function_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (0,zero_function_velocity));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 
   // inflow boundary condition at left boundary with ID=2: prescribe velocity profile which
   // is obtained as the results of the simulation on DOMAIN 1
-  std::shared_ptr<Function<dim> > inflow_profile;
-  inflow_profile.reset(new InflowProfile<dim>(dim));
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (2,inflow_profile));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(2,new InflowProfile<dim>(dim)));
 
   // outflow boundary condition at right boundary with ID=1
-  boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (1,zero_function_velocity));
+  boundary_descriptor_velocity->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(dim)));
 
   // fill boundary descriptor pressure
   // no slip boundaries at the upper and lower wall with ID=0
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (0,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 
   // inflow boundary condition at left boundary with ID=2
   // the inflow boundary condition is time dependent (du/dt != 0) but, for simplicity,
   // we assume that this is negligible when using the dual splitting scheme
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (2,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(2,new Functions::ZeroFunction<dim>(dim)));
 
   // outflow boundary condition at right boundary with ID=1: set pressure to zero
-  std::shared_ptr<Function<dim> > zero_function_pressure;
-  zero_function_pressure.reset(new Functions::ZeroFunction<dim>(1));
-  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (1,zero_function_pressure));
+  boundary_descriptor_pressure->dirichlet_bc.insert(pair(1,new Functions::ZeroFunction<dim>(1)));
 }
 
 
 template<int dim>
 void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-  std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-
+  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   // use a constant body force for the turbulent channel (DOMAIN 1)
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->initial_solution_velocity = initial_solution_velocity;
-  field_functions->initial_solution_pressure = initial_solution_pressure;
-  // This function will not be used since no analytical solution is available for this flow problem
-  field_functions->analytical_solution_pressure = initial_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
 template<int dim>
 void set_field_functions_2(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-//  initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-
+  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
+//  field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   // no body forces for the second domain
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
-  field_functions->initial_solution_velocity = initial_solution_velocity;
-  field_functions->initial_solution_pressure = initial_solution_pressure;
-  // This function will not be used since no analytical solution is available for this flow problem
-  field_functions->analytical_solution_pressure = initial_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
 template<int dim>
