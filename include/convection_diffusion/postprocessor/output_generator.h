@@ -31,9 +31,9 @@ write_output(OutputData const &      output_data,
 
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution_vector, "solution");
-  data_out.build_patches(output_data.number_of_patches);
+  data_out.build_patches(output_data.degree);
 
-  data_out.build_patches(mapping, output_data.number_of_patches, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
   std::ostringstream filename;
   filename << output_data.output_folder << output_data.output_name << "_Proc"

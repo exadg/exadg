@@ -65,7 +65,7 @@ write_output(OutputDataNavierStokes const &                     output_data,
     }
   }
 
-  data_out.build_patches(mapping, output_data.number_of_patches, DataOut<dim>::curved_inner_cells);
+  data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
   std::ostringstream filename;
   filename << output_data.output_folder << output_data.output_name << "_Proc"
