@@ -78,7 +78,6 @@ void InputParameters<dim>::set_input_parameters()
   max_velocity = MAX_VELOCITY; // MAX_VELOCITY is also needed somewhere else
   cfl = 2.0e-1;
   time_step_size = 1.0e-1;
-  max_number_of_time_steps = 1e8;
   order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
 
@@ -88,9 +87,10 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
-  // convective term - currently no parameters
+  // convective term
   if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
     upwind_factor = 0.5;
 
@@ -98,14 +98,6 @@ void InputParameters<dim>::set_input_parameters()
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
-
-  // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
-
-  // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = periodicBCs;
@@ -131,19 +123,6 @@ void InputParameters<dim>::set_input_parameters()
 
   // formulations
   order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
-
-  // convective step
-
-  // nonlinear solver
-  newton_solver_data_convective.abs_tol = 1.e-20;
-  newton_solver_data_convective.rel_tol = 1.e-6;
-  newton_solver_data_convective.max_iter = 100;
-  // linear solver
-  abs_tol_linear_convective = 1.e-20;
-  rel_tol_linear_convective = 1.e-3;
-  max_iter_linear_convective = 1e4;
-  use_right_preconditioning_convective = true;
-  max_n_tmp_vectors_convective = 100;
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
@@ -197,7 +176,7 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner = true;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::VelocityDiffusion;
+  momentum_preconditioner = MomentumPreconditioner::Multigrid;
   multigrid_data_momentum_preconditioner.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
 
   // GMRES smoother data
@@ -243,7 +222,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.mean_velocity.sample_start_time = start_time;
   output_data.mean_velocity.sample_end_time = end_time;
   output_data.mean_velocity.sample_every_timesteps = 1;
-  output_data.number_of_patches = FE_DEGREE_VELOCITY;
+  output_data.degree = FE_DEGREE_VELOCITY;
 
   // calculation of error
   if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
@@ -265,16 +244,6 @@ void InputParameters<dim>::set_input_parameters()
 /*                                                                                    */
 /**************************************************************************************/
 
-/*
- *  Analytical solution velocity:
- *
- *  - This function is used to calculate the L2 error
- *
- *  - This function can be used to prescribe initial conditions for the velocity field
- *
- *  - Moreover, this function can be used (if possible for simple geometries)
- *    to prescribe Dirichlet BC's for the velocity field on Dirichlet boundaries
- */
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -285,75 +254,56 @@ public:
     Function<dim>(n_components, time)
   {}
 
-  virtual ~AnalyticalSolutionVelocity(){};
-
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
-};
-
-template<int dim>
-double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
-                                              const unsigned int component) const
-{
-  double t = this->get_time();
-  double result = 0.0;
-
-  // initial velocity field = 0
-
-  //BC's specified below only relevant if periodicBCs == false
-  if(PROBLEM_TYPE == ProblemType::Steady)
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
   {
-    if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
-    {
-      if(component == 0 && (std::abs(p[0])<1.0e-12))
-        result = MAX_VELOCITY;
-    }
-    else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
-    {
-      const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
-      if(component == 0)
-        result = 1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0;
-    }
-  }
-  else if(PROBLEM_TYPE == ProblemType::Unsteady)
-  {
-    const double pi = numbers::PI;
-    double T = 1.0e0;
+    double t = this->get_time();
+    double result = 0.0;
 
-    if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
+    // initial velocity field = 0
+
+    //BC's specified below only relevant if periodicBCs == false
+    if(PROBLEM_TYPE == ProblemType::Steady)
     {
-      // ensure that the function is only "active" at the left boundary and if component == 0
-      if(component == 0 && (std::abs(p[0])<1.0e-12))
-        result = MAX_VELOCITY * (t<T ? std::sin(pi/2.*t/T) : 1.0);
-    }
-    else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
-    {
-      const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
-      if(component == 0)
+      if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
       {
-//        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
-
-        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * std::sin(pi*t/T);
+        if(component == 0 && (std::abs(p[0])<1.0e-12))
+          result = MAX_VELOCITY;
+      }
+      else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
+      {
+        const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+        if(component == 0)
+          result = 1.0/VISCOSITY*pressure_gradient*(pow(p[1],2.0)-1.0)/2.0;
       }
     }
+    else if(PROBLEM_TYPE == ProblemType::Unsteady)
+    {
+      const double pi = numbers::PI;
+      double T = 1.0e0;
+
+      if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
+      {
+        // ensure that the function is only "active" at the left boundary and if component == 0
+        if(component == 0 && (std::abs(p[0])<1.0e-12))
+          result = MAX_VELOCITY * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+      }
+      else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
+      {
+        const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+        if(component == 0)
+        {
+  //        result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+
+          result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * std::sin(pi*t/T);
+        }
+      }
+    }
+
+    return result;
   }
+};
 
-  return result;
-}
-
-/*
- *  Analytical solution pressure
- *
- *  - It is used to calculate the L2 error
- *
- *  - It is used to adjust the pressure level in case of pure Dirichlet BC's
- *    (where the pressure is only defined up to an additive constant)
- *
- *  - This function can be used to prescribe initial conditions for the pressure field
- *
- *  - Moreover, this function can be used (if possible for simple geometries)
- *    to prescribe Dirichlet BC's for the pressure field on Neumann boundaries
- */
 template<int dim>
 class AnalyticalSolutionPressure : public Function<dim>
 {
@@ -363,66 +313,50 @@ public:
     Function<dim>(1 /*n_components*/, time)
   {}
 
-  virtual ~AnalyticalSolutionPressure(){};
+  double value (const Point<dim>   &p,
+                const unsigned int /*component*/) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
 
-  virtual double value (const Point<dim>   &p,
-                        const unsigned int component = 0) const;
+    if(PROBLEM_TYPE == ProblemType::Steady)
+    {
+      if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
+      {
+        // For this inflow profile no analytical solution is available.
+        // Set the pressure to zero at the outflow boundary. This is
+        // already done since result is initialized with a value of 0.0.
+      }
+      else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
+      {
+        // pressure decreases linearly in flow direction
+        const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+        result = (p[0]-L)*pressure_gradient;
+      }
+    }
+    else if(PROBLEM_TYPE == ProblemType::Unsteady)
+    {
+      if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
+      {
+        // For this inflow profile no analytical solution is available.
+        // Set the pressure to zero at the outflow boundary. This is
+        // already done since result is initialized with a value of 0.0.
+      }
+      else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
+      {
+        // parabolic velocity profile
+        const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
+        const double pi = numbers::PI;
+        double T = 1.0e0;
+        // note that this is the steady state solution that would correspond to a
+        // steady velocity field at time t
+        result = (p[0]-L) * pressure_gradient * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+      }
+    }
+    return result;
+  }
 };
 
-template<int dim>
-double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &p,
-                                              const unsigned int  /* component */) const
-{
-  double t = this->get_time();
-  double result = 0.0;
-
-  if(PROBLEM_TYPE == ProblemType::Steady)
-  {
-    if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
-    {
-      // For this inflow profile no analytical solution is available.
-      // Set the pressure to zero at the outflow boundary. This is
-      // already done since result is initialized with a value of 0.0.
-    }
-    else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
-    {
-      // pressure decreases linearly in flow direction
-      const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
-      result = (p[0]-L)*pressure_gradient;
-    }
-  }
-  else if(PROBLEM_TYPE == ProblemType::Unsteady)
-  {
-    if(INFLOW_PROFILE == InflowProfile::ConstantProfile)
-    {
-      // For this inflow profile no analytical solution is available.
-      // Set the pressure to zero at the outflow boundary. This is
-      // already done since result is initialized with a value of 0.0.
-    }
-    else if(INFLOW_PROFILE == InflowProfile::ParabolicProfile)
-    {
-      // parabolic velocity profile
-      const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
-      const double pi = numbers::PI;
-      double T = 1.0e0;
-      // note that this is the steady state solution that would correspond to a
-      // steady velocity field at time t
-      result = (p[0]-L) * pressure_gradient * (t<T ? std::sin(pi/2.*t/T) : 1.0);
-    }
-  }
-  return result;
-}
-
-
-/*
- *  Neumann boundary conditions for velocity
- *
- *  - Laplace formulation of viscous term
- *    -> prescribe velocity gradient (grad U)*n on Gamma_N
- *
- *  - Divergence formulation of viscous term
- *    -> prescribe (grad U + (grad U)^T)*n on Gamma_N
- */
 template<int dim>
 class NeumannBoundaryVelocity : public Function<dim>
 {
@@ -432,46 +366,30 @@ public:
     Function<dim>(dim, time)
   {}
 
-  virtual ~NeumannBoundaryVelocity(){};
+  double value (const Point<dim> &p,
+                const unsigned int component = 0) const
+  {
+    (void)p;
+    (void)component;
 
-  virtual double value (const Point<dim> &p,const unsigned int component = 0) const;
+    double result = 0.0;
+
+    // The Neumann velocity boundary condition that is consistent with the analytical solution
+    // (in case of a parabolic inflow profile) is (grad U)*n = 0.
+
+    // Hence:
+    // If the viscous term is written in Laplace formulation, prescribe result = 0 as Neumann BC
+    // If the viscous term is written in Divergence formulation, the following boundary condition
+    // has to be used to ensure that (grad U)*n = 0:
+    // (grad U + (grad U)^T)*n = (grad U)^T * n
+
+  //  if(component==1)
+  //    result = - MAX_VELOCITY * 2.0 * p[1];
+
+    return result;
+  }
 };
 
-template<int dim>
-double NeumannBoundaryVelocity<dim>::value(const Point<dim> & /*p*/,const unsigned int /*component*/) const
-{
-  double result = 0.0;
-
-  // The Neumann velocity boundary condition that is consistent with the analytical solution
-  // (in case of a parabolic inflow profile) is (grad U)*n = 0.
-
-  // Hence:
-  // If the viscous term is written in Laplace formulation, prescribe result = 0 as Neumann BC
-  // If the viscous term is written in Divergence formulation, the following boundary condition
-  // has to be used to ensure that (grad U)*n = 0:
-  // (grad U + (grad U)^T)*n = (grad U)^T * n
-
-//  if(component==1)
-//    result = - MAX_VELOCITY * 2.0 * p[1];
-
-  return result;
-}
-
-/*
- *  PressureBC_dudt:
- *
- *  This functions is only used when applying the high-order dual splitting scheme and
- *  is evaluated on Dirichlet boundaries (where the velocity is prescribed).
- *  Hence, this is the function that is set in the dirichlet_bc map of boundary_descriptor_pressure.
- *
- *  Note:
- *    When using a couples solution approach we do not have to evaluate something like
- *    pressure Neumann BC's on Dirichlet boundaries (we only have p⁺ = p⁻ on Dirichlet boundaries,
- *    i.e., no boundary data used). So it doesn't matter when writing this function into the
- *    dirichlet_bc map of boundary_descriptor_pressure because this function will never be evaluated
- *    in case of a coupled solution approach.
- *
- */
 template<int dim>
 class PressureBC_dudt : public Function<dim>
 {
@@ -481,25 +399,15 @@ public:
     Function<dim>(dim, time)
   {}
 
-  virtual ~PressureBC_dudt(){};
-
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
+  double value (const Point<dim>    &/*p*/,
+                const unsigned int  /*component*/) const
+  {
+    // do nothing (result = 0) since we are interested in a steady state solution
+    double result = 0.0;
+    return result;
+  }
 };
 
-template<int dim>
-double PressureBC_dudt<dim>::value(const Point<dim>   &/*p*/,
-                                   const unsigned int /*component*/) const
-{
-  // do nothing (result = 0) since we are interested in a steady state solution
-  double result = 0.0;
-  return result;
-}
-
-/*
- *  Right-hand side function: Implements the body force vector occuring on the
- *  right-hand side of the momentum equation of the Navier-Stokes equations
- */
 template<int dim>
  class RightHandSide : public Function<dim>
  {
@@ -509,27 +417,20 @@ template<int dim>
      Function<dim>(dim, time)
    {}
 
-   virtual ~RightHandSide(){};
-
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
-
- template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
-                                  const unsigned int component) const
- {
-   double result = 0.0;
-
-   if(periodicBCs == true)
+   double value (const Point<dim>    &/*p*/,
+                 const unsigned int  component = 0) const
    {
-   if(component==0)
-     result = 0.02;
+     double result = 0.0;
+
+     if(periodicBCs == true)
+     {
+     if(component==0)
+       result = 0.02;
+     }
+
+     return result;
    }
-
-   return result;
- }
-
+ };
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -610,77 +511,42 @@ void create_grid_and_set_boundary_conditions(
 
   triangulation.refine_global(n_refine_space);
 
-  // fill boundary descriptor velocity
-  std::shared_ptr<Function<dim> > analytical_solution_velocity;
-  analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  // Dirichlet boundaries: ID = 0
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                     (0,analytical_solution_velocity));
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
-  std::shared_ptr<Function<dim> > neumann_bc_velocity;
-  neumann_bc_velocity.reset(new NeumannBoundaryVelocity<dim>());
-  // Neumann boundaris: ID = 1
-  boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (1,neumann_bc_velocity));
+  // fill boundary descriptor velocity
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new AnalyticalSolutionVelocity<dim>()));
+  boundary_descriptor_velocity->neumann_bc.insert(pair(1,new NeumannBoundaryVelocity<dim>()));
 
   if(symmetryBC == true)
   {
     // slip boundary condition: always u*n=0
     // function will not be used -> use ZeroFunction
-    std::shared_ptr<Function<dim> > zero_function;
-    zero_function.reset(new Functions::ZeroFunction<dim>(dim));
-    boundary_descriptor_velocity->symmetry_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                     (2,zero_function));
+    boundary_descriptor_velocity->symmetry_bc.insert(pair(2,new Functions::ZeroFunction<dim>(dim)));
   }
 
   // fill boundary descriptor pressure
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new PressureBC_dudt<dim>());
-  // Neumann boundaries: ID = 0
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                     (0,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new PressureBC_dudt<dim>()));
+  boundary_descriptor_pressure->dirichlet_bc.insert(pair(1,new AnalyticalSolutionPressure<dim>()));
 
   if(symmetryBC == true)
   {
-    // prescribe Neumann BC for pressure on symmetry boundaries
+    // On symmetry boundaries, a Neumann BC is prescribed for the pressure.
     // -> prescribe dudt for dual-splitting scheme, which is equal to zero since
     // (du/dt)*n = d(u*n)/dt = d(0)/dt = 0, i.e., the time derivative term is multiplied by the normal vector
     // and the normal velocity is zero (= symmetry boundary condition).
-    std::shared_ptr<Function<dim> > pressure_bc_dudt;
-    pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
-    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                     (2,pressure_bc_dudt));
+    boundary_descriptor_pressure->neumann_bc.insert(pair(2,new Functions::ZeroFunction<dim>(dim)));
   }
-
-  std::shared_ptr<Function<dim> > analytical_solution_pressure;
-  analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-  // Dirichlet boundaries: ID = 1
-  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                   (1,analytical_solution_pressure));
-
 }
 
 
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > initial_solution_velocity;
-//  initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  
-  std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-  std::shared_ptr<Function<dim> > analytical_solution_pressure;
-  analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->initial_solution_velocity = initial_solution_velocity;
-  field_functions->initial_solution_pressure = initial_solution_pressure;
-  field_functions->analytical_solution_pressure = analytical_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+//  field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
 template<int dim>

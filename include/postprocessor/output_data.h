@@ -21,7 +21,7 @@ struct OutputData
       output_name("name"),
       output_start_time(std::numeric_limits<double>::max()),
       output_interval_time(std::numeric_limits<double>::max()),
-      number_of_patches(1)
+      degree(1)
   {
   }
 
@@ -43,7 +43,7 @@ struct OutputData
         print_parameter(pcout, "Output interval time", output_interval_time);
       }
 
-      print_parameter(pcout, "Number of patches", number_of_patches);
+      print_parameter(pcout, "Polynomial degree", degree);
     }
   }
 
@@ -64,8 +64,9 @@ struct OutputData
   // specifies the time interval in which output is written
   double output_interval_time;
 
-  // number of patches
-  unsigned int number_of_patches;
+  // polynomial degree used for output (for visualization in Paraview: Properties > Miscellaneous >
+  // Nonlinear Subdivision Level (use a value > 1))
+  unsigned int degree;
 };
 
 #endif /* INCLUDE_POSTPROCESSOR_OUTPUT_DATA_H_ */

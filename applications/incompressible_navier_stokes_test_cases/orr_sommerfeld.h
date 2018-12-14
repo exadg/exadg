@@ -104,22 +104,15 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
-  // convective term - currently no parameters
+  // convective term
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
   IP_factor_viscous = 1.0;
   penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
-
-  // gradient term
-  gradp_integrated_by_parts = true;
-  gradp_use_boundary_data = true;
-
-  // divergence term
-  divu_integrated_by_parts = true;
-  divu_use_boundary_data = true;
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
@@ -128,9 +121,8 @@ void InputParameters<dim>::set_input_parameters()
   use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
   use_continuity_penalty = true;
-  continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
   continuity_penalty_factor = divergence_penalty_factor;
+  add_penalty_terms_to_monolithic_system = false;
 
   // PROJECTION METHODS
 
@@ -152,19 +144,6 @@ void InputParameters<dim>::set_input_parameters()
 
   // formulations
   order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
-
-  // convective step
-
-  // nonlinear solver
-  newton_solver_data_convective.abs_tol = 1.e-20;
-  newton_solver_data_convective.rel_tol = 1.e-6;
-  newton_solver_data_convective.max_iter = 100;
-  // linear solver
-  abs_tol_linear_convective = 1.e-20;
-  rel_tol_linear_convective = 1.e-3;
-  max_iter_linear_convective = 1e4;
-  use_right_preconditioning_convective = true;
-  max_n_tmp_vectors_convective = 100;
 
   // viscous step
   solver_viscous = SolverViscous::PCG;
@@ -256,7 +235,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
   output_data.write_divergence = true;
-  output_data.number_of_patches = FE_DEGREE_VELOCITY;
+  output_data.degree = FE_DEGREE_VELOCITY;
 
   // calculation of error
   error_data.analytical_solution_available = false; //true;
@@ -282,16 +261,6 @@ void InputParameters<dim>::set_input_parameters()
 /*                                                                                    */
 /**************************************************************************************/
 
-/*
- *  Analytical solution velocity:
- *
- *  - This function is used to calculate the L2 error
- *
- *  - This function can be used to prescribe initial conditions for the velocity field
- *
- *  - Moreover, this function can be used (if possible for simple geometries)
- *    to prescribe Dirichlet BC's for the velocity field on Dirichlet boundaries
- */
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
 {
@@ -302,101 +271,59 @@ public:
     Function<dim>(n_components, time)
     {}
 
-  virtual ~AnalyticalSolutionVelocity(){};
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
+    double const x = p[0]/H;
+    // transform from interval [-H,H] (-> y) to unit interval [0,1] (-> eta)
+    double const eta = 0.5*(p[1]/H + 1.0);
+    double const tol = 1.e-12;
+    AssertThrow(eta<=1.0+tol and eta>=0.0-tol, ExcMessage("Point in reference coordinates is invalid."));
+
+    double cos = std::cos(ALPHA*x-OMEGA.real()*t);
+    double sin = std::sin(ALPHA*x-OMEGA.real()*t);
+    double amplification = std::exp(OMEGA.imag()*t);
+    std::complex<double> exp(cos,sin);
+
+    if(component == 0)
+    {
+      double base = MAX_VELOCITY * (1.0 - pow(p[1]/H,2.0));
+
+      // d(psi)/dy = d(psi)/d(eta) * d(eta)/dy
+      // evaluate derivative d(psi)/d(eta) in eta(y)
+      std::complex<double> dpsi = 0;
+      for (unsigned int i=0; i<FE.get_degree()+1; ++i)
+        dpsi += EIG_VEC[i] * FE.shape_grad(i,Point<1>(eta))[0];
+
+      // multiply by d(eta)/dy to obtain derivative d(psi)/dy in physical space
+      dpsi *= 0.5/H;
+
+      std::complex<double> perturbation_complex = dpsi*exp*amplification;
+      double perturbation = perturbation_complex.real();
+
+      result = base + EPSILON*perturbation;
+    }
+    else if(component == 1)
+    {
+      // evaluate function psi in y
+      std::complex<double> psi = 0;
+      for (unsigned int i=0; i<FE.get_degree()+1; ++i)
+        psi += EIG_VEC[i] * FE.shape_value(i,Point<1>(eta));
+
+      std::complex<double> i(0,1);
+      std::complex<double> perturbation_complex = -i*ALPHA*psi*exp*amplification;
+      double perturbation = perturbation_complex.real();
+
+      result = EPSILON*perturbation;
+    }
+
+    return result;
+  }
 };
 
-template<int dim>
-double AnalyticalSolutionVelocity<dim>::value(const Point<dim>   &p,
-                                              const unsigned int component) const
-{
-  double t = this->get_time();
-  double result = 0.0;
-
-  double const x = p[0]/H;
-  // transform from interval [-H,H] (-> y) to unit interval [0,1] (-> eta)
-  double const eta = 0.5*(p[1]/H + 1.0);
-  double const tol = 1.e-12;
-  AssertThrow(eta<=1.0+tol and eta>=0.0-tol, ExcMessage("Point in reference coordinates is invalid."));
-
-  double cos = std::cos(ALPHA*x-OMEGA.real()*t);
-  double sin = std::sin(ALPHA*x-OMEGA.real()*t);
-  double amplification = std::exp(OMEGA.imag()*t);
-  std::complex<double> exp(cos,sin);
-
-  if(component == 0)
-  {
-    double base = MAX_VELOCITY * (1.0 - pow(p[1]/H,2.0));
-
-    // d(psi)/dy = d(psi)/d(eta) * d(eta)/dy
-    // evaluate derivative d(psi)/d(eta) in eta(y)
-    std::complex<double> dpsi = 0;
-    for (unsigned int i=0; i<FE.get_degree()+1; ++i)
-      dpsi += EIG_VEC[i] * FE.shape_grad(i,Point<1>(eta))[0];
-
-    // multiply by d(eta)/dy to obtain derivative d(psi)/dy in physical space
-    dpsi *= 0.5/H;
-
-    std::complex<double> perturbation_complex = dpsi*exp*amplification;
-    double perturbation = perturbation_complex.real();
-
-    result = base + EPSILON*perturbation;
-  }
-  else if(component == 1)
-  {
-    // evaluate function psi in y
-    std::complex<double> psi = 0;
-    for (unsigned int i=0; i<FE.get_degree()+1; ++i)
-      psi += EIG_VEC[i] * FE.shape_value(i,Point<1>(eta));
-
-    std::complex<double> i(0,1);
-    std::complex<double> perturbation_complex = -i*ALPHA*psi*exp*amplification;
-    double perturbation = perturbation_complex.real();
-
-    result = EPSILON*perturbation;
-  }
-
-  return result;
-}
-
-/*
- *  Analytical solution pressure
- *
- *  - It is used to calculate the L2 error
- *
- *  - It is used to adjust the pressure level in case of pure Dirichlet BC's
- *    (where the pressure is only defined up to an additive constant)
- *
- *  - This function can be used to prescribe initial conditions for the pressure field
- *
- *  - Moreover, this function can be used (if possible for simple geometries)
- *    to prescribe Dirichlet BC's for the pressure field on Neumann boundaries
- */
-template<int dim>
-class AnalyticalSolutionPressure : public Function<dim>
-{
-public:
-  AnalyticalSolutionPressure (const double time = 0.)
-    :
-    Function<dim>(1 /*n_components*/, time)
-  {}
-
-  virtual ~AnalyticalSolutionPressure(){};
-
-  virtual double value (const Point<dim>   &p,
-                        const unsigned int component = 0) const;
-};
-
-template<int dim>
-double AnalyticalSolutionPressure<dim>::value(const Point<dim>    &/*p*/,
-                                              const unsigned int  /* component */) const
-{
-  double result = 0.0;
-
-  return result;
-}
 
 /*
  *  Right-hand side function: Implements the body force vector occuring on the
@@ -411,29 +338,22 @@ public:
     Function<dim>(dim, time)
   {}
 
-  virtual ~RightHandSide(){};
+  double value (const Point<dim>    &/*p*/,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
 
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
+    // mean flow is driven by a constant body force since we use
+    // periodic BC's in streamwise direction.
+    // Body force is derived by a balance of forces in streamwise direction
+    //   f * L * 2H = tau * 2 * L (2H = height, L = length, factor 2 = upper and lower wall)
+    // with tau = nu du/dy|_{y=-H} = nu * U_max * (-2y/H^2)|_{y=-H} = 2 * nu * U_max / H
+    if(component==0)
+      result = 2.*VISCOSITY*MAX_VELOCITY/(H*H);
+
+    return result;
+  }
 };
-
- template<int dim>
- double RightHandSide<dim>::value(const Point<dim>   &/*p*/,
-                                  const unsigned int component) const
- {
-   double result = 0.0;
-
-   // mean flow is driven by a constant body force since we use
-   // periodic BC's in streamwise direction.
-   // Body force is derived by a balance of forces in streamwise direction
-   //   f * L * 2H = tau * 2 * L (2H = height, L = length, factor 2 = upper and lower wall)
-   // with tau = nu du/dy|_{y=-H} = nu * U_max * (-2y/H^2)|_{y=-H} = 2 * nu * U_max / H
-   if(component==0)
-     result = 2.*VISCOSITY*MAX_VELOCITY/(H*H);
-
-   return result;
- }
-
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -472,49 +392,30 @@ void create_grid_and_set_boundary_conditions(
 
   triangulation.refine_global(n_refine_space);
 
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
   // fill boundary descriptor velocity
-  std::shared_ptr<Function<dim> > analytical_solution_velocity;
-  analytical_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  // Dirichlet boundaries: ID = 0
-  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                     (0,analytical_solution_velocity));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new AnalyticalSolutionVelocity<dim>()));
 
   // fill boundary descriptor pressure
-  std::shared_ptr<Function<dim> > pressure_bc_dudt;
-  pressure_bc_dudt.reset(new Functions::ZeroFunction<dim>(dim));
-  // Neumann boundaries: ID = 0
-  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >
-                                                     (0,pressure_bc_dudt));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 }
 
 
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > initial_solution_velocity;
-  initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-
-  std::shared_ptr<Function<dim> > initial_solution_pressure;
-  initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-
-  std::shared_ptr<Function<dim> > analytical_solution_pressure;
-  analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
-
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->initial_solution_velocity = initial_solution_velocity;
-  field_functions->initial_solution_pressure = initial_solution_pressure;
-  field_functions->analytical_solution_pressure = analytical_solution_pressure;
-  field_functions->right_hand_side = right_hand_side;
+  field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
 template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
+  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
