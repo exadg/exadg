@@ -57,12 +57,15 @@ public:
                          bool               use_aux   = true,
                          bool /*use_pcg*/             = true)
     : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-      triangulation(MPI_COMM_WORLD,
-                    dealii::Triangulation<dim>::none,
-                    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
       n_refine_space(n_refine_space_in)
   {
     param.set_input_parameters();
+
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+
     param.degree_mapping = fe_degree;
 
     if(use_dg)
@@ -104,7 +107,8 @@ public:
 
     boundary_descriptor.reset(new Poisson::BoundaryDescriptor<dim>());
 
-    poisson_operation.reset(new Poisson::DGOperation<dim, fe_degree, Number>(triangulation, param));
+    poisson_operation.reset(
+      new Poisson::DGOperation<dim, fe_degree, Number>(*triangulation, param));
   }
 
   void
@@ -124,10 +128,10 @@ public:
   }
 
 public:
-  ConditionalOStream                        pcout;
-  parallel::distributed::Triangulation<dim> triangulation;
-  const unsigned int                        n_refine_space;
-  Poisson::InputParameters                  param;
+  ConditionalOStream                            pcout;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
+  const unsigned int                            n_refine_space;
+  Poisson::InputParameters                      param;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;

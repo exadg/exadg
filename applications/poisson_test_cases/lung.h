@@ -1,6 +1,8 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include "../incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+#include "lung/lung_environment.h"
+#include "lung/lung_grid.h"
 
 /******************************************************************************/
 /*                                                                            */
@@ -8,11 +10,11 @@
 /*                                                                            */
 /******************************************************************************/
 
-const unsigned int DIMENSION              = 2;
-const unsigned int FE_DEGREE              = 5;
-const unsigned int FE_DEGREE_MIN          = 3;
-const unsigned int FE_DEGREE_MAX          = 13;
-const unsigned int REFINE_STEPS           = 4;
+const unsigned int DIMENSION              = 3;
+const unsigned int FE_DEGREE              = 4;
+const unsigned int FE_DEGREE_MIN          = 1;
+const unsigned int FE_DEGREE_MAX          = 7;
+const unsigned int REFINE_STEPS           = 2;
 const unsigned int REFINE_STEPS_SPACE_MIN = 5;
 const unsigned int REFINE_STEPS_SPACE_MAX = 5;
 
@@ -33,18 +35,24 @@ Poisson::InputParameters::set_input_parameters()
   // SPATIAL DISCRETIZATION
   IP_factor = 1.0;
 
-  // SOLVER
+  // SOLVER  
   solver                      = Poisson::Solver::CG;
   solver_data.abs_tol                     = 1.e-20;
   solver_data.rel_tol                     = 1.e-8;
   solver_data.max_iter                    = 1e4;
-  compute_performance_metrics = true;
+  
   preconditioner              = Preconditioner::Multigrid;
   // MG smoother
-  multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  //multigrid_data.smoother = MultigridSmoother::Chebyshev;
+  // MG smoother data
+  //multigrid_data.chebyshev_smoother_data.smoother_smoothing_range = 30;
+  //multigrid_data.chebyshev_smoother_data.smoother_poly_degree     = 5;
+
+  //multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
+  //multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
-  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::AMG;
-  multigrid_data.type                  = MultigridType::pMG;
+  //multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; // GMRES_PointJacobi;
+  multigrid_data.type          = MultigridType::pMG;
 
   multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Coarse;
 
@@ -177,6 +185,8 @@ AnalyticalSolution<dim>::value(const Point<dim> & p, const unsigned int) const
     return_value += std::exp(-x_minus_xi.norm_square() / (this->width * this->width));
   }
 
+  return 1.0;
+
   return return_value / Utilities::fixed_power<dim>(std::sqrt(2. * numbers::PI) * this->width);
 }
 
@@ -225,25 +235,7 @@ template<int dim>
 double
 RightHandSide<dim>::value(const Point<dim> & p, const unsigned int) const
 {
-#if MESH_TYPE == 2
-  return 0;
-#else
-  CoefficientFunction<dim> coefficient;
-  const double             coef         = coefficient.value(p);
-  const Tensor<1, dim>     coef_grad    = coefficient.gradient(p);
-  double                   return_value = 0;
-  for(unsigned int i = 0; i < this->n_source_centers; ++i)
-  {
-    const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
-
-    return_value += ((2 * dim * coef + 2 * (coef_grad)*x_minus_xi -
-                      4 * coef * x_minus_xi.norm_square() / (this->width * this->width)) /
-                     (this->width * this->width) *
-                     std::exp(-x_minus_xi.norm_square() / (this->width * this->width)));
-  }
-
-  return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
-#endif
+  return 1.0;
 }
 
 /*
@@ -284,25 +276,40 @@ create_grid_and_set_boundary_conditions(
   std::vector<
     GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
 {
-  // hypercube: [left,right]^dim
-  const double left = -1.0, right = +1.0;
-  const double deformation = +0.1, frequnency = +2.0;
-  GridGenerator::hyper_cube(*triangulation, left, right);
+  std::vector<std::string> files;
+  get_lung_files_from_environment(files);
+  auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
 
-  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
-  triangulation->set_all_manifold_ids(1);
-  triangulation->set_manifold(1, manifold);
-  triangulation->refine_global(n_refine_space);
+  std::map<std::string, double> timings;
+  const int                     refinements = 4;
 
-  // dirichlet bc:
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  boundary_descriptor->dirichlet_bc.insert({0, analytical_solution});
+  // create triangulation
+  if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+    dealii::GridGenerator::lung(
+      *tria, refinements, n_refine_space, n_refine_space, tree_factory, timings);
+  else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+    dealii::GridGenerator::lung(*tria, refinements, n_refine_space, tree_factory, timings);
+  else
+    AssertThrow(false, ExcMessage("Unknown triangulation!"));
 
-  // neumann bc:
-  //  std::shared_ptr<Function<dim>> neumann_bc;
-  //  neumann_bc.reset(new NeumannBoundary<dim>());
-  //  boundary_descriptor->neumann_bc.insert({1, neumann_bc});
+  // set boundary conditions
+  std::shared_ptr<Function<dim>> zero_function_scalar;
+  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
+  //boundary_descriptor->neumann_bc.insert({0, zero_function_scalar});
+  boundary_descriptor->dirichlet_bc.insert({0, zero_function_scalar});
+  boundary_descriptor->dirichlet_bc.insert({1, zero_function_scalar});
+  boundary_descriptor->dirichlet_bc.insert({2, zero_function_scalar});
+}
+
+template<>
+void create_grid_and_set_boundary_conditions<2>(
+  std::shared_ptr<parallel::Triangulation<2>> /*triangulation*/,
+  unsigned int const /*n_refine_space*/,
+  std::shared_ptr<Poisson::BoundaryDescriptor<2>> /*boundary_descriptor*/,
+  std::vector<
+    GridTools::PeriodicFacePair<typename Triangulation<2>::cell_iterator>> & /*periodic_faces*/)
+{
+  AssertThrow(false, ExcMessage("The lung case can be only run in 3D!"));
 }
 
 template<int dim>

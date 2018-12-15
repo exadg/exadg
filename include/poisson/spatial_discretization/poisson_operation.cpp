@@ -6,9 +6,8 @@
 namespace Poisson
 {
 template<int dim, int degree, typename Number>
-DGOperation<dim, degree, Number>::DGOperation(
-  parallel::distributed::Triangulation<dim> const & triangulation,
-  Poisson::InputParameters const &                  param_in)
+DGOperation<dim, degree, Number>::DGOperation(parallel::Triangulation<dim> const & triangulation,
+                                              Poisson::InputParameters const &     param_in)
   : dealii::Subscriptor(),
     fe_dgq(degree),
     fe_q(degree),
@@ -226,8 +225,8 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
 
     if(param.enable_cell_based_face_loops)
     {
-      auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-        &dof_handler.get_triangulation());
+      auto tria =
+        dynamic_cast<parallel::Triangulation<dim> const *>(&dof_handler.get_triangulation());
       Categorization::do_cell_based_loops(*tria, additional_data);
     }
   }

@@ -13,9 +13,9 @@ public:
    */
   template<int dim, typename AdditionalData>
   static void
-  do_cell_based_loops(const parallel::distributed::Triangulation<dim> & tria,
-                      AdditionalData &                                  data,
-                      const unsigned int level = numbers::invalid_unsigned_int)
+  do_cell_based_loops(const parallel::Triangulation<dim> & tria,
+                      AdditionalData &                     data,
+                      const unsigned int                   level = numbers::invalid_unsigned_int)
   {
     bool is_mg = level != numbers::invalid_unsigned_int;
 
