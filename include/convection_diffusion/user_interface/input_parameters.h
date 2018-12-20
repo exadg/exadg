@@ -163,7 +163,8 @@ enum class Solver
 {
   Undefined,
   PCG,
-  GMRES
+  GMRES,
+  FGMRES // flexible GMRES
 };
 
 /*
@@ -653,11 +654,11 @@ public:
      *  from enums to strings
      */
 
-    std::string str_solver[] = {"Undefined", "PCG", "GMRES"};
+    std::string str_solver[] = {"Undefined", "PCG", "GMRES", "FGMRES"};
 
     print_parameter(pcout, "Solver", str_solver[(int)solver]);
 
-    if(solver == Solver::GMRES)
+    if(solver == Solver::GMRES || solver == Solver::FGMRES)
     {
       print_parameter(pcout, "Use right preconditioner", use_right_preconditioner);
       print_parameter(pcout, "max_n_tmp_vectors", max_n_tmp_vectors);

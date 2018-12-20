@@ -385,10 +385,28 @@ DGOperation<dim, degree, Number>::initialize_solver()
                       PreconditionerBase<Number>,
                       VectorType>(conv_diff_operator, *preconditioner, solver_data));
   }
+  else if(param.solver == Solver::FGMRES)
+  {
+    // initialize solver_data
+    FGMRESSolverData solver_data;
+    solver_data.solver_tolerance_abs  = param.abs_tol;
+    solver_data.solver_tolerance_rel  = param.rel_tol;
+    solver_data.max_iter              = param.max_iter;
+    solver_data.max_n_tmp_vectors     = param.max_n_tmp_vectors;
+    solver_data.update_preconditioner = param.update_preconditioner;
+
+    if(param.preconditioner != Preconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    // initialize solver
+    iterative_solver.reset(
+      new FGMRESSolver<ConvectionDiffusionOperator<dim, degree, Number>,
+                       PreconditionerBase<Number>,
+                       VectorType>(conv_diff_operator, *preconditioner, solver_data));
+  }
   else
   {
-    AssertThrow(param.solver == Solver::PCG || param.solver == Solver::GMRES,
-                ExcMessage("Specified solver is not implemented!"));
+    AssertThrow(false, ExcMessage("Specified solver is not implemented!"));
   }
 }
 
