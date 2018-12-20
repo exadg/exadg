@@ -85,7 +85,6 @@ template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   right_hand_side = false;
 

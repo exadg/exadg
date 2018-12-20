@@ -153,7 +153,6 @@ struct GMRESSolverData
       solver_tolerance_rel(1.e-6),
       use_preconditioner(false),
       update_preconditioner(false),
-      right_preconditioning(true),
       max_n_tmp_vectors(30),
       compute_eigenvalues(false),
       compute_performance_metrics(false)
@@ -165,7 +164,6 @@ struct GMRESSolverData
   double       solver_tolerance_rel;
   bool         use_preconditioner;
   bool         update_preconditioner;
-  bool         right_preconditioning;
   unsigned int max_n_tmp_vectors;
   bool         compute_eigenvalues;
   bool         compute_performance_metrics;
@@ -197,7 +195,7 @@ public:
 
     typename SolverGMRES<VectorType>::AdditionalData additional_data;
     additional_data.max_n_tmp_vectors     = solver_data.max_n_tmp_vectors;
-    additional_data.right_preconditioning = solver_data.right_preconditioning;
+    additional_data.right_preconditioning = true;
     SolverGMRES<VectorType> solver(solver_control, additional_data);
 
     if(solver_data.compute_eigenvalues == true)

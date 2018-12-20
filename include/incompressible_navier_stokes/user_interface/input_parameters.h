@@ -26,489 +26,10 @@
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
 
+#include "enum_types.h"
+
 namespace IncNS
 {
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 MATHEMATICAL MODEL                                 */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  ProblemType refers to the underlying physics of the flow problem and describes
- *  whether the considered flow problem is expected to be a steady or unsteady solution
- *  of the incompressible Navier-Stokes equations. This essentially depends on the
- *  Reynolds number but, for example, also on the boundary conditions (in case of
- *  time dependent boundary conditions, the problem type is always unsteady).
- */
-enum class ProblemType
-{
-  Undefined,
-  Steady,
-  Unsteady
-};
-
-/*
- *  EquationType describes the physical/mathematical model that has to be solved,
- *  i.e., Stokes equations or Navier-Stokes equations
- */
-enum class EquationType
-{
-  Undefined,
-  Stokes,
-  NavierStokes
-};
-
-/*
- *  Formulation of viscous term: divergence formulation or Laplace formulation
- */
-enum class FormulationViscousTerm
-{
-  Undefined,
-  DivergenceFormulation,
-  LaplaceFormulation
-};
-
-/*
- *  Formulation of convective term: divergence formulation or convective formulation
- */
-enum class FormulationConvectiveTerm
-{
-  Undefined,
-  DivergenceFormulation,
-  ConvectiveFormulation,
-  EnergyPreservingFormulation
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 PHYSICAL QUANTITIES                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-// there are currently no enums for this section
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                             TEMPORAL DISCRETIZATION                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  SolverType refers to the numerical solution of the incompressible Navier-Stokes
- *  equations and describes whether a steady or an unsteady solver is used.
- *  While it does not make sense to solve an unsteady problem with a steady solver,
- *  a steady problem can be solved (potentially more efficiently) by using an
- *  unsteady solver.
- */
-enum class SolverType
-{
-  Undefined,
-  Steady,
-  Unsteady
-};
-
-/*
- *  Temporal discretization method
- */
-enum class TemporalDiscretization
-{
-  Undefined,
-  BDFDualSplittingScheme,
-  BDFPressureCorrection,
-  BDFCoupledSolution
-};
-
-/*
- *  the convective term can be either treated explicitly or implicitly
- */
-enum class TreatmentOfConvectiveTerm
-{
-  Undefined,
-  Explicit,
-  ExplicitOIF,
-  Implicit
-};
-
-/*
- *  Temporal discretization method for OIF splitting:
- *
- *    Explicit Runge-Kutta methods
- */
-enum class TimeIntegratorOIF
-{
-  Undefined,
-  ExplRK1Stage1,
-  ExplRK2Stage2,
-  ExplRK3Stage3,
-  ExplRK4Stage4,
-  ExplRK3Stage4Reg2C,
-  ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg2C,
-  ExplRK4Stage8Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg3C,
-  ExplRK5Stage9Reg2S
-};
-
-
-/*
- * calculation of time step size
- */
-enum class TimeStepCalculation
-{
-  Undefined,
-  UserSpecified,
-  CFL,
-  MaxEfficiency // only relevant for analytical test cases with optimal rates of
-                // convergence in space
-};
-
-/*
- *  Pseudo-timestepping for steady-state problems:
- *  Define convergence criterion that is used to terminate simulation
- *
- *  option ResidualSteadyNavierStokes:
- *   - evaluate residual of steady, coupled incompressible Navier-Stokes equations
- *     and terminate simulation if norm of residual fulfills tolerances
- *   - can be used for the coupled solution approach
- *   - can be used for the pressure-correction scheme in case the incremental
- *     formulation is used (for the nonincremental formulation the steady-state
- *     solution cannot fulfill the residual of the steady Navier-Stokes equations
- *     in general due to the splitting error)
- *   - cannot be used for the dual splitting scheme (due to the splitting error
- *     the residual of the steady Navier-Stokes equations is not fulfilled)
- *
- *  option SolutionIncrement:
- *   - calculate solution increment from one time step to the next and terminate
- *     simulation if solution doesn't change any more (defined by tolerances)
- */
-enum class ConvergenceCriterionSteadyProblem
-{
-  Undefined,
-  ResidualSteadyNavierStokes,
-  SolutionIncrement
-};
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                              SPATIAL DISCRETIZATION                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Type of imposition of Dirichlet BC's:
- *
- *  direct: u⁺ = g
- *  mirror: u⁺ = -u⁻ + 2g
- *
- *  A direct imposition might be advantageous with respect to the CFL condition
- *  possibly allowing to use significantly larger time step sizes.
- */
-enum class TypeDirichletBCs
-{
-  Direct,
-  Mirror
-};
-
-/*
- *  Interior penalty formulation of viscous term:
- *  SIPG (symmetric IP) or NIPG (non-symmetric IP)
- */
-enum class InteriorPenaltyFormulation
-{
-  Undefined,
-  SIPG,
-  NIPG
-};
-
-
-/*
- *  Penalty term in case of divergence formulation:
- *  not symmetrized: penalty term identical to Laplace formulation, tau * [[u]]
- *  symmetrized: penalty term = tau * ([[u]] + [[u]]^T)
- */
-enum class PenaltyTermDivergenceFormulation
-{
-  Undefined,
-  Symmetrized,
-  NotSymmetrized
-};
-
-enum class AdjustPressureLevel
-{
-  ApplyZeroMeanValue,
-  ApplyAnalyticalMeanValue,
-  ApplyAnalyticalSolutionInPoint
-};
-
-enum class ContinuityPenaltyComponents
-{
-  Undefined,
-  All,
-  Normal
-};
-
-enum class TypePenaltyParameter
-{
-  Undefined,
-  ConvectiveTerm,
-  ViscousTerm,
-  ViscousAndConvectiveTerms
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                              NUMERICAL PARAMETERS                                  */
-/*                                                                                    */
-/**************************************************************************************/
-
-
-/*
- * Elementwise preconditioner for block Jacobi preconditioner (only relevant for
- * elementwise iterative solution procedure)
- */
-enum class PreconditionerBlockDiagonal
-{
-  Undefined,
-  None,
-  InverseMassMatrix
-};
-
-/*
- * Specify the operator type to be used for multigrid (which can differ from the
- * equation type)
- */
-enum class MultigridOperatorType
-{
-  Undefined,
-  ReactionDiffusion,
-  ReactionConvectionDiffusion
-};
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-
-/*
- *  Solver for pressure Poisson equation
- */
-enum class SolverPressurePoisson
-{
-  PCG,
-  FGMRES
-};
-
-/*
- *  Preconditioner type for solution of pressure Poisson equation
- */
-enum class PreconditionerPressurePoisson
-{
-  None,
-  Jacobi,
-  GeometricMultigrid
-};
-
-/*
- *  projection type: standard projection (no penalty term),
- *  divergence penalty term, divergence and continuity penalty term (weak projection)
- */
-enum class ProjectionType
-{
-  Undefined,
-  NoPenalty,
-  DivergencePenalty,
-  DivergenceAndContinuityPenalty
-};
-
-/*
- *  Type of projection solver
- */
-enum class SolverProjection
-{
-  LU,
-  PCG
-};
-
-/*
- *  Preconditioner type for solution of projection step
- */
-enum class PreconditionerProjection
-{
-  None,
-  PointJacobi,
-  BlockJacobi,
-  InverseMassMatrix
-};
-
-/*
- *  Solver type for solution of viscous step
- */
-enum class SolverViscous
-{
-  PCG,
-  GMRES,
-  FGMRES
-};
-
-/*
- *  Preconditioner type for solution of viscous step
- */
-enum class PreconditionerViscous
-{
-  None,
-  InverseMassMatrix,
-  PointJacobi,
-  BlockJacobi,
-  GeometricMultigrid
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                             PRESSURE-CORRECTION SCHEME                             */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Solver type for solution of momentum equation
- */
-enum class SolverMomentum
-{
-  PCG,
-  GMRES,
-  FGMRES
-};
-
-/*
- *  Preconditioner type for solution of momentum equation:
- *
- *  see coupled solution approach below
- */
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                            COUPLED NAVIER-STOKES SOLVER                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *   Solver for linearized Navier-Stokes problem
- */
-enum class SolverLinearizedNavierStokes
-{
-  Undefined,
-  GMRES,
-  FGMRES
-};
-
-/*
- *  Preconditioner type for linearized Navier-Stokes problem
- */
-enum class PreconditionerLinearizedNavierStokes
-{
-  Undefined,
-  None,
-  BlockDiagonal,
-  BlockTriangular,
-  BlockTriangularFactorization
-};
-
-/*
- *  preconditioner for velocity/momentum operator
- */
-enum class MomentumPreconditioner
-{
-  Undefined,
-  None,
-  PointJacobi,
-  BlockJacobi,
-  InverseMassMatrix,
-  Multigrid
-};
-
-
-/*
- *  Preconditioner for (2,2) pressure/Schur complement block in case of block preconditioning
- */
-enum class SchurComplementPreconditioner
-{
-  Undefined,
-  None,
-  InverseMassMatrix,
-  LaplaceOperator,
-  CahouetChabard,
-  Elman,
-  PressureConvectionDiffusion
-};
-
-
-/*
- *  Discretization of Laplacian: B: negative divergence operator, B^T gradient operator
- *  classical (BB^T is approximated by negative Laplace operator),
- *  compatible (BM^{-1}B^T)
- */
-enum class DiscretizationOfLaplacian
-{
-  Undefined,
-  Classical,
-  Compatible
-};
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                     TURBULENCE                                     */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- * Set the turbulence modeling approach for xwall
- */
-enum class XWallTurbulenceApproach
-{
-  Undefined,
-  None,
-  RANSSpalartAllmaras,
-  ClassicalDESSpalartAllmaras,
-  MultiscaleDESSpalartAllmaras
-};
-
-/*
- *  Algebraic subgrid-scale turbulence models for LES
- *
- *  Standard constants according to literature:
- *    Smagorinsky: 0.165
- *    Vreman: 0.28
- *    WALE: 0.50
- *    Sigma: 1.35
- */
-enum class TurbulenceEddyViscosityModel
-{
-  Undefined,
-  Smagorinsky,
-  Vreman,
-  WALE,
-  Sigma
-};
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               OUTPUT AND POSTPROCESSING                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-// there are currently no enums for this section
-
 // mass conservation data
 
 struct MassConservationData
@@ -693,7 +214,7 @@ public:
 
       // viscous term
       IP_formulation_viscous(InteriorPenaltyFormulation::Undefined),
-      penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Undefined),
+      penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Symmetrized),
       IP_factor_viscous(1.),
 
       // gradient term
@@ -725,21 +246,18 @@ public:
 
       // pressure Poisson equation
       IP_factor_pressure(1.),
-      solver_pressure_poisson(SolverPressurePoisson::PCG),
-      max_n_tmp_vectors_pressure_poisson(30),
-      preconditioner_pressure_poisson(PreconditionerPressurePoisson::GeometricMultigrid),
+      solver_pressure_poisson(SolverPressurePoisson::CG),
+      solver_data_pressure_poisson(SolverData(1e4, 1.e-12, 1.e-6, 100)),
+      preconditioner_pressure_poisson(PreconditionerPressurePoisson::Multigrid),
       multigrid_data_pressure_poisson(MultigridData()),
-      abs_tol_pressure(1.e-20),
-      rel_tol_pressure(1.e-12),
 
       // projection step
-      solver_projection(SolverProjection::PCG),
+      solver_projection(SolverProjection::CG),
+      solver_data_projection(SolverData(1000, 1.e-12, 1.e-6, 100)),
       preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
       preconditioner_block_diagonal_projection(PreconditionerBlockDiagonal::InverseMassMatrix),
-      solver_data_block_diagonal_projection(SolverData(1000, 1.e-12, 1.e-2)),
+      solver_data_block_diagonal_projection(SolverData(1000, 1.e-12, 1.e-2, 1000)),
       update_preconditioner_projection(true),
-      abs_tol_projection(1.e-20),
-      rel_tol_projection(1.e-12),
 
       // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -747,34 +265,25 @@ public:
       order_extrapolation_pressure_nbc((order_time_integrator <= 2) ? order_time_integrator : 2),
 
       // convective step
-      newton_solver_data_convective(NewtonSolverData()),
-      abs_tol_linear_convective(1.e-20),
-      rel_tol_linear_convective(1.e-12),
-      max_iter_linear_convective(std::numeric_limits<unsigned int>::max()),
-      use_right_preconditioning_convective(true),
-      max_n_tmp_vectors_convective(30),
+      newton_solver_data_convective(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
+      solver_data_convective(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
       // viscous step
-      solver_viscous(SolverViscous::PCG),
+      solver_viscous(SolverViscous::CG),
+      solver_data_viscous(SolverData(1e4, 1.e-12, 1.e-6, 100)),
       preconditioner_viscous(PreconditionerViscous::InverseMassMatrix),
       multigrid_data_viscous(MultigridData()),
-      abs_tol_viscous(1.e-20),
-      rel_tol_viscous(1.e-12),
       update_preconditioner_viscous(false),
 
       // PRESSURE-CORRECTION SCHEME
 
       // momentum step
-      newton_solver_data_momentum(NewtonSolverData()),
+      newton_solver_data_momentum(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
       solver_momentum(SolverMomentum::GMRES),
-      preconditioner_momentum(MomentumPreconditioner::Undefined),
+      solver_data_momentum(SolverData(1e4, 1.e-12, 1.e-6, 100)),
+      preconditioner_momentum(MomentumPreconditioner::InverseMassMatrix),
       multigrid_data_momentum(MultigridData()),
       multigrid_operator_type_momentum(MultigridOperatorType::Undefined),
-      abs_tol_momentum_linear(1.e-20),
-      rel_tol_momentum_linear(1.e-12),
-      max_iter_momentum_linear(std::numeric_limits<unsigned int>::max()),
-      use_right_preconditioning_momentum(true),
-      max_n_tmp_vectors_momentum(30),
       update_preconditioner_momentum(false),
 
       // formulations
@@ -789,53 +298,42 @@ public:
       scaling_factor_continuity(1.0),
 
       // nonlinear solver (Newton solver)
-      newton_solver_data_coupled(NewtonSolverData()),
+      newton_solver_data_coupled(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
 
       // linear solver
-      solver_linearized_navier_stokes(SolverLinearizedNavierStokes::Undefined),
-      abs_tol_linear(1.e-20),
-      rel_tol_linear(1.e-12),
-      max_iter_linear(std::numeric_limits<unsigned int>::max()),
+      solver_coupled(SolverCoupled::GMRES),
+      solver_data_coupled(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
       // preconditioning linear solver
-      preconditioner_linearized_navier_stokes(PreconditionerLinearizedNavierStokes::Undefined),
-      use_right_preconditioning(true),
-      max_n_tmp_vectors(30),
+      preconditioner_coupled(PreconditionerCoupled::BlockTriangular),
 
       // preconditioner velocity/momentum block
-      momentum_preconditioner(MomentumPreconditioner::Undefined),
-      momentum_multigrid_operator_type(MultigridOperatorType::Undefined),
-      multigrid_data_momentum_preconditioner(MultigridData()),
-      exact_inversion_of_momentum_block(false),
-      rel_tol_solver_momentum_preconditioner(1.e-12),
-      max_n_tmp_vectors_solver_momentum_preconditioner(30),
+      preconditioner_velocity_block(MomentumPreconditioner::InverseMassMatrix),
+      multigrid_operator_type_velocity_block(MultigridOperatorType::Undefined),
+      multigrid_data_velocity_block(MultigridData()),
+      exact_inversion_of_velocity_block(false),
+      solver_data_velocity_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
-      // preconditioner Schur-complement block
-      schur_complement_preconditioner(SchurComplementPreconditioner::Undefined),
-      discretization_of_laplacian(DiscretizationOfLaplacian::Undefined),
-      multigrid_data_schur_complement_preconditioner(MultigridData()),
+      // preconditioner pressure/Schur-complement block
+      preconditioner_pressure_block(SchurComplementPreconditioner::PressureConvectionDiffusion),
+      discretization_of_laplacian(DiscretizationOfLaplacian::Classical),
+      multigrid_data_pressure_block(MultigridData()),
       exact_inversion_of_laplace_operator(false),
-      rel_tol_solver_schur_complement_preconditioner(1.e-12),
+      solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
       // update preconditioner
-      update_preconditioner(false),
+      update_preconditioner_coupled(false),
 
       // TURBULENCE
       use_turbulence_model(false),
       turbulence_model_constant(1.0),
       turbulence_model(TurbulenceEddyViscosityModel::Undefined),
       turb_stat_data(TurbulenceStatisticsData()),
-      xwall_turb(XWallTurbulenceApproach::Undefined),
-      variabletauw(true),
-      dtauw(1.),
-      max_wdist_xwall(-1.),
-      diffusion_number(-1.),
-
 
       // OUTPUT AND POSTPROCESSING
 
       // print input parameters
-      print_input_parameters(false),
+      print_input_parameters(true),
 
       // write output for visualization of results
       output_data(OutputDataNavierStokes()),
@@ -962,8 +460,10 @@ public:
                 ExcMessage("parameter must be defined"));
 
     if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    {
       AssertThrow(penalty_term_div_formulation != PenaltyTermDivergenceFormulation::Undefined,
                   ExcMessage("parameter must be defined"));
+    }
 
     if(equation_type == EquationType::NavierStokes)
     {
@@ -1026,9 +526,6 @@ public:
                     order_pressure_extrapolation <= order_time_integrator,
                   ExcMessage("Invalid input parameter order_pressure_extrapolation!"));
 
-      AssertThrow(preconditioner_momentum != MomentumPreconditioner::Undefined,
-                  ExcMessage("parameter must be defined"));
-
       if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
       {
         AssertThrow(multigrid_operator_type_momentum != MultigridOperatorType::Undefined,
@@ -1049,36 +546,17 @@ public:
       if(use_scaling_continuity == true)
         AssertThrow(scaling_factor_continuity > 0.0, ExcMessage("Invalid parameter"));
 
-      AssertThrow(preconditioner_linearized_navier_stokes !=
-                    PreconditionerLinearizedNavierStokes::Undefined,
-                  ExcMessage("parameter must be defined"));
-
-      AssertThrow(momentum_preconditioner != MomentumPreconditioner::Undefined,
-                  ExcMessage("parameter must be defined"));
-
       if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
       {
-        AssertThrow(momentum_multigrid_operator_type != MultigridOperatorType::Undefined,
+        AssertThrow(multigrid_operator_type_velocity_block != MultigridOperatorType::Undefined,
                     ExcMessage("Parameter must be defined"));
 
         if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
         {
-          AssertThrow(momentum_multigrid_operator_type !=
+          AssertThrow(multigrid_operator_type_velocity_block !=
                         MultigridOperatorType::ReactionConvectionDiffusion,
                       ExcMessage("Invalid parameter. Convective term is treated explicitly."));
         }
-      }
-
-      AssertThrow(schur_complement_preconditioner != SchurComplementPreconditioner::Undefined,
-                  ExcMessage("parameter must be defined"));
-      if(schur_complement_preconditioner == SchurComplementPreconditioner::LaplaceOperator ||
-         schur_complement_preconditioner == SchurComplementPreconditioner::CahouetChabard ||
-         schur_complement_preconditioner == SchurComplementPreconditioner::Elman ||
-         schur_complement_preconditioner ==
-           SchurComplementPreconditioner::PressureConvectionDiffusion)
-      {
-        AssertThrow(discretization_of_laplacian != DiscretizationOfLaplacian::Undefined,
-                    ExcMessage("parameter must be defined"));
       }
     }
 
@@ -1162,48 +640,18 @@ public:
   {
     pcout << std::endl << "Mathematical model:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
-    // problem type
-    std::string str_problem_type[] = {"Undefined", "Steady", "Unsteady"};
-
-    print_parameter(pcout, "Problem type", str_problem_type[(int)problem_type]);
-
-    // equation type
-    std::string str_equation_type[] = {"Undefined", "Stokes", "Navier-Stokes"};
-
-    print_parameter(pcout, "Equation type", str_equation_type[(int)equation_type]);
-
-    // formulation of viscous term
-    std::string str_form_viscous_term[] = {"Undefined",
-                                           "Divergence formulation",
-                                           "Laplace formulation"};
-
-    print_parameter(pcout,
-                    "Formulation of viscous term",
-                    str_form_viscous_term[(int)formulation_viscous_term]);
+    print_parameter(pcout, "Problem type", enum_to_string(problem_type));
+    print_parameter(pcout, "Equation type", enum_to_string(equation_type));
+    print_parameter(pcout, "Formulation of viscous term", enum_to_string(formulation_viscous_term));
 
     if(equation_type == EquationType::NavierStokes)
     {
-      // formulation of convective term
-      std::string str_form_convective_term[] = {"Undefined",
-                                                "Divergence formulation",
-                                                "Convective formulation",
-                                                "Energy preserving formulation"};
-
       print_parameter(pcout,
                       "Formulation of convective term",
-                      str_form_convective_term[(int)formulation_convective_term]);
-
-      // outflow BC for convective term
+                      enum_to_string(formulation_convective_term));
       print_parameter(pcout, "Outflow BC for convective term", use_outflow_bc_convective_term);
     }
 
-    // right hand side
     print_parameter(pcout, "Right-hand side", right_hand_side);
   }
 
@@ -1229,53 +677,23 @@ public:
   {
     pcout << std::endl << "Temporal discretization:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
-    // temporal discretization scheme
-    std::string str_temporal_discretization[] = {"Undefined",
-                                                 "BDF dual splitting scheme",
-                                                 "BDF pressure-correction scheme",
-                                                 "BDF coupled solution"};
     print_parameter(pcout,
                     "Temporal discretization method",
-                    str_temporal_discretization[(int)temporal_discretization]);
-
-    // treatment of convective term
-    std::string str_conv_term[] = {"Undefined", "Explicit", "ExplicitOIF", "Implicit"};
-
+                    enum_to_string(temporal_discretization));
     print_parameter(pcout,
                     "Treatment of convective term",
-                    str_conv_term[(int)treatment_of_convective_term]);
+                    enum_to_string(treatment_of_convective_term));
 
     if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
     {
-      std::string str_time_int_oif[] = {"Undefined",
-                                        "ExplRK1Stage1",
-                                        "ExplRK2Stage2",
-                                        "ExplRK3Stage3",
-                                        "ExplRK4Stage4",
-                                        "ExplRK3Stage4Reg2C",
-                                        "ExplRK3Stage7Reg2",
-                                        "ExplRK4Stage5Reg2C",
-                                        "ExplRK4Stage8Reg2",
-                                        "ExplRK4Stage5Reg3C",
-                                        "ExplRK5Stage9Reg2S"};
-
       print_parameter(pcout,
                       "Time integrator for OIF splitting",
-                      str_time_int_oif[(int)time_integrator_oif]);
+                      enum_to_string(time_integrator_oif));
     }
-
-    // calculation of time step size
-    std::string str_calc_time_step[] = {"Undefined", "UserSpecified", "CFL", "MaxEfficiency"};
 
     print_parameter(pcout,
                     "Calculation of time step size",
-                    str_calc_time_step[(int)calculation_of_time_step_size]);
+                    enum_to_string(calculation_of_time_step_size));
 
     print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
 
@@ -1291,25 +709,15 @@ public:
     // because this is done by the time integration scheme (or the functions that
     // calculate the time step size)
 
-    // maximum number of time steps
     print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
-
-    // order of time integration scheme
     print_parameter(pcout, "Order of time integration scheme", order_time_integrator);
-
-    // start time integrator with high or low order method
     print_parameter(pcout, "Start with low order method", start_with_low_order);
 
     if(problem_type == ProblemType::Steady)
     {
-      // treatment of convective term
-      std::string str_convergence_crit[] = {"Undefined",
-                                            "ResidualSteadyNavierStokes",
-                                            "SolutionIncrement"};
-
       print_parameter(pcout,
                       "Convergence criterion steady problems",
-                      str_convergence_crit[(int)convergence_criterion_steady_problem]);
+                      enum_to_string(convergence_criterion_steady_problem));
 
       print_parameter(pcout, "Absolute tolerance", abs_tol_steady);
       print_parameter(pcout, "Relative tolerance", rel_tol_steady);
@@ -1321,52 +729,32 @@ public:
   {
     pcout << std::endl << "Spatial discretization:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
     if(equation_type == EquationType::NavierStokes)
     {
       print_parameter(pcout, "Convective term - Upwind factor", upwind_factor);
-
-      std::string str_type_dirichlet_convective[] = {"Direct", "Mirror"};
-
       print_parameter(pcout,
                       "Convective term - Type of Dirichlet BC's",
-                      str_type_dirichlet_convective[(int)type_dirichlet_bc_convective]);
+                      enum_to_string(type_dirichlet_bc_convective));
     }
 
-
-    // interior penalty formulation of viscous term
-    std::string str_IP_form_visc[] = {"Undefined", "SIPG", "NIPG"};
-
-    print_parameter(pcout,
-                    "Viscous term - IP formulation",
-                    str_IP_form_visc[(int)IP_formulation_viscous]);
-
+    print_parameter(pcout, "Viscous term - IP formulation", enum_to_string(IP_formulation_viscous));
     print_parameter(pcout, "Viscous term - IP factor", IP_factor_viscous);
 
     if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
     {
-      std::string str_penalty_term_div_form[] = {"Undefined", "Symmetrized", "NotSymmetrized"};
-
       print_parameter(pcout,
                       "Penalty term formulation viscous term",
-                      str_penalty_term_div_form[(int)penalty_term_div_formulation]);
+                      enum_to_string(penalty_term_div_formulation));
     }
 
     // pressure gradient term
     print_parameter(pcout, "Grad(p) - integration by parts", gradp_integrated_by_parts);
-
     print_parameter(pcout, "Grad(p) - use boundary data", gradp_use_boundary_data);
 
     // divergence term
     print_parameter(pcout, "Div(u) . integration by parts", divu_integrated_by_parts);
-
     print_parameter(pcout, "Div(u) - use boundary data", divu_use_boundary_data);
 
     // special case pure DBC's
@@ -1374,13 +762,7 @@ public:
 
     if(pure_dirichlet_bc == true)
     {
-      std::string str_pressure_level[] = {"applying zero mean value",
-                                          "applying correct (analytical) mean value",
-                                          "applying analytical solution in point"};
-
-      print_parameter(pcout,
-                      "Adjust pressure level by",
-                      str_pressure_level[(int)adjust_pressure_level]);
+      print_parameter(pcout, "Adjust pressure level", enum_to_string(adjust_pressure_level));
     }
 
     print_parameter(pcout, "Use divergence penalty term", use_divergence_penalty);
@@ -1394,31 +776,24 @@ public:
     {
       print_parameter(pcout, "Penalty factor continuity", continuity_penalty_factor);
 
-      std::string continuity_penalty_components_str[] = {"Undefined", "All", "Normal"};
-
       print_parameter(pcout,
                       "Continuity penalty term components",
-                      continuity_penalty_components_str[(int)continuity_penalty_components]);
+                      enum_to_string(continuity_penalty_components));
     }
 
     if(use_divergence_penalty == true || use_continuity_penalty == true)
     {
-      std::string type_penalty_parameter_str[] = {"Undefined",
-                                                  "ConvectiveTerm",
-                                                  "ViscousTerm",
-                                                  "ViscousAndConvectiveTerms"};
-
-      print_parameter(pcout,
-                      "Type of penalty parameter",
-                      type_penalty_parameter_str[(int)type_penalty_parameter]);
+      print_parameter(pcout, "Type of penalty parameter", enum_to_string(type_penalty_parameter));
     }
 
     if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
     {
       if(use_divergence_penalty == true || use_continuity_penalty == true)
+      {
         print_parameter(pcout,
                         "Add penalty terms to monolithic system",
                         add_penalty_terms_to_monolithic_system);
+      }
     }
   }
 
@@ -1438,32 +813,18 @@ public:
     // pressure Poisson equation
     pcout << std::endl << "  Pressure Poisson equation (PPE):" << std::endl;
 
-    print_parameter(pcout, "IP factor PPE", IP_factor_pressure);
+    print_parameter(pcout, "interior penalty factor", IP_factor_pressure);
 
-    std::string str_solver_ppe[] = {"PCG", "FGMRES"};
+    print_parameter(pcout, "Solver", enum_to_string(solver_pressure_poisson));
 
-    print_parameter(pcout, "Solver PPE", str_solver_ppe[(int)solver_pressure_poisson]);
+    solver_data_pressure_poisson.print(pcout);
 
-    if(solver_pressure_poisson == SolverPressurePoisson::FGMRES)
-    {
-      print_parameter(pcout,
-                      "Max number of vectors before restart",
-                      max_n_tmp_vectors_pressure_poisson);
-    }
+    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_pressure_poisson));
 
-    std::string str_precon_ppe[] = {"None", "Jacobi", "GeometricMultigrid"};
-
-    print_parameter(pcout,
-                    "Preconditioner PPE",
-                    str_precon_ppe[(int)preconditioner_pressure_poisson]);
-
-    if(preconditioner_pressure_poisson == PreconditionerPressurePoisson::GeometricMultigrid)
+    if(preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
     {
       multigrid_data_pressure_poisson.print(pcout);
     }
-
-    print_parameter(pcout, "Absolute solver tolerance", abs_tol_pressure);
-    print_parameter(pcout, "Relative solver tolerance", rel_tol_pressure);
   }
 
   void
@@ -1471,26 +832,22 @@ public:
   {
     if(use_divergence_penalty == true)
     {
-      std::string str_solver_proj[] = {"LU", "PCG"};
+      print_parameter(pcout, "Solver projection step", enum_to_string(solver_projection));
 
-      print_parameter(pcout, "Solver projection step", str_solver_proj[(int)solver_projection]);
+      solver_data_projection.print(pcout);
 
       if(use_divergence_penalty == true && use_continuity_penalty == true)
       {
-        std::string str_precon_proj[] = {"None", "PointJacobi", "BlockJacobi", "InverseMassMatrix"};
-
         print_parameter(pcout,
                         "Preconditioner projection step",
-                        str_precon_proj[(int)preconditioner_projection]);
+                        enum_to_string(preconditioner_projection));
 
         if(preconditioner_projection == PreconditionerProjection::BlockJacobi &&
            implement_block_diagonal_preconditioner_matrix_free)
         {
-          std::string str_precon[] = {"Undefined", "None", "InverseMassMatrix"};
-
           print_parameter(pcout,
                           "Preconditioner block diagonal",
-                          str_precon[(int)preconditioner_block_diagonal_projection]);
+                          enum_to_string(preconditioner_block_diagonal_projection));
 
           solver_data_block_diagonal_projection.print(pcout);
         }
@@ -1499,9 +856,6 @@ public:
                         "Update preconditioner projection step",
                         update_preconditioner_projection);
       }
-
-      print_parameter(pcout, "Absolute solver tolerance", abs_tol_projection);
-      print_parameter(pcout, "Relative solver tolerance", rel_tol_projection);
     }
   }
 
@@ -1522,25 +876,12 @@ public:
     {
       pcout << "  Newton solver:" << std::endl;
 
-      print_parameter(pcout, "Absolute solver tolerance", newton_solver_data_convective.abs_tol);
-      print_parameter(pcout, "Relative solver tolerance", newton_solver_data_convective.rel_tol);
-      print_parameter(pcout,
-                      "Maximum number of iterations",
-                      newton_solver_data_convective.max_iter);
+      newton_solver_data_convective.print(pcout);
 
       pcout << "  Linear solver:" << std::endl;
 
-      print_parameter(pcout, "Absolute solver tolerance", abs_tol_linear_convective);
-      print_parameter(pcout, "Relative solver tolerance", rel_tol_linear_convective);
-      print_parameter(pcout, "Maximum number of iterations", max_iter_linear_convective);
-      print_parameter(pcout, "Right preconditioning", use_right_preconditioning_convective);
-      print_parameter(pcout, "Max number of vectors before restart", max_n_tmp_vectors_convective);
+      solver_data_convective.print(pcout);
     }
-
-
-
-    // small time steps stability
-    pcout << std::endl << "  Small time steps stability:" << std::endl;
 
     // projection method
     print_parameters_pressure_poisson(pcout);
@@ -1552,24 +893,16 @@ public:
     // Viscous step
     pcout << std::endl << "  Viscous step:" << std::endl;
 
-    std::string str_solver_viscous[] = {"PCG", "GMRES", "FGMRES"};
+    print_parameter(pcout, "Solver viscous step", enum_to_string(solver_viscous));
 
-    print_parameter(pcout, "Solver viscous step", str_solver_viscous[(int)solver_viscous]);
+    solver_data_viscous.print(pcout);
 
-    std::string str_precon_viscous[] = {
-      "None", "InverseMassMatrix", "PointJacobi", "BlockJacobi", "GeometricMultigrid"};
+    print_parameter(pcout, "Preconditioner viscous step", enum_to_string(preconditioner_viscous));
 
-    print_parameter(pcout,
-                    "Preconditioner viscous step",
-                    str_precon_viscous[(int)preconditioner_viscous]);
-
-    if(preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+    if(preconditioner_viscous == PreconditionerViscous::Multigrid)
     {
       multigrid_data_viscous.print(pcout);
     }
-
-    print_parameter(pcout, "Absolute solver tolerance", abs_tol_viscous);
-    print_parameter(pcout, "Relative solver tolerance", rel_tol_viscous);
 
     print_parameter(pcout, "Udpate preconditioner viscous", update_preconditioner_viscous);
   }
@@ -1588,54 +921,28 @@ public:
     {
       pcout << "  Newton solver:" << std::endl;
 
-      print_parameter(pcout, "Absolute solver tolerance", newton_solver_data_momentum.abs_tol);
-      print_parameter(pcout, "Relative solver tolerance", newton_solver_data_momentum.rel_tol);
-      print_parameter(pcout, "Maximum number of iterations", newton_solver_data_momentum.max_iter);
+      newton_solver_data_momentum.print(pcout);
 
       pcout << std::endl;
     }
 
-    // Solver linearized problem
+    // Solver linear(ized) problem
     pcout << "  Linear solver:" << std::endl;
 
-    std::string str_solver_momentum[] = {"PCG", "GMRES", "FGMRES"};
+    print_parameter(pcout, "Solver", enum_to_string(solver_momentum));
 
-    print_parameter(pcout,
-                    "Solver for linear(ized) problem",
-                    str_solver_momentum[(int)solver_momentum]);
+    solver_data_momentum.print(pcout);
 
-    std::string str_precon_momentum[] = {"Undefined",
-                                         "None",
-                                         "PointJacobi",
-                                         "BlockJacobi",
-                                         "InverseMassMatrix",
-                                         "VelocityDiffusion",
-                                         "VelocityConvectionDiffusion"};
-
-    print_parameter(pcout,
-                    "Preconditioner linear(ized) problem",
-                    str_precon_momentum[(int)preconditioner_momentum]);
+    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_momentum));
 
     if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
     {
-      std::string str_operator_type[] = {"Undefined",
-                                         "ReactionDiffusion",
-                                         "ReactionConvectionDiffusion"};
-
       print_parameter(pcout,
                       "Multigrid operator type",
-                      str_operator_type[(int)multigrid_operator_type_momentum]);
+                      enum_to_string(multigrid_operator_type_momentum));
 
       multigrid_data_momentum.print(pcout);
     }
-
-    print_parameter(pcout, "Absolute solver tolerance", abs_tol_momentum_linear);
-    print_parameter(pcout, "Relative solver tolerance", rel_tol_momentum_linear);
-    print_parameter(pcout, "Maximum number of iterations", max_iter_momentum_linear);
-    print_parameter(pcout, "Right preconditioning", use_right_preconditioning_momentum);
-
-    if(solver_momentum == SolverMomentum::GMRES)
-      print_parameter(pcout, "Max number of vectors before restart", max_n_tmp_vectors_momentum);
 
     print_parameter(pcout, "Update of preconditioner", update_preconditioner_momentum);
 
@@ -1664,12 +971,6 @@ public:
 
     pcout << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
     // Newton solver
 
     // if a nonlinear problem has to be solved
@@ -1679,9 +980,7 @@ public:
     {
       pcout << "Newton solver:" << std::endl;
 
-      print_parameter(pcout, "Absolute solver tolerance", newton_solver_data_coupled.abs_tol);
-      print_parameter(pcout, "Relative solver tolerance", newton_solver_data_coupled.rel_tol);
-      print_parameter(pcout, "Maximum number of iterations", newton_solver_data_coupled.max_iter);
+      newton_solver_data_coupled.print(pcout);
 
       pcout << std::endl;
     }
@@ -1689,94 +988,50 @@ public:
     // Solver linearized problem
     pcout << "Linear solver:" << std::endl;
 
-    std::string str_solver_linearized[] = {"Undefined", "GMRES", "FGMRES"};
+    print_parameter(pcout, "Solver", enum_to_string(solver_coupled));
 
-    print_parameter(pcout,
-                    "Solver for linear(ized) problem",
-                    str_solver_linearized[(int)solver_linearized_navier_stokes]);
+    solver_data_coupled.print(pcout);
 
-    print_parameter(pcout, "Absolute solver tolerance", abs_tol_linear);
-    print_parameter(pcout, "Relative solver tolerance", rel_tol_linear);
-    print_parameter(pcout, "Maximum number of iterations", max_iter_linear);
+    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_coupled));
 
-    std::string str_precon_linear[] = {
-      "Undefined", "None", "BlockDiagonal", "BlockTriangular", "BlockTriangularFactorization"};
+    print_parameter(pcout, "Update preconditioner", update_preconditioner_coupled);
 
-    print_parameter(pcout,
-                    "Preconditioner linear(ized) problem",
-                    str_precon_linear[(int)preconditioner_linearized_navier_stokes]);
+    pcout << std::endl << "  Velocity/momentum block:" << std::endl;
 
-    print_parameter(pcout, "Right preconditioning", use_right_preconditioning);
+    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_velocity_block));
 
-    if(solver_linearized_navier_stokes == SolverLinearizedNavierStokes::GMRES)
-      print_parameter(pcout, "Max number of vectors before restart", max_n_tmp_vectors);
-
-    // preconditioner momentum block
-    std::string str_momentum_precon[] = {"Undefined",
-                                         "None",
-                                         "PointJacobi",
-                                         "BlockJacobi",
-                                         "InverseMassMatrix",
-                                         "VelocityDiffusion",
-                                         "VelocityConvectionDiffusion"};
-
-    print_parameter(pcout,
-                    "Preconditioner momentum block",
-                    str_momentum_precon[(int)momentum_preconditioner]);
-
-    if(momentum_preconditioner == MomentumPreconditioner::Multigrid)
+    if(preconditioner_velocity_block == MomentumPreconditioner::Multigrid)
     {
-      std::string str_operator_type[] = {"Undefined",
-                                         "ReactionDiffusion",
-                                         "ReactionConvectionDiffusion"};
-
       print_parameter(pcout,
                       "Multigrid operator type",
-                      str_operator_type[(int)momentum_multigrid_operator_type]);
+                      enum_to_string(multigrid_operator_type_velocity_block));
 
-      multigrid_data_momentum_preconditioner.print(pcout);
+      multigrid_data_velocity_block.print(pcout);
 
       print_parameter(pcout,
-                      "Exact inversion of momentum block",
-                      exact_inversion_of_momentum_block);
+                      "Exact inversion of velocity block",
+                      exact_inversion_of_velocity_block);
 
-      if(exact_inversion_of_momentum_block == true)
+      if(exact_inversion_of_velocity_block == true)
       {
-        print_parameter(pcout, "Relative solver tolerance", rel_tol_solver_momentum_preconditioner);
-
-        print_parameter(pcout,
-                        "Max number of vectors before restart",
-                        max_n_tmp_vectors_solver_momentum_preconditioner);
+        solver_data_velocity_block.print(pcout);
       }
-
-      print_parameter(pcout, "Update preconditioner", update_preconditioner);
     }
 
-    // preconditioner Schur-complement block
-    std::string str_schur_precon[] = {"Undefined",
-                                      "None",
-                                      "InverseMassMatrix",
-                                      "LaplaceOperator",
-                                      "CahouetChabard",
-                                      "Elman",
-                                      "PressureConvectionDiffusion"};
+    pcout << std::endl << "  Pressure/Schur-complement block:" << std::endl;
 
-    print_parameter(pcout,
-                    "Schur-complement preconditioner",
-                    str_schur_precon[(int)schur_complement_preconditioner]);
+    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_pressure_block));
 
-    if(schur_complement_preconditioner == SchurComplementPreconditioner::LaplaceOperator ||
-       schur_complement_preconditioner == SchurComplementPreconditioner::CahouetChabard ||
-       schur_complement_preconditioner == SchurComplementPreconditioner::Elman ||
-       schur_complement_preconditioner ==
-         SchurComplementPreconditioner::PressureConvectionDiffusion)
+    if(preconditioner_pressure_block == SchurComplementPreconditioner::LaplaceOperator ||
+       preconditioner_pressure_block == SchurComplementPreconditioner::CahouetChabard ||
+       preconditioner_pressure_block == SchurComplementPreconditioner::Elman ||
+       preconditioner_pressure_block == SchurComplementPreconditioner::PressureConvectionDiffusion)
     {
-      std::string str_discret_laplacian[] = {"Undefined", "Classical", "Compatible"};
       print_parameter(pcout,
                       "Discretization of Laplacian",
-                      str_discret_laplacian[(int)discretization_of_laplacian]);
+                      enum_to_string(discretization_of_laplacian));
 
-      multigrid_data_schur_complement_preconditioner.print(pcout);
+      multigrid_data_pressure_block.print(pcout);
 
       print_parameter(pcout,
                       "Exact inversion of Laplace operator",
@@ -1784,17 +1039,18 @@ public:
 
       if(exact_inversion_of_laplace_operator)
       {
-        print_parameter(pcout,
-                        "Relative solver tolerance",
-                        rel_tol_solver_schur_complement_preconditioner);
+        solver_data_pressure_block.print(pcout);
       }
     }
 
     // projection_step
     if(use_divergence_penalty == true || use_continuity_penalty == true)
     {
-      pcout << std::endl << "Postprocessing of velocity:" << std::endl;
-      print_parameters_projection_step(pcout);
+      if(add_penalty_terms_to_monolithic_system == false)
+      {
+        pcout << std::endl << "Postprocessing of velocity:" << std::endl;
+        print_parameters_projection_step(pcout);
+      }
     }
   }
 
@@ -1807,20 +1063,8 @@ public:
 
     if(use_turbulence_model == true)
     {
-      std::string str_turbulence_model[] = {"Undefined", "Smagorinsky", "Vreman", "WALE", "Sigma"};
-
-      print_parameter(pcout, "Turbulence model", str_turbulence_model[(int)turbulence_model]);
+      print_parameter(pcout, "Turbulence model", enum_to_string(turbulence_model));
       print_parameter(pcout, "Turbulence model constant", turbulence_model_constant);
-    }
-
-    if(false)
-    {
-      std::string str_xwall_turbulence_approach[] = {
-        "Undefined", "None", "RANSSpalartAllmaras", "ClassicalDES", "MultiscaleDES"};
-
-      print_parameter(pcout,
-                      "Turbulence model for xwall",
-                      str_xwall_turbulence_approach[(int)xwall_turb]);
     }
   }
 
@@ -2107,8 +1351,8 @@ public:
   // description: see enum declaration
   SolverPressurePoisson solver_pressure_poisson;
 
-  // defines the maximum size of the Krylov subspace before restart
-  unsigned int max_n_tmp_vectors_pressure_poisson;
+  // solver data for pressure Poisson equation
+  SolverData solver_data_pressure_poisson;
 
   // description: see enum declaration
   PreconditionerPressurePoisson preconditioner_pressure_poisson;
@@ -2116,14 +1360,13 @@ public:
   // description: see declaration of MultigridData
   MultigridData multigrid_data_pressure_poisson;
 
-  // solver tolerances for pressure Poisson equation
-  double abs_tol_pressure;
-  double rel_tol_pressure;
-
   // PROJECTION STEP
 
   // description: see enum declaration
   SolverProjection solver_projection;
+
+  // solver data for projection step
+  SolverData solver_data_projection;
 
   // description: see enum declaration
   PreconditionerProjection preconditioner_projection;
@@ -2141,11 +1384,6 @@ public:
   // to solve the global projection equation.
   bool update_preconditioner_projection;
 
-  // solver tolerances for projection step
-  double abs_tol_projection;
-  double rel_tol_projection;
-
-
   /**************************************************************************************/
   /*                                                                                    */
   /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */
@@ -2160,31 +1398,22 @@ public:
   // CONVECTIVE STEP
   NewtonSolverData newton_solver_data_convective;
 
-  // linear solver tolerances for momentum equation
-  double       abs_tol_linear_convective;
-  double       rel_tol_linear_convective;
-  unsigned int max_iter_linear_convective;
-
-  // use right preconditioning
-  bool use_right_preconditioning_convective;
-
-  // defines the maximum size of the Krylov subspace before restart
-  unsigned int max_n_tmp_vectors_convective;
+  // solver data for linearized problem
+  SolverData solver_data_convective;
 
   // VISCOUS STEP
 
   // description: see enum declaration
   SolverViscous solver_viscous;
 
+  // solver data for viscous step
+  SolverData solver_data_viscous;
+
   // description: see enum declaration
   PreconditionerViscous preconditioner_viscous;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data_viscous;
-
-  // solver tolerances for Helmholtz equation of viscous step
-  double abs_tol_viscous;
-  double rel_tol_viscous;
 
   // update preconditioner before every solve of the viscous step
   bool update_preconditioner_viscous;
@@ -2202,27 +1431,20 @@ public:
   // description: see enum declaration
   SolverMomentum solver_momentum;
 
+  // Solver data for (linearized) momentum equation
+  SolverData solver_data_momentum;
+
   // description: see enum declaration
   MomentumPreconditioner preconditioner_momentum;
 
   // description: see declaration of MultigridData
   MultigridData multigrid_data_momentum;
 
+  // description: see enum declaration
   MultigridOperatorType multigrid_operator_type_momentum;
 
-  // linear solver tolerances for momentum equation
-  double       abs_tol_momentum_linear;
-  double       rel_tol_momentum_linear;
-  unsigned int max_iter_momentum_linear;
-
-  // use right preconditioning
-  bool use_right_preconditioning_momentum;
-
-  // defines the maximum size of the Krylov subspace before restart
-  unsigned int max_n_tmp_vectors_momentum;
-
   // update preconditioner before solving the linear system of equations
-  // only necessary if the parts of the operator change during the simulation
+  // only necessary if the operator changes during the simulation
   bool update_preconditioner_momentum;
 
   // order of pressure extrapolation in case of incremental formulation
@@ -2255,61 +1477,51 @@ public:
   NewtonSolverData newton_solver_data_coupled;
 
   // description: see enum declaration
-  SolverLinearizedNavierStokes solver_linearized_navier_stokes;
+  SolverCoupled solver_coupled;
 
-  // solver tolerances for linearized problem of Newton solver
-  double       abs_tol_linear;
-  double       rel_tol_linear;
-  unsigned int max_iter_linear;
+  // Solver data for coupled solver
+  SolverData solver_data_coupled;
 
   // description: see enum declaration
-  PreconditionerLinearizedNavierStokes preconditioner_linearized_navier_stokes;
-
-  // use right preconditioning
-  bool use_right_preconditioning;
-
-  // defines the maximum size of the Krylov subspace before restart
-  unsigned int max_n_tmp_vectors;
+  PreconditionerCoupled preconditioner_coupled;
 
   // description: see enum declaration
-  MomentumPreconditioner momentum_preconditioner;
+  MomentumPreconditioner preconditioner_velocity_block;
 
   // description: see enum declaration
-  MultigridOperatorType momentum_multigrid_operator_type;
+  MultigridOperatorType multigrid_operator_type_velocity_block;
 
   // description: see declaration
-  MultigridData multigrid_data_momentum_preconditioner;
+  MultigridData multigrid_data_velocity_block;
 
   // The momentum block is inverted "exactly" in block preconditioner
   // by solving the velocity convection-diffusion problem to a given
   // relative tolerance
-  bool exact_inversion_of_momentum_block;
+  bool exact_inversion_of_velocity_block;
 
-  // relative tolerance for solver_momentum_preconditioner
-  double rel_tol_solver_momentum_preconditioner;
-
-  // defines the maximum size of the Krylov subspace before restart
-  // (for solver of momentum equation in block preconditioner)
-  unsigned int max_n_tmp_vectors_solver_momentum_preconditioner;
+  // solver data for velocity block (only relevant if velocity block
+  // is inverted exactly)
+  SolverData solver_data_velocity_block;
 
   // description: see enum declaration
-  SchurComplementPreconditioner schur_complement_preconditioner;
+  SchurComplementPreconditioner preconditioner_pressure_block;
 
   // description: see enum declaration
   DiscretizationOfLaplacian discretization_of_laplacian;
 
   // description: see declaration
-  MultigridData multigrid_data_schur_complement_preconditioner;
+  MultigridData multigrid_data_pressure_block;
 
   // The Laplace operator is inverted "exactly" in block preconditioner
   // by solving the Laplace problem to a given relative tolerance
   bool exact_inversion_of_laplace_operator;
 
-  // relative tolerance for solver_schur_complement_preconditioner
-  double rel_tol_solver_schur_complement_preconditioner;
+  // solver data for schur complement
+  // (only relevant if exact_inversion_of_laplace_operator == true)
+  SolverData solver_data_pressure_block;
 
   // Update preconditioner
-  bool update_preconditioner;
+  bool update_preconditioner_coupled;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -2328,22 +1540,6 @@ public:
 
   // turublence parameters that are required for statistics (post-processing)
   TurbulenceStatisticsData turb_stat_data;
-
-  // turbulence approach for xwall
-  XWallTurbulenceApproach xwall_turb;
-
-  // xwall with adaptive wall shear stress
-  bool variabletauw;
-
-  // delta tauw if adaptive between 0 and 1
-  double dtauw;
-
-  // max wall distance of enriched elements
-  double max_wdist_xwall;
-
-  // diffusion number: used to define time step size for the Spalart Allmaras equations
-  double diffusion_number;
-
 
   /**************************************************************************************/
   /*                                                                                    */

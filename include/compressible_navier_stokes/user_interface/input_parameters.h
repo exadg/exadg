@@ -18,127 +18,10 @@
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
 
+#include "enum_types.h"
+
 namespace CompNS
 {
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 MATHEMATICAL MODEL                                 */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  ProblemType describes whether a steady or an unsteady problem has to be solved
- */
-enum class ProblemType
-{
-  Undefined,
-  Steady,
-  Unsteady
-};
-
-
-/*
- *  EquationType describes the physical/mathematical model that has to be solved,
- *  i.e., Euler euqations or Navier-Stokes equations
- */
-enum class EquationType
-{
-  Undefined,
-  Euler,
-  NavierStokes
-};
-
-/*
- *  For energy boundary conditions, one can prescribe the temperature or the energy
- */
-enum class EnergyBoundaryVariable
-{
-  Undefined,
-  Energy,
-  Temperature
-};
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 PHYSICAL QUANTITIES                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-// there are currently no enums for this section
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                             TEMPORAL DISCRETIZATION                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Temporal discretization method:
- *
- *    Explicit Runge-Kutta methods
- */
-enum class TemporalDiscretization
-{
-  Undefined,
-  ExplRK, // specify order of time integration scheme (order = stages)
-  ExplRK3Stage4Reg2C,
-  ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg2C,
-  ExplRK4Stage8Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg3C,
-  ExplRK5Stage9Reg2S,
-  SSPRK // specify order and stages of time integration scheme
-};
-
-/*
- *  For the BDF time integrator, the convective term can be either
- *  treated explicitly or implicitly
- */
-enum class TreatmentOfConvectiveTerm
-{
-  Undefined,
-  Explicit,
-  Implicit
-};
-
-/*
- * calculation of time step size
- */
-enum class TimeStepCalculation
-{
-  Undefined,
-  UserSpecified,
-  CFL,
-  Diffusion,
-  CFLAndDiffusion
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               SPATIAL DISCRETIZATION                               */
-/*                                                                                    */
-/**************************************************************************************/
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                       SOLVER                                       */
-/*                                                                                    */
-/**************************************************************************************/
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               OUTPUT AND POSTPROCESSING                            */
-/*                                                                                    */
-/**************************************************************************************/
-
 struct OutputDataCompNavierStokes : public OutputData
 {
   OutputDataCompNavierStokes()
@@ -191,7 +74,6 @@ public:
   // standard constructor that initializes parameters with default values
   InputParameters()
     : // MATHEMATICAL MODEL
-      problem_type(ProblemType::Undefined),
       equation_type(EquationType::Undefined),
       right_hand_side(false),
 
@@ -263,8 +145,6 @@ public:
   check_input_parameters()
   {
     // MATHEMATICAL MODEL
-    AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
-
     AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
 
@@ -340,8 +220,7 @@ public:
     print_parameters_spatial_discretization(pcout);
 
     // SOLVER
-    // If a linear system of equations has to be solved:
-    // for the current implementation this means
+    // If a system of equations has to be solved (currently not used)
     print_parameters_solver(pcout);
 
     // NUMERICAL PARAMETERS
@@ -356,18 +235,7 @@ public:
   {
     pcout << std::endl << "Mathematical model:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
-    // equation type
-    std::string str_equation_type[] = {"Undefined",
-                                       "Convection",
-                                       "Diffusion",
-                                       "ConvectionDiffusion"};
-
+    print_parameter(pcout, "Equation type", enum_to_string(equation_type));
 
     // right hand side
     print_parameter(pcout, "Right-hand side", right_hand_side);
@@ -378,12 +246,8 @@ public:
   {
     pcout << std::endl << "Physical quantities:" << std::endl;
 
-    // start and end time
-    if(true /*problem_type == ProblemType::Unsteady*/)
-    {
-      print_parameter(pcout, "Start time", start_time);
-      print_parameter(pcout, "End time", end_time);
-    }
+    print_parameter(pcout, "Start time", start_time);
+    print_parameter(pcout, "End time", end_time);
 
     print_parameter(pcout, "Dynamic viscosity", dynamic_viscosity);
     print_parameter(pcout, "Reference density", reference_density);
@@ -397,19 +261,9 @@ public:
   {
     pcout << std::endl << "Temporal discretization:" << std::endl;
 
-    std::string str_temp_discret[] = {"Undefined",
-                                      "Classical, explicit Runge-Kutta",
-                                      "ExplRK3Stage4Reg2C",
-                                      "ExplRK3Stage7Reg2",
-                                      "ExplRK4Stage5Reg2C",
-                                      "ExplRK4Stage8Reg2",
-                                      "ExplRK4Stage5Reg3C",
-                                      "ExplRK5Stage9Reg2S",
-                                      "SSPRK"};
-
     print_parameter(pcout,
                     "Temporal discretization method",
-                    str_temp_discret[(int)temporal_discretization]);
+                    enum_to_string(temporal_discretization));
 
     if(temporal_discretization == TemporalDiscretization::ExplRK)
     {
@@ -422,12 +276,9 @@ public:
       print_parameter(pcout, "Number of stages", stages);
     }
 
-    std::string str_time_step_calc[] = {
-      "Undefined", "UserSpecified", "CFL", "Diffusion", "CFLAndDiffusion"};
-
     print_parameter(pcout,
                     "Calculation of time step size",
-                    str_time_step_calc[(int)calculation_of_time_step_size]);
+                    enum_to_string(calculation_of_time_step_size));
 
     // maximum number of time steps
     print_parameter(pcout, "Maximum number of time steps", max_number_of_time_steps);
@@ -476,8 +327,8 @@ public:
     print_parameter(pcout, "Calculate velocity field", calculate_velocity);
     print_parameter(pcout, "Calculate pressure field", calculate_pressure);
 
-    output_data.print(pcout, problem_type == ProblemType::Unsteady);
-    error_data.print(pcout, problem_type == ProblemType::Unsteady);
+    output_data.print(pcout, true);
+    error_data.print(pcout, true);
 
     // kinetic energy
     kinetic_energy_data.print(pcout);
@@ -498,9 +349,6 @@ public:
   /*                                 MATHEMATICAL MODEL                                 */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // description: see enum declaration
-  ProblemType problem_type;
 
   // description: see enum declaration
   EquationType equation_type;

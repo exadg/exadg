@@ -32,10 +32,8 @@ Poisson::InputParameters::set_input_parameters()
   IP_factor = 1.0;
 
   // SOLVER
-  solver         = Solver::PCG;
-  abs_tol        = 1.e-20;
-  rel_tol        = 1.e-8;
-  max_iter       = 1e4;
+  solver = Solver::CG;
+  solver_data = SolverData(1e4, 1.e-20, 1.e-8);
   preconditioner = Preconditioner::Multigrid;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Chebyshev;
@@ -45,7 +43,7 @@ Poisson::InputParameters::set_input_parameters()
   // MG coarse grid solver
   multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML; // GMRES_PointJacobi;
   // multigrid_data.two_levels = true;
-  multigrid_data.type = MultigridType::PGMG;
+  multigrid_data.type = MultigridType::pMG;
 
   // write output for visualization of results
   output_data.write_output  = false;
@@ -144,7 +142,7 @@ create_grid_and_set_boundary_conditions(
   parallel::distributed::Triangulation<dim> &                                            triangulation,
   unsigned int const                                                                     n_refine_space,
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>>                                      boundary_descriptor,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & periodic_faces)
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
 {
   // hypercube: [left,right]^dim
   const double left = -0.5 * numbers::PI, right = +0.5 * numbers::PI;

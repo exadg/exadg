@@ -66,7 +66,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   start_with_low_order = false;
   calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   time_step_size = 1.0e-2;
-  cfl_number = 0.1;
+  cfl = 0.1;
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
@@ -77,10 +77,8 @@ void ConvDiff::InputParameters::set_input_parameters()
   IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::PCG;
-  abs_tol = 1.e-20;
-  rel_tol = 1.e-6;
-  max_iter = 1e4;
+  solver = Solver::CG;
+  solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
   preconditioner = Preconditioner::Multigrid; //BlockJacobi;
   mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   multigrid_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
@@ -97,7 +95,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.output_name = "output";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.number_of_patches = FE_DEGREE;
+  output_data.degree = FE_DEGREE;
 
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
@@ -116,7 +114,6 @@ void ConvDiff::InputParameters::set_input_parameters()
 /*
  *  Analytical solution
  */
-
 template<int dim>
 class Solution : public Function<dim>
 {
@@ -128,46 +125,42 @@ public:
   {}
 
   double value (const Point<dim>   &p,
-                const unsigned int component = 0) const;
+                const unsigned int /*component*/) const
+  {
+    double t = this->get_time();
+    double result = 1.0;
+
+    if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
+    {
+      for(int d=0;d<dim;d++)
+        result *= std::cos(p[d]*numbers::PI/2.0);
+      result *= std::exp(-0.5*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+    }
+    else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
+    {
+      for(int d=0;d<dim;d++)
+        result *= std::cos(p[d]*numbers::PI);
+      result *= std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+    }
+    else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
+    {
+      for(int d=0;d<dim;d++)
+        result *= std::cos(p[d]*numbers::PI)+1.0;
+      result *= std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    return result;
+  }
 };
 
-template<int dim>
-double Solution<dim>::value(const Point<dim>    &p,
-                            const unsigned int  /* component */) const
-{
-  double t = this->get_time();
-  double result = 1.0;
-
-  if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
-  {
-    for(int d=0;d<dim;d++)
-      result *= std::cos(p[d]*numbers::PI/2.0);
-    result *= std::exp(-0.5*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
-  }
-  else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
-  {
-    for(int d=0;d<dim;d++)
-      result *= std::cos(p[d]*numbers::PI);
-    result *= std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
-  }
-  else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
-  {
-    for(int d=0;d<dim;d++)
-      result *= std::cos(p[d]*numbers::PI)+1.0;
-    result *= std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  return result;
-}
 
 /*
  *  Right-hand side
  */
-
 template<int dim>
 class RightHandSide : public Function<dim>
 {
@@ -178,95 +171,32 @@ public:
     Function<dim>(n_components, time)
   {}
 
-  virtual ~RightHandSide(){};
-
-  virtual double value (const Point<dim>    &p,
-                       const unsigned int  component = 0) const;
-};
-
-template<int dim>
-double RightHandSide<dim>::value(const Point<dim>     &p,
-                                const unsigned int   /* component */) const
-{
-  double t = this->get_time();
-  double result = 0.0;
-
-  if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC ||
-     BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
+  double value (const Point<dim>    &p,
+                const unsigned int  /*component*/) const
   {
-    // do nothing, rhs=0
+    double t = this->get_time();
+    double result = 0.0;
+
+    if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC ||
+       BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC)
+    {
+      // do nothing, rhs=0
+    }
+    else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
+    {
+      for(int d=0;d<dim;++d)
+        result += std::cos(p[d]*numbers::PI)+1;
+      result *=  -std::pow(numbers::PI,2.0) * DIFFUSIVITY
+                 * std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    return result;
   }
-  else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
-  {
-    for(int d=0;d<dim;++d)
-      result += std::cos(p[d]*numbers::PI)+1;
-    result *=  -std::pow(numbers::PI,2.0) * DIFFUSIVITY
-               * std::exp(-2.0*DIFFUSIVITY*pow(numbers::PI,2.0)*t);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  return result;
-}
-
-/*
- *  Neumann boundary condition
- */
-
-template<int dim>
-class NeumannBoundary : public Function<dim>
-{
-public:
-  NeumannBoundary (const unsigned int n_components = 1,
-                   const double       time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {}
-
-  virtual ~NeumannBoundary(){};
-
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
 };
-
-template<int dim>
-double NeumannBoundary<dim>::value(const Point<dim>   &/*p*/,
-                                   const unsigned int /* component */) const
-{
-  double result = 0.0;
-  return result;
-}
-
-/*
- *  Velocity field
- */
-
-template<int dim>
-class VelocityField : public Function<dim>
-{
-public:
-  VelocityField (const unsigned int n_components = dim,
-                 const double       time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {}
-
-  virtual ~VelocityField(){};
-
-  virtual double value (const Point<dim>    &p,
-                        const unsigned int  component = 0) const;
-};
-
-template<int dim>
-double VelocityField<dim>::value(const Point<dim>   &/*point*/,
-                                 const unsigned int /*component*/) const
-{
-  double value = 0.0;
-
-  return value;
-}
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -286,19 +216,16 @@ void create_grid_and_set_boundary_conditions(
 
   triangulation.refine_global(n_refine_space);
 
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
   if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)
   {
-    std::shared_ptr<Function<dim> > analytical_solution;
-    analytical_solution.reset(new Solution<dim>());
-    //problem with pure Dirichlet boundary conditions
-    boundary_descriptor->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,analytical_solution));
+    boundary_descriptor->dirichlet_bc.insert(pair(0,new Solution<dim>()));
   }
   else if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBC ||
           BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS)
   {
-    std::shared_ptr<Function<dim> > neumann_bc;
-    neumann_bc.reset(new NeumannBoundary<dim>());
-    boundary_descriptor->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,neumann_bc));
+    boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
   }
   else
   {
@@ -309,19 +236,9 @@ void create_grid_and_set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim> > analytical_solution;
-  analytical_solution.reset(new Solution<dim>());
-
-  std::shared_ptr<Function<dim> > right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  std::shared_ptr<Function<dim> > velocity;
-  velocity.reset(new VelocityField<dim>());
-
-  field_functions->analytical_solution = analytical_solution;
-  field_functions->right_hand_side = right_hand_side;
-  field_functions->velocity = velocity;
+  field_functions->analytical_solution.reset(new Solution<dim>());
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
+  field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
 template<int dim>

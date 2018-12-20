@@ -347,13 +347,13 @@ template<int dim, int degree, typename Number>
 void
 DGOperation<dim, degree, Number>::initialize_solver()
 {
-  if(param.solver == Solver::PCG)
+  if(param.solver == Solver::CG)
   {
     // initialize solver_data
     CGSolverData solver_data;
-    solver_data.solver_tolerance_abs  = param.abs_tol;
-    solver_data.solver_tolerance_rel  = param.rel_tol;
-    solver_data.max_iter              = param.max_iter;
+    solver_data.solver_tolerance_abs  = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel  = param.solver_data.rel_tol;
+    solver_data.max_iter              = param.solver_data.max_iter;
     solver_data.update_preconditioner = param.update_preconditioner;
 
     if(param.preconditioner != Preconditioner::None)
@@ -369,11 +369,10 @@ DGOperation<dim, degree, Number>::initialize_solver()
   {
     // initialize solver_data
     GMRESSolverData solver_data;
-    solver_data.solver_tolerance_abs  = param.abs_tol;
-    solver_data.solver_tolerance_rel  = param.rel_tol;
-    solver_data.max_iter              = param.max_iter;
-    solver_data.right_preconditioning = param.use_right_preconditioner;
-    solver_data.max_n_tmp_vectors     = param.max_n_tmp_vectors;
+    solver_data.solver_tolerance_abs  = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel  = param.solver_data.rel_tol;
+    solver_data.max_iter              = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors     = param.solver_data.max_krylov_size;
     solver_data.update_preconditioner = param.update_preconditioner;
 
     if(param.preconditioner != Preconditioner::None)
@@ -389,10 +388,10 @@ DGOperation<dim, degree, Number>::initialize_solver()
   {
     // initialize solver_data
     FGMRESSolverData solver_data;
-    solver_data.solver_tolerance_abs  = param.abs_tol;
-    solver_data.solver_tolerance_rel  = param.rel_tol;
-    solver_data.max_iter              = param.max_iter;
-    solver_data.max_n_tmp_vectors     = param.max_n_tmp_vectors;
+    solver_data.solver_tolerance_abs  = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel  = param.solver_data.rel_tol;
+    solver_data.max_iter              = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors     = param.solver_data.max_krylov_size;
     solver_data.update_preconditioner = param.update_preconditioner;
 
     if(param.preconditioner != Preconditioner::None)
