@@ -966,7 +966,7 @@ public:
                       update_preconditioner_momentum_every_time_steps);
     }
 
-    // formulations of pressur-correction scheme
+    // formulations of pressure-correction scheme
     pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
     print_parameter(pcout, "Order of pressure extrapolation", order_pressure_extrapolation);
     print_parameter(pcout, "Rotational formulation", rotational_formulation);
@@ -995,8 +995,7 @@ public:
 
     // if a nonlinear problem has to be solved
     if(equation_type == EquationType::NavierStokes &&
-       (problem_type == ProblemType::Steady /*TODO check this */ ||
-        treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+       treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
     {
       pcout << "Newton solver:" << std::endl;
 
@@ -1020,8 +1019,7 @@ public:
     {
       // if a nonlinear problem has to be solved
       if(equation_type == EquationType::NavierStokes &&
-         (problem_type == ProblemType::Steady /*TODO check this */ ||
-          treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+         treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
       {
         print_parameter(pcout,
                         "Update every Newton iterations",
