@@ -11,6 +11,7 @@ SET( SOURCE_FILES
      transfer/p-transfer-1
      transfer/p-transfer-2
      transfer/p-transfer-3
+     performance/operators
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )

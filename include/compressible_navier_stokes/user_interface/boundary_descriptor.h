@@ -13,6 +13,8 @@ using namespace dealii;
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
+#include "input_parameters.h"
+
 namespace CompNS
 {
 template<int dim>
