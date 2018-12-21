@@ -442,7 +442,8 @@ ConvectionDiffusionOperator<dim, degree, Number>::apply_inverse_block_diagonal(
   {
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
-    elementwise_solver->solve(dst, src);
+    bool variable_not_needed = false;
+    elementwise_solver->solve(dst, src, variable_not_needed);
   }
   else // matrix based
   {

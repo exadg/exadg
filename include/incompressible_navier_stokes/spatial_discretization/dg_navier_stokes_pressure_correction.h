@@ -62,6 +62,7 @@ public:
   void
   solve_linear_momentum_equation(VectorType &       solution,
                                  VectorType const & rhs,
+                                 bool const &       update_preconditioner,
                                  double const &     scaling_factor_mass_matrix_term,
                                  unsigned int &     linear_iterations);
 
@@ -96,6 +97,7 @@ public:
   solve_nonlinear_momentum_equation(VectorType &       dst,
                                     VectorType const & rhs_vector,
                                     double const &     eval_time,
+                                    bool const &       update_preconditioner,
                                     double const &     scaling_factor_mass_matrix_term,
                                     unsigned int &     newton_iterations,
                                     unsigned int &     linear_iterations);

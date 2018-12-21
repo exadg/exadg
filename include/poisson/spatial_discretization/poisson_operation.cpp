@@ -137,7 +137,7 @@ template<int dim, int degree, typename Number>
 unsigned int
 DGOperation<dim, degree, Number>::solve(VectorType & sol, VectorType const & rhs)
 {
-  unsigned int iterations = iterative_solver->solve(sol, rhs);
+  unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
 
   return iterations;
 }

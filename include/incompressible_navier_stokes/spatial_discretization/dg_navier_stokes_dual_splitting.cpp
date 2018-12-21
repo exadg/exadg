@@ -226,7 +226,6 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
     {
       solver_data.use_preconditioner = true;
     }
-    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
     // setup helmholtz solver
     helmholtz_solver.reset(
@@ -242,7 +241,6 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
     solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
     solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
     // use default value of compute_eigenvalues
-    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
     // default value of use_preconditioner = false
     if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
@@ -262,11 +260,10 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {
     FGMRESSolverData solver_data;
-    solver_data.max_iter              = this->param.solver_data_viscous.max_iter;
-    solver_data.solver_tolerance_abs  = this->param.solver_data_viscous.abs_tol;
-    solver_data.solver_tolerance_rel  = this->param.solver_data_viscous.rel_tol;
-    solver_data.max_n_tmp_vectors     = this->param.solver_data_viscous.max_krylov_size;
-    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
+    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
 
     if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
@@ -325,7 +322,8 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::solve_nonlinear_co
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
   // solve nonlinear problem
-  newton_solver->solve(dst, newton_iterations, linear_iterations);
+  newton_solver->solve(
+    dst, newton_iterations, linear_iterations, /* update_preconditioner = */ false, 1);
 
   // Reset sum_alphai_ui
   this->sum_alphai_ui = nullptr;
@@ -667,14 +665,16 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::rhs_add_viscous_te
 
 template<int dim, int degree_u, int degree_p, typename Number>
 unsigned int
-DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::solve_viscous(VectorType &       dst,
-                                                                            VectorType const & src,
-                                                                            double const & factor)
+DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::solve_viscous(
+  VectorType &       dst,
+  VectorType const & src,
+  bool const &       update_preconditioner,
+  double const &     factor)
 {
   // Update Helmholtz operator
   helmholtz_operator.set_scaling_factor_time_derivative_term(factor);
 
-  unsigned int n_iter = helmholtz_solver->solve(dst, src);
+  unsigned int n_iter = helmholtz_solver->solve(dst, src, update_preconditioner);
 
   return n_iter;
 }

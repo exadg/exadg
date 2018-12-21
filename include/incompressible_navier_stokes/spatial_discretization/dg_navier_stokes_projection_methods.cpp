@@ -224,7 +224,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_solve_press
   //    check_multigrid(this->laplace_operator,mg_preconditioner);
   //  check_multigrid.check();
 
-  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src);
+  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, false);
 
   return n_iter;
 }

@@ -93,7 +93,10 @@ DriverSteadyProblems<dim, Number>::solve()
     pde_operator->rhs_stokes_problem(rhs_vector);
 
     // solve coupled system of equations
-    unsigned int iterations = pde_operator->solve_linear_stokes_problem(solution, rhs_vector);
+    unsigned int iterations =
+      pde_operator->solve_linear_stokes_problem(solution,
+                                                rhs_vector,
+                                                this->param.update_preconditioner_coupled);
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
@@ -109,7 +112,10 @@ DriverSteadyProblems<dim, Number>::solve()
     // Newton solver
     unsigned int newton_iterations;
     unsigned int linear_iterations;
-    pde_operator->solve_nonlinear_steady_problem(solution, newton_iterations, linear_iterations);
+    pde_operator->solve_nonlinear_steady_problem(solution,
+                                                 this->param.update_preconditioner_coupled,
+                                                 newton_iterations,
+                                                 linear_iterations);
 
     // write output
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)

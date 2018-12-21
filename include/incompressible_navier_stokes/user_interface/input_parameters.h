@@ -255,9 +255,10 @@ public:
       solver_projection(SolverProjection::CG),
       solver_data_projection(SolverData(1000, 1.e-12, 1.e-6, 100)),
       preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
+      update_preconditioner_projection(true),
+      update_preconditioner_projection_every_time_steps(1),
       preconditioner_block_diagonal_projection(PreconditionerBlockDiagonal::InverseMassMatrix),
       solver_data_block_diagonal_projection(SolverData(1000, 1.e-12, 1.e-2, 1000)),
-      update_preconditioner_projection(true),
 
       // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -272,8 +273,9 @@ public:
       solver_viscous(SolverViscous::CG),
       solver_data_viscous(SolverData(1e4, 1.e-12, 1.e-6, 100)),
       preconditioner_viscous(PreconditionerViscous::InverseMassMatrix),
-      multigrid_data_viscous(MultigridData()),
       update_preconditioner_viscous(false),
+      update_preconditioner_viscous_every_time_steps(1),
+      multigrid_data_viscous(MultigridData()),
 
       // PRESSURE-CORRECTION SCHEME
 
@@ -282,9 +284,11 @@ public:
       solver_momentum(SolverMomentum::GMRES),
       solver_data_momentum(SolverData(1e4, 1.e-12, 1.e-6, 100)),
       preconditioner_momentum(MomentumPreconditioner::InverseMassMatrix),
+      update_preconditioner_momentum(false),
+      update_preconditioner_momentum_every_newton_iter(1),
+      update_preconditioner_momentum_every_time_steps(1),
       multigrid_data_momentum(MultigridData()),
       multigrid_operator_type_momentum(MultigridOperatorType::Undefined),
-      update_preconditioner_momentum(false),
 
       // formulations
       order_pressure_extrapolation(1),
@@ -306,6 +310,9 @@ public:
 
       // preconditioning linear solver
       preconditioner_coupled(PreconditionerCoupled::BlockTriangular),
+      update_preconditioner_coupled(false),
+      update_preconditioner_coupled_every_newton_iter(1),
+      update_preconditioner_coupled_every_time_steps(1),
 
       // preconditioner velocity/momentum block
       preconditioner_velocity_block(MomentumPreconditioner::InverseMassMatrix),
@@ -320,9 +327,6 @@ public:
       multigrid_data_pressure_block(MultigridData()),
       exact_inversion_of_laplace_operator(false),
       solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
-
-      // update preconditioner
-      update_preconditioner_coupled(false),
 
       // TURBULENCE
       use_turbulence_model(false),
@@ -946,6 +950,22 @@ public:
 
     print_parameter(pcout, "Update of preconditioner", update_preconditioner_momentum);
 
+    if(update_preconditioner_momentum == true)
+    {
+      // if a nonlinear problem has to be solved
+      if(equation_type == EquationType::NavierStokes &&
+         treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      {
+        print_parameter(pcout,
+                        "Update every Newton iterations",
+                        update_preconditioner_momentum_every_newton_iter);
+      }
+
+      print_parameter(pcout,
+                      "Update every time steps",
+                      update_preconditioner_momentum_every_time_steps);
+    }
+
     // formulations of pressur-correction scheme
     pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
     print_parameter(pcout, "Order of pressure extrapolation", order_pressure_extrapolation);
@@ -975,7 +995,7 @@ public:
 
     // if a nonlinear problem has to be solved
     if(equation_type == EquationType::NavierStokes &&
-       (problem_type == ProblemType::Steady ||
+       (problem_type == ProblemType::Steady /*TODO check this */ ||
         treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
     {
       pcout << "Newton solver:" << std::endl;
@@ -995,6 +1015,23 @@ public:
     print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_coupled));
 
     print_parameter(pcout, "Update preconditioner", update_preconditioner_coupled);
+
+    if(update_preconditioner_coupled == true)
+    {
+      // if a nonlinear problem has to be solved
+      if(equation_type == EquationType::NavierStokes &&
+         (problem_type == ProblemType::Steady /*TODO check this */ ||
+          treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+      {
+        print_parameter(pcout,
+                        "Update every Newton iterations",
+                        update_preconditioner_coupled_every_newton_iter);
+      }
+
+      print_parameter(pcout,
+                      "Update every time steps",
+                      update_preconditioner_coupled_every_time_steps);
+    }
 
     pcout << std::endl << "  Velocity/momentum block:" << std::endl;
 
@@ -1357,6 +1394,8 @@ public:
   // description: see enum declaration
   PreconditionerPressurePoisson preconditioner_pressure_poisson;
 
+  // update of preconditioner for this equation is currently not provided and not needed
+
   // description: see declaration of MultigridData
   MultigridData multigrid_data_pressure_poisson;
 
@@ -1371,6 +1410,15 @@ public:
   // description: see enum declaration
   PreconditionerProjection preconditioner_projection;
 
+  // Update preconditioner before solving the linear system of equations.
+  // Note that this variable is only used when using an iterative method
+  // to solve the global projection equation.
+  bool update_preconditioner_projection;
+
+  // Update preconditioner every ... time steps.
+  // This variable is only used if update of preconditioner is true.
+  unsigned int update_preconditioner_projection_every_time_steps;
+
   // description: see enum declaration (only relevant if block diagonal is used as
   // preconditioner)
   PreconditionerBlockDiagonal preconditioner_block_diagonal_projection;
@@ -1378,11 +1426,6 @@ public:
   // solver data for block Jacobi preconditioner (only relevant if elementwise
   // iterative solution procedure is used for block diagonal preconditioner)
   SolverData solver_data_block_diagonal_projection;
-
-  // Update preconditioner before solving the linear system of equations.
-  // Note that this variable is only used when using an iterative method
-  // to solve the global projection equation.
-  bool update_preconditioner_projection;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -1401,6 +1444,8 @@ public:
   // solver data for linearized problem
   SolverData solver_data_convective;
 
+  // update of preconditioner for this equation is currently not provided
+
   // VISCOUS STEP
 
   // description: see enum declaration
@@ -1412,11 +1457,15 @@ public:
   // description: see enum declaration
   PreconditionerViscous preconditioner_viscous;
 
-  // description: see declaration of MultigridData
-  MultigridData multigrid_data_viscous;
-
   // update preconditioner before every solve of the viscous step
   bool update_preconditioner_viscous;
+
+  // Update preconditioner every ... time steps.
+  // This variable is only used if update of preconditioner is true.
+  unsigned int update_preconditioner_viscous_every_time_steps;
+
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data_viscous;
 
 
   /**************************************************************************************/
@@ -1437,15 +1486,24 @@ public:
   // description: see enum declaration
   MomentumPreconditioner preconditioner_momentum;
 
+  // update preconditioner before solving the linear system of equations
+  // only necessary if the operator changes during the simulation
+  bool update_preconditioner_momentum;
+
+  // Update preconditioner every ... Newton iterations (only relevant for
+  // nonlinear problems, i.e., if the convective term is formulated implicitly)
+  // This variable is only used if update_preconditioner_coupled = true.
+  unsigned int update_preconditioner_momentum_every_newton_iter;
+
+  // Update preconditioner every ... time steps.
+  // This variable is only used if update_preconditioner_coupled = true.
+  unsigned int update_preconditioner_momentum_every_time_steps;
+
   // description: see declaration of MultigridData
   MultigridData multigrid_data_momentum;
 
   // description: see enum declaration
   MultigridOperatorType multigrid_operator_type_momentum;
-
-  // update preconditioner before solving the linear system of equations
-  // only necessary if the operator changes during the simulation
-  bool update_preconditioner_momentum;
 
   // order of pressure extrapolation in case of incremental formulation
   // a value of 0 corresponds to non-incremental formulation
@@ -1485,6 +1543,18 @@ public:
   // description: see enum declaration
   PreconditionerCoupled preconditioner_coupled;
 
+  // Update preconditioner
+  bool update_preconditioner_coupled;
+
+  // Update preconditioner every ... Newton iterations (only relevant for
+  // nonlinear problems, i.e., if the convective term is formulated implicitly)
+  // This variable is only used if update_preconditioner_coupled = true.
+  unsigned int update_preconditioner_coupled_every_newton_iter;
+
+  // Update preconditioner every ... time steps.
+  // This variable is only used if update_preconditioner_coupled = true.
+  unsigned int update_preconditioner_coupled_every_time_steps;
+
   // description: see enum declaration
   MomentumPreconditioner preconditioner_velocity_block;
 
@@ -1520,9 +1590,6 @@ public:
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
 
-  // Update preconditioner
-  bool update_preconditioner_coupled;
-
   /**************************************************************************************/
   /*                                                                                    */
   /*                                     TURBULENCE                                     */
@@ -1538,7 +1605,7 @@ public:
   // turbulence model
   TurbulenceEddyViscosityModel turbulence_model;
 
-  // turublence parameters that are required for statistics (post-processing)
+  // turbulence parameters that are required for statistics (post-processing)
   TurbulenceStatisticsData turb_stat_data;
 
   /**************************************************************************************/

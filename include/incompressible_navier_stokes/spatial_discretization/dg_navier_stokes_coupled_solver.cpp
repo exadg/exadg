@@ -144,12 +144,11 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_couple
   if(this->param.solver_coupled == SolverCoupled::GMRES)
   {
     GMRESSolverData solver_data;
-    solver_data.max_iter              = this->param.solver_data_coupled.max_iter;
-    solver_data.solver_tolerance_abs  = this->param.solver_data_coupled.abs_tol;
-    solver_data.solver_tolerance_rel  = this->param.solver_data_coupled.rel_tol;
-    solver_data.max_n_tmp_vectors     = this->param.solver_data_coupled.max_krylov_size;
-    solver_data.update_preconditioner = this->param.update_preconditioner_coupled;
-    solver_data.compute_eigenvalues   = false;
+    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
+    solver_data.compute_eigenvalues  = false;
 
     if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
     {
@@ -162,11 +161,10 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_couple
   else if(this->param.solver_coupled == SolverCoupled::FGMRES)
   {
     FGMRESSolverData solver_data;
-    solver_data.max_iter              = this->param.solver_data_coupled.max_iter;
-    solver_data.solver_tolerance_abs  = this->param.solver_data_coupled.abs_tol;
-    solver_data.solver_tolerance_rel  = this->param.solver_data_coupled.rel_tol;
-    solver_data.max_n_tmp_vectors     = this->param.solver_data_coupled.max_krylov_size;
-    solver_data.update_preconditioner = this->param.update_preconditioner_coupled;
+    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
 
     if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
     {
@@ -301,16 +299,17 @@ unsigned int
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_linear_stokes_problem(
   BlockVectorType &       dst,
   BlockVectorType const & src,
+  bool const &            update_preconditioner,
   double const &          scaling_factor_mass_matrix_term)
 {
-  // Set scaling_factor_time_derivative_term for linear operator (velocity_conv_diff_operator).
+  // Set scaling_factor_time_derivative_term for linear operator.
   momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
-  // Note that there is no need to set the evaluation time for the velocity_conv_diff_operator
+  // Note that there is no need to set the evaluation time for the momentum_operator
   // because this function is only called if the convective term is not considered
-  // in the velocity_conv_diff_operator (Stokes eq. or explicit treatment of convective term).
+  // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
 
-  return linear_solver->solve(dst, src);
+  return linear_solver->solve(dst, src, update_preconditioner);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -373,11 +372,16 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_steady_problem(
   BlockVectorType & dst,
+  bool const &      update_preconditioner,
   unsigned int &    newton_iterations,
   unsigned int &    linear_iterations)
 {
   // solve nonlinear problem
-  newton_solver->solve(dst, newton_iterations, linear_iterations);
+  newton_solver->solve(dst,
+                       newton_iterations,
+                       linear_iterations,
+                       update_preconditioner,
+                       this->param.update_preconditioner_coupled_every_newton_iter);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -386,6 +390,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
   BlockVectorType &  dst,
   VectorType const & sum_alphai_ui,
   double const &     eval_time,
+  bool const &       update_preconditioner,
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     newton_iterations,
   unsigned int &     linear_iterations)
@@ -404,7 +409,11 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
   momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  newton_solver->solve(dst, newton_iterations, linear_iterations);
+  newton_solver->solve(dst,
+                       newton_iterations,
+                       linear_iterations,
+                       update_preconditioner,
+                       this->param.update_preconditioner_coupled_every_newton_iter);
 
   // Reset sum_alphai_ui
   this->sum_alphai_ui = nullptr;

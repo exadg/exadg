@@ -344,8 +344,13 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   {
     // solve linear system of equations
     unsigned int linear_iterations_momentum;
+    bool const   update_preconditioner =
+      this->param.update_preconditioner_momentum &&
+      (this->time_step_number % this->param.update_preconditioner_momentum_every_time_steps == 0);
+
     pde_operator->solve_linear_momentum_equation(velocity_np,
                                                  rhs_vec_momentum,
+                                                 update_preconditioner,
                                                  this->get_scaling_factor_time_derivative_term(),
                                                  linear_iterations_momentum);
 
@@ -371,9 +376,14 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
 
     unsigned int linear_iterations_momentum;
     unsigned int nonlinear_iterations_momentum;
+    bool const   update_preconditioner =
+      this->param.update_preconditioner_momentum &&
+      (this->time_step_number % this->param.update_preconditioner_momentum_every_time_steps == 0);
+
     pde_operator->solve_nonlinear_momentum_equation(velocity_np,
                                                     rhs_vec_momentum,
                                                     this->get_next_time(),
+                                                    update_preconditioner,
                                                     this->get_scaling_factor_time_derivative_term(),
                                                     nonlinear_iterations_momentum,
                                                     linear_iterations_momentum);
@@ -733,7 +743,12 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step()
                                                     this->get_time_step_size());
 
     // solve linear system of equations
-    iterations_projection = this->operator_base->solve_projection(velocity_np, rhs_vec_projection);
+    bool const update_preconditioner =
+      this->param.update_preconditioner_projection &&
+      (this->time_step_number % this->param.update_preconditioner_projection_every_time_steps == 0);
+
+    iterations_projection =
+      this->operator_base->solve_projection(velocity_np, rhs_vec_projection, update_preconditioner);
   }
   else // no penalty terms, simply apply inverse mass matrix
   {

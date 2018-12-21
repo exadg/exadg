@@ -478,8 +478,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_preconditioner_veloc
       // clang-format on
 
       // iteratively solve momentum equation up to given tolerance
-      dst                           = 0.0;
-      unsigned int const iterations = solver_velocity_block->solve(dst, src);
+      dst = 0.0;
+      // Note that update of preconditioner is set to false here since the preconditioner has
+      // already been updated in the member function update() if desired.
+      unsigned int const iterations =
+        solver_velocity_block->solve(dst, src, /* update_preconditioner = */ false);
 
       // output
       bool const print_iterations = false;
@@ -670,8 +673,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_inverse_negative_lap
 
       pointer_to_src = &tmp_projection_vector;
     }
+
     dst = 0.0;
-    solver_pressure_block->solve(dst, *pointer_to_src);
+    // Note that update of preconditioner is set to false here since the preconditioner has
+    // already been updated in the member function update() if desired.
+    solver_pressure_block->solve(dst, *pointer_to_src, /* update_preconditioner = */ false);
   }
 }
 
@@ -763,10 +769,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_mom
 
   // use FMGRES for "exact" solution of velocity block system
   FGMRESSolverData gmres_data;
-  gmres_data.use_preconditioner = true;
-  // Do not update preconditioner since momentum preconditioner is already updated in function
-  // update() of this class (if update_preconditioner for the solver of the linearized
-  // Navier--Stokes problem is set to true).
+  gmres_data.use_preconditioner   = true;
   gmres_data.max_iter             = preconditioner_data.solver_data_momentum_block.max_iter;
   gmres_data.solver_tolerance_abs = preconditioner_data.solver_data_momentum_block.abs_tol;
   gmres_data.solver_tolerance_rel = preconditioner_data.solver_data_momentum_block.rel_tol;

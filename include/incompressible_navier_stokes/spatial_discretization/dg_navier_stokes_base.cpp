@@ -788,7 +788,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
     poisson_solver(laplace_operator, *preconditioner, solver_data);
 
   // solve Poisson problem
-  poisson_solver.solve(dst, rhs);
+  poisson_solver.solve(dst, rhs, /* update preconditioner = */ false);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -1089,8 +1089,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup_projection_solver()
          this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
          this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
       {
-        projection_solver_data.use_preconditioner    = true;
-        projection_solver_data.update_preconditioner = this->param.update_preconditioner_projection;
+        projection_solver_data.use_preconditioner = true;
       }
       else
       {
@@ -1141,12 +1140,14 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::update_projection_operator(
 
 template<int dim, int degree_u, int degree_p, typename Number>
 unsigned int
-DGNavierStokesBase<dim, degree_u, degree_p, Number>::solve_projection(VectorType &       dst,
-                                                                      VectorType const & src) const
+DGNavierStokesBase<dim, degree_u, degree_p, Number>::solve_projection(
+  VectorType &       dst,
+  VectorType const & src,
+  bool const &       update_preconditioner) const
 {
   Assert(projection_solver.get() != 0, ExcMessage("Projection solver has not been initialized."));
 
-  unsigned int n_iter = this->projection_solver->solve(dst, src);
+  unsigned int n_iter = this->projection_solver->solve(dst, src, update_preconditioner);
 
   return n_iter;
 }

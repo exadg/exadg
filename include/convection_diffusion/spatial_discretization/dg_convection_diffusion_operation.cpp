@@ -351,10 +351,9 @@ DGOperation<dim, degree, Number>::initialize_solver()
   {
     // initialize solver_data
     CGSolverData solver_data;
-    solver_data.solver_tolerance_abs  = param.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel  = param.solver_data.rel_tol;
-    solver_data.max_iter              = param.solver_data.max_iter;
-    solver_data.update_preconditioner = param.update_preconditioner;
+    solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+    solver_data.max_iter             = param.solver_data.max_iter;
 
     if(param.preconditioner != Preconditioner::None)
       solver_data.use_preconditioner = true;
@@ -369,11 +368,10 @@ DGOperation<dim, degree, Number>::initialize_solver()
   {
     // initialize solver_data
     GMRESSolverData solver_data;
-    solver_data.solver_tolerance_abs  = param.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel  = param.solver_data.rel_tol;
-    solver_data.max_iter              = param.solver_data.max_iter;
-    solver_data.max_n_tmp_vectors     = param.solver_data.max_krylov_size;
-    solver_data.update_preconditioner = param.update_preconditioner;
+    solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+    solver_data.max_iter             = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors    = param.solver_data.max_krylov_size;
 
     if(param.preconditioner != Preconditioner::None)
       solver_data.use_preconditioner = true;
@@ -388,11 +386,10 @@ DGOperation<dim, degree, Number>::initialize_solver()
   {
     // initialize solver_data
     FGMRESSolverData solver_data;
-    solver_data.solver_tolerance_abs  = param.solver_data.abs_tol;
-    solver_data.solver_tolerance_rel  = param.solver_data.rel_tol;
-    solver_data.max_iter              = param.solver_data.max_iter;
-    solver_data.max_n_tmp_vectors     = param.solver_data.max_krylov_size;
-    solver_data.update_preconditioner = param.update_preconditioner;
+    solver_data.solver_tolerance_abs = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel = param.solver_data.rel_tol;
+    solver_data.max_iter             = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors    = param.solver_data.max_krylov_size;
 
     if(param.preconditioner != Preconditioner::None)
       solver_data.use_preconditioner = true;
@@ -557,7 +554,7 @@ DGOperation<dim, degree, Number>::solve(VectorType &       sol,
   conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
   conv_diff_operator.set_evaluation_time(time);
 
-  unsigned int const iterations = iterative_solver->solve(sol, rhs);
+  unsigned int const iterations = iterative_solver->solve(sol, rhs, param.update_preconditioner);
 
   return iterations;
 }
