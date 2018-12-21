@@ -22,30 +22,26 @@ main(int argc, char ** argv)
 
   GridGenerator::hyper_cube(triangulation, left, right);
 
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(),
-                                             endc = triangulation.end();
-  for(; cell != endc; ++cell)
-  {
+  for(auto & cell : triangulation)
     for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
         ++face_number)
     {
       // x-direction
-      if((std::fabs(cell->face(face_number)->center()(0) - left) < 1e-12))
-        cell->face(face_number)->set_all_boundary_ids(0);
-      else if((std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12))
-        cell->face(face_number)->set_all_boundary_ids(1);
+      if((std::fabs(cell.face(face_number)->center()(0) - left) < 1e-12))
+        cell.face(face_number)->set_all_boundary_ids(0);
+      else if((std::fabs(cell.face(face_number)->center()(0) - right) < 1e-12))
+        cell.face(face_number)->set_all_boundary_ids(1);
       // y-direction
-      else if((std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12))
-        cell->face(face_number)->set_all_boundary_ids(2);
-      else if((std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12))
-        cell->face(face_number)->set_all_boundary_ids(3);
+      else if((std::fabs(cell.face(face_number)->center()(1) - left) < 1e-12))
+        cell.face(face_number)->set_all_boundary_ids(2);
+      else if((std::fabs(cell.face(face_number)->center()(1) - right) < 1e-12))
+        cell.face(face_number)->set_all_boundary_ids(3);
       // z-direction
-      else if((std::fabs(cell->face(face_number)->center()(2) - left) < 1e-12))
-        cell->face(face_number)->set_all_boundary_ids(4);
-      else if((std::fabs(cell->face(face_number)->center()(2) - right) < 1e-12))
-        cell->face(face_number)->set_all_boundary_ids(5);
+      else if((std::fabs(cell.face(face_number)->center()(2) - left) < 1e-12))
+        cell.face(face_number)->set_all_boundary_ids(4);
+      else if((std::fabs(cell.face(face_number)->center()(2) - right) < 1e-12))
+        cell.face(face_number)->set_all_boundary_ids(5);
     }
-  }
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
