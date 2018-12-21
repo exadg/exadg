@@ -548,13 +548,14 @@ template<int dim, int degree, typename Number>
 unsigned int
 DGOperation<dim, degree, Number>::solve(VectorType &       sol,
                                         VectorType const & rhs,
+                                        bool const         update_preconditioner,
                                         double const       scaling_factor,
                                         double const       time)
 {
   conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
   conv_diff_operator.set_evaluation_time(time);
 
-  unsigned int const iterations = iterative_solver->solve(sol, rhs, param.update_preconditioner);
+  unsigned int const iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
 
   return iterations;
 }

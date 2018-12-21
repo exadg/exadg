@@ -152,6 +152,7 @@ public:
   unsigned int
   solve(VectorType &       sol,
         VectorType const & rhs,
+        bool const         update_preconditioner,
         double const       scaling_factor = -1.0,
         double const       time           = -1.0);
 

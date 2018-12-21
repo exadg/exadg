@@ -66,6 +66,7 @@ public:
       solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
       preconditioner(Preconditioner::Undefined),
       update_preconditioner(false),
+      update_preconditioner_every_time_steps(1),
       implement_block_diagonal_preconditioner_matrix_free(false),
       preconditioner_block_diagonal(PreconditionerBlockDiagonal::InverseMassMatrix),
       block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2, 1000)),
@@ -399,6 +400,9 @@ public:
     if(preconditioner != Preconditioner::None)
     {
       print_parameter(pcout, "Update preconditioner", update_preconditioner);
+
+      if(update_preconditioner)
+        print_parameter(pcout, "Update every time steps", update_preconditioner_every_time_steps);
     }
 
     print_parameter(pcout,
@@ -594,6 +598,10 @@ public:
 
   // update preconditioner in case of varying parameters
   bool update_preconditioner;
+
+  // update preconditioner every ... time step. Only relevant if update preconditioner
+  // is set to true.
+  unsigned int update_preconditioner_every_time_steps;
 
   // Implement block diagonal (block Jacobi) preconditioner in a matrix-free way
   // by solving the block Jacobi problems elementwise using iterative solvers and
