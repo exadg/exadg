@@ -99,9 +99,6 @@ struct OperatorBaseData
   UpdateFlags mapping_update_flags_inner_faces;
   UpdateFlags mapping_update_flags_boundary_faces;
 
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs_level0;
-
   bool use_cell_based_loops;
   bool implement_block_diagonal_preconditioner_matrix_free;
 };
@@ -138,10 +135,6 @@ public:
   }
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, AdditionalData const & operator_data) const;
-
-
-  void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          AdditionalData const &            operator_data) const;
@@ -153,11 +146,14 @@ public:
                    unsigned int const                level) const;
 
   void
-  do_reinit_multigrid(DoFHandler<dim> const &   dof_handler,
-                      Mapping<dim> const &      mapping,
-                      void *                    operator_data,
-                      MGConstrainedDoFs const & mg_constrained_dofs,
-                      unsigned int const        level);
+  do_reinit_multigrid(
+    DoFHandler<dim> const &   dof_handler,
+    Mapping<dim> const &      mapping,
+    void *                    operator_data,
+    MGConstrainedDoFs const & mg_constrained_dofs,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                       periodic_face_pairs,
+    unsigned int const level);
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
@@ -165,13 +161,13 @@ public:
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
    * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
-  void
+  virtual void
   apply(VectorType & dst, VectorType const & src) const;
 
-  void
+  virtual void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
-  void
+  virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
 
   /*
@@ -243,6 +239,9 @@ public:
   void
   do_update_block_diagonal_preconditioner() const;
 
+  void
+  calculate_block_diagonal_matrices() const;
+
   // This function has to initialize everything related to the block diagonal preconditioner when
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
@@ -267,10 +266,10 @@ public:
   void
   do_init_system_matrix(SparseMatrix & system_matrix) const;
 
-  void
+  virtual void
   do_calculate_system_matrix(SparseMatrix & system_matrix) const;
 
-  void
+  virtual void
   do_calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
 #endif
 
@@ -290,7 +289,13 @@ public:
   get_level() const;
 
   AffineConstraints<double> const &
-  get_constraint_matrix() const;
+  do_get_constraint_matrix() const;
+
+  MatrixFree<dim, Number> const &
+  do_get_data() const;
+
+  void
+  do_initialize_dof_vector(VectorType & vector) const;
 
   /*
    * Returns whether the operator is singular, e.g., the Laplace operator with pure Neumann boundary
@@ -593,13 +598,17 @@ private:
   void
   set_constraint_diagonal(VectorType & diagonal) const;
 
+protected:
   void
-  add_constraints(DoFHandler<dim> const &     dof_handler,
-                  AffineConstraints<double> & constraint_own,
-                  MGConstrainedDoFs const &   mg_constrained_dofs,
-                  AdditionalData &            operator_data,
-                  unsigned int const          level);
+  add_constraints(
+    DoFHandler<dim> const &     dof_handler,
+    AffineConstraints<double> & constraint_own,
+    MGConstrainedDoFs const &   mg_constrained_dofs,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                       periodic_face_pairs,
+    unsigned int const level);
 
+private:
   /*
    * Add periodic constraints: loop over all periodic face pairs on level 0
    */
@@ -624,8 +633,9 @@ private:
    *  Verify that each boundary face is assigned exactly one boundary type.
    */
   void
-  verify_boundary_conditions(DoFHandler<dim> const & dof_handler,
-                             AdditionalData const &  operator_data) const;
+  verify_boundary_conditions(
+    DoFHandler<dim> const &                 dof_handler,
+    std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const;
 
   /*
    *  Since the type of boundary conditions depends on the operator, this function has
@@ -652,8 +662,10 @@ private:
   /*
    * Constraint matrix.
    */
+protected:
   mutable lazy_ptr<AffineConstraints<double>> constraint;
 
+private:
   /*
    * Is the discretization based on discontinuous Galerin method?
    */
@@ -688,6 +700,10 @@ private:
   mutable std::shared_ptr<FEEvalCell> fe_eval;
   mutable std::shared_ptr<FEEvalFace> fe_eval_m;
   mutable std::shared_ptr<FEEvalFace> fe_eval_p;
+
+  // for CG
+  mutable std::vector<unsigned int>              constrained_indices;
+  mutable std::vector<std::pair<Number, Number>> constrained_values;
 };
 
 #include "operator_base.cpp"

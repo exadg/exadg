@@ -157,7 +157,7 @@ DGOperation<dim, degree, Number>::setup_operators()
   mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  mass_matrix_operator.reinit(data, mass_matrix_operator_data);
+  mass_matrix_operator.reinit(data, constraint_matrix, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   // dof_index = 0, quad_index = 0
@@ -176,7 +176,7 @@ DGOperation<dim, degree, Number>::setup_operators()
   convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
 
-  convective_operator.reinit(data, convective_operator_data);
+  convective_operator.reinit(data, constraint_matrix, convective_operator_data);
 
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
@@ -193,7 +193,7 @@ DGOperation<dim, degree, Number>::setup_operators()
   diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  diffusive_operator.reinit(mapping, data, diffusive_operator_data);
+  diffusive_operator.reinit(mapping, data, constraint_matrix, diffusive_operator_data);
 
   // rhs operator
   RHSOperatorData<dim> rhs_operator_data;
@@ -281,8 +281,12 @@ DGOperation<dim, degree, Number>::initialize_convection_diffusion_operator(
   conv_diff_operator_data.type_velocity_field = param.type_velocity_field;
   conv_diff_operator_data.mg_operator_type    = param.mg_operator_type;
 
-  conv_diff_operator.reinit(
-    data, conv_diff_operator_data, mass_matrix_operator, convective_operator, diffusive_operator);
+  conv_diff_operator.reinit(data,
+                            constraint_matrix,
+                            conv_diff_operator_data,
+                            mass_matrix_operator,
+                            convective_operator,
+                            diffusive_operator);
 }
 
 template<int dim, int degree, typename Number>
@@ -328,8 +332,9 @@ DGOperation<dim, degree, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   dof_handler,
                                   mapping,
-                                  conv_diff_operator.get_boundary_descriptor()->dirichlet_bc,
                                   (void *)&conv_diff_operator.get_operator_data(),
+                                  &conv_diff_operator.get_boundary_descriptor()->dirichlet_bc,
+                                  &this->periodic_face_pairs,
                                   &(*dof_handler_velocity));
   }
   else

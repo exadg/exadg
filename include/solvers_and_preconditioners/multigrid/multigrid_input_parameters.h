@@ -16,7 +16,16 @@ enum class MultigridType
   hMG,
   pMG,
   hpMG,
-  phMG
+  phMG,
+  undefined
+};
+
+enum class PSequenceType
+{
+  GO_TO_ONE,
+  DECREASE_BY_ONE,
+  BISECTION,
+  MANUAL
 };
 
 enum class MultigridSmoother
@@ -168,7 +177,10 @@ struct MultigridData
   MultigridData()
     : smoother(MultigridSmoother::Chebyshev),
       coarse_solver(MultigridCoarseGridSolver::Chebyshev),
-      type(MultigridType::hMG)
+      type(MultigridType::hMG),
+      c_transfer_front(false),
+      c_transfer_back(false),
+      p_sequence(PSequenceType::BISECTION)
   {
   }
 
@@ -215,6 +227,12 @@ struct MultigridData
 
     std::string str_type[] = {"h-MG", "p-MG", "hp-MG", "ph-MG"};
     print_parameter(pcout, "Multigrid type", str_type[(int)type]);
+
+    if(type != MultigridType::hMG) // i.e.: p-MG, ph-MG. hp-MG
+    {
+      std::string str_type[] = {"Go to one", "Decrease by one", "Bisect", "Manual"};
+      print_parameter(pcout, "Multigrid type", str_type[(int)p_sequence]);
+    }
   }
 
   // Type of smoother
@@ -240,6 +258,13 @@ struct MultigridData
 
   // Multigrid type: p-MG vs. h-MG
   MultigridType type;
+
+  //
+  bool c_transfer_front;
+  bool c_transfer_back;
+
+  //
+  PSequenceType p_sequence;
 };
 
 

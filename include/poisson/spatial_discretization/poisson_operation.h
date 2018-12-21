@@ -73,12 +73,18 @@ private:
   void
   setup_operators();
 
-  FE_DGQ<dim>          fe;
+  FE_DGQ<dim> fe_dgq;
+  FE_Q<dim>   fe_q;
+
   MappingQGeneric<dim> mapping;
   DoFHandler<dim>      dof_handler;
 
+public:
+  AffineConstraints<double> constraint_matrix;
+
   MatrixFree<dim, Number> data;
 
+private:
   Poisson::InputParameters const & param;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
@@ -89,8 +95,10 @@ private:
 
   ConvDiff::RHSOperator<dim, degree, Number> rhs_operator;
 
+public:
   Poisson::LaplaceOperator<dim, degree, Number> laplace_operator;
 
+private:
   std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 };

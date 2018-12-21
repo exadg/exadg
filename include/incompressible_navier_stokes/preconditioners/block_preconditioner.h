@@ -753,7 +753,6 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_multigrid_preconditi
     preconditioner_data.multigrid_data_momentum_preconditioner,
     underlying_operator->get_dof_handler_u(),
     underlying_operator->get_mapping(),
-    /*underlying_operator->momentum_operator.get_operator_data().bc->dirichlet_bc,*/
     (void *)&underlying_operator->momentum_operator.get_operator_data());
 }
 
@@ -925,7 +924,6 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     mg_preconditioner->initialize(mg_data,
                                   underlying_operator->get_dof_handler_p(),
                                   underlying_operator->get_mapping(),
-                                  /*underlying_operator->get_operator_data().bc->dirichlet_bc,*/
                                   (void *)&compatible_laplace_operator_data);
   }
   else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
@@ -938,7 +936,6 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     laplace_operator_data.operator_is_singular = underlying_operator->param.pure_dirichlet_bc;
 
     laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
-    laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
@@ -956,8 +953,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     mg_preconditioner->initialize(mg_data,
                                   underlying_operator->get_dof_handler_p(),
                                   underlying_operator->get_mapping(),
-                                  laplace_operator_data.bc->dirichlet_bc,
-                                  (void *)&laplace_operator_data);
+                                  (void *)&laplace_operator_data,
+                                  &laplace_operator_data.bc->dirichlet_bc,
+                                  &underlying_operator->periodic_face_pairs);
   }
   else
   {
@@ -990,11 +988,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
     laplace_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
     laplace_operator_data.IP_factor  = 1.0;
     laplace_operator_data.bc         = underlying_operator->boundary_descriptor_laplace;
-    laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, degree_p, Number>());
     laplace_operator_classical->reinit(underlying_operator->get_mapping(),
                                        underlying_operator->get_data(),
+                                       underlying_operator->constraint_p,
                                        laplace_operator_data);
 
     solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, degree_p, Number>,
@@ -1114,7 +1112,8 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_pressure_convection_
     new PressureConvectionDiffusionOperator<dim, degree_p, degree_u, Number>(
       underlying_operator->mapping,
       underlying_operator->get_data(),
-      pressure_convection_diffusion_operator_data));
+      pressure_convection_diffusion_operator_data,
+      underlying_operator->constraint_p));
 
   if(underlying_operator->unsteady_problem_has_to_be_solved())
     pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(

@@ -16,12 +16,13 @@ template<int dim, int degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, degree, Number>::reinit(
   MatrixFree<dim, Number> const &                         mf_data,
+  AffineConstraints<double> const &                       constraint_matrix,
   ConvectionDiffusionOperatorData<dim> const &            operator_data,
   MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
   ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
   DiffusiveOperator<dim, degree, Number> const &          diffusive_operator)
 {
-  Base::reinit(mf_data, operator_data);
+  Base::reinit(mf_data, constraint_matrix, operator_data);
   this->mass_matrix_operator.reinit(mass_matrix_operator);
   this->convective_operator.reinit(convective_operator);
   this->diffusive_operator.reinit(diffusive_operator);
@@ -33,11 +34,33 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
 
 template<int dim, int degree, typename Number>
 void
+ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid(
+  DoFHandler<dim> const &   dof_handler,
+  Mapping<dim> const &      mapping,
+  void *                    operator_data_in,
+  MGConstrainedDoFs const & mg_constrained_dofs,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                     periodic_face_pairs,
+  unsigned int const level)
+{
+  this->reinit_multigrid_add_dof_handler(dof_handler,
+                                         mapping,
+                                         operator_data_in,
+                                         mg_constrained_dofs,
+                                         periodic_face_pairs,
+                                         level,
+                                         nullptr);
+}
+
+template<int dim, int degree, typename Number>
+void
 ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handler(
-  DoFHandler<dim> const & dof_handler,
-  Mapping<dim> const &    mapping,
-  void *                  operator_data_in,
-  MGConstrainedDoFs const & /*mg_constrained_dofs*/,
+  DoFHandler<dim> const &   dof_handler,
+  Mapping<dim> const &      mapping,
+  void *                    operator_data_in,
+  MGConstrainedDoFs const & mg_constrained_dofs,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                          periodic_face_pairs,
   unsigned int const      level,
   DoFHandler<dim> const * add_dof_handler)
 {
@@ -72,13 +95,16 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
      update_values);
 
-  additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+  if(is_dg)
+  {
+    additional_data.mapping_update_flags_inner_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
 
-  additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+    additional_data.mapping_update_flags_boundary_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+  }
 
   if(operator_data.use_cell_based_loops && is_dg)
   {
@@ -87,11 +113,18 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
     Categorization::do_cell_based_loops(*tria, additional_data, level);
   }
 
-  auto & data_own = this->data.own();
+  auto & data_own         = this->data.own();
+  auto & constraint_dummy = this->constraint.own();
+  constraint_dummy.clear();
 
   if(operator_data.type_velocity_field == TypeVelocityField::Analytical)
   {
-    AffineConstraints<double> constraint_dummy;
+    // AffineConstraints<double> constraint_dummy;
+    if(!is_dg)
+    {
+      this->add_constraints(
+        dof_handler, constraint_dummy, mg_constrained_dofs, periodic_face_pairs, level);
+    }
     constraint_dummy.close();
 
     // quadrature formula used to perform integrals
@@ -109,7 +142,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
 
     std::vector<const AffineConstraints<double> *> constraint_vec;
     constraint_vec.resize(2);
-    AffineConstraints<double> constraint_dummy;
+    // AffineConstraints<double> constraint_dummy;
     constraint_dummy.close();
     constraint_vec[0] = &constraint_dummy;
     constraint_vec[1] = &constraint_dummy;
@@ -138,9 +171,9 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
   //
   //  constraint_own.close();
 
-  AffineConstraints<double> constraint_own;
-  constraint_own.close();
-  Base::reinit_multigrid(data_own, constraint_own, operator_data, level);
+  // AffineConstraints<double> constraint_own;
+  // constraint_own.close();
+  Base::reinit_multigrid(data_own, constraint_dummy, operator_data, level);
 
   // use own operators
   mass_matrix_operator.reset();
@@ -237,6 +270,13 @@ ConvectionDiffusionOperator<dim, degree, Number>::get_scaling_factor_time_deriva
 }
 
 template<int dim, int degree, typename Number>
+AffineConstraints<double> const &
+ConvectionDiffusionOperator<dim, degree, Number>::get_constraint_matrix() const
+{
+  return this->do_get_constraint_matrix();
+}
+
+template<int dim, int degree, typename Number>
 MatrixFree<dim, Number> const &
 ConvectionDiffusionOperator<dim, degree, Number>::get_data() const
 {
@@ -283,6 +323,22 @@ void
 ConvectionDiffusionOperator<dim, degree, Number>::vmult(VectorType &       dst,
                                                         VectorType const & src) const
 {
+  this->apply(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::vmult_add(VectorType &       dst,
+                                                            VectorType const & src) const
+{
+  this->apply_add(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::apply(VectorType &       dst,
+                                                        VectorType const & src) const
+{
   if(this->operator_data.unsteady_problem == true)
   {
     AssertThrow(scaling_factor_time_derivative_term > 0.0,
@@ -309,7 +365,16 @@ ConvectionDiffusionOperator<dim, degree, Number>::vmult(VectorType &       dst,
 
 template<int dim, int degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, degree, Number>::vmult_add(VectorType &       dst,
+ConvectionDiffusionOperator<dim, degree, Number>::apply_add(VectorType &       dst,
+                                                            VectorType const & src,
+                                                            Number const       time) const
+{
+  Base::apply_add(dst, src, time);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::apply_add(VectorType &       dst,
                                                             VectorType const & src) const
 {
   if(this->operator_data.unsteady_problem == true)
@@ -357,6 +422,24 @@ ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
 template<int dim, int degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
+  SparseMatrix & system_matrix) const
+{
+  this->do_calculate_system_matrix(system_matrix);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::do_calculate_system_matrix(
+  SparseMatrix & system_matrix,
+  Number const   time) const
+{
+  this->eval_time = time;
+  do_calculate_system_matrix(system_matrix);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::do_calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
   // clear content of matrix since the next calculate_system_matrix-commands add their result

@@ -11,7 +11,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/point_value_history.h>
@@ -51,7 +51,7 @@
 #include "../../../operators/operation-base-1/src/include/rhs_operator.h"
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
-#include "../../../../include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.h"
+#include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
 
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>
@@ -116,7 +116,8 @@ public:
       dof_handler_cg(triangulation),
       mapping(fe_degree),
       quadrature(fe_degree + 1),
-      global_refinements(log(std::pow(1e8, 1.0 / dim) / (fe_degree + 1)) / log(2))
+      global_refinements(log(std::pow(5e7, 1.0 / dim) / (fe_degree + 1)) / log(2) +
+                         (fe_degree == 5 && dim == 3))
   {
   }
 
@@ -139,8 +140,8 @@ private:
   std::shared_ptr<BoundaryDescriptor<dim>>  bc;
   MGConstrainedDoFs                         mg_constrained_dofs_cg;
   MGConstrainedDoFs                         mg_constrained_dofs_dg;
-  ConstraintMatrix                          dummy_dg;
-  ConstraintMatrix                          dummy_cg;
+  AffineConstraints<double>                 dummy_dg;
+  AffineConstraints<double>                 dummy_cg;
 
   static int
   get_rank(MPI_Comm comm)
@@ -188,11 +189,16 @@ private:
   void
   init_matrixfree_and_constraint_matrix()
   {
+    LaplaceOperatorData<dim> laplace_additional_data;
+
     typename MatrixFree<dim, value_type>::AdditionalData additional_data_dg;
-    additional_data_dg.build_face_info = true;
-    //    additional_data_dg.level_mg_handler = global_refinements;
+    additional_data_dg.mapping_update_flags = laplace_additional_data.mapping_update_flags;
+    additional_data_dg.mapping_update_flags_inner_faces =
+      laplace_additional_data.mapping_update_flags_inner_faces;
+    additional_data_dg.mapping_update_flags_boundary_faces =
+      laplace_additional_data.mapping_update_flags_boundary_faces;
     typename MatrixFree<dim, value_type>::AdditionalData additional_data_cg;
-    //    additional_data_cg.level_mg_handler = global_refinements;
+    additional_data_cg.mapping_update_flags = laplace_additional_data.mapping_update_flags;
 
     // set boundary conditions: Dirichlet BC
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
@@ -225,42 +231,113 @@ private:
   }
 
   void
-  run(LaplaceOperator<dim, fe_degree, value_type> & laplace_dg,
-      LaplaceOperator<dim, fe_degree, value_type> & laplace_cg,
+  run(LaplaceOperator<dim, fe_degree, value_type> & laplace_1,
+      LaplaceOperator<dim, fe_degree, value_type> & laplace_2,
       unsigned int                                  mg_level = numbers::invalid_unsigned_int)
   {
     // determine level: -1 and globarl_refinements map to the same level
-    unsigned int level = std::min(global_refinements, mg_level);
+    int level = mg_level == numbers::invalid_unsigned_int ? -1 : mg_level;
 
     int procs;
     MPI_Comm_size(MPI_COMM_WORLD, &procs);
 
     // Right hand side
-    VectorType vec_rhs_dg, vec_rhs_cg;
-    laplace_dg.initialize_dof_vector(vec_rhs_dg);
-    laplace_cg.initialize_dof_vector(vec_rhs_cg);
+    LinearAlgebra::distributed::Vector<value_type> vec_1, vec_2, vec_3, vec_4, vec_5, vec_6, vec_7,
+      vec_8, vec_9, vec_10, vec_11, vec_12, vec_13, vec_14, vec_15, vec_16, vec_17, vec_18, vec_19,
+      vec_20, vec_21, vec_22;
+
+    laplace_1.get_data().initialize_dof_vector(vec_1);
+    laplace_1.get_data().initialize_dof_vector(vec_3);
+    laplace_1.get_data().initialize_dof_vector(vec_5);
+    laplace_1.get_data().initialize_dof_vector(vec_7);
+    laplace_1.get_data().initialize_dof_vector(vec_9);
+    laplace_1.get_data().initialize_dof_vector(vec_11);
+    laplace_1.get_data().initialize_dof_vector(vec_13);
+    laplace_1.get_data().initialize_dof_vector(vec_15);
+    laplace_1.get_data().initialize_dof_vector(vec_17);
+    laplace_1.get_data().initialize_dof_vector(vec_19);
+    laplace_1.get_data().initialize_dof_vector(vec_21);
+
+    laplace_2.get_data().initialize_dof_vector(vec_2);
+    laplace_2.get_data().initialize_dof_vector(vec_4);
+    laplace_2.get_data().initialize_dof_vector(vec_6);
+    laplace_2.get_data().initialize_dof_vector(vec_8);
+    laplace_2.get_data().initialize_dof_vector(vec_10);
+    laplace_2.get_data().initialize_dof_vector(vec_12);
+    laplace_2.get_data().initialize_dof_vector(vec_14);
+    laplace_2.get_data().initialize_dof_vector(vec_16);
+    laplace_2.get_data().initialize_dof_vector(vec_18);
+    laplace_2.get_data().initialize_dof_vector(vec_20);
+    laplace_2.get_data().initialize_dof_vector(vec_22);
+
+    laplace_1.vmult(vec_21, vec_21);
+    laplace_2.vmult(vec_22, vec_22);
 
     convergence_table.add_value("procs", procs);
     convergence_table.add_value("dim", dim);
     convergence_table.add_value("deg", fe_degree);
-    convergence_table.add_value("dofs_dg", vec_rhs_dg.size());
-    convergence_table.add_value("dofs_cg", vec_rhs_cg.size());
+    convergence_table.add_value("dofs_dg", vec_1.size());
+    convergence_table.add_value("dofs_cg", vec_2.size());
     convergence_table.add_value("lev", level);
 
     // setup implicitly RHS for CG via DG-CG-Transfer
-    CGToDGTransfer<dim, value_type> transfer(laplace_dg.get_data(),
-                                             laplace_cg.get_data(),
-                                             mg_level,
-                                             fe_degree);
+    MGTransferMFC<dim, value_type> transfer(
+      laplace_1.get_data(), laplace_2.get_data(), dummy_dg, dummy_cg, mg_level, fe_degree);
 
 
 
-    repeat<dim, fe_degree>(convergence_table, "toCG", [&]() mutable {
-      transfer.toCG(vec_rhs_cg, vec_rhs_dg);
+    int i;
+    i = 0;
+    repeat<dim, fe_degree>(convergence_table, "restrict", [&]() mutable {
+      if((i % 10) == 0)
+        transfer.restrict_and_add(0, vec_2, vec_1);
+      else if((i % 10) == 1)
+        transfer.restrict_and_add(0, vec_4, vec_3);
+      else if((i % 10) == 2)
+        transfer.restrict_and_add(0, vec_6, vec_5);
+      else if((i % 10) == 3)
+        transfer.restrict_and_add(0, vec_8, vec_7);
+      else if((i % 10) == 4)
+        transfer.restrict_and_add(0, vec_10, vec_9);
+      else if((i % 10) == 5)
+        transfer.restrict_and_add(0, vec_12, vec_11);
+      else if((i % 10) == 6)
+        transfer.restrict_and_add(0, vec_14, vec_13);
+      else if((i % 10) == 7)
+        transfer.restrict_and_add(0, vec_16, vec_15);
+      else if((i % 10) == 8)
+        transfer.restrict_and_add(0, vec_18, vec_17);
+      else if((i % 10) == 9)
+        transfer.restrict_and_add(0, vec_20, vec_19);
+      i++;
     });
 
-    repeat<dim, fe_degree>(convergence_table, "toDG", [&]() mutable {
-      transfer.toDG(vec_rhs_dg, vec_rhs_cg);
+    laplace_1.vmult(vec_21, vec_21);
+    laplace_2.vmult(vec_22, vec_22);
+
+    i = 0;
+    repeat<dim, fe_degree>(convergence_table, "prolongate", [&]() mutable {
+      if((i % 10) == 0)
+        transfer.prolongate(0, vec_1, vec_2);
+      else if((i % 10) == 1)
+        transfer.prolongate(0, vec_3, vec_4);
+      else if((i % 10) == 2)
+        transfer.prolongate(0, vec_5, vec_6);
+      else if((i % 10) == 3)
+        transfer.prolongate(0, vec_7, vec_8);
+      else if((i % 10) == 4)
+        transfer.prolongate(0, vec_9, vec_10);
+      else if((i % 10) == 5)
+        transfer.prolongate(0, vec_11, vec_12);
+      else if((i % 10) == 6)
+        transfer.prolongate(0, vec_13, vec_14);
+      else if((i % 10) == 7)
+        transfer.prolongate(0, vec_15, vec_16);
+      else if((i % 10) == 8)
+        transfer.prolongate(0, vec_17, vec_18);
+      else if((i % 10) == 9)
+        transfer.prolongate(0, vec_19, vec_20);
+      i++;
     });
   }
 
@@ -279,21 +356,31 @@ public:
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+      periodic_face_pairs;
 
     // run through all multigrid level
     for(unsigned int level = 0; level <= global_refinements; level++)
     {
-      laplace_dg.reinit(
-        dof_handler_dg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs_dg, level);
-      laplace_cg.reinit(
-        dof_handler_cg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs_cg, level);
+      laplace_dg.reinit_multigrid(dof_handler_dg,
+                                  mapping,
+                                  (void *)&laplace_additional_data,
+                                  mg_constrained_dofs_dg,
+                                  periodic_face_pairs,
+                                  level);
+      laplace_cg.reinit_multigrid(dof_handler_cg,
+                                  mapping,
+                                  (void *)&laplace_additional_data,
+                                  mg_constrained_dofs_cg,
+                                  periodic_face_pairs,
+                                  level);
       run(laplace_dg, laplace_cg, level);
     }
 
     // run on fine grid without multigrid
     {
-      laplace_dg.initialize(mapping, data_dg, dummy_dg, laplace_additional_data);
-      laplace_cg.initialize(mapping, data_cg, dummy_cg, laplace_additional_data);
+      laplace_dg.reinit(mapping, data_dg, dummy_dg, laplace_additional_data);
+      laplace_cg.reinit(mapping, data_cg, dummy_cg, laplace_additional_data);
       run(laplace_dg, laplace_cg);
     }
   }
@@ -311,14 +398,40 @@ public:
   }
 };
 
+template<int dim>
+void
+run()
+{
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  int                rank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  ConvergenceTable convergence_table;
+  Run<dim, 1>::run(convergence_table);
+  Run<dim, 2>::run(convergence_table);
+  Run<dim, 3>::run(convergence_table);
+  Run<dim, 4>::run(convergence_table);
+  Run<dim, 5>::run(convergence_table);
+  Run<dim, 6>::run(convergence_table);
+  Run<dim, 7>::run(convergence_table);
+  Run<dim, 8>::run(convergence_table);
+  Run<dim, 9>::run(convergence_table);
+
+  if(!rank)
+  {
+    std::string   file_name = "c-transfer" + std::to_string(dim) + ".csv";
+    std::ofstream outfile;
+    outfile.open(file_name.c_str());
+    convergence_table.write_text(std::cout);
+    convergence_table.write_text(outfile);
+    outfile.close();
+  }
+  pcout << std::endl;
+}
+
 int
 main(int argc, char ** argv)
 {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-  ConditionalOStream               pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  int                              rank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  ConvergenceTable convergence_table;
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_INIT;
@@ -328,25 +441,8 @@ main(int argc, char ** argv)
   }
 #endif
 
-  Run<2, 1>::run(convergence_table);
-  Run<2, 2>::run(convergence_table);
-  Run<2, 3>::run(convergence_table);
-  Run<2, 4>::run(convergence_table);
-  Run<2, 5>::run(convergence_table);
-  Run<2, 6>::run(convergence_table);
-  Run<2, 7>::run(convergence_table);
-  Run<2, 8>::run(convergence_table);
-  Run<2, 9>::run(convergence_table);
-
-  if(!rank)
-  {
-    std::ofstream outfile;
-    outfile.open("dg-to-cg-transfer.csv");
-    convergence_table.write_text(std::cout);
-    convergence_table.write_text(outfile);
-    outfile.close();
-  }
-  pcout << std::endl;
+  run<2>();
+  run<3>();
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_CLOSE;

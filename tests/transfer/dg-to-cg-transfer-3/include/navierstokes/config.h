@@ -2,7 +2,7 @@
 #define NAVIER_CONSTANTS
 
 #define DIM_2 1
-#define DIM_3 0
+#define DIM_3 1
 
 #define OP_FLOAT 0
 #define OP_DOUBLE 0

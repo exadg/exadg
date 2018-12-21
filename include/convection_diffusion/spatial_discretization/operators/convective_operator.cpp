@@ -10,9 +10,10 @@ template<int dim, int degree, int degree_velocity, typename Number>
 void
 ConvectiveOperator<dim, degree, degree_velocity, Number>::reinit(
   MatrixFree<dim, Number> const &     data,
+  AffineConstraints<double> const &   constraint_matrix,
   ConvectiveOperatorData<dim> const & operator_data)
 {
-  Base::reinit(data, operator_data);
+  Base::reinit(data, constraint_matrix, operator_data);
 
   if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
   {
@@ -409,23 +410,34 @@ ConvectiveOperator<dim, degree, degree_velocity, Number>::do_face_int_integral(
 template<int dim, int degree, int degree_velocity, typename Number>
 void
 ConvectiveOperator<dim, degree, degree_velocity, Number>::do_face_int_integral_cell_based(
-  FEEvalFace & fe_eval_m,
-  FEEvalFace & /*fe_eval_p*/,
+  FEEvalFace &       fe_eval_m,
+  FEEvalFace &       fe_eval_p,
   unsigned int const cell,
   unsigned int const face) const
 {
-  fe_eval_velocity_m->reinit(cell, face);
-  fe_eval_velocity_m->gather_evaluate(velocity, true, false);
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
+  {
+    this->do_face_int_integral(fe_eval_m, fe_eval_p, face);
+  }
+  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    fe_eval_velocity_m->reinit(cell, face);
+    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
 
-  // TODO: Matrix-free implementation in deal.II does currently not allow to access data of the
-  // neighboring element.
-  //  fe_eval_velocity_p->reinit(cell, face);
-  //  fe_eval_velocity_p->gather_evaluate(velocity, true, false);
+    // TODO: Matrix-free implementation in deal.II does currently not allow to access data of the
+    // neighboring element.
+    //  fe_eval_velocity_p->reinit(cell, face);
+    //  fe_eval_velocity_p->gather_evaluate(velocity, true, false);
 
-  //  do_face_int_integral(fe_eval_m, *fe_eval_velocity_m, *fe_eval_velocity_p);
+    //  do_face_int_integral(fe_eval_m, *fe_eval_velocity_m, *fe_eval_velocity_p);
 
-  // TODO: we have to use fe_eval_velocity_m twice to avoid the above problem
-  do_face_int_integral(fe_eval_m, *fe_eval_velocity_m, *fe_eval_velocity_m);
+    // TODO: we have to use fe_eval_velocity_m twice to avoid the above problem
+    do_face_int_integral(fe_eval_m, *fe_eval_velocity_m, *fe_eval_velocity_m);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 }
 
 template<int dim, int degree, int degree_velocity, typename Number>
@@ -552,8 +564,11 @@ ConvectiveOperator<dim, degree, degree_velocity, Number>::do_boundary_integral_c
   unsigned int const         cell,
   unsigned int const         face) const
 {
-  fe_eval_velocity_m->reinit(cell, face);
-  fe_eval_velocity_m->gather_evaluate(velocity, true, false);
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    fe_eval_velocity_m->reinit(cell, face);
+    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
+  }
 
   do_boundary_integral(fe_eval, operator_type, boundary_id);
 }
@@ -573,7 +588,22 @@ ConvectiveOperator<dim, degree, degree_velocity, Number>::do_boundary_integral(
     scalar value_p =
       calculate_exterior_value(value_m, q, fe_eval, operator_type, boundary_type, boundary_id);
 
-    vector velocity_m = fe_eval_velocity_m->get_value(q);
+    vector velocity_m;
+
+    if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
+    {
+      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
+      velocity_m =
+        evaluate_vectorial_function(this->operator_data.velocity, q_points, this->eval_time);
+    }
+    else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      velocity_m = fe_eval_velocity_m->get_value(q);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
 
     vector normal = fe_eval.get_normal_vector(q);
 

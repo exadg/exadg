@@ -36,6 +36,7 @@ template<int dim, int degree, typename Number>
 class DiffusiveOperator : public OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>>
 {
 public:
+  static const int                                                      DIM = dim;
   typedef OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>> Base;
   typedef typename Base::VectorType                                     VectorType;
 
@@ -44,6 +45,7 @@ public:
   void
   reinit(Mapping<dim> const &               mapping,
          MatrixFree<dim, Number> const &    mf_data,
+         AffineConstraints<double> const &  constraint_matrix,
          DiffusiveOperatorData<dim> const & operator_data);
 
   void

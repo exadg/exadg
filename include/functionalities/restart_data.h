@@ -10,7 +10,7 @@
 
 #include "deal.II/base/conditional_ostream.h"
 
-#include "functionalities/print_functions.h"
+#include "print_functions.h"
 
 struct RestartData
 {

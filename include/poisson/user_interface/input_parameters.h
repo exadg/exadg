@@ -17,6 +17,22 @@ namespace Poisson
 {
 /**************************************************************************************/
 /*                                                                                    */
+/*                              SPATIAL DISCRETIZATION                                */
+/*                                                                                    */
+/**************************************************************************************/
+
+/*
+ *  Spatial discretization method
+ */
+enum class SpatialDiscretization
+{
+  Undefined,
+  DG,
+  CG
+};
+
+/**************************************************************************************/
+/*                                                                                    */
 /*                                       SOLVER                                       */
 /*                                                                                    */
 /**************************************************************************************/
@@ -62,12 +78,14 @@ public:
       // SPATIAL DISCRETIZATION
       degree_mapping(1),
       IP_factor(1.0),
+      spatial_discretization(SpatialDiscretization::DG),
 
       // SOLVER
       solver(Solver::Undefined),
       abs_tol(1.e-20),
       rel_tol(1.e-12),
       max_iter(std::numeric_limits<unsigned int>::max()),
+      compute_performance_metrics(false),
       preconditioner(Preconditioner::Undefined),
       multigrid_data(MultigridData()),
       enable_cell_based_face_loops(false),
@@ -138,6 +156,10 @@ public:
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
     print_parameter(pcout, "IP factor viscous term", IP_factor);
+
+    std::string str_fe[] = {"Undefined", "FE_DGQ", "FE_Q"};
+
+    print_parameter(pcout, "Element type", str_fe[(int)spatial_discretization]);
   }
 
   void
@@ -201,7 +223,8 @@ public:
 
   // Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0
-  double IP_factor;
+  double                IP_factor;
+  SpatialDiscretization spatial_discretization;
 
 
 
@@ -218,6 +241,7 @@ public:
   double       abs_tol;
   double       rel_tol;
   unsigned int max_iter;
+  bool         compute_performance_metrics;
 
   // description: see enum declaration
   Preconditioner preconditioner;

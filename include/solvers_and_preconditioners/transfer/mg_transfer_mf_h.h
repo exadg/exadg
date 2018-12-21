@@ -18,17 +18,17 @@ using namespace dealii;
 // Specialized matrix-free implementation that overloads the copy_to_mg
 // function for proper initialization of the vectors in matrix-vector products.
 template<int dim, typename Number>
-class MGTransferMF : public MGTransferMatrixFree<dim, Number>
+class MGTransferMFH : public MGTransferMatrixFree<dim, Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MGTransferMF(std::map<unsigned int, unsigned int> level_to_triangulation_level_map)
+  MGTransferMFH(std::map<unsigned int, unsigned int> level_to_triangulation_level_map)
     : underlying_operator(0), level_to_triangulation_level_map(level_to_triangulation_level_map)
   {
   }
 
-  virtual ~MGTransferMF()
+  virtual ~MGTransferMFH()
   {
   }
 

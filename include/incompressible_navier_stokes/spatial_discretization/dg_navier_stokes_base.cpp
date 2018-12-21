@@ -752,10 +752,8 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
 
   laplace_operator_data.bc = boundary_descriptor_streamfunction;
 
-  laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
-
   Poisson::LaplaceOperator<dim, degree_u, Number> laplace_operator;
-  laplace_operator.reinit(this->mapping, this->data, laplace_operator_data);
+  laplace_operator.reinit(this->mapping, this->data, constraint_p, laplace_operator_data);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
@@ -773,11 +771,15 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
 
+  // explicit copy needed since function is called on const
+  auto periodic_face_pairs = this->periodic_face_pairs;
+
   mg_preconditioner->initialize(mg_data,
                                 this->dof_handler_u_scalar,
                                 this->mapping,
-                                laplace_operator.get_operator_data().bc->dirichlet_bc,
-                                (void *)&laplace_operator.get_operator_data());
+                                (void *)&laplace_operator.get_operator_data(),
+                                &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                &periodic_face_pairs);
 
   // setup solver
   CGSolverData solver_data;

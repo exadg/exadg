@@ -32,6 +32,38 @@
 // parameters
 #include "multigrid_input_parameters.h"
 
+struct MGDofHandlerIdentifier
+{
+  MGDofHandlerIdentifier(unsigned int degree, bool is_dg) : degree(degree), is_dg(is_dg)
+  {
+  }
+  unsigned int degree;
+  bool         is_dg;
+
+  bool
+  operator<(const MGDofHandlerIdentifier & rhs) const
+  {
+    return !((degree >= rhs.degree) && (is_dg >= rhs.is_dg));
+  }
+};
+
+struct MGLevelIdentifier
+{
+  MGLevelIdentifier(unsigned int level, unsigned int degree, bool is_dg)
+    : level(level), degree(degree), is_dg(is_dg), id(degree, is_dg)
+  {
+  }
+  MGLevelIdentifier(unsigned int level, MGDofHandlerIdentifier p)
+    : level(level), degree(p.degree), is_dg(p.is_dg), id(p)
+  {
+  }
+
+  unsigned int           level;
+  unsigned int           degree;
+  bool                   is_dg;
+  MGDofHandlerIdentifier id;
+};
+
 template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditionerBase : public PreconditionerBase<Number>
 {
@@ -50,17 +82,6 @@ public:
   virtual ~MultigridPreconditionerBase();
 
   /*
-   * Initialization function for purely discontinuous Galerkin usage (in this case no Dirichlet BCs
-   * are needed for the constraint matrix).
-   */
-  void
-  initialize(MultigridData const &   mg_data,
-             DoFHandler<dim> const & dof_handler,
-             Mapping<dim> const &    mapping,
-             void *                  operator_data,
-             DoFHandler<dim> const * add_dof_handler = nullptr);
-
-  /*
    * Initialization function for both discontinuous and continuous Galerkin methods (and for DG with
    * continuous Galerkin discretizations used as auxiliary space).
    */
@@ -68,9 +89,11 @@ public:
   initialize(MultigridData const &   mg_data,
              DoFHandler<dim> const & dof_handler,
              Mapping<dim> const &    mapping,
-             Map const &             dirichlet_bc,
              void *                  operator_data,
-             DoFHandler<dim> const * add_dof_handler = nullptr);
+             Map const *             dirichlet_bc = nullptr,
+             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
+                                     periodic_face_pairs = nullptr,
+             DoFHandler<dim> const * add_dof_handler     = nullptr);
 
   /*
    * Update of multigrid preconditioner including mg_matrices, smoothers, etc. (e.g. for problems
@@ -104,15 +127,16 @@ private:
    * Multigrid sequence (i.e. coarsening strategy).
    */
   void
-  initialize_mg_sequence(parallel::Triangulation<dim> const * tria,
-                         Levels &                             global_levels,
-                         std::vector<unsigned int> &          h_levels,
-                         std::vector<unsigned int> &          p_levels,
-                         unsigned int const                   degree,
-                         MultigridType const                  mg_type);
+  initialize_mg_sequence(parallel::Triangulation<dim> const *  tria,
+                         std::vector<MGLevelIdentifier> &      global_levels,
+                         std::vector<unsigned int> &           h_levels,
+                         std::vector<MGDofHandlerIdentifier> & p_levels,
+                         unsigned int const                    degree,
+                         MultigridType const                   mg_type,
+                         const bool                            is_dg);
 
   void
-  check_mg_sequence(Levels const & global_levels);
+  check_mg_sequence(std::vector<MGLevelIdentifier> const & global_levels);
 
   static unsigned int
   get_next_coarser_degree(unsigned int const degree)
@@ -125,23 +149,16 @@ private:
     return degree / 2;
   }
 
-  void
-  initialize_auxiliary_space(parallel::Triangulation<dim> const * tria,
-                             Levels const &                       global_levels,
-                             Map const &                          dirichlet_bc,
-                             Mapping<dim> const &                 mapping,
-                             void *                               operator_data);
-
   /*
    * Dof-handlers and constraints.
    */
   void
-  initialize_mg_dof_handler_and_constraints(DoFHandler<dim> const &              dof_handler,
-                                            parallel::Triangulation<dim> const * tria,
-                                            Levels &                             global_levels,
-                                            std::vector<unsigned int> &          p_levels,
-                                            Map const &                          dirichlet_bc,
-                                            unsigned int                         degree);
+  initialize_mg_dof_handler_and_constraints(
+    DoFHandler<dim> const &                                              dof_handler,
+    parallel::Triangulation<dim> const *                                 tria,
+    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGDofHandlerIdentifier> &                                p_levels,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc);
 
   virtual void
   initialize_mg_constrained_dofs(DoFHandler<dim> const &,
@@ -152,19 +169,22 @@ private:
    * Multigrid operators on each multigrid level.
    */
   void
-  initialize_mg_matrices(Levels const &          global_levels,
-                         Mapping<dim> const &    mapping,
-                         void *                  operator_data,
-                         DoFHandler<dim> const * add_dof_handler = nullptr);
+  initialize_mg_matrices(
+    std::vector<MGLevelIdentifier> & global_levels,
+    Mapping<dim> const &             mapping,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                            periodic_face_pairs,
+    void *                  operator_data,
+    DoFHandler<dim> const * add_dof_handler = nullptr);
 
   /*
    * Multigrid transfer operators.
    */
   void
   initialize_mg_transfer(parallel::Triangulation<dim> const * tria,
-                         Levels &                             global_levels,
+                         std::vector<MGLevelIdentifier> &     global_levels,
                          std::vector<unsigned int> & /*h_levels*/,
-                         std::vector<unsigned int> & p_levels);
+                         std::vector<MGDofHandlerIdentifier> & p_levels);
 
   /*
    * Smoother.

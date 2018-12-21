@@ -13,11 +13,12 @@ LaplaceOperator<dim, degree, Number>::LaplaceOperator()
 
 template<int dim, int degree, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &             mapping,
-                                             MatrixFree<dim, Number> const &  mf_data,
-                                             LaplaceOperatorData<dim> const & operator_data)
+LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &              mapping,
+                                             MatrixFree<dim, Number> const &   mf_data,
+                                             AffineConstraints<double> const & constraint_matrix,
+                                             LaplaceOperatorData<dim> const &  operator_data)
 {
-  Base::reinit(mf_data, operator_data);
+  Base::reinit(mf_data, constraint_matrix, operator_data);
 
   // calculate penalty parameters
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
@@ -33,9 +34,12 @@ LaplaceOperator<dim, degree, Number>::reinit_multigrid(
   Mapping<dim> const &      mapping,
   void *                    operator_data,
   MGConstrainedDoFs const & mg_constrained_dofs,
-  unsigned int const        level)
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                     periodic_face_pairs,
+  unsigned int const level)
 {
-  Base::do_reinit_multigrid(dof_handler, mapping, operator_data, mg_constrained_dofs, level);
+  Base::do_reinit_multigrid(
+    dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
 
   // calculate penalty parameters
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
@@ -56,6 +60,13 @@ void
 LaplaceOperator<dim, degree, Number>::vmult_add(VectorType & dst, VectorType const & src) const
 {
   this->apply_add(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+AffineConstraints<double> const &
+LaplaceOperator<dim, degree, Number>::get_constraint_matrix() const
+{
+  return this->do_get_constraint_matrix();
 }
 
 template<int dim, int degree, typename Number>

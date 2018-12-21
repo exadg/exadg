@@ -27,6 +27,11 @@ private:
 
   typedef typename Base::FEEvalCell FEEvalCell;
 
+public:
+  static const int                  DIM = dim;
+  typedef typename Base::VectorType VectorType;
+
+private:
   void
   do_cell_integral(FEEvalCell & fe_eval, unsigned int const /*cell*/) const;
 };

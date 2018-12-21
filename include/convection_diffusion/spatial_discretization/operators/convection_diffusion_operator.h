@@ -82,8 +82,11 @@ private:
   typedef typename Base::FEEvalFace FEEvalFace;
 
   typedef typename Base::BlockMatrix BlockMatrix;
-  typedef typename Base::VectorType  VectorType;
 
+public:
+  typedef typename Base::VectorType VectorType;
+
+private:
 #ifdef DEAL_II_WITH_TRILINOS
   typedef typename Base::SparseMatrix SparseMatrix;
 #endif
@@ -93,6 +96,7 @@ public:
 
   void
   reinit(MatrixFree<dim, Number> const &                         mf_data,
+         AffineConstraints<double> const &                       constraint_matrix,
          ConvectionDiffusionOperatorData<dim> const &            operator_data,
          MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
          ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
@@ -105,12 +109,25 @@ public:
    *  created.
    */
   void
-  reinit_multigrid_add_dof_handler(DoFHandler<dim> const &   dof_handler,
-                                   Mapping<dim> const &      mapping,
-                                   void *                    operator_data,
-                                   MGConstrainedDoFs const & mg_constrained_dofs,
-                                   unsigned int const        level,
-                                   DoFHandler<dim> const *   add_dof_handler);
+  reinit_multigrid(
+    DoFHandler<dim> const &   dof_handler,
+    Mapping<dim> const &      mapping,
+    void *                    operator_data,
+    MGConstrainedDoFs const & mg_constrained_dofs,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                       periodic_face_pairs,
+    unsigned int const level);
+
+  void
+  reinit_multigrid_add_dof_handler(
+    DoFHandler<dim> const &   dof_handler,
+    Mapping<dim> const &      mapping,
+    void *                    operator_data,
+    MGConstrainedDoFs const & mg_constrained_dofs,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                            periodic_face_pairs,
+    unsigned int const      level,
+    DoFHandler<dim> const * add_dof_handler);
 
   /*
    *  Scaling factor of time derivative term (mass matrix term)
@@ -120,6 +137,9 @@ public:
 
   double
   get_scaling_factor_time_derivative_term() const;
+
+  AffineConstraints<double> const &
+  get_constraint_matrix() const;
 
   MatrixFree<dim, Number> const &
   get_data() const;
@@ -146,6 +166,16 @@ public:
   void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
+  virtual void
+  apply(VectorType & dst, VectorType const & src) const;
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src) const;
+
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(SparseMatrix & system_matrix) const;
@@ -155,6 +185,12 @@ public:
 
   void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
+
+  virtual void
+  do_calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
+
+  virtual void
+  do_calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
   /*

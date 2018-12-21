@@ -16,9 +16,10 @@ template<int dim, int degree, typename Number>
 void
 DiffusiveOperator<dim, degree, Number>::reinit(Mapping<dim> const &               mapping,
                                                MatrixFree<dim, Number> const &    mf_data,
+                                               AffineConstraints<double> const &  constraint_matrix,
                                                DiffusiveOperatorData<dim> const & operator_data)
 {
-  Base::reinit(mf_data, operator_data);
+  Base::reinit(mf_data, constraint_matrix, operator_data);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,

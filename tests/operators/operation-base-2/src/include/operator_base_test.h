@@ -73,14 +73,14 @@ public:
     typedef typename Operator::VectorType VectorType;
     const int                             dim = Operator::DIM;
 
-    const auto & data        = op.get_data();
+    const auto & data        = op.do_get_data();
     auto &       dof_handler = data.get_dof_handler(/*TODO*/);
     const int    fe_degree   = dof_handler.get_fe(/*TODO*/).degree;
 
     // compute system matrix
     TrilinosWrappers::SparseMatrix system_matrix;
-    op.init_system_matrix(system_matrix);
-    op.calculate_system_matrix(system_matrix);
+    op.do_init_system_matrix(system_matrix);
+    op.do_calculate_system_matrix(system_matrix);
 
     // compute diagonal
     VectorType vec_diag;
@@ -94,8 +94,8 @@ public:
     {
       // create temporal vector for diagonal of sparse matrix
       VectorType vec_diag_sm;
-      op.initialize_dof_vector(vec_diag_sm);
-      
+      op.do_initialize_dof_vector(vec_diag_sm);
+
       // extract diagonal from sparse matrix
       auto p = system_matrix.local_range();
       for(unsigned int i = p.first; i < p.second; i++)
@@ -109,8 +109,8 @@ public:
     {
       // initialize vectors
       VectorType vec_src, vec_diag_mf;
-      op.initialize_dof_vector(vec_src);
-      op.initialize_dof_vector(vec_diag_mf);
+      op.do_initialize_dof_vector(vec_src);
+      op.do_initialize_dof_vector(vec_diag_mf);
 
       // fill source vector
       vec_src = 1;
@@ -118,13 +118,13 @@ public:
       // apply block-diagonal matrix of size: 1 x 1
       apply_block(op, 1, vec_diag_mf, vec_src);
 
-      //auto local_range = vec_diag_mf.local_range();
-      //auto & conatraint_matrix = op.get_constraint_matrix();
+      // auto local_range = vec_diag_mf.local_range();
+      // auto & conatraint_matrix = op.get_constraint_matrix();
       //// set diagonal to 1.0 if necessary
-      //for(int i = local_range.first; i < local_range.second; i++)
+      // for(int i = local_range.first; i < local_range.second; i++)
       //  if(vec_diag_mf[i] == 0.0/* || conatraint_matrix.is_constrained(i)*/)
       //    vec_diag_mf[i] == 1.0;
-      for(auto i : op.get_data().get_constrained_dofs())
+      for(auto i : op.do_get_data().get_constrained_dofs())
         vec_diag_mf.local_element(i) = 1.0;
 
       // print l2-norms
@@ -135,9 +135,9 @@ public:
     {
       // initialize vectors
       VectorType vec_src, vec_dst_sm, vec_dst_mf;
-      op.initialize_dof_vector(vec_src);
-      op.initialize_dof_vector(vec_dst_sm);
-      op.initialize_dof_vector(vec_dst_mf);
+      op.do_initialize_dof_vector(vec_src);
+      op.do_initialize_dof_vector(vec_dst_sm);
+      op.do_initialize_dof_vector(vec_dst_mf);
 
       // fill source vector
       MGTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src, op.get_level());
@@ -145,7 +145,7 @@ public:
       // perform vmult with system matrix
       system_matrix.vmult(vec_dst_sm, vec_src);
       // perform matirx-free vmult
-      op.vmult(vec_dst_mf, vec_src);
+      op.apply(vec_dst_mf, vec_src);
 
       // print l2-norms
       print_l2(convergence_table, vec_dst_sm, vec_dst_mf, "(S*v)_L2", "(S*v-F*v)_L2");
@@ -156,16 +156,16 @@ public:
     {
       // initialize vectors
       VectorType vec_src, vec_dst_mf, vec_dst_op;
-      op.initialize_dof_vector(vec_src);
-      op.initialize_dof_vector(vec_dst_mf);
-      op.initialize_dof_vector(vec_dst_op);
+      op.do_initialize_dof_vector(vec_src);
+      op.do_initialize_dof_vector(vec_dst_mf);
+      op.do_initialize_dof_vector(vec_dst_op);
 
       // fill source vector
       MGTools::interpolate(dof_handler, TestSolution<dim>(0), vec_src, op.get_level());
 
       // perform block-jacobi with operator
       op.calculate_block_diagonal_matrices();
-      op.apply_block_diagonal(vec_dst_op, vec_src);
+      op.apply_block_diagonal_matrix_based(vec_dst_op, vec_src);
 
       // apply block-diagonal matrix of size: dofs_per_cell x dofs_per_cell
       const unsigned int dofs_per_cell = std::pow(fe_degree + 1, dim);
@@ -179,7 +179,10 @@ public:
 private:
   template<typename Operator, typename VectorType>
   static void
-  apply_block(Operator & op, const unsigned int dofs_per_block, VectorType & vec_dst, VectorType & vec_src)
+  apply_block(Operator &         op,
+              const unsigned int dofs_per_block,
+              VectorType &       vec_dst,
+              VectorType &       vec_src)
   {
     // initialize temporal vectors
     VectorType vec_src_temp, vec_dst_temp;
@@ -188,9 +191,13 @@ private:
 
     const unsigned int n_blocks = vec_src.size() / dofs_per_block;
     // local range
-    auto               local_range = vec_src.local_range();
-    const unsigned int loc_start   = local_range.first;
-    const unsigned int loc_end     = local_range.second;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+    auto local_range = vec_src.local_range();
+#pragma GCC diagnostic pop
+
+    const unsigned int loc_start = local_range.first;
+    const unsigned int loc_end   = local_range.second;
     // iterate over all block diagonals
     for(unsigned int block = 0; block < n_blocks; block++)
     {
@@ -213,7 +220,7 @@ private:
       for(unsigned int i = start; i < end; i++)
         vec_src_temp[i] = vec_src[i];
       // perform vmult
-      op.vmult(vec_dst_temp, vec_src_temp);
+      op.apply(vec_dst_temp, vec_src_temp);
       // extract result
       for(unsigned int i = start; i < end; i++)
         vec_dst[i] = vec_dst_temp[i];

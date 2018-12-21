@@ -38,41 +38,45 @@ template<int dim, int degree, typename Number>
 class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>,
                         public MultigridOperatorBase<dim, Number>
 {
-public:
-  typedef Number value_type;
-
 private:
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Base;
 
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
 
-  typedef typename Base::VectorType VectorType;
-
   typedef VectorizedArray<Number> scalar;
 
-  static const int DIM = Base::DIM;
-
 public:
+  static const int                  DIM = dim;
+  typedef Number                    value_type;
+  typedef typename Base::VectorType VectorType;
+
   LaplaceOperator();
 
   void
-  reinit(Mapping<dim> const &             mapping,
-         MatrixFree<dim, Number> const &  mf_data,
-         LaplaceOperatorData<dim> const & operator_data);
+  reinit(Mapping<dim> const &              mapping,
+         MatrixFree<dim, Number> const &   mf_data,
+         AffineConstraints<double> const & constraint_matrix,
+         LaplaceOperatorData<dim> const &  operator_data);
 
   void
-  reinit_multigrid(DoFHandler<dim> const &   dof_handler,
-                   Mapping<dim> const &      mapping,
-                   void *                    operator_data,
-                   MGConstrainedDoFs const & mg_constrained_dofs,
-                   unsigned int const        level);
+  reinit_multigrid(
+    DoFHandler<dim> const &   dof_handler,
+    Mapping<dim> const &      mapping,
+    void *                    operator_data,
+    MGConstrainedDoFs const & mg_constrained_dofs,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                       periodic_face_pairs,
+    unsigned int const level);
 
   void
   vmult(VectorType & dst, VectorType const & src) const;
 
   void
   vmult_add(VectorType & dst, VectorType const & src) const;
+
+  AffineConstraints<double> const &
+  get_constraint_matrix() const;
 
   MatrixFree<dim, Number> const &
   get_data() const;

@@ -13,16 +13,16 @@ public:
 
   // apply matrix vector multiplication
   void
-  evaluate(parallel::distributed::Vector<value_type> & dst) const
+  evaluate(LinearAlgebra::distributed::Vector<value_type> & dst) const
   {
     dst = 0;
     evaluate_add(dst);
   }
 
   void
-  evaluate_add(parallel::distributed::Vector<value_type> & dst) const
+  evaluate_add(LinearAlgebra::distributed::Vector<value_type> & dst) const
   {
-    parallel::distributed::Vector<value_type> src;
+    LinearAlgebra::distributed::Vector<value_type> src;
     data->cell_loop(&This::cell_loop, this, dst, src);
   }
 
@@ -41,9 +41,9 @@ private:
   }
 
   void
-  cell_loop(MatrixFree<dim, value_type> const &         data,
-            parallel::distributed::Vector<value_type> & dst,
-            parallel::distributed::Vector<value_type> const &,
+  cell_loop(MatrixFree<dim, value_type> const &              data,
+            LinearAlgebra::distributed::Vector<value_type> & dst,
+            LinearAlgebra::distributed::Vector<value_type> const &,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data);

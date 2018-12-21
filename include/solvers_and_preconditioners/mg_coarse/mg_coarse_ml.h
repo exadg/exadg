@@ -8,7 +8,7 @@
 
 
 #include "../preconditioner/preconditioner_base.h"
-#include "../transfer/dg_to_cg_transfer.h"
+#include "../transfer/mg_transfer_mf_c.h"
 
 #include "../../functionalities/print_functions.h"
 
@@ -125,7 +125,6 @@ public:
    * Constructor
    */
   MGCoarseML(Operator const & operator_dg,
-             Operator const & operator_cg,
              bool             setup = false,
              int              level = -1,
              MGCoarseMLData   data  = MGCoarseMLData());
@@ -159,10 +158,9 @@ public:
 
 private:
   // reference to matrix-free operators
-  Operator const & operator_dg;
-  Operator const & operator_cg;
+  const Operator & operator_dg;
 
-  std::shared_ptr<CGToDGTransfer<Operator::DIM, NumberMG>> transfer;
+  std::shared_ptr<MGTransferMFC<Operator::DIM, NumberMG>> transfer;
   // distributed sparse system matrix
   MatrixType system_matrix;
   // AMG preconditioner
@@ -191,7 +189,6 @@ public:
    * Constructor
    */
   MGCoarseML(Operator const & matrix,
-             Operator const & matrix_q,
              bool             setup = false,
              int              level = -1,
              MGCoarseMLData   data  = MGCoarseMLData());

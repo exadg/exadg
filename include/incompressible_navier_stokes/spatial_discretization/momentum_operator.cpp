@@ -48,6 +48,8 @@ MomentumOperator<dim, degree, Number>::reinit_multigrid(
   Mapping<dim> const &    mapping,
   void *                  operator_data_in,
   MGConstrainedDoFs const & /*mg_constrained_dofs*/,
+  std::vector<GridTools::PeriodicFacePair<
+    typename Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
   unsigned int const level)
 {
   auto operator_data = *static_cast<MomentumOperatorData<dim> *>(operator_data_in);

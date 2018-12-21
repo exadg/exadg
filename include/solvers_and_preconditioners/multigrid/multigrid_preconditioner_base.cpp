@@ -8,6 +8,10 @@
 #include <map>
 #include <vector>
 
+#include "../transfer/mg_transfer_mf_c.h"
+#include "../transfer/mg_transfer_mf_h.h"
+#include "../transfer/mg_transfer_mf_p.h"
+
 #include "../mg_coarse/mg_coarse_ml.h"
 
 #include "../util/compute_eigenvalues.h"
@@ -31,25 +35,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   DoFHandler<dim> const & dof_handler,
   Mapping<dim> const &    mapping,
   void *                  operator_data,
-  DoFHandler<dim> const * add_dof_handler)
-{
-  AssertThrow(mg_data.coarse_solver != MultigridCoarseGridSolver::AMG_ML,
-              ExcMessage("You have to provide Dirichlet BCs if you want to use AMG!"));
-
-  // create emty vector for Dirichlet BC so that we can use the more general
-  //  method which is written for continuous and discontinuous Galerkin methods
-  Map dirichlet_bc;
-  this->initialize(mg_data, dof_handler, mapping, dirichlet_bc, operator_data, add_dof_handler);
-}
-
-template<int dim, typename Number, typename MultigridNumber>
-void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &   mg_data,
-  DoFHandler<dim> const & dof_handler,
-  Mapping<dim> const &    mapping,
-  Map const &             dirichlet_bc,
-  void *                  operator_data,
+  Map const *             dirichlet_bc_in,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
+                          periodic_face_pairs_in,
   DoFHandler<dim> const * add_dof_handler)
 {
   this->mg_data = mg_data;
@@ -58,27 +46,37 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   parallel::Triangulation<dim> const * tria =
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
 
-  unsigned int const degree = dof_handler.get_fe().degree;
+  if((/*is_cg ||*/ mg_data.coarse_solver == MultigridCoarseGridSolver::AMG_ML) &&
+     ((dirichlet_bc_in == nullptr) || (dirichlet_bc_in == nullptr)))
+    AssertThrow(
+      mg_data.coarse_solver != MultigridCoarseGridSolver::AMG_ML,
+      ExcMessage(
+        "You have to provide Dirichlet BCs and peridic face pairs if you want to use CG or AMG!"));
 
-  // setup multigrid sequence
-  std::vector<unsigned int> h_levels, p_levels;
+  // dereference points
+  auto & dirichlet_bc        = *dirichlet_bc_in;
+  auto & periodic_face_pairs = *periodic_face_pairs_in;
 
-  Levels global_levels;
-  this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_data.type);
+  // extract paramters
+  const auto   mg_type = this->mg_data.type;
+  unsigned int degree  = dof_handler.get_fe().degree;
+  const bool   is_dg   = dof_handler.get_fe().dofs_per_vertex == 0;
+
+  // setup sequence
+  std::vector<unsigned int>           h_levels;
+  std::vector<MGDofHandlerIdentifier> p_levels;
+  std::vector<MGLevelIdentifier>      global_levels;
+  this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type, is_dg);
+  this->check_mg_sequence(global_levels);
+  this->n_global_levels = global_levels.size(); // number of actual multigrid levels
 
   // setup of multigrid components
   this->initialize_mg_dof_handler_and_constraints(
-    dof_handler, tria, global_levels, p_levels, dirichlet_bc, degree);
-
-  this->initialize_mg_matrices(global_levels, mapping, operator_data, add_dof_handler);
-
-  if(mg_data.coarse_solver == MultigridCoarseGridSolver::AMG_ML) // TODO: will be removed
-    this->initialize_auxiliary_space(tria, global_levels, dirichlet_bc, mapping, operator_data);
-
+    dof_handler, tria, global_levels, p_levels, dirichlet_bc);
+  this->initialize_mg_matrices(
+    global_levels, mapping, periodic_face_pairs, operator_data, add_dof_handler);
   this->initialize_smoothers();
-
-  this->initialize_coarse_solver(global_levels[0].first);
-
+  this->initialize_coarse_solver(global_levels[0].level);
   this->initialize_mg_transfer(tria, global_levels, h_levels, p_levels);
 
   this->initialize_multigrid_preconditioner();
@@ -121,12 +119,13 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequence(
-  parallel::Triangulation<dim> const * tria,
-  Levels &                             global_levels,
-  std::vector<unsigned int> &          h_levels,
-  std::vector<unsigned int> &          p_levels,
-  unsigned int const                   degree,
-  MultigridType const                  mg_type)
+  const parallel::Triangulation<dim> *  tria,
+  std::vector<MGLevelIdentifier> &      global_levels,
+  std::vector<unsigned int> &           h_levels,
+  std::vector<MGDofHandlerIdentifier> & p_levels,
+  unsigned int                          degree,
+  MultigridType                         mg_type,
+  const bool                            is_dg)
 {
   // setup h-levels
   if(mg_type == MultigridType::pMG) // p-MG is only working on the finest h-level
@@ -142,44 +141,60 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
   // setup p-levels
   if(mg_type == MultigridType::hMG) // h-MG is only working on high-order
   {
-    p_levels.push_back(degree);
+    p_levels.push_back({degree, is_dg});
   }
   else // p-MG, hp-MG, and ph-MG are working on high- and low- order elements
   {
     unsigned int temp = degree;
     do
     {
-      p_levels.push_back(temp);
-      temp = get_next_coarser_degree(temp);
-    } while(temp != p_levels.back());
-
+      p_levels.push_back({temp, is_dg});
+      switch(this->mg_data.p_sequence)
+      {
+          // clang-format off
+        case PSequenceType::GO_TO_ONE:       temp = 1;                                                break;
+        case PSequenceType::DECREASE_BY_ONE: temp = std::max(temp-1, 1u);                             break;
+        case PSequenceType::BISECTION:       temp = std::max(temp/2, 1u);                             break;
+        case PSequenceType::MANUAL:          temp = (degree==3&&temp==3) ? 2 : std::max(degree/2, 1u);break;
+        default:
+          AssertThrow(false, ExcMessage("No valid p-sequence selected!"));
+          // clang-format on
+      }
+    } while(temp != p_levels.back().degree);
     std::reverse(std::begin(p_levels), std::end(p_levels));
+  }
+
+  AssertThrow(!(mg_data.c_transfer_front && mg_data.c_transfer_back),
+              ExcMessage("You can only use c_transfer once!"));
+
+  if(mg_data.c_transfer_back && is_dg)
+    p_levels.insert(p_levels.begin(), {p_levels.front().degree, false});
+
+  if(mg_data.c_transfer_front && is_dg)
+  {
+    for(auto & i : p_levels)
+      i.is_dg = false;
+    p_levels.push_back({p_levels.back().degree, true});
   }
 
   // setup global-levels
   if(mg_type == MultigridType::pMG || mg_type == MultigridType::phMG)
   {
-    // top level: p-MG
-    if(mg_type == MultigridType::phMG) // low level: h-MG
-    {
+    // top level: p-gmg
+    if(mg_type == MultigridType::phMG) // low level: h-gmg
       for(unsigned int i = 0; i < h_levels.size() - 1; i++)
-        global_levels.push_back(std::pair<int, int>(h_levels[i], p_levels.front()));
-    }
-
-    for(auto p : p_levels)
-      global_levels.push_back(std::pair<int, int>(h_levels.back(), p));
+        global_levels.push_back({h_levels[i], p_levels.front()});
+    for(auto deg : p_levels)
+      global_levels.push_back({h_levels.back(), deg});
   }
   else if(mg_type == MultigridType::hMG || mg_type == MultigridType::hpMG)
   {
-    // top level: h-MG
-    if(mg_type == MultigridType::hpMG) // low level: p-MG
-    {
+    // top level: h-gmg
+    if(mg_type == MultigridType::hpMG) // low level: p-gmg
       for(unsigned int i = 0; i < p_levels.size() - 1; i++)
-        global_levels.push_back(std::pair<int, int>(h_levels.front(), p_levels[i]));
-    }
-
-    for(auto h : h_levels)
-      global_levels.push_back(std::pair<int, int>(h, p_levels.back()));
+        global_levels.push_back({h_levels.front(), p_levels[i]});
+    for(auto geo : h_levels)
+      global_levels.push_back({geo, p_levels.back()});
   }
   else
     AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
@@ -192,7 +207,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_mg_sequence(
-  Levels const & global_levels)
+  std::vector<MGLevelIdentifier> const & global_levels)
 {
   AssertThrow(this->n_global_levels == global_levels.size(),
               ExcMessage("Variable n_global_levels is not initialized correctly."));
@@ -202,73 +217,43 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_mg_sequence(
     auto fine_level   = global_levels[i];
     auto coarse_level = global_levels[i - 1];
 
-    AssertThrow(
-      (fine_level.first != coarse_level.first) ^ (fine_level.second != coarse_level.second),
-      ExcMessage("Between levels there is only ONE change allowed: either in h- or p-level!"));
+    AssertThrow((fine_level.level != coarse_level.level) ^
+                  (fine_level.degree != coarse_level.degree) ^
+                  (fine_level.is_dg != coarse_level.is_dg),
+                ExcMessage(
+                  "Between levels there is only ONE change allowed: either in h- or p-level!"));
   }
 }
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_auxiliary_space(
-  parallel::Triangulation<dim> const * tria,
-  Levels const &                       global_levels,
-  Map const &                          dirichlet_bc,
-  Mapping<dim> const &                 mapping,
-  void *                               operator_data)
-{
-  // create coarse matrix with cg
-  auto dof_handler_cg = new DoFHandler<dim>(*tria);
-  dof_handler_cg->distribute_dofs(FE_Q<dim>(global_levels[0].second));
-  dof_handler_cg->distribute_mg_dofs();
-  this->cg_dofhandler.reset(dof_handler_cg);
-
-  auto constrained_dofs_cg = new MGConstrainedDoFs();
-  constrained_dofs_cg->clear();
-  this->initialize_mg_constrained_dofs(*dof_handler_cg, *constrained_dofs_cg, dirichlet_bc);
-  this->cg_constrained_dofs.reset(constrained_dofs_cg);
-
-  // TODO: remove static cast
-  auto matrix_cg = static_cast<Operator *>(underlying_operator->get_new(global_levels[0].second));
-  matrix_cg->reinit_multigrid(
-    *dof_handler_cg, mapping, operator_data, *this->cg_constrained_dofs, global_levels[0].first);
-
-  this->cg_matrices.reset(matrix_cg);
-}
-
-template<int dim, typename Number, typename MultigridNumber>
-void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_mg_dof_handler_and_constraints(DoFHandler<dim> const &              dof_handler,
-                                            parallel::Triangulation<dim> const * tria,
-                                            Levels &                             global_levels,
-                                            std::vector<unsigned int> &          p_levels,
-                                            Map const &                          dirichlet_bc,
-                                            unsigned int                         degree)
-
+  initialize_mg_dof_handler_and_constraints(
+    DoFHandler<dim> const &                                              dof_handler,
+    parallel::Triangulation<dim> const *                                 tria,
+    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGDofHandlerIdentifier> &                                p_levels,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc)
 {
   this->mg_constrained_dofs.resize(0, this->n_global_levels - 1);
   this->mg_dofhandler.resize(0, this->n_global_levels - 1);
 
-  // determine number of components
-  // n_components is needed so that also vector quantities can be handled
-  // (note: since at the moment continuous space is only selectable as an auxiliary
-  // coarse space and vector quantities are not supported there, it is
-  // enough to determine this number for DG)
-  unsigned int const n_components =
-    dof_handler.n_dofs() / tria->n_global_active_cells() / std::pow(1 + degree, dim);
+  const unsigned int n_components = dof_handler.get_fe().n_components();
 
   // temporal storage for new dofhandlers and constraints on each p-level
-  std::map<unsigned int, std::shared_ptr<DoFHandler<dim> const>> map_dofhandlers;
-  std::map<unsigned int, std::shared_ptr<MGConstrainedDoFs>>     map_constraints;
+  std::map<MGDofHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
+  std::map<MGDofHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constraints;
 
   // setup dof-handler and constrained dofs for each p-level
-  for(unsigned int degree : p_levels)
+  for(auto degree : p_levels)
   {
     // setup dof_handler: create dof_handler...
     auto dof_handler = new DoFHandler<dim>(*tria);
     // ... create FE and distribute it
-    dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(degree), n_components));
+    if(degree.is_dg)
+      dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(degree.degree), n_components));
+    else
+      dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(degree.degree), n_components));
     dof_handler->distribute_mg_dofs();
     // setup constrained dofs:
     auto constrained_dofs = new MGConstrainedDoFs();
@@ -283,7 +268,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   // populate dof-handler and constrained dofs to all hp-levels with the same degree
   for(unsigned int i = 0; i < global_levels.size(); i++)
   {
-    int degree             = global_levels[i].second;
+    auto degree            = global_levels[i].id;
     mg_dofhandler[i]       = map_dofhandlers[degree];
     mg_constrained_dofs[i] = map_constraints[degree];
   }
@@ -292,9 +277,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices(
-  Levels const &          global_levels,
-  Mapping<dim> const &    mapping,
-  void *                  operator_data,
+  std::vector<MGLevelIdentifier> & global_levels,
+  const Mapping<dim> &             mapping,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                          periodic_face_pairs,
+  void *                  operator_data_in,
   DoFHandler<dim> const * add_dof_handler)
 {
   this->mg_matrices.resize(0, this->n_global_levels - 1);
@@ -302,24 +289,26 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrice
   // create and setup operator on each level
   for(unsigned int i = 0; i < this->n_global_levels; i++)
   {
-    auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].second));
+    auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].degree));
 
     if(add_dof_handler != nullptr)
     {
       matrix->reinit_multigrid_add_dof_handler(*mg_dofhandler[i],
                                                mapping,
-                                               operator_data,
+                                               operator_data_in,
                                                *this->mg_constrained_dofs[i],
-                                               global_levels[i].first,
+                                               periodic_face_pairs,
+                                               global_levels[i].level,
                                                add_dof_handler);
     }
     else
     {
       matrix->reinit_multigrid(*mg_dofhandler[i],
                                mapping,
-                               operator_data,
+                               operator_data_in,
                                *this->mg_constrained_dofs[i],
-                               global_levels[i].first);
+                               periodic_face_pairs,
+                               global_levels[i].level);
     }
     mg_matrices[i].reset(matrix);
   }
@@ -339,10 +328,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfer(
-  parallel::Triangulation<dim> const * tria,
-  Levels &                             global_levels,
+  const parallel::Triangulation<dim> * tria,
+  std::vector<MGLevelIdentifier> &     global_levels,
   std::vector<unsigned int> & /*h_levels*/,
-  std::vector<unsigned int> & p_levels)
+  std::vector<MGDofHandlerIdentifier> & p_levels)
 {
   this->mg_transfer.resize(0, this->n_global_levels - 1);
 
@@ -350,12 +339,13 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
   (void)tria; // avoid compiler warning
 #endif
 
-  std::map<unsigned int, std::shared_ptr<MGTransferMF<dim, MultigridNumber>>> mg_tranfers_temp;
-
-  std::map<unsigned int, std::map<unsigned int, unsigned int>> map_global_level_to_h_levels;
+  std::map<MGDofHandlerIdentifier, std::shared_ptr<MGTransferMFH<dim, MultigridNumber>>>
+    mg_tranfers_temp;
+  std::map<MGDofHandlerIdentifier, std::map<unsigned int, unsigned int>>
+    map_global_level_to_h_levels;
 
   // initialize maps so that we do not have to check existence later on
-  for(unsigned int deg : p_levels)
+  for(auto deg : p_levels)
     map_global_level_to_h_levels[deg] = {};
 
   // fill the maps
@@ -363,17 +353,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
   {
     auto level = global_levels[i];
 
-    map_global_level_to_h_levels[level.second][i] = level.first;
+    map_global_level_to_h_levels[level.id][i] = level.level;
   }
 
   // create h-transfer operators between levels
-  for(unsigned int deg : p_levels)
+  for(auto deg : p_levels)
   {
     if(map_global_level_to_h_levels[deg].size() > 1)
     {
       // create actual h-transfer-operator
-      std::shared_ptr<MGTransferMF<dim, MultigridNumber>> transfer(
-        new MGTransferMF<dim, MultigridNumber>(map_global_level_to_h_levels[deg]));
+      std::shared_ptr<MGTransferMFH<dim, MultigridNumber>> transfer(
+        new MGTransferMFH<dim, MultigridNumber>(map_global_level_to_h_levels[deg]));
 
       // dof-handlers and constrains are saved for global levels
       // so we have to convert degree to any global level which has this degree
@@ -388,133 +378,59 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
   // fill mg_transfer with the correct transfers
   for(unsigned int i = 1; i < global_levels.size(); i++)
   {
-    auto coarse_level   = global_levels[i - 1];
-    auto fine_level     = global_levels[i];
-    auto h_coarse_level = coarse_level.first;
-    auto h_fine_level   = fine_level.first;
-    auto p_coarse_level = coarse_level.second;
-    auto p_fine_level   = fine_level.second;
+    auto coarse_level = global_levels[i - 1];
+    auto fine_level   = global_levels[i];
 
     std::shared_ptr<MGTransferBase<VectorTypeMG>> temp;
 
-    if(h_coarse_level != h_fine_level) // h-transfer
+    if(coarse_level.level != fine_level.level) // h-transfer
     {
 #ifdef DEBUG
       if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
         printf("  h-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n",
-               h_coarse_level,
-               p_coarse_level,
-               h_fine_level,
-               p_fine_level);
+               coarse_level.level,
+               coarse_level.degree,
+               fine_level.level,
+               fine_level.degree);
 #endif
 
-      temp = mg_tranfers_temp[p_coarse_level]; // get the previous h-transfer operator
+      temp = mg_tranfers_temp[coarse_level.id]; // get the previously h-transfer operator
     }
-    else if(p_coarse_level != p_fine_level) // p-transfer
+    else if(coarse_level.degree != fine_level.degree) // p-transfer
     {
 #ifdef DEBUG
       if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
         printf("  p-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n",
-               h_coarse_level,
-               p_coarse_level,
-               h_fine_level,
-               p_fine_level);
+               coarse_level.level,
+               coarse_level.degree,
+               fine_level.level,
+               fine_level.degree);
 #endif
 
-// clang-format off
-#if DEGREE_15 && DEGREE_7
-      if(p_fine_level == 15 && p_coarse_level == 7)
-        temp.reset(
-          new MGTransferMatrixFreeP<dim, 15, 7, MultigridNumber, VectorTypeMG>(
-            *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
+      temp.reset(
+        new MGTransferMFP<dim, MultigridNumber, VectorTypeMG>(&mg_matrices[i]->get_data(),
+                                                              &mg_matrices[i - 1]->get_data(),
+                                                              fine_level.degree,
+                                                              coarse_level.degree));
+    }
+    else if(coarse_level.is_dg != fine_level.is_dg) // c-transfer
+    {
+#ifdef DEBUG
+      if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
+        printf("  c-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n",
+               coarse_level.level,
+               coarse_level.degree,
+               fine_level.level,
+               fine_level.degree);
 #endif
-#if DEGREE_14 && DEGREE_7
-      if(p_fine_level == 14 && p_coarse_level == 7)
-        temp.reset(
-          new MGTransferMatrixFreeP<dim, 14, 7, MultigridNumber, VectorTypeMG>(
-            *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_13 && DEGREE_6
-      if(p_fine_level == 13 && p_coarse_level == 6)
-        temp.reset(
-          new MGTransferMatrixFreeP<dim, 13, 6, MultigridNumber, VectorTypeMG>(
-            *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_12 && DEGREE_6
-      if(p_fine_level == 12 && p_coarse_level == 6)
-        temp.reset(
-          new MGTransferMatrixFreeP<dim, 12, 6, MultigridNumber, VectorTypeMG>(
-            *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_11 && DEGREE_5
-      if(p_fine_level == 11 && p_coarse_level == 5)
-        temp.reset(
-          new MGTransferMatrixFreeP<dim, 11, 5, MultigridNumber, VectorTypeMG>(
-            *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_10 && DEGREE_5
-      if(p_fine_level == 10 && p_coarse_level == 5)
-        temp.reset(new MGTransferMatrixFreeP<dim, 9, 4, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_9 && DEGREE_4
-      if(p_fine_level == 9 && p_coarse_level == 4)
-        temp.reset(new MGTransferMatrixFreeP<dim, 9, 4, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_8 && DEGREE_4
-      if(p_fine_level == 8 && p_coarse_level == 4)
-        temp.reset(new MGTransferMatrixFreeP<dim, 8, 4, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_7 && DEGREE_3
-      if(p_fine_level == 7 && p_coarse_level == 3)
-        temp.reset(new MGTransferMatrixFreeP<dim, 7, 3, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_6 && DEGREE_3
-      if(p_fine_level == 6 && p_coarse_level == 3)
-        temp.reset(new MGTransferMatrixFreeP<dim, 6, 3, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_5 && DEGREE_2
-      if(p_fine_level == 5 && p_coarse_level == 2)
-        temp.reset(new MGTransferMatrixFreeP<dim, 5, 2, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_4 && DEGREE_2
-      if(p_fine_level == 4 && p_coarse_level == 2)
-        temp.reset(new MGTransferMatrixFreeP<dim, 4, 2, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_3 && DEGREE_1
-      if(p_fine_level == 3 && p_coarse_level == 1)
-        temp.reset(new MGTransferMatrixFreeP<dim, 3, 1, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-#if DEGREE_2 && DEGREE_1
-      if(p_fine_level == 2 && p_coarse_level == 1)
-        temp.reset(new MGTransferMatrixFreeP<dim, 2, 1, MultigridNumber, VectorTypeMG>(
-          *mg_dofhandler[i], *mg_dofhandler[i - 1], h_fine_level));
-      else
-#endif
-      // clang-format on
-      {
-        AssertThrow(false, ExcMessage("This type of p-transfer is not implemented"));
-      }
+
+      temp.reset(new MGTransferMFC<dim, typename Operator::value_type>(
+        mg_matrices[i]->get_data(),
+        mg_matrices[i - 1]->get_data(),
+        mg_matrices[i]->get_constraint_matrix(),
+        mg_matrices[i - 1]->get_constraint_matrix(),
+        fine_level.level,
+        coarse_level.degree));
     }
     mg_transfer[i] = temp;
   }
@@ -825,8 +741,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
     }
     case MultigridCoarseGridSolver::AMG_ML:
     {
-      mg_coarse.reset(new MGCoarseML<Operator, Number>(
-        matrix, *cg_matrices, true, coarse_level, this->mg_data.coarse_ml_data));
+      mg_coarse.reset(
+        new MGCoarseML<Operator, Number>(matrix, true, coarse_level, this->mg_data.coarse_ml_data));
       return;
     }
     default:

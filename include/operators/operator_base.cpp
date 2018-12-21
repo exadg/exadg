@@ -25,16 +25,6 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::reinit(
-  MatrixFree<dim, Number> const & matrix_free,
-  AdditionalData const &          operator_data) const
-{
-  AffineConstraints<double> constraint_matrix;
-  reinit(matrix_free, constraint_matrix, operator_data);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData>
-void
-OperatorBase<dim, degree, Number, AdditionalData>::reinit(
   MatrixFree<dim, Number> const &   matrix_free,
   AffineConstraints<double> const & constraint_matrix,
   AdditionalData const &            operator_data) const
@@ -44,12 +34,13 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
   this->constraint.reinit(constraint_matrix);
   this->operator_data = operator_data;
 
-  // verify boundary conditions
-  if(this->operator_data.evaluate_face_integrals)
-  {
-    this->verify_boundary_conditions(data->get_dof_handler(this->operator_data.dof_index),
-                                     this->operator_data);
-  }
+  // TODO: do it somewhere else where we have access to periodic_face_pairs
+  //  // verify boundary conditions
+  //  if(this->operator_data.evaluate_face_integrals)
+  //  {
+  //    this->verify_boundary_conditions(data->get_dof_handler(this->operator_data.dof_index),
+  //                                     this->operator_data);
+  //  }
 
   // check if DG or CG
   // An approximation can have degrees of freedom on vertices, edges, quads and
@@ -70,6 +61,16 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
       *this->data, true, this->operator_data.dof_index, this->operator_data.quad_index));
     fe_eval_p.reset(new FEEvalFace(
       *this->data, false, this->operator_data.dof_index, this->operator_data.quad_index));
+  }
+
+  if(!is_dg)
+  {
+    VectorType dummy_vector;
+    this->do_initialize_dof_vector(dummy_vector);
+    for(unsigned int i = 0; i < dummy_vector.local_size(); ++i)
+      if(constraint->is_constrained(dummy_vector.get_partitioner()->local_to_global(i)))
+        constrained_indices.push_back(i);
+    constrained_values.resize(constrained_indices.size());
   }
 }
 
@@ -100,7 +101,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_reinit_multigrid(
   Mapping<dim> const &      mapping,
   void *                    operator_data_in,
   MGConstrainedDoFs const & mg_constrained_dofs,
-  unsigned int const        level)
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                     periodic_face_pairs,
+  unsigned int const level)
 {
   // create copy of data and ...
   auto operator_data = *static_cast<AdditionalData *>(operator_data_in);
@@ -138,7 +141,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_reinit_multigrid(
   // setup constraint matrix for CG
   if(!is_dg)
   {
-    this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_data, level);
+    this->add_constraints(
+      dof_handler, constraint_own, mg_constrained_dofs, periodic_face_pairs, level);
   }
 
   constraint_own.close();
@@ -185,7 +189,21 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       
   }
   else
   {
+    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+    {
+      constrained_values[i] =
+        std::pair<Number, Number>(actual_src->local_element(constrained_indices[i]),
+                                  dst.local_element(constrained_indices[i]));
+      const_cast<VectorType &>(*actual_src).local_element(constrained_indices[i]) = 0.;
+    }
     data->cell_loop(&This::cell_loop, this, dst, *actual_src);
+    for(unsigned int i = 0; i < constrained_indices.size(); ++i)
+    {
+      const_cast<VectorType &>(*actual_src).local_element(constrained_indices[i]) =
+        constrained_values[i].first;
+      dst.local_element(constrained_indices[i]) =
+        constrained_values[i].second + constrained_values[i].first;
+    }
   }
 
   if(operator_is_singular() && !is_mg && is_dg)
@@ -468,6 +486,29 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_update_block_diagonal_prec
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
+OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matrices() const
+{
+  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+
+  // allocate memory only the first time
+  if(!block_diagonal_preconditioner_is_initialized ||
+     data->n_macro_cells() * vectorization_length != matrices.size())
+  {
+    auto dofs = data->get_shape_info().dofs_per_component_on_cell;
+    matrices.resize(data->n_macro_cells() * vectorization_length,
+                    LAPACKFullMatrix<Number>(dofs, dofs));
+    block_diagonal_preconditioner_is_initialized = true;
+  } // else: reuse old memory
+
+  // clear matrices
+  initialize_block_jacobi_matrices_with_zero(matrices);
+
+  // compute block matrices
+  add_block_diagonal_matrices(matrices);
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
 OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
   BlockMatrix & matrices) const
 {
@@ -624,9 +665,24 @@ OperatorBase<dim, degree, Number, AdditionalData>::get_level() const
 
 template<int dim, int degree, typename Number, typename AdditionalData>
 AffineConstraints<double> const &
-OperatorBase<dim, degree, Number, AdditionalData>::get_constraint_matrix() const
+OperatorBase<dim, degree, Number, AdditionalData>::do_get_constraint_matrix() const
 {
   return *constraint;
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+MatrixFree<dim, Number> const &
+OperatorBase<dim, degree, Number, AdditionalData>::do_get_data() const
+{
+  return *data;
+}
+
+template<int dim, int degree, typename Number, typename AdditionalData>
+void
+OperatorBase<dim, degree, Number, AdditionalData>::do_initialize_dof_vector(
+  VectorType & vector) const
+{
+  data->initialize_dof_vector(vector, operator_data.dof_index);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData>
@@ -1625,17 +1681,15 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(
   DoFHandler<dim> const &     dof_handler,
   AffineConstraints<double> & constraint_own,
   MGConstrainedDoFs const &   mg_constrained_dofs,
-  AdditionalData &            operator_data,
-  unsigned int const          level)
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                     periodic_face_pairs,
+  unsigned int const level)
 {
   // 0) clear old content (to be on the safe side)
   constraint_own.clear();
 
   // 1) add periodic BCs
-  this->add_periodicity_constraints(dof_handler,
-                                    level,
-                                    operator_data.periodic_face_pairs_level0,
-                                    constraint_own);
+  this->add_periodicity_constraints(dof_handler, level, periodic_face_pairs, constraint_own);
 
   // 2) add Dirichlet BCs
   constraint_own.add_lines(mg_constrained_dofs.get_boundary_indices(level));
@@ -1752,8 +1806,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
 template<int dim, int degree, typename Number, typename AdditionalData>
 void
 OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
-  DoFHandler<dim> const & dof_handler,
-  AdditionalData const &  operator_data) const
+  DoFHandler<dim> const &                 dof_handler,
+  std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const
 {
   // fill set with periodic boundary ids
   std::set<types::boundary_id> periodic_boundary_ids;

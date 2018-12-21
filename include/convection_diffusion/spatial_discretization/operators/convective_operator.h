@@ -52,17 +52,26 @@ private:
 
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
+
+public:
   typedef typename Base::VectorType VectorType;
 
+private:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
+public:
+  static const int DIM = dim;
+
+private:
   typedef FEEvaluation<dim, degree_velocity, degree + 1, dim, Number>     FEEvalCellVelocity;
   typedef FEFaceEvaluation<dim, degree_velocity, degree + 1, dim, Number> FEEvalFaceVelocity;
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const & data, ConvectiveOperatorData<dim> const & operator_data);
+  reinit(MatrixFree<dim, Number> const &     data,
+         AffineConstraints<double> const &   constraint_matrix,
+         ConvectiveOperatorData<dim> const & operator_data);
 
   /*
    *  TODO: This function has to be removed later. It is currently only needed since level is a

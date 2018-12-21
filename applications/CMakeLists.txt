@@ -22,6 +22,7 @@ SET( SOURCE_FILES
      
      # Poisson
      poisson.cc
+     poisson_dual.cc
      laplace_operator_matrix_free.cc
      #multigrid_solver.cc
 

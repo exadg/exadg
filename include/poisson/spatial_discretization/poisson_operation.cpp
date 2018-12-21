@@ -10,7 +10,8 @@ DGOperation<dim, degree, Number>::DGOperation(
   parallel::distributed::Triangulation<dim> const & triangulation,
   Poisson::InputParameters const &                  param_in)
   : dealii::Subscriptor(),
-    fe(degree),
+    fe_dgq(degree),
+    fe_q(degree),
     mapping(param_in.degree_mapping),
     dof_handler(triangulation),
     param(param_in)
@@ -78,8 +79,9 @@ DGOperation<dim, degree, Number>::setup_solver()
     mg_preconditioner->initialize(mg_data,
                                   dof_handler,
                                   mapping,
-                                  laplace_operator.get_operator_data().bc->dirichlet_bc,
-                                  (void *)&laplace_operator.get_operator_data());
+                                  (void *)&laplace_operator.get_operator_data(),
+                                  &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                  &this->periodic_face_pairs);
   }
   else
   {
@@ -94,9 +96,10 @@ DGOperation<dim, degree, Number>::setup_solver()
   {
     // initialize solver_data
     CGSolverData solver_data;
-    solver_data.solver_tolerance_abs = param.abs_tol;
-    solver_data.solver_tolerance_rel = param.rel_tol;
-    solver_data.max_iter             = param.max_iter;
+    solver_data.solver_tolerance_abs        = param.abs_tol;
+    solver_data.solver_tolerance_rel        = param.rel_tol;
+    solver_data.max_iter                    = param.max_iter;
+    solver_data.compute_performance_metrics = param.compute_performance_metrics;
 
     if(param.preconditioner != Poisson::Preconditioner::None)
       solver_data.use_preconditioner = true;
@@ -128,7 +131,8 @@ void
 DGOperation<dim, degree, Number>::rhs(VectorType & dst, double const evaluation_time) const
 {
   dst = 0;
-  laplace_operator.rhs_add(dst, evaluation_time);
+  if(param.spatial_discretization == SpatialDiscretization::DG)
+    laplace_operator.rhs_add(dst, evaluation_time);
   if(param.right_hand_side == true)
     rhs_operator.evaluate_add(dst, evaluation_time);
 }
@@ -168,7 +172,10 @@ void
 DGOperation<dim, degree, Number>::create_dofs()
 {
   // enumerate degrees of freedom
-  dof_handler.distribute_dofs(fe);
+  if(param.spatial_discretization == SpatialDiscretization::DG)
+    dof_handler.distribute_dofs(fe_dgq);
+  else
+    dof_handler.distribute_dofs(fe_q);
   dof_handler.distribute_mg_dofs();
 
   unsigned int ndofs_per_cell = Utilities::pow(degree + 1, dim);
@@ -199,25 +206,37 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
   additional_data.mapping_update_flags =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
      update_values);
-
-  additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  if(param.enable_cell_based_face_loops)
+  if(param.spatial_discretization == SpatialDiscretization::DG)
   {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-      &dof_handler.get_triangulation());
-    Categorization::do_cell_based_loops(*tria, additional_data);
+    additional_data.mapping_update_flags_inner_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+
+    additional_data.mapping_update_flags_boundary_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+
+    if(param.enable_cell_based_face_loops)
+    {
+      auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+        &dof_handler.get_triangulation());
+      Categorization::do_cell_based_loops(*tria, additional_data);
+    }
+  }
+  else
+  {
+    MGConstrainedDoFs            mg_constrained_dofs;
+    std::set<types::boundary_id> dirichlet_boundary;
+    for(auto it : boundary_descriptor->dirichlet_bc)
+      dirichlet_boundary.insert(it.first);
+    mg_constrained_dofs.initialize(dof_handler);
+    mg_constrained_dofs.make_zero_boundary_constraints(dof_handler, dirichlet_boundary);
+    constraint_matrix.add_lines(mg_constrained_dofs.get_boundary_indices(
+      dof_handler.get_triangulation().n_global_levels() - 1));
   }
 
-  AffineConstraints<double> dummy;
-  dummy.close();
-  data.reinit(mapping, dof_handler, dummy, quadrature, additional_data);
+  constraint_matrix.close();
+  data.reinit(mapping, dof_handler, constraint_matrix, quadrature, additional_data);
 }
 
 template<int dim, int degree, typename Number>
@@ -226,13 +245,12 @@ DGOperation<dim, degree, Number>::setup_operators()
 {
   // laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.dof_index                  = 0;
-  laplace_operator_data.quad_index                 = 0;
-  laplace_operator_data.IP_factor                  = param.IP_factor;
-  laplace_operator_data.bc                         = boundary_descriptor;
-  laplace_operator_data.periodic_face_pairs_level0 = periodic_face_pairs;
-  laplace_operator_data.use_cell_based_loops       = param.enable_cell_based_face_loops;
-  laplace_operator.reinit(mapping, data, laplace_operator_data);
+  laplace_operator_data.dof_index            = 0;
+  laplace_operator_data.quad_index           = 0;
+  laplace_operator_data.IP_factor            = param.IP_factor;
+  laplace_operator_data.bc                   = boundary_descriptor;
+  laplace_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
+  laplace_operator.reinit(mapping, data, constraint_matrix, laplace_operator_data);
 
   // rhs operator
   ConvDiff::RHSOperatorData<dim> rhs_operator_data;

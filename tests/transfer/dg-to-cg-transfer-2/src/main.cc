@@ -11,7 +11,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/point_value_history.h>
@@ -51,7 +51,7 @@
 #include "../../../operators/operation-base-1/src/include/rhs_operator.h"
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
-#include "../../../../include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.h"
+#include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
 
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
@@ -100,8 +100,8 @@ private:
   MatrixFree<dim, value_type>               data_cg;
   std::shared_ptr<BoundaryDescriptor<dim>>  bc;
   MGConstrainedDoFs                         mg_constrained_dofs_cg;
-  ConstraintMatrix                          dummy_dg;
-  ConstraintMatrix                          dummy_cg;
+  AffineConstraints<double>                 dummy_dg;
+  AffineConstraints<double>                 dummy_cg;
 
   static int
   get_rank(MPI_Comm comm)
@@ -149,11 +149,16 @@ private:
   void
   init_matrixfree_and_constraint_matrix()
   {
+    LaplaceOperatorData<dim> laplace_additional_data;
+
     typename MatrixFree<dim, value_type>::AdditionalData additional_data_dg;
-    additional_data_dg.build_face_info = true;
-    //    additional_data_dg.level_mg_handler = global_refinements;
+    additional_data_dg.mapping_update_flags = laplace_additional_data.mapping_update_flags;
+    additional_data_dg.mapping_update_flags_inner_faces =
+      laplace_additional_data.mapping_update_flags_inner_faces;
+    additional_data_dg.mapping_update_flags_boundary_faces =
+      laplace_additional_data.mapping_update_flags_boundary_faces;
     typename MatrixFree<dim, value_type>::AdditionalData additional_data_cg;
-    //    additional_data_cg.level_mg_handler = global_refinements;
+    additional_data_cg.mapping_update_flags = laplace_additional_data.mapping_update_flags;
 
     // set boundary conditions: Dirichlet BC
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
@@ -210,8 +215,9 @@ private:
     rhs.evaluate(vec_rhs_dg);
 
     // setup implicitly RHS for CG via DG-CG-Transfer
-    CGToDGTransfer<dim, value_type> transfer(data_dg, data_cg, mg_level, fe_degree);
-    transfer.toCG(vec_rhs_cg, vec_rhs_dg);
+    MGTransferMFC<dim, value_type> transfer(
+      data_dg, data_cg, dummy_dg, dummy_cg, mg_level, fe_degree);
+    transfer.restrict_and_add(0, vec_rhs_cg, vec_rhs_dg);
 
     auto bs = mg_constrained_dofs_cg.get_boundary_indices(level);
     auto ls = vec_rhs_cg.locally_owned_elements();
@@ -291,7 +297,7 @@ private:
       data_out.write_vtu_in_parallel(filename.c_str(), comm);
     }
 
-    transfer.toDG(vec_sol_cg_dg, vec_sol_cg);
+    transfer.prolongate(0, vec_sol_cg_dg, vec_sol_cg);
 
     if(mg_level == numbers::invalid_unsigned_int)
     {
@@ -349,21 +355,31 @@ public:
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+      periodic_face_pairs;
 
     // run through all multigrid level
     for(unsigned int level = 0; level <= global_refinements; level++)
     {
-      laplace_dg.reinit(
-        dof_handler_dg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs_cg /*TODO*/, level);
-      laplace_cg.reinit(
-        dof_handler_cg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs_cg, level);
+      laplace_dg.reinit_multigrid(dof_handler_dg,
+                                  mapping,
+                                  (void *)&laplace_additional_data,
+                                  mg_constrained_dofs_cg /*TODO*/,
+                                  periodic_face_pairs,
+                                  level);
+      laplace_cg.reinit_multigrid(dof_handler_cg,
+                                  mapping,
+                                  (void *)&laplace_additional_data,
+                                  mg_constrained_dofs_cg,
+                                  periodic_face_pairs,
+                                  level);
       run(laplace_dg, laplace_cg, level);
     }
 
     // run on fine grid without multigrid
     {
-      laplace_dg.initialize(mapping, data_dg, dummy_dg, laplace_additional_data);
-      laplace_cg.initialize(mapping, data_cg, dummy_cg, laplace_additional_data);
+      laplace_dg.reinit(mapping, data_dg, dummy_dg, laplace_additional_data);
+      laplace_cg.reinit(mapping, data_cg, dummy_cg, laplace_additional_data);
       run(laplace_dg, laplace_cg);
     }
 
@@ -377,7 +393,7 @@ int
 main(int argc, char ** argv)
 {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-  ConditionalOStream               pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   {
     pcout << "2D 1st-order:" << std::endl;
     Runner<2, 1> run_cg;
