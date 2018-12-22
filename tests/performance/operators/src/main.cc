@@ -6,6 +6,7 @@
 #include "operator_wrappers/conv_diff_convective_wrapper.h"
 #include "operator_wrappers/conv_diff_diffusive_wrapper.h"
 #include "operator_wrappers/conv_diff_mass_wrapper.h"
+#include "operator_wrappers/incomp_projection_wrapper.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
 const int best_of = 10;
@@ -87,42 +88,49 @@ public:
       
       {
         OperatorWrapperLaplace<dim, fe_degree, Number> ns(triangulation);
-        repeat<dim>(convergence_table, "vmult-poisson", [&]() mutable {
+        repeat<dim>(convergence_table, "poisson", [&]() mutable {
             ns.run();
         });
       }
       
       {
         OperatorWrapperMassMatrix<dim, fe_degree, Number> ns(triangulation);
-        repeat<dim>(convergence_table, "vmult-cd-mass", [&]() mutable {
+        repeat<dim>(convergence_table, "cd-mass", [&]() mutable {
             ns.run();
         });
       }
       
       {
         OperatorWrapperDiffusiveOperator<dim, fe_degree, Number> ns(triangulation);
-        repeat<dim>(convergence_table, "vmult-cd-diff", [&]() mutable {
+        repeat<dim>(convergence_table, "cd-diff", [&]() mutable {
             ns.run();
         });
       }
       
       {
         OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(triangulation, ConvDiff::TypeVelocityField::Analytical);
-        repeat<dim>(convergence_table, "vmult-cd-conv-1", [&]() mutable {
+        repeat<dim>(convergence_table, "cd-conv-1", [&]() mutable {
             ns.run();
         });
       }
       
       {
         OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(triangulation, ConvDiff::TypeVelocityField::Numerical);
-        repeat<dim>(convergence_table, "vmult-cd-conv-2", [&]() mutable {
+        repeat<dim>(convergence_table, "cd-conv-2", [&]() mutable {
+            ns.run();
+        });
+      }
+      
+      {
+        OperatorWrapperProjection<dim, fe_degree, fe_degree, Number> ns(triangulation);
+        repeat<dim>(convergence_table, "ns-icomp-proj", [&]() mutable {
             ns.run();
         });
       }
       
       {
         OperatorWrapperCompNS<dim, fe_degree, fe_degree+1, fe_degree+1, Number> ns(triangulation);
-        repeat<dim>(convergence_table, "vmult-ns-comp", [&]() mutable {
+        repeat<dim>(convergence_table, "ns-comp", [&]() mutable {
             ns.run();
         });
       }
