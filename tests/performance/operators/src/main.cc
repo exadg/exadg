@@ -3,6 +3,7 @@
 #include <deal.II/grid/grid_generator.h>
 
 #include "operator_wrappers/comp_navier_stokes.h"
+#include "operator_wrappers/conv_diff_mass_wrapper.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
 const int best_of = 10;
@@ -90,6 +91,13 @@ public:
       }
       
       {
+        OperatorWrapperMassMatrix<dim, fe_degree, Number> ns(triangulation);
+        repeat<dim>(convergence_table, "vmult-cd-mass", [&]() mutable {
+            ns.run();
+        });
+      }
+      
+      {
         OperatorWrapperCompNS<dim, fe_degree, fe_degree+1, fe_degree+1, Number> ns(triangulation);
         repeat<dim>(convergence_table, "vmult-ns-comp", [&]() mutable {
             ns.run();
@@ -108,13 +116,13 @@ run(){
   
   ConvergenceTable convergence_table;
   Run<dim,  3>::run(convergence_table);
-  Run<dim,  4>::run(convergence_table);
-  Run<dim,  5>::run(convergence_table);
-  Run<dim,  6>::run(convergence_table);
-  Run<dim,  7>::run(convergence_table);
-  Run<dim,  8>::run(convergence_table);
-  Run<dim,  9>::run(convergence_table);
-  Run<dim, 10>::run(convergence_table);
+//  Run<dim,  4>::run(convergence_table);
+//  Run<dim,  5>::run(convergence_table);
+//  Run<dim,  6>::run(convergence_table);
+//  Run<dim,  7>::run(convergence_table);
+//  Run<dim,  8>::run(convergence_table);
+//  Run<dim,  9>::run(convergence_table);
+//  Run<dim, 10>::run(convergence_table);
 
   if(!rank)
   {
