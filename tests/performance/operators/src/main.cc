@@ -3,6 +3,8 @@
 #include <deal.II/grid/grid_generator.h>
 
 #include "operator_wrappers/comp_navier_stokes.h"
+#include "operator_wrappers/conv_diff_convective_wrapper.h"
+#include "operator_wrappers/conv_diff_diffusive_wrapper.h"
 #include "operator_wrappers/conv_diff_mass_wrapper.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
@@ -93,6 +95,20 @@ public:
       {
         OperatorWrapperMassMatrix<dim, fe_degree, Number> ns(triangulation);
         repeat<dim>(convergence_table, "vmult-cd-mass", [&]() mutable {
+            ns.run();
+        });
+      }
+      
+      {
+        OperatorWrapperDiffusiveOperator<dim, fe_degree, Number> ns(triangulation);
+        repeat<dim>(convergence_table, "vmult-cd-diff", [&]() mutable {
+            ns.run();
+        });
+      }
+      
+      {
+        OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(triangulation);
+        repeat<dim>(convergence_table, "vmult-cd-conv-1", [&]() mutable {
             ns.run();
         });
       }
