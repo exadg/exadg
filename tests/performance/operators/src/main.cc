@@ -107,8 +107,15 @@ public:
       }
       
       {
-        OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(triangulation);
+        OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(triangulation, ConvDiff::TypeVelocityField::Analytical);
         repeat<dim>(convergence_table, "vmult-cd-conv-1", [&]() mutable {
+            ns.run();
+        });
+      }
+      
+      {
+        OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(triangulation, ConvDiff::TypeVelocityField::Numerical);
+        repeat<dim>(convergence_table, "vmult-cd-conv-2", [&]() mutable {
             ns.run();
         });
       }
