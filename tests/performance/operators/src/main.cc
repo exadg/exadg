@@ -3,6 +3,7 @@
 #include <deal.II/grid/grid_generator.h>
 
 #include "operator_wrappers/comp_navier_stokes.h"
+#include "operator_wrappers/laplace_wrapper.h"
 
 const int best_of = 10;
 typedef double Number;
@@ -72,8 +73,6 @@ public:
       triangulation.add_periodicity(periodic_faces);
       triangulation.refine_global(log(std::pow(5e7, 1.0 / dim) / (fe_degree + 1)) / log(2));
 
-      OperatorWrapperCompNS<dim, fe_degree, fe_degree+1, fe_degree+1, Number> ns(triangulation);
-      
       int procs;
       MPI_Comm_size(comm, &procs);
       
@@ -83,9 +82,19 @@ public:
       convergence_table.add_value("refs", triangulation.n_global_levels());
       convergence_table.add_value("dofs",  (int)std::pow(fe_degree+1,dim)*triangulation.n_global_active_cells ());
       
-      repeat<dim>(convergence_table, "vmult", [&]() mutable {
-          ns.run();
-      });
+      {
+        OperatorWrapperLaplace<dim, fe_degree, Number> ns(triangulation);
+        repeat<dim>(convergence_table, "vmult-poisson", [&]() mutable {
+            ns.run();
+        });
+      }
+      
+      {
+        OperatorWrapperCompNS<dim, fe_degree, fe_degree+1, fe_degree+1, Number> ns(triangulation);
+        repeat<dim>(convergence_table, "vmult-ns-comp", [&]() mutable {
+            ns.run();
+        });
+      }
       
   }
 };
@@ -109,12 +118,12 @@ run(){
 
   if(!rank)
   {
-    std::string   file_name = "out" + std::to_string(dim) + ".csv";
-    std::ofstream outfile;
-    outfile.open(file_name.c_str());
+    //std::string   file_name = "out" + std::to_string(dim) + ".csv";
+    //std::ofstream outfile;
+    //outfile.open(file_name.c_str());
     convergence_table.write_text(std::cout);
-    convergence_table.write_text(outfile);
-    outfile.close();
+    //convergence_table.write_text(outfile);
+    //outfile.close();
   }
     
 }
