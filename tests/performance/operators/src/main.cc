@@ -6,6 +6,7 @@
 #include "operator_wrappers/conv_diff_convective_wrapper.h"
 #include "operator_wrappers/conv_diff_diffusive_wrapper.h"
 #include "operator_wrappers/conv_diff_mass_wrapper.h"
+#include "operator_wrappers/incomp_mass_matrix_wrapper.h"
 #include "operator_wrappers/incomp_projection_wrapper.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
@@ -124,6 +125,13 @@ public:
       {
         OperatorWrapperProjection<dim, fe_degree, fe_degree, Number> ns(triangulation);
         repeat<dim>(convergence_table, "ns-icomp-proj", [&]() mutable {
+            ns.run();
+        });
+      }
+      
+      {
+        OperatorWrapperIcompMassMatrix<dim, fe_degree, fe_degree, Number> ns(triangulation);
+        repeat<dim>(convergence_table, "ns-icomp-mass", [&]() mutable {
             ns.run();
         });
       }
