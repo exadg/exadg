@@ -89,7 +89,7 @@ public:
                                   triangulation.n_global_active_cells());
 
     {
-      OperatorWrapperLaplace<dim, fe_degree, Number> ns(triangulation);
+      Poisson::OperatorWrapper<dim, fe_degree, Number> ns(triangulation);
       repeat<dim>(convergence_table, "poisson", [&]() mutable { ns.run(); });
     }
 
@@ -136,7 +136,8 @@ public:
     }
 
     {
-      OperatorWrapperCompNS<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(triangulation);
+      CompNS::OperatorWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
+        triangulation);
       repeat<dim>(convergence_table, "ns-comp", [&]() mutable { ns.run(); });
     }
   }

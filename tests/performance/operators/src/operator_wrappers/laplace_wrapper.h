@@ -8,19 +8,21 @@
 
 #include "../../../../../include/poisson/spatial_discretization/laplace_operator.h"
 
+namespace Poisson
+{
 template<int dim, int degree, typename Number>
-class OperatorWrapperLaplace : public OperatorWrapperBase
+class OperatorWrapper : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  OperatorWrapperLaplace(parallel::distributed::Triangulation<dim> const & triangulation)
+  OperatorWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
     : fe(degree), mapping(1 /*TODO*/), dof_handler(triangulation)
   {
     this->create_dofs();
     this->initialize_matrix_free();
 
-    Poisson::LaplaceOperatorData<dim> laplace_additional_data;
+    LaplaceOperatorData<dim> laplace_additional_data;
     laplace.reinit(mapping, data, dummy, laplace_additional_data);
 
     // initialize vectors
@@ -39,7 +41,7 @@ public:
   {
     typename MatrixFree<dim, Number>::AdditionalData additional_data;
 
-    Poisson::LaplaceOperatorData<dim> laplace_additional_data;
+    LaplaceOperatorData<dim> laplace_additional_data;
     additional_data.mapping_update_flags = laplace_additional_data.mapping_update_flags;
     additional_data.mapping_update_flags_inner_faces =
       laplace_additional_data.mapping_update_flags_inner_faces;
@@ -66,10 +68,12 @@ public:
 
   MatrixFree<dim, Number> data;
 
-  Poisson::LaplaceOperator<dim, degree, Number> laplace;
+  LaplaceOperator<dim, degree, Number> laplace;
 
   VectorType dst;
   VectorType src;
 };
+
+} // namespace Poisson
 
 #endif

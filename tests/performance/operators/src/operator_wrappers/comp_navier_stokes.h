@@ -8,13 +8,15 @@
 
 #include "../../../../../include/compressible_navier_stokes/spatial_discretization/comp_navier_stokes_operators.h"
 
+namespace CompNS
+{
 template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
-class OperatorWrapperCompNS : public OperatorWrapperBase
+class OperatorWrapper : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  OperatorWrapperCompNS(parallel::distributed::Triangulation<dim> const & triangulation)
+  OperatorWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
     : fe(new FESystem<dim>(FE_DGQ<dim>(degree), dim + 2)),
       fe_vector(new FESystem<dim>(FE_DGQ<dim>(degree), dim)),
       fe_scalar(degree),
@@ -26,7 +28,7 @@ public:
     this->create_dofs();
     this->initialize_matrix_free();
 
-    CompNS::CombinedOperatorData<dim> operator_data;
+    CombinedOperatorData<dim> operator_data;
     op.initialize(mapping, data, operator_data);
 
     // initialize vectors
@@ -154,10 +156,12 @@ public:
 
   MatrixFree<dim, Number> data;
 
-  CompNS::CombinedOperator<dim, degree, n_q_points_vis, Number> op;
+  CombinedOperator<dim, degree, n_q_points_vis, Number> op;
 
   VectorType dst;
   VectorType src;
 };
+
+} // namespace CompNS
 
 #endif
