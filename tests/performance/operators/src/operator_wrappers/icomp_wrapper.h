@@ -11,13 +11,15 @@
 #include "../../../../../include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h"
 #include "../../../../../include/incompressible_navier_stokes/spatial_discretization/projection_operator.h"
 
+namespace IncNS
+{
 template<int dim, int degree_u, int degree_p, typename Number>
-class OperatorWrapperIcomp : public OperatorWrapperBase
+class OperatorWrapper : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  OperatorWrapperIcomp(parallel::distributed::Triangulation<dim> const & triangulation)
+  OperatorWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
     : fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u), dim)),
       fe_p(degree_p),
       fe_u_scalar(degree_u),
@@ -154,13 +156,13 @@ public:
 
 
 template<int dim, int degree_u, int degree_p, typename Number>
-class OperatorWrapperIcompMassMatrix : public OperatorWrapperIcomp<dim, degree_u, degree_p, Number>
+class MassMatrixWrapper : public OperatorWrapper<dim, degree_u, degree_p, Number>
 {
-  typedef OperatorWrapperIcomp<dim, degree_u, degree_p, Number> PARENT;
+  typedef OperatorWrapper<dim, degree_u, degree_p, Number> PARENT;
 
 public:
-  OperatorWrapperIcompMassMatrix(parallel::distributed::Triangulation<dim> const & triangulation)
-    : OperatorWrapperIcomp<dim, degree_u, degree_p, Number>(triangulation)
+  MassMatrixWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
+    : OperatorWrapper<dim, degree_u, degree_p, Number>(triangulation)
   {
     IncNS::MassMatrixOperatorData mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index  = PARENT::dof_index_u;
@@ -182,15 +184,13 @@ public:
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
-class OperatorWrapperIcomConvectiveOperator
-  : public OperatorWrapperIcomp<dim, degree_u, degree_p, Number>
+class ConvectiveWrapper : public OperatorWrapper<dim, degree_u, degree_p, Number>
 {
-  typedef OperatorWrapperIcomp<dim, degree_u, degree_p, Number> PARENT;
+  typedef OperatorWrapper<dim, degree_u, degree_p, Number> PARENT;
 
 public:
-  OperatorWrapperIcomConvectiveOperator(
-    parallel::distributed::Triangulation<dim> const & triangulation)
-    : OperatorWrapperIcomp<dim, degree_u, degree_p, Number>(triangulation)
+  ConvectiveWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
+    : OperatorWrapper<dim, degree_u, degree_p, Number>(triangulation)
   {
     IncNS::ConvectiveOperatorData<dim> convective_operator_data;
 
@@ -219,15 +219,13 @@ public:
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
-class OperatorWrapperIcomViscousOperator
-  : public OperatorWrapperIcomp<dim, degree_u, degree_p, Number>
+class ViscousWrapper : public OperatorWrapper<dim, degree_u, degree_p, Number>
 {
-  typedef OperatorWrapperIcomp<dim, degree_u, degree_p, Number> PARENT;
+  typedef OperatorWrapper<dim, degree_u, degree_p, Number> PARENT;
 
 public:
-  OperatorWrapperIcomViscousOperator(
-    parallel::distributed::Triangulation<dim> const & triangulation)
-    : OperatorWrapperIcomp<dim, degree_u, degree_p, Number>(triangulation)
+  ViscousWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
+    : OperatorWrapper<dim, degree_u, degree_p, Number>(triangulation)
   {
     IncNS::ViscousOperatorData<dim> viscous_operator_data;
     // viscous_operator_data.formulation_viscous_term     = param.formulation_viscous_term;
@@ -258,13 +256,13 @@ public:
 
 
 template<int dim, int degree_u, int degree_p, typename Number>
-class OperatorWrapperProjection : public OperatorWrapperIcomp<dim, degree_u, degree_p, Number>
+class ProjectionWrapper : public OperatorWrapper<dim, degree_u, degree_p, Number>
 {
-  typedef OperatorWrapperIcomp<dim, degree_u, degree_p, Number> PARENT;
+  typedef OperatorWrapper<dim, degree_u, degree_p, Number> PARENT;
 
 public:
-  OperatorWrapperProjection(parallel::distributed::Triangulation<dim> const & triangulation)
-    : OperatorWrapperIcomp<dim, degree_u, degree_p, Number>(triangulation)
+  ProjectionWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
+    : OperatorWrapper<dim, degree_u, degree_p, Number>(triangulation)
   {
     IncNS::ProjectionOperatorData laplace_additional_data;
     laplace.reset(new IncNS::ProjectionOperator<dim, degree_u, Number>(
@@ -284,5 +282,6 @@ public:
   std::shared_ptr<IncNS::ProjectionOperator<dim, degree_u, Number>> laplace;
 };
 
+} // namespace IncNS
 
 #endif

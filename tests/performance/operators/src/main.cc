@@ -116,22 +116,22 @@ public:
     }
 
     {
-      OperatorWrapperProjection<dim, fe_degree, fe_degree, Number> ns(triangulation);
+      IncNS::ProjectionWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
       repeat<dim>(convergence_table, "ns-icomp-proj", [&]() mutable { ns.run(); });
     }
 
     {
-      OperatorWrapperIcompMassMatrix<dim, fe_degree, fe_degree, Number> ns(triangulation);
+      IncNS::MassMatrixWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
       repeat<dim>(convergence_table, "ns-icomp-mass", [&]() mutable { ns.run(); });
     }
 
     {
-      OperatorWrapperIcomConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(triangulation);
+      IncNS::ConvectiveWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
       repeat<dim>(convergence_table, "ns-icomp-conv", [&]() mutable { ns.run(); });
     }
 
     {
-      OperatorWrapperIcomViscousOperator<dim, fe_degree, fe_degree, Number> ns(triangulation);
+      IncNS::ViscousWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
       repeat<dim>(convergence_table, "ns-icomp-visc", [&]() mutable { ns.run(); });
     }
 
