@@ -9,6 +9,10 @@
 #include "operator_wrappers/icomp_wrapper.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
+#ifdef LIKWID_PERFMON
+#  include <likwid.h>
+#endif
+
 const int      best_of = 10;
 typedef double Number;
 
@@ -17,19 +21,28 @@ const MPI_Comm comm = MPI_COMM_WORLD;
 using namespace dealii;
 
 
-template<int dim, typename Function>
+template<int dim, int fe_degree, typename Function>
 void
 repeat(ConvergenceTable & convergence_table, std::string label, Function f)
 {
   Timer  time;
   double min_time = std::numeric_limits<double>::max();
+#ifdef LIKWID_PERFMON
+  std::string likwid_label = label + "-" + std::to_string(dim) + "-" + std::to_string(fe_degree);
+#endif
   for(int i = 0; i < best_of; i++)
   {
+#ifdef LIKWID_PERFMON
+    LIKWID_MARKER_START(likwid_label.c_str());
+#endif
     MPI_Barrier(MPI_COMM_WORLD);
     time.restart();
     f();
     double temp = time.wall_time();
-    min_time    = std::min(min_time, temp);
+#ifdef LIKWID_PERFMON
+    LIKWID_MARKER_STOP(likwid_label.c_str());
+#endif
+    min_time = std::min(min_time, temp);
   }
   convergence_table.add_value(label, min_time);
   convergence_table.set_scientific(label, true);
@@ -90,55 +103,55 @@ public:
 
     {
       Poisson::OperatorWrapper<dim, fe_degree, Number> ns(triangulation);
-      repeat<dim>(convergence_table, "poisson", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "poisson", [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperMassMatrix<dim, fe_degree, Number> ns(triangulation);
-      repeat<dim>(convergence_table, "cd-mass", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-mass", [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperDiffusiveOperator<dim, fe_degree, Number> ns(triangulation);
-      repeat<dim>(convergence_table, "cd-diff", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-diff", [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(
         triangulation, ConvDiff::TypeVelocityField::Analytical);
-      repeat<dim>(convergence_table, "cd-conv-1", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-conv-1", [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(
         triangulation, ConvDiff::TypeVelocityField::Numerical);
-      repeat<dim>(convergence_table, "cd-conv-2", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-conv-2", [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::ProjectionWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim>(convergence_table, "ns-icomp-proj", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-proj", [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::MassMatrixWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim>(convergence_table, "ns-icomp-mass", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-mass", [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::ConvectiveWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim>(convergence_table, "ns-icomp-conv", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-conv", [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::ViscousWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim>(convergence_table, "ns-icomp-visc", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-visc", [&]() mutable { ns.run(); });
     }
 
     {
       CompNS::OperatorWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
         triangulation);
-      repeat<dim>(convergence_table, "ns-comp", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-comp", [&]() mutable { ns.run(); });
     }
   }
 };
@@ -175,7 +188,22 @@ int
 main(int argc, char ** argv)
 {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_INIT;
+#  pragma omp parallel
+  {
+    LIKWID_MARKER_THREADINIT;
+  }
+#else
+  std::cout << "WARNING: Not compiled with LIKWID!" << std::endl;
+#endif
 
   run<2>();
   run<3>();
+
+#ifdef LIKWID_PERFMON
+  LIKWID_MARKER_CLOSE;
+#endif
 }
