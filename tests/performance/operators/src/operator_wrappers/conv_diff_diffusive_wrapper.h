@@ -9,7 +9,7 @@
 #include "../../../../include/convection_diffusion/spatial_discretization/operators/diffusive_operator.h"
 
 template<int dim, int degree, typename Number>
-class OperatorWrapperDiffusiveOperator : public OperatorWrapper
+class OperatorWrapperDiffusiveOperator : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 

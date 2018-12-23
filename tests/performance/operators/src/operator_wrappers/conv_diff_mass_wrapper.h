@@ -9,7 +9,7 @@
 #include "../../../../include/convection_diffusion/spatial_discretization/operators/mass_operator.h"
 
 template<int dim, int degree, typename Number>
-class OperatorWrapperMassMatrix : public OperatorWrapper
+class OperatorWrapperMassMatrix : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 

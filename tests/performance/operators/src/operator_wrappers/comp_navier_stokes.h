@@ -9,7 +9,7 @@
 #include "../../../../../include/compressible_navier_stokes/spatial_discretization/comp_navier_stokes_operators.h"
 
 template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
-class OperatorWrapperCompNS : public OperatorWrapper
+class OperatorWrapperCompNS : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 

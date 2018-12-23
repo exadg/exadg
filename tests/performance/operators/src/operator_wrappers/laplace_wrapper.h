@@ -9,7 +9,7 @@
 #include "../../../../../include/poisson/spatial_discretization/laplace_operator.h"
 
 template<int dim, int degree, typename Number>
-class OperatorWrapperLaplace : public OperatorWrapper
+class OperatorWrapperLaplace : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 

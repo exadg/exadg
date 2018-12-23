@@ -1,7 +1,7 @@
 #ifndef OPERATOR_WRAPPERS_COMP
 #define OPERATOR_WRAPPERS_COMP
 
-class OperatorWrapper
+class OperatorWrapperBase
 {
 public:
   virtual void

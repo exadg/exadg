@@ -12,7 +12,7 @@
 #include "../../../../../include/incompressible_navier_stokes/spatial_discretization/projection_operator.h"
 
 template<int dim, int degree_u, int degree_p, typename Number>
-class OperatorWrapperIcomp : public OperatorWrapper
+class OperatorWrapperIcomp : public OperatorWrapperBase
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
