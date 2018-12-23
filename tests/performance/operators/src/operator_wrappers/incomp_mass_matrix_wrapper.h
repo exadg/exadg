@@ -12,9 +12,8 @@
 template<int dim, int degree_u, int degree_p, typename Number>
 class OperatorWrapperIcompMassMatrix : public OperatorWrapperIcomp<dim, degree_u, degree_p, Number>
 {
-    
-    typedef OperatorWrapperIcomp<dim, degree_u, degree_p, Number> PARENT;
-    
+  typedef OperatorWrapperIcomp<dim, degree_u, degree_p, Number> PARENT;
+
 public:
   OperatorWrapperIcompMassMatrix(parallel::distributed::Triangulation<dim> const & triangulation)
     : OperatorWrapperIcomp<dim, degree_u, degree_p, Number>(triangulation)
@@ -23,7 +22,7 @@ public:
     mass_matrix_operator_data.dof_index  = PARENT::dof_index_u;
     mass_matrix_operator_data.quad_index = PARENT::quad_index_u;
     mass_matrix_operator.initialize(this->data, mass_matrix_operator_data);
-    
+
     // initialize vectors
     this->data.initialize_dof_vector(this->src, PARENT::dof_index_u);
     this->data.initialize_dof_vector(this->dst, PARENT::dof_index_u);
@@ -36,7 +35,6 @@ public:
   }
 
   IncNS::MassMatrixOperator<dim, degree_u, Number> mass_matrix_operator;
-  
 };
 
 #endif

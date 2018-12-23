@@ -10,7 +10,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 class OperatorWrapperIcomp : public OperatorWrapper
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  
+
 public:
   OperatorWrapperIcomp(parallel::distributed::Triangulation<dim> const & triangulation)
     : fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u), dim)),
@@ -28,68 +28,68 @@ public:
   void
   create_dofs()
   {
-  // enumerate degrees of freedom
-  dof_handler_u.distribute_dofs(*fe_u);
-  dof_handler_p.distribute_dofs(fe_p);
-  dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
+    // enumerate degrees of freedom
+    dof_handler_u.distribute_dofs(*fe_u);
+    dof_handler_p.distribute_dofs(fe_p);
+    dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   }
 
   void
   initialize_matrix_free()
   {
+    // initialize matrix_free_data
+    typename MatrixFree<dim, Number>::AdditionalData additional_data;
+    additional_data.tasks_parallel_scheme =
+      MatrixFree<dim, Number>::AdditionalData::partition_partition;
+    additional_data.mapping_update_flags =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
 
-  // initialize matrix_free_data
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-  additional_data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+    additional_data.mapping_update_flags_inner_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
 
-  additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+    additional_data.mapping_update_flags_boundary_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
 
-  additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+    // dofhandler
+    std::vector<const DoFHandler<dim> *> dof_handler_vec;
 
-  // dofhandler
-  std::vector<const DoFHandler<dim> *> dof_handler_vec;
+    dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
+      DofHandlerSelector::n_variants));
+    dof_handler_vec[dof_index_u]        = &dof_handler_u;
+    dof_handler_vec[dof_index_p]        = &dof_handler_p;
+    dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
-  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-    DofHandlerSelector::n_variants));
-  dof_handler_vec[dof_index_u]        = &dof_handler_u;
-  dof_handler_vec[dof_index_p]        = &dof_handler_p;
-  dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
+    // constraint
+    std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
+    constraint_matrix_vec.resize(
+      static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
+        DofHandlerSelector::n_variants));
+    AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+    constraint_u.close();
+    constraint_p.close();
+    constraint_u_scalar.close();
+    constraint_matrix_vec[dof_index_u]        = &constraint_u;
+    constraint_matrix_vec[dof_index_p]        = &constraint_p;
+    constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
 
-  // constraint
-  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
-  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-    DofHandlerSelector::n_variants));
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-  constraint_u.close();
-  constraint_p.close();
-  constraint_u_scalar.close();
-  constraint_matrix_vec[dof_index_u]        = &constraint_u;
-  constraint_matrix_vec[dof_index_p]        = &constraint_p;
-  constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
+    // quadrature
+    std::vector<Quadrature<1>> quadratures;
 
-  // quadrature
-  std::vector<Quadrature<1>> quadratures;
+    // resize quadratures
+    quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+      QuadratureSelector::n_variants));
+    // velocity
+    quadratures[quad_index_u] = QGauss<1>(degree_u + 1);
+    // pressure
+    quadratures[quad_index_p] = QGauss<1>(degree_p + 1);
+    // exact integration of nonlinear convective term
+    quadratures[quad_index_u_nonlinear] = QGauss<1>(degree_u + (degree_u + 2) / 2);
 
-  // resize quadratures
-  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-    QuadratureSelector::n_variants));
-  // velocity
-  quadratures[quad_index_u] = QGauss<1>(degree_u + 1);
-  // pressure
-  quadratures[quad_index_p] = QGauss<1>(degree_p + 1);
-  // exact integration of nonlinear convective term
-  quadratures[quad_index_u_nonlinear] = QGauss<1>(degree_u + (degree_u + 2) / 2);
-
-  // reinit
-  data.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+    // reinit
+    data.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
   }
 
   enum class DofHandlerSelector

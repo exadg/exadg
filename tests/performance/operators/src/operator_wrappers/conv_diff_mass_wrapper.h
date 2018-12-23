@@ -12,19 +12,17 @@ template<int dim, int degree, typename Number>
 class OperatorWrapperMassMatrix : public OperatorWrapper
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  
+
 public:
   OperatorWrapperMassMatrix(parallel::distributed::Triangulation<dim> const & triangulation)
-    : fe(degree),
-      mapping(1 /*TODO*/),
-      dof_handler(triangulation)
+    : fe(degree), mapping(1 /*TODO*/), dof_handler(triangulation)
   {
     this->create_dofs();
     this->initialize_matrix_free();
 
     ConvDiff::MassMatrixOperatorData<dim> laplace_additional_data;
     laplace.reinit(data, dummy, laplace_additional_data);
-    
+
     // initialize vectors
     laplace.do_initialize_dof_vector(src);
   }
@@ -43,8 +41,8 @@ public:
     ConvDiff::MassMatrixOperatorData<dim> laplace_additional_data;
     additional_data.mapping_update_flags = laplace_additional_data.mapping_update_flags;
 
-    QGauss<1> quadrature(degree+1);
-    
+    QGauss<1> quadrature(degree + 1);
+
     data.reinit(mapping, dof_handler, dummy, quadrature, additional_data);
   }
 
@@ -56,7 +54,7 @@ public:
 
   FE_DGQ<dim> fe;
 
-  MappingQGeneric<dim> mapping;
+  MappingQGeneric<dim>      mapping;
   AffineConstraints<double> dummy;
 
   DoFHandler<dim> dof_handler;
