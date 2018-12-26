@@ -9,6 +9,8 @@
 #include "operator_wrappers/icomp_wrapper.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
+#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>
 #endif
@@ -23,12 +25,12 @@ using namespace dealii;
 
 template<int dim, int fe_degree, typename Function>
 void
-repeat(ConvergenceTable & convergence_table, std::string label, Function f)
+repeat(ConvergenceTable & convergence_table, std::string label, bool curv, Function f)
 {
   Timer  time;
   double min_time = std::numeric_limits<double>::max();
 #ifdef LIKWID_PERFMON
-  std::string likwid_label = label + "-" + std::to_string(dim) + "-" + std::to_string(fe_degree);
+  std::string likwid_label = label + "-" + std::to_string(dim) +  (curv ? std::string("-curv-") : std::string("-cart-")) + std::to_string(fe_degree);
 #endif
   for(int i = 0; i < best_of; i++)
   {
@@ -54,7 +56,7 @@ class Run
 {
 public:
   static void
-  run(ConvergenceTable & convergence_table)
+  run(ConvergenceTable & convergence_table, bool curv = false)
   {
     double                                    left = -1, right = +1;
     parallel::distributed::Triangulation<dim> triangulation(comm);
@@ -88,99 +90,120 @@ public:
     GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
     GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
     triangulation.add_periodicity(periodic_faces);
-    triangulation.refine_global(log(std::pow(5e7, 1.0 / dim) / (fe_degree + 1)) / log(2));
+    
+    
+    const double deformation = +0.1;
+    const double frequnency  = +2.0;
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    if(curv){
+        triangulation.set_all_manifold_ids(1);
+        triangulation.set_manifold(1, manifold);
+    }
+        
+    
+    triangulation.refine_global(log(std::pow(dim==2 ? 5e7 : 2e7, 1.0 / dim) / (fe_degree + 1)) / log(2));
 
     int procs;
     MPI_Comm_size(comm, &procs);
 
     convergence_table.add_value("procs", procs);
     convergence_table.add_value("dim", dim);
+    convergence_table.add_value("curv", curv);
     convergence_table.add_value("deg", fe_degree);
     convergence_table.add_value("refs", triangulation.n_global_levels());
     convergence_table.add_value("dofs",
                                 (int)std::pow(fe_degree + 1, dim) *
                                   triangulation.n_global_active_cells());
 
+    /*
     {
       Poisson::OperatorWrapper<dim, fe_degree, Number> ns(triangulation);
-      repeat<dim, fe_degree>(convergence_table, "poisson", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "poisson", curv, [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperMassMatrix<dim, fe_degree, Number> ns(triangulation);
-      repeat<dim, fe_degree>(convergence_table, "cd-mass", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-mass", curv, [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperDiffusiveOperator<dim, fe_degree, Number> ns(triangulation);
-      repeat<dim, fe_degree>(convergence_table, "cd-diff", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-diff", curv, [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(
         triangulation, ConvDiff::TypeVelocityField::Analytical);
-      repeat<dim, fe_degree>(convergence_table, "cd-conv-1", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-conv-1", curv, [&]() mutable { ns.run(); });
     }
 
     {
       OperatorWrapperConvectiveOperator<dim, fe_degree, fe_degree, Number> ns(
         triangulation, ConvDiff::TypeVelocityField::Numerical);
-      repeat<dim, fe_degree>(convergence_table, "cd-conv-2", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "cd-conv-2", curv, [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::ProjectionWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-icomp-proj", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-proj", curv, [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::MassMatrixWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-icomp-mass", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-mass", curv, [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::ConvectiveWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-icomp-conv", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-conv", curv, [&]() mutable { ns.run(); });
     }
 
     {
       IncNS::ViscousWrapper<dim, fe_degree, fe_degree, Number> ns(triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-icomp-visc", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-icomp-visc", curv, [&]() mutable { ns.run(); });
     }
+     */
 
     {
       CompNS::OperatorWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
         triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-comp", [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-comp", curv, [&]() mutable { ns.run(); });
     }
   }
 };
 
 template<int dim>
 void
-run()
+run(bool curv)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   ConvergenceTable convergence_table;
-  Run<dim, 3>::run(convergence_table);
-  //  Run<dim,  4>::run(convergence_table);
-  //  Run<dim,  5>::run(convergence_table);
-  //  Run<dim,  6>::run(convergence_table);
-  //  Run<dim,  7>::run(convergence_table);
-  //  Run<dim,  8>::run(convergence_table);
-  //  Run<dim,  9>::run(convergence_table);
-  //  Run<dim, 10>::run(convergence_table);
+  Run<dim, 1>::run(convergence_table, curv);
+  Run<dim, 2>::run(convergence_table, curv);
+  Run<dim, 3>::run(convergence_table, curv);
+  Run<dim,  4>::run(convergence_table, curv);
+  Run<dim,  5>::run(convergence_table, curv);
+  Run<dim,  6>::run(convergence_table, curv);
+  Run<dim,  7>::run(convergence_table, curv);
+  Run<dim,  8>::run(convergence_table, curv);
+  Run<dim,  9>::run(convergence_table, curv);
+  Run<dim, 10>::run(convergence_table, curv);
+  Run<dim, 11>::run(convergence_table, curv);
+  Run<dim, 12>::run(convergence_table, curv);
+  Run<dim, 13>::run(convergence_table, curv);
+  Run<dim, 14>::run(convergence_table, curv);
+  Run<dim, 15>::run(convergence_table, curv);
 
   if(!rank)
   {
-    // std::string   file_name = "out" + std::to_string(dim) + ".csv";
-    // std::ofstream outfile;
-    // outfile.open(file_name.c_str());
+     std::string   file_name = "out." + (curv ? std::string("curv.") : std::string("cart.")) + std::to_string(dim) + ".csv";
+     std::ofstream outfile;
+     outfile.open(file_name.c_str());
     convergence_table.write_text(std::cout);
-    // convergence_table.write_text(outfile);
-    // outfile.close();
+     convergence_table.write_text(outfile);
+     outfile.close();
   }
 }
 
@@ -200,8 +223,10 @@ main(int argc, char ** argv)
   std::cout << "WARNING: Not compiled with LIKWID!" << std::endl;
 #endif
 
-  run<2>();
-  run<3>();
+  run<2>(false);
+  run<2>(true);
+  run<3>(false);
+  run<3>(true);
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_CLOSE;
