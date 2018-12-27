@@ -165,9 +165,21 @@ public:
      */
 
     {
-      CompNS::OperatorWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
+      CompNS::CombinedWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
         triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-comp", curv, [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-comp-comb", curv, [&]() mutable { ns.run(); });
+    }
+
+    {
+      CompNS::ConvectiveWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
+        triangulation);
+      repeat<dim, fe_degree>(convergence_table, "ns-comp-conv", curv, [&]() mutable { ns.run(); });
+    }
+
+    {
+      CompNS::ViscousWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
+        triangulation);
+      repeat<dim, fe_degree>(convergence_table, "ns-comp-visc", curv, [&]() mutable { ns.run(); });
     }
   }
 };

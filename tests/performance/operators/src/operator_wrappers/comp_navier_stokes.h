@@ -28,9 +28,6 @@ public:
     this->create_dofs();
     this->initialize_matrix_free();
 
-    CombinedOperatorData<dim> operator_data;
-    op.initialize(mapping, data, operator_data);
-
     // initialize vectors
     this->initialize_dof_vector(src);
     this->initialize_dof_vector(dst);
@@ -97,12 +94,6 @@ public:
     data.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
   }
 
-  void
-  run()
-  {
-    op.evaluate_add(dst, src, 0.0);
-  }
-
   enum class DofHandlerSelector
   {
     all_components = 0,
@@ -156,10 +147,74 @@ public:
 
   MatrixFree<dim, Number> data;
 
-  CombinedOperator<dim, degree, n_q_points_vis, Number> op;
-
   VectorType dst;
   VectorType src;
+};
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+class CombinedWrapper : public OperatorWrapper<dim, degree, n_q_points_conv, n_q_points_vis, Number>
+{
+
+public:
+  CombinedWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
+    : OperatorWrapper<dim, degree, n_q_points_conv, n_q_points_vis, Number>(triangulation)
+  {
+    CombinedOperatorData<dim> operator_data;
+    op.initialize(this->mapping, this->data, operator_data);
+  }
+
+  void
+  run()
+  {
+    op.evaluate_add(this->dst, this->src, 0.0);
+  }
+
+  CombinedOperator<dim, degree, n_q_points_vis, Number> op;
+
+};
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+class ConvectiveWrapper : public OperatorWrapper<dim, degree, n_q_points_conv, n_q_points_vis, Number>
+{
+
+public:
+  ConvectiveWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
+    : OperatorWrapper<dim, degree, n_q_points_conv, n_q_points_vis, Number>(triangulation)
+  {
+    ConvectiveOperatorData<dim> operator_data;
+    op.initialize(this->data, operator_data);
+  }
+
+  void
+  run()
+  {
+    op.evaluate_add(this->dst, this->src, 0.0);
+  }
+
+  ConvectiveOperator<dim, degree, n_q_points_conv, Number> op;
+
+};
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+class ViscousWrapper : public OperatorWrapper<dim, degree, n_q_points_conv, n_q_points_vis, Number>
+{
+
+public:
+  ViscousWrapper(parallel::distributed::Triangulation<dim> const & triangulation)
+    : OperatorWrapper<dim, degree, n_q_points_conv, n_q_points_vis, Number>(triangulation)
+  {
+    ViscousOperatorData<dim> operator_data;
+    op.initialize(this->mapping, this->data, operator_data);
+  }
+
+  void
+  run()
+  {
+    op.evaluate_add(this->dst, this->src, 0.0);
+  }
+
+  ViscousOperator<dim, degree, n_q_points_vis, Number> op;
+
 };
 
 } // namespace CompNS
