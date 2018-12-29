@@ -163,6 +163,7 @@ public:
 //        GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
 //        triangulation.add_periodicity(periodic_faces);
 
+//        triangulation.refine_global(5);
         triangulation.refine_global(log(std::pow(dim==2 ? 5e7 : 2e7, 1.0 / dim) / (fe_degree + 1)) / log(2));
 
         DoFHandler<dim> dof_handler(triangulation);
@@ -204,8 +205,8 @@ run() {
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
     ConvergenceTable convergence_table;
-    {
-        Run<dim, 1> runner;
+    { 
+       Run<dim, 1> runner;
         runner.run(convergence_table);
     }
     {
@@ -224,15 +225,55 @@ run() {
         Run<dim, 5> runner;
         runner.run(convergence_table);
     }
+    {
+        Run<dim, 6> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 7> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 8> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 9> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 10> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 11> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 12> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 13> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 14> runner;
+        runner.run(convergence_table);
+    }
+    {
+        Run<dim, 15> runner;
+        runner.run(convergence_table);
+    }
 
-    if (!rank) {
         std::string file_name = "out." + std::to_string(dim) + ".csv";
         std::ofstream outfile;
         outfile.open(file_name.c_str());
         convergence_table.write_text(std::cout);
+    if (!rank) {
         convergence_table.write_text(outfile);
-        outfile.close();
     }
+        outfile.close();
 }
 
 int
@@ -240,7 +281,7 @@ main(int argc, char ** argv) {
     Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
-    run<2>();
+//    run<2>();
     run<3>();
 
 }
