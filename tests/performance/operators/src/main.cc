@@ -56,7 +56,7 @@ class Run
 {
 public:
   static void
-  run(ConvergenceTable & convergence_table, bool curv = false)
+  run(ConvergenceTable & convergence_table, bool curv, MPI_Comm comm)
   {
     double                                    left = -1, right = +1;
     parallel::distributed::Triangulation<dim> triangulation(comm);
@@ -100,13 +100,17 @@ public:
         triangulation.set_manifold(1, manifold);
     }
         
-    
-    triangulation.refine_global(log(std::pow(dim==2 ? 5e7 : 2e7, 1.0 / dim) / (fe_degree + 1)) / log(2));
 
     int procs;
-    MPI_Comm_size(comm, &procs);
+    MPI_Comm_size(MPI_COMM_WORLD, &procs);
+    int dofs = dim==2 ? 5e7 : 2e7;
+    if (comm==MPI_COMM_SELF)
+        dofs /= procs;
+    int ref = log(std::pow(dofs, 1.0 / dim) / (fe_degree + 1)) / log(2);
+    triangulation.refine_global(ref);
 
     convergence_table.add_value("procs", procs);
+    convergence_table.add_value("self", MPI_COMM_SELF==comm);
     convergence_table.add_value("dim", dim);
     convergence_table.add_value("curv", curv);
     convergence_table.add_value("deg", fe_degree);
@@ -186,27 +190,27 @@ public:
 
 template<int dim>
 void
-run(bool curv)
+run(bool curv, MPI_Comm comm)
 {
   int rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   ConvergenceTable convergence_table;
-  Run<dim, 1>::run(convergence_table, curv);
-  Run<dim, 2>::run(convergence_table, curv);
-  Run<dim, 3>::run(convergence_table, curv);
-  Run<dim,  4>::run(convergence_table, curv);
-  Run<dim,  5>::run(convergence_table, curv);
-  Run<dim,  6>::run(convergence_table, curv);
-  Run<dim,  7>::run(convergence_table, curv);
-  Run<dim,  8>::run(convergence_table, curv);
-  Run<dim,  9>::run(convergence_table, curv);
-  Run<dim, 10>::run(convergence_table, curv);
-  Run<dim, 11>::run(convergence_table, curv);
-  Run<dim, 12>::run(convergence_table, curv);
-  Run<dim, 13>::run(convergence_table, curv);
-  Run<dim, 14>::run(convergence_table, curv);
-  Run<dim, 15>::run(convergence_table, curv);
+  Run<dim,  1>::run(convergence_table, curv, comm);
+  Run<dim,  2>::run(convergence_table, curv, comm);
+  Run<dim,  3>::run(convergence_table, curv, comm);
+  Run<dim,  4>::run(convergence_table, curv, comm);
+  Run<dim,  5>::run(convergence_table, curv, comm);
+  Run<dim,  6>::run(convergence_table, curv, comm);
+  Run<dim,  7>::run(convergence_table, curv, comm);
+  Run<dim,  8>::run(convergence_table, curv, comm);
+  Run<dim,  9>::run(convergence_table, curv, comm);
+  Run<dim, 10>::run(convergence_table, curv, comm);
+  Run<dim, 11>::run(convergence_table, curv, comm);
+  Run<dim, 12>::run(convergence_table, curv, comm);
+  Run<dim, 13>::run(convergence_table, curv, comm);
+  Run<dim, 14>::run(convergence_table, curv, comm);
+  Run<dim, 15>::run(convergence_table, curv, comm);
 
   if(!rank)
   {
@@ -235,10 +239,10 @@ main(int argc, char ** argv)
   std::cout << "WARNING: Not compiled with LIKWID!" << std::endl;
 #endif
 
-  run<2>(false);
-  run<2>(true);
-  run<3>(false);
-  run<3>(true);
+  run<2>(false, MPI_COMM_SELF);
+  run<2>(true , MPI_COMM_SELF);
+  run<3>(false, MPI_COMM_SELF);
+  run<3>(true , MPI_COMM_SELF);
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_CLOSE;
