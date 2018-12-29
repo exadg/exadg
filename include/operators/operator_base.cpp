@@ -8,8 +8,8 @@
 #include "../functionalities/set_zero_mean_value.h"
 #include "operator_base.h"
 
-template<int dim, int degree, typename Number, typename AdditionalData>
-OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::OperatorBase()
   : operator_data(AdditionalData()),
     data(),
     eval_time(0.0),
@@ -22,9 +22,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::OperatorBase()
 {
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::reinit(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
   MatrixFree<dim, Number> const &   matrix_free,
   AffineConstraints<double> const & constraint_matrix,
   AdditionalData const &            operator_data) const
@@ -74,9 +74,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::reinit_multigrid(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit_multigrid(
   MatrixFree<dim, Number> const &   matrix_free,
   AffineConstraints<double> const & constraint_matrix,
   AdditionalData const &            operator_data,
@@ -94,9 +94,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::reinit_multigrid(
   reinit(matrix_free, constraint_matrix, operator_data);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::do_reinit_multigrid(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_reinit_multigrid(
   DoFHandler<dim> const &   dof_handler,
   Mapping<dim> const &      mapping,
   void *                    operator_data_in,
@@ -155,18 +155,18 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_reinit_multigrid(
   reinit_multigrid(data_own, constraint_own, operator_data, level);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply(VectorType &       dst,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply(VectorType &       dst,
                                                          VectorType const & src) const
 {
   dst = 0;
   apply_add(dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       dst,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
                                                              VectorType const & src) const
 {
   VectorType const * actual_src = &src;
@@ -210,9 +210,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       
     set_zero_mean_value(dst);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       dst,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
                                                              VectorType const & src,
                                                              Number const       time) const
 {
@@ -220,25 +220,25 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add(VectorType &       
   this->apply_add(dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs(VectorType & dst) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs(VectorType & dst) const
 {
   dst = 0;
   this->rhs_add(dst);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs(VectorType & dst, Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs(VectorType & dst, Number const time) const
 {
   this->set_evaluation_time(time);
   this->rhs(dst);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorType & dst) const
 {
   VectorType tmp;
   tmp.reinit(dst, false);
@@ -254,18 +254,18 @@ OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst) con
   dst.add(-1.0, tmp);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::rhs_add(VectorType & dst,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorType & dst,
                                                            Number const time) const
 {
   this->set_evaluation_time(time);
   this->rhs_add(dst);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::evaluate(VectorType &       dst,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate(VectorType &       dst,
                                                             VectorType const & src,
                                                             Number const       time) const
 {
@@ -273,9 +273,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::evaluate(VectorType &       d
   evaluate_add(dst, src, time);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::evaluate_add(VectorType &       dst,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate_add(VectorType &       dst,
                                                                 VectorType const & src,
                                                                 Number const       time) const
 {
@@ -285,9 +285,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::evaluate_add(VectorType &    
     &This::cell_loop, &This::face_loop, &This::boundary_face_loop_full_operator, this, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_diagonal(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_diagonal(VectorType & diagonal) const
 {
   if(diagonal.size() == 0)
     data->initialize_dof_vector(diagonal);
@@ -295,9 +295,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_diagonal(VectorType
   add_diagonal(diagonal);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(VectorType & diagonal) const
 {
   // compute diagonal
   if(is_dg && do_eval_faces)
@@ -335,18 +335,18 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & dia
     set_constraint_diagonal(diagonal);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_diagonal(VectorType & diagonal,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(VectorType & diagonal,
                                                                 Number const time) const
 {
   this->set_evaluation_time(time);
   this->add_diagonal(diagonal);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal_matrix_based(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_inverse_block_diagonal_matrix_based(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -357,9 +357,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_inverse_block_diagonal_
   data->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based, this, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elementwise(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
   unsigned int const                    cell,
   VectorizedArray<Number> * const       dst,
   VectorizedArray<Number> const * const src,
@@ -370,9 +370,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elem
   apply_add_block_diagonal_elementwise(cell, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elementwise(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
   unsigned int const                    cell,
   VectorizedArray<Number> * const       dst,
   VectorizedArray<Number> const * const src) const
@@ -430,9 +430,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_add_block_diagonal_elem
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal_matrix_based(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_block_diagonal_matrix_based(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -443,9 +443,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::apply_block_diagonal_matrix_b
   data->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::do_update_block_diagonal_preconditioner() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_update_block_diagonal_preconditioner() const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -484,9 +484,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_update_block_diagonal_prec
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matrices() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_block_diagonal_matrices() const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -494,9 +494,8 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matr
   if(!block_diagonal_preconditioner_is_initialized ||
      data->n_macro_cells() * vectorization_length != matrices.size())
   {
-    auto dofs = data->get_shape_info().dofs_per_component_on_cell;
     matrices.resize(data->n_macro_cells() * vectorization_length,
-                    LAPACKFullMatrix<Number>(dofs, dofs));
+                    LAPACKFullMatrix<Number>(dofs_per_cell, dofs_per_cell));
     block_diagonal_preconditioner_is_initialized = true;
   } // else: reuse old memory
 
@@ -507,9 +506,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::calculate_block_diagonal_matr
   add_block_diagonal_matrices(matrices);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
   BlockMatrix & matrices) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
@@ -542,9 +541,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
   BlockMatrix & matrices,
   Number const  time) const
 {
@@ -553,9 +552,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_block_diagonal_matrices(
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::do_init_system_matrix(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_init_system_matrix(
   SparseMatrix & system_matrix) const
 {
   DoFHandler<dim> const & dof_handler = this->data->get_dof_handler();
@@ -591,9 +590,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_init_system_matrix(
   system_matrix.reinit(dsp);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::do_calculate_system_matrix(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
   // assemble matrix locally on each process
@@ -624,9 +623,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_calculate_system_matrix(
   } // nothing to do for dg
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::do_calculate_system_matrix(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_calculate_system_matrix(
   SparseMatrix & system_matrix,
   Number const   time) const
 {
@@ -635,66 +634,66 @@ OperatorBase<dim, degree, Number, AdditionalData>::do_calculate_system_matrix(
 }
 #endif
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 AdditionalData const &
-OperatorBase<dim, degree, Number, AdditionalData>::get_operator_data() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::get_operator_data() const
 {
   return operator_data;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_evaluation_time(double const time) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_evaluation_time(double const time) const
 {
   eval_time = time;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 double
-OperatorBase<dim, degree, Number, AdditionalData>::get_evaluation_time() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::get_evaluation_time() const
 {
   return eval_time;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 unsigned int
-OperatorBase<dim, degree, Number, AdditionalData>::get_level() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::get_level() const
 {
   return level_mg_handler;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 AffineConstraints<double> const &
-OperatorBase<dim, degree, Number, AdditionalData>::do_get_constraint_matrix() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_get_constraint_matrix() const
 {
   return *constraint;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 MatrixFree<dim, Number> const &
-OperatorBase<dim, degree, Number, AdditionalData>::do_get_data() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_get_data() const
 {
   return *data;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::do_initialize_dof_vector(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_initialize_dof_vector(
   VectorType & vector) const
 {
   data->initialize_dof_vector(vector, operator_data.dof_index);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 bool
-OperatorBase<dim, degree, Number, AdditionalData>::operator_is_singular() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::operator_is_singular() const
 {
   return this->operator_data.operator_is_singular;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigned int j,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(unsigned int j,
                                                                          FEEvalCell & fe_eval) const
 {
   // create a standard basis in the dof values of FEEvalution
@@ -703,9 +702,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigne
   fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigned int j,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(unsigned int j,
                                                                          FEEvalFace & fe_eval) const
 {
   // create a standard basis in the dof values of FEEvalution
@@ -715,9 +714,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(unsigne
 }
 
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(
   unsigned int j,
   FEEvalFace & fe_eval_1,
   FEEvalFace & fe_eval_2) const
@@ -732,9 +731,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::create_standard_basis(
     fe_eval_2.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_loop(MatrixFree<dim, Number> const & data,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop(MatrixFree<dim, Number> const & data,
                                                              VectorType &                    dst,
                                                              VectorType const &              src,
                                                              Range const & range) const
@@ -758,9 +757,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop(MatrixFree<dim, Num
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::face_loop(MatrixFree<dim, Number> const & data,
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop(MatrixFree<dim, Number> const & data,
                                                              VectorType &                    dst,
                                                              VectorType const &              src,
                                                              Range const & range) const
@@ -791,9 +790,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop(MatrixFree<dim, Num
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_hom_operator(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_hom_operator(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &              src,
@@ -817,9 +816,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_hom_operat
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_inhom_operator(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_inhom_operator(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -842,9 +841,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_inhom_oper
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_full_operator(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_full_operator(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &              src,
@@ -868,9 +867,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_full_opera
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -911,9 +910,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_diagonal(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::face_loop_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -973,9 +972,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_diagonal(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -1014,9 +1013,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_diagonal(
 }
 
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -1091,9 +1090,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_diagonal(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
   cell_loop_apply_inverse_block_diagonal_matrix_based(MatrixFree<dim, Number> const & data,
                                                       VectorType &                    dst,
                                                       VectorType const &              src,
@@ -1123,9 +1122,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_apply_block_diagonal_matrix_based(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_apply_block_diagonal_matrix_based(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &              src,
@@ -1156,9 +1155,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_apply_block_diagona
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_block_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1190,9 +1189,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_block_diagonal(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::face_loop_block_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1252,9 +1251,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_block_diagonal(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_block_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1291,9 +1290,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_block_diag
 }
 
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_block_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1367,9 +1366,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_based_loop_block_diagona
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_calculate_system_matrix(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
   SparseMatrix const & /*src*/,
@@ -1433,9 +1432,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::cell_loop_calculate_system_ma
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::face_loop_calculate_system_matrix(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
   SparseMatrix const & /*src*/,
@@ -1592,9 +1591,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::face_loop_calculate_system_ma
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_calculate_system_matrix(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
   SparseMatrix const & /*src*/,
@@ -1649,9 +1648,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::boundary_face_loop_calculate_
 }
 #endif
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::adjust_diagonal_for_singular_operator(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::adjust_diagonal_for_singular_operator(
   VectorType & diagonal) const
 {
   VectorType vec1, d;
@@ -1665,9 +1664,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::adjust_diagonal_for_singular_
   diagonal.add(-2. / length, d, factor / pow(length, 2.), vec1);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_constraint_diagonal(
   VectorType & diagonal) const
 {
   // set (diagonal) entries to 1.0 for constrained dofs
@@ -1675,9 +1674,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::set_constraint_diagonal(
     diagonal.local_element(i) = 1.0;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_constraints(
   DoFHandler<dim> const &     dof_handler,
   AffineConstraints<double> & constraint_own,
   MGConstrainedDoFs const &   mg_constrained_dofs,
@@ -1732,9 +1731,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_constraints(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_periodicity_constraints(
   DoFHandler<dim> const &                 dof_handler,
   unsigned int const                      level,
   std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0,
@@ -1760,9 +1759,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_periodicity_constraints(
   unsigned int const                            level,
   unsigned int const                            target_level,
   typename DoFHandler<dim>::face_iterator const face1,
@@ -1803,9 +1802,9 @@ OperatorBase<dim, degree, Number, AdditionalData>::add_periodicity_constraints(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData>::verify_boundary_conditions(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::verify_boundary_conditions(
   DoFHandler<dim> const &                 dof_handler,
   std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const
 {

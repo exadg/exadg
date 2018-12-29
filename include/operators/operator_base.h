@@ -103,7 +103,7 @@ struct OperatorBaseData
   bool implement_block_diagonal_preconditioner_matrix_free;
 };
 
-template<int dim, int degree, typename Number, typename AdditionalData>
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components=1>
 class OperatorBase
 {
 public:
@@ -111,7 +111,7 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef OperatorBase<dim, degree, Number, AdditionalData> This;
+  typedef OperatorBase<dim, degree, Number, AdditionalData, n_components> This;
 
 #ifdef DEAL_II_WITH_TRILINOS
   typedef FullMatrix<TrilinosScalar>     FullMatrix_;
@@ -120,8 +120,8 @@ public:
 
   typedef std::vector<LAPACKFullMatrix<Number>>                BlockMatrix;
   typedef std::pair<unsigned int, unsigned int>                Range;
-  typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
-  typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
+  typedef FEEvaluation<dim, degree, degree + 1, n_components, Number>     FEEvalCell;
+  typedef FEFaceEvaluation<dim, degree, degree + 1, n_components, Number> FEEvalFace;
   typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>
     PeriodicFacePairIterator;
 
