@@ -9,9 +9,11 @@ SET( SOURCE_FILES
      transfer/dg-to-cg-transfer-1
      transfer/dg-to-cg-transfer-2
      transfer/dg-to-cg-transfer-3
+     transfer/dg-to-cg-transfer-4
      transfer/p-transfer-1
      transfer/p-transfer-2
      transfer/p-transfer-3
+     transfer/p-transfer-4
      performance/operators
      performance/distance_computer
      )

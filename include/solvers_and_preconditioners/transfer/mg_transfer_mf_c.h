@@ -6,7 +6,10 @@
 
 using namespace dealii;
 
-template<int dim, typename Number, typename VectorType = LinearAlgebra::distributed::Vector<Number>>
+template<int dim,
+         typename Number,
+         typename VectorType = LinearAlgebra::distributed::Vector<Number>,
+         int components      = 1>
 class MGTransferMFC : virtual public MGTransferBase<VectorType>
 {
 public:

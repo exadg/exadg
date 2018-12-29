@@ -4,13 +4,14 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 
-template<int dim, typename Number, typename VectorType>
-MGTransferMFC<dim, Number, VectorType>::MGTransferMFC(const MF &                        data_dg,
-                                                      const MF &                        data_cg,
-                                                      const AffineConstraints<double> & cm_dg,
-                                                      const AffineConstraints<double> & cm_cg,
-                                                      const unsigned int                level,
-                                                      const unsigned int                fe_degree)
+template<int dim, typename Number, typename VectorType, int components>
+MGTransferMFC<dim, Number, VectorType, components>::MGTransferMFC(
+  const MF &                        data_dg,
+  const MF &                        data_cg,
+  const AffineConstraints<double> & cm_dg,
+  const AffineConstraints<double> & cm_cg,
+  const unsigned int                level,
+  const unsigned int                fe_degree)
   : fe_degree(fe_degree)
 {
   std::vector<const DoFHandler<dim> *> dofhandlers = {&data_cg.get_dof_handler(),
@@ -24,19 +25,20 @@ MGTransferMFC<dim, Number, VectorType>::MGTransferMFC(const MF &                
   data_composite.reinit(dofhandlers, constraint_matrices, quadrature, additional_data);
 }
 
-template<int dim, typename Number, typename VectorType>
-MGTransferMFC<dim, Number, VectorType>::~MGTransferMFC()
+template<int dim, typename Number, typename VectorType, int components>
+MGTransferMFC<dim, Number, VectorType, components>::~MGTransferMFC()
 {
 }
 
-template<int dim, typename Number, typename VectorType>
+template<int dim, typename Number, typename VectorType, int components>
 template<int degree>
 void
-MGTransferMFC<dim, Number, VectorType>::do_restrict_and_add(VectorType &       dst,
-                                                            const VectorType & src) const
+MGTransferMFC<dim, Number, VectorType, components>::do_restrict_and_add(
+  VectorType &       dst,
+  const VectorType & src) const
 {
-  FEEvaluation<dim, degree, 1, 1, Number> fe_eval_cg(data_composite, 0);
-  FEEvaluation<dim, degree, 1, 1, Number> fe_eval_dg(data_composite, 1);
+  FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
+  FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
   VectorType vec__dg;
   data_composite.initialize_dof_vector(vec__dg, 1);
@@ -58,16 +60,16 @@ MGTransferMFC<dim, Number, VectorType>::do_restrict_and_add(VectorType &       d
   dst.compress(VectorOperation::add);
 }
 
-template<int dim, typename Number, typename VectorType>
+template<int dim, typename Number, typename VectorType, int components>
 template<int degree>
 void
-MGTransferMFC<dim, Number, VectorType>::do_prolongate(VectorType &       dst,
-                                                      const VectorType & src) const
+MGTransferMFC<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
+                                                                  const VectorType & src) const
 {
   src.update_ghost_values();
 
-  FEEvaluation<dim, degree, 1, 1, Number> fe_eval_cg(data_composite, 0);
-  FEEvaluation<dim, degree, 1, 1, Number> fe_eval_dg(data_composite, 1);
+  FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
+  FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
 
   VectorType vec__dg;
   data_composite.initialize_dof_vector(vec__dg, 1);
@@ -87,11 +89,11 @@ MGTransferMFC<dim, Number, VectorType>::do_prolongate(VectorType &       dst,
   dst.copy_locally_owned_data_from(vec__dg);
 }
 
-template<int dim, typename Number, typename VectorType>
+template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFC<dim, Number, VectorType>::restrict_and_add(const unsigned int /*level*/,
-                                                         VectorType &       dst,
-                                                         const VectorType & src) const
+MGTransferMFC<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
+                                                                     VectorType &       dst,
+                                                                     const VectorType & src) const
 {
   switch(this->fe_degree)
   {
@@ -117,11 +119,11 @@ MGTransferMFC<dim, Number, VectorType>::restrict_and_add(const unsigned int /*le
   }
 }
 
-template<int dim, typename Number, typename VectorType>
+template<int dim, typename Number, typename VectorType, int components>
 void
-MGTransferMFC<dim, Number, VectorType>::prolongate(const unsigned int /*level*/,
-                                                   VectorType &       dst,
-                                                   const VectorType & src) const
+MGTransferMFC<dim, Number, VectorType, components>::prolongate(const unsigned int /*level*/,
+                                                               VectorType &       dst,
+                                                               const VectorType & src) const
 {
   switch(this->fe_degree)
   {
