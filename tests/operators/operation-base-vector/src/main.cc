@@ -18,6 +18,7 @@ using namespace dealii;
 
 #include "../../../../include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.h"
 #include "operators/mass_operator.h"
+#include "../../operation-base-util/sparse_matrix_util.h"
 
 const int      best_of = 10;
 typedef double Number;
@@ -30,7 +31,7 @@ class Run
 {
 public:
   static void
-  run()
+  run(bool use_dg)
   {
     double                                    left = -1, right = +1;
     parallel::distributed::Triangulation<dim> triangulation(comm);
@@ -72,13 +73,16 @@ public:
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
     triangulation.set_all_manifold_ids(1);
     triangulation.set_manifold(1, manifold);
-    triangulation.refine_global(4);
-        
-    FE_DGQ<dim> temp(fe_degree);
-    FESystem<dim> fe_u(temp, dim);
+    triangulation.refine_global(1);
+    
+    std::shared_ptr<FESystem<dim>> fe_u;
+    if(use_dg)
+        fe_u.reset(new FESystem<dim>(FE_DGQ<dim>(fe_degree), dim));
+    else
+        fe_u.reset(new FESystem<dim>(FE_Q<dim>(fe_degree), dim));
     MappingQGeneric<dim> mapping(fe_degree+1);
     DoFHandler<dim> dof_handler_u(triangulation);
-    dof_handler_u.distribute_dofs(fe_u);
+    dof_handler_u.distribute_dofs(*fe_u);
     
     typename MatrixFree<dim, Number>::AdditionalData additional_data;
     additional_data.mapping_update_flags = (update_JxW_values | update_values);
@@ -126,7 +130,7 @@ public:
         std::cout << v1.l2_norm() << " " << v2.l2_norm() << std::endl;
     }
     
-    {
+    if(use_dg){
         // test block diagonal (has to be same as apply)
         LinearAlgebra::distributed::Vector<Number> v1, v2;
         mm2.do_initialize_dof_vector(v2);
@@ -137,6 +141,23 @@ public:
         
         std::cout << v1.l2_norm() << std::endl;
     }
+    
+    {
+        TrilinosWrappers::SparseMatrix system_matrix;
+        mm2.do_init_system_matrix(system_matrix);
+        mm2.do_calculate_system_matrix(system_matrix);
+        
+        LinearAlgebra::distributed::Vector<Number> v1,v2;
+        mm2.do_initialize_dof_vector(v1);
+        mm2.do_initialize_dof_vector(v2);
+        v2 = 1.0;
+        system_matrix.vmult(v1,v2);
+        
+        //print_matlab(system_matrix);
+        
+        std::cout << v1.l2_norm() << std::endl;
+    }
+    std::cout << std::endl;
   }
 };
 
@@ -144,7 +165,12 @@ template<int dim>
 void
 run()
 {
-  Run<dim,  1>::run();
+  Run<dim,  1>::run(true);
+  Run<dim,  1>::run(false);
+  Run<dim,  2>::run(true);
+  Run<dim,  2>::run(false);
+  Run<dim,  3>::run(true);
+  Run<dim,  3>::run(false);
 }
 
 int
