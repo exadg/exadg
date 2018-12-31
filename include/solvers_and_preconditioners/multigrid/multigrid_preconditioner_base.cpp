@@ -77,7 +77,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
     global_levels, mapping, periodic_face_pairs, operator_data, add_dof_handler);
   this->initialize_smoothers();
   this->initialize_coarse_solver(global_levels[0].level);
-  this->initialize_mg_transfer(dof_handler, tria, global_levels, h_levels, p_levels);
+  this->initialize_mg_transfer(dof_handler.get_fe().n_components(),
+                               Utilities::MPI::this_mpi_process(tria->get_communicator()),
+                               global_levels,
+                               p_levels);
 
   this->initialize_multigrid_preconditioner();
 }
@@ -328,18 +331,15 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfer(
-  DoFHandler<dim> const &              dof_handler,
-  const parallel::Triangulation<dim> * tria,
-  std::vector<MGLevelIdentifier> &     global_levels,
-  std::vector<unsigned int> & /*h_levels*/,
+  const int                             n_components,
+  const int                             rank,
+  std::vector<MGLevelIdentifier> &      global_levels,
   std::vector<MGDofHandlerIdentifier> & p_levels)
 {
-  const unsigned int n_components = dof_handler.get_fe().n_components();
-
   this->mg_transfer.resize(0, this->n_global_levels - 1);
 
 #ifndef DEBUG
-  (void)tria; // avoid compiler warning
+  (void)rank; // avoid compiler warning
 #endif
 
   std::map<MGDofHandlerIdentifier, std::shared_ptr<MGTransferMFH<dim, MultigridNumber>>>
@@ -389,7 +389,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
     if(coarse_level.level != fine_level.level) // h-transfer
     {
 #ifdef DEBUG
-      if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
+      if(rank == 0)
         printf("  h-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n",
                coarse_level.level,
                coarse_level.degree,
@@ -402,7 +402,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
     else if(coarse_level.degree != fine_level.degree) // p-transfer
     {
 #ifdef DEBUG
-      if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
+      if(rank == 0)
         printf("  p-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n",
                coarse_level.level,
                coarse_level.degree,
@@ -428,7 +428,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
     else if(coarse_level.is_dg != fine_level.is_dg) // c-transfer
     {
 #ifdef DEBUG
-      if(Utilities::MPI::this_mpi_process(tria->get_communicator()) == 0)
+      if(rank == 0)
         printf("  c-MG (l=%2d,k=%2d) -> (l=%2d,k=%2d)\n",
                coarse_level.level,
                coarse_level.degree,
