@@ -181,7 +181,8 @@ private:
    * Multigrid transfer operators.
    */
   void
-  initialize_mg_transfer(parallel::Triangulation<dim> const * tria,
+  initialize_mg_transfer(DoFHandler<dim> const &              dof_handler,
+                         parallel::Triangulation<dim> const * tria,
                          std::vector<MGLevelIdentifier> &     global_levels,
                          std::vector<unsigned int> & /*h_levels*/,
                          std::vector<MGDofHandlerIdentifier> & p_levels);

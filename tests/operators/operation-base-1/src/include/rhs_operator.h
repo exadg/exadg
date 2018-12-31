@@ -1,11 +1,11 @@
 #ifndef OPERATOR_BASE_RHS_OPERATOR
 #define OPERATOR_BASE_RHS_OPERATOR
 
-template<int dim, int fe_degree, typename value_type>
+template<int dim, int fe_degree, typename value_type, int n_components = 1>
 class RHSOperator
 {
 public:
-  typedef RHSOperator<dim, fe_degree, value_type> This;
+  typedef RHSOperator<dim, fe_degree, value_type, n_components> This;
 
   RHSOperator(MatrixFree<dim, value_type> const & mf_data) : data(&mf_data)
   {
@@ -33,8 +33,9 @@ private:
   {
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
-      VectorizedArray<value_type> rhs = make_vectorized_array<value_type>(0.0);
-      rhs                             = 1.0;
+      dealii::Tensor<1, n_components, dealii::VectorizedArray<value_type>> rhs;
+      for(unsigned int i = 0; i < n_components; i++)
+        rhs[i] = 1.0;
       fe_eval.submit_value(rhs, q);
     }
     fe_eval.integrate(true, false);
@@ -46,7 +47,7 @@ private:
             LinearAlgebra::distributed::Vector<value_type> const &,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data);
+    FEEvaluation<dim, fe_degree, fe_degree + 1, n_components, value_type> fe_eval(data);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {

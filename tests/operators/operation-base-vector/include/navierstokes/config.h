@@ -12,7 +12,7 @@
 
 #define DEGREE_1 1
 #define DEGREE_2 1
-#define DEGREE_3 0
+#define DEGREE_3 1
 #define DEGREE_4 0
 #define DEGREE_5 0
 #define DEGREE_6 0

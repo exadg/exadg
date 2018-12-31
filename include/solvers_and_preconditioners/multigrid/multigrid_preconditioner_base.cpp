@@ -77,7 +77,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
     global_levels, mapping, periodic_face_pairs, operator_data, add_dof_handler);
   this->initialize_smoothers();
   this->initialize_coarse_solver(global_levels[0].level);
-  this->initialize_mg_transfer(tria, global_levels, h_levels, p_levels);
+  this->initialize_mg_transfer(dof_handler, tria, global_levels, h_levels, p_levels);
 
   this->initialize_multigrid_preconditioner();
 }
@@ -328,11 +328,14 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfer(
+  DoFHandler<dim> const &              dof_handler,
   const parallel::Triangulation<dim> * tria,
   std::vector<MGLevelIdentifier> &     global_levels,
   std::vector<unsigned int> & /*h_levels*/,
   std::vector<MGDofHandlerIdentifier> & p_levels)
 {
+  const unsigned int n_components = dof_handler.get_fe().n_components();
+
   this->mg_transfer.resize(0, this->n_global_levels - 1);
 
 #ifndef DEBUG
@@ -407,11 +410,20 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
                fine_level.degree);
 #endif
 
-      temp.reset(
-        new MGTransferMFP<dim, MultigridNumber, VectorTypeMG>(&mg_matrices[i]->get_data(),
-                                                              &mg_matrices[i - 1]->get_data(),
-                                                              fine_level.degree,
-                                                              coarse_level.degree));
+      if(n_components == 1)
+        temp.reset(
+          new MGTransferMFP<dim, MultigridNumber, VectorTypeMG, 1>(&mg_matrices[i]->get_data(),
+                                                                   &mg_matrices[i - 1]->get_data(),
+                                                                   fine_level.degree,
+                                                                   coarse_level.degree));
+      else if(n_components == dim)
+        temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorTypeMG, dim>(
+          &mg_matrices[i]->get_data(),
+          &mg_matrices[i - 1]->get_data(),
+          fine_level.degree,
+          coarse_level.degree));
+      else
+        AssertThrow(false, ExcMessage("Cannot create MGTransferMFP!"));
     }
     else if(coarse_level.is_dg != fine_level.is_dg) // c-transfer
     {
@@ -424,13 +436,24 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfe
                fine_level.degree);
 #endif
 
-      temp.reset(new MGTransferMFC<dim, typename Operator::value_type>(
-        mg_matrices[i]->get_data(),
-        mg_matrices[i - 1]->get_data(),
-        mg_matrices[i]->get_constraint_matrix(),
-        mg_matrices[i - 1]->get_constraint_matrix(),
-        fine_level.level,
-        coarse_level.degree));
+      if(n_components == 1)
+        temp.reset(new MGTransferMFC<dim, typename Operator::value_type, VectorTypeMG, 1>(
+          mg_matrices[i]->get_data(),
+          mg_matrices[i - 1]->get_data(),
+          mg_matrices[i]->get_constraint_matrix(),
+          mg_matrices[i - 1]->get_constraint_matrix(),
+          fine_level.level,
+          coarse_level.degree));
+      else if(n_components == dim)
+        temp.reset(new MGTransferMFC<dim, typename Operator::value_type, VectorTypeMG, dim>(
+          mg_matrices[i]->get_data(),
+          mg_matrices[i - 1]->get_data(),
+          mg_matrices[i]->get_constraint_matrix(),
+          mg_matrices[i - 1]->get_constraint_matrix(),
+          fine_level.level,
+          coarse_level.degree));
+      else
+        AssertThrow(false, ExcMessage("Cannot create MGTransferMFP!"));
     }
     mg_transfer[i] = temp;
   }

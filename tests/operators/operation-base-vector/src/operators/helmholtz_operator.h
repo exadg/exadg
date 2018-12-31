@@ -42,7 +42,8 @@ struct HelmholtzOperatorDataNew : public OperatorBaseData<dim>
 };
 
 template<int dim, int degree, typename Number>
-class HelmholtzOperatorNew : public OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim>
+class HelmholtzOperatorNew : public OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim>,
+                             public MultigridOperatorBase<dim, Number>
 {
 private:
   typedef OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>,dim> Base;
@@ -71,11 +72,118 @@ public:
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
                                                          mapping,
-                                                         operator_data.dof_index);
+                                                         this->operator_data.dof_index);
 
-    const_viscosity = operator_data.viscosity;
+    const_viscosity = this->operator_data.viscosity;
   }
   
+
+  void
+  reinit_multigrid(
+    DoFHandler<dim> const &   dof_handler,
+    Mapping<dim> const &      mapping,
+    void *                    operator_data,
+    MGConstrainedDoFs const & mg_constrained_dofs,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                       periodic_face_pairs,
+    unsigned int const level){
+    //  AssertThrow(false, ExcMessage("Function not implemented!"));
+      
+      
+  Base::do_reinit_multigrid(
+    dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
+
+    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
+                                                         *this->data,
+                                                         mapping,
+                                                         this->operator_data.dof_index);
+
+    const_viscosity = this->operator_data.viscosity;
+  }
+
+  void
+  vmult(VectorType & dst, VectorType const & src) const{
+  this->apply(dst, src);
+  }
+
+  void
+  vmult_add(VectorType & dst, VectorType const & src) const{
+      this->apply_add(dst, src);
+  }
+
+  AffineConstraints<double> const &
+  get_constraint_matrix() const{
+      return this->do_get_constraint_matrix();
+  }
+
+  MatrixFree<dim, Number> const &
+  get_data() const{
+      return *this->data;
+  }
+
+  unsigned int
+  get_dof_index() const
+{
+  return this->operator_data.dof_index;
+}
+
+  void
+  calculate_inverse_diagonal(VectorType & diagonal) const
+{
+  this->calculate_diagonal(diagonal);
+  invert_diagonal(diagonal);
+}
+
+  void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
+{
+  AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
+              ExcMessage("Not implemented."));
+
+  this->apply_inverse_block_diagonal_matrix_based(dst, src);
+}
+
+  void
+  update_block_diagonal_preconditioner() const
+{
+  this->do_update_block_diagonal_preconditioner();
+}
+  
+bool
+is_singular() const
+{
+  return this->operator_is_singular();
+}
+
+#ifdef DEAL_II_WITH_TRILINOS
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_init_system_matrix(system_matrix);
+  }
+
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_calculate_system_matrix(system_matrix);
+  }
+#endif
+
+MultigridOperatorBase<dim, Number> *
+get_new(unsigned int deg) const
+{
+    switch(deg){
+        case 1:
+          return new HelmholtzOperatorNew<dim, 1, Number>();
+        case 2:
+          return new HelmholtzOperatorNew<dim, 2, Number>();
+        case 3:
+          return new HelmholtzOperatorNew<dim, 3, Number>();
+        default:
+          AssertThrow(false, ExcMessage("This degree is not implemented!"));
+          return new HelmholtzOperatorNew<dim, degree, Number>();
+    }
+}
   
   bool
   viscosity_is_variable() const
