@@ -1,11 +1,11 @@
 #ifndef TEST_VECTOR_HELMHOLTZ_OPERATOR
 #define TEST_VECTOR_HELMHOLTZ_OPERATOR
 
-#include "../../../../../include/operators/operator_base.h"
-#include "../../../../../include/operators/interior_penalty_parameter.h"
-#include "../../../../../include/incompressible_navier_stokes/user_interface/input_parameters.h"
-#include "../../../../../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../../../../include/functionalities/evaluate_functions.h"
+#include "../../../../../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
+#include "../../../../../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+#include "../../../../../include/operators/interior_penalty_parameter.h"
+#include "../../../../../include/operators/operator_base.h"
 
 namespace IncNS
 {
@@ -18,8 +18,8 @@ struct HelmholtzOperatorDataNew : public OperatorBaseData<dim>
           false, true, false, false, true, false, // cell
           true,  true,        true,  true         // face
     ),
-  // clang-format on
-  formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
+      // clang-format on
+      formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
       penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Symmetrized),
       IP_formulation(InteriorPenaltyFormulation::SIPG),
       IP_factor(1.0),
@@ -30,23 +30,24 @@ struct HelmholtzOperatorDataNew : public OperatorBaseData<dim>
       this->mapping_update_flags | update_values | update_normal_vectors;
     this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
-  
+
   FormulationViscousTerm           formulation_viscous_term;
   PenaltyTermDivergenceFormulation penalty_term_div_formulation;
   InteriorPenaltyFormulation       IP_formulation;
   double                           IP_factor;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
-  
+
   double viscosity;
 };
 
 template<int dim, int degree, typename Number>
-class HelmholtzOperatorNew : public OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim>,
-                             public MultigridOperatorBase<dim, Number>
+class HelmholtzOperatorNew
+  : public OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim>,
+    public MultigridOperatorBase<dim, Number>
 {
 private:
-  typedef OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>,dim> Base;
+  typedef OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim> Base;
 
 public:
   static const int                  DIM = dim;
@@ -55,19 +56,21 @@ public:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
-  
+
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
-  
-  HelmholtzOperatorNew() : const_viscosity(-1.0){}
+
+  HelmholtzOperatorNew() : const_viscosity(-1.0)
+  {
+  }
 
   void
-  reinit(Mapping<dim> const &               mapping,
-         MatrixFree<dim, Number> const &    mf_data,
-         AffineConstraints<double> const &  constraint_matrix,
+  reinit(Mapping<dim> const &                  mapping,
+         MatrixFree<dim, Number> const &       mf_data,
+         AffineConstraints<double> const &     constraint_matrix,
          HelmholtzOperatorDataNew<dim> const & operator_data)
   {
-  Base::reinit(mf_data, constraint_matrix, operator_data);
+    Base::reinit(mf_data, constraint_matrix, operator_data);
 
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
@@ -76,7 +79,7 @@ public:
 
     const_viscosity = this->operator_data.viscosity;
   }
-  
+
 
   void
   reinit_multigrid(
@@ -86,12 +89,13 @@ public:
     MGConstrainedDoFs const & mg_constrained_dofs,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                        periodic_face_pairs,
-    unsigned int const level){
+    unsigned int const level)
+  {
     //  AssertThrow(false, ExcMessage("Function not implemented!"));
-      
-      
-  Base::do_reinit_multigrid(
-    dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
+
+
+    Base::do_reinit_multigrid(
+      dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
 
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                          *this->data,
@@ -102,58 +106,62 @@ public:
   }
 
   void
-  vmult(VectorType & dst, VectorType const & src) const{
-  this->apply(dst, src);
+  vmult(VectorType & dst, VectorType const & src) const
+  {
+    this->apply(dst, src);
   }
 
   void
-  vmult_add(VectorType & dst, VectorType const & src) const{
-      this->apply_add(dst, src);
+  vmult_add(VectorType & dst, VectorType const & src) const
+  {
+    this->apply_add(dst, src);
   }
 
   AffineConstraints<double> const &
-  get_constraint_matrix() const{
-      return this->do_get_constraint_matrix();
+  get_constraint_matrix() const
+  {
+    return this->do_get_constraint_matrix();
   }
 
   MatrixFree<dim, Number> const &
-  get_data() const{
-      return *this->data;
+  get_data() const
+  {
+    return *this->data;
   }
 
   unsigned int
   get_dof_index() const
-{
-  return this->operator_data.dof_index;
-}
+  {
+    return this->operator_data.dof_index;
+  }
 
   void
   calculate_inverse_diagonal(VectorType & diagonal) const
-{
-  this->calculate_diagonal(diagonal);
-  invert_diagonal(diagonal);
-}
+  {
+    this->calculate_diagonal(diagonal);
+    invert_diagonal(diagonal);
+  }
 
   void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
-{
-  AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
-              ExcMessage("Not implemented."));
+  {
+    AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
+                ExcMessage("Not implemented."));
 
-  this->apply_inverse_block_diagonal_matrix_based(dst, src);
-}
+    this->apply_inverse_block_diagonal_matrix_based(dst, src);
+  }
 
   void
   update_block_diagonal_preconditioner() const
-{
-  this->do_update_block_diagonal_preconditioner();
-}
-  
-bool
-is_singular() const
-{
-  return this->operator_is_singular();
-}
+  {
+    this->do_update_block_diagonal_preconditioner();
+  }
+
+  bool
+  is_singular() const
+  {
+    return this->operator_is_singular();
+  }
 
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
@@ -169,22 +177,23 @@ is_singular() const
   }
 #endif
 
-MultigridOperatorBase<dim, Number> *
-get_new(unsigned int deg) const
-{
-    switch(deg){
-        case 1:
-          return new HelmholtzOperatorNew<dim, 1, Number>();
-        case 2:
-          return new HelmholtzOperatorNew<dim, 2, Number>();
-        case 3:
-          return new HelmholtzOperatorNew<dim, 3, Number>();
-        default:
-          AssertThrow(false, ExcMessage("This degree is not implemented!"));
-          return new HelmholtzOperatorNew<dim, degree, Number>();
+  MultigridOperatorBase<dim, Number> *
+  get_new(unsigned int deg) const
+  {
+    switch(deg)
+    {
+      case 1:
+        return new HelmholtzOperatorNew<dim, 1, Number>();
+      case 2:
+        return new HelmholtzOperatorNew<dim, 2, Number>();
+      case 3:
+        return new HelmholtzOperatorNew<dim, 3, Number>();
+      default:
+        AssertThrow(false, ExcMessage("This degree is not implemented!"));
+        return new HelmholtzOperatorNew<dim, degree, Number>();
     }
-}
-  
+  }
+
   bool
   viscosity_is_variable() const
   {
@@ -203,13 +212,15 @@ private:
       if(viscosity_is_variable())
         viscosity = viscous_coefficient_cell[cell][q];
 
-      if(this->operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+      if(this->operator_data.formulation_viscous_term ==
+         FormulationViscousTerm::DivergenceFormulation)
       {
         fe_eval.submit_gradient(viscosity * make_vectorized_array<Number>(2.) *
                                   fe_eval.get_symmetric_gradient(q),
                                 q);
       }
-      else if(this->operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+      else if(this->operator_data.formulation_viscous_term ==
+              FormulationViscousTerm::LaplaceFormulation)
       {
         fe_eval.submit_gradient(viscosity * fe_eval.get_gradient(q), q);
       }
@@ -223,15 +234,14 @@ private:
       }
     }
   }
-  
+
   void
-  do_face_integral(FEEvalFace &     fe_eval_m,
-                   FEEvalFace &     fe_eval_p,
-                   unsigned int const face) const
+  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p, unsigned int const face) const
   {
-    scalar penalty_parameter = IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
-                               std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
-                                        fe_eval_p.read_cell_data(array_penalty_parameter));
+    scalar penalty_parameter =
+      IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
+      std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
+               fe_eval_p.read_cell_data(array_penalty_parameter));
 
     for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
     {
@@ -265,13 +275,14 @@ private:
   }
 
   void
-  do_face_int_integral(FEEvalFace &     fe_eval_m,
-                       FEEvalFace &     fe_eval_p,
+  do_face_int_integral(FEEvalFace &       fe_eval_m,
+                       FEEvalFace &       fe_eval_p,
                        unsigned int const face) const
   {
-    scalar penalty_parameter = IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
-                               std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
-                                        fe_eval_p.read_cell_data(array_penalty_parameter));
+    scalar penalty_parameter =
+      IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
+      std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
+               fe_eval_p.read_cell_data(array_penalty_parameter));
 
     for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
     {
@@ -305,13 +316,14 @@ private:
 
 
   void
-  do_face_ext_integral(FEEvalFace &     fe_eval_m,
-                       FEEvalFace &     fe_eval_p,
+  do_face_ext_integral(FEEvalFace &       fe_eval_m,
+                       FEEvalFace &       fe_eval_p,
                        unsigned int const face) const
   {
-    scalar penalty_parameter = IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
-                               std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
-                                        fe_eval_p.read_cell_data(array_penalty_parameter));
+    scalar penalty_parameter =
+      IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
+      std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
+               fe_eval_p.read_cell_data(array_penalty_parameter));
 
     for(unsigned int q = 0; q < fe_eval_p.n_q_points; ++q)
     {
@@ -346,15 +358,16 @@ private:
   }
 
   void
-  do_boundary_integral(FEEvalFace &             fe_eval,
+  do_boundary_integral(FEEvalFace &               fe_eval,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id,
                        unsigned int const         face) const
   {
     BoundaryTypeU boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-    scalar penalty_parameter = IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
-                               fe_eval.read_cell_data(array_penalty_parameter);
+    scalar penalty_parameter =
+      IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor) *
+      fe_eval.read_cell_data(array_penalty_parameter);
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
@@ -386,7 +399,7 @@ private:
       fe_eval.submit_value(-gradient_flux, q);
     }
   }
-  
+
   /*
    *  This function calculates the average viscosity for interior faces.
    */
@@ -444,7 +457,8 @@ private:
                     ExcMessage("Specified interior penalty formulation is not implemented."));
       }
     }
-    else if(this->operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    else if(this->operator_data.formulation_viscous_term ==
+            FormulationViscousTerm::DivergenceFormulation)
     {
       if(this->operator_data.IP_formulation == InteriorPenaltyFormulation::NIPG)
       {
@@ -574,7 +588,8 @@ private:
   {
     tensor gradient;
 
-    if(this->operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    if(this->operator_data.formulation_viscous_term ==
+       FormulationViscousTerm::DivergenceFormulation)
     {
       /*
        * F = 2 * nu * symmetric_gradient
@@ -582,7 +597,8 @@ private:
        */
       gradient = make_vectorized_array<Number>(2.0) * fe_eval.get_symmetric_gradient(q);
     }
-    else if(this->operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+    else if(this->operator_data.formulation_viscous_term ==
+            FormulationViscousTerm::LaplaceFormulation)
     {
       /*
        *  F = nu * grad(u)
@@ -623,7 +639,8 @@ private:
     vector jump_value              = value_m - value_p;
     vector average_normal_gradient = 0.5 * (normal_gradient_m + normal_gradient_p);
 
-    if(this->operator_data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    if(this->operator_data.formulation_viscous_term ==
+       FormulationViscousTerm::DivergenceFormulation)
     {
       if(this->operator_data.penalty_term_div_formulation ==
          PenaltyTermDivergenceFormulation::Symmetrized)
@@ -647,7 +664,8 @@ private:
                     ExcMessage("Specified formulation of viscous term is not implemented."));
       }
     }
-    else if(this->operator_data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
+    else if(this->operator_data.formulation_viscous_term ==
+            FormulationViscousTerm::LaplaceFormulation)
     {
       gradient_flux =
         viscosity * average_normal_gradient - viscosity * penalty_parameter * jump_value;
@@ -770,8 +788,7 @@ private:
     return normal_gradient_p;
   }
 
-  public:
-
+public:
   // penalty parameter
   AlignedVector<scalar> array_penalty_parameter;
 
@@ -783,7 +800,6 @@ private:
   Table<2, scalar> viscous_coefficient_face;
   Table<2, scalar> viscous_coefficient_face_neighbor;
 };
-}
+} // namespace IncNS
 
 #endif
-
