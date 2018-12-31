@@ -84,7 +84,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
                                mg_matrices,
                                mg_dofhandler,
                                mg_constrained_dofs,
-                               mg_transfer);
+                               mg_transfer.mg_level_object);
 
   this->initialize_multigrid_preconditioner();
 }
@@ -789,7 +789,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_multigrid_
 {
   this->multigrid_preconditioner.reset(
     new MultigridPreconditioner<VectorTypeMG, Operator, MG_TRANSFER, SMOOTHER>(
-      this->mg_matrices, *this->mg_coarse, this->mg_transfer, this->mg_smoother));
+      this->mg_matrices, *this->mg_coarse, this->mg_transfer.mg_level_object, this->mg_smoother));
 }
 
 template<int dim, typename Number, typename MultigridNumber>

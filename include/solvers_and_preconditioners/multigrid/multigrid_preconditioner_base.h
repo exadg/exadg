@@ -196,8 +196,9 @@ private:
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>     mg_constrained_dofs;
 
-  typedef MGTransferBase<VectorTypeMG>        MG_TRANSFER;
-  MGLevelObject<std::shared_ptr<MG_TRANSFER>> mg_transfer;
+  typedef MGTransferBase<VectorTypeMG> MG_TRANSFER;
+  // MGLevelObject<std::shared_ptr<MG_TRANSFER>> mg_transfer;
+  MGTransferMF_MGLevelObject<VectorTypeMG> mg_transfer;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
   MGLevelObject<std::shared_ptr<SMOOTHER>> mg_smoother;
