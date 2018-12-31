@@ -32,10 +32,7 @@ using namespace dealii;
  * Re-implementation of multigrid preconditioner (V-cycle) in order to have more direct control over
  * its individual components and avoid inner products and other expensive stuff.
  */
-template<typename VectorType,
-         typename MatrixType,
-         typename TransferType,
-         typename PreconditionerType>
+template<typename VectorType, typename MatrixType, typename PreconditionerType>
 class MultigridPreconditioner
 {
 public:

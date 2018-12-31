@@ -651,7 +651,7 @@ void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_multigrid_preconditioner()
 {
   this->multigrid_preconditioner.reset(
-    new MultigridPreconditioner<VectorTypeMG, Operator, MG_TRANSFER, SMOOTHER>(
+    new MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>(
       this->mg_matrices, *this->mg_coarse, this->mg_transfer, this->mg_smoother));
 }
 

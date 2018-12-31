@@ -108,17 +108,6 @@ private:
   void
   check_mg_sequence(std::vector<MGLevelIdentifier> const & global_levels);
 
-  static unsigned int
-  get_next_coarser_degree(unsigned int const degree)
-  {
-    // examples:
-    // 9 -> 4; 8 -> 4; 7 -> 3; 6 -> 3; 5 -> 2; 4 -> 2; 3 -> 1; 2 -> 1
-    if(degree == 1)
-      return 1;
-
-    return degree / 2;
-  }
-
   /*
    * Dof-handlers and constraints.
    */
@@ -182,8 +171,6 @@ private:
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>     mg_constrained_dofs;
 
-  typedef MGTransferBase<VectorTypeMG> MG_TRANSFER;
-  // MGLevelObject<std::shared_ptr<MG_TRANSFER>> mg_transfer;
   MGTransferMF_MGLevelObject<VectorTypeMG> mg_transfer;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
@@ -191,7 +178,7 @@ private:
 
   std::shared_ptr<MGCoarseGridBase<VectorTypeMG>> mg_coarse;
 
-  std::shared_ptr<MultigridPreconditioner<VectorTypeMG, Operator, MG_TRANSFER, SMOOTHER>>
+  std::shared_ptr<MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>>
     multigrid_preconditioner;
 
   std::shared_ptr<Operator> underlying_operator;
