@@ -15,8 +15,6 @@
 #include <deal.II/multigrid/mg_tools.h>
 #include <deal.II/multigrid/multigrid.h>
 
-#include "../transfer/mg_transfer_mf_mg_level_object.h"
-
 using namespace dealii;
 
 /*
@@ -43,7 +41,7 @@ class MultigridPreconditioner
 public:
   MultigridPreconditioner(const MGLevelObject<std::shared_ptr<MatrixType>> &         matrix,
                           const MGCoarseGridBase<VectorType> &                       coarse,
-                          const MGTransferMF_MGLevelObject<VectorType> &             transfer,
+                          const MGTransferBase<VectorType> &                         transfer,
                           const MGLevelObject<std::shared_ptr<PreconditionerType>> & smooth,
                           const unsigned int                                         n_cycles = 1)
     : minlevel(matrix.min_level()),
@@ -210,7 +208,7 @@ private:
   /**
    * Object for grid tranfer.
    */
-  const MGTransferMF_MGLevelObject<VectorType> & transfer;
+  const MGTransferBase<VectorType> & transfer;
 
   /**
    * The smoothing object.
