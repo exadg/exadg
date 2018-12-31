@@ -32,37 +32,7 @@
 // parameters
 #include "multigrid_input_parameters.h"
 
-struct MGDofHandlerIdentifier
-{
-  MGDofHandlerIdentifier(unsigned int degree, bool is_dg) : degree(degree), is_dg(is_dg)
-  {
-  }
-  unsigned int degree;
-  bool         is_dg;
-
-  bool
-  operator<(const MGDofHandlerIdentifier & rhs) const
-  {
-    return !((degree >= rhs.degree) && (is_dg >= rhs.is_dg));
-  }
-};
-
-struct MGLevelIdentifier
-{
-  MGLevelIdentifier(unsigned int level, unsigned int degree, bool is_dg)
-    : level(level), degree(degree), is_dg(is_dg), id(degree, is_dg)
-  {
-  }
-  MGLevelIdentifier(unsigned int level, MGDofHandlerIdentifier p)
-    : level(level), degree(p.degree), is_dg(p.is_dg), id(p)
-  {
-  }
-
-  unsigned int           level;
-  unsigned int           degree;
-  bool                   is_dg;
-  MGDofHandlerIdentifier id;
-};
+#include "../transfer/mg_transfer_mf_mg_level_object.h"
 
 template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditionerBase : public PreconditionerBase<Number>
@@ -180,11 +150,16 @@ private:
   /*
    * Multigrid transfer operators.
    */
-  void
-  initialize_mg_transfer(const int                             n_components,
-                         const int                             rank,
-                         std::vector<MGLevelIdentifier> &      global_levels,
-                         std::vector<MGDofHandlerIdentifier> & p_levels);
+  static void
+  initialize_mg_transfer(
+    const int                                                      n_components,
+    const int                                                      rank,
+    std::vector<MGLevelIdentifier> &                               global_levels,
+    std::vector<MGDofHandlerIdentifier> &                          p_levels,
+    MGLevelObject<std::shared_ptr<Operator>> &                     mg_matrices,
+    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &        mg_dofhandler,
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &            mg_constrained_dofs,
+    MGLevelObject<std::shared_ptr<MGTransferBase<VectorTypeMG>>> & mg_transfer);
 
   /*
    * Smoother.

@@ -80,7 +80,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->initialize_mg_transfer(dof_handler.get_fe().n_components(),
                                Utilities::MPI::this_mpi_process(tria->get_communicator()),
                                global_levels,
-                               p_levels);
+                               p_levels,
+                               mg_matrices,
+                               mg_dofhandler,
+                               mg_constrained_dofs,
+                               mg_transfer);
 
   this->initialize_multigrid_preconditioner();
 }
@@ -331,12 +335,16 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfer(
-  const int                             n_components,
-  const int                             rank,
-  std::vector<MGLevelIdentifier> &      global_levels,
-  std::vector<MGDofHandlerIdentifier> & p_levels)
+  const int                                                      n_components,
+  const int                                                      rank,
+  std::vector<MGLevelIdentifier> &                               global_levels,
+  std::vector<MGDofHandlerIdentifier> &                          p_levels,
+  MGLevelObject<std::shared_ptr<Operator>> &                     mg_matrices,
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &        mg_dofhandler,
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &            mg_constrained_dofs,
+  MGLevelObject<std::shared_ptr<MGTransferBase<VectorTypeMG>>> & mg_transfer)
 {
-  this->mg_transfer.resize(0, this->n_global_levels - 1);
+  mg_transfer.resize(0, global_levels.size() - 1);
 
 #ifndef DEBUG
   (void)rank; // avoid compiler warning
