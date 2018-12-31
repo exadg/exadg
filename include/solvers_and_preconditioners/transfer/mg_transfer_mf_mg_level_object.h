@@ -48,6 +48,9 @@ public:
          MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &     mg_constrained_dofs);
 
   virtual void
+  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
+
+  virtual void
   restrict_and_add(const unsigned int level, VectorType & dst, const VectorType & src) const;
 
   virtual void

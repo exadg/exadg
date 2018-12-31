@@ -135,6 +135,19 @@ MGTransferMF_MGLevelObject<VectorType>::reinit(
 
 template<typename VectorType>
 void
+MGTransferMF_MGLevelObject<VectorType>::interpolate(const unsigned int level,
+                                                    VectorType &       dst,
+                                                    const VectorType & src) const
+{
+  (void)level;
+  (void)dst;
+  (void)src;
+
+  AssertThrow(false, ExcMessage("MGTransferMF_MGLevelObject::interpolate(): to be implemented!"));
+}
+
+template<typename VectorType>
+void
 MGTransferMF_MGLevelObject<VectorType>::restrict_and_add(const unsigned int level,
                                                          VectorType &       dst,
                                                          const VectorType & src) const
