@@ -33,11 +33,23 @@ struct MGLevelIdentifier
   MGDofHandlerIdentifier id;
 };
 
-template<typename VectorTypeMG>
+template<typename VectorType>
 class MGTransferMF_MGLevelObject
 {
 public:
-  MGLevelObject<std::shared_ptr<MGTransferBase<VectorTypeMG>>> mg_level_object;
+  virtual void
+  restrict_and_add(const unsigned int level, VectorType & dst, const VectorType & src) const
+  {
+    this->mg_level_object[level]->restrict_and_add(level, dst, src);
+  }
+
+  virtual void
+  prolongate(const unsigned int level, VectorType & dst, const VectorType & src) const
+  {
+    this->mg_level_object[level]->prolongate(level, dst, src);
+  }
+
+  MGLevelObject<std::shared_ptr<MGTransferBase<VectorType>>> mg_level_object;
 };
 
 #endif
