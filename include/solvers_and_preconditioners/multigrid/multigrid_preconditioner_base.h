@@ -148,20 +148,6 @@ private:
     DoFHandler<dim> const * add_dof_handler = nullptr);
 
   /*
-   * Multigrid transfer operators.
-   */
-  static void
-  initialize_mg_transfer(
-    const int                                                      n_components,
-    const int                                                      rank,
-    std::vector<MGLevelIdentifier> &                               global_levels,
-    std::vector<MGDofHandlerIdentifier> &                          p_levels,
-    MGLevelObject<std::shared_ptr<Operator>> &                     mg_matrices,
-    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &        mg_dofhandler,
-    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &            mg_constrained_dofs,
-    MGLevelObject<std::shared_ptr<MGTransferBase<VectorTypeMG>>> & mg_transfer);
-
-  /*
    * Smoother.
    */
   void
