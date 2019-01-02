@@ -183,10 +183,6 @@ private:
 
   std::shared_ptr<Operator> underlying_operator;
 
-  // for CG
-  std::shared_ptr<DoFHandler<dim> const> cg_dofhandler;
-  std::shared_ptr<MGConstrainedDoFs>     cg_constrained_dofs;
-  std::shared_ptr<Operator>              cg_matrices;
 };
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \
