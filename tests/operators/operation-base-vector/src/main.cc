@@ -17,7 +17,7 @@ using namespace dealii;
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 
 #include "../../../../include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.h"
-#include "../../operation-base-util/sparse_matrix_util.h"
+//#include "../../operation-base-util/sparse_matrix_util.h"
 #include "operators/helmholtz_operator.h"
 #include "operators/mass_operator.h"
 
