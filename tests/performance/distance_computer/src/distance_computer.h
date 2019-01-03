@@ -164,10 +164,10 @@ private:
             auto temp_m = phi_m.read_cell_data(ip);
             phi_p.reinit(cell);
             auto temp_p = phi_p.read_cell_data(ip);
-//            printf("f ");
-//            for (unsigned int i = 0; i < data.n_active_entries_per_face_batch(cell); i++)
-//                printf("(%3d-%3d)", (int) temp_m[i], (int) temp_p[i]);
-//            printf("\n");
+            printf("f ");
+            for (unsigned int i = 0; i < data.n_active_entries_per_face_batch(cell); i++)
+                printf("(%3d-%3d)", (int) temp_m[i], (int) temp_p[i]);
+            printf("\n");
             for (unsigned int i = 0; i < data.n_active_entries_per_face_batch(cell); i++){
                 if(!((0 <= temp_m[i] && temp_m[i] < visits.size()) || (0 <= temp_p[i] && temp_p[i] < visits.size())))
                     AssertThrow(false, ExcMessage("Error!"));

@@ -20,5 +20,10 @@
 #define DEGREE_8 1
 #define DEGREE_9 1
 #define DEGREE_10 1
+#define DEGREE_11 1
+#define DEGREE_12 1
+#define DEGREE_13 1
+#define DEGREE_14 1
+#define DEGREE_15 1
 
 #endif

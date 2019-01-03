@@ -11,6 +11,9 @@
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 
+//#define CORE
+#define SELF
+
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>
 #endif
@@ -18,8 +21,15 @@
 const int      best_of = 10;
 typedef double Number;
 
-const MPI_Comm comm = MPI_COMM_WORLD;
-
+#ifdef CORE
+    const MPI_Comm comm = MPI_COMM_SELF;
+#else
+    #ifdef SELF
+        const MPI_Comm comm = MPI_COMM_SELF;
+    #else
+        const MPI_Comm comm = MPI_COMM_WORLD;
+    #endif
+#endif
 using namespace dealii;
 
 
@@ -88,7 +98,8 @@ public:
       periodic_faces;
     GridTools::collect_periodic_faces(triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
     GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
-    GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
+    if(dim==3)
+      GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
     triangulation.add_periodicity(periodic_faces);
     
     
@@ -107,6 +118,11 @@ public:
     if (comm==MPI_COMM_SELF)
         dofs /= procs;
     int ref = log(std::pow(dofs, 1.0 / dim) / (fe_degree + 1)) / log(2);
+    
+#ifdef CORE
+    ref = 1;
+#endif
+    
     triangulation.refine_global(ref);
 
     convergence_table.add_value("procs", procs);
@@ -171,9 +187,15 @@ public:
     {
       CompNS::CombinedWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
         triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-comp-comb", curv, [&]() mutable { ns.run(); });
+      repeat<dim, fe_degree>(convergence_table, "ns-comp-comb", curv, [&]() mutable { 
+#ifdef CORE
+          for(int i = 0; i < 100; i++)
+#endif
+          ns.run(); 
+      });
     }
 
+  /*
     {
       CompNS::ConvectiveWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
         triangulation);
@@ -185,6 +207,7 @@ public:
         triangulation);
       repeat<dim, fe_degree>(convergence_table, "ns-comp-visc", curv, [&]() mutable { ns.run(); });
     }
+   */
   }
 };
 
@@ -239,10 +262,10 @@ main(int argc, char ** argv)
   std::cout << "WARNING: Not compiled with LIKWID!" << std::endl;
 #endif
 
-  run<2>(false, MPI_COMM_SELF);
-  run<2>(true , MPI_COMM_SELF);
-  run<3>(false, MPI_COMM_SELF);
-  run<3>(true , MPI_COMM_SELF);
+  run<2>(false, comm);
+  run<2>(true , comm);
+  run<3>(false, comm);
+  run<3>(true , comm);
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_CLOSE;

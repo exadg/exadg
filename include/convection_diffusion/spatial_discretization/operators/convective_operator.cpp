@@ -421,6 +421,7 @@ ConvectiveOperator<dim, degree, degree_velocity, Number>::do_face_int_integral_c
   }
   else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
   {
+      std::cout << "ConvectiveOperator::do_face_int_integral_cell_based" << std::endl;
     fe_eval_velocity_m->reinit(cell, face);
     fe_eval_velocity_m->gather_evaluate(velocity, true, false);
 

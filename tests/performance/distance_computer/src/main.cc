@@ -53,7 +53,7 @@ using namespace dealii;
 #include "distance_computer.h"
 
 const int best_of = 10;
-const int n_refinements = 5;
+const int n_refinements = 1;
 typedef double Number;
 
 const MPI_Comm comm = MPI_COMM_WORLD;
@@ -156,15 +156,15 @@ public:
                     cell.face(face_number)->set_all_boundary_ids(5);
             }
 
-//        std::vector < GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-//                periodic_faces;
-//        GridTools::collect_periodic_faces(triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
-//        GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
-//        GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
-//        triangulation.add_periodicity(periodic_faces);
+        std::vector < GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+                periodic_faces;
+        GridTools::collect_periodic_faces(triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
+        GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
+        GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
+        triangulation.add_periodicity(periodic_faces);
 
-//        triangulation.refine_global(5);
-        triangulation.refine_global(log(std::pow(dim==2 ? 5e7 : 2e7, 1.0 / dim) / (fe_degree + 1)) / log(2));
+        triangulation.refine_global(n_refinements);
+//        triangulation.refine_global(log(std::pow(dim==2 ? 5e7 : 2e7, 1.0 / dim) / (fe_degree + 1)) / log(2));
 
         DoFHandler<dim> dof_handler(triangulation);
         MappingQGeneric<dim> mapping(1);
@@ -209,6 +209,7 @@ run() {
        Run<dim, 1> runner;
         runner.run(convergence_table);
     }
+    /*
     {
         Run<dim, 2> runner;
         runner.run(convergence_table);
@@ -265,6 +266,7 @@ run() {
         Run<dim, 15> runner;
         runner.run(convergence_table);
     }
+     */
 
         std::string file_name = "out." + std::to_string(dim) + ".csv";
         std::ofstream outfile;

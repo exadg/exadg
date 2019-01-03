@@ -6,6 +6,7 @@ SET( SOURCE_FILES
      operators/operation-base-3
      operators/operation-base-4
      operators/operation-base-vector
+     operators/operation-cell-based
      transfer/dg-to-cg-transfer-1
      transfer/dg-to-cg-transfer-2
      transfer/dg-to-cg-transfer-3
