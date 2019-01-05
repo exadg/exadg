@@ -17,6 +17,8 @@ SET( SOURCE_FILES
      transfer/p-transfer-4
      performance/operators
      performance/distance_computer
+     performance/laplace
+     performance/stream
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
