@@ -11,6 +11,7 @@ SET( SOURCE_FILES
      transfer/dg-to-cg-transfer-2
      transfer/dg-to-cg-transfer-3
      transfer/dg-to-cg-transfer-4
+     transfer/h-transfer-1
      transfer/p-transfer-1
      transfer/p-transfer-2
      transfer/p-transfer-3
