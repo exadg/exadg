@@ -1,6 +1,8 @@
 #ifndef MG_TRANSFER_MF_MG_LEVEL_OBJECT
 #define MG_TRANSFER_MF_MG_LEVEL_OBJECT
 
+#include "mg_transfer_mf.h"
+
 struct MGDofHandlerIdentifier
 {
   MGDofHandlerIdentifier(unsigned int degree, bool is_dg) : degree(degree), is_dg(is_dg)
@@ -33,11 +35,22 @@ struct MGLevelIdentifier
   MGDofHandlerIdentifier id;
 };
 
-template<typename VectorType>
-class MGTransferMF_MGLevelObject : virtual public MGTransferBase<VectorType>
+template<int dim, typename VectorType>
+class MGTransferMF_MGLevelObject : virtual public MGTransferMF<VectorType>
 {
 public:
-  template<int dim, typename MultigridNumber, typename Operator>
+  template<typename MultigridNumber, typename MatrixFree, typename Constraints>
+  void
+  reinit(const int                                               n_components,
+         const int                                               rank,
+         std::vector<MGLevelIdentifier> &                        global_levels,
+         std::vector<MGDofHandlerIdentifier> &                   p_levels,
+         MGLevelObject<std::shared_ptr<MatrixFree>> &            mg_data,
+         MGLevelObject<std::shared_ptr<Constraints>> &           mg_Constraints,
+         MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> & mg_dofhandler,
+         MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &     mg_constrained_dofs);
+
+  template<typename MultigridNumber, typename Operator>
   void
   reinit(const int                                               n_components,
          const int                                               rank,
@@ -57,7 +70,7 @@ public:
   prolongate(const unsigned int level, VectorType & dst, const VectorType & src) const;
 
 private:
-  MGLevelObject<std::shared_ptr<MGTransferBase<VectorType>>> mg_level_object;
+  MGLevelObject<std::shared_ptr<MGTransferMF<VectorType>>> mg_level_object;
 };
 
 #include "mg_transfer_mf_mg_level_object.cpp"

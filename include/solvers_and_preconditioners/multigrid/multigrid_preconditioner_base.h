@@ -171,7 +171,7 @@ private:
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>     mg_constrained_dofs;
 
-  MGTransferMF_MGLevelObject<VectorTypeMG> mg_transfer;
+  MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
   MGLevelObject<std::shared_ptr<SMOOTHER>> mg_smoother;
@@ -182,7 +182,6 @@ private:
     multigrid_preconditioner;
 
   std::shared_ptr<Operator> underlying_operator;
-
 };
 
 #endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_ \

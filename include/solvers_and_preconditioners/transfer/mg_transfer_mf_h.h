@@ -18,13 +18,17 @@ using namespace dealii;
 // Specialized matrix-free implementation that overloads the copy_to_mg
 // function for proper initialization of the vectors in matrix-vector products.
 template<int dim, typename Number>
-class MGTransferMFH : public MGTransferMatrixFree<dim, Number>
+class MGTransferMFH : public MGTransferMatrixFree<dim, Number>,
+                      public MGTransferMF<LinearAlgebra::distributed::Vector<Number>>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MGTransferMFH(std::map<unsigned int, unsigned int> level_to_triangulation_level_map)
-    : underlying_operator(0), level_to_triangulation_level_map(level_to_triangulation_level_map)
+  MGTransferMFH(std::map<unsigned int, unsigned int> level_to_triangulation_level_map,
+                const DoFHandler<dim> &              dof_handler)
+    : underlying_operator(0),
+      level_to_triangulation_level_map(level_to_triangulation_level_map),
+      dof_handler(dof_handler)
   {
   }
 
@@ -54,6 +58,50 @@ public:
       level_to_triangulation_level_map[from_level], dst, src);
   }
 
+  virtual void
+  interpolate(unsigned int const level_in, VectorType & dst, VectorType const & src) const
+  {
+    auto & fe    = dof_handler.get_fe();
+    auto   level = level_to_triangulation_level_map[level_in];
+
+    this->ghosted_level_vector[level].copy_locally_owned_data_from(src);
+    this->ghosted_level_vector[level].update_ghost_values();
+
+    auto & src_gh = this->ghosted_level_vector[level - 0];
+    auto & dst_gh = this->ghosted_level_vector[level - 1];
+
+    std::vector<Number>                     dof_values_coarse(fe.dofs_per_cell);
+    Vector<Number>                          dof_values_fine(fe.dofs_per_cell);
+    Vector<Number>                          tmp(fe.dofs_per_cell);
+    std::vector<types::global_dof_index>    dof_indices(fe.dofs_per_cell);
+    typename DoFHandler<dim>::cell_iterator cell = dof_handler.begin(level - 1);
+    typename DoFHandler<dim>::cell_iterator endc = dof_handler.end(level - 1);
+    for(; cell != endc; ++cell)
+      if(cell->is_locally_owned_on_level())
+      {
+        Assert(cell->has_children(), ExcNotImplemented());
+        std::fill(dof_values_coarse.begin(), dof_values_coarse.end(), 0.);
+        for(unsigned int child = 0; child < cell->n_children(); ++child)
+        {
+          cell->child(child)->get_mg_dof_indices(dof_indices);
+          for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+            dof_values_fine(i) = src_gh(dof_indices[i]);
+          fe.get_restriction_matrix(child, cell->refinement_case()).vmult(tmp, dof_values_fine);
+          for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+            if(fe.restriction_is_additive(i))
+              dof_values_coarse[i] += tmp[i];
+            else if(tmp(i) != 0.)
+              dof_values_coarse[i] = tmp[i];
+        }
+        cell->get_mg_dof_indices(dof_indices);
+        for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+          dst_gh(dof_indices[i]) = dof_values_coarse[i];
+      }
+
+    // this->ghosted_level_vector[level - 1].compress(VectorOperation::add);
+    dst.copy_locally_owned_data_from(this->ghosted_level_vector[level - 1]);
+  }
+
   /**
    * Overload copy_to_mg from MGTransferMatrixFree
    */
@@ -79,6 +127,8 @@ private:
   // equal e.g. in the case of hp-MG multiple (p-)levels
   // are on the zeroth triangulation level)
   mutable std::map<unsigned int, unsigned int> level_to_triangulation_level_map;
+
+  const DoFHandler<dim> & dof_handler;
 };
 
 

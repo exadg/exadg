@@ -91,6 +91,19 @@ MGTransferMFC<dim, Number, VectorType, components>::do_prolongate(VectorType &  
 
 template<int dim, typename Number, typename VectorType, int components>
 void
+MGTransferMFC<dim, Number, VectorType, components>::interpolate(const unsigned int level,
+                                                                VectorType &       dst,
+                                                                const VectorType & src) const
+{
+  (void)level;
+  (void)dst;
+  (void)src;
+
+  AssertThrow(false, ExcMessage("MGTransferMFP::interpolate(): to be implemented!"));
+}
+
+template<int dim, typename Number, typename VectorType, int components>
+void
 MGTransferMFC<dim, Number, VectorType, components>::restrict_and_add(const unsigned int /*level*/,
                                                                      VectorType &       dst,
                                                                      const VectorType & src) const

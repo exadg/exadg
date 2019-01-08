@@ -8,10 +8,12 @@
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/multigrid/mg_base.h>
 
+#include "mg_transfer_mf.h"
+
 using namespace dealii;
 
 template<int dim, typename Number, typename VectorType, int components = 1>
-class MGTransferMFP : virtual public MGTransferBase<VectorType>
+class MGTransferMFP : virtual public MGTransferMF<VectorType>
 {
 public:
   typedef Number value_type;
@@ -30,6 +32,9 @@ public:
          int                                 degree_2);
 
   ~MGTransferMFP();
+
+  virtual void
+  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
 
   virtual void
   restrict_and_add(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;

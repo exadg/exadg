@@ -4,13 +4,15 @@
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/multigrid/mg_base.h>
 
+#include "mg_transfer_mf.h"
+
 using namespace dealii;
 
 template<int dim,
          typename Number,
          typename VectorType = LinearAlgebra::distributed::Vector<Number>,
          int components      = 1>
-class MGTransferMFC : virtual public MGTransferBase<VectorType>
+class MGTransferMFC : virtual public MGTransferMF<VectorType>
 {
 public:
   typedef MatrixFree<dim, Number> MF;
@@ -23,6 +25,9 @@ public:
                 const unsigned int                fe_degree);
 
   virtual ~MGTransferMFC();
+
+  void
+  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
 
   void
   restrict_and_add(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;

@@ -38,7 +38,7 @@ class MultigridPreconditioner
 public:
   MultigridPreconditioner(const MGLevelObject<std::shared_ptr<MatrixType>> &         matrix,
                           const MGCoarseGridBase<VectorType> &                       coarse,
-                          const MGTransferBase<VectorType> &                         transfer,
+                          const MGTransferMF<VectorType> &                           transfer,
                           const MGLevelObject<std::shared_ptr<PreconditionerType>> & smooth,
                           const unsigned int                                         n_cycles = 1)
     : minlevel(matrix.min_level()),
@@ -205,7 +205,7 @@ private:
   /**
    * Object for grid tranfer.
    */
-  const MGTransferBase<VectorType> & transfer;
+  const MGTransferMF<VectorType> & transfer;
 
   /**
    * The smoothing object.
