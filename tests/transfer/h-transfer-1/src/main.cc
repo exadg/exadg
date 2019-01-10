@@ -128,11 +128,13 @@ template<int dim, int fe_degree_1>
 class Runner
 {
 public:
-  Runner()
-    : triangulation(MPI_COMM_WORLD,
+  Runner(bool use_dg = true)
+    : use_dg(use_dg),
+      triangulation(MPI_COMM_WORLD,
                     dealii::Triangulation<dim>::none,
                     parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-      fe(fe_degree_1),
+      fe(use_dg ? new FESystem<dim>(FE_DGQ<dim>(fe_degree_1), 1) :
+                  new FESystem<dim>(FE_Q<dim>(fe_degree_1), 1)),
       dof_handler(new DoFHandler<dim>(triangulation)),
       mapping_1(fe_degree_1),
       quadrature_1(fe_degree_1 + 1),
@@ -143,8 +145,9 @@ public:
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
 private:
+  bool                                      use_dg;
   parallel::distributed::Triangulation<dim> triangulation;
-  FE_DGQ<dim>                               fe;
+  std::shared_ptr<FESystem<dim>>            fe;
   std::shared_ptr<DoFHandler<dim>>          dof_handler;
   MappingQGeneric<dim>                      mapping_1;
 
@@ -166,7 +169,7 @@ private:
     GridGenerator::hyper_cube(triangulation, left, right);
     triangulation.refine_global(global_refinements);
 
-    dof_handler->distribute_dofs(fe);
+    dof_handler->distribute_dofs(*fe);
     dof_handler->distribute_mg_dofs();
   }
 
@@ -191,10 +194,13 @@ private:
       typename MatrixFree<dim, value_type>::AdditionalData additional_data_1;
       additional_data_1.mapping_update_flags =
         update_gradients | update_JxW_values | update_quadrature_points;
-      additional_data_1.mapping_update_flags_inner_faces =
-        additional_data_1.mapping_update_flags | update_values | update_normal_vectors;
-      additional_data_1.mapping_update_flags_boundary_faces =
-        additional_data_1.mapping_update_flags_inner_faces | update_quadrature_points;
+      if(use_dg)
+      {
+        additional_data_1.mapping_update_flags_inner_faces =
+          additional_data_1.mapping_update_flags | update_values | update_normal_vectors;
+        additional_data_1.mapping_update_flags_boundary_faces =
+          additional_data_1.mapping_update_flags_inner_faces | update_quadrature_points;
+      }
       additional_data_1.level_mg_handler = level;
       data_1[level]->reinit(
         mapping_1, *dof_handler, *dummy_1[level], quadrature_1, additional_data_1);
@@ -256,10 +262,13 @@ public:
 
     for(unsigned int level = 0; level < global_refinements; level++)
     {
+#ifdef PRINT
       L2Norm<dim, fe_degree_1, value_type> norm(*data_1[level]);
       std::cout << level << ": " << norm.run(vectors[level]) << " " << vectors[level].l2_norm()
                 << std::endl;
+#endif
 
+      value_type accumulator = 0;
 
       FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, 1, value_type> fe_eval(*data_1[level], 0);
 
@@ -274,6 +283,7 @@ public:
           auto point_ref  = fe_eval.begin_values()[i];
 
           unsigned int const n_filled_lanes = data_1[level]->n_active_entries_per_cell_batch(cell);
+#ifdef PRINT
           for(unsigned int v = 0; v < n_filled_lanes; v++)
             printf("%10.5f", point_real[v]);
           for(unsigned int v = n_filled_lanes; v < VectorizedArray<value_type>::n_array_elements;
@@ -286,10 +296,21 @@ public:
               v++)
             printf("          ");
           printf("\n");
+#else
+          auto diff = point_ref - point_real;
+          diff *= diff;
+          for(unsigned int v = 0; v < n_filled_lanes; v++)
+            accumulator += diff[v];
+
+#endif
         }
       }
 
+      printf("%10.5e\n", sqrt(accumulator));
+
+#ifdef PRINT
       printf("\n\n");
+#endif
 
       /*
       MGDataOut<dim> data_out(level);
@@ -313,7 +334,12 @@ main(int argc, char ** argv)
   int                rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-
-  Runner<2, 3> run_cg;
-  run_cg.run();
+  {
+    Runner<2, 3> run_dg(true);
+    run_dg.run();
+  }
+  {
+    Runner<2, 3> run_cg(false);
+    run_cg.run();
+  }
 }
