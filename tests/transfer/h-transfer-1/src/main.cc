@@ -105,22 +105,21 @@ template<int dim>
 class TestSolution : public Function<dim>
 {
 public:
-  TestSolution(const double time = 0.) : Function<dim>(1, time), wave_number(1.)
+  TestSolution(unsigned int dir, const double time = 0.) : Function<dim>(1, time), dir(dir)
   {
   }
 
   virtual double
   value(const Point<dim> & p, const unsigned int = 0) const
   {
-    return p[0];
+    return p[dir];
     // double result = std::sin(wave_number * p[0] * numbers::PI);
     // for(unsigned int d = 1; d < dim; ++d)
     //  result *= std::sin(wave_number * p[d] * numbers::PI);
     // return result;
   }
 
-private:
-  const double wave_number;
+  const unsigned int dir;
 };
 
 
@@ -128,8 +127,10 @@ template<int dim, int fe_degree_1>
 class Runner
 {
 public:
-  Runner(bool use_dg = true)
+  Runner(bool use_dg, unsigned int dir, ConvergenceTable & convergence_table)
     : use_dg(use_dg),
+      dir(dir),
+      convergence_table(convergence_table),
       triangulation(MPI_COMM_WORLD,
                     dealii::Triangulation<dim>::none,
                     parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
@@ -146,6 +147,8 @@ public:
 
 private:
   bool                                      use_dg;
+  unsigned int                              dir;
+  ConvergenceTable &                        convergence_table;
   parallel::distributed::Triangulation<dim> triangulation;
   std::shared_ptr<FESystem<dim>>            fe;
   std::shared_ptr<DoFHandler<dim>>          dof_handler;
@@ -215,7 +218,7 @@ private:
       data_1[level]->initialize_dof_vector(vectors[level]);
 
     MGTools::interpolate(*dof_handler,
-                         TestSolution<dim>(0),
+                         TestSolution<dim>(dir, 0),
                          vectors[global_refinements],
                          numbers::invalid_unsigned_int);
   }
@@ -260,7 +263,7 @@ public:
     for(unsigned int level = global_refinements; level >= 1; level--)
       transfer.interpolate(level, vectors[level - 1], vectors[level]);
 
-    for(unsigned int level = 0; level < global_refinements; level++)
+    for(unsigned int level = 0; level <= global_refinements; level++)
     {
 #ifdef PRINT
       L2Norm<dim, fe_degree_1, value_type> norm(*data_1[level]);
@@ -279,7 +282,7 @@ public:
 
         for(unsigned int i = 0; i < fe_eval.static_dofs_per_cell; i++)
         {
-          auto point_real = fe_eval.quadrature_point(i)[0];
+          auto point_real = fe_eval.quadrature_point(i)[dir];
           auto point_ref  = fe_eval.begin_values()[i];
 
           unsigned int const n_filled_lanes = data_1[level]->n_active_entries_per_cell_batch(cell);
@@ -306,7 +309,12 @@ public:
         }
       }
 
-      printf("%10.5e\n", sqrt(accumulator));
+      std::string label = std::string(use_dg ? "_dg_" : "_cg_") + std::to_string(dir);
+      convergence_table.add_value(std::string("level") + label, level);
+      convergence_table.add_value(std::string("dofs_1") + label, vectors[level].size());
+      convergence_table.add_value(std::string("err") + label, sqrt(accumulator));
+      convergence_table.set_scientific(std::string("err") + label, true);
+      // printf("%10.5e\n", sqrt(accumulator));
 
 #ifdef PRINT
       printf("\n\n");
@@ -334,12 +342,25 @@ main(int argc, char ** argv)
   int                rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  ConvergenceTable convergence_table;
+
   {
-    Runner<2, 3> run_dg(true);
+    Runner<2, 3> run_dg(true, 0, convergence_table);
     run_dg.run();
   }
   {
-    Runner<2, 3> run_cg(false);
+    Runner<2, 3> run_dg(true, 1, convergence_table);
+    run_dg.run();
+  }
+  {
+    Runner<2, 3> run_cg(false, 0, convergence_table);
     run_cg.run();
   }
+  {
+    Runner<2, 3> run_cg(false, 1, convergence_table);
+    run_cg.run();
+  }
+
+  if(!rank)
+    convergence_table.write_text(std::cout);
 }
