@@ -16,6 +16,12 @@ struct MGDofHandlerIdentifier
   {
     return !((degree >= rhs.degree) && (is_dg >= rhs.is_dg));
   }
+
+  bool
+  operator==(const MGDofHandlerIdentifier & rhs) const
+  {
+    return (degree >= rhs.degree) && (is_dg >= rhs.is_dg);
+  }
 };
 
 struct MGLevelIdentifier

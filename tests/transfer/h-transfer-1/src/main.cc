@@ -223,25 +223,42 @@ private:
                          numbers::invalid_unsigned_int);
   }
 
+  void
+  setup_sequence(std::vector<MGLevelIdentifier> &      global_levels,
+                 std::vector<MGDofHandlerIdentifier> & p_levels)
+  {
+    for(unsigned int i = 0; i <= global_refinements; i++)
+      global_levels.push_back({i, fe_degree_1, true});
+
+    for(auto i : global_levels)
+      p_levels.push_back(i.id);
+
+    sort(p_levels.begin(), p_levels.end());
+    p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
+    std::reverse(std::begin(p_levels), std::end(p_levels));
+
+    //  for(unsigned int i = 1; i < global_levels.size(); i++)
+    //  {
+    //      if(p_levels.back().degree!=global_levels[i].degree ||
+    //      p_levels.back().degree!=global_levels[i].is_dg)
+    //    p_levels.push_back({fe_degree_1, true});
+    //  }
+  }
+
 public:
   void
   run()
   {
+    std::vector<MGLevelIdentifier>      global_levels;
+    std::vector<MGDofHandlerIdentifier> p_levels;
+
+    setup_sequence(global_levels, p_levels);
+
     // initialize the system
     init_triangulation_and_dof_handler();
     init_boundary_conditions();
     init_matrixfree_and_constraint_matrix();
     init_vectors();
-
-    // create transfer-operator
-    MGTransferMF_MGLevelObject<dim, VectorType> transfer;
-
-    std::vector<MGLevelIdentifier> global_levels;
-    for(unsigned int i = 0; i <= global_refinements; i++)
-      global_levels.push_back({i, fe_degree_1, true});
-
-    std::vector<MGDofHandlerIdentifier> p_levels;
-    p_levels.push_back({fe_degree_1, true});
 
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
     mg_dofhandler.resize(0, global_refinements);
@@ -255,7 +272,8 @@ public:
     for(unsigned int i = 0; i <= global_refinements; i++)
       mg_constrained_dofs[i] = constrained_dofs;
 
-
+    // create transfer-operator
+    MGTransferMF_MGLevelObject<dim, VectorType> transfer;
     transfer.template reinit<value_type>(
       1, 0, global_levels, p_levels, data_1, dummy_1, mg_dofhandler, mg_constrained_dofs);
 
