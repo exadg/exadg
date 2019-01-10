@@ -211,15 +211,18 @@ private:
   }
 
   void
-  init_vectors()
+  init_vectors(unsigned int                                                  min_level,
+               unsigned int                                                  max_level,
+               MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &       mg_dofhandler,
+               MGLevelObject<std::shared_ptr<MatrixFree<dim, value_type>>> & data_1)
   {
-    vectors.resize(0, global_refinements);
-    for(unsigned int level = 0; level <= global_refinements; level++)
+    vectors.resize(min_level, max_level);
+    for(unsigned int level = min_level; level <= max_level; level++)
       data_1[level]->initialize_dof_vector(vectors[level]);
 
-    MGTools::interpolate(*dof_handler,
+    MGTools::interpolate(*mg_dofhandler[max_level],
                          TestSolution<dim>(dir, 0),
-                         vectors[global_refinements],
+                         vectors[max_level],
                          numbers::invalid_unsigned_int);
   }
 
@@ -253,24 +256,28 @@ public:
     std::vector<MGDofHandlerIdentifier> p_levels;
 
     setup_sequence(global_levels, p_levels);
+    unsigned int min_level = 0;
+    unsigned int max_level = global_levels.size() - 1;
 
     // initialize the system
     init_triangulation_and_dof_handler();
     init_boundary_conditions();
     init_matrixfree_and_constraint_matrix();
-    init_vectors();
 
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>     mg_constrained_dofs;
+
     mg_dofhandler.resize(0, global_refinements);
     for(unsigned int i = 0; i <= global_refinements; i++)
       mg_dofhandler[i] = dof_handler;
 
     std::shared_ptr<MGConstrainedDoFs> constrained_dofs(new MGConstrainedDoFs);
     constrained_dofs->initialize(*dof_handler);
-    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> mg_constrained_dofs;
     mg_constrained_dofs.resize(0, global_refinements);
     for(unsigned int i = 0; i <= global_refinements; i++)
       mg_constrained_dofs[i] = constrained_dofs;
+
+    init_vectors(min_level, max_level, mg_dofhandler, data_1);
 
     // create transfer-operator
     MGTransferMF_MGLevelObject<dim, VectorType> transfer;
@@ -278,10 +285,10 @@ public:
       1, 0, global_levels, p_levels, data_1, dummy_1, mg_dofhandler, mg_constrained_dofs);
 
     // interpolate solution on the fines grid onto coarse grids
-    for(unsigned int level = global_refinements; level >= 1; level--)
+    for(unsigned int level = max_level; level >= 1 + min_level; level--)
       transfer.interpolate(level, vectors[level - 1], vectors[level]);
 
-    for(unsigned int level = 0; level <= global_refinements; level++)
+    for(unsigned int level = min_level; level <= max_level; level++)
     {
 #ifdef PRINT
       L2Norm<dim, fe_degree_1, value_type> norm(*data_1[level]);
