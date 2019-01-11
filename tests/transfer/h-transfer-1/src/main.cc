@@ -48,7 +48,10 @@
 #include <bits/stl_vector.h>
 
 //#define DETAIL_OUTPUT
-const int PATCHES = 10;
+const int          PATCHES   = 10;
+const unsigned int fe_degree = 7;
+
+//#define PRINT
 
 typedef double value_type;
 
@@ -58,6 +61,13 @@ using namespace dealii;
 #include "../../../operators/operation-base-util/l2_norm.h"
 
 #include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_mg_level_object.h"
+
+enum RunConfiguration
+{
+  h_coarsening,
+  p_coarsening,
+  c_coarsening
+};
 
 template<int dim, typename DoFHandlerType = DoFHandler<dim>>
 class MGDataOut : public DataOut<dim, DoFHandlerType>
@@ -127,53 +137,59 @@ template<int dim, int fe_degree_1>
 class Runner
 {
 public:
-  Runner(bool use_dg, unsigned int dir, ConvergenceTable & convergence_table)
+  Runner(bool               use_dg,
+         unsigned int       dir,
+         ConvergenceTable & convergence_table,
+         RunConfiguration   run_configuration)
     : use_dg(use_dg),
       dir(dir),
       convergence_table(convergence_table),
-      triangulation(MPI_COMM_WORLD,
-                    dealii::Triangulation<dim>::none,
-                    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-      fe(use_dg ? new FESystem<dim>(FE_DGQ<dim>(fe_degree_1), 1) :
-                  new FESystem<dim>(FE_Q<dim>(fe_degree_1), 1)),
-      dof_handler(new DoFHandler<dim>(triangulation)),
-      mapping_1(fe_degree_1),
-      quadrature_1(fe_degree_1 + 1),
-      global_refinements(dim == 2 ? 4 : 3)
+      global_refinements(dim == 2 ? 4 : 3),
+      run_configuration(run_configuration)
   {
   }
 
   typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
 
 private:
-  bool                                      use_dg;
-  unsigned int                              dir;
-  ConvergenceTable &                        convergence_table;
-  parallel::distributed::Triangulation<dim> triangulation;
-  std::shared_ptr<FESystem<dim>>            fe;
-  std::shared_ptr<DoFHandler<dim>>          dof_handler;
-  MappingQGeneric<dim>                      mapping_1;
-
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> dummy_1;
-
-  QGauss<1>          quadrature_1;
+  bool               use_dg;
+  unsigned int       dir;
+  ConvergenceTable & convergence_table;
   const unsigned int global_refinements;
+  RunConfiguration   run_configuration;
 
-  MGLevelObject<std::shared_ptr<MatrixFree<dim, value_type>>> data_1;
-  MGLevelObject<VectorType>                                   vectors;
+  MGLevelObject<VectorType> vectors;
 
 
   void
-  init_triangulation_and_dof_handler()
+  init_triangulation_and_dof_handler(
+    MGLevelIdentifier                                            id,
+    std::shared_ptr<parallel::distributed::Triangulation<dim>> & triangulation,
+    std::shared_ptr<FESystem<dim>> &                             fe,
+    std::shared_ptr<const DoFHandler<dim>> &                     dof_handler,
+    std::shared_ptr<MappingQGeneric<dim>> &                      mapping,
+    std::shared_ptr<QGauss<1>> &                                 quadrature)
   {
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+
+    fe.reset(id.is_dg ? new FESystem<dim>(FE_DGQ<dim>(id.degree), 1) :
+                        new FESystem<dim>(FE_Q<dim>(id.degree), 1));
+    mapping.reset(new MappingQGeneric<dim>(id.degree));
+    quadrature.reset(new QGauss<1>(id.degree + 1));
+
     const double left  = -1.0;
     const double right = +1.0;
 
-    GridGenerator::hyper_cube(triangulation, left, right);
-    triangulation.refine_global(global_refinements);
+    GridGenerator::hyper_cube(*triangulation, left, right);
+    triangulation->refine_global(global_refinements);
 
-    dof_handler->distribute_dofs(*fe);
-    dof_handler->distribute_mg_dofs();
+    auto temp = new DoFHandler<dim>(*triangulation);
+    temp->distribute_dofs(*fe);
+    temp->distribute_mg_dofs();
+    dof_handler.reset(temp);
   }
 
   void
@@ -183,31 +199,29 @@ private:
   }
 
   void
-  init_matrixfree_and_constraint_matrix()
+  init_matrixfree_and_constraint_matrix(MGLevelIdentifier                              id,
+                                        std::shared_ptr<AffineConstraints<double>> &   dummy,
+                                        std::shared_ptr<MatrixFree<dim, value_type>> & data,
+                                        std::shared_ptr<const DoFHandler<dim>> &       dof_handler,
+                                        std::shared_ptr<MappingQGeneric<dim>> &        mapping,
+                                        std::shared_ptr<QGauss<1>> &                   quadrature)
   {
-    dummy_1.resize(0, global_refinements);
-    data_1.resize(0, global_refinements);
+    dummy.reset(new AffineConstraints<double>);
+    dummy->clear();
 
-    for(unsigned int level = 0; level <= global_refinements; level++)
+    data.reset(new MatrixFree<dim, value_type>);
+    typename MatrixFree<dim, value_type>::AdditionalData additional_data_1;
+    additional_data_1.mapping_update_flags =
+      update_gradients | update_JxW_values | update_quadrature_points;
+    if(id.is_dg)
     {
-      dummy_1[level].reset(new AffineConstraints<double>);
-      dummy_1[level]->clear();
-
-      data_1[level].reset(new MatrixFree<dim, value_type>);
-      typename MatrixFree<dim, value_type>::AdditionalData additional_data_1;
-      additional_data_1.mapping_update_flags =
-        update_gradients | update_JxW_values | update_quadrature_points;
-      if(use_dg)
-      {
-        additional_data_1.mapping_update_flags_inner_faces =
-          additional_data_1.mapping_update_flags | update_values | update_normal_vectors;
-        additional_data_1.mapping_update_flags_boundary_faces =
-          additional_data_1.mapping_update_flags_inner_faces | update_quadrature_points;
-      }
-      additional_data_1.level_mg_handler = level;
-      data_1[level]->reinit(
-        mapping_1, *dof_handler, *dummy_1[level], quadrature_1, additional_data_1);
+      additional_data_1.mapping_update_flags_inner_faces =
+        additional_data_1.mapping_update_flags | update_values | update_normal_vectors;
+      additional_data_1.mapping_update_flags_boundary_faces =
+        additional_data_1.mapping_update_flags_inner_faces | update_quadrature_points;
     }
+    additional_data_1.level_mg_handler = id.level;
+    data->reinit(*mapping, *dof_handler, *dummy, *quadrature, additional_data_1);
   }
 
   void
@@ -230,8 +244,27 @@ private:
   setup_sequence(std::vector<MGLevelIdentifier> &      global_levels,
                  std::vector<MGDofHandlerIdentifier> & p_levels)
   {
-    for(unsigned int i = 0; i <= global_refinements; i++)
-      global_levels.push_back({i, fe_degree_1, true});
+    if(run_configuration == RunConfiguration::h_coarsening)
+    {
+      for(unsigned int i = 0; i <= global_refinements; i++)
+        global_levels.push_back({i, fe_degree_1, use_dg});
+    }
+    else if(run_configuration == RunConfiguration::p_coarsening)
+    {
+      unsigned int temp_degree = fe_degree_1;
+      while(temp_degree != 0)
+      {
+        global_levels.insert(global_levels.begin(), {global_refinements, temp_degree, use_dg});
+        temp_degree /= 2;
+      }
+    }
+    else if((run_configuration == RunConfiguration::c_coarsening))
+    {
+      global_levels.push_back({global_refinements, fe_degree_1, false});
+      global_levels.push_back({global_refinements, fe_degree_1, true});
+    }
+    else
+      AssertThrow(false, ExcMessage("This run configuration is not implemented!"));
 
     for(auto i : global_levels)
       p_levels.push_back(i.id);
@@ -239,13 +272,6 @@ private:
     sort(p_levels.begin(), p_levels.end());
     p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
     std::reverse(std::begin(p_levels), std::end(p_levels));
-
-    //  for(unsigned int i = 1; i < global_levels.size(); i++)
-    //  {
-    //      if(p_levels.back().degree!=global_levels[i].degree ||
-    //      p_levels.back().degree!=global_levels[i].is_dg)
-    //    p_levels.push_back({fe_degree_1, true});
-    //  }
   }
 
 public:
@@ -259,30 +285,53 @@ public:
     unsigned int min_level = 0;
     unsigned int max_level = global_levels.size() - 1;
 
-    // initialize the system
-    init_triangulation_and_dof_handler();
-    init_boundary_conditions();
-    init_matrixfree_and_constraint_matrix();
+    MGLevelObject<std::shared_ptr<parallel::distributed::Triangulation<dim>>> mg_triangulation;
+    MGLevelObject<std::shared_ptr<FESystem<dim>>>                             mg_fe;
+    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>                     mg_dofhandler;
+    MGLevelObject<std::shared_ptr<MappingQGeneric<dim>>>                      mg_mapping;
+    MGLevelObject<std::shared_ptr<QGauss<1>>>                                 mg_quadrature;
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                         mg_constrained_dofs;
+    MGLevelObject<std::shared_ptr<MatrixFree<dim, value_type>>>               mg_data;
+    MGLevelObject<std::shared_ptr<AffineConstraints<double>>>                 mg_dummy;
 
-    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
-    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>     mg_constrained_dofs;
+    mg_triangulation.resize(min_level, max_level);
+    mg_fe.resize(min_level, max_level);
+    mg_dofhandler.resize(min_level, max_level);
+    mg_mapping.resize(min_level, max_level);
+    mg_quadrature.resize(min_level, max_level);
+    mg_constrained_dofs.resize(min_level, max_level);
+    mg_data.resize(min_level, max_level);
+    mg_dummy.resize(min_level, max_level);
 
-    mg_dofhandler.resize(0, global_refinements);
-    for(unsigned int i = 0; i <= global_refinements; i++)
-      mg_dofhandler[i] = dof_handler;
+    for(unsigned int level = min_level; level <= max_level; level++)
+    {
+      init_triangulation_and_dof_handler(global_levels[level],
+                                         mg_triangulation[level],
+                                         mg_fe[level],
+                                         mg_dofhandler[level],
+                                         mg_mapping[level],
+                                         mg_quadrature[level]);
 
-    std::shared_ptr<MGConstrainedDoFs> constrained_dofs(new MGConstrainedDoFs);
-    constrained_dofs->initialize(*dof_handler);
-    mg_constrained_dofs.resize(0, global_refinements);
-    for(unsigned int i = 0; i <= global_refinements; i++)
-      mg_constrained_dofs[i] = constrained_dofs;
+      init_boundary_conditions();
 
-    init_vectors(min_level, max_level, mg_dofhandler, data_1);
+      init_matrixfree_and_constraint_matrix(global_levels[level],
+                                            mg_dummy[level],
+                                            mg_data[level],
+                                            mg_dofhandler[level],
+                                            mg_mapping[level],
+                                            mg_quadrature[level]);
+
+      std::shared_ptr<MGConstrainedDoFs> constrained_dofs(new MGConstrainedDoFs);
+      constrained_dofs->initialize(*mg_dofhandler[level]);
+      mg_constrained_dofs[level] = constrained_dofs;
+    }
+
+    init_vectors(min_level, max_level, mg_dofhandler, mg_data);
 
     // create transfer-operator
     MGTransferMF_MGLevelObject<dim, VectorType> transfer;
     transfer.template reinit<value_type>(
-      1, 0, global_levels, p_levels, data_1, dummy_1, mg_dofhandler, mg_constrained_dofs);
+      1, global_levels, p_levels, mg_data, mg_dummy, mg_dofhandler, mg_constrained_dofs);
 
     // interpolate solution on the fines grid onto coarse grids
     for(unsigned int level = max_level; level >= 1 + min_level; level--)
@@ -291,47 +340,27 @@ public:
     for(unsigned int level = min_level; level <= max_level; level++)
     {
 #ifdef PRINT
-      L2Norm<dim, fe_degree_1, value_type> norm(*data_1[level]);
+      L2Norm<dim, fe_degree_1, value_type> norm(*mg_data[level]);
       std::cout << level << ": " << norm.run(vectors[level]) << " " << vectors[level].l2_norm()
                 << std::endl;
 #endif
 
       value_type accumulator = 0;
 
-      FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, 1, value_type> fe_eval(*data_1[level], 0);
-
-      for(unsigned int cell = 0; cell < data_1[level]->n_macro_cells(); ++cell)
+      switch(global_levels[level].degree)
       {
-        fe_eval.reinit(cell);
-        fe_eval.gather_evaluate(vectors[level], true, false);
-
-        for(unsigned int i = 0; i < fe_eval.static_dofs_per_cell; i++)
-        {
-          auto point_real = fe_eval.quadrature_point(i)[dir];
-          auto point_ref  = fe_eval.begin_values()[i];
-
-          unsigned int const n_filled_lanes = data_1[level]->n_active_entries_per_cell_batch(cell);
-#ifdef PRINT
-          for(unsigned int v = 0; v < n_filled_lanes; v++)
-            printf("%10.5f", point_real[v]);
-          for(unsigned int v = n_filled_lanes; v < VectorizedArray<value_type>::n_array_elements;
-              v++)
-            printf("          ");
-          printf("     ");
-          for(unsigned int v = 0; v < n_filled_lanes; v++)
-            printf("%10.5f", point_ref[v]);
-          for(unsigned int v = n_filled_lanes; v < VectorizedArray<value_type>::n_array_elements;
-              v++)
-            printf("          ");
-          printf("\n");
-#else
-          auto diff = point_ref - point_real;
-          diff *= diff;
-          for(unsigned int v = 0; v < n_filled_lanes; v++)
-            accumulator += diff[v];
-
-#endif
-        }
+        case 1:
+          accumulator = check<1>(*mg_data[level], vectors[level]);
+          break;
+        case 3:
+          accumulator = check<3>(*mg_data[level], vectors[level]);
+          break;
+        case 7:
+          accumulator = check<7>(*mg_data[level], vectors[level]);
+          break;
+        // error:
+        default:
+          AssertThrow(false, ExcMessage("Not implemented! Just extend jump table!"));
       }
 
       std::string label = std::string(use_dg ? "_dg_" : "_cg_") + std::to_string(dir);
@@ -357,6 +386,50 @@ public:
        */
     }
   }
+
+  template<int fe_degree>
+  value_type
+  check(MatrixFree<dim, value_type> & data, VectorType & vector)
+  {
+    value_type accumulator = 0;
+
+
+    FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data, 0);
+    vector.update_ghost_values();
+
+    for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
+    {
+      fe_eval.reinit(cell);
+      fe_eval.gather_evaluate(vector, true, false);
+
+      for(unsigned int i = 0; i < fe_eval.static_dofs_per_cell; i++)
+      {
+        auto point_real = fe_eval.quadrature_point(i)[dir];
+        auto point_ref  = fe_eval.begin_values()[i];
+
+        unsigned int const n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
+#ifdef PRINT
+        for(unsigned int v = 0; v < n_filled_lanes; v++)
+          printf("%10.5f", point_real[v]);
+        for(unsigned int v = n_filled_lanes; v < VectorizedArray<value_type>::n_array_elements; v++)
+          printf("          ");
+        printf("     ");
+        for(unsigned int v = 0; v < n_filled_lanes; v++)
+          printf("%10.5f", point_ref[v]);
+        for(unsigned int v = n_filled_lanes; v < VectorizedArray<value_type>::n_array_elements; v++)
+          printf("          ");
+        printf("\n");
+#else
+        auto diff = point_ref - point_real;
+        diff *= diff;
+        for(unsigned int v = 0; v < n_filled_lanes; v++)
+          accumulator += diff[v];
+
+#endif
+      }
+    }
+    return accumulator;
+  }
 };
 
 int
@@ -367,25 +440,72 @@ main(int argc, char ** argv)
   int                rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-  ConvergenceTable convergence_table;
+  ConvergenceTable convergence_table_h, convergence_table_p, convergence_table_c;
 
+  if(true) // h-coarsening
   {
-    Runner<2, 3> run_dg(true, 0, convergence_table);
-    run_dg.run();
-  }
-  {
-    Runner<2, 3> run_dg(true, 1, convergence_table);
-    run_dg.run();
-  }
-  {
-    Runner<2, 3> run_cg(false, 0, convergence_table);
-    run_cg.run();
-  }
-  {
-    Runner<2, 3> run_cg(false, 1, convergence_table);
-    run_cg.run();
+    { // CG + dir=0
+      Runner<2, fe_degree> run_cg(false, 0, convergence_table_h, RunConfiguration::h_coarsening);
+      run_cg.run();
+    }
+    { // CG + dir=1
+      Runner<2, fe_degree> run_cg(false, 1, convergence_table_h, RunConfiguration::h_coarsening);
+      run_cg.run();
+    }
+    { // DG + dir=0
+      Runner<2, fe_degree> run_cg(true, 0, convergence_table_h, RunConfiguration::h_coarsening);
+      run_cg.run();
+    }
+    { // DG + dir=1
+      Runner<2, fe_degree> run_cg(true, 1, convergence_table_h, RunConfiguration::h_coarsening);
+      run_cg.run();
+    }
   }
 
-  if(!rank)
-    convergence_table.write_text(std::cout);
+  if(true) // p-coarsening
+  {
+    { // CG + dir=0
+      Runner<2, fe_degree> run_cg(false, 0, convergence_table_p, RunConfiguration::p_coarsening);
+      run_cg.run();
+    }
+    { // CG + dir=1
+      Runner<2, fe_degree> run_cg(false, 1, convergence_table_p, RunConfiguration::p_coarsening);
+      run_cg.run();
+    }
+    { // DG + dir=0
+      Runner<2, fe_degree> run_cg(true, 0, convergence_table_p, RunConfiguration::p_coarsening);
+      run_cg.run();
+    }
+    { // DG + dir=1
+      Runner<2, fe_degree> run_cg(true, 1, convergence_table_p, RunConfiguration::p_coarsening);
+      run_cg.run();
+    }
+  }
+
+  if(true) // c-coarsening
+  {
+    { // dir=0
+      Runner<2, fe_degree> run_cg(true, 0, convergence_table_c, RunConfiguration::c_coarsening);
+      run_cg.run();
+    }
+    { // dir=1
+      Runner<2, fe_degree> run_cg(true, 1, convergence_table_c, RunConfiguration::c_coarsening);
+      run_cg.run();
+    }
+  }
+
+  // if(!rank)
+  {
+    std::cout << "h-coasening:" << std::endl;
+    convergence_table_h.write_text(std::cout);
+    std::cout << std::endl;
+
+    std::cout << "p-coasening:" << std::endl;
+    convergence_table_p.write_text(std::cout);
+    std::cout << std::endl;
+
+    std::cout << "c-coasening:" << std::endl;
+    convergence_table_c.write_text(std::cout);
+    std::cout << std::endl;
+  }
 }

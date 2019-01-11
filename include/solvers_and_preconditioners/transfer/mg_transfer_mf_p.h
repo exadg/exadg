@@ -46,6 +46,11 @@ private:
   const MatrixFree<dim, value_type> *    data_1_cm;
   const MatrixFree<dim, value_type> *    data_2_cm;
   AlignedVector<VectorizedArray<Number>> prolongation_matrix_1d;
+  AlignedVector<VectorizedArray<Number>> interpolation_matrix_1d;
+
+  template<int fe_degree_1, int fe_degree_2>
+  void
+  do_interpolate(VectorType & dst, const VectorType & src) const;
 
   template<int fe_degree_1, int fe_degree_2>
   void

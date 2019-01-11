@@ -38,6 +38,10 @@ public:
 private:
   template<int degree>
   void
+  do_interpolate(VectorType & dst, const VectorType & src) const;
+
+  template<int degree>
+  void
   do_restrict_and_add(VectorType & dst, const VectorType & src) const;
 
   template<int degree>

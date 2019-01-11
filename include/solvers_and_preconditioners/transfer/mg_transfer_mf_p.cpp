@@ -33,10 +33,19 @@ template<typename Number>
 void
 fill_shape_values(AlignedVector<VectorizedArray<Number>> & shape_values,
                   unsigned int                             fe_degree_src,
-                  unsigned int                             fe_degree_dst)
+                  unsigned int                             fe_degree_dst,
+                  bool                                     do_transpose)
 {
   FullMatrix<double> matrix(fe_degree_dst + 1, fe_degree_src + 1);
-  FETools::get_projection_matrix(FE_DGQ<1>(fe_degree_src), FE_DGQ<1>(fe_degree_dst), matrix);
+
+  if(do_transpose)
+  {
+    FullMatrix<double> matrix_temp(fe_degree_src + 1, fe_degree_dst + 1);
+    FETools::get_projection_matrix(FE_DGQ<1>(fe_degree_dst), FE_DGQ<1>(fe_degree_src), matrix_temp);
+    matrix.copy_transposed(matrix_temp);
+  }
+  else
+    FETools::get_projection_matrix(FE_DGQ<1>(fe_degree_src), FE_DGQ<1>(fe_degree_dst), matrix);
 
   // ... and convert to linearized format
   AlignedVector<VectorizedArray<Number>> shape_values_temp;
@@ -114,6 +123,41 @@ weight_residuum(MatrixFree & data_1, FEEval & fe_eval1, unsigned int cell)
 }
 } // namespace
 
+
+template<int dim, typename Number, typename VectorType, int components>
+template<int fe_degree_1, int fe_degree_2>
+void
+MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
+                                                                   const VectorType & src) const
+{
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm);
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm);
+
+  for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+  {
+    fe_eval1.reinit(cell);
+    fe_eval2.reinit(cell);
+
+    fe_eval1.read_dof_values(src);
+
+    internal::FEEvaluationImplBasisChange<
+      internal::evaluate_evenodd,
+      dim,
+      fe_degree_2 + 1,
+      fe_degree_1 + 1,
+      components,
+      VectorizedArray<Number>,
+      VectorizedArray<Number>>::do_backward(interpolation_matrix_1d,
+                                            false,
+                                            fe_eval1.begin_dof_values(),
+                                            fe_eval1.begin_dof_values());
+
+    for(unsigned int q = 0; q < fe_eval2.dofs_per_cell; ++q)
+      fe_eval2.begin_dof_values()[q] = fe_eval1.begin_dof_values()[q];
+
+    fe_eval2.set_dof_values(dst);
+  }
+}
 
 template<int dim, typename Number, typename VectorType, int components>
 template<int fe_degree_1, int fe_degree_2>
@@ -224,7 +268,8 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
 
   this->is_dg = data_1_cm->get_dof_handler().get_fe().dofs_per_vertex == 0;
 
-  fill_shape_values(prolongation_matrix_1d, this->degree_2, this->degree_1);
+  fill_shape_values(prolongation_matrix_1d, this->degree_2, this->degree_1, false);
+  fill_shape_values(interpolation_matrix_1d, this->degree_2, this->degree_1, true);
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -239,10 +284,70 @@ MGTransferMFP<dim, Number, VectorType, components>::interpolate(const unsigned i
                                                                 const VectorType & src) const
 {
   (void)level;
-  (void)dst;
-  (void)src;
+  if(!this->is_dg) // only if CG
+    src.update_ghost_values();
 
-  AssertThrow(false, ExcMessage("MGTransferMFP::interpolate(): to be implemented!"));
+  // clang-format off
+  switch(this->degree_1*100+this->degree_2)
+  {
+    // degree  2  
+    case  201: do_interpolate< 2, 1>(dst, src); break;
+    // degree  3  
+    case  301: do_interpolate< 3, 1>(dst, src); break;
+    case  302: do_interpolate< 3, 2>(dst, src); break;
+    // degree  4  
+    case  401: do_interpolate< 4, 1>(dst, src); break;
+    case  402: do_interpolate< 4, 2>(dst, src); break;
+    case  403: do_interpolate< 4, 3>(dst, src); break;
+    // degree  5  
+    case  501: do_interpolate< 5, 1>(dst, src); break;
+    case  502: do_interpolate< 5, 2>(dst, src); break;
+    case  504: do_interpolate< 5, 4>(dst, src); break;
+    // degree  6  
+    case  601: do_interpolate< 6, 1>(dst, src); break;
+    case  603: do_interpolate< 6, 3>(dst, src); break;
+    case  605: do_interpolate< 6, 5>(dst, src); break;
+    // degree  7  
+    case  701: do_interpolate< 7, 1>(dst, src); break;
+    case  703: do_interpolate< 7, 3>(dst, src); break;
+    case  706: do_interpolate< 7, 6>(dst, src); break;
+    // degree  8  
+    case  801: do_interpolate< 8, 1>(dst, src); break;
+    case  804: do_interpolate< 8, 4>(dst, src); break;
+    case  807: do_interpolate< 8, 7>(dst, src); break;
+    // degree  9  
+    case  901: do_interpolate< 9, 1>(dst, src); break;
+    case  904: do_interpolate< 9, 4>(dst, src); break;
+    case  908: do_interpolate< 9, 8>(dst, src); break;
+    // degree 10  
+    case 1001: do_interpolate<10, 1>(dst, src); break;
+    case 1005: do_interpolate<10, 5>(dst, src); break;
+    case 1009: do_interpolate<10, 9>(dst, src); break;
+    // degree 11  
+    case 1101: do_interpolate<11, 1>(dst, src); break;
+    case 1105: do_interpolate<11, 5>(dst, src); break;
+    case 1110: do_interpolate<11,10>(dst, src); break;
+    // degree 12  
+    case 1201: do_interpolate<12, 1>(dst, src); break;
+    case 1206: do_interpolate<12, 6>(dst, src); break;
+    case 1211: do_interpolate<12,11>(dst, src); break;
+    // degree 13  
+    case 1301: do_interpolate<13, 1>(dst, src); break;
+    case 1306: do_interpolate<13, 6>(dst, src); break;
+    case 1312: do_interpolate<13,12>(dst, src); break;
+    // degree 14  
+    case 1401: do_interpolate<14, 1>(dst, src); break;
+    case 1407: do_interpolate<14, 7>(dst, src); break;
+    case 1413: do_interpolate<14,13>(dst, src); break;
+    // degree 15  
+    case 1501: do_interpolate<15, 1>(dst, src); break;
+    case 1507: do_interpolate<15, 7>(dst, src); break;
+    case 1514: do_interpolate<15,14>(dst, src); break;
+    // error: 
+    default:
+      AssertThrow(false, ExcMessage("MGTransferMFP::restrict_and_add not implemented for this degree combination!"));
+  }
+  // clang-format on
 }
 
 template<int dim, typename Number, typename VectorType, int components>

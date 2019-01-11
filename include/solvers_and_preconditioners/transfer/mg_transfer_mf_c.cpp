@@ -33,6 +33,33 @@ MGTransferMFC<dim, Number, VectorType, components>::~MGTransferMFC()
 template<int dim, typename Number, typename VectorType, int components>
 template<int degree>
 void
+MGTransferMFC<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
+                                                                   const VectorType & src) const
+{
+  FEEvaluation<dim, degree, 1, components, Number> fe_eval_cg(data_composite, 0);
+  FEEvaluation<dim, degree, 1, components, Number> fe_eval_dg(data_composite, 1);
+
+  VectorType vec__dg;
+  data_composite.initialize_dof_vector(vec__dg, 1);
+  vec__dg.copy_locally_owned_data_from(src);
+
+  for(unsigned int cell = 0; cell < data_composite.n_macro_cells(); ++cell)
+  {
+    fe_eval_cg.reinit(cell);
+    fe_eval_dg.reinit(cell);
+
+    fe_eval_dg.read_dof_values(vec__dg);
+
+    for(unsigned int i = 0; i < fe_eval_cg.static_dofs_per_cell; i++)
+      fe_eval_cg.begin_dof_values()[i] = fe_eval_dg.begin_dof_values()[i];
+
+    fe_eval_cg.set_dof_values(dst);
+  }
+}
+
+template<int dim, typename Number, typename VectorType, int components>
+template<int degree>
+void
 MGTransferMFC<dim, Number, VectorType, components>::do_restrict_and_add(
   VectorType &       dst,
   const VectorType & src) const
@@ -96,10 +123,29 @@ MGTransferMFC<dim, Number, VectorType, components>::interpolate(const unsigned i
                                                                 const VectorType & src) const
 {
   (void)level;
-  (void)dst;
-  (void)src;
 
-  AssertThrow(false, ExcMessage("MGTransferMFP::interpolate(): to be implemented!"));
+  switch(this->fe_degree)
+  {
+      // clang-format off
+    case  1: do_interpolate< 1>(dst, src); break;
+    case  2: do_interpolate< 2>(dst, src); break;
+    case  3: do_interpolate< 3>(dst, src); break;
+    case  4: do_interpolate< 4>(dst, src); break;
+    case  5: do_interpolate< 5>(dst, src); break;
+    case  6: do_interpolate< 6>(dst, src); break;
+    case  7: do_interpolate< 7>(dst, src); break;
+    case  8: do_interpolate< 8>(dst, src); break;
+    case  9: do_interpolate< 9>(dst, src); break;
+    case 10: do_interpolate<10>(dst, src); break;
+    case 11: do_interpolate<11>(dst, src); break;
+    case 12: do_interpolate<12>(dst, src); break;
+    case 13: do_interpolate<13>(dst, src); break;
+    case 14: do_interpolate<14>(dst, src); break;
+    case 15: do_interpolate<15>(dst, src); break;
+    default:
+      AssertThrow(false, ExcMessage("MGTransferMFC::interpolate not implemented for this degree!"));
+      // clang-format on
+  }
 }
 
 template<int dim, typename Number, typename VectorType, int components>

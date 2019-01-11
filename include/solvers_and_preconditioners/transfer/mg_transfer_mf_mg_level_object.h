@@ -48,7 +48,6 @@ public:
   template<typename MultigridNumber, typename MatrixFree, typename Constraints>
   void
   reinit(const int                                               n_components,
-         const int                                               rank,
          std::vector<MGLevelIdentifier> &                        global_levels,
          std::vector<MGDofHandlerIdentifier> &                   p_levels,
          MGLevelObject<std::shared_ptr<MatrixFree>> &            mg_data,
