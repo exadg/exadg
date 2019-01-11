@@ -1,13 +1,8 @@
 #ifndef MG_TRANSFER_MF
 #define MG_TRANSFER_MF
 
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/multigrid/mg_base.h>
-
-using namespace dealii;
-
 template<typename VectorType>
-class MGTransferMF //: virtual public MGTransferBase<VectorType>
+class MGTransferMF
 {
 public:
   virtual void
