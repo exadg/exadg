@@ -11,34 +11,13 @@ class MGTransferMF //: virtual public MGTransferBase<VectorType>
 {
 public:
   virtual void
-  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const
-  {
-    (void)level;
-    (void)dst;
-    (void)src;
-
-    AssertThrow(false, ExcMessage("MGTransferMF::interpolate(): should not be called!"));
-  }
+  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
 
   virtual void
-  restrict_and_add(const unsigned int level, VectorType & dst, const VectorType & src) const
-  {
-    (void)level;
-    (void)dst;
-    (void)src;
-
-    AssertThrow(false, ExcMessage("MGTransferMF::interpolate(): should not be called!"));
-  }
+  restrict_and_add(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
 
   virtual void
-  prolongate(const unsigned int level, VectorType & dst, const VectorType & src) const
-  {
-    (void)level;
-    (void)dst;
-    (void)src;
-
-    AssertThrow(false, ExcMessage("MGTransferMF::interpolate(): should not be called!"));
-  }
+  prolongate(const unsigned int level, VectorType & dst, const VectorType & src) const = 0;
 };
 
 #endif
