@@ -47,13 +47,10 @@ class MGTransferMF_MGLevelObject : virtual public MGTransferMF<VectorType>
 public:
   template<typename MultigridNumber, typename MatrixFree, typename Constraints>
   void
-  reinit(const int                                               n_components,
-         std::vector<MGLevelIdentifier> &                        global_levels,
-         std::vector<MGDofHandlerIdentifier> &                   p_levels,
-         MGLevelObject<std::shared_ptr<MatrixFree>> &            mg_data,
-         MGLevelObject<std::shared_ptr<Constraints>> &           mg_Constraints,
-         MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> & mg_dofhandler,
-         MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &     mg_constrained_dofs);
+  reinit(MGLevelObject<std::shared_ptr<MatrixFree>> &        mg_data,
+         MGLevelObject<std::shared_ptr<Constraints>> &       mg_Constraints,
+         MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> & mg_constrained_dofs,
+         const unsigned int                                  dof_handler_index = 0);
 
   template<typename MultigridNumber, typename Operator>
   void

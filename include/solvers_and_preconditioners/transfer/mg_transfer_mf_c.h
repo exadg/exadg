@@ -22,7 +22,8 @@ public:
                 const AffineConstraints<double> & cm_dg,
                 const AffineConstraints<double> & cm_cg,
                 const unsigned int                level,
-                const unsigned int                fe_degree);
+                const unsigned int                fe_degree,
+                const unsigned int                dof_handler_index = 0);
 
   virtual ~MGTransferMFC();
 

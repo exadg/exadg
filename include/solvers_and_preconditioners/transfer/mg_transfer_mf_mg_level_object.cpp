@@ -8,14 +8,41 @@ template<int dim, typename VectorType>
 template<typename MultigridNumber, typename MatrixFree, typename Constraints>
 void
 MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
-  const int                                               n_components,
-  std::vector<MGLevelIdentifier> &                        global_levels,
-  std::vector<MGDofHandlerIdentifier> &                   p_levels,
-  MGLevelObject<std::shared_ptr<MatrixFree>> &            mg_data,
-  MGLevelObject<std::shared_ptr<Constraints>> &           mg_Constraints,
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> & mg_dofhandler,
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &     mg_constrained_dofs)
+  MGLevelObject<std::shared_ptr<MatrixFree>> &        mg_data,
+  MGLevelObject<std::shared_ptr<Constraints>> &       mg_Constraints,
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> & mg_constrained_dofs,
+  const unsigned int                                  dof_handler_index)
 {
+  std::vector<MGLevelIdentifier>      global_levels;
+  std::vector<MGDofHandlerIdentifier> p_levels;
+
+  const unsigned int min_level = mg_data.min_level();
+  AssertThrow(min_level == 0, ExcMessage("Currently, we expect min_level==0!"));
+
+  const unsigned int max_level = mg_data.max_level();
+  const int          n_components =
+    mg_data[max_level]->get_dof_handler(dof_handler_index).get_fe().n_components();
+
+  // extract relevant information and construct global_levels...
+  for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
+  {
+    const auto &       data   = mg_data[global_level];
+    const auto &       fe     = data->get_dof_handler(dof_handler_index).get_fe();
+    const bool         is_dg  = fe.dofs_per_vertex == 0;
+    const unsigned int level  = data->get_level_mg_handler();
+    const unsigned int degree = sqrt(fe.n_dofs_per_cell() / fe.n_components()) - 1;
+    global_levels.push_back({level, degree, is_dg});
+  }
+
+  // .. and p_levels
+  for(auto i : global_levels)
+    p_levels.push_back(i.id);
+
+  sort(p_levels.begin(), p_levels.end());
+  p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
+  std::reverse(std::begin(p_levels), std::end(p_levels));
+
+  // create transfer-operator instances
   mg_level_object.resize(0, global_levels.size() - 1);
 
   std::map<MGDofHandlerIdentifier, std::shared_ptr<MGTransferMFH<dim, MultigridNumber>>>
@@ -44,13 +71,14 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
       unsigned int global_level = map_global_level_to_h_levels[deg].begin()->first;
       std::shared_ptr<MGTransferMFH<dim, MultigridNumber>> transfer(
         new MGTransferMFH<dim, MultigridNumber>(map_global_level_to_h_levels[deg],
-                                                *mg_dofhandler[global_level]));
+                                                mg_data[global_level]->get_dof_handler(
+                                                  dof_handler_index)));
 
       // dof-handlers and constrains are saved for global levels
       // so we have to convert degree to any global level which has this degree
       // (these share the same dof-handlers and constraints)
       transfer->initialize_constraints(*mg_constrained_dofs[global_level]);
-      transfer->build(*mg_dofhandler[global_level]);
+      transfer->build(mg_data[global_level]->get_dof_handler(dof_handler_index));
       mg_tranfers_temp[deg] = transfer;
     } // else: there is only one global level (and one h-level) on this p-level
   }
@@ -86,11 +114,17 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
 #endif
 
       if(n_components == 1)
-        temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorType, 1>(
-          &*mg_data[i], &*mg_data[i - 1], fine_level.degree, coarse_level.degree));
+        temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorType, 1>(&*mg_data[i],
+                                                                          &*mg_data[i - 1],
+                                                                          fine_level.degree,
+                                                                          coarse_level.degree,
+                                                                          dof_handler_index));
       else if(n_components == dim)
-        temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorType, dim>(
-          &*mg_data[i], &*mg_data[i - 1], fine_level.degree, coarse_level.degree));
+        temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorType, dim>(&*mg_data[i],
+                                                                            &*mg_data[i - 1],
+                                                                            fine_level.degree,
+                                                                            coarse_level.degree,
+                                                                            dof_handler_index));
       else
         AssertThrow(false, ExcMessage("Cannot create MGTransferMFP!"));
     }
@@ -113,7 +147,8 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
           *mg_Constraints[i],
           *mg_Constraints[i - 1],
           fine_level.level,
-          coarse_level.degree));
+          coarse_level.degree,
+          dof_handler_index));
       else if(n_components == dim)
         temp.reset(new MGTransferMFC<dim, typename MatrixFree::value_type, VectorType, dim>(
           *mg_data[i],
@@ -121,7 +156,8 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
           *mg_Constraints[i],
           *mg_Constraints[i - 1],
           fine_level.level,
-          coarse_level.degree));
+          coarse_level.degree,
+          dof_handler_index));
       else
         AssertThrow(false, ExcMessage("Cannot create MGTransferMFP!"));
     }

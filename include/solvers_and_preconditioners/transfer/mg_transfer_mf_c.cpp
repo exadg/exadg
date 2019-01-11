@@ -11,11 +11,12 @@ MGTransferMFC<dim, Number, VectorType, components>::MGTransferMFC(
   const AffineConstraints<double> & cm_dg,
   const AffineConstraints<double> & cm_cg,
   const unsigned int                level,
-  const unsigned int                fe_degree)
+  const unsigned int                fe_degree,
+  const unsigned int                dof_handler_index)
   : fe_degree(fe_degree)
 {
-  std::vector<const DoFHandler<dim> *> dofhandlers = {&data_cg.get_dof_handler(),
-                                                      &data_dg.get_dof_handler()};
+  std::vector<const DoFHandler<dim> *> dofhandlers = {&data_cg.get_dof_handler(dof_handler_index),
+                                                      &data_dg.get_dof_handler(dof_handler_index)};
 
   std::vector<const AffineConstraints<double> *> constraint_matrices = {&cm_cg, &cm_dg};
   QGauss<1>                                      quadrature(1);

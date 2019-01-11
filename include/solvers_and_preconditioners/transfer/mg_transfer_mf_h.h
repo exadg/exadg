@@ -64,11 +64,11 @@ public:
     auto & fe    = dof_handler.get_fe();
     auto   level = level_to_triangulation_level_map[level_in];
 
-    this->ghosted_level_vector[level].copy_locally_owned_data_from(src);
-    this->ghosted_level_vector[level].update_ghost_values();
+    auto & src_ghosted = this->ghosted_level_vector[level - 0];
+    auto & dst_ghosted = this->ghosted_level_vector[level - 1];
 
-    auto & src_gh = this->ghosted_level_vector[level - 0];
-    auto & dst_gh = this->ghosted_level_vector[level - 1];
+    src_ghosted.copy_locally_owned_data_from(src);
+    src_ghosted.update_ghost_values();
 
     std::vector<Number>                     dof_values_coarse(fe.dofs_per_cell);
     Vector<Number>                          dof_values_fine(fe.dofs_per_cell);
@@ -85,7 +85,7 @@ public:
         {
           cell->child(child)->get_mg_dof_indices(dof_indices);
           for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-            dof_values_fine(i) = src_gh(dof_indices[i]);
+            dof_values_fine(i) = src_ghosted(dof_indices[i]);
           fe.get_restriction_matrix(child, cell->refinement_case()).vmult(tmp, dof_values_fine);
           for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
             if(fe.restriction_is_additive(i))
@@ -95,11 +95,10 @@ public:
         }
         cell->get_mg_dof_indices(dof_indices);
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-          dst_gh(dof_indices[i]) = dof_values_coarse[i];
+          dst_ghosted(dof_indices[i]) = dof_values_coarse[i];
       }
 
-    // this->ghosted_level_vector[level - 1].compress(VectorOperation::add);
-    dst.copy_locally_owned_data_from(this->ghosted_level_vector[level - 1]);
+    dst.copy_locally_owned_data_from(dst_ghosted);
   }
 
   /**

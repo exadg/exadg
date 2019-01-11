@@ -23,13 +23,15 @@ public:
   MGTransferMFP(const MatrixFree<dim, value_type> * data_1_cm,
                 const MatrixFree<dim, value_type> * data_2_cm,
                 int                                 degree_1,
-                int                                 degree_2);
+                int                                 degree_2,
+                int                                 dof_handler_index = 0);
 
   void
   reinit(const MatrixFree<dim, value_type> * data_1_cm,
          const MatrixFree<dim, value_type> * data_2_cm,
          int                                 degree_1,
-         int                                 degree_2);
+         int                                 degree_2,
+         int                                 dof_handler_index = 0);
 
   ~MGTransferMFP();
 
@@ -62,6 +64,7 @@ private:
 
   int degree_1;
   int degree_2;
+  int dof_handler_index;
 
   bool is_dg;
 };

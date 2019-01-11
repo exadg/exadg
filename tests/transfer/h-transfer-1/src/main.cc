@@ -241,8 +241,7 @@ private:
   }
 
   void
-  setup_sequence(std::vector<MGLevelIdentifier> &      global_levels,
-                 std::vector<MGDofHandlerIdentifier> & p_levels)
+  setup_sequence(std::vector<MGLevelIdentifier> & global_levels)
   {
     if(run_configuration == RunConfiguration::h_coarsening)
     {
@@ -265,23 +264,15 @@ private:
     }
     else
       AssertThrow(false, ExcMessage("This run configuration is not implemented!"));
-
-    for(auto i : global_levels)
-      p_levels.push_back(i.id);
-
-    sort(p_levels.begin(), p_levels.end());
-    p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
-    std::reverse(std::begin(p_levels), std::end(p_levels));
   }
 
 public:
   void
   run()
   {
-    std::vector<MGLevelIdentifier>      global_levels;
-    std::vector<MGDofHandlerIdentifier> p_levels;
+    std::vector<MGLevelIdentifier> global_levels;
 
-    setup_sequence(global_levels, p_levels);
+    setup_sequence(global_levels);
     unsigned int min_level = 0;
     unsigned int max_level = global_levels.size() - 1;
 
@@ -330,8 +321,7 @@ public:
 
     // create transfer-operator
     MGTransferMF_MGLevelObject<dim, VectorType> transfer;
-    transfer.template reinit<value_type>(
-      1, global_levels, p_levels, mg_data, mg_dummy, mg_dofhandler, mg_constrained_dofs);
+    transfer.template reinit<value_type>(mg_data, mg_dummy, mg_constrained_dofs);
 
     // interpolate solution on the fines grid onto coarse grids
     for(unsigned int level = max_level; level >= 1 + min_level; level--)

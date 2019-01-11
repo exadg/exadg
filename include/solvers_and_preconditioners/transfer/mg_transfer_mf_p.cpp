@@ -247,9 +247,10 @@ MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP(
   const MatrixFree<dim, value_type> * data_1_cm,
   const MatrixFree<dim, value_type> * data_2_cm,
   int                                 degree_1,
-  int                                 degree_2)
+  int                                 degree_2,
+  int                                 dof_handler_index)
 {
-  reinit(data_1_cm, data_2_cm, degree_1, degree_2);
+  reinit(data_1_cm, data_2_cm, degree_1, degree_2, dof_handler_index);
 }
 
 template<int dim, typename Number, typename VectorType, int components>
@@ -258,13 +259,16 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
   const MatrixFree<dim, value_type> * data_1_cm,
   const MatrixFree<dim, value_type> * data_2_cm,
   int                                 degree_1,
-  int                                 degree_2)
+  int                                 degree_2,
+  int                                 dof_handler_index)
 {
   this->data_1_cm = data_1_cm;
   this->data_2_cm = data_2_cm;
 
   this->degree_1 = degree_1;
   this->degree_2 = degree_2;
+
+  this->dof_handler_index = dof_handler_index;
 
   this->is_dg = data_1_cm->get_dof_handler().get_fe().dofs_per_vertex == 0;
 
