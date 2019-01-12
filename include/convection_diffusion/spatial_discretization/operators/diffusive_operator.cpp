@@ -31,25 +31,6 @@ DiffusiveOperator<dim, degree, Number>::reinit(Mapping<dim> const &             
 
 template<int dim, int degree, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::reinit_multigrid__(
-  Mapping<dim> const &               mapping,
-  MatrixFree<dim, Number> const &    mf_data,
-  AffineConstraints<double> const &  constraint_matrix,
-  DiffusiveOperatorData<dim> const & operator_data,
-  unsigned int                       level)
-{
-  Base::reinit_multigrid_(mf_data, constraint_matrix, operator_data, level);
-
-  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                       *this->data,
-                                                       mapping,
-                                                       this->operator_data.dof_index);
-
-  diffusivity = this->operator_data.diffusivity;
-}
-
-template<int dim, int degree, typename Number>
-void
 DiffusiveOperator<dim, degree, Number>::apply_add(VectorType & dst, VectorType const & src) const
 {
   AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));

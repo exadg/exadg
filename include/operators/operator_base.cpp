@@ -72,26 +72,15 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
         constrained_indices.push_back(i);
     constrained_values.resize(constrained_indices.size());
   }
-}
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit_multigrid_(
-  MatrixFree<dim, Number> const &   matrix_free,
-  AffineConstraints<double> const & constraint_matrix,
-  AdditionalData const &            operator_data,
-  unsigned int const                level) const
-{
   // set multigrid level
-  this->level_mg_handler = level;
+  this->level_mg_handler = data->get_level_mg_handler();
 
   // The default value is is_mg = false and this variable is set to true in case
   // the operator is applied in multigrid algorithm. By convention, the default
   // argument numbers::invalid_unsigned_int corresponds to the default
   // value is_mg = false
-  this->is_mg = (level != numbers::invalid_unsigned_int);
-
-  reinit(matrix_free, constraint_matrix, operator_data);
+  this->is_mg = (this->level_mg_handler != numbers::invalid_unsigned_int);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
@@ -152,7 +141,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_reinit_multi
   auto & data_own = data.own();
   data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
 
-  reinit_multigrid_(data_own, constraint_own, operator_data, level);
+  reinit(data_own, constraint_own, operator_data);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>

@@ -142,12 +142,6 @@ public:
          AdditionalData const &            operator_data) const;
 
   void
-  reinit_multigrid_(MatrixFree<dim, Number> const &   matrix_free,
-                    AffineConstraints<double> const & constraint_matrix,
-                    AdditionalData const &            operator_data,
-                    unsigned int const                level) const;
-
-  void
   do_reinit_multigrid(
     DoFHandler<dim> const &   dof_handler,
     Mapping<dim> const &      mapping,

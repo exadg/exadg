@@ -73,19 +73,6 @@ public:
          AffineConstraints<double> const &   constraint_matrix,
          ConvectiveOperatorData<dim> const & operator_data);
 
-  /*
-   *  TODO: This function has to be removed later. It is currently only needed since level is a
-   * member variable of operator base (which should not be the case!) and has to be initialized.
-   * Functions called reinit_multigrid() should only exist for multigrid operators, i.e., those
-   * operators that are derived from PreconditionableOperator.
-   */
-
-  void
-  reinit_multigrid__(MatrixFree<dim, Number> const &     data,
-                     AffineConstraints<double> const &   constraint_matrix,
-                     ConvectiveOperatorData<dim> const & operator_data,
-                     unsigned int const                  level);
-
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 

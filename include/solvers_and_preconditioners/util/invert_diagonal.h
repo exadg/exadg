@@ -10,6 +10,7 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+using namespace dealii;
 
 /*
  *  This function inverts the diagonal (element by element).

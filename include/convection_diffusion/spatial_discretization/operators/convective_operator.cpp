@@ -30,38 +30,6 @@ ConvectiveOperator<dim, degree, degree_velocity, Number>::reinit(
   }
 }
 
-/*
- * TODO: This function has to be removed later. It is currently only needed since level is a member
- * variable of operator base (which should not be the case!) and has to be initialized. Functions
- * called reinit_multigrid() should only exist for multigrid operators, i.e., those operators that
- * are derived from PreconditionableOperator.
- */
-template<int dim, int degree, int degree_velocity, typename Number>
-void
-ConvectiveOperator<dim, degree, degree_velocity, Number>::reinit_multigrid__(
-  MatrixFree<dim, Number> const &     data,
-  AffineConstraints<double> const &   constraint_matrix,
-  ConvectiveOperatorData<dim> const & operator_data,
-  unsigned int const                  level)
-{
-  Base::reinit_multigrid_(data, constraint_matrix, operator_data, level);
-
-  if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    data.initialize_dof_vector(velocity, operator_data.dof_index_velocity);
-
-    fe_eval_velocity.reset(
-      new FEEvalCellVelocity(data, operator_data.dof_index_velocity, operator_data.quad_index));
-
-    fe_eval_velocity_m.reset(new FEEvalFaceVelocity(
-      data, true, operator_data.dof_index_velocity, operator_data.quad_index));
-
-    fe_eval_velocity_p.reset(new FEEvalFaceVelocity(
-      data, false, operator_data.dof_index_velocity, operator_data.quad_index));
-  }
-}
-
-
 template<int dim, int degree, int degree_velocity, typename Number>
 void
 ConvectiveOperator<dim, degree, degree_velocity, Number>::set_velocity(
