@@ -113,6 +113,9 @@ private:
    */
   void
   initialize_mg_dof_handler_and_constraints(
+    bool is_singular,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                                                         periodic_face_pairs,
     DoFHandler<dim> const &                                              dof_handler,
     parallel::Triangulation<dim> const *                                 tria,
     std::vector<MGLevelIdentifier> &                                     global_levels,
@@ -168,8 +171,9 @@ private:
 
   MultigridData mg_data;
 
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> mg_dofhandler;
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>     mg_constrained_dofs;
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     mg_dofhandler;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         mg_constrained_dofs;
+  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> mg_constrains;
 
   MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer;
 
