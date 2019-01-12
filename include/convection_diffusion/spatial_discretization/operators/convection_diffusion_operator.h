@@ -106,33 +106,6 @@ public:
          ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
          DiffusiveOperator<dim, degree, Number> const &          diffusive_operator) const;
 
-
-  /*
-   *  This function is called by the multigrid algorithm to initialize the
-   *  matrices on all levels. Own operators (mass, convection, diffusion) are
-   *  created.
-   */
-  void
-  reinit_multigrid(
-    DoFHandler<dim> const &   dof_handler,
-    Mapping<dim> const &      mapping,
-    void *                    operator_data,
-    MGConstrainedDoFs const & mg_constrained_dofs,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    unsigned int const level);
-
-  void
-  reinit_multigrid_add_dof_handler(
-    DoFHandler<dim> const &   dof_handler,
-    Mapping<dim> const &      mapping,
-    void *                    operator_data,
-    MGConstrainedDoFs const & mg_constrained_dofs,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                            periodic_face_pairs,
-    unsigned int const      level,
-    DoFHandler<dim> const * add_dof_handler);
-
   /*
    *  Scaling factor of time derivative term (mass matrix term)
    */

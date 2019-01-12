@@ -178,6 +178,7 @@ public:
     const unsigned int /*level*/,
     const DoFHandler<dim> * /*additional_dof_handler*/)
   {
+    AssertThrow(false, ExcMessage("This function should not be accessed!"));
   }
 
   void
