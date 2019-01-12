@@ -145,7 +145,7 @@ public:
     this->reinit(matrix_free, constraint_matrix, operator_data);
   }
 
-  void
+  virtual void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          AdditionalData const &            operator_data) const;

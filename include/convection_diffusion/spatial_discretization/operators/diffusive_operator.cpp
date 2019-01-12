@@ -14,10 +14,22 @@ DiffusiveOperator<dim, degree, Number>::DiffusiveOperator() : diffusivity(-1.0)
 
 template<int dim, int degree, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::reinit(Mapping<dim> const &               mapping,
-                                               MatrixFree<dim, Number> const &    mf_data,
-                                               AffineConstraints<double> const &  constraint_matrix,
-                                               DiffusiveOperatorData<dim> const & operator_data)
+DiffusiveOperator<dim, degree, Number>::reinit(
+  MatrixFree<dim, Number> const &    mf_data,
+  AffineConstraints<double> const &  constraint_matrix,
+  DiffusiveOperatorData<dim> const & operator_data) const
+{
+  MappingQGeneric<dim> mapping(degree);
+  this->reinit(mapping, mf_data, constraint_matrix, operator_data);
+}
+
+template<int dim, int degree, typename Number>
+void
+DiffusiveOperator<dim, degree, Number>::reinit(
+  Mapping<dim> const &               mapping,
+  MatrixFree<dim, Number> const &    mf_data,
+  AffineConstraints<double> const &  constraint_matrix,
+  DiffusiveOperatorData<dim> const & operator_data) const
 {
   Base::reinit(mf_data, constraint_matrix, operator_data);
 

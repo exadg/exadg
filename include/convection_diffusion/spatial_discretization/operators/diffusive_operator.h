@@ -43,10 +43,15 @@ public:
   DiffusiveOperator();
 
   void
+  reinit(MatrixFree<dim, Number> const &    mf_data,
+         AffineConstraints<double> const &  constraint_matrix,
+         DiffusiveOperatorData<dim> const & operator_data) const;
+
+  void
   reinit(Mapping<dim> const &               mapping,
          MatrixFree<dim, Number> const &    mf_data,
          AffineConstraints<double> const &  constraint_matrix,
-         DiffusiveOperatorData<dim> const & operator_data);
+         DiffusiveOperatorData<dim> const & operator_data) const;
 
   void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
@@ -133,8 +138,8 @@ private:
                                 DiffusiveOperatorData<dim> const &   operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  AlignedVector<scalar> array_penalty_parameter;
-  double                diffusivity;
+  mutable AlignedVector<scalar> array_penalty_parameter;
+  mutable double                diffusivity;
 };
 } // namespace ConvDiff
 

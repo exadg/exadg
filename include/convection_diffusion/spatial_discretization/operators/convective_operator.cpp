@@ -11,7 +11,7 @@ void
 ConvectiveOperator<dim, degree, degree_velocity, Number>::reinit(
   MatrixFree<dim, Number> const &     data,
   AffineConstraints<double> const &   constraint_matrix,
-  ConvectiveOperatorData<dim> const & operator_data)
+  ConvectiveOperatorData<dim> const & operator_data) const
 {
   Base::reinit(data, constraint_matrix, operator_data);
 

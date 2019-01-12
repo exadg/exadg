@@ -94,12 +94,17 @@ public:
   ConvectionDiffusionOperator();
 
   void
+  reinit(MatrixFree<dim, Number> const &              mf_data,
+         AffineConstraints<double> const &            constraint_matrix,
+         ConvectionDiffusionOperatorData<dim> const & operator_data) const;
+
+  void
   reinit(MatrixFree<dim, Number> const &                         mf_data,
          AffineConstraints<double> const &                       constraint_matrix,
          ConvectionDiffusionOperatorData<dim> const &            operator_data,
          MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
          ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
-         DiffusiveOperator<dim, degree, Number> const &          diffusive_operator);
+         DiffusiveOperator<dim, degree, Number> const &          diffusive_operator) const;
 
 
   /*
@@ -242,7 +247,7 @@ private:
 
   mutable VectorType temp;
 
-  double scaling_factor_time_derivative_term;
+  mutable double scaling_factor_time_derivative_term;
 
   // Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
   typedef Elementwise::OperatorBase<dim, Number, This> ELEMENTWISE_OPERATOR;

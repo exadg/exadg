@@ -14,6 +14,7 @@
 
 #include "../mg_coarse/mg_coarse_ml.h"
 
+#include "../../functionalities/categorization.h"
 #include "../../functionalities/constraints.h"
 #include "../util/compute_eigenvalues.h"
 
@@ -79,6 +80,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
                                                   global_levels,
                                                   p_levels,
                                                   dirichlet_bc);
+  this->initialize_matrixfree(global_levels, mapping);
   this->initialize_mg_matrices(
     global_levels, mapping, periodic_face_pairs, operator_data, add_dof_handler);
   this->initialize_smoothers();
@@ -303,6 +305,51 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
                                          global_levels[i].level);
 
     this->mg_constrains[i].reset(constraint_own);
+  }
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree(
+  std::vector<MGLevelIdentifier> & global_levels,
+  Mapping<dim> const &             mapping)
+{
+  this->mg_matrixfree.resize(0, this->n_global_levels - 1);
+
+  for(unsigned int i = 0; i < this->n_global_levels; i++)
+  {
+    auto data = new MatrixFree<dim, MultigridNumber>;
+
+    // setup MatrixFree::AdditionalData
+    typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+    additional_data.level_mg_handler = global_levels[i].level;
+    // additional_data.mapping_update_flags = operator_data.mapping_update_flags;
+    additional_data.mapping_update_flags = update_gradients | update_JxW_values;
+
+    if(global_levels[i].is_dg)
+    {
+      // additional_data.mapping_update_flags_inner_faces =
+      //  operator_data.mapping_update_flags_inner_faces;
+      additional_data.mapping_update_flags_inner_faces =
+        additional_data.mapping_update_flags | update_values | update_normal_vectors;
+      // additional_data.mapping_update_flags_boundary_faces =
+      additional_data.mapping_update_flags_inner_faces =
+        additional_data.mapping_update_flags_inner_faces | update_quadrature_points;
+      //  operator_data.mapping_update_flags_boundary_faces;
+    }
+
+    bool use_cell_based_loops = false;
+    if(/*operator_data.*/ use_cell_based_loops && global_levels[i].is_dg)
+    {
+      auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+        &mg_dofhandler[i]->get_triangulation());
+      Categorization::do_cell_based_loops(*tria, additional_data, global_levels[i].level);
+    }
+
+    QGauss<1> const quad(global_levels[i].degree + 1);
+    data->reinit(mapping, *mg_dofhandler[i], *mg_constrains[i], quad, additional_data);
+
+    this->mg_matrixfree[i].reset(data);
   }
 }
 

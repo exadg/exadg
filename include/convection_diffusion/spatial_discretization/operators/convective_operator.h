@@ -71,7 +71,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &     data,
          AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & operator_data);
+         ConvectiveOperatorData<dim> const & operator_data) const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -211,9 +211,9 @@ private:
 
   mutable VectorType velocity;
 
-  std::shared_ptr<FEEvalCellVelocity> fe_eval_velocity;
-  std::shared_ptr<FEEvalFaceVelocity> fe_eval_velocity_m;
-  std::shared_ptr<FEEvalFaceVelocity> fe_eval_velocity_p;
+  mutable std::shared_ptr<FEEvalCellVelocity> fe_eval_velocity;
+  mutable std::shared_ptr<FEEvalFaceVelocity> fe_eval_velocity_m;
+  mutable std::shared_ptr<FEEvalFaceVelocity> fe_eval_velocity_p;
 };
 } // namespace ConvDiff
 

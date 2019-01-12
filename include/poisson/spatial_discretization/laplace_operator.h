@@ -56,7 +56,12 @@ public:
   reinit(Mapping<dim> const &              mapping,
          MatrixFree<dim, Number> const &   mf_data,
          AffineConstraints<double> const & constraint_matrix,
-         LaplaceOperatorData<dim> const &  operator_data);
+         LaplaceOperatorData<dim> const &  operator_data) const;
+
+  void
+  reinit(MatrixFree<dim, Number> const &   mf_data,
+         AffineConstraints<double> const & constraint_matrix,
+         LaplaceOperatorData<dim> const &  operator_data) const;
 
   void
   reinit_multigrid(
@@ -178,7 +183,7 @@ private:
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   // stores the penalty parameter of the interior penalty method for each cell
-  AlignedVector<scalar> array_penalty_parameter;
+  mutable AlignedVector<scalar> array_penalty_parameter;
 };
 
 } // namespace Poisson

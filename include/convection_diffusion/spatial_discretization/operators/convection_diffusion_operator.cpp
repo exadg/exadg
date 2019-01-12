@@ -16,12 +16,25 @@ ConvectionDiffusionOperator<dim, degree, Number>::ConvectionDiffusionOperator()
 template<int dim, int degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, degree, Number>::reinit(
+  MatrixFree<dim, Number> const &              mf_data,
+  AffineConstraints<double> const &            constraint_matrix,
+  ConvectionDiffusionOperatorData<dim> const & operator_data) const
+{
+  (void)mf_data;
+  (void)constraint_matrix;
+  (void)operator_data;
+  AssertThrow(false, ExcMessage("ConvectionDiffusionOperator::reinit is not implemented!"));
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::reinit(
   MatrixFree<dim, Number> const &                         mf_data,
   AffineConstraints<double> const &                       constraint_matrix,
   ConvectionDiffusionOperatorData<dim> const &            operator_data,
   MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
   ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
-  DiffusiveOperator<dim, degree, Number> const &          diffusive_operator)
+  DiffusiveOperator<dim, degree, Number> const &          diffusive_operator) const
 {
   Base::reinit(mf_data, constraint_matrix, operator_data);
   this->mass_matrix_operator.reinit(mass_matrix_operator);

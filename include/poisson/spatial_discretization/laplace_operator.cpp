@@ -16,7 +16,7 @@ void
 LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &              mapping,
                                              MatrixFree<dim, Number> const &   mf_data,
                                              AffineConstraints<double> const & constraint_matrix,
-                                             LaplaceOperatorData<dim> const &  operator_data)
+                                             LaplaceOperatorData<dim> const &  operator_data) const
 {
   Base::reinit(mf_data, constraint_matrix, operator_data);
 
@@ -25,6 +25,16 @@ LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &              m
                                                        *this->data,
                                                        mapping,
                                                        this->operator_data.dof_index);
+}
+
+template<int dim, int degree, typename Number>
+void
+LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
+                                             AffineConstraints<double> const & constraint_matrix,
+                                             LaplaceOperatorData<dim> const &  operator_data) const
+{
+  MappingQGeneric<dim> mapping(degree);
+  this->reinit(mapping, mf_data, constraint_matrix, operator_data);
 }
 
 template<int dim, int degree, typename Number>

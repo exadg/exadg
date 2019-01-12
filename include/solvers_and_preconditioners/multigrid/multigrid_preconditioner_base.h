@@ -127,6 +127,10 @@ private:
                                  MGConstrainedDoFs &,
                                  Map const & dirichlet_bc);
 
+  void
+  initialize_matrixfree(std::vector<MGLevelIdentifier> & global_levels,
+                        Mapping<dim> const &             mapping);
+
   /*
    * Multigrid operators on each multigrid level.
    */
