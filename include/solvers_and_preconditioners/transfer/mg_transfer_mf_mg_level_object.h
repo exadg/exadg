@@ -52,16 +52,6 @@ public:
          MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> & mg_constrained_dofs,
          const unsigned int                                  dof_handler_index = 0);
 
-  template<typename MultigridNumber, typename Operator>
-  void
-  reinit(const int                                               n_components,
-         const int                                               rank,
-         std::vector<MGLevelIdentifier> &                        global_levels,
-         std::vector<MGDofHandlerIdentifier> &                   p_levels,
-         MGLevelObject<std::shared_ptr<Operator>> &              mg_matrices,
-         MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> & mg_dofhandler,
-         MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &     mg_constrained_dofs);
-
   virtual void
   interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
 

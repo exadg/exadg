@@ -85,14 +85,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
     global_levels, mapping, periodic_face_pairs, operator_data, add_dof_handler);
   this->initialize_smoothers();
   this->initialize_coarse_solver(global_levels[0].level);
-  this->mg_transfer.template reinit<MultigridNumber, Operator>(dof_handler.get_fe().n_components(),
-                                                               Utilities::MPI::this_mpi_process(
-                                                                 tria->get_communicator()),
-                                                               global_levels,
-                                                               p_levels,
-                                                               mg_matrices,
-                                                               mg_dofhandler,
-                                                               mg_constrained_dofs);
+  this->mg_transfer.template reinit<MultigridNumber>(mg_matrixfree,
+                                                     mg_constrains,
+                                                     mg_constrained_dofs);
 
   this->initialize_multigrid_preconditioner();
 }
