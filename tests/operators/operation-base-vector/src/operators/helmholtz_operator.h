@@ -93,7 +93,7 @@ public:
     //  AssertThrow(false, ExcMessage("Function not implemented!"));
 
 
-    Base::do_reinit_multigrid(
+    Base::reinit_multigrid(
       dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
 
     IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,

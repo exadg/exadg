@@ -85,7 +85,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_reinit_multigrid(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit_multigrid(
   DoFHandler<dim> const &   dof_handler,
   Mapping<dim> const &      mapping,
   void *                    operator_data_in,

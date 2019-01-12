@@ -142,7 +142,7 @@ public:
          AdditionalData const &            operator_data) const;
 
   void
-  do_reinit_multigrid(
+  reinit_multigrid(
     DoFHandler<dim> const &   dof_handler,
     Mapping<dim> const &      mapping,
     void *                    operator_data,
@@ -157,21 +157,6 @@ public:
   {
     AssertThrow(false, ExcMessage("Not implemented"));
   }
-
-  virtual void
-  reinit_multigrid(
-    DoFHandler<dim> const &   dof_handler,
-    Mapping<dim> const &      mapping,
-    void *                    operator_data,
-    MGConstrainedDoFs const & mg_constrained_dofs,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    unsigned int const level)
-  {
-    do_reinit_multigrid(
-      dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
-  }
-
 
   virtual void
   reinit_multigrid_add_dof_handler(
