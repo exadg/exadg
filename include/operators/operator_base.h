@@ -740,37 +740,7 @@ private:
   void
   set_constraint_diagonal(VectorType & diagonal) const;
 
-protected:
-  void
-  add_constraints(
-    DoFHandler<dim> const &     dof_handler,
-    AffineConstraints<double> & constraint_own,
-    MGConstrainedDoFs const &   mg_constrained_dofs,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    unsigned int const level);
-
 private:
-  /*
-   * Add periodic constraints: loop over all periodic face pairs on level 0
-   */
-  void
-  add_periodicity_constraints(DoFHandler<dim> const &                 dof_handler,
-                              unsigned int const                      level,
-                              std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0,
-                              AffineConstraints<double> &             constraint_own);
-
-  /*
-   * Add periodic constraints: for a given face pair on level 0 add recursively
-   * all subfaces on the given level
-   */
-  void
-  add_periodicity_constraints(unsigned int const                            level,
-                              unsigned int const                            target_level,
-                              typename DoFHandler<dim>::face_iterator const face1,
-                              typename DoFHandler<dim>::face_iterator const face2,
-                              AffineConstraints<double> &                   constraints);
-
   /*
    *  Verify that each boundary face is assigned exactly one boundary type.
    */

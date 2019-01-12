@@ -2,6 +2,7 @@
 
 #include <navierstokes/config.h>
 
+#include "../../../functionalities/constraints.h"
 #include "solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
 namespace ConvDiff
@@ -120,12 +121,13 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
   if(operator_data.type_velocity_field == TypeVelocityField::Analytical)
   {
     // AffineConstraints<double> constraint_dummy;
-    if(!is_dg)
-    {
-      this->add_constraints(
-        dof_handler, constraint_dummy, mg_constrained_dofs, periodic_face_pairs, level);
-    }
-    constraint_dummy.close();
+    ConstraintUtil<dim>::add_constraints(is_dg,
+                                         this->is_singular(),
+                                         dof_handler,
+                                         constraint_dummy,
+                                         mg_constrained_dofs,
+                                         periodic_face_pairs,
+                                         level);
 
     // quadrature formula used to perform integrals
     QGauss<1> quadrature(dof_handler.get_fe().degree + 1);
