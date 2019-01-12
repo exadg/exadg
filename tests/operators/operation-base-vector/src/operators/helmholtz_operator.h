@@ -7,6 +7,8 @@
 #include "../../../../../include/operators/interior_penalty_parameter.h"
 #include "../../../../../include/operators/operator_base.h"
 
+#include <deal.II/fe/mapping_q.h>
+
 namespace IncNS
 {
 template<int dim>
@@ -64,10 +66,19 @@ public:
   }
 
   void
+  reinit(MatrixFree<dim, Number> const &       mf_data,
+         AffineConstraints<double> const &     constraint_matrix,
+         HelmholtzOperatorDataNew<dim> const & operator_data) const
+  {
+    MappingQ<dim> mapping(degree);
+    this->reinit(mapping, mf_data, constraint_matrix, operator_data);
+  }
+
+  void
   reinit(Mapping<dim> const &                  mapping,
          MatrixFree<dim, Number> const &       mf_data,
          AffineConstraints<double> const &     constraint_matrix,
-         HelmholtzOperatorDataNew<dim> const & operator_data)
+         HelmholtzOperatorDataNew<dim> const & operator_data) const
   {
     Base::reinit(mf_data, constraint_matrix, operator_data);
 
@@ -789,15 +800,15 @@ private:
 
 public:
   // penalty parameter
-  AlignedVector<scalar> array_penalty_parameter;
+  mutable AlignedVector<scalar> array_penalty_parameter;
 
   // viscosity
-  Number const_viscosity;
+  mutable Number const_viscosity;
 
   // variable viscosity
-  Table<2, scalar> viscous_coefficient_cell;
-  Table<2, scalar> viscous_coefficient_face;
-  Table<2, scalar> viscous_coefficient_face_neighbor;
+  mutable Table<2, scalar> viscous_coefficient_cell;
+  mutable Table<2, scalar> viscous_coefficient_face;
+  mutable Table<2, scalar> viscous_coefficient_face_neighbor;
 };
 } // namespace IncNS
 
