@@ -20,10 +20,32 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
   AffineConstraints<double> const &            constraint_matrix,
   ConvectionDiffusionOperatorData<dim> const & operator_data) const
 {
-  (void)mf_data;
-  (void)constraint_matrix;
-  (void)operator_data;
-  AssertThrow(false, ExcMessage("ConvectionDiffusionOperator::reinit is not implemented!"));
+  Base::reinit(mf_data, constraint_matrix, operator_data);
+
+  // mass matrix term: set scaling factor time derivative term
+  this->scaling_factor_time_derivative_term =
+    this->operator_data.scaling_factor_time_derivative_term;
+
+  // use own data structures (TODO: no switch necessary)
+  this->mass_matrix_operator.reset();
+  this->convective_operator.reset();
+  this->diffusive_operator.reset();
+
+  // reinit mass-, convection- and diffusive-opertor
+  this->mass_matrix_operator->reinit(mf_data,
+                                     constraint_matrix,
+                                     operator_data.mass_matrix_operator_data);
+  this->convective_operator->reinit(mf_data,
+                                    constraint_matrix,
+                                    operator_data.convective_operator_data);
+  this->diffusive_operator->reinit(mf_data,
+                                   constraint_matrix,
+                                   operator_data.diffusive_operator_data);
+
+  // initialize temp-vector: this is done in this function because
+  // the vector temp is only used in the function vmult_add(), i.e.,
+  // when using the multigrid preconditioner
+  this->initialize_dof_vector(temp);
 }
 
 template<int dim, int degree, typename Number>

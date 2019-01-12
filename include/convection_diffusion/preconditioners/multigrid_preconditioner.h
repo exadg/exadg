@@ -40,6 +40,85 @@ public:
 
   virtual ~MultigridPreconditioner(){};
 
+
+  void
+  initialize_matrixfree(std::vector<MGLevelIdentifier> & global_levels,
+                        Mapping<dim> const &             mapping,
+                        void *                           operator_data_in)
+  {
+    auto operator_data = static_cast<ConvectionDiffusionOperatorData<dim> *>(operator_data_in);
+
+    this->mg_matrixfree.resize(0, this->n_global_levels - 1);
+
+    for(unsigned int i = 0; i < this->n_global_levels; i++)
+    {
+      auto data = new MatrixFree<dim, MultigridNumber>;
+
+      typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+
+      additional_data.level_mg_handler = global_levels[i].level;
+      additional_data.tasks_parallel_scheme =
+        MatrixFree<dim, MultigridNumber>::AdditionalData::none;
+      additional_data.mapping_update_flags =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
+
+      if(global_levels[i].is_dg)
+      {
+        additional_data.mapping_update_flags_inner_faces =
+          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+           update_values);
+
+        additional_data.mapping_update_flags_boundary_faces =
+          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+           update_values);
+      }
+
+      if(operator_data->use_cell_based_loops && global_levels[i].is_dg)
+      {
+        auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+          &this->mg_dofhandler[i]->get_triangulation());
+        Categorization::do_cell_based_loops(*tria, additional_data, global_levels[i].level);
+      }
+
+      if(operator_data->type_velocity_field == TypeVelocityField::Analytical)
+      {
+        QGauss<1> quadrature(global_levels[i].degree + 1);
+        data->reinit(
+          mapping, *this->mg_dofhandler[i], *this->mg_constrains[i], quadrature, additional_data);
+      }
+      // we need two dof-handlers in case the velocity field comes from the fluid solver.
+      else if(operator_data->type_velocity_field == TypeVelocityField::Numerical)
+      {
+        AssertThrow(false, ExcMessage("No memory allocated yet."));
+        // collect dof-handlers
+        std::vector<const DoFHandler<dim> *> dof_handler_vec;
+        dof_handler_vec.resize(2);
+        dof_handler_vec[0] = &*this->mg_dofhandler[i];
+        dof_handler_vec[1] = &*this->mg_dofhandler_vel[i];
+
+        // collect affine matrices
+        std::vector<const AffineConstraints<double> *> constraint_vec;
+        constraint_vec.resize(2);
+        constraint_vec[0] = &*this->mg_constrains[i];
+        constraint_vec[1] = &*this->mg_constrains_vel[i];
+
+
+        std::vector<Quadrature<1>> quadrature_vec;
+        quadrature_vec.resize(1);
+        quadrature_vec[0] = QGauss<1>(global_levels[i].degree + 1);
+
+        data->reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+
+      this->mg_matrixfree[i].reset(data);
+    }
+  }
+
   /*
    *  This function updates the multigrid preconditioner.
    */
@@ -209,6 +288,10 @@ private:
       this->update_smoother(level);
     }
   }
+
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     mg_dofhandler_vel;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         mg_constrained_dofs_vel;
+  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> mg_constrains_vel;
 };
 
 } // namespace ConvDiff

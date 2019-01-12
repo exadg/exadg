@@ -318,7 +318,8 @@ DGOperation<dim, degree, Number>::initialize_preconditioner()
                     "Invalid solver parameters. The convective term is treated explicitly."));
     }
 
-    AssertThrow(dof_handler_velocity.get() != 0,
+    AssertThrow(param.type_velocity_field != TypeVelocityField::Numerical ||
+                  dof_handler_velocity.get() != 0,
                 ExcMessage("dof_handler_velocity is not initialized."));
 
     MultigridData mg_data;

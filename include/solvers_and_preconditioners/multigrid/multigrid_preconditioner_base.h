@@ -127,9 +127,10 @@ private:
                                  MGConstrainedDoFs &,
                                  Map const & dirichlet_bc);
 
-  void
+  virtual void
   initialize_matrixfree(std::vector<MGLevelIdentifier> & global_levels,
-                        Mapping<dim> const &             mapping);
+                        Mapping<dim> const &             mapping,
+                        void *                           operator_data);
 
   /*
    * Multigrid operators on each multigrid level.
@@ -175,11 +176,13 @@ private:
 
   MultigridData mg_data;
 
+protected:
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>            mg_dofhandler;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                mg_constrained_dofs;
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>>        mg_constrains;
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>> mg_matrixfree;
 
+private:
   MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer;
 
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;

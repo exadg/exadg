@@ -80,7 +80,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
                                                   global_levels,
                                                   p_levels,
                                                   dirichlet_bc);
-  this->initialize_matrixfree(global_levels, mapping);
+  this->initialize_matrixfree(global_levels, mapping, operator_data);
   this->initialize_mg_matrices(
     global_levels, mapping, periodic_face_pairs, operator_data, add_dof_handler);
   this->initialize_smoothers();
@@ -307,8 +307,11 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree(
   std::vector<MGLevelIdentifier> & global_levels,
-  Mapping<dim> const &             mapping)
+  Mapping<dim> const &             mapping,
+  void *                           operator_data)
 {
+  (void)operator_data;
+
   this->mg_matrixfree.resize(0, this->n_global_levels - 1);
 
   for(unsigned int i = 0; i < this->n_global_levels; i++)
