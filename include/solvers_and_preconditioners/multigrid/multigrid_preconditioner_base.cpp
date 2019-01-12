@@ -310,11 +310,11 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices(
   std::vector<MGLevelIdentifier> & global_levels,
-  const Mapping<dim> &             mapping,
+  const Mapping<dim> & /*mapping*/,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                          periodic_face_pairs,
-  void *                  operator_data_in,
-  DoFHandler<dim> const * add_dof_handler)
+  /*periodic_face_pairs*/,
+  void * operator_data_in,
+  DoFHandler<dim> const * /*add_dof_handler*/)
 {
   this->mg_matrices.resize(0, this->n_global_levels - 1);
 
@@ -322,7 +322,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrice
   for(unsigned int i = 0; i < this->n_global_levels; i++)
   {
     auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].degree));
+    matrix->reinit_void(*mg_matrixfree[i], *mg_constrains[i], operator_data_in);
+    mg_matrices[i].reset(matrix);
 
+    /*
     if(add_dof_handler != nullptr)
     {
       matrix->reinit_multigrid_add_dof_handler(*mg_dofhandler[i],
@@ -342,7 +345,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrice
                                periodic_face_pairs,
                                global_levels[i].level);
     }
-    mg_matrices[i].reset(matrix);
+     */
   }
 }
 

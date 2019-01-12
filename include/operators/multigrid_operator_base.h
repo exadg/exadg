@@ -95,6 +95,15 @@ public:
     AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
   }
 
+
+  void
+  reinit_void(MatrixFree<dim, Number> const & /*matrix_free*/,
+              AffineConstraints<double> const & /*constraint_matrix*/,
+              void * /*operator_data_in*/) const
+  {
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::reinit_void should be overwritten!"));
+  }
+
   virtual void
   reinit_multigrid(const DoFHandler<dim> & /*dof_handler*/,
                    const Mapping<dim> & /*mapping*/,

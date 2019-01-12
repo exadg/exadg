@@ -137,6 +137,15 @@ public:
   }
 
   void
+  reinit_void(MatrixFree<dim, Number> const &   matrix_free,
+              AffineConstraints<double> const & constraint_matrix,
+              void *                            operator_data_in) const
+  {
+    auto operator_data = *static_cast<AdditionalData *>(operator_data_in);
+    this->reinit(matrix_free, constraint_matrix, operator_data);
+  }
+
+  void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          AdditionalData const &            operator_data) const;

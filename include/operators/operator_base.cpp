@@ -95,6 +95,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit_multigri
                      periodic_face_pairs,
   unsigned int const level)
 {
+  AssertThrow(false,
+              ExcMessage("OperatorBase::reinit_multigrid should be not be accessed any more!"));
+
   // create copy of data and ...
   auto operator_data = *static_cast<AdditionalData *>(operator_data_in);
   // set dof_index and quad_index to 0 since we only consider a subset
