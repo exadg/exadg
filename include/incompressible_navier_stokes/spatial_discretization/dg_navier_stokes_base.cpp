@@ -761,7 +761,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   // use multigrid preconditioner with Chebyshev smoother
   MultigridData mg_data;
 
-  typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
+  typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
   typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber> MG_OPERATOR;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;

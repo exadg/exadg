@@ -14,7 +14,9 @@
 #include "operator_type.h"
 
 #include "../functionalities/lazy_ptr.h"
-#include "multigrid_operator_base.h"
+
+#include "../solvers_and_preconditioners/util/invert_diagonal.h"
+#include "operator_preconditionable.h"
 
 using namespace dealii;
 
@@ -103,8 +105,8 @@ struct OperatorBaseData
   bool implement_block_diagonal_preconditioner_matrix_free;
 };
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components=1>
-class OperatorBase
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components = 1>
+class OperatorBase : virtual public PreconditionableOperator<dim, Number>
 {
 public:
   static const int DIM = dim;
@@ -118,8 +120,8 @@ public:
   typedef TrilinosWrappers::SparseMatrix SparseMatrix;
 #endif
 
-  typedef std::vector<LAPACKFullMatrix<Number>>                BlockMatrix;
-  typedef std::pair<unsigned int, unsigned int>                Range;
+  typedef std::vector<LAPACKFullMatrix<Number>>                           BlockMatrix;
+  typedef std::pair<unsigned int, unsigned int>                           Range;
   typedef FEEvaluation<dim, degree, degree + 1, n_components, Number>     FEEvalCell;
   typedef FEFaceEvaluation<dim, degree, degree + 1, n_components, Number> FEEvalFace;
   typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>
@@ -140,10 +142,10 @@ public:
          AdditionalData const &            operator_data) const;
 
   void
-  reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
-                   AffineConstraints<double> const & constraint_matrix,
-                   AdditionalData const &            operator_data,
-                   unsigned int const                level) const;
+  reinit_multigrid_(MatrixFree<dim, Number> const &   matrix_free,
+                    AffineConstraints<double> const & constraint_matrix,
+                    AdditionalData const &            operator_data,
+                    unsigned int const                level) const;
 
   void
   do_reinit_multigrid(
@@ -154,6 +156,167 @@ public:
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                        periodic_face_pairs,
     unsigned int const level);
+
+
+  virtual PreconditionableOperator<dim, Number> *
+  get_new(unsigned int /*deg*/) const
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  virtual void
+  reinit_multigrid(
+    DoFHandler<dim> const &   dof_handler,
+    Mapping<dim> const &      mapping,
+    void *                    operator_data,
+    MGConstrainedDoFs const & mg_constrained_dofs,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                       periodic_face_pairs,
+    unsigned int const level)
+  {
+    do_reinit_multigrid(
+      dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
+  }
+
+
+  virtual void
+  reinit_multigrid_add_dof_handler(
+    const DoFHandler<dim> & /*dof_handler*/,
+    const Mapping<dim> & /*mapping*/,
+    void * /*operator_data*/,
+    const MGConstrainedDoFs & /*mg_constrained_dofs*/,
+    std::vector<GridTools::PeriodicFacePair<
+      typename Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
+    const unsigned int /*level*/,
+    const DoFHandler<dim> * /*additional_dof_handler*/)
+  {
+  }
+
+  void
+  vmult(VectorType & dst, VectorType const & src) const
+  {
+    this->apply(dst, src);
+  }
+
+  void
+  vmult_add(VectorType & dst, VectorType const & src) const
+  {
+    this->apply_add(dst, src);
+  }
+
+  void
+  vmult_interface_down(VectorType & dst, VectorType const & src) const
+  {
+    vmult(dst, src);
+  }
+
+  void
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
+  {
+    vmult_add(dst, src);
+  }
+
+  types::global_dof_index
+  m() const
+  {
+    return n();
+  }
+
+  types::global_dof_index
+  n() const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    return data.get_vector_partitioner(dof_index)->size();
+  }
+
+
+
+  Number
+  el(const unsigned int, const unsigned int) const
+  {
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
+  }
+
+  bool
+  is_empty_locally() const
+  {
+    MatrixFree<dim, Number> const & data = get_data();
+    return (data.n_macro_cells() == 0);
+  }
+
+  AffineConstraints<double> const &
+  get_constraint_matrix() const
+  {
+    return this->do_get_constraint_matrix();
+  }
+
+  MatrixFree<dim, Number> const &
+  get_data() const
+  {
+    return *this->data;
+  }
+
+  unsigned int
+  get_dof_index() const
+  {
+    return this->operator_data.dof_index;
+  }
+
+  void
+  calculate_inverse_diagonal(VectorType & diagonal) const
+  {
+    this->calculate_diagonal(diagonal);
+    invert_diagonal(diagonal);
+  }
+
+  void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
+  {
+    AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
+                ExcMessage("Not implemented."));
+
+    this->apply_inverse_block_diagonal_matrix_based(dst, src);
+  }
+
+  void
+  update_block_diagonal_preconditioner() const
+  {
+    this->do_update_block_diagonal_preconditioner();
+  }
+
+  bool
+  is_singular() const
+  {
+    return this->operator_is_singular();
+  }
+
+
+  void
+  initialize_dof_vector(VectorType & vector) const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    data.initialize_dof_vector(vector, dof_index);
+  }
+
+
+#ifdef DEAL_II_WITH_TRILINOS
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_init_system_matrix(system_matrix);
+  }
+
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_calculate_system_matrix(system_matrix);
+  }
+#endif
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is

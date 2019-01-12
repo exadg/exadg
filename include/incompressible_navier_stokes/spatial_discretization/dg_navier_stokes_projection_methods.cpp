@@ -115,7 +115,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
     // use single precision for multigrid
     typedef float MultigridNumber;
 
-    typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
+    typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
     typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber> MG_OPERATOR;
 
     typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;

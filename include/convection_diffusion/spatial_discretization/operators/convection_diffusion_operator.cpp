@@ -173,7 +173,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
 
   // AffineConstraints<double> constraint_own;
   // constraint_own.close();
-  Base::reinit_multigrid(data_own, constraint_dummy, operator_data, level);
+  Base::reinit_multigrid_(data_own, constraint_dummy, operator_data, level);
 
   // use own operators
   mass_matrix_operator.reset();
@@ -185,10 +185,10 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
     auto & op_data = this->operator_data.mass_matrix_operator_data;
     //    op_data.dof_index  = 0;
     //    op_data.quad_index = 0;
-    mass_matrix_operator.own().reinit_multigrid(this->get_data(),
-                                                this->get_constraint_matrix(),
-                                                op_data,
-                                                level);
+    mass_matrix_operator.own().reinit_multigrid_(this->get_data(),
+                                                 this->get_constraint_matrix(),
+                                                 op_data,
+                                                 level);
   }
 
   // setup own convective operator
@@ -197,10 +197,10 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
     //    op_data.dof_index          = 0;
     //    op_data.quad_index         = 0;
     //    op_data.dof_index_velocity = 1;
-    convective_operator.own().reinit_multigrid(this->get_data(),
-                                               this->get_constraint_matrix(),
-                                               op_data,
-                                               level);
+    convective_operator.own().reinit_multigrid__(this->get_data(),
+                                                 this->get_constraint_matrix(),
+                                                 op_data,
+                                                 level);
   }
 
   // setup own viscous operator
@@ -208,7 +208,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handl
     auto & op_data = this->operator_data.diffusive_operator_data;
     //    op_data.dof_index  = 0;
     //    op_data.quad_index = 0;
-    diffusive_operator.own().reinit_multigrid(
+    diffusive_operator.own().reinit_multigrid__(
       mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
   }
 
@@ -655,7 +655,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::add_block_diagonal_matrices(
 }
 
 template<int dim, int degree, typename Number>
-MultigridOperatorBase<dim, Number> *
+PreconditionableOperator<dim, Number> *
 ConvectionDiffusionOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)

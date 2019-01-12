@@ -75,7 +75,7 @@ struct MomentumOperatorData
 };
 
 template<int dim, int degree, typename Number = double>
-class MomentumOperator : public MultigridOperatorBase<dim, Number>
+class MomentumOperator : public PreconditionableOperatorDummy<dim, Number>
 {
 public:
   typedef MomentumOperator<dim, degree, Number> This;
@@ -220,7 +220,7 @@ public:
                                        VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size = 1) const;
 
-  virtual MultigridOperatorBase<dim, Number> *
+  virtual PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const;
 
 private:

@@ -638,7 +638,7 @@ MomentumOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
 }
 
 template<int dim, int degree, typename Number>
-MultigridOperatorBase<dim, Number> *
+PreconditionableOperator<dim, Number> *
 MomentumOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
   AssertThrow(deg == degree, ExcMessage("Not compatible with p-MG!"));

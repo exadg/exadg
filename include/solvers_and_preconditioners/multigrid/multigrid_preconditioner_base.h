@@ -38,7 +38,7 @@ template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditionerBase : public PreconditionerBase<Number>
 {
 private:
-  typedef MultigridOperatorBase<dim, MultigridNumber> Operator;
+  typedef PreconditionableOperator<dim, MultigridNumber> Operator;
 
   typedef std::vector<std::pair<unsigned int, unsigned int>>           Levels;
   typedef std::map<types::boundary_id, std::shared_ptr<Function<dim>>> Map;

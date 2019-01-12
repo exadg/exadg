@@ -10,7 +10,7 @@
 using namespace dealii;
 
 template<int dim, typename Number = double>
-class MultigridOperatorBase : public LinearOperatorBase
+class PreconditionableOperatorDummy : public PreconditionableOperator<dim, Number>
 {
 public:
   typedef Number value_type;
@@ -18,6 +18,82 @@ public:
   static const int DIM = dim;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+
+
+  virtual void
+  apply(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
+
+  virtual void
+  evaluate_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+  }
 
   virtual void
   reinit_multigrid(const DoFHandler<dim> & /*dof_handler*/,
@@ -95,7 +171,7 @@ public:
   is_empty_locally() const
   {
     MatrixFree<dim, Number> const & data = get_data();
-    return (data->n_macro_cells() == 0);
+    return (data.n_macro_cells() == 0);
   }
 
   void
@@ -154,7 +230,7 @@ public:
     return 0;
   }
 
-  virtual MultigridOperatorBase<dim, Number> *
+  virtual PreconditionableOperator<dim, Number> *
   get_new(unsigned int /*deg*/) const
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::get_new should be overwritten!"));

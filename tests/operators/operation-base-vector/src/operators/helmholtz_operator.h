@@ -43,8 +43,7 @@ struct HelmholtzOperatorDataNew : public OperatorBaseData<dim>
 
 template<int dim, int degree, typename Number>
 class HelmholtzOperatorNew
-  : public OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim>,
-    public MultigridOperatorBase<dim, Number>
+  : public OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim>
 {
 private:
   typedef OperatorBase<dim, degree, Number, HelmholtzOperatorDataNew<dim>, dim> Base;
@@ -177,7 +176,7 @@ public:
   }
 #endif
 
-  MultigridOperatorBase<dim, Number> *
+  PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const
   {
     switch(deg)

@@ -131,8 +131,8 @@ public:
 
 private:
   void
-  local_diagonal_by_cell(const MF &         data,
-                         VectorType &       dst,
+  local_diagonal_by_cell(const MF & data,
+                         VectorType & /*dst*/,
                          const VectorType & src,
                          const Range &      cell_range) const
   {
@@ -245,7 +245,7 @@ class Runner
 {
 public:
   static void
-  run(ConvergenceTable & convergence_table)
+  run(ConvergenceTable & /*convergence_table*/)
   {
     int size;
     MPI_Comm_size(MPI_COMM_WORLD, &size);
@@ -272,7 +272,7 @@ public:
     DoFHandler<dim> dof_handler_dg(triangulation);
     dof_handler_dg.distribute_dofs(fe_dgq);
     dof_handler_dg.distribute_mg_dofs();
-    bool is_dg = (fe_dgq.dofs_per_vertex == 0);
+    // bool is_dg = (fe_dgq.dofs_per_vertex == 0);
 
     MappingQGeneric<dim> mapping(fe_degree);
 

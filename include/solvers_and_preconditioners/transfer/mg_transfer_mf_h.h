@@ -11,7 +11,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>
 
-#include "../../operators/multigrid_operator_base.h"
+#include "../../operators/operator_preconditionable.h"
 
 using namespace dealii;
 
@@ -38,7 +38,7 @@ public:
 
   void
   set_operator(
-    const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> & operator_in)
+    const MGLevelObject<std::shared_ptr<PreconditionableOperator<dim, Number>>> & operator_in)
   {
     underlying_operator = &operator_in;
   }
@@ -119,7 +119,7 @@ public:
   }
 
 private:
-  const MGLevelObject<std::shared_ptr<MultigridOperatorBase<dim, Number>>> * underlying_operator;
+  const MGLevelObject<std::shared_ptr<PreconditionableOperator<dim, Number>>> * underlying_operator;
 
   // this map converts the multigrid level as used in the V-cycle to an actual
   // level in the triangulation (this is necessary since both numbers might not

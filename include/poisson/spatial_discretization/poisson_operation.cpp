@@ -68,7 +68,7 @@ DGOperation<dim, degree, Number>::setup_solver()
 
     typedef float MultigridNumber;
 
-    typedef MultigridOperatorBase<dim, MultigridNumber>               MG_BASE;
+    typedef PreconditionableOperator<dim, MultigridNumber>            MG_BASE;
     typedef Poisson::LaplaceOperator<dim, degree, MultigridNumber>    MG_OPERATOR;
     typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
 

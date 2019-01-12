@@ -38,7 +38,7 @@ LaplaceOperator<dim, degree, Number>::reinit_multigrid(
                      periodic_face_pairs,
   unsigned int const level)
 {
-  Base::do_reinit_multigrid(
+  Base::reinit_multigrid(
     dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
 
   // calculate penalty parameters
@@ -47,6 +47,8 @@ LaplaceOperator<dim, degree, Number>::reinit_multigrid(
                                                        mapping,
                                                        this->operator_data.dof_index);
 }
+
+/*
 
 template<int dim, int degree, typename Number>
 void
@@ -108,6 +110,7 @@ LaplaceOperator<dim, degree, Number>::update_block_diagonal_preconditioner() con
 {
   this->do_update_block_diagonal_preconditioner();
 }
+ */
 
 template<int dim, int degree, typename Number>
 bool
@@ -405,7 +408,7 @@ LaplaceOperator<dim, degree, Number>::do_boundary_integral(FEEvalFace &         
 }
 
 template<int dim, int degree, typename Number>
-MultigridOperatorBase<dim, Number> *
+PreconditionableOperator<dim, Number> *
 LaplaceOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)

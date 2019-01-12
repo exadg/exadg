@@ -38,7 +38,7 @@ struct CompatibleLaplaceOperatorData
 };
 
 template<int dim, int fe_degree, int fe_degree_p, typename Number = double>
-class CompatibleLaplaceOperator : public MultigridOperatorBase<dim, Number>
+class CompatibleLaplaceOperator : public PreconditionableOperatorDummy<dim, Number>
 {
 public:
   static const int DIM = dim;
@@ -224,7 +224,7 @@ public:
   void
   update_inverse_block_diagonal() const;
 
-  MultigridOperatorBase<dim, Number> *
+  PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const
   {
     AssertThrow(deg == fe_degree_p, ExcMessage("Not compatible for p-GMG!"));

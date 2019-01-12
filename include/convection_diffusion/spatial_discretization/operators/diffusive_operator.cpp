@@ -31,14 +31,14 @@ DiffusiveOperator<dim, degree, Number>::reinit(Mapping<dim> const &             
 
 template<int dim, int degree, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::reinit_multigrid(
+DiffusiveOperator<dim, degree, Number>::reinit_multigrid__(
   Mapping<dim> const &               mapping,
   MatrixFree<dim, Number> const &    mf_data,
   AffineConstraints<double> const &  constraint_matrix,
   DiffusiveOperatorData<dim> const & operator_data,
   unsigned int                       level)
 {
-  Base::reinit_multigrid(mf_data, constraint_matrix, operator_data, level);
+  Base::reinit_multigrid_(mf_data, constraint_matrix, operator_data, level);
 
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,

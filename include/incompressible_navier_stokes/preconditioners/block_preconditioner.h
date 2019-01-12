@@ -908,7 +908,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
     // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible
     // Laplace operator
-    typedef MultigridOperatorBase<dim, MultigridNumber>                         MG_BASE;
+    typedef PreconditionableOperator<dim, MultigridNumber>                      MG_BASE;
     typedef CompatibleLaplaceOperator<dim, degree_u, degree_p, MultigridNumber> MG_OPERATOR;
 
     typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
@@ -939,7 +939,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
 
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-    typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
+    typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
     typedef Poisson::LaplaceOperator<dim, degree_u, MultigridNumber> MG_OPERATOR;
 
     typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;

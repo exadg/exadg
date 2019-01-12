@@ -35,7 +35,7 @@ private:
 public:
   MultigridPreconditioner()
     : MultigridPreconditionerBase<dim, Number, MultigridNumber>(
-        std::shared_ptr<MultigridOperatorBase<dim, MultigridNumber>>(new MultigridOperator()))
+        std::shared_ptr<PreconditionableOperator<dim, MultigridNumber>>(new MultigridOperator()))
   {
   }
 
@@ -122,7 +122,7 @@ private:
     {
       if(level == (int)this->n_global_levels - 1) // finest level
       {
-        // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
+        // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
         // so we have to dereference the shared_ptr, get the reference to it and
         // finally we can cast it to pointer of type Operator
         dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
@@ -154,7 +154,7 @@ private:
                                                                       dof_handler_velocity,
                                                                       level);
 
-        // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
+        // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
         // so we have to dereference the shared_ptr, get the reference to it and
         // finally we can cast it to pointer of type Operator
         dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
@@ -174,7 +174,7 @@ private:
   {
     for(int level = this->n_global_levels - 1; level >= 0; --level)
     {
-      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
+      // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
       dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
@@ -192,7 +192,7 @@ private:
   {
     for(int level = this->n_global_levels - 1; level >= 0; --level)
     {
-      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
+      // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
       dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])

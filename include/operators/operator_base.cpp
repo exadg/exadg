@@ -76,7 +76,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit_multigrid(
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit_multigrid_(
   MatrixFree<dim, Number> const &   matrix_free,
   AffineConstraints<double> const & constraint_matrix,
   AdditionalData const &            operator_data,
@@ -152,13 +152,13 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_reinit_multi
   auto & data_own = data.own();
   data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
 
-  reinit_multigrid(data_own, constraint_own, operator_data, level);
+  reinit_multigrid_(data_own, constraint_own, operator_data, level);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply(VectorType &       dst,
-                                                         VectorType const & src) const
+                                                                       VectorType const & src) const
 {
   dst = 0;
   apply_add(dst, src);
@@ -166,8 +166,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply(VectorTyp
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
-                                                             VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   VectorType const * actual_src = &src;
   VectorType         tmp_projection_vector;
@@ -213,8 +214,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(Vecto
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
-                                                             VectorType const & src,
-                                                             Number const       time) const
+                                                                           VectorType const & src,
+                                                                           Number const time) const
 {
   this->set_evaluation_time(time);
   this->apply_add(dst, src);
@@ -230,7 +231,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs(VectorType 
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs(VectorType & dst, Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs(VectorType & dst,
+                                                                     Number const time) const
 {
   this->set_evaluation_time(time);
   this->rhs(dst);
@@ -257,7 +259,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorT
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorType & dst,
-                                                           Number const time) const
+                                                                         Number const time) const
 {
   this->set_evaluation_time(time);
   this->rhs_add(dst);
@@ -266,8 +268,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorT
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate(VectorType &       dst,
-                                                            VectorType const & src,
-                                                            Number const       time) const
+                                                                          VectorType const & src,
+                                                                          Number const time) const
 {
   dst = 0;
   evaluate_add(dst, src, time);
@@ -275,9 +277,10 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate(Vector
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate_add(VectorType &       dst,
-                                                                VectorType const & src,
-                                                                Number const       time) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate_add(
+  VectorType &       dst,
+  VectorType const & src,
+  Number const       time) const
 {
   this->eval_time = time;
 
@@ -287,7 +290,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate_add(Ve
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_diagonal(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_diagonal(
+  VectorType & diagonal) const
 {
   if(diagonal.size() == 0)
     data->initialize_dof_vector(diagonal);
@@ -297,7 +301,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_diago
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(
+  VectorType & diagonal) const
 {
   // compute diagonal
   if(is_dg && do_eval_faces)
@@ -337,8 +342,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(Ve
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(VectorType & diagonal,
-                                                                Number const time) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(
+  VectorType & diagonal,
+  Number const time) const
 {
   this->set_evaluation_time(time);
   this->add_diagonal(diagonal);
@@ -346,9 +352,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(Ve
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_inverse_block_diagonal_matrix_based(
-  VectorType &       dst,
-  VectorType const & src) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+  apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_diagonal_preconditioner_is_initialized,
@@ -359,11 +364,11 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_inverse_b
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
-  unsigned int const                    cell,
-  VectorizedArray<Number> * const       dst,
-  VectorizedArray<Number> const * const src,
-  Number const                          evaluation_time) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src,
+                                       Number const                          evaluation_time) const
 {
   this->set_evaluation_time(evaluation_time);
 
@@ -372,10 +377,10 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add_block
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
-  unsigned int const                    cell,
-  VectorizedArray<Number> * const       dst,
-  VectorizedArray<Number> const * const src) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -445,7 +450,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_block_dia
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_update_block_diagonal_preconditioner() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+  do_update_block_diagonal_preconditioner() const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -486,7 +492,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_update_block
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_block_diagonal_matrices() const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_block_diagonal_matrices()
+  const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -643,7 +650,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::get_operator_da
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_evaluation_time(double const time) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_evaluation_time(
+  double const time) const
 {
   eval_time = time;
 }
@@ -693,8 +701,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::operator_is_sin
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(unsigned int j,
-                                                                         FEEvalCell & fe_eval) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(
+  unsigned int j,
+  FEEvalCell & fe_eval) const
 {
   // create a standard basis in the dof values of FEEvalution
   for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -704,8 +713,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(unsigned int j,
-                                                                         FEEvalFace & fe_eval) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(
+  unsigned int j,
+  FEEvalFace & fe_eval) const
 {
   // create a standard basis in the dof values of FEEvalution
   for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -733,10 +743,11 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop(MatrixFree<dim, Number> const & data,
-                                                             VectorType &                    dst,
-                                                             VectorType const &              src,
-                                                             Range const & range) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop(
+  MatrixFree<dim, Number> const & data,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   range) const
 {
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
 
@@ -759,10 +770,11 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop(Matri
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop(MatrixFree<dim, Number> const & data,
-                                                             VectorType &                    dst,
-                                                             VectorType const &              src,
-                                                             Range const & range) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop(
+  MatrixFree<dim, Number> const & data,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   range) const
 {
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_data.dof_index, operator_data.quad_index);
@@ -1124,11 +1136,11 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_apply_block_diagonal_matrix_based(
-  MatrixFree<dim, Number> const & data,
-  VectorType &                    dst,
-  VectorType const &              src,
-  Range const &                   range) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+  cell_loop_apply_block_diagonal_matrix_based(MatrixFree<dim, Number> const & data,
+                                              VectorType &                    dst,
+                                              VectorType const &              src,
+                                              Range const &                   range) const
 {
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
 
@@ -1593,11 +1605,11 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_calculate_system_matrix(
-  MatrixFree<dim, Number> const & data,
-  SparseMatrix &                  dst,
-  SparseMatrix const & /*src*/,
-  Range const & range) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+  boundary_face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & data,
+                                             SparseMatrix &                  dst,
+                                             SparseMatrix const & /*src*/,
+                                             Range const & range) const
 {
   FEEvalFace fe_eval(data, true, operator_data.dof_index, operator_data.quad_index);
 
@@ -1650,8 +1662,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::adjust_diagonal_for_singular_operator(
-  VectorType & diagonal) const
+OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+  adjust_diagonal_for_singular_operator(VectorType & diagonal) const
 {
   VectorType vec1, d;
   vec1.reinit(diagonal, true);

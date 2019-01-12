@@ -35,8 +35,7 @@ public:
 };
 
 template<int dim, int degree, typename Number>
-class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>,
-                        public MultigridOperatorBase<dim, Number>
+class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
 {
 private:
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Base;
@@ -69,6 +68,8 @@ public:
                        periodic_face_pairs,
     unsigned int const level);
 
+  /*
+
   void
   vmult(VectorType & dst, VectorType const & src) const;
 
@@ -93,6 +94,7 @@ public:
 
   void
   update_block_diagonal_preconditioner() const;
+   */
 
   /*
    * Returns whether the operator is singular, e.g., in case of pure Neumann boundary conditions.
@@ -100,21 +102,8 @@ public:
   bool
   is_singular() const;
 
-#ifdef DEAL_II_WITH_TRILINOS
-  virtual void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
-  {
-    this->do_init_system_matrix(system_matrix);
-  }
 
-  virtual void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
-  {
-    this->do_calculate_system_matrix(system_matrix);
-  }
-#endif
-
-  MultigridOperatorBase<dim, Number> *
+  PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const;
 
 private:

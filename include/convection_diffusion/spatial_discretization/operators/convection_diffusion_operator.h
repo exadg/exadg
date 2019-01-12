@@ -66,8 +66,7 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
 
 template<int dim, int degree, typename Number = double>
 class ConvectionDiffusionOperator
-  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>,
-    public MultigridOperatorBase<dim, Number>
+  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>
 {
 public:
   static const int DIM = dim;
@@ -220,7 +219,7 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
-  MultigridOperatorBase<dim, Number> *
+  PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const;
 
 private:
