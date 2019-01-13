@@ -78,22 +78,22 @@ public:
   {
     auto operator_data = static_cast<ConvectionDiffusionOperatorData<dim> *>(operator_data_in);
 
-    this->mg_matrixfree.resize(0, this->n_global_levels - 1);
+    this->mg_matrixfree.resize(this->min_level, this->max_level);
 
-    for(unsigned int i = 0; i < this->n_global_levels; i++)
+    for(auto level = this->min_level; level <= this->max_level; ++level)
     {
       auto data = new MatrixFree<dim, MultigridNumber>;
 
       typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
 
-      additional_data.level_mg_handler = global_levels[i].level;
+      additional_data.level_mg_handler = global_levels[level].level;
       additional_data.tasks_parallel_scheme =
         MatrixFree<dim, MultigridNumber>::AdditionalData::none;
       additional_data.mapping_update_flags =
         (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
          update_values);
 
-      if(global_levels[i].is_dg)
+      if(global_levels[level].is_dg)
       {
         additional_data.mapping_update_flags_inner_faces =
           (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
@@ -104,18 +104,21 @@ public:
            update_values);
       }
 
-      if(operator_data->use_cell_based_loops && global_levels[i].is_dg)
+      if(operator_data->use_cell_based_loops && global_levels[level].is_dg)
       {
         auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-          &this->mg_dofhandler[i]->get_triangulation());
-        Categorization::do_cell_based_loops(*tria, additional_data, global_levels[i].level);
+          &this->mg_dofhandler[level]->get_triangulation());
+        Categorization::do_cell_based_loops(*tria, additional_data, global_levels[level].level);
       }
 
       if(operator_data->type_velocity_field == TypeVelocityField::Analytical)
       {
-        QGauss<1> quadrature(global_levels[i].degree + 1);
-        data->reinit(
-          mapping, *this->mg_dofhandler[i], *this->mg_constrains[i], quadrature, additional_data);
+        QGauss<1> quadrature(global_levels[level].degree + 1);
+        data->reinit(mapping,
+                     *this->mg_dofhandler[level],
+                     *this->mg_constrains[level],
+                     quadrature,
+                     additional_data);
       }
       // we need two dof-handlers in case the velocity field comes from the fluid solver.
       else if(operator_data->type_velocity_field == TypeVelocityField::Numerical)
@@ -123,19 +126,19 @@ public:
         // collect dof-handlers
         std::vector<const DoFHandler<dim> *> dof_handler_vec;
         dof_handler_vec.resize(2);
-        dof_handler_vec[0] = &*this->mg_dofhandler[i];
-        dof_handler_vec[1] = &*this->mg_dofhandler_vel[i];
+        dof_handler_vec[0] = &*this->mg_dofhandler[level];
+        dof_handler_vec[1] = &*this->mg_dofhandler_vel[level];
 
         // collect affine matrices
         std::vector<const AffineConstraints<double> *> constraint_vec;
         constraint_vec.resize(2);
-        constraint_vec[0] = &*this->mg_constrains[i];
-        constraint_vec[1] = &*this->mg_constrains_vel[i];
+        constraint_vec[0] = &*this->mg_constrains[level];
+        constraint_vec[1] = &*this->mg_constrains_vel[level];
 
 
         std::vector<Quadrature<1>> quadrature_vec;
         quadrature_vec.resize(1);
-        quadrature_vec[0] = QGauss<1>(global_levels[i].degree + 1);
+        quadrature_vec[0] = QGauss<1>(global_levels[level].degree + 1);
 
         data->reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
       }
@@ -144,7 +147,7 @@ public:
         AssertThrow(false, ExcMessage("Not implemented."));
       }
 
-      this->mg_matrixfree[i].reset(data);
+      this->mg_matrixfree[level].reset(data);
     }
 
     // setup velocity transfer operator
@@ -229,13 +232,11 @@ private:
   void
   set_velocity(VectorTypeMG const & velocity)
   {
-    unsigned int min_level = 0, max_level = this->n_global_levels - 1;
-
     // copy velocity to finest level
-    this->get_matrix(max_level)->set_velocity(velocity);
+    this->get_matrix(this->max_level)->set_velocity(velocity);
 
     // interpolate velocity from fine to coarse level
-    for(unsigned int level = max_level; level > min_level; --level)
+    for(auto level = this->max_level; level > this->min_level; --level)
       mg_transfer_vel.interpolate(level,
                                   this->get_matrix(level - 1)->get_velocity(),
                                   this->get_matrix(level - 0)->get_velocity());
@@ -250,7 +251,7 @@ private:
   void
   set_evaluation_time(double const & evaluation_time)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
+    for(auto level = this->min_level; level <= this->max_level; ++level)
       this->get_matrix(level)->set_evaluation_time(evaluation_time);
   }
 
@@ -263,7 +264,7 @@ private:
   void
   set_scaling_factor_time_derivative_term(double const & scaling_factor)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
+    for(auto level = this->min_level; level <= this->max_level; ++level)
       this->get_matrix(level)->set_scaling_factor_time_derivative_term(scaling_factor);
   }
 
@@ -276,11 +277,9 @@ private:
   void
   update_smoothers()
   {
-    // Start with level = 1!
-    for(unsigned int level = 1; level < this->n_global_levels; ++level)
-    {
+    // Skip coarsest level!
+    for(auto level = this->min_level + 1; level <= this->max_level; ++level)
       this->update_smoother(level);
-    }
   }
 
   ConvectionDiffusionOperatorAbstract<dim, MultigridNumber> *

@@ -95,6 +95,8 @@ protected:
   update_coarse_solver();
 
   unsigned int n_global_levels;
+  unsigned int min_level;
+  unsigned int max_level;
 
   MGLevelObject<std::shared_ptr<Operator>> mg_matrices;
 

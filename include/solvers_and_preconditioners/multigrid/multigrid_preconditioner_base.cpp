@@ -84,6 +84,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type, is_dg);
   this->check_mg_sequence(global_levels);
   this->n_global_levels = global_levels.size(); // number of actual multigrid levels
+  this->min_level       = 0;
+  this->max_level       = this->n_global_levels - 1;
 
   // setup of multigrid components
   this->initialize_mg_dof_handler_and_constraints_all(underlying_operator->is_singular(),
