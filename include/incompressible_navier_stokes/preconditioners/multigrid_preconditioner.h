@@ -41,6 +41,19 @@ public:
 
   virtual ~MultigridPreconditioner(){};
 
+
+  void
+  initialize_matrixfree(std::vector<MGLevelIdentifier> & global_levels,
+                        Mapping<dim> const &             mapping,
+                        void *                           operator_data_in)
+  {
+    (void)global_levels;
+    (void)mapping;
+    (void)operator_data_in;
+
+    AssertThrow(false, ExcMessage("Not implemented yet!"));
+  }
+
   /*
    * This function updates the multigrid preconditioner.
    */

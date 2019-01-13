@@ -8,6 +8,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_ADAPTER_BASE_H_
 
+#include <deal.II/fe/fe.h>
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_gmres.h>
@@ -51,10 +52,16 @@ public:
 
   virtual ~MultigridPreconditionerBase();
 
-  /*
-   * Initialization function for both discontinuous and continuous Galerkin methods (and for DG with
-   * continuous Galerkin discretizations used as auxiliary space).
-   */
+  void
+  initialize(MultigridData const &                mg_data,
+             const parallel::Triangulation<dim> * tria,
+             const FiniteElement<dim> &           fe,
+             Mapping<dim> const &                 mapping,
+             void *                               operator_data,
+             Map const *                          dirichlet_bc = nullptr,
+             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
+               periodic_face_pairs = nullptr);
+
   void
   initialize(MultigridData const &   mg_data,
              DoFHandler<dim> const & dof_handler,
@@ -62,8 +69,7 @@ public:
              void *                  operator_data,
              Map const *             dirichlet_bc = nullptr,
              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-                                     periodic_face_pairs = nullptr,
-             DoFHandler<dim> const * add_dof_handler     = nullptr);
+               periodic_face_pairs = nullptr);
 
   /*
    * Update of multigrid preconditioner including mg_matrices, smoothers, etc. (e.g. for problems
@@ -116,7 +122,7 @@ private:
     bool is_singular,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                                                                          periodic_face_pairs,
-    DoFHandler<dim> const &                                              dof_handler,
+    FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
     std::vector<MGLevelIdentifier> &                                     global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
@@ -136,13 +142,7 @@ private:
    * Multigrid operators on each multigrid level.
    */
   void
-  initialize_mg_matrices(
-    std::vector<MGLevelIdentifier> & global_levels,
-    Mapping<dim> const &             mapping,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                            periodic_face_pairs,
-    void *                  operator_data,
-    DoFHandler<dim> const * add_dof_handler = nullptr);
+  initialize_mg_matrices(std::vector<MGLevelIdentifier> & global_levels, void * operator_data);
 
   /*
    * Smoother.

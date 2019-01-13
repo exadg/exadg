@@ -16,6 +16,7 @@
 
 #include "../../functionalities/categorization.h"
 #include "../../functionalities/constraints.h"
+#include "../../operators/operator_base.h"
 #include "../util/compute_eigenvalues.h"
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -39,14 +40,29 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   void *                  operator_data,
   Map const *             dirichlet_bc_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-                          periodic_face_pairs_in,
-  DoFHandler<dim> const * add_dof_handler)
+    periodic_face_pairs_in)
 {
-  this->mg_data = mg_data;
-
   // get triangulation
   parallel::Triangulation<dim> const * tria =
     dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+  const FiniteElement<dim> & fe = dof_handler.get_fe(/*TODO*/);
+  this->initialize(
+    mg_data, tria, fe, mapping, operator_data, dirichlet_bc_in, periodic_face_pairs_in);
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
+  MultigridData const &                mg_data,
+  const parallel::Triangulation<dim> * tria,
+  const FiniteElement<dim> &           fe,
+  Mapping<dim> const &                 mapping,
+  void *                               operator_data,
+  Map const *                          dirichlet_bc_in,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
+    periodic_face_pairs_in)
+{
+  this->mg_data = mg_data;
 
   if((/*is_cg ||*/ mg_data.coarse_solver == MultigridCoarseGridSolver::AMG_ML) &&
      ((dirichlet_bc_in == nullptr) || (dirichlet_bc_in == nullptr)))
@@ -61,8 +77,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 
   // extract paramters
   const auto   mg_type = this->mg_data.type;
-  unsigned int degree  = dof_handler.get_fe().degree;
-  const bool   is_dg   = dof_handler.get_fe().dofs_per_vertex == 0;
+  unsigned int degree  = fe.degree;
+  const bool   is_dg   = fe.dofs_per_vertex == 0;
 
   // setup sequence
   std::vector<unsigned int>           h_levels;
@@ -75,14 +91,13 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   // setup of multigrid components
   this->initialize_mg_dof_handler_and_constraints(underlying_operator->is_singular(),
                                                   periodic_face_pairs,
-                                                  dof_handler,
+                                                  fe,
                                                   tria,
                                                   global_levels,
                                                   p_levels,
                                                   dirichlet_bc);
   this->initialize_matrixfree(global_levels, mapping, operator_data);
-  this->initialize_mg_matrices(
-    global_levels, mapping, periodic_face_pairs, operator_data, add_dof_handler);
+  this->initialize_mg_matrices(global_levels, operator_data);
   this->initialize_smoothers();
   this->initialize_coarse_solver(global_levels[0].level);
   this->mg_transfer.template reinit<MultigridNumber>(mg_matrixfree,
@@ -242,7 +257,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     bool is_singular,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                                                                          periodic_face_pairs,
-    DoFHandler<dim> const &                                              dof_handler,
+    FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
     std::vector<MGLevelIdentifier> &                                     global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
@@ -252,7 +267,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   this->mg_dofhandler.resize(0, this->n_global_levels - 1);
   this->mg_constrains.resize(0, this->n_global_levels - 1);
 
-  const unsigned int n_components = dof_handler.get_fe().n_components();
+  const unsigned int n_components = fe.n_components();
 
   // temporal storage for new dofhandlers and constraints on each p-level
   std::map<MGDofHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
@@ -310,7 +325,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
   Mapping<dim> const &             mapping,
   void *                           operator_data)
 {
-  (void)operator_data;
+  auto & od                   = *static_cast<OperatorBaseData<dim> *>(operator_data);
+  bool   use_cell_based_loops = od.use_cell_based_loops;
 
   this->mg_matrixfree.resize(0, this->n_global_levels - 1);
 
@@ -336,7 +352,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
       //  operator_data.mapping_update_flags_boundary_faces;
     }
 
-    bool use_cell_based_loops = false;
     if(/*operator_data.*/ use_cell_based_loops && global_levels[i].is_dg)
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
@@ -344,6 +359,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
       Categorization::do_cell_based_loops(*tria, additional_data, global_levels[i].level);
     }
 
+    std::cout << global_levels[i].degree + 1 << std::endl;
     QGauss<1> const quad(global_levels[i].degree + 1);
     data->reinit(mapping, *mg_dofhandler[i], *mg_constrains[i], quad, additional_data);
 
@@ -355,11 +371,7 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices(
   std::vector<MGLevelIdentifier> & global_levels,
-  const Mapping<dim> & /*mapping*/,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-  /*periodic_face_pairs*/,
-  void * operator_data_in,
-  DoFHandler<dim> const * /*add_dof_handler*/)
+  void *                           operator_data_in)
 {
   this->mg_matrices.resize(0, this->n_global_levels - 1);
 

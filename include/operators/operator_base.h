@@ -141,7 +141,9 @@ public:
               AffineConstraints<double> const & constraint_matrix,
               void *                            operator_data_in) const
   {
-    auto operator_data = *static_cast<AdditionalData *>(operator_data_in);
+    auto operator_data       = *static_cast<AdditionalData *>(operator_data_in);
+    operator_data.dof_index  = 0;
+    operator_data.quad_index = 0;
     this->reinit(matrix_free, constraint_matrix, operator_data);
   }
 
