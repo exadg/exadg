@@ -130,8 +130,10 @@ void
 MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType &       dst,
                                                                    const VectorType & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm);
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
+                                                                               dof_handler_index);
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
+                                                                               dof_handler_index);
 
   for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
   {
@@ -166,8 +168,10 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
   VectorType &       dst,
   const VectorType & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm);
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
+                                                                               dof_handler_index);
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
+                                                                               dof_handler_index);
 
   for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
   {
@@ -204,8 +208,10 @@ void
 MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &       dst,
                                                                   const VectorType & src) const
 {
-  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm);
-  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm);
+  FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
+                                                                               dof_handler_index);
+  FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
+                                                                               dof_handler_index);
 
   for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
   {

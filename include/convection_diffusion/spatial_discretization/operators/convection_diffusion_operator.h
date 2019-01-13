@@ -64,9 +64,27 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
   MultigridOperatorType mg_operator_type;
 };
 
+template<int dim, typename Number = double>
+class ConvectionDiffusionOperatorAbstract : virtual public PreconditionableOperator<dim, Number>
+{
+public:
+  virtual LinearAlgebra::distributed::Vector<Number> &
+  get_velocity() const = 0;
+
+  virtual void
+  set_velocity(LinearAlgebra::distributed::Vector<Number> const & velocity) const = 0;
+
+  virtual void
+  set_scaling_factor_time_derivative_term(double const & factor) = 0;
+
+  virtual void
+  set_evaluation_time(double const evaluation_time_in) const = 0;
+};
+
 template<int dim, int degree, typename Number = double>
 class ConvectionDiffusionOperator
-  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>
+  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>,
+    virtual public ConvectionDiffusionOperatorAbstract<dim, Number>
 {
 public:
   static const int DIM = dim;
@@ -151,6 +169,13 @@ public:
 
   virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
+
+
+  virtual void
+  set_evaluation_time(double const evaluation_time_in) const
+  {
+    Base::set_evaluation_time(evaluation_time_in);
+  }
 
 
 #ifdef DEAL_II_WITH_TRILINOS

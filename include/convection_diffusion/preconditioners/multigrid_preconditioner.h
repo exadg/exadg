@@ -232,14 +232,13 @@ private:
     unsigned int min_level = 0, max_level = this->n_global_levels - 1;
 
     // copy velocity to finest level
-    dynamic_cast<MultigridOperator *>(&*this->mg_matrices[max_level])->set_velocity(velocity);
+    this->get_matrix(max_level)->set_velocity(velocity);
 
     // interpolate velocity from fine to coarse level
     for(unsigned int level = max_level; level > min_level; --level)
-      mg_transfer_vel.interpolate(
-        level,
-        dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level - 1])->get_velocity(),
-        dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level + 0])->get_velocity());
+      mg_transfer_vel.interpolate(level,
+                                  this->get_matrix(level - 1)->get_velocity(),
+                                  this->get_matrix(level - 0)->get_velocity());
   }
 
   /*
@@ -252,13 +251,7 @@ private:
   set_evaluation_time(double const & evaluation_time)
   {
     for(int level = this->n_global_levels - 1; level >= 0; --level)
-    {
-      // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
-      // so we have to dereference the shared_ptr, get the reference to it and
-      // finally we can cast it to pointer of type Operator
-      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-        ->set_evaluation_time(evaluation_time);
-    }
+      this->get_matrix(level)->set_evaluation_time(evaluation_time);
   }
 
   /*
@@ -268,16 +261,10 @@ private:
    *  the scaling factor of the derivative term is variable.
    */
   void
-  set_scaling_factor_time_derivative_term(double const & scaling_factor_time_derivative_term)
+  set_scaling_factor_time_derivative_term(double const & scaling_factor)
   {
     for(int level = this->n_global_levels - 1; level >= 0; --level)
-    {
-      // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
-      // so we have to dereference the shared_ptr, get the reference to it and
-      // finally we can cast it to pointer of type Operator
-      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-        ->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
-    }
+      this->get_matrix(level)->set_scaling_factor_time_derivative_term(scaling_factor);
   }
 
   /*
@@ -295,6 +282,14 @@ private:
       this->update_smoother(level);
     }
   }
+
+  ConvectionDiffusionOperatorAbstract<dim, MultigridNumber> *
+  get_matrix(unsigned int level)
+  {
+    return dynamic_cast<ConvectionDiffusionOperatorAbstract<dim, MultigridNumber> *>(
+      &*this->mg_matrices[level]);
+  }
+
   MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer_vel;
 
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     mg_dofhandler_vel;
