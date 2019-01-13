@@ -130,7 +130,7 @@ public:
   std::shared_ptr<BoundaryDescriptor<dim>>
   get_boundary_descriptor() const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  LinearAlgebra::distributed::Vector<Number> &
   get_velocity() const;
 
   void

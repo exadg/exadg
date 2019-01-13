@@ -73,7 +73,7 @@ public:
          AffineConstraints<double> const &   constraint_matrix,
          ConvectiveOperatorData<dim> const & operator_data) const;
 
-  LinearAlgebra::distributed::Vector<Number> const &
+  LinearAlgebra::distributed::Vector<Number> &
   get_velocity() const;
 
   void

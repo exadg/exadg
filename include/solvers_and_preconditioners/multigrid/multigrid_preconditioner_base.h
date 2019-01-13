@@ -117,8 +117,9 @@ private:
   /*
    * Dof-handlers and constraints.
    */
-  void
-  initialize_mg_dof_handler_and_constraints(
+protected:
+  virtual void
+  initialize_mg_dof_handler_and_constraints_all(
     bool is_singular,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                                                                          periodic_face_pairs,
@@ -128,6 +129,21 @@ private:
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc);
 
+  void
+  initialize_mg_dof_handler_and_constraints(
+    bool is_singular,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                                                         periodic_face_pairs,
+    FiniteElement<dim> const &                                           fe,
+    parallel::Triangulation<dim> const *                                 tria,
+    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGDofHandlerIdentifier> &                                p_levels,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              mg_dofhandler,
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  mg_constrained_dofs,
+    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          mg_constrains);
+
+private:
   virtual void
   initialize_mg_constrained_dofs(DoFHandler<dim> const &,
                                  MGConstrainedDoFs &,
@@ -181,6 +197,10 @@ protected:
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                mg_constrained_dofs;
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>>        mg_constrains;
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>> mg_matrixfree;
+
+  std::vector<unsigned int>           h_levels;
+  std::vector<MGDofHandlerIdentifier> p_levels;
+  std::vector<MGLevelIdentifier>      global_levels;
 
 private:
   MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer;

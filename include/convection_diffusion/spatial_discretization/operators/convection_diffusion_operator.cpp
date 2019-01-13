@@ -119,7 +119,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::get_boundary_descriptor() cons
 }
 
 template<int dim, int degree, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
+LinearAlgebra::distributed::Vector<Number> &
 ConvectionDiffusionOperator<dim, degree, Number>::get_velocity() const
 {
   return convective_operator->get_velocity();

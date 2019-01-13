@@ -81,21 +81,18 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   const bool   is_dg   = fe.dofs_per_vertex == 0;
 
   // setup sequence
-  std::vector<unsigned int>           h_levels;
-  std::vector<MGDofHandlerIdentifier> p_levels;
-  std::vector<MGLevelIdentifier>      global_levels;
   this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type, is_dg);
   this->check_mg_sequence(global_levels);
   this->n_global_levels = global_levels.size(); // number of actual multigrid levels
 
   // setup of multigrid components
-  this->initialize_mg_dof_handler_and_constraints(underlying_operator->is_singular(),
-                                                  periodic_face_pairs,
-                                                  fe,
-                                                  tria,
-                                                  global_levels,
-                                                  p_levels,
-                                                  dirichlet_bc);
+  this->initialize_mg_dof_handler_and_constraints_all(underlying_operator->is_singular(),
+                                                      periodic_face_pairs,
+                                                      fe,
+                                                      tria,
+                                                      global_levels,
+                                                      p_levels,
+                                                      dirichlet_bc);
   this->initialize_matrixfree(global_levels, mapping, operator_data);
   this->initialize_mg_matrices(global_levels, operator_data);
   this->initialize_smoothers();
@@ -253,7 +250,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_mg_sequence(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_mg_dof_handler_and_constraints(
+  initialize_mg_dof_handler_and_constraints_all(
     bool is_singular,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                                                                          periodic_face_pairs,
@@ -263,9 +260,37 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc)
 {
-  this->mg_constrained_dofs.resize(0, this->n_global_levels - 1);
-  this->mg_dofhandler.resize(0, this->n_global_levels - 1);
-  this->mg_constrains.resize(0, this->n_global_levels - 1);
+  initialize_mg_dof_handler_and_constraints(is_singular,
+                                            periodic_face_pairs,
+                                            fe,
+                                            tria,
+                                            global_levels,
+                                            p_levels,
+                                            dirichlet_bc,
+                                            this->mg_dofhandler,
+                                            this->mg_constrained_dofs,
+                                            this->mg_constrains);
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::
+  initialize_mg_dof_handler_and_constraints(
+    bool is_singular,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                                                         periodic_face_pairs,
+    FiniteElement<dim> const &                                           fe,
+    parallel::Triangulation<dim> const *                                 tria,
+    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGDofHandlerIdentifier> &                                p_levels,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              mg_dofhandler,
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  mg_constrained_dofs,
+    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          mg_constrains)
+{
+  mg_constrained_dofs.resize(0, this->n_global_levels - 1);
+  mg_dofhandler.resize(0, this->n_global_levels - 1);
+  mg_constrains.resize(0, this->n_global_levels - 1);
 
   const unsigned int n_components = fe.n_components();
 
@@ -308,13 +333,13 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 
     ConstraintUtil<dim>::add_constraints(global_levels[i].is_dg,
                                          is_singular,
-                                         *this->mg_dofhandler[i],
+                                         *mg_dofhandler[i],
                                          *constraint_own,
-                                         *this->mg_constrained_dofs[i],
+                                         *mg_constrained_dofs[i],
                                          periodic_face_pairs,
                                          global_levels[i].level);
 
-    this->mg_constrains[i].reset(constraint_own);
+    mg_constrains[i].reset(constraint_own);
   }
 }
 
@@ -359,7 +384,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
       Categorization::do_cell_based_loops(*tria, additional_data, global_levels[i].level);
     }
 
-    std::cout << global_levels[i].degree + 1 << std::endl;
     QGauss<1> const quad(global_levels[i].degree + 1);
     data->reinit(mapping, *mg_dofhandler[i], *mg_constrains[i], quad, additional_data);
 
