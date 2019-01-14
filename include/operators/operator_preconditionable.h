@@ -71,17 +71,6 @@ public:
               AffineConstraints<double> const &         constraint_matrix,
               PreconditionableOperatorData<dim> const & operator_data_in) const = 0;
 
-  // TODO: remove
-  virtual void
-  reinit_multigrid(
-    const DoFHandler<dim> &   dof_handler,
-    const Mapping<dim> &      mapping,
-    void *                    operator_data,
-    const MGConstrainedDoFs & mg_constrained_dofs,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    const unsigned int level = numbers::invalid_unsigned_int) = 0;
-
   /*
    *
    */

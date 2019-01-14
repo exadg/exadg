@@ -93,19 +93,6 @@ public:
     this->reinit(mf_data, constraint_matrix, operator_data);
   }
 
-
-  void
-  reinit_multigrid(
-    DoFHandler<dim> const &,
-    Mapping<dim> const &,
-    void *,
-    MGConstrainedDoFs const &,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &,
-    unsigned int const)
-  {
-    AssertThrow(false, ExcMessage("Function should not be accessed!"));
-  }
-
   void
   vmult(VectorType & dst, VectorType const & src) const
   {

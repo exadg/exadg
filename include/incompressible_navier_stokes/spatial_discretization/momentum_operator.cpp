@@ -41,17 +41,21 @@ MomentumOperator<dim, degree, Number>::reinit(
   set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
 }
 
+/*
 template<int dim, int degree, typename Number>
 void
 MomentumOperator<dim, degree, Number>::reinit_multigrid(
   DoFHandler<dim> const & dof_handler,
   Mapping<dim> const &    mapping,
   void *                  operator_data_in,
-  MGConstrainedDoFs const & /*mg_constrained_dofs*/,
+  MGConstrainedDoFs const & mg_constrained_dofs,
   std::vector<GridTools::PeriodicFacePair<
-    typename Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
+    typename Triangulation<dim>::cell_iterator>> & periodic_face_pairs,
   unsigned int const level)
 {
+    (void) mg_constrained_dofs;
+    (void) periodic_face_pairs;
+
   auto operator_data = *static_cast<MomentumOperatorData<dim> *>(operator_data_in);
 
   // setup own matrix free object
@@ -160,6 +164,7 @@ MomentumOperator<dim, degree, Number>::reinit_multigrid(
   // function vmult_add(), i.e., when using the multigrid preconditioner
   this->initialize_dof_vector(temp_vector);
 }
+ */
 
 template<int dim, int degree, typename Number>
 void

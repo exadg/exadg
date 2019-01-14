@@ -376,12 +376,6 @@ public:
                           contraint_matrix_dg);
       laplace_dg.reinit(mapping, matrixfree_dg, contraint_matrix_dg, laplace_additional_data);
 
-      //      laplace_dg.reinit_multigrid(dof_handler_dg,
-      //                                  mapping,
-      //                                  laplace_additional_data,
-      //                                  mg_constrained_dofs_cg /*TODO*/,
-      //                                  periodic_face_pairs,
-      //                                  level);
       MatrixFree<dim, value_type> matrixfree_cg;
       AffineConstraints<double>   contraint_matrix_cg;
       do_reinit_multigrid(dof_handler_cg,
@@ -393,12 +387,6 @@ public:
                           matrixfree_cg,
                           contraint_matrix_cg);
       laplace_cg.reinit(mapping, matrixfree_cg, contraint_matrix_cg, laplace_additional_data);
-      //      laplace_cg.reinit_multigrid(dof_handler_cg,
-      //                                  mapping,
-      //                                  laplace_additional_data,
-      //                                  mg_constrained_dofs_cg,
-      //                                  periodic_face_pairs,
-      //                                  level);
       run(laplace_dg, laplace_cg, level);
     }
 

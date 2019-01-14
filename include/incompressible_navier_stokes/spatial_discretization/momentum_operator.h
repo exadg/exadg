@@ -101,20 +101,6 @@ public:
          ConvectiveOperator<dim, degree, Number> const & convective_operator);
 
   /*
-   *  This function is called by the multigrid algorithm to initialize the
-   *  multigrid operators on all levels.
-   */
-  void
-  reinit_multigrid(
-    DoFHandler<dim> const & dof_handler,
-    Mapping<dim> const &    mapping,
-    void *                  operator_data,
-    MGConstrainedDoFs const & /*mg_constrained_dofs*/,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    unsigned int const level);
-
-  /*
    * Setters and getters.
    */
 
