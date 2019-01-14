@@ -55,6 +55,8 @@
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 
+#include "../../operation-base-util/operator_reinit_multigrid.h"
+
 using namespace dealii;
 using namespace Poisson;
 
@@ -204,12 +206,18 @@ public:
       if(!CATEGORIZE || true)
         for(unsigned int level = 0; level <= global_refinements; level++)
         {
-          laplace.reinit_multigrid(dof_handler_dg,
-                                   mapping,
-                                   laplace_additional_data,
-                                   mg_constrained_dofs,
-                                   periodic_face_pairs,
-                                   level);
+          MatrixFree<dim, value_type> matrixfree;
+          AffineConstraints<double>   contraint_matrix;
+          do_reinit_multigrid(dof_handler_dg,
+                              mapping,
+                              laplace_additional_data,
+                              mg_constrained_dofs,
+                              periodic_face_pairs,
+                              level,
+                              matrixfree,
+                              contraint_matrix);
+
+          laplace.reinit(mapping, matrixfree, contraint_matrix, laplace_additional_data);
           process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table, level);
         }
 
@@ -283,12 +291,18 @@ public:
       if(!CATEGORIZE || true)
         for(unsigned int level = 0; level <= global_refinements; level++)
         {
-          conv_diff_operator.reinit_multigrid(dof_handler_dg,
-                                              mapping,
-                                              conv_diff_operator_data,
-                                              mg_constrained_dofs,
-                                              periodic_face_pairs,
-                                              level);
+          MatrixFree<dim, value_type> matrixfree;
+          AffineConstraints<double>   contraint_matrix;
+          do_reinit_multigrid(dof_handler_dg,
+                              mapping,
+                              conv_diff_operator_data,
+                              mg_constrained_dofs,
+                              periodic_face_pairs,
+                              level,
+                              matrixfree,
+                              contraint_matrix);
+          conv_diff_operator.reinit(matrixfree, contraint_matrix, conv_diff_operator_data);
+
           process(
             conv_diff_operator, conv_diff_operator_data, size, is_dg, 4, convergence_table, level);
         }

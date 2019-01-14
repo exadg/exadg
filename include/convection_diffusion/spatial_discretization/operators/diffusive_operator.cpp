@@ -19,6 +19,7 @@ DiffusiveOperator<dim, degree, Number>::reinit(
   AffineConstraints<double> const &  constraint_matrix,
   DiffusiveOperatorData<dim> const & operator_data) const
 {
+  // TODO: adjust as in the case of laplace
   MappingQGeneric<dim> mapping(degree);
   this->reinit(mapping, mf_data, constraint_matrix, operator_data);
 }

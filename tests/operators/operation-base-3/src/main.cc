@@ -51,6 +51,8 @@
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 
+#include "../../operation-base-util/operator_reinit_multigrid.h"
+
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>
 #endif
@@ -335,12 +337,18 @@ public:
     // run through all multigrid level
     for(unsigned int level = 0; level <= global_refinements; level++)
     {
-      laplace.reinit_multigrid(dof_handler_dg,
-                               mapping,
-                               laplace_additional_data,
-                               mg_constrained_dofs,
-                               periodic_face_pairs,
-                               level);
+      MatrixFree<dim, value_type> matrixfree;
+      AffineConstraints<double>   contraint_matrix;
+      do_reinit_multigrid(dof_handler_dg,
+                          mapping,
+                          laplace_additional_data,
+                          mg_constrained_dofs,
+                          periodic_face_pairs,
+                          level,
+                          matrixfree,
+                          contraint_matrix);
+
+      laplace.reinit(mapping, matrixfree, contraint_matrix, laplace_additional_data);
       run(laplace, level);
     }
 

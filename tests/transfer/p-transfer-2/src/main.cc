@@ -54,6 +54,8 @@
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 #include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.h"
 
+#include "../../../operators/operation-base-util/operator_reinit_multigrid.h"
+
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>
 #endif
@@ -391,18 +393,30 @@ public:
     // run through all multigrid level
     for(unsigned int level = 0; level <= global_refinements; level++)
     {
-      laplace_1.reinit_multigrid(dof_handler_1,
-                                 mapping_1,
-                                 laplace_additional_data,
-                                 mg_constrained_dofs_1,
-                                 periodic_face_pairs,
-                                 level);
-      laplace_2.reinit_multigrid(dof_handler_2,
-                                 mapping_2,
-                                 laplace_additional_data,
-                                 mg_constrained_dofs_2,
-                                 periodic_face_pairs,
-                                 level);
+      MatrixFree<dim, value_type> matrixfree_1;
+      AffineConstraints<double>   contraint_matrix_1;
+      do_reinit_multigrid(dof_handler_1,
+                          mapping_1,
+                          laplace_additional_data,
+                          mg_constrained_dofs_1,
+                          periodic_face_pairs,
+                          level,
+                          matrixfree_1,
+                          contraint_matrix_1);
+      laplace_1.reinit(mapping_1, matrixfree_1, contraint_matrix_1, laplace_additional_data);
+
+      MatrixFree<dim, value_type> matrixfree_2;
+      AffineConstraints<double>   contraint_matrix_2;
+      do_reinit_multigrid(dof_handler_2,
+                          mapping_2,
+                          laplace_additional_data,
+                          mg_constrained_dofs_2,
+                          periodic_face_pairs,
+                          level,
+                          matrixfree_2,
+                          contraint_matrix_2);
+      laplace_2.reinit(mapping_2, matrixfree_2, contraint_matrix_2, laplace_additional_data);
+
       run(laplace_1, laplace_2, level);
     }
 

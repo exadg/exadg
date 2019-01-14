@@ -53,6 +53,8 @@
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 #include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
 
+#include "../../../operators/operation-base-util/operator_reinit_multigrid.h"
+
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
 
@@ -361,18 +363,41 @@ public:
     // run through all multigrid level
     for(unsigned int level = 0; level <= global_refinements; level++)
     {
-      laplace_dg.reinit_multigrid(dof_handler_dg,
-                                  mapping,
-                                  laplace_additional_data,
-                                  mg_constrained_dofs_cg /*TODO*/,
-                                  periodic_face_pairs,
-                                  level);
-      laplace_cg.reinit_multigrid(dof_handler_cg,
-                                  mapping,
-                                  laplace_additional_data,
-                                  mg_constrained_dofs_cg,
-                                  periodic_face_pairs,
-                                  level);
+      MatrixFree<dim, value_type> matrixfree_dg;
+      AffineConstraints<double>   contraint_matrix_dg;
+      do_reinit_multigrid(dof_handler_dg,
+                          mapping,
+                          laplace_additional_data,
+                          mg_constrained_dofs_cg,
+                          periodic_face_pairs,
+                          level,
+                          matrixfree_dg,
+                          contraint_matrix_dg);
+      laplace_dg.reinit(mapping, matrixfree_dg, contraint_matrix_dg, laplace_additional_data);
+
+      //      laplace_dg.reinit_multigrid(dof_handler_dg,
+      //                                  mapping,
+      //                                  laplace_additional_data,
+      //                                  mg_constrained_dofs_cg /*TODO*/,
+      //                                  periodic_face_pairs,
+      //                                  level);
+      MatrixFree<dim, value_type> matrixfree_cg;
+      AffineConstraints<double>   contraint_matrix_cg;
+      do_reinit_multigrid(dof_handler_cg,
+                          mapping,
+                          laplace_additional_data,
+                          mg_constrained_dofs_cg,
+                          periodic_face_pairs,
+                          level,
+                          matrixfree_cg,
+                          contraint_matrix_cg);
+      laplace_cg.reinit(mapping, matrixfree_cg, contraint_matrix_cg, laplace_additional_data);
+      //      laplace_cg.reinit_multigrid(dof_handler_cg,
+      //                                  mapping,
+      //                                  laplace_additional_data,
+      //                                  mg_constrained_dofs_cg,
+      //                                  periodic_face_pairs,
+      //                                  level);
       run(laplace_dg, laplace_cg, level);
     }
 

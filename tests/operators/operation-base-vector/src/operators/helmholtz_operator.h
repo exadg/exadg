@@ -39,6 +39,7 @@ struct HelmholtzOperatorDataNew : public OperatorBaseData<dim>
   double                           IP_factor;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
+  std::shared_ptr<Mapping<dim>>             mapping;
 
   double viscosity;
 };
@@ -70,49 +71,39 @@ public:
          AffineConstraints<double> const &     constraint_matrix,
          HelmholtzOperatorDataNew<dim> const & operator_data) const
   {
-    MappingQ<dim> mapping(degree);
-    this->reinit(mapping, mf_data, constraint_matrix, operator_data);
+    Base::reinit(mf_data, constraint_matrix, operator_data);
+
+    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
+                                                         *this->data,
+                                                         *operator_data.mapping,
+                                                         this->operator_data.dof_index);
+
+    const_viscosity = this->operator_data.viscosity;
   }
 
   void
   reinit(Mapping<dim> const &                  mapping,
          MatrixFree<dim, Number> const &       mf_data,
          AffineConstraints<double> const &     constraint_matrix,
-         HelmholtzOperatorDataNew<dim> const & operator_data) const
+         HelmholtzOperatorDataNew<dim> const & operator_data_in) const
   {
-    Base::reinit(mf_data, constraint_matrix, operator_data);
+    HelmholtzOperatorDataNew<dim> operator_data = operator_data_in;
+    operator_data.mapping                       = std::move(mapping.clone());
 
-    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                         *this->data,
-                                                         mapping,
-                                                         this->operator_data.dof_index);
-
-    const_viscosity = this->operator_data.viscosity;
+    this->reinit(mf_data, constraint_matrix, operator_data);
   }
 
 
   void
   reinit_multigrid(
-    DoFHandler<dim> const &   dof_handler,
-    Mapping<dim> const &      mapping,
-    void *                    operator_data,
-    MGConstrainedDoFs const & mg_constrained_dofs,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    unsigned int const level)
+    DoFHandler<dim> const &,
+    Mapping<dim> const &,
+    void *,
+    MGConstrainedDoFs const &,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &,
+    unsigned int const)
   {
-    //  AssertThrow(false, ExcMessage("Function not implemented!"));
-
-
-    Base::reinit_multigrid(
-      dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
-
-    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                         *this->data,
-                                                         mapping,
-                                                         this->operator_data.dof_index);
-
-    const_viscosity = this->operator_data.viscosity;
+    AssertThrow(false, ExcMessage("Function should not be accessed!"));
   }
 
   void
