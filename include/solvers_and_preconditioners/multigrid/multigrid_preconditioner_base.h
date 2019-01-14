@@ -129,7 +129,8 @@ protected:
     parallel::Triangulation<dim> const *                                 tria,
     std::vector<MGLevelIdentifier> &                                     global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc);
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    PreconditionableOperatorData<dim> const &                            operator_data);
 
   void
   initialize_mg_dof_handler_and_constraints(

@@ -94,7 +94,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
                                                       tria,
                                                       global_levels,
                                                       p_levels,
-                                                      dirichlet_bc);
+                                                      dirichlet_bc,
+                                                      operator_data);
   this->initialize_matrixfree(global_levels, mapping, operator_data);
   this->initialize_mg_matrices(global_levels, operator_data);
   this->initialize_smoothers();
@@ -260,8 +261,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     parallel::Triangulation<dim> const *                                 tria,
     std::vector<MGLevelIdentifier> &                                     global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc)
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    PreconditionableOperatorData<dim> const &                            operator_data)
 {
+  (void)operator_data;
+
   initialize_mg_dof_handler_and_constraints(is_singular,
                                             periodic_face_pairs,
                                             fe,

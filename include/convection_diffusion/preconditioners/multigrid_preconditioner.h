@@ -49,26 +49,36 @@ public:
     parallel::Triangulation<dim> const *                                 tria,
     std::vector<MGLevelIdentifier> &                                     global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc)
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    PreconditionableOperatorData<dim> const &                            operator_data_in)
   {
-    BASE::initialize_mg_dof_handler_and_constraints_all(
-      is_singular, periodic_face_pairs, fe, tria, global_levels, p_levels, dirichlet_bc);
+    BASE::initialize_mg_dof_handler_and_constraints_all(is_singular,
+                                                        periodic_face_pairs,
+                                                        fe,
+                                                        tria,
+                                                        global_levels,
+                                                        p_levels,
+                                                        dirichlet_bc,
+                                                        operator_data_in);
 
-    // if(param.type_velocity_field == TypeVelocityField::Numerical)
-    //{
-    FESystem<dim> fe_vel(FE_DGQ<dim>(fe.degree), dim);
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc_vel;
-    this->initialize_mg_dof_handler_and_constraints(false,
-                                                    periodic_face_pairs,
-                                                    fe_vel,
-                                                    tria,
-                                                    global_levels,
-                                                    p_levels,
-                                                    dirichlet_bc_vel,
-                                                    this->mg_dofhandler_vel,
-                                                    this->mg_constrained_dofs_vel,
-                                                    this->mg_constrains_vel);
-    //}
+
+    const auto & operator_data =
+      static_cast<ConvectionDiffusionOperatorData<dim> const &>(operator_data_in);
+    if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      FESystem<dim> fe_vel(FE_DGQ<dim>(fe.degree), dim);
+      std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc_vel;
+      this->initialize_mg_dof_handler_and_constraints(false,
+                                                      periodic_face_pairs,
+                                                      fe_vel,
+                                                      tria,
+                                                      global_levels,
+                                                      p_levels,
+                                                      dirichlet_bc_vel,
+                                                      this->mg_dofhandler_vel,
+                                                      this->mg_constrained_dofs_vel,
+                                                      this->mg_constrains_vel);
+    }
   }
 
   void
