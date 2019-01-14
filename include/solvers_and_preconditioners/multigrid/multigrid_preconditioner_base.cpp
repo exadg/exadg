@@ -34,11 +34,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::~MultigridPreconditio
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &   mg_data,
-  DoFHandler<dim> const & dof_handler,
-  Mapping<dim> const &    mapping,
-  void *                  operator_data,
-  Map const *             dirichlet_bc_in,
+  MultigridData const &                     mg_data,
+  DoFHandler<dim> const &                   dof_handler,
+  Mapping<dim> const &                      mapping,
+  PreconditionableOperatorData<dim> const & operator_data,
+  Map const *                               dirichlet_bc_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
     periodic_face_pairs_in)
 {
@@ -53,12 +53,12 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &                mg_data,
-  const parallel::Triangulation<dim> * tria,
-  const FiniteElement<dim> &           fe,
-  Mapping<dim> const &                 mapping,
-  void *                               operator_data,
-  Map const *                          dirichlet_bc_in,
+  MultigridData const &                     mg_data,
+  const parallel::Triangulation<dim> *      tria,
+  const FiniteElement<dim> &                fe,
+  Mapping<dim> const &                      mapping,
+  PreconditionableOperatorData<dim> const & operator_data,
+  Map const *                               dirichlet_bc_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
     periodic_face_pairs_in)
 {
@@ -348,13 +348,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree(
-  std::vector<MGLevelIdentifier> & global_levels,
-  Mapping<dim> const &             mapping,
-  void *                           operator_data)
+  std::vector<MGLevelIdentifier> &          global_levels,
+  Mapping<dim> const &                      mapping,
+  PreconditionableOperatorData<dim> const & operator_data)
 {
-  auto & od                   = *static_cast<OperatorBaseData<dim> *>(operator_data);
-  bool   use_cell_based_loops = od.use_cell_based_loops;
-
   this->mg_matrixfree.resize(0, this->n_global_levels - 1);
 
   for(unsigned int i = 0; i < this->n_global_levels; i++)
@@ -363,23 +360,18 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
 
     // setup MatrixFree::AdditionalData
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
-    additional_data.level_mg_handler = global_levels[i].level;
-    // additional_data.mapping_update_flags = operator_data.mapping_update_flags;
-    additional_data.mapping_update_flags = update_gradients | update_JxW_values;
+    additional_data.level_mg_handler     = global_levels[i].level;
+    additional_data.mapping_update_flags = operator_data.get_mapping_update_flags();
 
     if(global_levels[i].is_dg)
     {
-      // additional_data.mapping_update_flags_inner_faces =
-      //  operator_data.mapping_update_flags_inner_faces;
       additional_data.mapping_update_flags_inner_faces =
-        additional_data.mapping_update_flags | update_values | update_normal_vectors;
-      // additional_data.mapping_update_flags_boundary_faces =
-      additional_data.mapping_update_flags_inner_faces =
-        additional_data.mapping_update_flags_inner_faces | update_quadrature_points;
-      //  operator_data.mapping_update_flags_boundary_faces;
+        operator_data.get_mapping_update_flags_inner_faces();
+      additional_data.mapping_update_flags_boundary_faces =
+        operator_data.get_mapping_update_flags_boundary_faces();
     }
 
-    if(/*operator_data.*/ use_cell_based_loops && global_levels[i].is_dg)
+    if(operator_data.do_use_cell_based_loops() && global_levels[i].is_dg)
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &mg_dofhandler[i]->get_triangulation());
@@ -396,8 +388,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices(
-  std::vector<MGLevelIdentifier> & global_levels,
-  void *                           operator_data_in)
+  std::vector<MGLevelIdentifier> &          global_levels,
+  PreconditionableOperatorData<dim> const & operator_data_in)
 {
   this->mg_matrices.resize(0, this->n_global_levels - 1);
 

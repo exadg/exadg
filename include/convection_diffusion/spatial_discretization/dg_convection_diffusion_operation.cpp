@@ -333,7 +333,7 @@ DGOperation<dim, degree, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   dof_handler,
                                   mapping,
-                                  (void *)&conv_diff_operator.get_operator_data(),
+                                  conv_diff_operator.get_operator_data(),
                                   &conv_diff_operator.get_boundary_descriptor()->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }

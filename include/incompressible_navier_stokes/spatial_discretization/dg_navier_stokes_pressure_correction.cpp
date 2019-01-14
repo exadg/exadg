@@ -134,7 +134,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
                                   this->get_dof_handler_u(),
                                   this->get_mapping(),
                                   /*momentum_operator.get_operator_data().bc->dirichlet_bc,*/
-                                  (void *)&momentum_operator.get_operator_data());
+                                  momentum_operator.get_operator_data());
   }
   else
   {

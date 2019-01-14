@@ -217,7 +217,7 @@ public:
       preconditioner.initialize(multigrid_data,
                                 dof_handler_u,
                                 mapping,
-                                (void *)&ho2.get_operator_data(),
+                                ho2.get_operator_data(),
                                 &ho2.get_operator_data().bc->dirichlet_bc,
                                 &periodic_faces);
 

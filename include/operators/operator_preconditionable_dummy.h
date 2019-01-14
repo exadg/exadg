@@ -99,7 +99,7 @@ public:
   void
   reinit_void(MatrixFree<dim, Number> const & /*matrix_free*/,
               AffineConstraints<double> const & /*constraint_matrix*/,
-              void * /*operator_data_in*/) const
+              PreconditionableOperatorData<dim> const & /*operator_data_in*/) const
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::reinit_void should be overwritten!"));
   }

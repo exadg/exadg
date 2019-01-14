@@ -21,7 +21,7 @@
 using namespace dealii;
 
 template<int dim>
-struct OperatorBaseData
+struct OperatorBaseData : public PreconditionableOperatorData<dim>
 {
   OperatorBaseData(const unsigned int dof_index,
                    const unsigned int quad_index,
@@ -103,6 +103,42 @@ struct OperatorBaseData
 
   bool use_cell_based_loops;
   bool implement_block_diagonal_preconditioner_matrix_free;
+
+  bool
+  do_use_cell_based_loops() const
+  {
+    return use_cell_based_loops;
+  }
+  void
+  set_dof_index(const int dof_index)
+  {
+    this->dof_index = dof_index;
+  }
+
+  void
+  set_quad_index(const int quad_index)
+  {
+    this->quad_index = quad_index;
+  }
+
+
+  UpdateFlags
+  get_mapping_update_flags() const
+  {
+    return mapping_update_flags;
+  }
+
+  UpdateFlags
+  get_mapping_update_flags_inner_faces() const
+  {
+    return get_mapping_update_flags() | mapping_update_flags_inner_faces;
+  }
+
+  UpdateFlags
+  get_mapping_update_flags_boundary_faces() const
+  {
+    return get_mapping_update_flags_inner_faces() | mapping_update_flags_boundary_faces;
+  }
 };
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components = 1>
@@ -137,11 +173,11 @@ public:
   }
 
   void
-  reinit_void(MatrixFree<dim, Number> const &   matrix_free,
-              AffineConstraints<double> const & constraint_matrix,
-              void *                            operator_data_in) const
+  reinit_void(MatrixFree<dim, Number> const &           matrix_free,
+              AffineConstraints<double> const &         constraint_matrix,
+              PreconditionableOperatorData<dim> const & operator_data_in) const
   {
-    auto operator_data       = *static_cast<AdditionalData *>(operator_data_in);
+    auto operator_data       = *static_cast<AdditionalData const *>(&operator_data_in);
     operator_data.dof_index  = 0;
     operator_data.quad_index = 0;
     this->reinit(matrix_free, constraint_matrix, operator_data);

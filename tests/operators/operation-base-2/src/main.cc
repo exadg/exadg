@@ -206,7 +206,7 @@ public:
         {
           laplace.reinit_multigrid(dof_handler_dg,
                                    mapping,
-                                   (void *)&laplace_additional_data,
+                                   laplace_additional_data,
                                    mg_constrained_dofs,
                                    periodic_face_pairs,
                                    level);
@@ -285,7 +285,7 @@ public:
         {
           conv_diff_operator.reinit_multigrid(dof_handler_dg,
                                               mapping,
-                                              (void *)&conv_diff_operator_data,
+                                              conv_diff_operator_data,
                                               mg_constrained_dofs,
                                               periodic_face_pairs,
                                               level);

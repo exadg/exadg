@@ -257,7 +257,7 @@ private:
     preconditioner.initialize(multigrid_data,
                               dof_handler_1,
                               mapping_1,
-                              (void *)&laplace_1.get_operator_data(),
+                              laplace_1.get_operator_data(),
                               &laplace_1.get_operator_data().bc->dirichlet_bc,
                               &periodic_face_pairs);
 

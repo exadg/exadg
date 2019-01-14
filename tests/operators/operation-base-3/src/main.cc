@@ -337,7 +337,7 @@ public:
     {
       laplace.reinit_multigrid(dof_handler_dg,
                                mapping,
-                               (void *)&laplace_additional_data,
+                               laplace_additional_data,
                                mg_constrained_dofs,
                                periodic_face_pairs,
                                level);

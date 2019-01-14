@@ -31,7 +31,7 @@
 namespace IncNS
 {
 template<int dim>
-struct MomentumOperatorData
+struct MomentumOperatorData : public PreconditionableOperatorData<dim>
 {
   MomentumOperatorData()
     : unsteady_problem(true),

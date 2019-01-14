@@ -749,11 +749,10 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_multigrid_preconditi
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
-  mg_preconditioner->initialize(
-    preconditioner_data.multigrid_data_momentum_preconditioner,
-    underlying_operator->get_dof_handler_u(),
-    underlying_operator->get_mapping(),
-    (void *)&underlying_operator->momentum_operator.get_operator_data());
+  mg_preconditioner->initialize(preconditioner_data.multigrid_data_momentum_preconditioner,
+                                underlying_operator->get_dof_handler_u(),
+                                underlying_operator->get_mapping(),
+                                underlying_operator->momentum_operator.get_operator_data());
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -924,7 +923,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     mg_preconditioner->initialize(mg_data,
                                   underlying_operator->get_dof_handler_p(),
                                   underlying_operator->get_mapping(),
-                                  (void *)&compatible_laplace_operator_data);
+                                  compatible_laplace_operator_data);
   }
   else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
   {
@@ -953,7 +952,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     mg_preconditioner->initialize(mg_data,
                                   underlying_operator->get_dof_handler_p(),
                                   underlying_operator->get_mapping(),
-                                  (void *)&laplace_operator_data,
+                                  laplace_operator_data,
                                   &laplace_operator_data.bc->dirichlet_bc,
                                   &underlying_operator->periodic_face_pairs);
   }

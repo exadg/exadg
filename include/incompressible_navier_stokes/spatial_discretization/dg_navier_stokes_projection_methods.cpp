@@ -128,7 +128,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
     mg_preconditioner->initialize(mg_data,
                                   this->dof_handler_p,
                                   this->mapping,
-                                  (void *)&laplace_operator.get_operator_data(),
+                                  laplace_operator.get_operator_data(),
                                   &laplace_operator.get_operator_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }

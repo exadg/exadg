@@ -53,21 +53,21 @@ public:
   virtual ~MultigridPreconditionerBase();
 
   void
-  initialize(MultigridData const &                mg_data,
-             const parallel::Triangulation<dim> * tria,
-             const FiniteElement<dim> &           fe,
-             Mapping<dim> const &                 mapping,
-             void *                               operator_data,
-             Map const *                          dirichlet_bc = nullptr,
+  initialize(MultigridData const &                     mg_data,
+             const parallel::Triangulation<dim> *      tria,
+             const FiniteElement<dim> &                fe,
+             Mapping<dim> const &                      mapping,
+             PreconditionableOperatorData<dim> const & operator_data,
+             Map const *                               dirichlet_bc = nullptr,
              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
                periodic_face_pairs = nullptr);
 
   void
-  initialize(MultigridData const &   mg_data,
-             DoFHandler<dim> const & dof_handler,
-             Mapping<dim> const &    mapping,
-             void *                  operator_data,
-             Map const *             dirichlet_bc = nullptr,
+  initialize(MultigridData const &                     mg_data,
+             DoFHandler<dim> const &                   dof_handler,
+             Mapping<dim> const &                      mapping,
+             PreconditionableOperatorData<dim> const & operator_data,
+             Map const *                               dirichlet_bc = nullptr,
              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
                periodic_face_pairs = nullptr);
 
@@ -152,15 +152,16 @@ private:
                                  Map const & dirichlet_bc);
 
   virtual void
-  initialize_matrixfree(std::vector<MGLevelIdentifier> & global_levels,
-                        Mapping<dim> const &             mapping,
-                        void *                           operator_data);
+  initialize_matrixfree(std::vector<MGLevelIdentifier> &          global_levels,
+                        Mapping<dim> const &                      mapping,
+                        PreconditionableOperatorData<dim> const & operator_data);
 
   /*
    * Multigrid operators on each multigrid level.
    */
   void
-  initialize_mg_matrices(std::vector<MGLevelIdentifier> & global_levels, void * operator_data);
+  initialize_mg_matrices(std::vector<MGLevelIdentifier> &          global_levels,
+                         PreconditionableOperatorData<dim> const & operator_data);
 
   /*
    * Smoother.

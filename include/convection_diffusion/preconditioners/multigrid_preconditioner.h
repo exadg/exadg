@@ -72,11 +72,12 @@ public:
   }
 
   void
-  initialize_matrixfree(std::vector<MGLevelIdentifier> & global_levels,
-                        Mapping<dim> const &             mapping,
-                        void *                           operator_data_in)
+  initialize_matrixfree(std::vector<MGLevelIdentifier> &          global_levels,
+                        Mapping<dim> const &                      mapping,
+                        PreconditionableOperatorData<dim> const & operator_data_in)
   {
-    auto operator_data = static_cast<ConvectionDiffusionOperatorData<dim> *>(operator_data_in);
+    const auto & operator_data =
+      static_cast<ConvectionDiffusionOperatorData<dim> const &>(operator_data_in);
 
     this->mg_matrixfree.resize(this->min_level, this->max_level);
 
@@ -104,14 +105,14 @@ public:
            update_values);
       }
 
-      if(operator_data->use_cell_based_loops && global_levels[level].is_dg)
+      if(operator_data.use_cell_based_loops && global_levels[level].is_dg)
       {
         auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
           &this->mg_dofhandler[level]->get_triangulation());
         Categorization::do_cell_based_loops(*tria, additional_data, global_levels[level].level);
       }
 
-      if(operator_data->type_velocity_field == TypeVelocityField::Analytical)
+      if(operator_data.type_velocity_field == TypeVelocityField::Analytical)
       {
         QGauss<1> quadrature(global_levels[level].degree + 1);
         data->reinit(mapping,
@@ -121,7 +122,7 @@ public:
                      additional_data);
       }
       // we need two dof-handlers in case the velocity field comes from the fluid solver.
-      else if(operator_data->type_velocity_field == TypeVelocityField::Numerical)
+      else if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
       {
         // collect dof-handlers
         std::vector<const DoFHandler<dim> *> dof_handler_vec;

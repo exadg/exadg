@@ -79,7 +79,7 @@ DGOperation<dim, degree, Number>::setup_solver()
     mg_preconditioner->initialize(mg_data,
                                   dof_handler,
                                   mapping,
-                                  (void *)&laplace_operator.get_operator_data(),
+                                  laplace_operator.get_operator_data(),
                                   &laplace_operator.get_operator_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }

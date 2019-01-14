@@ -43,9 +43,9 @@ public:
 
 
   void
-  initialize_matrixfree(std::vector<MGLevelIdentifier> & global_levels,
-                        Mapping<dim> const &             mapping,
-                        void *                           operator_data_in)
+  initialize_matrixfree(std::vector<MGLevelIdentifier> &          global_levels,
+                        Mapping<dim> const &                      mapping,
+                        PreconditionableOperatorData<dim> const & operator_data_in)
   {
     (void)global_levels;
     (void)mapping;

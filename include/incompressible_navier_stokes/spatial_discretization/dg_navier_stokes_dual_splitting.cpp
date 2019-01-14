@@ -204,7 +204,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
                                   this->get_dof_handler_u(),
                                   this->get_mapping(),
                                   /*helmholtz_operator.get_operator_data().bc->dirichlet_bc,*/
-                                  (void *)&helmholtz_operator.get_operator_data());
+                                  helmholtz_operator.get_operator_data());
   }
 }
 

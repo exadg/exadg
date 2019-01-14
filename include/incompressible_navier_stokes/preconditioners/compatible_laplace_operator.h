@@ -19,7 +19,7 @@
 namespace IncNS
 {
 template<int dim>
-struct CompatibleLaplaceOperatorData
+struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
 {
   CompatibleLaplaceOperatorData()
     : dof_index_velocity(0),

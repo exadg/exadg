@@ -393,13 +393,13 @@ public:
     {
       laplace_1.reinit_multigrid(dof_handler_1,
                                  mapping_1,
-                                 (void *)&laplace_additional_data,
+                                 laplace_additional_data,
                                  mg_constrained_dofs_1,
                                  periodic_face_pairs,
                                  level);
       laplace_2.reinit_multigrid(dof_handler_2,
                                  mapping_2,
-                                 (void *)&laplace_additional_data,
+                                 laplace_additional_data,
                                  mg_constrained_dofs_2,
                                  periodic_face_pairs,
                                  level);

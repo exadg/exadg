@@ -5,6 +5,54 @@
 
 #include "linear_operator_base_new.h"
 
+template<int dim>
+struct PreconditionableOperatorData
+{
+public:
+  virtual bool
+  do_use_cell_based_loops() const
+  {
+    AssertThrow(false, ExcMessage("Not implemented yet!"));
+    return true;
+  }
+
+  virtual void
+  set_dof_index(const int dof_index)
+  {
+    (void)dof_index;
+    AssertThrow(false, ExcMessage("Not implemented yet!"));
+  }
+
+  virtual void
+  set_quad_index(const int quad_index)
+  {
+    (void)quad_index;
+    AssertThrow(false, ExcMessage("Not implemented yet!"));
+  }
+
+  virtual UpdateFlags
+  get_mapping_update_flags() const
+  {
+    AssertThrow(false, ExcMessage("Not implemented yet!"));
+    return update_default;
+  }
+
+  virtual UpdateFlags
+  get_mapping_update_flags_inner_faces() const
+  {
+    AssertThrow(false, ExcMessage("Not implemented yet!"));
+    return update_default;
+  }
+
+  virtual UpdateFlags
+  get_mapping_update_flags_boundary_faces() const
+  {
+    AssertThrow(false, ExcMessage("Not implemented yet!"));
+    return update_default;
+  }
+};
+
+
 template<int dim, typename Number>
 class PreconditionableOperator : virtual public LinearOperatorBaseNew<Number>
 {
@@ -19,9 +67,9 @@ public:
    * Initialization
    */
   virtual void
-  reinit_void(MatrixFree<dim, Number> const &   matrix_free,
-              AffineConstraints<double> const & constraint_matrix,
-              void *                            operator_data_in) const = 0;
+  reinit_void(MatrixFree<dim, Number> const &           matrix_free,
+              AffineConstraints<double> const &         constraint_matrix,
+              PreconditionableOperatorData<dim> const & operator_data_in) const = 0;
 
   // TODO: remove
   virtual void
