@@ -15,12 +15,15 @@ public:
   static const int                    DIM = dim;
   typedef typename Parent::VectorType VectorType;
 
-
+  /*
+   * Initialization
+   */
   virtual void
   reinit_void(MatrixFree<dim, Number> const &   matrix_free,
               AffineConstraints<double> const & constraint_matrix,
               void *                            operator_data_in) const = 0;
 
+  // TODO: remove
   virtual void
   reinit_multigrid(
     const DoFHandler<dim> &   dof_handler,
@@ -31,6 +34,27 @@ public:
                        periodic_face_pairs,
     const unsigned int level = numbers::invalid_unsigned_int) = 0;
 
+  /*
+   *
+   */
+  virtual PreconditionableOperator<dim, Number> *
+  get_new(unsigned int deg) const = 0;
+
+  virtual bool
+  is_singular() const = 0;
+
+  virtual AffineConstraints<double> const &
+  get_constraint_matrix() const = 0;
+
+  virtual const MatrixFree<dim, Number> &
+  get_data() const = 0;
+
+  virtual unsigned int
+  get_dof_index() const = 0;
+
+  /*
+   * Actual preconditioning methods
+   */
   virtual void
   vmult(VectorType & dst, VectorType const & src) const = 0;
 
@@ -43,30 +67,14 @@ public:
   virtual void
   vmult_add_interface_up(VectorType & dst, VectorType const & src) const = 0;
 
-
   virtual void
   calculate_inverse_diagonal(VectorType & inverse_diagonal_entries) const = 0;
 
   virtual void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const = 0;
-
-  virtual void
   update_block_diagonal_preconditioner() const = 0;
 
-  virtual AffineConstraints<double> const &
-  get_constraint_matrix() const = 0;
-
-  virtual const MatrixFree<dim, Number> &
-  get_data() const = 0;
-
-  virtual unsigned int
-  get_dof_index() const = 0;
-
-  virtual PreconditionableOperator<dim, Number> *
-  get_new(unsigned int deg) const = 0;
-
-  virtual bool
-  is_singular() const = 0;
+  virtual void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const = 0;
 
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
