@@ -10,6 +10,8 @@
 
 #include <deal.II/base/conditional_ostream.h>
 
+#include <vector>
+
 using namespace dealii;
 
 class ExtrapolationConstants
