@@ -9,7 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 
 #include "../../functionalities/set_zero_mean_value.h"
-#include "../../operators/multigrid_operator_base.h"
+#include "../../operators/operator_preconditionable_dummy.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 

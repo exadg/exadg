@@ -19,7 +19,7 @@
 
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/linear_operator_base.h"
-#include "../../operators/multigrid_operator_base.h"
+#include "../../operators/operator_preconditionable_dummy.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
