@@ -3,7 +3,7 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
-#include "operator.h"
+#include "linear_operator_base_new.h"
 
 template<int dim, typename Number>
 class PreconditionableOperator : virtual public LinearOperatorBaseNew<Number>
