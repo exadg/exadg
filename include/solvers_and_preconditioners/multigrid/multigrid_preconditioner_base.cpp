@@ -407,28 +407,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrice
     auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].degree));
     matrix->reinit_void(*mg_matrixfree[i], *mg_constrains[i], operator_data_in);
     mg_matrices[i].reset(matrix);
-
-    /*
-    if(add_dof_handler != nullptr)
-    {
-      matrix->reinit_multigrid_add_dof_handler(*mg_dofhandler[i],
-                                               mapping,
-                                               operator_data_in,
-                                               *this->mg_constrained_dofs[i],
-                                               periodic_face_pairs,
-                                               global_levels[i].level,
-                                               add_dof_handler);
-    }
-    else
-    {
-      matrix->reinit_multigrid(*mg_dofhandler[i],
-                               mapping,
-                               operator_data_in,
-                               *this->mg_constrained_dofs[i],
-                               periodic_face_pairs,
-                               global_levels[i].level);
-    }
-     */
   }
 }
 

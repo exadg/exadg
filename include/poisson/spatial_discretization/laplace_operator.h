@@ -64,16 +64,6 @@ public:
          AffineConstraints<double> const & constraint_matrix,
          LaplaceOperatorData<dim> const &  operator_data) const;
 
-  void
-  reinit_multigrid(
-    DoFHandler<dim> const &   dof_handler,
-    Mapping<dim> const &      mapping,
-    void *                    operator_data,
-    MGConstrainedDoFs const & mg_constrained_dofs,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    unsigned int const level);
-
   /*
 
   void

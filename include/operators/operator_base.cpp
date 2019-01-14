@@ -86,69 +86,6 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit_multigrid(
-  DoFHandler<dim> const &   dof_handler,
-  Mapping<dim> const &      mapping,
-  void *                    operator_data_in,
-  MGConstrainedDoFs const & mg_constrained_dofs,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                     periodic_face_pairs,
-  unsigned int const level)
-{
-  AssertThrow(false,
-              ExcMessage("OperatorBase::reinit_multigrid should be not be accessed any more!"));
-
-  // create copy of data and ...
-  auto operator_data = *static_cast<AdditionalData *>(operator_data_in);
-  // set dof_index and quad_index to 0 since we only consider a subset
-  operator_data.dof_index  = 0;
-  operator_data.quad_index = 0;
-
-  // check if DG or CG (for explanation: see above)
-  bool is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
-
-  // setup MatrixFree::AdditionalData
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-
-  additional_data.level_mg_handler = level;
-
-  additional_data.mapping_update_flags = operator_data.mapping_update_flags;
-
-  if(is_dg)
-  {
-    additional_data.mapping_update_flags_inner_faces =
-      operator_data.mapping_update_flags_inner_faces;
-    additional_data.mapping_update_flags_boundary_faces =
-      operator_data.mapping_update_flags_boundary_faces;
-  }
-
-  if(operator_data.use_cell_based_loops && is_dg)
-  {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-      &dof_handler.get_triangulation());
-    Categorization::do_cell_based_loops(*tria, additional_data, level);
-  }
-
-  auto & constraint_own = constraint.own();
-
-  ConstraintUtil<dim>::add_constraints(is_dg,
-                                       is_singular(),
-                                       dof_handler,
-                                       constraint_own,
-                                       mg_constrained_dofs,
-                                       periodic_face_pairs,
-                                       level);
-
-  QGauss<1> const quad(dof_handler.get_fe().degree + 1);
-
-  auto & data_own = data.own();
-  data_own.reinit(mapping, dof_handler, constraint_own, quad, additional_data);
-
-  reinit(data_own, constraint_own, operator_data);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
-void
 OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply(VectorType &       dst,
                                                                        VectorType const & src) const
 {

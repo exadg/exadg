@@ -40,27 +40,6 @@ LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   m
                                                        this->operator_data.dof_index);
 }
 
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::reinit_multigrid(
-  DoFHandler<dim> const &   dof_handler,
-  Mapping<dim> const &      mapping,
-  void *                    operator_data,
-  MGConstrainedDoFs const & mg_constrained_dofs,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                     periodic_face_pairs,
-  unsigned int const level)
-{
-  Base::reinit_multigrid(
-    dof_handler, mapping, operator_data, mg_constrained_dofs, periodic_face_pairs, level);
-
-  // calculate penalty parameters
-  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                       *this->data,
-                                                       mapping,
-                                                       this->operator_data.dof_index);
-}
-
 /*
 
 template<int dim, int degree, typename Number>

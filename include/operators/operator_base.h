@@ -154,33 +154,23 @@ public:
 
   void
   reinit_multigrid(
-    DoFHandler<dim> const &   dof_handler,
-    Mapping<dim> const &      mapping,
-    void *                    operator_data,
-    MGConstrainedDoFs const & mg_constrained_dofs,
+    DoFHandler<dim> const & /*dof_handler*/,
+    Mapping<dim> const & /*mapping*/,
+    void * /*operator_data*/,
+    MGConstrainedDoFs const & /*mg_constrained_dofs*/,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                       periodic_face_pairs,
-    unsigned int const level);
+    /*periodic_face_pairs*/,
+    unsigned int const /*level*/)
+  {
+    AssertThrow(false,
+                ExcMessage("OperatorBase::reinit_multigrid should be not be accessed any more!"));
+  }
 
 
   virtual PreconditionableOperator<dim, Number> *
   get_new(unsigned int /*deg*/) const
   {
     AssertThrow(false, ExcMessage("Not implemented"));
-  }
-
-  virtual void
-  reinit_multigrid_add_dof_handler(
-    const DoFHandler<dim> & /*dof_handler*/,
-    const Mapping<dim> & /*mapping*/,
-    void * /*operator_data*/,
-    const MGConstrainedDoFs & /*mg_constrained_dofs*/,
-    std::vector<GridTools::PeriodicFacePair<
-      typename Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
-    const unsigned int /*level*/,
-    const DoFHandler<dim> * /*additional_dof_handler*/)
-  {
-    AssertThrow(false, ExcMessage("This function should not be accessed!"));
   }
 
   void

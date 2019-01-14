@@ -117,20 +117,6 @@ public:
   }
 
   virtual void
-  reinit_multigrid_add_dof_handler(
-    const DoFHandler<dim> & /*dof_handler*/,
-    const Mapping<dim> & /*mapping*/,
-    void * /*operator_data*/,
-    const MGConstrainedDoFs & /*mg_constrained_dofs*/,
-    std::vector<GridTools::PeriodicFacePair<
-      typename Triangulation<dim>::cell_iterator>> & /*periodic_face_pairs*/,
-    const unsigned int /*level*/,
-    const DoFHandler<dim> * /*additional_dof_handler*/)
-  {
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::reinit should be overwritten!"));
-  }
-
-  virtual void
   vmult(VectorType & /*dst*/, VectorType const & /*src*/) const
   {
     AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
