@@ -68,7 +68,7 @@ public:
     {
       FESystem<dim> fe_vel(FE_DGQ<dim>(fe.degree), dim);
       std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc_vel;
-      this->initialize_mg_dof_handler_and_constraints(false,
+      BASE::initialize_mg_dof_handler_and_constraints(false,
                                                       periodic_face_pairs,
                                                       fe_vel,
                                                       tria,
