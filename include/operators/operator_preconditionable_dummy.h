@@ -27,7 +27,7 @@ public:
     (void)dst;
     (void)src;
 
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::apply should be overwritten!"));
   }
 
   virtual void
@@ -36,7 +36,7 @@ public:
     (void)dst;
     (void)src;
     (void)time;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::apply_add should be overwritten!"));
   }
 
   virtual void
@@ -44,14 +44,14 @@ public:
   {
     (void)dst;
     (void)src;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::apply_add should be overwritten!"));
   }
 
   virtual void
   rhs(VectorType & dst) const
   {
     (void)dst;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::rhs should be overwritten!"));
   }
 
   virtual void
@@ -59,14 +59,14 @@ public:
   {
     (void)dst;
     (void)time;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::rhs should be overwritten!"));
   }
 
   virtual void
   rhs_add(VectorType & dst) const
   {
     (void)dst;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::rhs_add should be overwritten!"));
   }
 
   virtual void
@@ -74,7 +74,7 @@ public:
   {
     (void)dst;
     (void)time;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::rhs_add should be overwritten!"));
   }
 
   virtual void
@@ -83,7 +83,7 @@ public:
     (void)dst;
     (void)src;
     (void)time;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::evaluate should be overwritten!"));
   }
 
   virtual void
@@ -92,7 +92,7 @@ public:
     (void)dst;
     (void)src;
     (void)time;
-    AssertThrow(false, ExcMessage("MultigridOperatorBase::vmult should be overwritten!"));
+    AssertThrow(false, ExcMessage("MultigridOperatorBase::evaluate_add should be overwritten!"));
   }
 
 
