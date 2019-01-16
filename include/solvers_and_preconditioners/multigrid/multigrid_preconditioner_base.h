@@ -144,7 +144,7 @@ protected:
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              mg_dofhandler,
     MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  mg_constrained_dofs,
-    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          mg_constrains);
+    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          mg_constraints);
 
 private:
   virtual void
@@ -199,7 +199,7 @@ private:
 protected:
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>            mg_dofhandler;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                mg_constrained_dofs;
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>>        mg_constrains;
+  MGLevelObject<std::shared_ptr<AffineConstraints<double>>>        mg_constraints;
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>> mg_matrixfree;
 
   std::vector<unsigned int>           h_levels;

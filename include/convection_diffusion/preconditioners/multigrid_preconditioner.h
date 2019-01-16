@@ -77,7 +77,7 @@ public:
                                                       dirichlet_bc_vel,
                                                       this->mg_dofhandler_vel,
                                                       this->mg_constrained_dofs_vel,
-                                                      this->mg_constrains_vel);
+                                                      this->mg_constraints_vel);
     }
   }
 
@@ -127,7 +127,7 @@ public:
         QGauss<1> quadrature(global_levels[level].degree + 1);
         data->reinit(mapping,
                      *this->mg_dofhandler[level],
-                     *this->mg_constrains[level],
+                     *this->mg_constraints[level],
                      quadrature,
                      additional_data);
       }
@@ -143,8 +143,8 @@ public:
         // collect affine matrices
         std::vector<const AffineConstraints<double> *> constraint_vec;
         constraint_vec.resize(2);
-        constraint_vec[0] = &*this->mg_constrains[level];
-        constraint_vec[1] = &*this->mg_constrains_vel[level];
+        constraint_vec[0] = &*this->mg_constraints[level];
+        constraint_vec[1] = &*this->mg_constraints_vel[level];
 
 
         std::vector<Quadrature<1>> quadrature_vec;
@@ -163,7 +163,7 @@ public:
 
     // setup velocity transfer operator
     this->mg_transfer_vel.template reinit<MultigridNumber>(this->mg_matrixfree,
-                                                           this->mg_constrains_vel,
+                                                           this->mg_constraints_vel,
                                                            this->mg_constrained_dofs_vel,
                                                            1);
   }
@@ -304,7 +304,7 @@ private:
 
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     mg_dofhandler_vel;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         mg_constrained_dofs_vel;
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> mg_constrains_vel;
+  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> mg_constraints_vel;
 };
 
 } // namespace ConvDiff

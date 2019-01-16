@@ -101,7 +101,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->initialize_smoothers();
   this->initialize_coarse_solver(global_levels[0].level);
   this->mg_transfer.template reinit<MultigridNumber>(mg_matrixfree,
-                                                     mg_constrains,
+                                                     mg_constraints,
                                                      mg_constrained_dofs);
 
   this->initialize_multigrid_preconditioner();
@@ -275,7 +275,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
                                             dirichlet_bc,
                                             this->mg_dofhandler,
                                             this->mg_constrained_dofs,
-                                            this->mg_constrains);
+                                            this->mg_constraints);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -292,11 +292,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              mg_dofhandler,
     MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  mg_constrained_dofs,
-    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          mg_constrains)
+    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          mg_constraints)
 {
   mg_constrained_dofs.resize(0, this->n_global_levels - 1);
   mg_dofhandler.resize(0, this->n_global_levels - 1);
-  mg_constrains.resize(0, this->n_global_levels - 1);
+  mg_constraints.resize(0, this->n_global_levels - 1);
 
   const unsigned int n_components = fe.n_components();
 
@@ -345,7 +345,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
                                          periodic_face_pairs,
                                          global_levels[i].level);
 
-    mg_constrains[i].reset(constraint_own);
+    mg_constraints[i].reset(constraint_own);
   }
 }
 
@@ -383,7 +383,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
     }
 
     QGauss<1> const quad(global_levels[i].degree + 1);
-    data->reinit(mapping, *mg_dofhandler[i], *mg_constrains[i], quad, additional_data);
+    data->reinit(mapping, *mg_dofhandler[i], *mg_constraints[i], quad, additional_data);
 
     this->mg_matrixfree[i].reset(data);
   }
@@ -401,7 +401,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrice
   for(unsigned int i = 0; i < this->n_global_levels; i++)
   {
     auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].degree));
-    matrix->reinit_void(*mg_matrixfree[i], *mg_constrains[i], operator_data_in);
+    matrix->reinit_void(*mg_matrixfree[i], *mg_constraints[i], operator_data_in);
     mg_matrices[i].reset(matrix);
   }
 }
