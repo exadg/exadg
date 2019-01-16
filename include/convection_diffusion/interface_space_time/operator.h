@@ -55,6 +55,7 @@ public:
   virtual unsigned int
   solve(VectorType &       sol,
         VectorType const & rhs,
+        bool const         update_preconditioner,
         double const       scaling_factor  = -1.0,
         double const       evaluation_time = -1.0) = 0;
 

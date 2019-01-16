@@ -103,7 +103,8 @@ DriverSteadyProblems<Number>::solve()
   pde_operator->rhs(rhs_vector);
 
   // solve linear system of equations
-  unsigned int iterations = pde_operator->solve(solution, rhs_vector);
+  unsigned int iterations =
+    pde_operator->solve(solution, rhs_vector, /* update_preconditioner = */ false);
 
   // write output
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)

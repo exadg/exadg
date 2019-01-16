@@ -147,16 +147,15 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::initialize_momentum_solver()
 {
-  if(this->param.solver_momentum == SolverMomentum::PCG)
+  if(this->param.solver_momentum == SolverMomentum::CG)
   {
     // setup solver data
     CGSolverData solver_data;
-    solver_data.solver_tolerance_abs = this->param.abs_tol_momentum_linear;
-    solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
-    solver_data.max_iter             = this->param.max_iter_momentum_linear;
+    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
-    solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     // setup solver
     momentum_linear_solver.reset(
@@ -167,15 +166,13 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::initialize_mo
   {
     // setup solver data
     GMRESSolverData solver_data;
-    solver_data.solver_tolerance_abs  = this->param.abs_tol_momentum_linear;
-    solver_data.solver_tolerance_rel  = this->param.rel_tol_momentum_linear;
-    solver_data.max_iter              = this->param.max_iter_momentum_linear;
-    solver_data.right_preconditioning = this->param.use_right_preconditioning_momentum;
-    solver_data.max_n_tmp_vectors     = this->param.max_n_tmp_vectors_momentum;
-    solver_data.compute_eigenvalues   = false;
+    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_momentum.max_krylov_size;
+    solver_data.compute_eigenvalues  = false;
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
-    solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     // setup solver
     momentum_linear_solver.reset(
@@ -186,13 +183,12 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::initialize_mo
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {
     FGMRESSolverData solver_data;
-    solver_data.max_iter             = this->param.max_iter_momentum_linear;
-    solver_data.solver_tolerance_abs = this->param.abs_tol_momentum_linear;
-    solver_data.solver_tolerance_rel = this->param.rel_tol_momentum_linear;
-    solver_data.max_n_tmp_vectors    = this->param.max_n_tmp_vectors_momentum;
+    solver_data.max_iter             = this->param.solver_data_momentum.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_momentum.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_momentum.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_momentum.max_krylov_size;
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
-    solver_data.update_preconditioner = this->param.update_preconditioner_momentum;
 
     momentum_linear_solver.reset(
       new FGMRESSolver<MomentumOperator<dim, degree_u, Number>,
@@ -201,7 +197,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::initialize_mo
   }
   else
   {
-    AssertThrow(false, ExcNotImplemented());
+    AssertThrow(false, ExcMessage("Specified solver for momentum equation is not implemented."));
   }
 
 
@@ -238,6 +234,7 @@ void
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::solve_linear_momentum_equation(
   VectorType &       solution,
   VectorType const & rhs,
+  bool const &       update_preconditioner,
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     linear_iterations)
 {
@@ -248,7 +245,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::solve_linear_
   // in this because because this function is only called if the convective term is not considered
   // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
 
-  linear_iterations = momentum_linear_solver->solve(solution, rhs);
+  linear_iterations = momentum_linear_solver->solve(solution, rhs, update_preconditioner);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -283,6 +280,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
   solve_nonlinear_momentum_equation(VectorType &       dst,
                                     VectorType const & rhs_vector,
                                     double const &     eval_time,
+                                    bool const &       update_preconditioner,
                                     double const &     scaling_factor_mass_matrix_term,
                                     unsigned int &     newton_iterations,
                                     unsigned int &     linear_iterations)
@@ -301,7 +299,11 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
   momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  momentum_newton_solver->solve(dst, newton_iterations, linear_iterations);
+  momentum_newton_solver->solve(dst,
+                                newton_iterations,
+                                linear_iterations,
+                                update_preconditioner,
+                                this->param.update_preconditioner_momentum_every_newton_iter);
 
   // Reset rhs_vector
   this->rhs_vector = nullptr;

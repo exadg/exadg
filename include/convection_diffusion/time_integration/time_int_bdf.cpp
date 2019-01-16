@@ -421,8 +421,13 @@ TimeIntBDF<Number>::solve_timestep()
     solution_np.add(extra.get_beta(i), solution[i]);
 
   // solve the linear system of equations
+  bool const update_preconditioner =
+    this->param.update_preconditioner &&
+    (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
+
   unsigned int iterations = pde_operator->solve(solution_np,
                                                 rhs_vector,
+                                                update_preconditioner,
                                                 bdf.get_gamma0() / this->get_time_step_size(),
                                                 this->get_next_time());
 

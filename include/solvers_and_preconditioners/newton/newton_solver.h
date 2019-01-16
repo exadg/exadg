@@ -32,7 +32,11 @@ public:
   }
 
   void
-  solve(VectorType & dst, unsigned int & newton_iterations, unsigned int & linear_iterations)
+  solve(VectorType &       dst,
+        unsigned int &     newton_iterations,
+        unsigned int &     linear_iterations,
+        bool const         update_preconditioner_linear_solver,
+        unsigned int const update_preconditioner_every_newton_iter)
   {
     // evaluate residual using the given estimate of the solution
     nonlinear_operator.evaluate_nonlinear_residual(residual, dst);
@@ -57,7 +61,9 @@ public:
 
       // solve linear problem
       linear_operator.set_solution_linearization(dst);
-      linear_iterations += linear_solver.solve(increment, residual);
+      bool const do_update = update_preconditioner_linear_solver &&
+                             (n_iter % update_preconditioner_every_newton_iter == 0);
+      linear_iterations += linear_solver.solve(increment, residual, do_update);
 
       // damped Newton scheme
       double       omega      = 1.0; // damping factor

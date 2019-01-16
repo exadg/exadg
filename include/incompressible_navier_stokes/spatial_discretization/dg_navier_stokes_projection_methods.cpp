@@ -102,13 +102,12 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
   initialize_preconditioner_pressure_poisson()
 {
   // setup preconditioner
-  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi)
+  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
   {
     preconditioner_pressure_poisson.reset(
       new JacobiPreconditioner<Poisson::LaplaceOperator<dim, degree_p, Number>>(laplace_operator));
   }
-  else if(this->param.preconditioner_pressure_poisson ==
-          PreconditionerPressurePoisson::GeometricMultigrid)
+  else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
     MultigridData mg_data;
     mg_data = this->param.multigrid_data_pressure_poisson;
@@ -116,9 +115,8 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
     // use single precision for multigrid
     typedef float MultigridNumber;
 
-    typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
-    typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber> MG_OPERATOR;
-
+    typedef MultigridOperatorBase<dim, MultigridNumber>               MG_BASE;
+    typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber>  MG_OPERATOR;
     typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
@@ -135,11 +133,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
   else
   {
     AssertThrow(
-      this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::None ||
-        this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
-        this->param.preconditioner_pressure_poisson ==
-          PreconditionerPressurePoisson::GeometricMultigrid,
-      ExcMessage("Specified preconditioner for pressure Poisson equation not implemented"));
+      false, ExcMessage("Specified preconditioner for pressure Poisson equation not implemented"));
   }
 }
 
@@ -148,17 +142,16 @@ void
 DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
   initialize_solver_pressure_poisson()
 {
-  if(this->param.solver_pressure_poisson == SolverPressurePoisson::PCG)
+  if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
   {
     // setup solver data
     CGSolverData solver_data;
-    // use default value of max_iter
-    solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
-    solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
-    // default value of use_preconditioner = false
-    if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
-       this->param.preconditioner_pressure_poisson ==
-         PreconditionerPressurePoisson::GeometricMultigrid)
+    solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
+    // use default value of update_preconditioner (=false)
+
+    if(this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None)
     {
       solver_data.use_preconditioner = true;
     }
@@ -172,15 +165,13 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
     FGMRESSolverData solver_data;
-    // use default value of max_iter
-    solver_data.solver_tolerance_abs = this->param.abs_tol_pressure;
-    solver_data.solver_tolerance_rel = this->param.rel_tol_pressure;
-    solver_data.max_n_tmp_vectors    = this->param.max_n_tmp_vectors_pressure_poisson;
+    solver_data.max_iter             = this->param.solver_data_pressure_poisson.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_pressure_poisson.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_pressure_poisson.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_pressure_poisson.max_krylov_size;
     // use default value of update_preconditioner (=false)
 
-    if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Jacobi ||
-       this->param.preconditioner_pressure_poisson ==
-         PreconditionerPressurePoisson::GeometricMultigrid)
+    if(this->param.preconditioner_pressure_poisson != PreconditionerPressurePoisson::None)
     {
       solver_data.use_preconditioner = true;
     }
@@ -193,11 +184,8 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
   }
   else
   {
-    AssertThrow(
-      this->param.solver_viscous == SolverViscous::PCG ||
-        this->param.solver_viscous == SolverViscous::FGMRES,
-      ExcMessage(
-        "Specified solver for pressure Poisson equation not implemented - possibilities are PCG and FGMRES"));
+    AssertThrow(false,
+                ExcMessage("Specified solver for pressure Poisson equation is not implemented."));
   }
 }
 
@@ -236,7 +224,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_solve_press
   //    check_multigrid(this->laplace_operator,mg_preconditioner);
   //  check_multigrid.check();
 
-  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src);
+  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, false);
 
   return n_iter;
 }

@@ -162,6 +162,7 @@ public:
   unsigned int
   solve_viscous(VectorType &       dst,
                 VectorType const & src,
+                bool const &       update_preconditioner,
                 double const &     scaling_factor_time_derivative_term);
 
   /*

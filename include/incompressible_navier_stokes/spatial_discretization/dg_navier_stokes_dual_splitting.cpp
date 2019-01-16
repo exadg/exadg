@@ -62,11 +62,10 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_convective_s
 
   // linear solver (GMRES)
   GMRESSolverData solver_data;
-  solver_data.max_iter              = this->param.max_iter_linear_convective;
-  solver_data.solver_tolerance_abs  = this->param.abs_tol_linear_convective;
-  solver_data.solver_tolerance_rel  = this->param.rel_tol_linear_convective;
-  solver_data.right_preconditioning = this->param.use_right_preconditioning_convective;
-  solver_data.max_n_tmp_vectors     = this->param.max_n_tmp_vectors_convective;
+  solver_data.max_iter             = this->param.solver_data_convective.max_iter;
+  solver_data.solver_tolerance_abs = this->param.solver_data_convective.abs_tol;
+  solver_data.solver_tolerance_rel = this->param.solver_data_convective.rel_tol;
+  solver_data.max_n_tmp_vectors    = this->param.solver_data_convective.max_krylov_size;
 
   // always use inverse mass matrix preconditioner
   solver_data.use_preconditioner = true;
@@ -188,7 +187,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
     helmholtz_preconditioner.reset(
       new BlockJacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(helmholtz_operator));
   }
-  else if(this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+  else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
     // use single precision for multigrid
     typedef float MultigridNumber;
@@ -212,22 +211,21 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmholtz_solver()
 {
-  if(this->param.solver_viscous == SolverViscous::PCG)
+  if(this->param.solver_viscous == SolverViscous::CG)
   {
     // setup solver data
     CGSolverData solver_data;
-    // use default value of max_iter
-    solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
-    solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
-    // default value of use_preconditioner = false
+    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
+
     if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
-       this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
     {
       solver_data.use_preconditioner = true;
     }
-    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
     // setup helmholtz solver
     helmholtz_solver.reset(
@@ -238,19 +236,17 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
   {
     // setup solver data
     GMRESSolverData solver_data;
-    // use default value of max_iter
-    solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
-    solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
-    // use default value of right_preconditioning
-    // use default value of max_n_tmp_vectors
+    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
     // use default value of compute_eigenvalues
-    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
 
     // default value of use_preconditioner = false
     if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
-       this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
     {
       solver_data.use_preconditioner = true;
     }
@@ -264,16 +260,15 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {
     FGMRESSolverData solver_data;
-    // use default value of max_iter
-    solver_data.solver_tolerance_abs = this->param.abs_tol_viscous;
-    solver_data.solver_tolerance_rel = this->param.rel_tol_viscous;
-    // use default value of max_n_tmp_vectors
-    solver_data.update_preconditioner = this->param.update_preconditioner_viscous;
+    solver_data.max_iter             = this->param.solver_data_viscous.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_viscous.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_viscous.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_viscous.max_krylov_size;
 
     if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi ||
        this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix ||
-       this->param.preconditioner_viscous == PreconditionerViscous::GeometricMultigrid)
+       this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
     {
       solver_data.use_preconditioner = true;
     }
@@ -285,11 +280,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
   }
   else
   {
-    AssertThrow(this->param.solver_viscous == SolverViscous::PCG ||
-                  this->param.solver_viscous == SolverViscous::GMRES ||
-                  this->param.solver_viscous == SolverViscous::FGMRES,
-                ExcMessage(
-                  "Specified Viscous Solver not implemented - possibilities are PCG and GMRES"));
+    AssertThrow(false, ExcMessage("Specified viscous solver is not implemented."));
   }
 }
 
@@ -331,7 +322,8 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::solve_nonlinear_co
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
   // solve nonlinear problem
-  newton_solver->solve(dst, newton_iterations, linear_iterations);
+  newton_solver->solve(
+    dst, newton_iterations, linear_iterations, /* update_preconditioner = */ false, 1);
 
   // Reset sum_alphai_ui
   this->sum_alphai_ui = nullptr;
@@ -673,14 +665,16 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::rhs_add_viscous_te
 
 template<int dim, int degree_u, int degree_p, typename Number>
 unsigned int
-DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::solve_viscous(VectorType &       dst,
-                                                                            VectorType const & src,
-                                                                            double const & factor)
+DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::solve_viscous(
+  VectorType &       dst,
+  VectorType const & src,
+  bool const &       update_preconditioner,
+  double const &     factor)
 {
   // Update Helmholtz operator
   helmholtz_operator.set_scaling_factor_time_derivative_term(factor);
 
-  unsigned int n_iter = helmholtz_solver->solve(dst, src);
+  unsigned int n_iter = helmholtz_solver->solve(dst, src, update_preconditioner);
 
   return n_iter;
 }

@@ -131,6 +131,7 @@ public:
   unsigned int
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
+                              bool const &            update_preconditioner,
                               double const &          scaling_factor_mass_matrix_term = 1.0);
 
 
@@ -160,6 +161,7 @@ public:
    */
   void
   solve_nonlinear_steady_problem(BlockVectorType & dst,
+                                 bool const &      update_preconditioner,
                                  unsigned int &    newton_iterations,
                                  unsigned int &    linear_iterations);
 
@@ -170,6 +172,7 @@ public:
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & sum_alphai_ui,
                           double const &     evaluation_time,
+                          bool const &       update_preconditioner,
                           double const &     scaling_factor_mass_matrix_term,
                           unsigned int &     newton_iterations,
                           unsigned int &     linear_iterations);

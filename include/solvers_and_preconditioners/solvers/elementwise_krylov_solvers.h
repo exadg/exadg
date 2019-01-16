@@ -328,9 +328,7 @@ template<typename value_type>
 class SolverGMRES
 {
 public:
-  SolverGMRES(unsigned int const unknowns,
-              SolverData const & solver_data,
-              unsigned int const max_krylov_size = 1e3);
+  SolverGMRES(unsigned int const unknowns, SolverData const & solver_data);
 
   template<typename Matrix, typename Preconditioner>
   void
@@ -414,14 +412,12 @@ private:
  * Implementation of GMRES solver.
  */
 template<typename value_type>
-SolverGMRES<value_type>::SolverGMRES(unsigned int const unknowns,
-                                     SolverData const & solver_data,
-                                     unsigned int const max_krylov_size)
+SolverGMRES<value_type>::SolverGMRES(unsigned int const unknowns, SolverData const & solver_data)
   : M(unknowns),
     ABS_TOL(solver_data.abs_tol),
     REL_TOL(solver_data.rel_tol),
     MAX_ITER(solver_data.max_iter),
-    MAX_KRYLOV_SIZE(max_krylov_size),
+    MAX_KRYLOV_SIZE(solver_data.max_krylov_size),
     iterations(0),
     k(0)
 {

@@ -609,7 +609,12 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
                                                     this->get_time_step_size());
 
     // solve linear system of equations
-    iterations_projection = this->operator_base->solve_projection(velocity_np, rhs_vec_projection);
+    bool const update_preconditioner =
+      this->param.update_preconditioner_projection &&
+      (this->time_step_number % this->param.update_preconditioner_projection_every_time_steps == 0);
+
+    iterations_projection =
+      this->operator_base->solve_projection(velocity_np, rhs_vec_projection, update_preconditioner);
   }
   else // no penalty terms, simply apply inverse mass matrix
   {
@@ -698,9 +703,14 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
     velocity_np.add(this->extra.get_beta(i), velocity[i]);
 
   // solve linear system of equations
+  bool const update_preconditioner =
+    this->param.update_preconditioner_viscous &&
+    (this->time_step_number % this->param.update_preconditioner_viscous_every_time_steps == 0);
+
   unsigned int iterations_viscous =
     pde_operator->solve_viscous(velocity_np,
                                 rhs_vec_viscous,
+                                update_preconditioner,
                                 this->get_scaling_factor_time_derivative_term());
 
   // write output

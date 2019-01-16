@@ -63,7 +63,6 @@ template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
   equation_type = EquationType::NavierStokes;
   right_hand_side = true;
 
@@ -111,7 +110,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   output_data.output_name = FILENAME;
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.number_of_patches = FE_DEGREE;
+  output_data.degree = FE_DEGREE;
 
   error_data.analytical_solution_available = true;
   error_data.error_calc_start_time = start_time;
