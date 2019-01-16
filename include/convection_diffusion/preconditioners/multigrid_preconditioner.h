@@ -47,7 +47,7 @@ public:
                                                                          periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
-    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGLevelInfo> &                                           global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     PreconditionableOperatorData<dim> const &                            operator_data_in)
@@ -82,7 +82,7 @@ public:
   }
 
   void
-  initialize_matrixfree(std::vector<MGLevelIdentifier> &          global_levels,
+  initialize_matrixfree(std::vector<MGLevelInfo> &                global_levels,
                         Mapping<dim> const &                      mapping,
                         PreconditionableOperatorData<dim> const & operator_data_in)
   {

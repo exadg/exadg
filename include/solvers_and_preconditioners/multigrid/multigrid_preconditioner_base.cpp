@@ -145,7 +145,7 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequence(
   const parallel::Triangulation<dim> *  tria,
-  std::vector<MGLevelIdentifier> &      global_levels,
+  std::vector<MGLevelInfo> &            global_levels,
   std::vector<unsigned int> &           h_levels,
   std::vector<MGDofHandlerIdentifier> & p_levels,
   unsigned int                          degree,
@@ -232,7 +232,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_mg_sequence(
-  std::vector<MGLevelIdentifier> const & global_levels)
+  std::vector<MGLevelInfo> const & global_levels)
 {
   AssertThrow(this->n_global_levels == global_levels.size(),
               ExcMessage("Variable n_global_levels is not initialized correctly."));
@@ -259,7 +259,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
                                                                          periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
-    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGLevelInfo> &                                           global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     PreconditionableOperatorData<dim> const &                            operator_data)
@@ -287,7 +287,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
                                                                          periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
-    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGLevelInfo> &                                           global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              mg_dofhandler,
@@ -352,7 +352,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree(
-  std::vector<MGLevelIdentifier> &          global_levels,
+  std::vector<MGLevelInfo> &                global_levels,
   Mapping<dim> const &                      mapping,
   PreconditionableOperatorData<dim> const & operator_data)
 {
@@ -392,7 +392,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices(
-  std::vector<MGLevelIdentifier> &          global_levels,
+  std::vector<MGLevelInfo> &                global_levels,
   PreconditionableOperatorData<dim> const & operator_data_in)
 {
   this->mg_matrices.resize(0, this->n_global_levels - 1);

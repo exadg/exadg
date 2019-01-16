@@ -24,13 +24,13 @@ struct MGDofHandlerIdentifier
   }
 };
 
-struct MGLevelIdentifier
+struct MGLevelInfo
 {
-  MGLevelIdentifier(unsigned int level, unsigned int degree, bool is_dg)
+  MGLevelInfo(unsigned int level, unsigned int degree, bool is_dg)
     : level(level), degree(degree), is_dg(is_dg), id(degree, is_dg)
   {
   }
-  MGLevelIdentifier(unsigned int level, MGDofHandlerIdentifier p)
+  MGLevelInfo(unsigned int level, MGDofHandlerIdentifier p)
     : level(level), degree(p.degree), is_dg(p.is_dg), id(p)
   {
   }

@@ -13,7 +13,7 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> & mg_constrained_dofs,
   const unsigned int                                  dof_handler_index)
 {
-  std::vector<MGLevelIdentifier>      global_levels;
+  std::vector<MGLevelInfo>            global_levels;
   std::vector<MGDofHandlerIdentifier> p_levels;
 
   const unsigned int min_level = mg_data.min_level();

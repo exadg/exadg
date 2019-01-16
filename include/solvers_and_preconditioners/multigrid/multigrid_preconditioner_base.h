@@ -106,7 +106,7 @@ private:
    */
   void
   initialize_mg_sequence(parallel::Triangulation<dim> const *  tria,
-                         std::vector<MGLevelIdentifier> &      global_levels,
+                         std::vector<MGLevelInfo> &            global_levels,
                          std::vector<unsigned int> &           h_levels,
                          std::vector<MGDofHandlerIdentifier> & p_levels,
                          unsigned int const                    degree,
@@ -114,7 +114,7 @@ private:
                          const bool                            is_dg);
 
   void
-  check_mg_sequence(std::vector<MGLevelIdentifier> const & global_levels);
+  check_mg_sequence(std::vector<MGLevelInfo> const & global_levels);
 
   /*
    * Dof-handlers and constraints.
@@ -127,7 +127,7 @@ protected:
                                                                          periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
-    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGLevelInfo> &                                           global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     PreconditionableOperatorData<dim> const &                            operator_data);
@@ -139,7 +139,7 @@ protected:
                                                                          periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
-    std::vector<MGLevelIdentifier> &                                     global_levels,
+    std::vector<MGLevelInfo> &                                           global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              mg_dofhandler,
@@ -153,7 +153,7 @@ private:
                                  Map const & dirichlet_bc);
 
   virtual void
-  initialize_matrixfree(std::vector<MGLevelIdentifier> &          global_levels,
+  initialize_matrixfree(std::vector<MGLevelInfo> &                global_levels,
                         Mapping<dim> const &                      mapping,
                         PreconditionableOperatorData<dim> const & operator_data);
 
@@ -161,7 +161,7 @@ private:
    * Multigrid operators on each multigrid level.
    */
   void
-  initialize_mg_matrices(std::vector<MGLevelIdentifier> &          global_levels,
+  initialize_mg_matrices(std::vector<MGLevelInfo> &                global_levels,
                          PreconditionableOperatorData<dim> const & operator_data);
 
   /*
@@ -204,7 +204,7 @@ protected:
 
   std::vector<unsigned int>           h_levels;
   std::vector<MGDofHandlerIdentifier> p_levels;
-  std::vector<MGLevelIdentifier>      global_levels;
+  std::vector<MGLevelInfo>            global_levels;
 
 private:
   MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer;

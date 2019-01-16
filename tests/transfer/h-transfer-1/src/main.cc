@@ -163,7 +163,7 @@ private:
 
   void
   init_triangulation_and_dof_handler(
-    MGLevelIdentifier                                            id,
+    MGLevelInfo                                                  id,
     std::shared_ptr<parallel::distributed::Triangulation<dim>> & triangulation,
     std::shared_ptr<FESystem<dim>> &                             fe,
     std::shared_ptr<const DoFHandler<dim>> &                     dof_handler,
@@ -199,7 +199,7 @@ private:
   }
 
   void
-  init_matrixfree_and_constraint_matrix(MGLevelIdentifier                              id,
+  init_matrixfree_and_constraint_matrix(MGLevelInfo                                    id,
                                         std::shared_ptr<AffineConstraints<double>> &   dummy,
                                         std::shared_ptr<MatrixFree<dim, value_type>> & data,
                                         std::shared_ptr<const DoFHandler<dim>> &       dof_handler,
@@ -241,7 +241,7 @@ private:
   }
 
   void
-  setup_sequence(std::vector<MGLevelIdentifier> & global_levels)
+  setup_sequence(std::vector<MGLevelInfo> & global_levels)
   {
     if(run_configuration == RunConfiguration::h_coarsening)
     {
@@ -270,7 +270,7 @@ public:
   void
   run()
   {
-    std::vector<MGLevelIdentifier> global_levels;
+    std::vector<MGLevelInfo> global_levels;
 
     setup_sequence(global_levels);
     unsigned int min_level = 0;
