@@ -337,7 +337,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   {
     auto constraint_own = new AffineConstraints<double>;
 
-    ConstraintUtil<dim>::add_constraints(global_levels[i].is_dg,
+    ConstraintUtil::add_constraints<dim>(global_levels[i].is_dg,
                                          is_singular,
                                          *mg_dofhandler[i],
                                          *constraint_own,

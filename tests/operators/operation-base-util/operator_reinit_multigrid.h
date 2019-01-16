@@ -48,7 +48,7 @@ do_reinit_multigrid(
   }
 
 
-  ConstraintUtil<dim>::add_constraints(
+  ConstraintUtil::add_constraints<dim>(
     is_dg, false, dof_handler, constraint_own, mg_constrained_dofs, periodic_face_pairs, level);
 
   // // setup constraint matrix for CG
