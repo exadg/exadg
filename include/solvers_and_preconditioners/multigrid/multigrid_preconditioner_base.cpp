@@ -69,11 +69,18 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
     AssertThrow(
       mg_data.coarse_solver != MultigridCoarseGridSolver::AMG_ML,
       ExcMessage(
-        "You have to provide Dirichlet BCs and peridic face pairs if you want to use CG or AMG!"));
-
+        "You have to provide Dirichlet BCs and periodic face pairs if you want to use CG or AMG!"));
+  
+  // in the case of nullptr initialize empty data structures
+  Map dirichlet_bc;
+  if(dirichlet_bc_in != nullptr)
+    dirichlet_bc        = *dirichlet_bc_in;
+      
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>periodic_face_pairs;
+  if(dirichlet_bc_in != nullptr)
+    periodic_face_pairs = *periodic_face_pairs_in;
+  
   // dereference points
-  auto & dirichlet_bc        = *dirichlet_bc_in;
-  auto & periodic_face_pairs = *periodic_face_pairs_in;
 
   // extract paramters
   const auto   mg_type = this->mg_data.type;
@@ -96,6 +103,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
                                                       p_levels,
                                                       dirichlet_bc,
                                                       operator_data);
+  
   this->initialize_matrixfree(global_levels, mapping, operator_data);
   this->initialize_mg_matrices(global_levels, operator_data);
   this->initialize_smoothers();
