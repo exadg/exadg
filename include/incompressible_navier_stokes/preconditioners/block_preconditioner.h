@@ -21,7 +21,9 @@
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../spatial_discretization/momentum_operator.h"
+#include "compatible_laplace_multigrid_preconditioner.h"
 #include "multigrid_preconditioner.h"
 
 namespace IncNS
@@ -910,10 +912,14 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     typedef PreconditionableOperator<dim, MultigridNumber>                      MG_BASE;
     typedef CompatibleLaplaceOperator<dim, degree_u, degree_p, MultigridNumber> MG_OPERATOR;
 
-    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+    typedef CompatibleLaplaceMultigridPreconditioner<dim,
+                                                     degree_u,
+                                                     degree_p,
+                                                     Number,
+                                                     MultigridNumber>
+      MULTIGRID;
 
-    multigrid_preconditioner_schur_complement.reset(
-      new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR())));
+    multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
@@ -941,10 +947,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
     typedef Poisson::LaplaceOperator<dim, degree_u, MultigridNumber> MG_OPERATOR;
 
-    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
 
-    multigrid_preconditioner_schur_complement.reset(
-      new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR())));
+    multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);

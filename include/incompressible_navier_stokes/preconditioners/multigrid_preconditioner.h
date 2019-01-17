@@ -50,7 +50,7 @@ public:
     (void)global_levels;
     (void)mapping;
     (void)operator_data_in;
-
+    std::cout << "MultigridPreconditioner::initialize_matrixfree" << std::endl;
     AssertThrow(false, ExcMessage("Not implemented yet!"));
   }
 

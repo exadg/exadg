@@ -7,6 +7,8 @@
 
 #include "dg_navier_stokes_base.h"
 
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
+
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -764,9 +766,9 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
   typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber> MG_OPERATOR;
 
-  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+  typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
 
-  preconditioner.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
+  preconditioner.reset(new MULTIGRID());
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner);

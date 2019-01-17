@@ -1,7 +1,7 @@
 #include "poisson_operation.h"
 
 
-#include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
+#include "../preconditioner/multigrid_preconditioner.h"
 
 namespace Poisson
 {
@@ -68,11 +68,11 @@ DGOperation<dim, degree, Number>::setup_solver()
 
     typedef float MultigridNumber;
 
-    typedef PreconditionableOperator<dim, MultigridNumber>            MG_BASE;
-    typedef Poisson::LaplaceOperator<dim, degree, MultigridNumber>    MG_OPERATOR;
-    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+    typedef PreconditionableOperator<dim, MultigridNumber>                         MG_BASE;
+    typedef Poisson::LaplaceOperator<dim, degree, MultigridNumber>                 MG_OPERATOR;
+    typedef Poisson::MultigridPreconditioner<dim, degree, Number, MultigridNumber> MULTIGRID;
 
-    preconditioner.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
+    preconditioner.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
