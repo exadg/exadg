@@ -41,7 +41,9 @@ class MultigridPreconditionerBase : public PreconditionerBase<Number>
 private:
   typedef PreconditionableOperator<dim, MultigridNumber> Operator;
 
-  typedef std::vector<std::pair<unsigned int, unsigned int>>           Levels;
+  typedef std::vector<std::pair<unsigned int, unsigned int>> Levels;
+
+protected:
   typedef std::map<types::boundary_id, std::shared_ptr<Function<dim>>> Map;
 
 public:
@@ -56,15 +58,6 @@ public:
   initialize(MultigridData const &                     mg_data,
              const parallel::Triangulation<dim> *      tria,
              const FiniteElement<dim> &                fe,
-             Mapping<dim> const &                      mapping,
-             PreconditionableOperatorData<dim> const & operator_data,
-             Map const *                               dirichlet_bc = nullptr,
-             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-               periodic_face_pairs = nullptr);
-
-  void
-  initialize(MultigridData const &                     mg_data,
-             DoFHandler<dim> const &                   dof_handler,
              Mapping<dim> const &                      mapping,
              PreconditionableOperatorData<dim> const & operator_data,
              Map const *                               dirichlet_bc = nullptr,

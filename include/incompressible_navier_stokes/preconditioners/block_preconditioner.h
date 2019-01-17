@@ -751,8 +751,14 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_multigrid_preconditi
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
+  auto &                               dof_handler = underlying_operator->get_dof_handler_u();
+  parallel::Triangulation<dim> const * tria =
+    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+  const FiniteElement<dim> & fe = dof_handler.get_fe();
+
   mg_preconditioner->initialize(preconditioner_data.multigrid_data_momentum_preconditioner,
-                                underlying_operator->get_dof_handler_u(),
+                                tria,
+                                fe,
                                 underlying_operator->get_mapping(),
                                 underlying_operator->momentum_operator.get_operator_data());
 }
@@ -926,10 +932,14 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
 
     auto compatible_laplace_operator_data =
       underlying_operator->get_compatible_laplace_operator_data();
-    mg_preconditioner->initialize(mg_data,
-                                  underlying_operator->get_dof_handler_p(),
-                                  underlying_operator->get_mapping(),
-                                  compatible_laplace_operator_data);
+
+    auto &                               dof_handler = underlying_operator->get_dof_handler_p();
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    const FiniteElement<dim> & fe = dof_handler.get_fe();
+
+    mg_preconditioner->initialize(
+      mg_data, tria, fe, underlying_operator->get_mapping(), compatible_laplace_operator_data);
   }
   else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
   {
@@ -954,8 +964,15 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
+
+    auto &                               dof_handler = underlying_operator->get_dof_handler_p();
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    const FiniteElement<dim> & fe = dof_handler.get_fe();
+
     mg_preconditioner->initialize(mg_data,
-                                  underlying_operator->get_dof_handler_p(),
+                                  tria,
+                                  fe,
                                   underlying_operator->get_mapping(),
                                   laplace_operator_data,
                                   &laplace_operator_data.bc->dirichlet_bc,
@@ -1017,8 +1034,6 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
       underlying_operator->get_gradient_operator_data();
     compatible_laplace_operator_data.divergence_operator_data =
       underlying_operator->get_divergence_operator_data();
-    compatible_laplace_operator_data.underlying_operator_dof_index_velocity =
-      underlying_operator->get_dof_index_velocity();
 
     laplace_operator_compatible.reset(
       new CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>());

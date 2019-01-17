@@ -112,14 +112,14 @@ MomentumOperator<dim, degree, Number>::reinit_multigrid(
   // setup own mass matrix operator
   MassMatrixOperatorData & mass_matrix_operator_data = operator_data.mass_matrix_operator_data;
   // set dof index to zero since matrix free object only contains one dof-handler
-  mass_matrix_operator_data.dof_index = 0;
+  mass_matrix_operator_data.dof_index = operator_data.dof_index;
   own_mass_matrix_operator_storage.initialize(own_matrix_free_storage, mass_matrix_operator_data);
 
 
   // setup own viscous operator
   ViscousOperatorData<dim> & viscous_operator_data = operator_data.viscous_operator_data;
   // set dof index to zero since matrix free object only contains one dof-handler
-  viscous_operator_data.dof_index = 0;
+  viscous_operator_data.dof_index = operator_data.dof_index;
   own_viscous_operator_storage.initialize(mapping, own_matrix_free_storage, viscous_operator_data);
 
 
@@ -128,7 +128,7 @@ MomentumOperator<dim, degree, Number>::reinit_multigrid(
   // set dof index to zero since matrix free object only contains one dof-handler
   convective_operator_data.dof_index = 0;
   // set quad index to 1 since matrix free object only contains two quadrature formulas
-  convective_operator_data.quad_index = 1;
+  convective_operator_data.quad_index = operator_data.quad_index_over;
   own_convective_operator_storage.initialize(own_matrix_free_storage, convective_operator_data);
 
   // When solving the reaction-convection-diffusion problem, it might be possible

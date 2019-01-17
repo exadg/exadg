@@ -149,8 +149,9 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
   // convective problem = false (dual splitting scheme!)
   momentum_operator_data.convective_problem = false;
 
-  momentum_operator_data.dof_index      = this->get_dof_index_velocity();
-  momentum_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
+  momentum_operator_data.dof_index       = this->get_dof_index_velocity();
+  momentum_operator_data.quad_index_std  = this->get_quad_index_velocity_linear();
+  momentum_operator_data.quad_index_over = this->get_quad_index_velocity_nonlinear();
 
   momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
   momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -200,10 +201,16 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::initialize_helmhol
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
 
+
+    auto &                               dof_handler = this->get_dof_handler_u();
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    const FiniteElement<dim> & fe = dof_handler.get_fe();
+
     mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  this->get_dof_handler_u(),
+                                  tria,
+                                  fe,
                                   this->get_mapping(),
-                                  /*helmholtz_operator.get_operator_data().bc->dirichlet_bc,*/
                                   helmholtz_operator.get_operator_data());
   }
 }

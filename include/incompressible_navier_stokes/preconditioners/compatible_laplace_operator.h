@@ -22,10 +22,7 @@ template<int dim>
 struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
 {
   CompatibleLaplaceOperatorData()
-    : dof_index_velocity(0),
-      dof_index_pressure(1),
-      dof_handler_u(nullptr),
-      underlying_operator_dof_index_velocity(0)
+    : dof_index_velocity(0), dof_index_pressure(1), dof_handler_u(nullptr)
   {
   }
 
@@ -34,7 +31,6 @@ struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
   const DoFHandler<dim> *     dof_handler_u;
   GradientOperatorData<dim>   gradient_operator_data;
   DivergenceOperatorData<dim> divergence_operator_data;
-  unsigned int                underlying_operator_dof_index_velocity;
 };
 
 template<int dim, int fe_degree, int fe_degree_p, typename Number = double>
@@ -143,10 +139,9 @@ public:
     // NOTE: use quad_index = 0 since own_matrix_free_storage contains only one quadrature formula
     // (i.e. on would use quad_index = 0 also if quad_index_velocity would be 1 !)
     unsigned int quad_index = 0;
-    own_inv_mass_matrix_operator_storage.initialize(
-      own_matrix_free_storage,
-      comp_laplace_operator_data.underlying_operator_dof_index_velocity,
-      quad_index);
+    own_inv_mass_matrix_operator_storage.initialize(own_matrix_free_storage,
+                                                    comp_laplace_operator_data.dof_index_velocity,
+                                                    quad_index);
 
     // setup compatible Laplace operator
     initialize(own_matrix_free_storage,

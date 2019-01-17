@@ -252,10 +252,15 @@ private:
     typedef float                                            Number;
     typedef Poisson::LaplaceOperator<dim, fe_degree, Number> MG_OPERATOR;
 
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler_1.get_triangulation());
+    const FiniteElement<dim> & fe = dof_handler_1.get_fe();
+
     MultigridPreconditionerBase<dim, value_type, Number> preconditioner(
       std::shared_ptr<MG_OPERATOR>(new MG_OPERATOR()));
     preconditioner.initialize(multigrid_data,
-                              dof_handler_1,
+                              tria,
+                              fe,
                               mapping_1,
                               laplace_1.get_operator_data(),
                               &laplace_1.get_operator_data().bc->dirichlet_bc,

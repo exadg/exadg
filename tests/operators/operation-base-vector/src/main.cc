@@ -212,10 +212,16 @@ public:
       typedef float                                                  Number_MG;
       typedef IncNS::HelmholtzOperatorNew<dim, fe_degree, Number_MG> MG_OPERATOR;
 
+
+      parallel::Triangulation<dim> const * tria =
+        dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler_u.get_triangulation());
+      const FiniteElement<dim> & fe = dof_handler_u.get_fe();
+
       MultigridPreconditionerBase<dim, Number, Number_MG> preconditioner(
         std::shared_ptr<MG_OPERATOR>(new MG_OPERATOR()));
       preconditioner.initialize(multigrid_data,
-                                dof_handler_u,
+                                tria,
+                                fe,
                                 mapping,
                                 ho2.get_operator_data(),
                                 &ho2.get_operator_data().bc->dirichlet_bc,

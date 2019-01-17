@@ -20,21 +20,34 @@ template<int dim, int degree, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
-  // TODO: remove unnecessary typedefs
   typedef PreconditionableOperator<dim, MultigridNumber> MG_OPERATOR_BASE;
 
-  typedef LaplaceOperator<dim, degree, Number>          PDEOperator;
   typedef LaplaceOperator<dim, degree, MultigridNumber> MultigridOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
-
-  typedef typename BASE::VectorType   VectorType;
-  typedef typename BASE::VectorTypeMG VectorTypeMG;
+  typedef typename BASE::Map                                        Map;
 
   MultigridPreconditioner()
     : MultigridPreconditionerBase<dim, Number, MultigridNumber>(
         std::shared_ptr<MG_OPERATOR_BASE>(new MultigridOperator()))
   {
+  }
+
+  void
+  initialize(MultigridData const &                mg_data,
+             const parallel::Triangulation<dim> * tria,
+             const FiniteElement<dim> &           fe,
+             Mapping<dim> const &                 mapping,
+             LaplaceOperatorData<dim> const &     operator_data_in,
+             Map const *                          dirichlet_bc = nullptr,
+             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
+               periodic_face_pairs = nullptr)
+  {
+    auto operator_data       = operator_data_in;
+    operator_data.dof_index  = 0;
+    operator_data.quad_index = 0;
+
+    BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
   }
 };
 

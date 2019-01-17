@@ -776,8 +776,13 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   // explicit copy needed since function is called on const
   auto periodic_face_pairs = this->periodic_face_pairs;
 
+  parallel::Triangulation<dim> const * tria =
+    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler_u_scalar.get_triangulation());
+  const FiniteElement<dim> & fe = dof_handler_u_scalar.get_fe();
+
   mg_preconditioner->initialize(mg_data,
-                                this->dof_handler_u_scalar,
+                                tria,
+                                fe,
                                 this->mapping,
                                 laplace_operator.get_operator_data(),
                                 &laplace_operator.get_operator_data().bc->dirichlet_bc,

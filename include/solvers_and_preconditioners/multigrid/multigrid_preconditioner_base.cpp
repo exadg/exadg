@@ -35,25 +35,6 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   MultigridData const &                     mg_data,
-  DoFHandler<dim> const &                   dof_handler,
-  Mapping<dim> const &                      mapping,
-  PreconditionableOperatorData<dim> const & operator_data,
-  Map const *                               dirichlet_bc_in,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-    periodic_face_pairs_in)
-{
-  // get triangulation
-  parallel::Triangulation<dim> const * tria =
-    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
-  const FiniteElement<dim> & fe = dof_handler.get_fe(/*TODO*/);
-  this->initialize(
-    mg_data, tria, fe, mapping, operator_data, dirichlet_bc_in, periodic_face_pairs_in);
-}
-
-template<int dim, typename Number, typename MultigridNumber>
-void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &                     mg_data,
   const parallel::Triangulation<dim> *      tria,
   const FiniteElement<dim> &                fe,
   Mapping<dim> const &                      mapping,
@@ -70,16 +51,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
       mg_data.coarse_solver != MultigridCoarseGridSolver::AMG_ML,
       ExcMessage(
         "You have to provide Dirichlet BCs and periodic face pairs if you want to use CG or AMG!"));
-  
+
   // in the case of nullptr initialize empty data structures
   Map dirichlet_bc;
   if(dirichlet_bc_in != nullptr)
-    dirichlet_bc        = *dirichlet_bc_in;
-      
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>periodic_face_pairs;
+    dirichlet_bc = *dirichlet_bc_in;
+
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_face_pairs;
   if(dirichlet_bc_in != nullptr)
     periodic_face_pairs = *periodic_face_pairs_in;
-  
+
   // dereference points
 
   // extract paramters
@@ -103,7 +85,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
                                                       p_levels,
                                                       dirichlet_bc,
                                                       operator_data);
-  
+
   this->initialize_matrixfree(global_levels, mapping, operator_data);
   this->initialize_mg_matrices(global_levels, operator_data);
   this->initialize_smoothers();

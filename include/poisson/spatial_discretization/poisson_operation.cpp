@@ -76,8 +76,16 @@ DGOperation<dim, degree, Number>::setup_solver()
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+
+
+
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&this->dof_handler.get_triangulation());
+    const FiniteElement<dim> & fe = this->dof_handler.get_fe();
+
     mg_preconditioner->initialize(mg_data,
-                                  dof_handler,
+                                  tria,
+                                  fe,
                                   mapping,
                                   laplace_operator.get_operator_data(),
                                   &laplace_operator.get_operator_data().bc->dirichlet_bc,

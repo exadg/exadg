@@ -38,6 +38,7 @@ struct MomentumOperatorData : public PreconditionableOperatorData<dim>
       convective_problem(true),
       dof_index(0),
       quad_index_std(0),
+      quad_index_over(1),
       scaling_factor_time_derivative_term(-1.0),
       implement_block_diagonal_preconditioner_matrix_free(false),
       use_cell_based_loops(false),
@@ -53,6 +54,7 @@ struct MomentumOperatorData : public PreconditionableOperatorData<dim>
   unsigned int dof_index;
 
   unsigned int quad_index_std;
+  unsigned int quad_index_over;
 
   double scaling_factor_time_derivative_term;
 

@@ -28,6 +28,7 @@ private:
   typedef MomentumOperator<dim, degree, MultigridNumber> MultigridOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
+  typedef typename BASE::Map                                        Map;
 
   typedef typename BASE::VectorType   VectorType;
   typedef typename BASE::VectorTypeMG VectorTypeMG;
@@ -37,6 +38,24 @@ public:
     : MultigridPreconditionerBase<dim, Number, MultigridNumber>(
         std::shared_ptr<PreconditionableOperator<dim, MultigridNumber>>(new MultigridOperator()))
   {
+  }
+
+  void
+  initialize(MultigridData const &                mg_data,
+             const parallel::Triangulation<dim> * tria,
+             const FiniteElement<dim> &           fe,
+             Mapping<dim> const &                 mapping,
+             MomentumOperatorData<dim> const &    operator_data_in,
+             Map const *                          dirichlet_bc = nullptr,
+             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
+               periodic_face_pairs = nullptr)
+  {
+    auto operator_data            = operator_data_in;
+    operator_data.dof_index       = 0;
+    operator_data.quad_index_std  = 0;
+    operator_data.quad_index_over = 1;
+
+    BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
   }
 
   virtual ~MultigridPreconditioner(){};
