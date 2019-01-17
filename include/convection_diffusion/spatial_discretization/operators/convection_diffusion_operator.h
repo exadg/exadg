@@ -68,7 +68,7 @@ template<int dim, typename Number = double>
 class ConvectionDiffusionOperatorAbstract : virtual public PreconditionableOperator<dim, Number>
 {
 public:
-  virtual LinearAlgebra::distributed::Vector<Number> &
+  virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const = 0;
 
   virtual void
@@ -148,7 +148,7 @@ public:
   std::shared_ptr<BoundaryDescriptor<dim>>
   get_boundary_descriptor() const;
 
-  LinearAlgebra::distributed::Vector<Number> &
+  LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
   void

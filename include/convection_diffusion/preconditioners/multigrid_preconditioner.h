@@ -248,9 +248,12 @@ private:
 
     // interpolate velocity from fine to coarse level
     for(auto level = this->max_level; level > this->min_level; --level)
-      mg_transfer_vel.interpolate(level,
-                                  this->get_matrix(level - 1)->get_velocity(),
-                                  this->get_matrix(level - 0)->get_velocity());
+    {
+      auto & vector_fine_level   = this->get_matrix(level - 0)->get_velocity();
+      auto   vector_coarse_level = this->get_matrix(level - 1)->get_velocity();
+      mg_transfer_vel.interpolate(level, vector_coarse_level, vector_fine_level);
+      this->get_matrix(level - 1)->set_velocity(vector_coarse_level);
+    }
   }
 
   /*
