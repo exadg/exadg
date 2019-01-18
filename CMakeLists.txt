@@ -52,6 +52,7 @@ SET( TARGET_SRC
      include/convection_diffusion/time_integration/time_int_bdf.cpp
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
+     include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
      include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.cpp     
      include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp 

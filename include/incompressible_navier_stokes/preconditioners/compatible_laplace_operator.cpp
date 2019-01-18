@@ -1,3 +1,5 @@
+#include <navierstokes/config.h>
+
 #include "compatible_laplace_operator.h"
 
 namespace IncNS
@@ -424,53 +426,56 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::get_new(unsigned int
     case 5:
       return new CompatibleLaplaceOperator<dim, 5,  5-offset, Number>();
 #endif
-//#if DEGREE_6
-//    case 6:
-//      return new CompatibleLaplaceOperator<dim, 6,  6-offset, Number>();
-//#endif
-//#if DEGREE_7
-//    case 7:
-//      return new CompatibleLaplaceOperator<dim, 7,  7-offset, Number>();
-//#endif
-//#if DEGREE_8
-//    case 8:
-//      return new CompatibleLaplaceOperator<dim, 8,  8-offset, Number>();
-//#endif
-//#if DEGREE_9
-//    case 9:
-//      return new CompatibleLaplaceOperator<dim, 9,  9-offset, Number>();
-//#endif
-//#if DEGREE_10
-//    case 10:
-//      return new CompatibleLaplaceOperator<dim, 10,  10-offset, Number>();
-//#endif
-//#if DEGREE_11
-//    case 11:
-//      return new CompatibleLaplaceOperator<dim, 11,  11-offset, Number>();
-//#endif
-//#if DEGREE_12
-//    case 12:
-//      return new CompatibleLaplaceOperator<dim, 12,  12-offset, Number>();
-//#endif
-//#if DEGREE_13
-//    case 13:
-//      return new CompatibleLaplaceOperator<dim, 13,  13-offset, Number>();
-//#endif
-//#if DEGREE_14
-//    case 14:
-//      return new CompatibleLaplaceOperator<dim, 14,  14-offset, Number>();
-//#endif
-//#if DEGREE_15
-//    case 15:
-//      return new CompatibleLaplaceOperator<dim, 15,  15-offset, Number>();
-//#endif
+#if DEGREE_6
+    case 6:
+      return new CompatibleLaplaceOperator<dim, 6,  6-offset, Number>();
+#endif
+#if DEGREE_7
+    case 7:
+      return new CompatibleLaplaceOperator<dim, 7,  7-offset, Number>();
+#endif
+#if DEGREE_8
+    case 8:
+      return new CompatibleLaplaceOperator<dim, 8,  8-offset, Number>();
+#endif
+#if DEGREE_9
+    case 9:
+      return new CompatibleLaplaceOperator<dim, 9,  9-offset, Number>();
+#endif
+#if DEGREE_10
+    case 10:
+      return new CompatibleLaplaceOperator<dim, 10,  10-offset, Number>();
+#endif
+#if DEGREE_11
+    case 11:
+      return new CompatibleLaplaceOperator<dim, 11,  11-offset, Number>();
+#endif
+#if DEGREE_12
+    case 12:
+      return new CompatibleLaplaceOperator<dim, 12,  12-offset, Number>();
+#endif
+#if DEGREE_13
+    case 13:
+      return new CompatibleLaplaceOperator<dim, 13,  13-offset, Number>();
+#endif
+#if DEGREE_14
+    case 14:
+      return new CompatibleLaplaceOperator<dim, 14,  14-offset, Number>();
+#endif
+#if DEGREE_15
+    case 15:
+      return new CompatibleLaplaceOperator<dim, 15,  15-offset, Number>();
+#endif
     default:
       AssertThrow(false,
                   ExcMessage("CompatibleLaplaceOperator not implemented for this degree!"));
       return nullptr;
   }
-    std::cout << "BB" << std::endl;
+  
   }
 
 
 } // namespace IncNS
+
+
+#include "compatible_laplace_operator.hpp"

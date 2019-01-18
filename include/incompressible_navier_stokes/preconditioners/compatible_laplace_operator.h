@@ -176,6 +176,4 @@ private:
 
 } // namespace IncNS
 
-#include "compatible_laplace_operator.cpp"
-
 #endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_ */

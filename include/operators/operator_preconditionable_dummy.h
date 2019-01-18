@@ -5,7 +5,7 @@
 #include <deal.II/base/exceptions.h>
 #include <deal.II/multigrid/mg_constrained_dofs.h>
 
-#include "linear_operator_base.h"
+#include "operator_preconditionable.h"
 
 using namespace dealii;
 
