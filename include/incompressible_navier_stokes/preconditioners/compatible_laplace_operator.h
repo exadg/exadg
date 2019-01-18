@@ -55,10 +55,9 @@ public:
 
 
   void
-  reinit_preconditionable_operator_data(
-    MatrixFree<dim, Number> const &           matrix_free,
-    AffineConstraints<double> const &         constraint_matrix,
-    PreconditionableOperatorData<dim> const & operator_data_in) const
+  reinit_preconditionable_operator_data(MatrixFree<dim, Number> const &           matrix_free,
+                                        AffineConstraints<double> const &         constraint_matrix,
+                                        PreconditionableOperatorData<dim> const & operator_data_in)
   {
     auto operator_data =
       *static_cast<CompatibleLaplaceOperatorData<dim> const *>(&operator_data_in);

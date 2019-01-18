@@ -267,6 +267,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     PreconditionableOperatorData<dim> const &                            operator_data)
 {
+  (void)is_singular;
   (void)periodic_face_pairs;
   (void)fe;
   (void)tria;
