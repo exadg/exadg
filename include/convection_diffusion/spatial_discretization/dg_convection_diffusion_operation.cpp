@@ -189,11 +189,12 @@ DGOperation<dim, degree, Number>::setup_operators()
   diffusive_operator_data.quad_index           = 0;
   diffusive_operator_data.IP_factor            = param.IP_factor;
   diffusive_operator_data.diffusivity          = param.diffusivity;
+  diffusive_operator_data.degree_mapping       = param.degree_mapping;
   diffusive_operator_data.bc                   = boundary_descriptor;
   diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  diffusive_operator.reinit(mapping, data, constraint_matrix, diffusive_operator_data);
+  diffusive_operator.reinit(data, constraint_matrix, diffusive_operator_data);
 
   // rhs operator
   RHSOperatorData<dim> rhs_operator_data;

@@ -256,9 +256,10 @@ DGOperation<dim, degree, Number>::setup_operators()
   laplace_operator_data.dof_index            = 0;
   laplace_operator_data.quad_index           = 0;
   laplace_operator_data.IP_factor            = param.IP_factor;
+  laplace_operator_data.degree_mapping       = param.degree_mapping;
   laplace_operator_data.bc                   = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
-  laplace_operator_data.mapping.reset(new MappingQGeneric<dim>(param.degree_mapping));
+
   laplace_operator.reinit(data, constraint_matrix, laplace_operator_data);
 
   // rhs operator

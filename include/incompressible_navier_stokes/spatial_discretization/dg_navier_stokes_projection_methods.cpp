@@ -45,9 +45,10 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::initialize_lap
 {
   // setup Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.dof_index  = this->get_dof_index_pressure();
-  laplace_operator_data.quad_index = this->get_quad_index_pressure();
-  laplace_operator_data.IP_factor  = this->param.IP_factor_pressure;
+  laplace_operator_data.dof_index      = this->get_dof_index_pressure();
+  laplace_operator_data.quad_index     = this->get_quad_index_pressure();
+  laplace_operator_data.IP_factor      = this->param.IP_factor_pressure;
+  laplace_operator_data.degree_mapping = this->param.IP_factor_pressure;
 
   /*
    * In case of pure Dirichlet boundary conditions for the velocity (or more precisely pure Neumann

@@ -32,7 +32,7 @@ LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   m
                                              AffineConstraints<double> const & constraint_matrix,
                                              LaplaceOperatorData<dim> const &  operator_data) const
 {
-  MappingQGeneric<dim> mapping(degree);
+  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
   this->reinit(mapping, mf_data, constraint_matrix, operator_data);
 }
 

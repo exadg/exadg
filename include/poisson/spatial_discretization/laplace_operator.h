@@ -20,7 +20,8 @@ public:
           true,  true,        true,  true         // face
       ),
       // clang-format on
-      IP_factor(1.0)
+      IP_factor(1.0),
+      degree_mapping(1)
   {
     this->mapping_update_flags = update_gradients | update_JxW_values;
     this->mapping_update_flags_inner_faces =
@@ -30,6 +31,7 @@ public:
   }
 
   double IP_factor;
+  int    degree_mapping;
 
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
 };

@@ -27,6 +27,7 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim>
   }
 
   double IP_factor;
+  int    degree_mapping;
   double diffusivity;
 
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;

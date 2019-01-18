@@ -948,6 +948,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     laplace_operator_data.dof_index            = underlying_operator->get_dof_index_pressure();
     laplace_operator_data.quad_index           = underlying_operator->get_quad_index_pressure();
     laplace_operator_data.IP_factor            = 1.0;
+    laplace_operator_data.degree_mapping       = underlying_operator->param.degree_mapping;
     laplace_operator_data.operator_is_singular = underlying_operator->param.pure_dirichlet_bc;
 
     laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
@@ -1005,10 +1006,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
   if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
   {
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index  = underlying_operator->get_dof_index_pressure();
-    laplace_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
-    laplace_operator_data.IP_factor  = 1.0;
-    laplace_operator_data.bc         = underlying_operator->boundary_descriptor_laplace;
+    laplace_operator_data.dof_index      = underlying_operator->get_dof_index_pressure();
+    laplace_operator_data.quad_index     = underlying_operator->get_quad_index_pressure();
+    laplace_operator_data.IP_factor      = 1.0;
+    laplace_operator_data.degree_mapping = underlying_operator->param.degree_mapping;
+    laplace_operator_data.bc             = underlying_operator->boundary_descriptor_laplace;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, degree_p, Number>());
     laplace_operator_classical->reinit(underlying_operator->get_mapping(),
@@ -1096,10 +1098,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_pressure_convection_
 
   // b) diffusive operator
   ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
-  diffusive_operator_data.dof_index  = underlying_operator->get_dof_index_pressure();
-  diffusive_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
-  diffusive_operator_data.IP_factor  = underlying_operator->param.IP_factor_viscous;
-  diffusive_operator_data.bc         = boundary_descriptor;
+  diffusive_operator_data.dof_index      = underlying_operator->get_dof_index_pressure();
+  diffusive_operator_data.quad_index     = underlying_operator->get_quad_index_pressure();
+  diffusive_operator_data.IP_factor      = underlying_operator->param.IP_factor_viscous;
+  diffusive_operator_data.degree_mapping = underlying_operator->param.degree_mapping;
+  diffusive_operator_data.bc             = boundary_descriptor;
   // TODO: the pressure convection-diffusion operator is initialized with constant viscosity, in
   // case of varying viscosities the pressure convection-diffusion operator (the diffusive
   // operator of the pressure convection-diffusion operator) has to be updated before applying
