@@ -64,6 +64,13 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
   MultigridOperatorType mg_operator_type;
 };
 
+/*
+ * The class ConvectionDiffusionOperatorAbstract is the interface to the multigrid preconditioner
+ * ConvDiff::MultigridPreconditioner. This interface is needed to remove the template argument
+ * degree of the class ConvectionDiffusionOperator, since ConvDiff::MultigridPreconditioner works
+ * on ConvectionDiffusionOperators of different degrees in the case of p-Multigrid.
+ *
+ */
 template<int dim, typename Number = double>
 class ConvectionDiffusionOperatorAbstract : virtual public PreconditionableOperator<dim, Number>
 {

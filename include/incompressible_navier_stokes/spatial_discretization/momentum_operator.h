@@ -77,6 +77,13 @@ struct MomentumOperatorData : public PreconditionableOperatorData<dim>
 };
 
 
+/*
+ * The class MomentumOperatorAbstract is the interface to the multigrid preconditioner
+ * IncNS::MultigridPreconditioner. This interface is needed to remove the template argument
+ * degree of the class MomentumOperator, since IncNS::MultigridPreconditioner works
+ * on MomentumOperators of different degrees in the case of p-Multigrid.
+ *
+ */
 template<int dim, typename Number = double>
 class MomentumOperatorAbstract //: public PreconditionableOperator<dim, Number>
 {
