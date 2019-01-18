@@ -45,12 +45,11 @@ public:
   CompatibleLaplaceOperator();
 
   void
-  initialize(
-    MatrixFree<dim, Number> const &                             mf_data_in,
-    CompatibleLaplaceOperatorData<dim> const &                  compatible_laplace_operator_data_in,
-    GradientOperator<dim, degree_u, degree_p, Number> const &   gradient_operator_in,
-    DivergenceOperator<dim, degree_u, degree_p, Number> const & divergence_operator_in,
-    InverseMassMatrixOperator<dim, degree_u, Number> const &    inv_mass_matrix_operator_in) const;
+  initialize(MatrixFree<dim, Number> const &            mf_data_in,
+             CompatibleLaplaceOperatorData<dim> const & compatible_laplace_operator_data_in,
+             GradientOperator<dim, degree_u, degree_p, Number> const &   gradient_operator_in,
+             DivergenceOperator<dim, degree_u, degree_p, Number> const & divergence_operator_in,
+             InverseMassMatrixOperator<dim, degree_u, Number> const & inv_mass_matrix_operator_in);
 
 
 
@@ -68,7 +67,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &            data,
          AffineConstraints<double> const &          constraint_matrix,
-         CompatibleLaplaceOperatorData<dim> const & operator_data) const;
+         CompatibleLaplaceOperatorData<dim> const & operator_data);
 
 
 
@@ -200,7 +199,7 @@ public:
   is_singular() const;
 
   void
-  disable_mean_value_constraint() const;
+  disable_mean_value_constraint();
 
   // apply matrix vector multiplication
   void
@@ -264,14 +263,14 @@ public:
   get_new(unsigned int deg) const;
 
 private:
-  mutable MatrixFree<dim, Number> const *                           data;
-  mutable GradientOperator<dim, degree_u, degree_p, Number> const * gradient_operator;
+  MatrixFree<dim, Number> const *                           data;
+  GradientOperator<dim, degree_u, degree_p, Number> const * gradient_operator;
 
-  mutable DivergenceOperator<dim, degree_u, degree_p, Number> const * divergence_operator;
+  DivergenceOperator<dim, degree_u, degree_p, Number> const * divergence_operator;
 
-  mutable InverseMassMatrixOperator<dim, degree_u, Number> const * inv_mass_matrix_operator;
+  InverseMassMatrixOperator<dim, degree_u, Number> const * inv_mass_matrix_operator;
 
-  mutable CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
+  CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
 
   VectorType mutable tmp;
 
@@ -286,14 +285,14 @@ private:
    */
   MatrixFree<dim, Number> own_matrix_free_storage;
 
-  mutable GradientOperator<dim, degree_u, degree_p, Number> own_gradient_operator_storage;
+  GradientOperator<dim, degree_u, degree_p, Number> own_gradient_operator_storage;
 
-  mutable DivergenceOperator<dim, degree_u, degree_p, Number> own_divergence_operator_storage;
+  DivergenceOperator<dim, degree_u, degree_p, Number> own_divergence_operator_storage;
 
-  mutable InverseMassMatrixOperator<dim, degree_u, Number> own_inv_mass_matrix_operator_storage;
+  InverseMassMatrixOperator<dim, degree_u, Number> own_inv_mass_matrix_operator_storage;
 
-  mutable bool needs_mean_value_constraint;
-  mutable bool apply_mean_value_constraint_in_matvec;
+  bool needs_mean_value_constraint;
+  bool apply_mean_value_constraint_in_matvec;
 
   mutable VectorType tmp_projection_vector;
 };

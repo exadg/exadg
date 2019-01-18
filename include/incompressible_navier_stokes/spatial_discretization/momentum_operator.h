@@ -85,13 +85,13 @@ public:
   get_solution_linearization() const = 0;
 
   virtual void
-  set_solution_linearization(LinearAlgebra::distributed::Vector<Number> const & velocity) const = 0;
+  set_solution_linearization(LinearAlgebra::distributed::Vector<Number> const & velocity) = 0;
 
   virtual void
-  set_scaling_factor_time_derivative_term(double const & factor) const = 0;
+  set_scaling_factor_time_derivative_term(double const & factor) = 0;
 
   virtual void
-  set_evaluation_time(double const time) const = 0;
+  set_evaluation_time(double const time) = 0;
 };
 
 template<int dim, int degree, typename Number = double>
@@ -126,14 +126,14 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   data,
          AffineConstraints<double> const & constraint_matrix,
-         MomentumOperatorData<dim> const & operator_data) const;
+         MomentumOperatorData<dim> const & operator_data);
 
   void
   reinit(MatrixFree<dim, Number> const &                 data,
          MomentumOperatorData<dim> const &               operator_data,
          MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
          ViscousOperator<dim, degree, Number> const &    viscous_operator,
-         ConvectiveOperator<dim, degree, Number> const & convective_operator) const;
+         ConvectiveOperator<dim, degree, Number> const & convective_operator);
 
 
   virtual void
@@ -308,7 +308,7 @@ public:
    *  Scaling factor of time derivative term (mass matrix term)
    */
   void
-  set_scaling_factor_time_derivative_term(double const & factor) const;
+  set_scaling_factor_time_derivative_term(double const & factor);
 
   double
   get_scaling_factor_time_derivative_term() const;
@@ -317,7 +317,7 @@ public:
    *  Linearized velocity field for convective operator
    */
   void
-  set_solution_linearization(VectorType const & solution_linearization) const;
+  set_solution_linearization(VectorType const & solution_linearization);
 
   VectorType const &
   get_solution_linearization() const;
@@ -326,7 +326,7 @@ public:
    *  Evaluation time that is needed for evaluation of linearized convective operator.
    */
   void
-  set_evaluation_time(double const time) const;
+  set_evaluation_time(double const time);
 
   double
   get_evaluation_time() const;
@@ -446,15 +446,15 @@ private:
                                  VectorType const &                            src,
                                  std::pair<unsigned int, unsigned int> const & cell_range) const;
 
-  mutable MomentumOperatorData<dim> operator_data;
+  MomentumOperatorData<dim> operator_data;
 
-  mutable MatrixFree<dim, Number> const * data;
+  MatrixFree<dim, Number> const * data;
 
-  mutable MassMatrixOperator<dim, degree, Number> const * mass_matrix_operator;
+  MassMatrixOperator<dim, degree, Number> const * mass_matrix_operator;
 
-  mutable ViscousOperator<dim, degree, Number> const * viscous_operator;
+  ViscousOperator<dim, degree, Number> const * viscous_operator;
 
-  mutable ConvectiveOperator<dim, degree, Number> const * convective_operator;
+  ConvectiveOperator<dim, degree, Number> const * convective_operator;
 
   /*
    * The following variables are necessary when applying the multigrid
@@ -468,17 +468,17 @@ private:
    * ojects by setting the above pointers to the own_objects_storage,
    *   e.g., data = &own_mass_matrix_operator_storage;
    */
-  mutable MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
+  MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
 
-  mutable ViscousOperator<dim, degree, Number> own_viscous_operator_storage;
+  ViscousOperator<dim, degree, Number> own_viscous_operator_storage;
 
-  mutable ConvectiveOperator<dim, degree, Number> own_convective_operator_storage;
+  ConvectiveOperator<dim, degree, Number> own_convective_operator_storage;
 
   VectorType mutable temp_vector;
   VectorType mutable velocity_linearization;
 
-  mutable double evaluation_time;
-  mutable double scaling_factor_time_derivative_term;
+  double evaluation_time;
+  double scaling_factor_time_derivative_term;
 
   /*
    * Vector of matrices for block-diagonal preconditioners.

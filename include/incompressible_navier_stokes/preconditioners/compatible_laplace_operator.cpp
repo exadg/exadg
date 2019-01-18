@@ -21,7 +21,7 @@ void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::reinit(
   MatrixFree<dim, Number> const &                 data,
   AffineConstraints<double> const &               constraint_matrix,
-  CompatibleLaplaceOperatorData<dim> const &               operator_data) const
+  CompatibleLaplaceOperatorData<dim> const &               operator_data)
 {
     (void) constraint_matrix;
 
@@ -61,7 +61,7 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::
     CompatibleLaplaceOperatorData<dim> const &                                                        compatible_laplace_operator_data_in,
     GradientOperator<dim, degree_u, degree_p, Number> const &   gradient_operator_in,
     DivergenceOperator<dim, degree_u, degree_p, Number> const & divergence_operator_in,
-    InverseMassMatrixOperator<dim, degree_u, Number> const &                                         inv_mass_matrix_operator_in) const
+    InverseMassMatrixOperator<dim, degree_u, Number> const &                                         inv_mass_matrix_operator_in)
 {
   // copy parameters into element variables
   this->data                             = &mf_data_in;
@@ -110,7 +110,7 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::is_singular() const
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::disable_mean_value_constraint() const
+CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::disable_mean_value_constraint()
 {
   this->apply_mean_value_constraint_in_matvec = false;
 }

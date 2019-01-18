@@ -24,7 +24,7 @@ template<int dim, int degree, typename Number>
 void
 MomentumOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   data,
                                               AffineConstraints<double> const & constraint_matrix,
-                                              MomentumOperatorData<dim> const & operator_data) const
+                                              MomentumOperatorData<dim> const & operator_data)
 {
   (void)constraint_matrix;
 
@@ -55,7 +55,7 @@ MomentumOperator<dim, degree, Number>::reinit(
   MomentumOperatorData<dim> const &               operator_data,
   MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
   ViscousOperator<dim, degree, Number> const &    viscous_operator,
-  ConvectiveOperator<dim, degree, Number> const & convective_operator) const
+  ConvectiveOperator<dim, degree, Number> const & convective_operator)
 {
   // copy parameters into element variables
   this->data                 = &data;
@@ -72,7 +72,7 @@ MomentumOperator<dim, degree, Number>::reinit(
 template<int dim, int degree, typename Number>
 void
 MomentumOperator<dim, degree, Number>::set_scaling_factor_time_derivative_term(
-  double const & factor) const
+  double const & factor)
 {
   this->scaling_factor_time_derivative_term = factor;
 }
@@ -87,7 +87,7 @@ MomentumOperator<dim, degree, Number>::get_scaling_factor_time_derivative_term()
 template<int dim, int degree, typename Number>
 void
 MomentumOperator<dim, degree, Number>::set_solution_linearization(
-  VectorType const & solution_linearization) const
+  VectorType const & solution_linearization)
 {
   if(operator_data.convective_problem == true)
   {
@@ -108,7 +108,7 @@ MomentumOperator<dim, degree, Number>::get_solution_linearization() const
 
 template<int dim, int degree, typename Number>
 void
-MomentumOperator<dim, degree, Number>::set_evaluation_time(double const evaluation_time_in) const
+MomentumOperator<dim, degree, Number>::set_evaluation_time(double const evaluation_time_in)
 {
   evaluation_time = evaluation_time_in;
 }
