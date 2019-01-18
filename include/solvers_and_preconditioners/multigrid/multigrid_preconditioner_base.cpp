@@ -77,14 +77,27 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->max_level       = this->n_global_levels - 1;
 
   // setup of multigrid components
-  this->initialize_mg_dof_handler_and_constraints_all(underlying_operator->is_singular(),
-                                                      periodic_face_pairs,
-                                                      fe,
-                                                      tria,
-                                                      global_levels,
-                                                      p_levels,
-                                                      dirichlet_bc,
-                                                      operator_data);
+
+
+  this->initialize_mg_dof_handler_and_constraints(underlying_operator->is_singular(),
+                                                  periodic_face_pairs,
+                                                  fe,
+                                                  tria,
+                                                  global_levels,
+                                                  p_levels,
+                                                  dirichlet_bc,
+                                                  this->mg_dofhandler,
+                                                  this->mg_constrained_dofs,
+                                                  this->mg_constraints);
+
+  this->initialize_additional_mg_dof_handler_and_constraints(underlying_operator->is_singular(),
+                                                             periodic_face_pairs,
+                                                             fe,
+                                                             tria,
+                                                             global_levels,
+                                                             p_levels,
+                                                             dirichlet_bc,
+                                                             operator_data);
 
   this->initialize_matrixfree(global_levels, mapping, operator_data);
   this->initialize_mg_matrices(global_levels, operator_data);
@@ -243,7 +256,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_mg_sequence(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_mg_dof_handler_and_constraints_all(
+  initialize_additional_mg_dof_handler_and_constraints(
     bool is_singular,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                                                                          periodic_face_pairs,
@@ -254,18 +267,13 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     PreconditionableOperatorData<dim> const &                            operator_data)
 {
+  (void)periodic_face_pairs;
+  (void)fe;
+  (void)tria;
+  (void)global_levels;
+  (void)p_levels;
+  (void)dirichlet_bc;
   (void)operator_data;
-
-  initialize_mg_dof_handler_and_constraints(is_singular,
-                                            periodic_face_pairs,
-                                            fe,
-                                            tria,
-                                            global_levels,
-                                            p_levels,
-                                            dirichlet_bc,
-                                            this->mg_dofhandler,
-                                            this->mg_constrained_dofs,
-                                            this->mg_constraints);
 }
 
 template<int dim, typename Number, typename MultigridNumber>

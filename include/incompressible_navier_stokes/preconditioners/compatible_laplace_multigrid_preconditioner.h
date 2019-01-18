@@ -67,7 +67,7 @@ public:
   }
 
   virtual void
-  initialize_mg_dof_handler_and_constraints_all(
+  initialize_additional_mg_dof_handler_and_constraints(
     bool is_singular,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                                                                          periodic_face_pairs,
@@ -78,14 +78,11 @@ public:
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     PreconditionableOperatorData<dim> const &                            operator_data_in)
   {
-    BASE::initialize_mg_dof_handler_and_constraints_all(is_singular,
-                                                        periodic_face_pairs,
-                                                        fe,
-                                                        tria,
-                                                        global_levels,
-                                                        p_levels,
-                                                        dirichlet_bc,
-                                                        operator_data_in);
+    (void)is_singular;
+    (void)fe;
+    (void)p_levels;
+    (void)dirichlet_bc;
+    (void)operator_data_in;
 
     std::vector<MGLevelInfo>            global_levels_vel;
     std::vector<MGDofHandlerIdentifier> p_levels_vel;
