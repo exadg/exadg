@@ -42,6 +42,9 @@ MomentumOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   
                own_viscous_operator_storage,
                own_convective_operator_storage);
 
+  // initialize temp-vector: this is done in this function because
+  // the vector temp is only used in the function vmult_add(), i.e.,
+  // when using the multigrid preconditioner
   this->initialize_dof_vector(temp_vector);
 }
 

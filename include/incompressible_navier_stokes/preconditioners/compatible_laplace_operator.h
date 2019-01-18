@@ -9,7 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 
 #include "../../functionalities/set_zero_mean_value.h"
-#include "../../operators/operator_preconditionable_dummy.h"
+#include "../../operators/operator_preconditionable.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 
@@ -34,7 +34,7 @@ struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
 };
 
 template<int dim, int degree_u, int degree_p, typename Number = double>
-class CompatibleLaplaceOperator : public PreconditionableOperatorDummy<dim, Number>
+class CompatibleLaplaceOperator : public PreconditionableOperator<dim, Number>
 {
 public:
   static const int DIM = dim;
@@ -70,6 +70,132 @@ public:
   reinit(MatrixFree<dim, Number> const &            data,
          AffineConstraints<double> const &          constraint_matrix,
          CompatibleLaplaceOperatorData<dim> const & operator_data) const;
+
+
+
+  virtual void
+  apply(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::apply should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::apply_add should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::apply_add should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs_add should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs_add should be overwritten!"));
+  }
+
+  virtual void
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::evaluate should be overwritten!"));
+  }
+
+  virtual void
+  evaluate_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false,
+                ExcMessage("CompatibleLaplaceOperator::evaluate_add should be overwritten!"));
+  }
+
+  virtual void
+  update_block_diagonal_preconditioner() const
+  {
+    AssertThrow(
+      false,
+      ExcMessage(
+        "CompatibleLaplaceOperator::update_block_diagonal_preconditioner should be overwritten!"));
+  }
+
+  bool
+  is_empty_locally() const
+  {
+    MatrixFree<dim, Number> const & data = get_data();
+    return (data.n_macro_cells() == 0);
+  }
+
+  virtual AffineConstraints<double> const &
+  get_constraint_matrix() const
+  {
+    AssertThrow(
+      false, ExcMessage("CompatibleLaplaceOperator::get_constraint_matrix should be overwritten!"));
+    return *(new AffineConstraints<double>());
+  }
+
+  virtual unsigned int
+  get_dof_index() const
+  {
+    AssertThrow(false,
+                ExcMessage("CompatibleLaplaceOperator::get_dof_index should be overwritten!"));
+    return 0;
+  }
+
+#ifdef DEAL_II_WITH_TRILINOS
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
+  {
+    AssertThrow(false,
+                ExcMessage("CompatibleLaplaceOperator::init_system_matrix should be overwritten!"));
+  }
+
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
+  {
+    AssertThrow(false,
+                ExcMessage(
+                  "CompatibleLaplaceOperator::calculate_system_matrix should be overwritten!"));
+  }
+#endif
 
   bool
   is_singular() const;

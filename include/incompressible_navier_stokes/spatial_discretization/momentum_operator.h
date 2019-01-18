@@ -19,7 +19,7 @@
 
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/linear_operator_base.h"
-#include "../../operators/operator_preconditionable_dummy.h"
+#include "../../operators/operator_preconditionable.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
@@ -95,7 +95,7 @@ public:
 };
 
 template<int dim, int degree, typename Number = double>
-class MomentumOperator : public PreconditionableOperatorDummy<dim, Number>,
+class MomentumOperator : public PreconditionableOperator<dim, Number>,
                          public MomentumOperatorAbstract<dim, Number>
 {
 public:
@@ -135,6 +135,162 @@ public:
          MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
          ViscousOperator<dim, degree, Number> const &    viscous_operator,
          ConvectiveOperator<dim, degree, Number> const & convective_operator) const;
+
+
+  virtual void
+  apply(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+
+    AssertThrow(false, ExcMessage("MomentumOperator::apply should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::apply_add should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+    AssertThrow(false, ExcMessage("MomentumOperator::apply_add should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs_add should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs_add should be overwritten!"));
+  }
+
+  virtual void
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::evaluate should be overwritten!"));
+  }
+
+  virtual void
+  evaluate_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::evaluate_add should be overwritten!"));
+  }
+
+  void
+  vmult_interface_down(VectorType & dst, VectorType const & src) const
+  {
+    vmult(dst, src);
+  }
+
+  void
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
+  {
+    vmult_add(dst, src);
+  }
+
+  types::global_dof_index
+  m() const
+  {
+    return n();
+  }
+
+  types::global_dof_index
+  n() const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    return data.get_vector_partitioner(dof_index)->size();
+  }
+
+  Number
+  el(const unsigned int, const unsigned int) const
+  {
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
+  }
+
+  bool
+  is_empty_locally() const
+  {
+    MatrixFree<dim, Number> const & data = get_data();
+    return (data.n_macro_cells() == 0);
+  }
+
+  void
+  initialize_dof_vector(VectorType & vector) const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    data.initialize_dof_vector(vector, dof_index);
+  }
+
+  virtual AffineConstraints<double> const &
+  get_constraint_matrix() const
+  {
+    AssertThrow(false,
+                ExcMessage("MomentumOperator::get_constraint_matrix should be overwritten!"));
+    return *(new AffineConstraints<double>());
+  }
+
+  virtual bool
+  is_singular() const
+  {
+    // per default the operator is not singular
+    // if an operator can be singular, this method has to be overwritten
+    return false;
+  }
+
+#ifdef DEAL_II_WITH_TRILINOS
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
+  {
+    AssertThrow(false, ExcMessage("MomentumOperator::init_system_matrix should be overwritten!"));
+  }
+
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
+  {
+    AssertThrow(false,
+                ExcMessage("MomentumOperator::calculate_system_matrix should be overwritten!"));
+  }
+#endif
 
   /*
    * Setters and getters.
