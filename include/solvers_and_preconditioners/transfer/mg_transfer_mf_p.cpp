@@ -131,9 +131,11 @@ MGTransferMFP<dim, Number, VectorType, components>::do_interpolate(VectorType & 
                                                                    const VectorType & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
-                                                                               dof_handler_index);
+                                                                               dof_handler_index,
+                                                                               quad_index);
   FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
-                                                                               dof_handler_index);
+                                                                               dof_handler_index,
+                                                                               quad_index);
 
   for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
   {
@@ -169,9 +171,11 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
   const VectorType & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
-                                                                               dof_handler_index);
+                                                                               dof_handler_index,
+                                                                               quad_index);
   FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
-                                                                               dof_handler_index);
+                                                                               dof_handler_index,
+                                                                               quad_index);
 
   for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
   {
@@ -209,9 +213,11 @@ MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &  
                                                                   const VectorType & src) const
 {
   FEEvaluation<dim, fe_degree_1, fe_degree_1 + 1, components, Number> fe_eval1(*data_1_cm,
-                                                                               dof_handler_index);
+                                                                               dof_handler_index,
+                                                                               quad_index);
   FEEvaluation<dim, fe_degree_2, fe_degree_2 + 1, components, Number> fe_eval2(*data_2_cm,
-                                                                               dof_handler_index);
+                                                                               dof_handler_index,
+                                                                               quad_index);
 
   for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
   {
@@ -275,6 +281,23 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
   this->degree_2 = degree_2;
 
   this->dof_handler_index = dof_handler_index;
+
+  this->quad_index                 = numbers::invalid_unsigned_int;
+  const unsigned int n_q_points_1d = degree_1 + 1;
+  const unsigned int n_q_points    = std::pow(n_q_points_1d, dim);
+  
+  for(unsigned int quad_index = 0; quad_index < data_1_cm->get_mapping_info().cell_data.size();
+      quad_index++)
+  {
+    if(data_1_cm->get_mapping_info().cell_data[quad_index].descriptor[0].n_q_points == n_q_points)
+    {
+      this->quad_index = quad_index;
+      break;
+    }
+  }
+
+  AssertThrow(this->quad_index != numbers::invalid_unsigned_int,
+              ExcMessage("You need for p-transfer quadrature of type k+1"));
 
   this->is_dg = data_1_cm->get_dof_handler().get_fe().dofs_per_vertex == 0;
 
