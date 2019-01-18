@@ -46,6 +46,7 @@ public:
       operator_data(operator_data_in),
       scaling_factor_time_derivative_term(-1.0)
   {
+    (void)mapping;
     // initialize MassMatrixOperator
     if(operator_data.unsteady_problem == true)
     {
@@ -55,8 +56,7 @@ public:
     }
 
     // initialize DiffusiveOperator
-    diffusive_operator.reinit(mapping,
-                              matrix_free_data,
+    diffusive_operator.reinit(matrix_free_data,
                               constraint_matrix,
                               operator_data.diffusive_operator_data);
 

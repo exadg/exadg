@@ -246,7 +246,7 @@ public:
       diffusive_data.bc = bc_convdiff;
       if(CATEGORIZE)
         diffusive_data.use_cell_based_loops = true;
-      diffusive_operator.reinit(mapping, data, dummy, diffusive_data);
+      diffusive_operator.reinit(data, dummy, diffusive_data);
 
       // Convective operator
       ConvDiff::ConvectiveOperator<dim, fe_degree, fe_degree, value_type> convective_operator;

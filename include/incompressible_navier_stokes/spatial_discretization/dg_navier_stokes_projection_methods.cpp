@@ -92,10 +92,11 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::initialize_lap
 
   laplace_operator_data.bc                   = this->boundary_descriptor_laplace;
   laplace_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+  laplace_operator_data.degree_mapping       = this->param.degree_mapping;
   laplace_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
-  laplace_operator.reinit(this->mapping, this->data, this->constraint_p, laplace_operator_data);
+  laplace_operator.reinit(this->data, this->constraint_p, laplace_operator_data);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>

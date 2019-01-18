@@ -1013,8 +1013,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
     laplace_operator_data.bc             = underlying_operator->boundary_descriptor_laplace;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, degree_p, Number>());
-    laplace_operator_classical->reinit(underlying_operator->get_mapping(),
-                                       underlying_operator->get_data(),
+    laplace_operator_classical->reinit(underlying_operator->get_data(),
                                        underlying_operator->constraint_p,
                                        laplace_operator_data);
 

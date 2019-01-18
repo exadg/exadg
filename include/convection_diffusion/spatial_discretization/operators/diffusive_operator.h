@@ -49,12 +49,6 @@ public:
          DiffusiveOperatorData<dim> const & operator_data) const;
 
   void
-  reinit(Mapping<dim> const &               mapping,
-         MatrixFree<dim, Number> const &    mf_data,
-         AffineConstraints<double> const &  constraint_matrix,
-         DiffusiveOperatorData<dim> const & operator_data) const;
-
-  void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
   void

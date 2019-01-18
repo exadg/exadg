@@ -19,20 +19,9 @@ DiffusiveOperator<dim, degree, Number>::reinit(
   AffineConstraints<double> const &  constraint_matrix,
   DiffusiveOperatorData<dim> const & operator_data) const
 {
-  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
-  this->reinit(mapping, mf_data, constraint_matrix, operator_data);
-}
-
-template<int dim, int degree, typename Number>
-void
-DiffusiveOperator<dim, degree, Number>::reinit(
-  Mapping<dim> const &               mapping,
-  MatrixFree<dim, Number> const &    mf_data,
-  AffineConstraints<double> const &  constraint_matrix,
-  DiffusiveOperatorData<dim> const & operator_data) const
-{
   Base::reinit(mf_data, constraint_matrix, operator_data);
 
+  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,
                                                        mapping,

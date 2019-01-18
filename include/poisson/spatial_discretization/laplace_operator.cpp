@@ -13,27 +13,18 @@ LaplaceOperator<dim, degree, Number>::LaplaceOperator()
 
 template<int dim, int degree, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &              mapping,
-                                             MatrixFree<dim, Number> const &   mf_data,
+LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
                                              AffineConstraints<double> const & constraint_matrix,
                                              LaplaceOperatorData<dim> const &  operator_data) const
 {
   Base::reinit(mf_data, constraint_matrix, operator_data);
   // calculate penalty parameters
+  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,
                                                        mapping,
                                                        this->operator_data.dof_index);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
-                                             AffineConstraints<double> const & constraint_matrix,
-                                             LaplaceOperatorData<dim> const &  operator_data) const
-{
-  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
-  this->reinit(mapping, mf_data, constraint_matrix, operator_data);
+  // this->reinit(mapping, mf_data, constraint_matrix, operator_data);
 }
 
 /*

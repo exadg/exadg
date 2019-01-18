@@ -755,7 +755,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   laplace_operator_data.bc = boundary_descriptor_streamfunction;
 
   Poisson::LaplaceOperator<dim, degree_u, Number> laplace_operator;
-  laplace_operator.reinit(this->mapping, this->data, constraint_p, laplace_operator_data);
+  laplace_operator.reinit(this->data, constraint_p, laplace_operator_data);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;

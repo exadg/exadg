@@ -55,12 +55,6 @@ public:
   LaplaceOperator();
 
   void
-  reinit(Mapping<dim> const &              mapping,
-         MatrixFree<dim, Number> const &   mf_data,
-         AffineConstraints<double> const & constraint_matrix,
-         LaplaceOperatorData<dim> const &  operator_data) const;
-
-  void
   reinit(MatrixFree<dim, Number> const &   mf_data,
          AffineConstraints<double> const & constraint_matrix,
          LaplaceOperatorData<dim> const &  operator_data) const;
