@@ -22,12 +22,37 @@ MomentumOperator<dim, degree, Number>::MomentumOperator()
 
 template<int dim, int degree, typename Number>
 void
+MomentumOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   data,
+                                              AffineConstraints<double> const & constraint_matrix,
+                                              MomentumOperatorData<dim> const & operator_data) const
+{
+  (void)constraint_matrix;
+
+  // setup own mass matrix operator
+  own_mass_matrix_operator_storage.initialize(data, operator_data.mass_matrix_operator_data);
+
+  // TODO: refactor viscous operator, s.t. it does not need mappding
+  MappingQGeneric<dim> mapping(degree);
+  own_viscous_operator_storage.initialize(mapping, data, operator_data.viscous_operator_data);
+  own_convective_operator_storage.initialize(data, operator_data.convective_operator_data);
+
+  this->reinit(data,
+               operator_data,
+               own_mass_matrix_operator_storage,
+               own_viscous_operator_storage,
+               own_convective_operator_storage);
+
+  this->initialize_dof_vector(temp_vector);
+}
+
+template<int dim, int degree, typename Number>
+void
 MomentumOperator<dim, degree, Number>::reinit(
   MatrixFree<dim, Number> const &                 data,
   MomentumOperatorData<dim> const &               operator_data,
   MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
   ViscousOperator<dim, degree, Number> const &    viscous_operator,
-  ConvectiveOperator<dim, degree, Number> const & convective_operator)
+  ConvectiveOperator<dim, degree, Number> const & convective_operator) const
 {
   // copy parameters into element variables
   this->data                 = &data;
@@ -169,7 +194,7 @@ MomentumOperator<dim, degree, Number>::reinit_multigrid(
 template<int dim, int degree, typename Number>
 void
 MomentumOperator<dim, degree, Number>::set_scaling_factor_time_derivative_term(
-  double const & factor)
+  double const & factor) const
 {
   this->scaling_factor_time_derivative_term = factor;
 }
@@ -205,7 +230,7 @@ MomentumOperator<dim, degree, Number>::get_solution_linearization() const
 
 template<int dim, int degree, typename Number>
 void
-MomentumOperator<dim, degree, Number>::set_evaluation_time(double const & evaluation_time_in)
+MomentumOperator<dim, degree, Number>::set_evaluation_time(double const evaluation_time_in) const
 {
   evaluation_time = evaluation_time_in;
 }
@@ -646,8 +671,72 @@ template<int dim, int degree, typename Number>
 PreconditionableOperator<dim, Number> *
 MomentumOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
-  AssertThrow(deg == degree, ExcMessage("Not compatible with p-MG!"));
-  return new MomentumOperator<dim, degree, Number>();
+  switch(deg)
+  {
+#if DEGREE_1
+    case 1:
+      return new MomentumOperator<dim, 1, Number>();
+#endif
+#if DEGREE_2
+    case 2:
+      return new MomentumOperator<dim, 2, Number>();
+#endif
+#if DEGREE_3
+    case 3:
+      return new MomentumOperator<dim, 3, Number>();
+#endif
+#if DEGREE_4
+    case 4:
+      return new MomentumOperator<dim, 4, Number>();
+#endif
+#if DEGREE_5
+    case 5:
+      return new MomentumOperator<dim, 5, Number>();
+#endif
+#if DEGREE_6
+    case 6:
+      return new MomentumOperator<dim, 6, Number>();
+#endif
+#if DEGREE_7
+    case 7:
+      return new MomentumOperator<dim, 7, Number>();
+#endif
+#if DEGREE_8
+    case 8:
+      return new MomentumOperator<dim, 8, Number>();
+#endif
+#if DEGREE_9
+    case 9:
+      return new MomentumOperator<dim, 9, Number>();
+#endif
+#if DEGREE_10
+    case 10:
+      return new MomentumOperator<dim, 10, Number>();
+#endif
+#if DEGREE_11
+    case 11:
+      return new MomentumOperator<dim, 11, Number>();
+#endif
+#if DEGREE_12
+    case 12:
+      return new MomentumOperator<dim, 12, Number>();
+#endif
+#if DEGREE_13
+    case 13:
+      return new MomentumOperator<dim, 13, Number>();
+#endif
+#if DEGREE_14
+    case 14:
+      return new MomentumOperator<dim, 14, Number>();
+#endif
+#if DEGREE_15
+    case 15:
+      return new MomentumOperator<dim, 15, Number>();
+#endif
+    default:
+      AssertThrow(false, ExcMessage("MomentumOperator not implemented for this degree!"));
+      return nullptr;
+  }
 }
 
 } // namespace IncNS

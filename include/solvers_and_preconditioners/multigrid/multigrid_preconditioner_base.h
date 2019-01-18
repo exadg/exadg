@@ -199,9 +199,9 @@ protected:
   std::vector<MGDofHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            global_levels;
 
-private:
   MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer;
 
+private:
   typedef SmootherBase<VectorTypeMG>       SMOOTHER;
   MGLevelObject<std::shared_ptr<SMOOTHER>> mg_smoother;
 

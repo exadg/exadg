@@ -67,9 +67,10 @@ public:
    * Initialization
    */
   virtual void
-  reinit_void(MatrixFree<dim, Number> const &           matrix_free,
-              AffineConstraints<double> const &         constraint_matrix,
-              PreconditionableOperatorData<dim> const & operator_data_in) const = 0;
+  reinit_preconditionable_operator_data(
+    MatrixFree<dim, Number> const &           matrix_free,
+    AffineConstraints<double> const &         constraint_matrix,
+    PreconditionableOperatorData<dim> const & operator_data_in) const = 0;
 
   /*
    *

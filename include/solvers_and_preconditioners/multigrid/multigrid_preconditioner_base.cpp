@@ -391,7 +391,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrice
   for(unsigned int i = 0; i < this->n_global_levels; i++)
   {
     auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].degree));
-    matrix->reinit_void(*mg_matrixfree[i], *mg_constraints[i], operator_data_in);
+    matrix->reinit_preconditionable_operator_data(*mg_matrixfree[i],
+                                                  *mg_constraints[i],
+                                                  operator_data_in);
     mg_matrices[i].reset(matrix);
   }
 }

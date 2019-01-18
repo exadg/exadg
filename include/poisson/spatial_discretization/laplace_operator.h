@@ -32,7 +32,6 @@ public:
   double IP_factor;
 
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
-  std::shared_ptr<Mapping<dim>>                     mapping;
 };
 
 template<int dim, int degree, typename Number>

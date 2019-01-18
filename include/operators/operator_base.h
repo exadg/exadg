@@ -173,13 +173,12 @@ public:
   }
 
   void
-  reinit_void(MatrixFree<dim, Number> const &           matrix_free,
-              AffineConstraints<double> const &         constraint_matrix,
-              PreconditionableOperatorData<dim> const & operator_data_in) const
+  reinit_preconditionable_operator_data(
+    MatrixFree<dim, Number> const &           matrix_free,
+    AffineConstraints<double> const &         constraint_matrix,
+    PreconditionableOperatorData<dim> const & operator_data_in) const
   {
-    auto operator_data       = *static_cast<AdditionalData const *>(&operator_data_in);
-    operator_data.dof_index  = 0;
-    operator_data.quad_index = 0;
+    auto operator_data = *static_cast<AdditionalData const *>(&operator_data_in);
     this->reinit(matrix_free, constraint_matrix, operator_data);
   }
 

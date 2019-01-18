@@ -76,8 +76,27 @@ struct MomentumOperatorData : public PreconditionableOperatorData<dim>
   MultigridOperatorType mg_operator_type;
 };
 
+
+template<int dim, typename Number = double>
+class MomentumOperatorAbstract //: public PreconditionableOperator<dim, Number>
+{
+public:
+  virtual LinearAlgebra::distributed::Vector<Number> const &
+  get_solution_linearization() const = 0;
+
+  virtual void
+  set_solution_linearization(LinearAlgebra::distributed::Vector<Number> const & velocity) const = 0;
+
+  virtual void
+  set_scaling_factor_time_derivative_term(double const & factor) const = 0;
+
+  virtual void
+  set_evaluation_time(double const time) const = 0;
+};
+
 template<int dim, int degree, typename Number = double>
-class MomentumOperator : public PreconditionableOperatorDummy<dim, Number>
+class MomentumOperator : public PreconditionableOperatorDummy<dim, Number>,
+                         public MomentumOperatorAbstract<dim, Number>
 {
 public:
   typedef MomentumOperator<dim, degree, Number> This;
@@ -96,11 +115,26 @@ public:
   }
 
   void
+  reinit_preconditionable_operator_data(
+    MatrixFree<dim, Number> const &           matrix_free,
+    AffineConstraints<double> const &         constraint_matrix,
+    PreconditionableOperatorData<dim> const & operator_data_in) const
+  {
+    auto operator_data = *static_cast<MomentumOperatorData<dim> const *>(&operator_data_in);
+    this->reinit(matrix_free, constraint_matrix, operator_data);
+  }
+
+  void
+  reinit(MatrixFree<dim, Number> const &   data,
+         AffineConstraints<double> const & constraint_matrix,
+         MomentumOperatorData<dim> const & operator_data) const;
+
+  void
   reinit(MatrixFree<dim, Number> const &                 data,
          MomentumOperatorData<dim> const &               operator_data,
          MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
          ViscousOperator<dim, degree, Number> const &    viscous_operator,
-         ConvectiveOperator<dim, degree, Number> const & convective_operator);
+         ConvectiveOperator<dim, degree, Number> const & convective_operator) const;
 
   /*
    * Setters and getters.
@@ -119,7 +153,7 @@ public:
    *  Scaling factor of time derivative term (mass matrix term)
    */
   void
-  set_scaling_factor_time_derivative_term(double const & factor);
+  set_scaling_factor_time_derivative_term(double const & factor) const;
 
   double
   get_scaling_factor_time_derivative_term() const;
@@ -137,7 +171,7 @@ public:
    *  Evaluation time that is needed for evaluation of linearized convective operator.
    */
   void
-  set_evaluation_time(double const & time);
+  set_evaluation_time(double const time) const;
 
   double
   get_evaluation_time() const;
@@ -257,15 +291,15 @@ private:
                                  VectorType const &                            src,
                                  std::pair<unsigned int, unsigned int> const & cell_range) const;
 
-  MomentumOperatorData<dim> operator_data;
+  mutable MomentumOperatorData<dim> operator_data;
 
-  MatrixFree<dim, Number> const * data;
+  mutable MatrixFree<dim, Number> const * data;
 
-  MassMatrixOperator<dim, degree, Number> const * mass_matrix_operator;
+  mutable MassMatrixOperator<dim, degree, Number> const * mass_matrix_operator;
 
-  ViscousOperator<dim, degree, Number> const * viscous_operator;
+  mutable ViscousOperator<dim, degree, Number> const * viscous_operator;
 
-  ConvectiveOperator<dim, degree, Number> const * convective_operator;
+  mutable ConvectiveOperator<dim, degree, Number> const * convective_operator;
 
   /*
    * The following variables are necessary when applying the multigrid
@@ -279,19 +313,19 @@ private:
    * ojects by setting the above pointers to the own_objects_storage,
    *   e.g., data = &own_matrix_free_storage;
    */
-  MatrixFree<dim, Number> own_matrix_free_storage;
+  mutable MatrixFree<dim, Number> own_matrix_free_storage;
 
-  MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
+  mutable MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
 
-  ViscousOperator<dim, degree, Number> own_viscous_operator_storage;
+  mutable ViscousOperator<dim, degree, Number> own_viscous_operator_storage;
 
-  ConvectiveOperator<dim, degree, Number> own_convective_operator_storage;
+  mutable ConvectiveOperator<dim, degree, Number> own_convective_operator_storage;
 
   VectorType mutable temp_vector;
   VectorType mutable velocity_linearization;
 
-  double evaluation_time;
-  double scaling_factor_time_derivative_term;
+  mutable double evaluation_time;
+  mutable double scaling_factor_time_derivative_term;
 
   /*
    * Vector of matrices for block-diagonal preconditioners.

@@ -55,6 +55,19 @@ public:
     operator_data.quad_index_std  = 0;
     operator_data.quad_index_over = 1;
 
+    // set dof index to zero since matrix free object only contains one dof-handler
+    operator_data.mass_matrix_operator_data.dof_index  = operator_data.dof_index;
+    operator_data.mass_matrix_operator_data.quad_index = operator_data.quad_index_std;
+
+    // set dof index to zero since matrix free object only contains one dof-handler
+    operator_data.viscous_operator_data.dof_index  = operator_data.dof_index;
+    operator_data.viscous_operator_data.quad_index = operator_data.quad_index_std;
+
+    // set dof index to zero since matrix free object only contains one dof-handler
+    operator_data.convective_operator_data.dof_index = operator_data.dof_index;
+    // set quad index to 1 since matrix free object only contains two quadrature formulas
+    operator_data.convective_operator_data.quad_index = operator_data.quad_index_over;
+
     BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
   }
 
@@ -66,11 +79,62 @@ public:
                         Mapping<dim> const &                      mapping,
                         PreconditionableOperatorData<dim> const & operator_data_in)
   {
-    (void)global_levels;
-    (void)mapping;
-    (void)operator_data_in;
-    std::cout << "MultigridPreconditioner::initialize_matrixfree" << std::endl;
-    AssertThrow(false, ExcMessage("Not implemented yet!"));
+    const auto & operator_data = static_cast<MomentumOperatorData<dim> const &>(operator_data_in);
+
+    this->mg_matrixfree.resize(this->min_level, this->max_level);
+
+    for(auto level = this->min_level; level <= this->max_level; ++level)
+    {
+      auto data = new MatrixFree<dim, MultigridNumber>;
+
+      auto & dof_handler = *this->mg_dofhandler[level];
+
+      std::vector<DoFHandler<dim> const *> dof_handler_vec;
+      dof_handler_vec.resize(1);
+      dof_handler_vec[0] = &dof_handler;
+
+      // constraint matrix
+      std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
+      constraint_matrix_vec.resize(1);
+      constraint_matrix_vec[0] = &*this->mg_constraints[level];
+
+      // quadratures
+      std::vector<Quadrature<1>> quadrature_vec;
+      quadrature_vec.resize(2);
+      quadrature_vec[operator_data.quad_index_std] = QGauss<1>(dof_handler.get_fe().degree + 1);
+      quadrature_vec[operator_data.quad_index_over] =
+        QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
+
+      // additional data
+      typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+
+      additional_data.mapping_update_flags =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
+
+      additional_data.mapping_update_flags_inner_faces =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
+
+      additional_data.mapping_update_flags_boundary_faces =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
+
+      additional_data.level_mg_handler = global_levels[level].level;
+
+      if(operator_data.use_cell_based_loops)
+      {
+        auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+          &dof_handler.get_triangulation());
+        Categorization::do_cell_based_loops(*tria, additional_data, global_levels[level].level);
+      }
+
+      // reinit
+      data->reinit(
+        mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
+
+      this->mg_matrixfree[level].reset(data);
+    }
   }
 
   /*
@@ -150,48 +214,16 @@ private:
   void
   set_vector_linearization(VectorTypeMG const & vector_linearization)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
+    // copy velocity to finest level
+    this->get_matrix(this->max_level)->set_solution_linearization(vector_linearization);
+
+    // interpolate velocity from fine to coarse level
+    for(auto level = this->max_level; level > this->min_level; --level)
     {
-      if(level == (int)this->n_global_levels - 1) // finest level
-      {
-        // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
-        // so we have to dereference the shared_ptr, get the reference to it and
-        // finally we can cast it to pointer of type Operator
-        dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-          ->set_solution_linearization(vector_linearization);
-      }
-      else // all coarser levels
-      {
-        // restrict vector_linearization from fine to coarse level
-        VectorTypeMG const & vector_fine_level =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level + 1])
-            ->get_solution_linearization();
-
-        VectorTypeMG vector_coarse_level =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-            ->get_solution_linearization();
-
-        unsigned int dof_index_velocity =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-            ->get_operator_data()
-            .dof_index;
-
-        DoFHandler<dim> const & dof_handler_velocity =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-            ->get_data()
-            .get_dof_handler(dof_index_velocity);
-
-        restrict_to_coarser_level<dim, MultigridNumber, VectorTypeMG>(vector_coarse_level,
-                                                                      vector_fine_level,
-                                                                      dof_handler_velocity,
-                                                                      level);
-
-        // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
-        // so we have to dereference the shared_ptr, get the reference to it and
-        // finally we can cast it to pointer of type Operator
-        dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-          ->set_solution_linearization(vector_coarse_level);
-      }
+      auto & vector_fine_level   = this->get_matrix(level - 0)->get_solution_linearization();
+      auto   vector_coarse_level = this->get_matrix(level - 1)->get_solution_linearization();
+      this->mg_transfer.interpolate(level, vector_coarse_level, vector_fine_level);
+      this->get_matrix(level - 1)->set_solution_linearization(vector_coarse_level);
     }
   }
 
@@ -209,8 +241,7 @@ private:
       // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
-      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-        ->set_evaluation_time(evaluation_time);
+      get_matrix(level)->set_evaluation_time(evaluation_time);
     }
   }
 
@@ -227,8 +258,8 @@ private:
       // this->mg_matrices[level] is a std::shared_ptr<PreconditionableOperator>:
       // so we have to dereference the shared_ptr, get the reference to it and
       // finally we can cast it to pointer of type Operator
-      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-        ->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+      get_matrix(level)->set_scaling_factor_time_derivative_term(
+        scaling_factor_time_derivative_term);
     }
   }
 
@@ -244,6 +275,13 @@ private:
     {
       this->update_smoother(level);
     }
+  }
+
+  MomentumOperatorAbstract<dim, MultigridNumber> *
+  get_matrix(unsigned int level)
+  {
+    return dynamic_cast<MomentumOperatorAbstract<dim, MultigridNumber> *>(
+      &*this->mg_matrices[level]);
   }
 };
 

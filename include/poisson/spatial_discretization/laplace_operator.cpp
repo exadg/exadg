@@ -13,16 +13,17 @@ LaplaceOperator<dim, degree, Number>::LaplaceOperator()
 
 template<int dim, int degree, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::reinit(
-  Mapping<dim> const &              mapping,
-  MatrixFree<dim, Number> const &   mf_data,
-  AffineConstraints<double> const & constraint_matrix,
-  LaplaceOperatorData<dim> const &  operator_data_in) const
+LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &              mapping,
+                                             MatrixFree<dim, Number> const &   mf_data,
+                                             AffineConstraints<double> const & constraint_matrix,
+                                             LaplaceOperatorData<dim> const &  operator_data) const
 {
-  LaplaceOperatorData<dim> operator_data = operator_data_in;
-  operator_data.mapping                  = std::move(mapping.clone());
-
-  this->reinit(mf_data, constraint_matrix, operator_data);
+  Base::reinit(mf_data, constraint_matrix, operator_data);
+  // calculate penalty parameters
+  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
+                                                       *this->data,
+                                                       mapping,
+                                                       this->operator_data.dof_index);
 }
 
 template<int dim, int degree, typename Number>
@@ -31,13 +32,8 @@ LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   m
                                              AffineConstraints<double> const & constraint_matrix,
                                              LaplaceOperatorData<dim> const &  operator_data) const
 {
-  Base::reinit(mf_data, constraint_matrix, operator_data);
-
-  // calculate penalty parameters
-  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                       *this->data,
-                                                       *operator_data.mapping,
-                                                       this->operator_data.dof_index);
+  MappingQGeneric<dim> mapping(degree);
+  this->reinit(mapping, mf_data, constraint_matrix, operator_data);
 }
 
 /*
