@@ -91,8 +91,6 @@ protected:
   unsigned int min_level;
   unsigned int max_level;
 
-  MGLevelObject<std::shared_ptr<Operator>> mg_matrices;
-
 private:
   /*
    * Multigrid sequence (i.e. coarsening strategy).
@@ -194,6 +192,7 @@ protected:
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>                mg_constrained_dofs;
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>>        mg_constraints;
   MGLevelObject<std::shared_ptr<MatrixFree<dim, MultigridNumber>>> mg_matrixfree;
+  MGLevelObject<std::shared_ptr<Operator>>                         mg_matrices;
 
   std::vector<unsigned int>           h_levels;
   std::vector<MGDofHandlerIdentifier> p_levels;

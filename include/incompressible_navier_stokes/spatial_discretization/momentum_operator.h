@@ -307,14 +307,12 @@ private:
    * In that case, the VelocityConvDiffOperator has to be generated
    * for each level of the multigrid algorithm.
    * Accordingly, in a first step one has to setup own objects of
-   * MatrixFree, MassMatrixOperator, ViscousOperator,
-   *   e.g., own_matrix_free_storage.reinit(...);
+   * MassMatrixOperator, ViscousOperator,
+   *   e.g., own_mass_matrix_operator_storage.reinit(...);
    * and later initialize the VelocityConvDiffOperator with these
    * ojects by setting the above pointers to the own_objects_storage,
-   *   e.g., data = &own_matrix_free_storage;
+   *   e.g., data = &own_mass_matrix_operator_storage;
    */
-  mutable MatrixFree<dim, Number> own_matrix_free_storage;
-
   mutable MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
 
   mutable ViscousOperator<dim, degree, Number> own_viscous_operator_storage;
