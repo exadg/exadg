@@ -76,7 +76,7 @@ Download **trilinos** and run the following commands
 
 ```bash
 wget https://github.com/trilinos/Trilinos/archive/trilinos-release-12-12-1.tar.gz
-tar xf Trilinos-trilinos-release-12-12-1.tar.gz 
+tar xf trilinos-release-12-12-1.tar.gz 
 cd Trilinos-trilinos-release-12-12-1/
 
 mkdir build
