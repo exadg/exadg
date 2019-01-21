@@ -291,7 +291,7 @@ private:
 
     Timer time;
     time.restart();
-    auto   n    = solver.solve(vec_sol, vec_rhs);
+    auto   n    = solver.solve(vec_sol, vec_rhs, false);
     double temp = time.wall_time();
 
     if(!rank)
@@ -331,8 +331,9 @@ public:
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
+    laplace_additional_data.degree_mapping = fe_degree;
 
-    laplace.reinit(mapping_1, data_1, dummy_1, laplace_additional_data);
+    laplace.reinit(data_1, dummy_1, laplace_additional_data);
     return run(laplace, vt);
   }
 };

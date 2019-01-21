@@ -60,7 +60,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & src) const
+  solve(VectorType & dst, VectorType const & src, bool const /* update_preconditioner */) const
   {
     dst = 0;
 

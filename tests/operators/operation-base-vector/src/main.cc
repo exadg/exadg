@@ -236,7 +236,7 @@ public:
       RHSOperator<dim, fe_degree, Number, dim> rhs(ho2.get_data());
       rhs.evaluate(vec_rhs);
 
-      auto n = solver.solve(vec_sol, vec_rhs);
+      auto n = solver.solve(vec_sol, vec_rhs, false);
       std::cout << "  " << n << std::endl;
 
       {

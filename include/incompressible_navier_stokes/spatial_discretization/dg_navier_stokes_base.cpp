@@ -797,7 +797,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
     poisson_solver(laplace_operator, *preconditioner, solver_data);
 
   // solve Poisson problem
-  poisson_solver.solve(dst, rhs);
+  poisson_solver.solve(dst, rhs, /* update preconditioner = */ false);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -996,7 +996,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup_projection_solver()
       projection_solver.reset(new PROJ_SOLVER(*projection_operator));
     }
     // use iterative solver (PCG)
-    else if(this->param.solver_projection == SolverProjection::PCG)
+    else if(this->param.solver_projection == SolverProjection::CG)
     {
       // projection operator
       elementwise_projection_operator.reset(new ELEMENTWISE_PROJ_OPERATOR(*projection_operator));
@@ -1029,8 +1029,8 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup_projection_solver()
       // solver
       Elementwise::IterativeSolverData projection_solver_data;
       projection_solver_data.solver_type         = Elementwise::SolverType::CG;
-      projection_solver_data.solver_data.abs_tol = this->param.abs_tol_projection;
-      projection_solver_data.solver_data.rel_tol = this->param.rel_tol_projection;
+      projection_solver_data.solver_data.abs_tol = this->param.solver_data_projection.abs_tol;
+      projection_solver_data.solver_data.rel_tol = this->param.solver_data_projection.rel_tol;
 
       typedef Elementwise::
         IterativeSolver<dim, dim, degree_u, Number, ELEMENTWISE_PROJ_OPERATOR, PROJ_PRECONDITIONER>
@@ -1043,9 +1043,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup_projection_solver()
     }
     else
     {
-      AssertThrow(this->param.solver_projection == SolverProjection::LU ||
-                    this->param.solver_projection == SolverProjection::PCG,
-                  ExcMessage("Specified projection solver not implemented."));
+      AssertThrow(false, ExcMessage("Specified projection solver not implemented."));
     }
   }
   // both divergence and continuity penalty terms
@@ -1088,20 +1086,19 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup_projection_solver()
     }
 
     // solver
-    if(this->param.solver_projection == SolverProjection::PCG)
+    if(this->param.solver_projection == SolverProjection::CG)
     {
       // setup solver data
       CGSolverData projection_solver_data;
-      // use default value of max_iter
-      projection_solver_data.solver_tolerance_abs = this->param.abs_tol_projection;
-      projection_solver_data.solver_tolerance_rel = this->param.rel_tol_projection;
+      projection_solver_data.max_iter             = this->param.solver_data_projection.max_iter;
+      projection_solver_data.solver_tolerance_abs = this->param.solver_data_projection.abs_tol;
+      projection_solver_data.solver_tolerance_rel = this->param.solver_data_projection.rel_tol;
       // default value of use_preconditioner = false
       if(this->param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
          this->param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
          this->param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
       {
-        projection_solver_data.use_preconditioner    = true;
-        projection_solver_data.update_preconditioner = this->param.update_preconditioner_projection;
+        projection_solver_data.use_preconditioner = true;
       }
       else
       {
@@ -1121,7 +1118,7 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::setup_projection_solver()
     }
     else
     {
-      AssertThrow(this->param.solver_projection == SolverProjection::PCG,
+      AssertThrow(this->param.solver_projection == SolverProjection::CG,
                   ExcMessage("Specified projection solver not implemented."));
     }
   }
@@ -1152,12 +1149,14 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::update_projection_operator(
 
 template<int dim, int degree_u, int degree_p, typename Number>
 unsigned int
-DGNavierStokesBase<dim, degree_u, degree_p, Number>::solve_projection(VectorType &       dst,
-                                                                      VectorType const & src) const
+DGNavierStokesBase<dim, degree_u, degree_p, Number>::solve_projection(
+  VectorType &       dst,
+  VectorType const & src,
+  bool const &       update_preconditioner) const
 {
   Assert(projection_solver.get() != 0, ExcMessage("Projection solver has not been initialized."));
 
-  unsigned int n_iter = this->projection_solver->solve(dst, src);
+  unsigned int n_iter = this->projection_solver->solve(dst, src, update_preconditioner);
 
   return n_iter;
 }

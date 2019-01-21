@@ -143,21 +143,20 @@ class DGNavierStokesCoupled;
 
 struct BlockPreconditionerData
 {
-  PreconditionerLinearizedNavierStokes preconditioner_type;
+  PreconditionerCoupled preconditioner_type;
 
   // preconditioner momentum block
   MomentumPreconditioner momentum_preconditioner;
   MultigridData          multigrid_data_momentum_preconditioner;
   bool                   exact_inversion_of_momentum_block;
-  double                 rel_tol_solver_momentum_preconditioner;
-  unsigned int           max_n_tmp_vectors_solver_momentum_preconditioner;
+  SolverData             solver_data_momentum_block;
 
   // preconditioner Schur-complement block
   SchurComplementPreconditioner schur_complement_preconditioner;
   DiscretizationOfLaplacian     discretization_of_laplacian;
   MultigridData                 multigrid_data_schur_complement_preconditioner;
   bool                          exact_inversion_of_laplace_operator;
-  double                        rel_tol_solver_schur_complement_preconditioner;
+  SolverData                    solver_data_schur_complement;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -293,7 +292,7 @@ void
 BlockPreconditioner<dim, degree_u, degree_p, Number>::vmult(BlockVectorType &       dst,
                                                             BlockVectorType const & src) const
 {
-  if(preconditioner_data.preconditioner_type == PreconditionerLinearizedNavierStokes::BlockDiagonal)
+  if(preconditioner_data.preconditioner_type == PreconditionerCoupled::BlockDiagonal)
   {
     /*                        / A^{-1}   0    \   / A^{-1}  0 \   / I      0    \
      *   -> P_diagonal^{-1} = |               | = |           | * |             |
@@ -318,8 +317,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::vmult(BlockVectorType &   
     // apply preconditioner for velocity/momentum block
     apply_preconditioner_velocity_block(dst.block(0), src.block(0));
   }
-  else if(preconditioner_data.preconditioner_type ==
-          PreconditionerLinearizedNavierStokes::BlockTriangular)
+  else if(preconditioner_data.preconditioner_type == PreconditionerCoupled::BlockTriangular)
   {
     /*
      *                         / A^{-1}  0 \   / I  B^{T} \   / I      0    \
@@ -362,7 +360,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::vmult(BlockVectorType &   
     apply_preconditioner_velocity_block(dst.block(0), vec_tmp_velocity);
   }
   else if(preconditioner_data.preconditioner_type ==
-          PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
+          PreconditionerCoupled::BlockTriangularFactorization)
   {
     /*
      *                          / I  - A^{-1} B^{T} \   / I      0    \   / I   0 \   / A^{-1} 0 \
@@ -482,8 +480,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_preconditioner_veloc
       // clang-format on
 
       // iteratively solve momentum equation up to given tolerance
-      dst                           = 0.0;
-      unsigned int const iterations = solver_velocity_block->solve(dst, src);
+      dst = 0.0;
+      // Note that update of preconditioner is set to false here since the preconditioner has
+      // already been updated in the member function update() if desired.
+      unsigned int const iterations =
+        solver_velocity_block->solve(dst, src, /* update_preconditioner = */ false);
 
       // output
       bool const print_iterations = false;
@@ -674,8 +675,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_inverse_negative_lap
 
       pointer_to_src = &tmp_projection_vector;
     }
+
     dst = 0.0;
-    solver_pressure_block->solve(dst, *pointer_to_src);
+    // Note that update of preconditioner is set to false here since the preconditioner has
+    // already been updated in the member function update() if desired.
+    solver_pressure_block->solve(dst, *pointer_to_src, /* update_preconditioner = */ false);
   }
 }
 
@@ -683,13 +687,12 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_vectors()
 {
-  if(preconditioner_data.preconditioner_type ==
-     PreconditionerLinearizedNavierStokes::BlockTriangular)
+  if(preconditioner_data.preconditioner_type == PreconditionerCoupled::BlockTriangular)
   {
     underlying_operator->initialize_vector_velocity(vec_tmp_velocity);
   }
   else if(preconditioner_data.preconditioner_type ==
-          PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
+          PreconditionerCoupled::BlockTriangularFactorization)
   {
     underlying_operator->initialize_vector_pressure(vec_tmp_pressure);
     underlying_operator->initialize_vector_velocity(vec_tmp_velocity);
@@ -772,13 +775,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_mom
 
   // use FMGRES for "exact" solution of velocity block system
   FGMRESSolverData gmres_data;
-  gmres_data.use_preconditioner = true;
-  // Do not update preconditioner since momentum preconditioner is already updated in function
-  // update() of this class (if update_preconditioner for the solver of the linearized
-  // Navier--Stokes problem is set to true).
-  gmres_data.solver_tolerance_rel = preconditioner_data.rel_tol_solver_momentum_preconditioner;
-  gmres_data.max_n_tmp_vectors =
-    preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner;
+  gmres_data.use_preconditioner   = true;
+  gmres_data.max_iter             = preconditioner_data.solver_data_momentum_block.max_iter;
+  gmres_data.solver_tolerance_abs = preconditioner_data.solver_data_momentum_block.abs_tol;
+  gmres_data.solver_tolerance_rel = preconditioner_data.solver_data_momentum_block.rel_tol;
+  gmres_data.max_n_tmp_vectors    = preconditioner_data.solver_data_momentum_block.max_krylov_size;
 
   solver_velocity_block.reset(new FGMRESSolver<MomentumOperator<dim, degree_u, Number>,
                                                PreconditionerBase<Number>,
@@ -999,9 +1000,10 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
       "Setup of iterative solver for Schur complement preconditioner: Multigrid preconditioner is uninitialized"));
 
   CGSolverData solver_data;
-  solver_data.use_preconditioner = true;
-  solver_data.solver_tolerance_rel =
-    preconditioner_data.rel_tol_solver_schur_complement_preconditioner;
+  solver_data.max_iter             = preconditioner_data.solver_data_schur_complement.max_iter;
+  solver_data.solver_tolerance_abs = preconditioner_data.solver_data_schur_complement.abs_tol;
+  solver_data.solver_tolerance_rel = preconditioner_data.solver_data_schur_complement.rel_tol;
+  solver_data.use_preconditioner   = true;
 
   if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
   {

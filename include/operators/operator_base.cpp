@@ -66,11 +66,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
 
   if(!is_dg)
   {
-    VectorType dummy_vector;
-    this->do_initialize_dof_vector(dummy_vector);
-    for(unsigned int i = 0; i < dummy_vector.local_size(); ++i)
-      if(constraint->is_constrained(dummy_vector.get_partitioner()->local_to_global(i)))
-        constrained_indices.push_back(i);
+    constrained_indices.clear();
+    for(auto i : this->data->get_constrained_dofs())
+      constrained_indices.push_back(i);
     constrained_values.resize(constrained_indices.size());
   }
 

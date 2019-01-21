@@ -104,7 +104,9 @@ public:
   update_projection_operator(VectorType const & velocity, double const time_step_size) const = 0;
 
   virtual unsigned int
-  solve_projection(VectorType & dst, VectorType const & src) const = 0;
+  solve_projection(VectorType &       dst,
+                   VectorType const & src,
+                   bool const &       update_preconditioner) const = 0;
 
   virtual void
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
@@ -147,6 +149,7 @@ public:
   virtual unsigned int
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
+                              bool const &            update_preconditioner,
                               double const &          scaling_factor_mass_matrix_term = 1.0) = 0;
 
   virtual void
@@ -156,12 +159,14 @@ public:
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & sum_alphai_ui,
                           double const &     evaluation_time,
+                          bool const &       update_preconditioner,
                           double const &     scaling_factor_mass_matrix_term,
                           unsigned int &     newton_iterations,
                           unsigned int &     linear_iterations) = 0;
 
   virtual void
   solve_nonlinear_steady_problem(BlockVectorType & dst,
+                                 bool const &      update_preconditioner,
                                  unsigned int &    newton_iterations,
                                  unsigned int &    linear_iterations) = 0;
 
@@ -240,6 +245,7 @@ public:
   virtual unsigned int
   solve_viscous(VectorType &       dst,
                 VectorType const & src,
+                bool const &       update_preconditioner,
                 double const &     scaling_factor_time_derivative_term) = 0;
 
   virtual void
@@ -288,6 +294,7 @@ public:
   virtual void
   solve_linear_momentum_equation(VectorType &       solution,
                                  VectorType const & rhs,
+                                 bool const &       update_preconditioner,
                                  double const &     scaling_factor_mass_matrix_term,
                                  unsigned int &     linear_iterations) = 0;
 
@@ -295,6 +302,7 @@ public:
   solve_nonlinear_momentum_equation(VectorType &       dst,
                                     VectorType const & rhs_vector,
                                     double const &     eval_time,
+                                    bool const &       update_preconditioner,
                                     double const &     scaling_factor_mass_matrix_term,
                                     unsigned int &     newton_iterations,
                                     unsigned int &     linear_iterations) = 0;

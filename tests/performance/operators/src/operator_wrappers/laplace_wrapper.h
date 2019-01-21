@@ -23,7 +23,7 @@ public:
     this->initialize_matrix_free();
 
     LaplaceOperatorData<dim> laplace_additional_data;
-    laplace.reinit(mapping, data, dummy, laplace_additional_data);
+    laplace.reinit(/*mapping,*/ data, dummy, laplace_additional_data);
 
     // initialize vectors
     laplace.initialize_dof_vector(src);

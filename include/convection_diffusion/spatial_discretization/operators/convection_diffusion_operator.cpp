@@ -66,6 +66,11 @@ ConvectionDiffusionOperator<dim, degree, Number>::reinit(
   // mass matrix term: set scaling factor time derivative term
   this->scaling_factor_time_derivative_term =
     this->operator_data.scaling_factor_time_derivative_term;
+
+  // initialize temp-vector: this is done in this function because
+  // the vector temp is only used in the function vmult_add(), i.e.,
+  // when using the multigrid preconditioner
+  this->initialize_dof_vector(temp);
 }
 
 template<int dim, int degree, typename Number>
@@ -339,7 +344,8 @@ ConvectionDiffusionOperator<dim, degree, Number>::apply_inverse_block_diagonal(
   {
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
-    elementwise_solver->solve(dst, src);
+    bool variable_not_needed = false;
+    elementwise_solver->solve(dst, src, variable_not_needed);
   }
   else // matrix based
   {

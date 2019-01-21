@@ -157,7 +157,7 @@ gmres_test_1a()
 {
   std::cout << std::endl << "GMRES solver (double), size M=3:" << std::endl << std::endl;
 
-  SolverData                                  solver_data(100, 1e-12, 1e-12);
+  SolverData                                  solver_data(100, 1e-12, 1e-12, 30);
   Elementwise::SolverGMRES<double>            gmres_solver(M, solver_data);
   Elementwise::PreconditionerIdentity<double> preconditioner(M);
 
@@ -202,7 +202,7 @@ gmres_test_1b()
   std::cout << std::endl << "GMRES solver (double), size M=10000:" << std::endl << std::endl;
 
   const unsigned int                          M_large = 10000;
-  SolverData                                  solver_data(100, 1e-12, 1e-12);
+  SolverData                                  solver_data(100, 1e-12, 1e-12, 30);
   Elementwise::SolverGMRES<double>            gmres_solver(M_large, solver_data);
   Elementwise::PreconditionerIdentity<double> preconditioner(M_large);
 
@@ -264,7 +264,7 @@ gmres_test_2a()
             << std::endl
             << std::endl;
 
-  SolverData                                                   solver_data(100, 1e-12, 1e-12);
+  SolverData                                                   solver_data(100, 1e-12, 1e-12, 30);
   Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
   Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
   MyVector<VectorizedArray<double>>                            b(M);
@@ -313,7 +313,7 @@ gmres_test_2b()
             << std::endl
             << std::endl;
 
-  SolverData                                                   solver_data(100, 1e-12, 1e-12);
+  SolverData                                                   solver_data(100, 1e-12, 1e-12, 30);
   Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
   Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
 
@@ -367,7 +367,7 @@ gmres_test_2c()
             << std::endl
             << std::endl;
 
-  SolverData                                                   solver_data(100, 1e-12, 1e-12);
+  SolverData                                                   solver_data(100, 1e-12, 1e-12, 30);
   Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
   Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
   MyVector<VectorizedArray<double>>                            b(M);

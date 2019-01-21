@@ -16,203 +16,10 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 
+#include "enum_types.h"
+
 namespace ConvDiff
 {
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 MATHEMATICAL MODEL                                 */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  ProblemType describes whether a steady or an unsteady problem has to be solved
- */
-enum class ProblemType
-{
-  Undefined,
-  Steady,
-  Unsteady
-};
-
-
-/*
- *  EquationType describes the physical/mathematical model that has to be solved,
- *  i.e., diffusion problem, convective problem or convection-diffusion problem
- */
-enum class EquationType
-{
-  Undefined,
-  Convection,
-  Diffusion,
-  ConvectionDiffusion
-};
-
-/*
- * This parameter describes the type of velocity field for the convective term.
- * Analytical means that an analytical velocity field is prescribed, while Numerical
- * means that a discrete (potentially discontinuous) velocity field is prescribed that
- * is the result of numerical computations, e.g., the velocity field obtained as the
- * solution of the incompressible Navier-Stokes equations.
- */
-enum class TypeVelocityField
-{
-  Analytical,
-  Numerical
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 PHYSICAL QUANTITIES                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-// there are currently no enums for this section
-
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                             TEMPORAL DISCRETIZATION                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Temporal discretization method:
- *  ExplRK: Explicit Runge-Kutta methods (implemented for orders 1-4)
- *  BDF: backward differentiation formulae (implemented for order 1-3)
- */
-enum class TemporalDiscretization
-{
-  Undefined,
-  ExplRK,
-  BDF
-};
-
-/*
- *  For the BDF time integrator, the convective term can be either
- *  treated explicitly or implicitly
- */
-enum class TreatmentOfConvectiveTerm
-{
-  Undefined,
-  Explicit,    // additive decomposition (IMEX)
-  ExplicitOIF, // operator-integration-factor splitting (Maday et al. 1990)
-  Implicit
-};
-
-/*
- *  Temporal discretization method for OIF splitting:
- *
- *    Explicit Runge-Kutta methods
- */
-enum class TimeIntegratorRK
-{
-  Undefined,
-  ExplRK1Stage1,
-  ExplRK2Stage2,
-  ExplRK3Stage3,
-  ExplRK4Stage4,
-  ExplRK3Stage4Reg2C,
-  ExplRK3Stage7Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg2C,
-  ExplRK4Stage8Reg2, // optimized for maximum time step sizes in DG context
-  ExplRK4Stage5Reg3C,
-  ExplRK5Stage9Reg2S
-};
-
-/*
- * calculation of time step size
- */
-enum class TimeStepCalculation
-{
-  Undefined,
-  UserSpecified,
-  CFL,
-  Diffusion,
-  CFLAndDiffusion,
-  MaxEfficiency
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               SPATIAL DISCRETIZATION                               */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Numerical flux formulation of convective term
- */
-
-enum class NumericalFluxConvectiveOperator
-{
-  Undefined,
-  CentralFlux,
-  LaxFriedrichsFlux
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                       SOLVER                                       */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *   Solver for linear system of equations
- */
-enum class Solver
-{
-  Undefined,
-  PCG,
-  GMRES,
-  FGMRES // flexible GMRES
-};
-
-/*
- *  Preconditioner type for solution of linear system of equations
- */
-enum class Preconditioner
-{
-  Undefined,
-  None,
-  InverseMassMatrix,
-  PointJacobi,
-  BlockJacobi,
-  Multigrid
-};
-
-/*
- * Elementwise preconditioner for block Jacobi preconditioner (only relevant for
- * elementwise iterative solution procedure)
- */
-enum class PreconditionerBlockDiagonal
-{
-  Undefined,
-  None,
-  InverseMassMatrix
-};
-
-/*
- * Specify the operator type to be used for multigrid (which can differ from the
- * equation type)
- */
-enum class MultigridOperatorType
-{
-  Undefined,
-  ReactionDiffusion,
-  ReactionConvection,
-  ReactionConvectionDiffusion
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               OUTPUT AND POSTPROCESSING                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-// there are currently no enums for this section
-
-
-
 class InputParameters
 {
 public:
@@ -256,16 +63,13 @@ public:
 
       // SOLVER
       solver(Solver::Undefined),
-      use_right_preconditioner(true),
-      max_n_tmp_vectors(30),
-      abs_tol(1.e-20),
-      rel_tol(1.e-12),
-      max_iter(std::numeric_limits<unsigned int>::max()),
+      solver_data(SolverData(1e4, 1.e-12, 1.e-6, 100)),
       preconditioner(Preconditioner::Undefined),
       update_preconditioner(false),
+      update_preconditioner_every_time_steps(1),
       implement_block_diagonal_preconditioner_matrix_free(false),
       preconditioner_block_diagonal(PreconditionerBlockDiagonal::InverseMassMatrix),
-      block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2)),
+      block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2, 1000)),
       mg_operator_type(MultigridOperatorType::Undefined),
       multigrid_data(MultigridData()),
 
@@ -483,26 +287,9 @@ public:
   {
     pcout << std::endl << "Mathematical model:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
-    // equation type
-    std::string str_equation_type[] = {"Undefined",
-                                       "Convection",
-                                       "Diffusion",
-                                       "ConvectionDiffusion"};
-
-    print_parameter(pcout, "Equation type", str_equation_type[(int)equation_type]);
-
-    // type of velocity field
-    std::string str_type_velocity[] = {"Analytical", "Numerical"};
-
-    print_parameter(pcout, "Type of velocity field", str_type_velocity[(int)type_velocity_field]);
-
-    // right hand side
+    print_parameter(pcout, "Problem type", enum_to_string(problem_type));
+    print_parameter(pcout, "Equation type", enum_to_string(equation_type));
+    print_parameter(pcout, "Type of velocity field", enum_to_string(type_velocity_field));
     print_parameter(pcout, "Right-hand side", right_hand_side);
   }
 
@@ -511,8 +298,7 @@ public:
   {
     pcout << std::endl << "Physical quantities:" << std::endl;
 
-    // start and end time
-    if(true /*problem_type == ProblemType::Unsteady*/)
+    if(problem_type == ProblemType::Unsteady)
     {
       print_parameter(pcout, "Start time", start_time);
       print_parameter(pcout, "End time", end_time);
@@ -531,35 +317,13 @@ public:
   {
     pcout << std::endl << "Temporal discretization:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
-
-    std::string str_temp_discret[] = {"Undefined", "ExplicitRungeKutta", "BDF"};
-
     print_parameter(pcout,
                     "Temporal discretization method",
-                    str_temp_discret[(int)temporal_discretization]);
+                    enum_to_string(temporal_discretization));
 
     if(temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      std::string str_expl_time_int[] = {"Undefined",
-                                         "ExplRK1Stage1",
-                                         "ExplRK2Stage2",
-                                         "ExplRK3Stage3",
-                                         "ExplRK4Stage4",
-                                         "ExplRK3Stage4Reg2C",
-                                         "ExplRK3Stage7Reg2",
-                                         "ExplRK4Stage5Reg2C",
-                                         "ExplRK4Stage8Reg2",
-                                         "ExplRK4Stage5Reg3C",
-                                         "ExplRK5Stage9Reg2S"};
-
-      print_parameter(pcout,
-                      "Explicit time integrator",
-                      str_expl_time_int[(int)time_integrator_rk]);
+      print_parameter(pcout, "Explicit time integrator", enum_to_string(time_integrator_rk));
     }
 
     // maximum number of time steps
@@ -568,41 +332,22 @@ public:
     if(temporal_discretization == TemporalDiscretization::BDF)
     {
       print_parameter(pcout, "Order of time integrator", order_time_integrator);
-
       print_parameter(pcout, "Start with low order method", start_with_low_order);
-
-      std::string str_treatment_conv[] = {"Undefined", "Explicit", "ExplicitOIF", "Implicit"};
-
       print_parameter(pcout,
                       "Treatment of convective term",
-                      str_treatment_conv[(int)treatment_of_convective_term]);
+                      enum_to_string(treatment_of_convective_term));
 
       if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
       {
-        std::string str_time_int_oif[] = {"Undefined",
-                                          "ExplRK1Stage1",
-                                          "ExplRK2Stage2",
-                                          "ExplRK3Stage3",
-                                          "ExplRK4Stage4",
-                                          "ExplRK3Stage4Reg2C",
-                                          "ExplRK3Stage7Reg2",
-                                          "ExplRK4Stage5Reg2C",
-                                          "ExplRK4Stage8Reg2",
-                                          "ExplRK4Stage5Reg3C",
-                                          "ExplRK5Stage9Reg2S"};
-
         print_parameter(pcout,
                         "Time integrator for OIF splitting",
-                        str_time_int_oif[(int)time_integrator_oif]);
+                        enum_to_string(time_integrator_oif));
       }
     }
 
-    std::string str_time_step_calc[] = {
-      "Undefined", "UserSpecified", "CFL", "Diffusion", "CFLAndDiffusion", "MaxEfficiency"};
-
     print_parameter(pcout,
                     "Calculation of time step size",
-                    str_time_step_calc[(int)calculation_of_time_step_size]);
+                    enum_to_string(calculation_of_time_step_size));
 
     print_parameter(pcout, "Adaptive time stepping", adaptive_time_stepping);
 
@@ -629,11 +374,9 @@ public:
     if(equation_type == EquationType::Convection ||
        equation_type == EquationType::ConvectionDiffusion)
     {
-      std::string str_num_flux_convective[] = {"Undefined", "Central flux", "Lax-Friedrichs flux"};
-
       print_parameter(pcout,
                       "Numerical flux convective term",
-                      str_num_flux_convective[(int)numerical_flux_convective_operator]);
+                      enum_to_string(numerical_flux_convective_operator));
     }
 
     if(equation_type == EquationType::Diffusion ||
@@ -648,32 +391,19 @@ public:
   {
     pcout << std::endl << "Solver:" << std::endl;
 
-    /*
-     *  The definition of string-arrays in this function is somehow redundant with the
-     *  enum declarations but I think C++ does not offer a more elaborate conversion
-     *  from enums to strings
-     */
+    print_parameter(pcout, "Solver", enum_to_string(solver));
 
-    std::string str_solver[] = {"Undefined", "PCG", "GMRES", "FGMRES"};
+    solver_data.print(pcout);
 
-    print_parameter(pcout, "Solver", str_solver[(int)solver]);
+    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
 
-    if(solver == Solver::GMRES || solver == Solver::FGMRES)
+    if(preconditioner != Preconditioner::None)
     {
-      print_parameter(pcout, "Use right preconditioner", use_right_preconditioner);
-      print_parameter(pcout, "max_n_tmp_vectors", max_n_tmp_vectors);
+      print_parameter(pcout, "Update preconditioner", update_preconditioner);
+
+      if(update_preconditioner)
+        print_parameter(pcout, "Update every time steps", update_preconditioner_every_time_steps);
     }
-
-    print_parameter(pcout, "Absolute solver tolerance", abs_tol);
-    print_parameter(pcout, "Relative solver tolerance", rel_tol);
-    print_parameter(pcout, "Maximum number of iterations", max_iter);
-
-    std::string str_precon[] = {
-      "Undefined", "None", "InverseMassMatrix", "PointJacobi", "BlockJacobi", "Multigrid"};
-
-    print_parameter(pcout, "Preconditioner", str_precon[(int)preconditioner]);
-
-    print_parameter(pcout, "Update preconditioner", update_preconditioner);
 
     print_parameter(pcout,
                     "Block Jacobi matrix-free",
@@ -681,23 +411,16 @@ public:
 
     if(implement_block_diagonal_preconditioner_matrix_free)
     {
-      std::string str_precon[] = {"Undefined", "None", "InverseMassMatrix"};
-
       print_parameter(pcout,
                       "Preconditioner block diagonal",
-                      str_precon[(int)preconditioner_block_diagonal]);
+                      enum_to_string(preconditioner_block_diagonal));
 
       block_jacobi_solver_data.print(pcout);
     }
 
     if(preconditioner == Preconditioner::Multigrid)
     {
-      std::string str_mg[] = {"Undefined",
-                              "Reaction-Diffusion",
-                              "Reaction-Convection",
-                              "Reaction-Convection-Diffusion"};
-
-      print_parameter(pcout, "MG Operator type", str_mg[(int)mg_operator_type]);
+      print_parameter(pcout, "Multigrid operator type", enum_to_string(mg_operator_type));
       multigrid_data.print(pcout);
     }
   }
@@ -721,9 +444,9 @@ public:
   {
     pcout << std::endl << "Output and postprocessing:" << std::endl;
 
-    output_data.print(pcout, true /*problem_type == ProblemType::Unsteady*/);
+    output_data.print(pcout, problem_type == ProblemType::Unsteady);
 
-    error_data.print(pcout, true /*problem_type == ProblemType::Unsteady*/);
+    error_data.print(pcout, problem_type == ProblemType::Unsteady);
 
     restart_data.print(pcout);
   }
@@ -867,22 +590,18 @@ public:
   // description: see enum declaration
   Solver solver;
 
-  // use right-preconditioner in case of GMRES solver
-  bool use_right_preconditioner;
-
-  // max_n_temp_vectors for GMRES solver
-  unsigned int max_n_tmp_vectors;
-
-  // solver tolerances
-  double       abs_tol;
-  double       rel_tol;
-  unsigned int max_iter;
+  // solver data
+  SolverData solver_data;
 
   // description: see enum declaration
   Preconditioner preconditioner;
 
   // update preconditioner in case of varying parameters
   bool update_preconditioner;
+
+  // update preconditioner every ... time step. Only relevant if update preconditioner
+  // is set to true.
+  unsigned int update_preconditioner_every_time_steps;
 
   // Implement block diagonal (block Jacobi) preconditioner in a matrix-free way
   // by solving the block Jacobi problems elementwise using iterative solvers and

@@ -18,6 +18,7 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim>
       ),
       // clang-format on
       IP_factor(1.0),
+      degree_mapping(1),
       diffusivity(1.0)
   {
     this->mapping_update_flags = update_gradients | update_JxW_values | update_quadrature_points;

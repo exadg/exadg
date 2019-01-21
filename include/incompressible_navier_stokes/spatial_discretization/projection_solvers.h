@@ -29,8 +29,14 @@ public:
   {
   }
 
+  /*
+   * TODO:
+   * update_preconditioner is not required here (because the matrix is assembled in this function
+   * and because a direct solver is used. This points to deficiencies in the code design, i.e.,
+   * this direct solver should not be derived from IterativeSolverBase.
+   */
   unsigned int
-  solve(VectorType & dst, VectorType const & src) const
+  solve(VectorType & dst, VectorType const & src, bool const /* update_preconditioner */) const
   {
     dst = 0;
 

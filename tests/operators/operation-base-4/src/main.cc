@@ -274,10 +274,11 @@ public:
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
+    laplace_additional_data.degree_mapping = fe_degree;
 
     // run on fine grid without multigrid
     {
-      laplace.reinit(mapping, data, dummy, laplace_additional_data);
+      laplace.reinit(data, dummy, laplace_additional_data);
       run(laplace);
     }
   }

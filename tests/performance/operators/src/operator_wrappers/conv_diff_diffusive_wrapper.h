@@ -21,7 +21,7 @@ public:
     this->initialize_matrix_free();
 
     ConvDiff::DiffusiveOperatorData<dim> laplace_additional_data;
-    laplace.reinit(mapping, data, dummy, laplace_additional_data);
+    laplace.reinit(/*mapping,*/ data, dummy, laplace_additional_data);
 
     // initialize vectors
     laplace.do_initialize_dof_vector(src);

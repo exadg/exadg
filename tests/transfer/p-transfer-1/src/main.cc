@@ -340,11 +340,16 @@ public:
     LaplaceOperator<dim, fe_degree_1, value_type> laplace_1;
     LaplaceOperator<dim, fe_degree_2, value_type> laplace_2;
     // ... its additional data
-    LaplaceOperatorData<dim> laplace_additional_data;
-    laplace_additional_data.bc = this->bc;
+    LaplaceOperatorData<dim> laplace_additional_data_1;
+    laplace_additional_data_1.bc = this->bc;
+    laplace_additional_data_1.degree_mapping = fe_degree_1;
+    
+    LaplaceOperatorData<dim> laplace_additional_data_2;
+    laplace_additional_data_2.bc = this->bc;
+    laplace_additional_data_2.degree_mapping = fe_degree_2;
 
-    laplace_1.reinit(mapping_1, data_1, dummy_1, laplace_additional_data);
-    laplace_2.reinit(mapping_2, data_2, dummy_2, laplace_additional_data);
+    laplace_1.reinit(data_1, dummy_1, laplace_additional_data_1);
+    laplace_2.reinit(data_2, dummy_2, laplace_additional_data_2);
     run(laplace_1, laplace_2);
   }
 };

@@ -385,8 +385,12 @@ public:
     LaplaceOperator<dim, fe_degree_1, value_type> laplace_1;
     LaplaceOperator<dim, fe_degree_2, value_type> laplace_2;
     // ... its additional data
-    LaplaceOperatorData<dim> laplace_additional_data;
-    laplace_additional_data.bc = this->bc;
+    LaplaceOperatorData<dim> laplace_additional_data_1;
+    laplace_additional_data_1.bc = this->bc;
+    laplace_additional_data_1.degree_mapping = fe_degree_1;
+    LaplaceOperatorData<dim> laplace_additional_data_2;
+    laplace_additional_data_2.bc = this->bc;
+    laplace_additional_data_2.degree_mapping = fe_degree_2;
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
       periodic_face_pairs;
 
@@ -397,33 +401,33 @@ public:
       AffineConstraints<double>   contraint_matrix_1;
       do_reinit_multigrid(dof_handler_1,
                           mapping_1,
-                          laplace_additional_data,
+                          laplace_additional_data_1,
                           mg_constrained_dofs_1,
                           periodic_face_pairs,
                           level,
                           matrixfree_1,
                           contraint_matrix_1);
-      laplace_1.reinit(mapping_1, matrixfree_1, contraint_matrix_1, laplace_additional_data);
+      laplace_1.reinit(matrixfree_1, contraint_matrix_1, laplace_additional_data_1);
 
       MatrixFree<dim, value_type> matrixfree_2;
       AffineConstraints<double>   contraint_matrix_2;
       do_reinit_multigrid(dof_handler_2,
                           mapping_2,
-                          laplace_additional_data,
+                          laplace_additional_data_2,
                           mg_constrained_dofs_2,
                           periodic_face_pairs,
                           level,
                           matrixfree_2,
                           contraint_matrix_2);
-      laplace_2.reinit(mapping_2, matrixfree_2, contraint_matrix_2, laplace_additional_data);
+      laplace_2.reinit(matrixfree_2, contraint_matrix_2, laplace_additional_data_2);
 
       run(laplace_1, laplace_2, level);
     }
 
     // run on fine grid without multigrid
     {
-      laplace_1.reinit(mapping_1, data_1, dummy_1, laplace_additional_data);
-      laplace_2.reinit(mapping_2, data_2, dummy_2, laplace_additional_data);
+      laplace_1.reinit(data_1, dummy_1, laplace_additional_data_1);
+      laplace_2.reinit(data_2, dummy_2, laplace_additional_data_2);
       run(laplace_1, laplace_2);
     }
   }

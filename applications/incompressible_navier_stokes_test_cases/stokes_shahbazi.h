@@ -49,14 +49,14 @@ void InputParameters<dim>::set_input_parameters()
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
   equation_type = EquationType::Stokes;
-  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
+  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   right_hand_side = false;
 
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 1.0e-1;
-  viscosity = VISCOSITY; // VISCOSITY is also needed somewhere else
+  viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
@@ -80,8 +80,6 @@ void InputParameters<dim>::set_input_parameters()
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
-  IP_factor_viscous = 1.0;
-  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::NotSymmetrized;
 
   // gradient term
   gradp_integrated_by_parts = true;
@@ -93,7 +91,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
-  adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue; // ApplyZeroMeanValue; //ApplyAnalyticalSolutionInPoint;
+  adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue; //ApplyAnalyticalSolutionInPoint;
 
   // div-div and continuity penalty terms
   use_divergence_penalty = false;
@@ -102,17 +100,15 @@ void InputParameters<dim>::set_input_parameters()
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  IP_factor_pressure = 1.0;
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::GeometricMultigrid;
+  solver_pressure_poisson = SolverPressurePoisson::CG;
+  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-8);
   multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_pressure = 1.e-12;
-  rel_tol_pressure = 1.e-8;
 
   // projection step
-  solver_projection = SolverProjection::PCG;
+  solver_projection = SolverProjection::CG;
+  solver_data_projection = SolverData(1000, 1.e-20, 1.e-12);
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  abs_tol_projection = 1.e-20;
-  rel_tol_projection = 1.e-12;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -120,11 +116,10 @@ void InputParameters<dim>::set_input_parameters()
   order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
 
   // viscous step
-  solver_viscous = SolverViscous::PCG;
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //GeometricMultigrid;
+  solver_viscous = SolverViscous::CG;
+  solver_data_viscous = SolverData(1000,1.e-12,1.e-8);
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //Multigrid;
   multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_viscous = 1.e-12;
-  rel_tol_viscous = 1.e-8;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -132,53 +127,36 @@ void InputParameters<dim>::set_input_parameters()
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum.abs_tol = 1.e-20;
-  newton_solver_data_momentum.rel_tol = 1.e-6;
-  newton_solver_data_momentum.max_iter = 100;
 
   // linear solver
   solver_momentum = SolverMomentum::GMRES;
+  solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-8, 100);
   preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  abs_tol_momentum_linear = 1.e-12;
-  rel_tol_momentum_linear = 1.e-8;
-  max_iter_momentum_linear = 1e4;
-  use_right_preconditioning_momentum = true;
-  max_n_tmp_vectors_momentum = 100;
   update_preconditioner_momentum = false;
 
   // formulation
   order_pressure_extrapolation = order_time_integrator-1;
-  rotational_formulation = false; //TODO //true;
+  rotational_formulation = true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled.abs_tol = 1.e-20;
-  newton_solver_data_coupled.rel_tol = 1.e-6;
-  newton_solver_data_coupled.max_iter = 1e2;
 
   // linear solver
-  solver_linearized_navier_stokes = SolverLinearizedNavierStokes::GMRES;
-  abs_tol_linear = 1.e-12;
-  rel_tol_linear = 1.e-8;
-  max_iter_linear = 1e4;
+  solver_coupled = SolverCoupled::GMRES;
+  solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-8, 100);
 
   // preconditioning linear solver
-  preconditioner_linearized_navier_stokes = PreconditionerLinearizedNavierStokes::BlockTriangular;
+  preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  momentum_preconditioner = MomentumPreconditioner::InverseMassMatrix;
-  exact_inversion_of_momentum_block = false;
-  rel_tol_solver_momentum_preconditioner = 1.e-6;
-  max_n_tmp_vectors_solver_momentum_preconditioner = 100;
+  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
   // preconditioner Schur-complement block
-  schur_complement_preconditioner = SchurComplementPreconditioner::CahouetChabard;
+  preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-  exact_inversion_of_laplace_operator = false;
-  rel_tol_solver_schur_complement_preconditioner = 1.e-6;
 
 
   // OUTPUT AND POSTPROCESSING

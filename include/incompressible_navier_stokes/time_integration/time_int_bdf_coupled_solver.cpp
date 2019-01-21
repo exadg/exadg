@@ -267,9 +267,14 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     this->operator_base->apply_mass_matrix_add(rhs_vector.block(0), this->sum_alphai_ui);
 
     // solve coupled system of equations
+    bool const update_preconditioner =
+      this->param.update_preconditioner_coupled &&
+      (this->time_step_number % this->param.update_preconditioner_coupled_every_time_steps == 0);
+
     unsigned int linear_iterations =
       pde_operator->solve_linear_stokes_problem(solution_np,
                                                 rhs_vector,
+                                                update_preconditioner,
                                                 this->get_scaling_factor_time_derivative_term());
 
     iterations[0] += linear_iterations;
@@ -298,9 +303,14 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     // Newton solver
     unsigned int newton_iterations = 0;
     unsigned int linear_iterations = 0;
+    bool const   update_preconditioner =
+      this->param.update_preconditioner_coupled &&
+      (this->time_step_number % this->param.update_preconditioner_coupled_every_time_steps == 0);
+
     pde_operator->solve_nonlinear_problem(solution_np,
                                           this->sum_alphai_ui,
                                           this->get_next_time(),
+                                          update_preconditioner,
                                           this->get_scaling_factor_time_derivative_term(),
                                           newton_iterations,
                                           linear_iterations);
@@ -391,8 +401,12 @@ TimeIntBDFCoupled<dim, Number>::postprocess_velocity()
                                                   this->get_time_step_size());
 
   // solve projection (where also the preconditioner is updated)
+  bool const update_preconditioner =
+    this->param.update_preconditioner_projection &&
+    (this->time_step_number % this->param.update_preconditioner_projection_every_time_steps == 0);
+
   unsigned int iterations_postprocessing =
-    this->operator_base->solve_projection(solution_np.block(0), temp);
+    this->operator_base->solve_projection(solution_np.block(0), temp, update_preconditioner);
 
   iterations[1] += iterations_postprocessing;
 

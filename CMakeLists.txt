@@ -41,7 +41,9 @@ SET( TARGET_SRC
      include/time_integration/time_int_base.cpp
      include/time_integration/time_int_bdf_base.cpp
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
+     include/poisson/user_interface/enum_types.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp     
+     include/convection_diffusion/user_interface/enum_types.cpp
      include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
@@ -53,6 +55,7 @@ SET( TARGET_SRC
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
      include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
+     include/incompressible_navier_stokes/user_interface/enum_types.cpp
      include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.cpp     
      include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp 
@@ -82,6 +85,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
      include/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
      include/incompressible_navier_stokes/postprocessor/statistics_manager.cpp 
+     include/compressible_navier_stokes/user_interface/enum_types.cpp
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/compressible_navier_stokes/interface_space_time/operator.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp     

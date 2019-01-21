@@ -9,12 +9,16 @@
 #define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../include/functionalities/print_functions.h"
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
 
+#include "enum_types.h"
+
 namespace Poisson
 {
+    
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */
@@ -31,40 +35,7 @@ enum class SpatialDiscretization
   CG
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                                       SOLVER                                       */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *   Solver for linear system of equations
- */
-enum class Solver
-{
-  Undefined,
-  PCG
-};
-
-/*
- *  Preconditioner type for solution of linear system of equations
- */
-enum class Preconditioner
-{
-  Undefined,
-  None,
-  PointJacobi,
-  BlockJacobi,
-  Multigrid
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                               OUTPUT AND POSTPROCESSING                            */
-/*                                                                                    */
-/**************************************************************************************/
-
-
+    
 class InputParameters
 {
 public:
@@ -82,9 +53,7 @@ public:
 
       // SOLVER
       solver(Solver::Undefined),
-      abs_tol(1.e-20),
-      rel_tol(1.e-12),
-      max_iter(std::numeric_limits<unsigned int>::max()),
+      solver_data(SolverData(1e4, 1.e-20, 1.e-12)),
       compute_performance_metrics(false),
       preconditioner(Preconditioner::Undefined),
       multigrid_data(MultigridData()),
@@ -167,17 +136,11 @@ public:
   {
     pcout << std::endl << "Solver:" << std::endl;
 
-    std::string str_solver[] = {"Undefined", "PCG"};
+    print_parameter(pcout, "Solver", enum_to_string(solver));
 
-    print_parameter(pcout, "Solver", str_solver[(int)solver]);
+    solver_data.print(pcout);
 
-    print_parameter(pcout, "Absolute solver tolerance", abs_tol);
-    print_parameter(pcout, "Relative solver tolerance", rel_tol);
-    print_parameter(pcout, "Maximum number of iterations", max_iter);
-
-    std::string str_precon[] = {"Undefined", "None", "PointJacobi", "BlockJacobi", "GMG"};
-
-    print_parameter(pcout, "Preconditioner", str_precon[(int)preconditioner]);
+    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
 
     if(preconditioner == Preconditioner::Multigrid)
       multigrid_data.print(pcout);
@@ -237,10 +200,8 @@ public:
   // description: see enum declaration
   Solver solver;
 
-  // solver tolerances
-  double       abs_tol;
-  double       rel_tol;
-  unsigned int max_iter;
+  // solver data
+  SolverData solver_data;
   bool         compute_performance_metrics;
 
   // description: see enum declaration

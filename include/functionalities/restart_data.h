@@ -12,6 +12,8 @@
 
 #include "print_functions.h"
 
+#include <limits>
+
 struct RestartData
 {
   RestartData()

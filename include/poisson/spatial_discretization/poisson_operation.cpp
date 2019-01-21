@@ -100,13 +100,13 @@ DGOperation<dim, degree, Number>::setup_solver()
                 ExcMessage("Specified preconditioner is not implemented!"));
   }
 
-  if(param.solver == Poisson::Solver::PCG)
+  if(param.solver == Poisson::Solver::CG)
   {
     // initialize solver_data
     CGSolverData solver_data;
-    solver_data.solver_tolerance_abs        = param.abs_tol;
-    solver_data.solver_tolerance_rel        = param.rel_tol;
-    solver_data.max_iter                    = param.max_iter;
+    solver_data.solver_tolerance_abs        = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel        = param.solver_data.rel_tol;
+    solver_data.max_iter                    = param.solver_data.max_iter;
     solver_data.compute_performance_metrics = param.compute_performance_metrics;
 
     if(param.preconditioner != Poisson::Preconditioner::None)
@@ -120,7 +120,7 @@ DGOperation<dim, degree, Number>::setup_solver()
   }
   else
   {
-    AssertThrow(param.solver == Poisson::Solver::PCG,
+    AssertThrow(param.solver == Poisson::Solver::CG,
                 ExcMessage("Specified solver is not implemented!"));
   }
 
@@ -149,7 +149,7 @@ template<int dim, int degree, typename Number>
 unsigned int
 DGOperation<dim, degree, Number>::solve(VectorType & sol, VectorType const & rhs)
 {
-  unsigned int iterations = iterative_solver->solve(sol, rhs);
+  unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
 
   return iterations;
 }

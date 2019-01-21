@@ -21,7 +21,7 @@ public:
   }
 
   virtual unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const = 0;
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const = 0;
 
   virtual ~IterativeSolverBase()
   {
@@ -61,7 +61,6 @@ struct CGSolverData
       solver_tolerance_abs(1.e-20),
       solver_tolerance_rel(1.e-6),
       use_preconditioner(false),
-      update_preconditioner(false),
       compute_performance_metrics(false)
   {
   }
@@ -70,7 +69,6 @@ struct CGSolverData
   double       solver_tolerance_abs;
   double       solver_tolerance_rel;
   bool         use_preconditioner;
-  bool         update_preconditioner;
   bool         compute_performance_metrics;
 };
 
@@ -88,7 +86,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
     ReductionControl solver_control(solver_data.max_iter,
                                     solver_data.solver_tolerance_abs,
@@ -102,8 +100,10 @@ public:
     }
     else
     {
-      if(solver_data.update_preconditioner == true)
+      if(update_preconditioner == true)
+      {
         preconditioner.update(&underlying_operator);
+      }
 
       solver.solve(underlying_operator, dst, rhs, preconditioner);
     }
@@ -152,8 +152,6 @@ struct GMRESSolverData
       solver_tolerance_abs(1.e-20),
       solver_tolerance_rel(1.e-6),
       use_preconditioner(false),
-      update_preconditioner(false),
-      right_preconditioning(true),
       max_n_tmp_vectors(30),
       compute_eigenvalues(false),
       compute_performance_metrics(false)
@@ -164,8 +162,6 @@ struct GMRESSolverData
   double       solver_tolerance_abs;
   double       solver_tolerance_rel;
   bool         use_preconditioner;
-  bool         update_preconditioner;
-  bool         right_preconditioning;
   unsigned int max_n_tmp_vectors;
   bool         compute_eigenvalues;
   bool         compute_performance_metrics;
@@ -189,7 +185,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
     ReductionControl solver_control(solver_data.max_iter,
                                     solver_data.solver_tolerance_abs,
@@ -197,7 +193,7 @@ public:
 
     typename SolverGMRES<VectorType>::AdditionalData additional_data;
     additional_data.max_n_tmp_vectors     = solver_data.max_n_tmp_vectors;
-    additional_data.right_preconditioning = solver_data.right_preconditioning;
+    additional_data.right_preconditioning = true;
     SolverGMRES<VectorType> solver(solver_control, additional_data);
 
     if(solver_data.compute_eigenvalues == true)
@@ -214,7 +210,7 @@ public:
     }
     else
     {
-      if(solver_data.update_preconditioner == true)
+      if(update_preconditioner == true)
       {
         preconditioner.update(&this->underlying_operator);
       }
@@ -244,7 +240,6 @@ struct FGMRESSolverData
       solver_tolerance_abs(1.e-20),
       solver_tolerance_rel(1.e-6),
       use_preconditioner(false),
-      update_preconditioner(false),
       max_n_tmp_vectors(30),
       compute_performance_metrics(false)
   {
@@ -254,7 +249,6 @@ struct FGMRESSolverData
   double       solver_tolerance_abs;
   double       solver_tolerance_rel;
   bool         use_preconditioner;
-  bool         update_preconditioner;
   unsigned int max_n_tmp_vectors;
   bool         compute_performance_metrics;
 };
@@ -277,7 +271,7 @@ public:
   }
 
   unsigned int
-  solve(VectorType & dst, VectorType const & rhs) const
+  solve(VectorType & dst, VectorType const & rhs, bool const update_preconditioner) const
   {
     ReductionControl solver_control(solver_data.max_iter,
                                     solver_data.solver_tolerance_abs,
@@ -295,8 +289,10 @@ public:
     }
     else
     {
-      if(solver_data.update_preconditioner == true)
+      if(update_preconditioner == true)
+      {
         preconditioner.update(&underlying_operator);
+      }
 
       solver.solve(underlying_operator, dst, rhs, preconditioner);
     }

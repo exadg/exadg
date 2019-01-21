@@ -359,7 +359,9 @@ public:
   update_projection_operator(VectorType const & velocity, double const time_step_size) const;
 
   unsigned int
-  solve_projection(VectorType & dst, VectorType const & src) const;
+  solve_projection(VectorType &       dst,
+                   VectorType const & src,
+                   bool const &       update_preconditioner) const;
 
   /*
    * Postprocessing.

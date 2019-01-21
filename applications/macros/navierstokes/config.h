@@ -18,7 +18,7 @@
 #define DEGREE_5 1
 #define DEGREE_6 1
 #define DEGREE_7 1
-#define DEGREE_8 0
+#define DEGREE_8 1
 #define DEGREE_9 0
 #define DEGREE_10 0
 #define DEGREE_11 0

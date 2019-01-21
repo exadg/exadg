@@ -197,6 +197,7 @@ public:
       Poisson::LaplaceOperator<dim, fe_degree, value_type> laplace;
       Poisson::LaplaceOperatorData<dim>                    laplace_additional_data;
       laplace_additional_data.bc = bc_poisson;
+    laplace_additional_data.degree_mapping = fe_degree;
       if(CATEGORIZE)
         laplace_additional_data.use_cell_based_loops = true;
       std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
@@ -217,13 +218,13 @@ public:
                               matrixfree,
                               contraint_matrix);
 
-          laplace.reinit(mapping, matrixfree, contraint_matrix, laplace_additional_data);
+          laplace.reinit(matrixfree, contraint_matrix, laplace_additional_data);
           process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table, level);
         }
 
       // run on fine grid without multigrid
       {
-        laplace.reinit(mapping, data, dummy, laplace_additional_data);
+        laplace.reinit(data, dummy, laplace_additional_data);
         process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table);
       }
     }
@@ -244,6 +245,7 @@ public:
       ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
       ConvDiff::DiffusiveOperatorData<dim>                    diffusive_data;
       diffusive_data.bc = bc_convdiff;
+      diffusive_data.degree_mapping = fe_degree;
       if(CATEGORIZE)
         diffusive_data.use_cell_based_loops = true;
       diffusive_operator.reinit(data, dummy, diffusive_data);

@@ -103,7 +103,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_momentum_oper
   momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
   momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
-  momentum_operator_data.mg_operator_type = this->param.momentum_multigrid_operator_type;
+  momentum_operator_data.mg_operator_type = this->param.multigrid_operator_type_velocity_block;
 
   momentum_operator.reinit(this->get_data(),
                            momentum_operator_data,
@@ -117,29 +117,23 @@ void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_preconditioner_coupled()
 {
   // setup preconditioner
-  if(this->param.preconditioner_linearized_navier_stokes ==
-       PreconditionerLinearizedNavierStokes::BlockDiagonal ||
-     this->param.preconditioner_linearized_navier_stokes ==
-       PreconditionerLinearizedNavierStokes::BlockTriangular ||
-     this->param.preconditioner_linearized_navier_stokes ==
-       PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
+  if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
   {
-    BlockPreconditionerData preconditioner_data;
+    BlockPreconditionerData data;
     // clang-format off
-    preconditioner_data.preconditioner_type = this->param.preconditioner_linearized_navier_stokes;
-    preconditioner_data.momentum_preconditioner = this->param.momentum_preconditioner;
-    preconditioner_data.exact_inversion_of_momentum_block = this->param.exact_inversion_of_momentum_block;
-    preconditioner_data.multigrid_data_momentum_preconditioner = this->param.multigrid_data_momentum_preconditioner;
-    preconditioner_data.rel_tol_solver_momentum_preconditioner = this->param.rel_tol_solver_momentum_preconditioner;
-    preconditioner_data.max_n_tmp_vectors_solver_momentum_preconditioner = this->param.max_n_tmp_vectors_solver_momentum_preconditioner;
-    preconditioner_data.schur_complement_preconditioner = this->param.schur_complement_preconditioner;
-    preconditioner_data.discretization_of_laplacian = this->param.discretization_of_laplacian;
-    preconditioner_data.exact_inversion_of_laplace_operator = this->param.exact_inversion_of_laplace_operator;
-    preconditioner_data.multigrid_data_schur_complement_preconditioner = this->param.multigrid_data_schur_complement_preconditioner;
-    preconditioner_data.rel_tol_solver_schur_complement_preconditioner = this->param.rel_tol_solver_schur_complement_preconditioner;
+    data.preconditioner_type = this->param.preconditioner_coupled;
+    data.momentum_preconditioner = this->param.preconditioner_velocity_block;
+    data.exact_inversion_of_momentum_block = this->param.exact_inversion_of_velocity_block;
+    data.multigrid_data_momentum_preconditioner = this->param.multigrid_data_velocity_block;
+    data.solver_data_momentum_block = this->param.solver_data_velocity_block;
+    data.schur_complement_preconditioner = this->param.preconditioner_pressure_block;
+    data.discretization_of_laplacian = this->param.discretization_of_laplacian;
+    data.exact_inversion_of_laplace_operator = this->param.exact_inversion_of_laplace_operator;
+    data.multigrid_data_schur_complement_preconditioner = this->param.multigrid_data_pressure_block;
+    data.solver_data_schur_complement = this->param.solver_data_pressure_block;
     // clang-format on
 
-    preconditioner.reset(new Preconditioner(this, preconditioner_data));
+    preconditioner.reset(new Preconditioner(this, data));
   }
 }
 
@@ -148,23 +142,16 @@ void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_coupled()
 {
   // setup linear solver
-  if(this->param.solver_linearized_navier_stokes == SolverLinearizedNavierStokes::GMRES)
+  if(this->param.solver_coupled == SolverCoupled::GMRES)
   {
     GMRESSolverData solver_data;
-    solver_data.max_iter              = this->param.max_iter_linear;
-    solver_data.solver_tolerance_abs  = this->param.abs_tol_linear;
-    solver_data.solver_tolerance_rel  = this->param.rel_tol_linear;
-    solver_data.right_preconditioning = this->param.use_right_preconditioning;
-    solver_data.update_preconditioner = this->param.update_preconditioner;
-    solver_data.max_n_tmp_vectors     = this->param.max_n_tmp_vectors;
-    solver_data.compute_eigenvalues   = false;
+    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
+    solver_data.compute_eigenvalues  = false;
 
-    if(this->param.preconditioner_linearized_navier_stokes ==
-         PreconditionerLinearizedNavierStokes::BlockDiagonal ||
-       this->param.preconditioner_linearized_navier_stokes ==
-         PreconditionerLinearizedNavierStokes::BlockTriangular ||
-       this->param.preconditioner_linearized_navier_stokes ==
-         PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
+    if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
     {
       solver_data.use_preconditioner = true;
     }
@@ -172,21 +159,15 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_couple
     linear_solver.reset(
       new GMRESSolver<THIS, Preconditioner, BlockVectorType>(*this, *preconditioner, solver_data));
   }
-  else if(this->param.solver_linearized_navier_stokes == SolverLinearizedNavierStokes::FGMRES)
+  else if(this->param.solver_coupled == SolverCoupled::FGMRES)
   {
     FGMRESSolverData solver_data;
-    solver_data.max_iter              = this->param.max_iter_linear;
-    solver_data.solver_tolerance_abs  = this->param.abs_tol_linear;
-    solver_data.solver_tolerance_rel  = this->param.rel_tol_linear;
-    solver_data.update_preconditioner = this->param.update_preconditioner;
-    solver_data.max_n_tmp_vectors     = this->param.max_n_tmp_vectors;
+    solver_data.max_iter             = this->param.solver_data_coupled.max_iter;
+    solver_data.solver_tolerance_abs = this->param.solver_data_coupled.abs_tol;
+    solver_data.solver_tolerance_rel = this->param.solver_data_coupled.rel_tol;
+    solver_data.max_n_tmp_vectors    = this->param.solver_data_coupled.max_krylov_size;
 
-    if(this->param.preconditioner_linearized_navier_stokes ==
-         PreconditionerLinearizedNavierStokes::BlockDiagonal ||
-       this->param.preconditioner_linearized_navier_stokes ==
-         PreconditionerLinearizedNavierStokes::BlockTriangular ||
-       this->param.preconditioner_linearized_navier_stokes ==
-         PreconditionerLinearizedNavierStokes::BlockTriangularFactorization)
+    if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
     {
       solver_data.use_preconditioner = true;
     }
@@ -196,11 +177,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_couple
   }
   else
   {
-    AssertThrow(this->param.solver_linearized_navier_stokes ==
-                    SolverLinearizedNavierStokes::GMRES ||
-                  this->param.solver_linearized_navier_stokes ==
-                    SolverLinearizedNavierStokes::FGMRES,
-                ExcMessage("Specified solver for linearized Navier-Stokes problem not available."));
+    AssertThrow(false, ExcMessage("Specified solver for linearized problem is not implemented."));
   }
 
   // setup Newton solver
@@ -321,16 +298,17 @@ unsigned int
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_linear_stokes_problem(
   BlockVectorType &       dst,
   BlockVectorType const & src,
+  bool const &            update_preconditioner,
   double const &          scaling_factor_mass_matrix_term)
 {
-  // Set scaling_factor_time_derivative_term for linear operator (velocity_conv_diff_operator).
+  // Set scaling_factor_time_derivative_term for linear operator.
   momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
-  // Note that there is no need to set the evaluation time for the velocity_conv_diff_operator
+  // Note that there is no need to set the evaluation time for the momentum_operator
   // because this function is only called if the convective term is not considered
-  // in the velocity_conv_diff_operator (Stokes eq. or explicit treatment of convective term).
+  // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
 
-  return linear_solver->solve(dst, src);
+  return linear_solver->solve(dst, src, update_preconditioner);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -393,11 +371,16 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_steady_problem(
   BlockVectorType & dst,
+  bool const &      update_preconditioner,
   unsigned int &    newton_iterations,
   unsigned int &    linear_iterations)
 {
   // solve nonlinear problem
-  newton_solver->solve(dst, newton_iterations, linear_iterations);
+  newton_solver->solve(dst,
+                       newton_iterations,
+                       linear_iterations,
+                       update_preconditioner,
+                       this->param.update_preconditioner_coupled_every_newton_iter);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -406,6 +389,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
   BlockVectorType &  dst,
   VectorType const & sum_alphai_ui,
   double const &     eval_time,
+  bool const &       update_preconditioner,
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     newton_iterations,
   unsigned int &     linear_iterations)
@@ -424,7 +408,11 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
   momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
-  newton_solver->solve(dst, newton_iterations, linear_iterations);
+  newton_solver->solve(dst,
+                       newton_iterations,
+                       linear_iterations,
+                       update_preconditioner,
+                       this->param.update_preconditioner_coupled_every_newton_iter);
 
   // Reset sum_alphai_ui
   this->sum_alphai_ui = nullptr;

@@ -361,6 +361,7 @@ public:
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
+    laplace_additional_data.degree_mapping = fe_degree;
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
       periodic_face_pairs;
 
@@ -378,13 +379,13 @@ public:
                           matrixfree,
                           contraint_matrix);
 
-      laplace.reinit(mapping, matrixfree, contraint_matrix, laplace_additional_data);
+      laplace.reinit(matrixfree, contraint_matrix, laplace_additional_data);
       run(laplace, level);
     }
 
     // run on fine grid without multigrid
     {
-      laplace.reinit(mapping, data, dummy, laplace_additional_data);
+      laplace.reinit(data, dummy, laplace_additional_data);
       run(laplace);
     }
 

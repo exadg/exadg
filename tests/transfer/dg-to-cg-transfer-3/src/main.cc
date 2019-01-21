@@ -358,6 +358,7 @@ public:
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
     laplace_additional_data.bc = this->bc;
+    laplace_additional_data.degree_mapping = fe_degree;
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
       periodic_face_pairs;
 
@@ -374,7 +375,7 @@ public:
                           level,
                           matrixfree_dg,
                           contraint_matrix_dg);
-      laplace_dg.reinit(mapping, matrixfree_dg, contraint_matrix_dg, laplace_additional_data);
+      laplace_dg.reinit(matrixfree_dg, contraint_matrix_dg, laplace_additional_data);
 
       MatrixFree<dim, value_type> matrixfree_cg;
       AffineConstraints<double>   contraint_matrix_cg;
@@ -386,14 +387,14 @@ public:
                           level,
                           matrixfree_cg,
                           contraint_matrix_cg);
-      laplace_cg.reinit(mapping, matrixfree_cg, contraint_matrix_cg, laplace_additional_data);
+      laplace_cg.reinit(matrixfree_cg, contraint_matrix_cg, laplace_additional_data);
       run(laplace_dg, laplace_cg, level);
     }
 
     // run on fine grid without multigrid
     {
-      laplace_dg.reinit(mapping, data_dg, dummy_dg, laplace_additional_data);
-      laplace_cg.reinit(mapping, data_cg, dummy_cg, laplace_additional_data);
+      laplace_dg.reinit(data_dg, dummy_dg, laplace_additional_data);
+      laplace_cg.reinit(data_cg, dummy_cg, laplace_additional_data);
       run(laplace_dg, laplace_cg);
     }
   }

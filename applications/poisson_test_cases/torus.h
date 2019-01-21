@@ -31,10 +31,8 @@ Poisson::InputParameters::set_input_parameters()
   IP_factor = 1.0;
 
   // SOLVER
-  solver         = Solver::PCG;
-  abs_tol        = 1.e-20;
-  rel_tol        = 1.e-8;
-  max_iter       = 1e4;
+  solver = Solver::CG;
+  solver_data = SolverData(1e4, 1.e-20, 1.e-8);
   preconditioner = Preconditioner::Multigrid;
   // MG smoother
   multigrid_data.smoother = MultigridSmoother::Chebyshev;

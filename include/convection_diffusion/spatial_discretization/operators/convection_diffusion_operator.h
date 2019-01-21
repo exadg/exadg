@@ -27,7 +27,7 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
       type_velocity_field(TypeVelocityField::Analytical),
       scaling_factor_time_derivative_term(-1.0),
       preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
-      block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2)),
+      block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2, 1000)),
       mg_operator_type(MultigridOperatorType::Undefined)
   {
   }

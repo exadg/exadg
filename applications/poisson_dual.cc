@@ -68,7 +68,7 @@ public:
     if(use_dg)
     {
       param.spatial_discretization = SpatialDiscretization::DG;
-      param.rel_tol                = 1e-1;
+      param.solver_data.rel_tol                = 1e-1;
     }
     else
       param.spatial_discretization = SpatialDiscretization::CG;
@@ -311,7 +311,7 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(bool /*is_not_convergence_
     if(i == 0)
     {
       double norm_n = rhs_dg.l2_norm();
-      ppi_dg.param.rel_tol *= norm_0 / norm_n;
+      ppi_dg.param.solver_data.rel_tol *= norm_0 / norm_n;
       ppi_dg.setup_solver();
     }
 
@@ -345,7 +345,7 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(bool /*is_not_convergence_
   }
   double time_dg_pure = 10000;
   int    cycles_dg_pure;
-  ppi_dg.param.rel_tol = ppi_cg.param.rel_tol;
+  ppi_dg.param.solver_data.rel_tol = ppi_cg.param.solver_data.rel_tol;
   ppi_dg.setup_solver();
   for(int i = 0; i < BEST_OF; i++)
   {
