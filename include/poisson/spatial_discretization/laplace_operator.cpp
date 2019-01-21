@@ -24,72 +24,7 @@ LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   m
                                                        *this->data,
                                                        mapping,
                                                        this->operator_data.dof_index);
-  // this->reinit(mapping, mf_data, constraint_matrix, operator_data);
 }
-
-/*
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::vmult(VectorType & dst, VectorType const & src) const
-{
-  this->apply(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::vmult_add(VectorType & dst, VectorType const & src) const
-{
-  this->apply_add(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-AffineConstraints<double> const &
-LaplaceOperator<dim, degree, Number>::get_constraint_matrix() const
-{
-  return this->do_get_constraint_matrix();
-}
-
-template<int dim, int degree, typename Number>
-MatrixFree<dim, Number> const &
-LaplaceOperator<dim, degree, Number>::get_data() const
-{
-  return *this->data;
-}
-
-template<int dim, int degree, typename Number>
-unsigned int
-LaplaceOperator<dim, degree, Number>::get_dof_index() const
-{
-  return this->operator_data.dof_index;
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::calculate_inverse_diagonal(VectorType & diagonal) const
-{
-  this->calculate_diagonal(diagonal);
-  invert_diagonal(diagonal);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::apply_inverse_block_diagonal(VectorType &       dst,
-                                                                   VectorType const & src) const
-{
-  AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
-              ExcMessage("Not implemented."));
-
-  this->apply_inverse_block_diagonal_matrix_based(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::update_block_diagonal_preconditioner() const
-{
-  this->do_update_block_diagonal_preconditioner();
-}
- */
 
 template<int dim, int degree, typename Number>
 bool

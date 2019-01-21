@@ -60,34 +60,6 @@ public:
          LaplaceOperatorData<dim> const &  operator_data) const;
 
   /*
-
-  void
-  vmult(VectorType & dst, VectorType const & src) const;
-
-  void
-  vmult_add(VectorType & dst, VectorType const & src) const;
-
-  AffineConstraints<double> const &
-  get_constraint_matrix() const;
-
-  MatrixFree<dim, Number> const &
-  get_data() const;
-
-  unsigned int
-  get_dof_index() const;
-
-  void
-  calculate_inverse_diagonal(VectorType & diagonal) const;
-
-  // apply the inverse block diagonal operator (for matrix-based and matrix-free variants)
-  void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
-
-  void
-  update_block_diagonal_preconditioner() const;
-   */
-
-  /*
    * Returns whether the operator is singular, e.g., in case of pure Neumann boundary conditions.
    */
   bool
