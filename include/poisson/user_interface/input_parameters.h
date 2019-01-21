@@ -18,23 +18,6 @@
 
 namespace Poisson
 {
-/**************************************************************************************/
-/*                                                                                    */
-/*                              SPATIAL DISCRETIZATION                                */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  Spatial discretization method
- */
-enum class SpatialDiscretization
-{
-  Undefined,
-  DG,
-  CG
-};
-
-
 class InputParameters
 {
 public:
@@ -125,9 +108,7 @@ public:
 
     print_parameter(pcout, "IP factor viscous term", IP_factor);
 
-    std::string str_fe[] = {"Undefined", "FE_DGQ", "FE_Q"};
-
-    print_parameter(pcout, "Element type", str_fe[(int)spatial_discretization]);
+    print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
   }
 
   void
