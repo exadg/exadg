@@ -173,10 +173,11 @@ public:
     }
 
     // setup velocity transfer operator
-    this->mg_transfer_vel.template reinit<MultigridNumber>(this->mg_matrixfree,
-                                                           this->mg_constraints_vel,
-                                                           this->mg_constrained_dofs_vel,
-                                                           1);
+    if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+      this->mg_transfer_vel.template reinit<MultigridNumber>(this->mg_matrixfree,
+                                                             this->mg_constraints_vel,
+                                                             this->mg_constrained_dofs_vel,
+                                                             1);
   }
 
   /*
