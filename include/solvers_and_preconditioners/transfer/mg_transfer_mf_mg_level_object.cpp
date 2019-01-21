@@ -26,11 +26,12 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
   // extract relevant information and construct global_levels...
   for(unsigned int global_level = min_level; global_level <= max_level; global_level++)
   {
-    const auto &       data   = mg_data[global_level];
-    const auto &       fe     = data->get_dof_handler(dof_handler_index).get_fe();
-    const bool         is_dg  = fe.dofs_per_vertex == 0;
-    const unsigned int level  = data->get_level_mg_handler();
-    const unsigned int degree = (int)round(std::pow(fe.n_dofs_per_cell() / fe.n_components(),1.0/dim)) - 1;
+    const auto &       data  = mg_data[global_level];
+    const auto &       fe    = data->get_dof_handler(dof_handler_index).get_fe();
+    const bool         is_dg = fe.dofs_per_vertex == 0;
+    const unsigned int level = data->get_level_mg_handler();
+    const unsigned int degree =
+      (int)round(std::pow(fe.n_dofs_per_cell() / fe.n_components(), 1.0 / dim)) - 1;
     global_levels.push_back(MGLevelInfo(level, degree, is_dg));
   }
 

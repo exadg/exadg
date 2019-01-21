@@ -129,7 +129,6 @@ public:
 
       // print l2-norms
       print_l2(convergence_table, vec_diag, vec_diag_mf, "", "(D-D(F))_L2");
-      
     }
 
     if(do_sm_vs_mf)

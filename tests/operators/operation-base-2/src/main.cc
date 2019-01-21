@@ -196,8 +196,8 @@ public:
       // Laplace operator
       Poisson::LaplaceOperator<dim, fe_degree, value_type> laplace;
       Poisson::LaplaceOperatorData<dim>                    laplace_additional_data;
-      laplace_additional_data.bc = bc_poisson;
-    laplace_additional_data.degree_mapping = fe_degree;
+      laplace_additional_data.bc             = bc_poisson;
+      laplace_additional_data.degree_mapping = fe_degree;
       if(CATEGORIZE)
         laplace_additional_data.use_cell_based_loops = true;
       std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
@@ -244,7 +244,7 @@ public:
 
       ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
       ConvDiff::DiffusiveOperatorData<dim>                    diffusive_data;
-      diffusive_data.bc = bc_convdiff;
+      diffusive_data.bc             = bc_convdiff;
       diffusive_data.degree_mapping = fe_degree;
       if(CATEGORIZE)
         diffusive_data.use_cell_based_loops = true;

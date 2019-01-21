@@ -360,7 +360,7 @@ public:
     LaplaceOperator<dim, fe_degree, value_type> laplace;
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
-    laplace_additional_data.bc = this->bc;
+    laplace_additional_data.bc             = this->bc;
     laplace_additional_data.degree_mapping = fe_degree;
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
       periodic_face_pairs;

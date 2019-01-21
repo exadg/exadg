@@ -330,7 +330,7 @@ public:
     LaplaceOperator<dim, fe_degree, value_type> laplace;
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
-    laplace_additional_data.bc = this->bc;
+    laplace_additional_data.bc             = this->bc;
     laplace_additional_data.degree_mapping = fe_degree;
 
     laplace.reinit(data_1, dummy_1, laplace_additional_data);

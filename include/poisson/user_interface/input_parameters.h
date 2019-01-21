@@ -18,7 +18,6 @@
 
 namespace Poisson
 {
-    
 /**************************************************************************************/
 /*                                                                                    */
 /*                              SPATIAL DISCRETIZATION                                */
@@ -35,7 +34,7 @@ enum class SpatialDiscretization
   CG
 };
 
-    
+
 class InputParameters
 {
 public:
@@ -202,7 +201,7 @@ public:
 
   // solver data
   SolverData solver_data;
-  bool         compute_performance_metrics;
+  bool       compute_performance_metrics;
 
   // description: see enum declaration
   Preconditioner preconditioner;
