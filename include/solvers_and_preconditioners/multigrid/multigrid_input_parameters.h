@@ -259,11 +259,13 @@ struct MultigridData
   // Multigrid type: p-MG vs. h-MG
   MultigridType type;
 
-  //
+  // transfer from discontinuous space (FE_DGQ) to continuous space (FE_Q) on the finest level
   bool c_transfer_front;
+  
+  // ... on the coarsest level
   bool c_transfer_back;
 
-  //
+  // sequence of polynomial degrees during p-multigrid
   PSequenceType p_sequence;
 };
 
