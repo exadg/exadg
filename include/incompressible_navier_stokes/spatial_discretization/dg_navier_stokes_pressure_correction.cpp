@@ -80,8 +80,9 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::initialize_mo
     momentum_operator_data.convective_problem = false;
   }
 
-  momentum_operator_data.dof_index      = this->get_dof_index_velocity();
-  momentum_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
+  momentum_operator_data.dof_index       = this->get_dof_index_velocity();
+  momentum_operator_data.quad_index_std  = this->get_quad_index_velocity_linear();
+  momentum_operator_data.quad_index_over = this->get_quad_index_velocity_nonlinear();
 
   momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
   momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
@@ -130,11 +131,17 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
 
+
+    auto &                               dof_handler = this->get_dof_handler_u();
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    const FiniteElement<dim> & fe = dof_handler.get_fe();
+
     mg_preconditioner->initialize(this->param.multigrid_data_momentum,
-                                  this->get_dof_handler_u(),
+                                  tria,
+                                  fe,
                                   this->get_mapping(),
-                                  /*momentum_operator.get_operator_data().bc->dirichlet_bc,*/
-                                  (void *)&momentum_operator.get_operator_data());
+                                  momentum_operator.get_operator_data());
   }
   else
   {

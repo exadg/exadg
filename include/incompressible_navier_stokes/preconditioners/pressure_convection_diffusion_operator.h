@@ -40,24 +40,32 @@ public:
   PressureConvectionDiffusionOperator(
     Mapping<dim> const &                                 mapping,
     MatrixFree<dim, value_type> const &                  matrix_free_data_in,
-    PressureConvectionDiffusionOperatorData<dim> const & operator_data_in)
+    PressureConvectionDiffusionOperatorData<dim> const & operator_data_in,
+    AffineConstraints<double> &                          constraint_matrix)
     : matrix_free_data(matrix_free_data_in),
       operator_data(operator_data_in),
       scaling_factor_time_derivative_term(-1.0)
   {
+    (void)mapping;
     // initialize MassMatrixOperator
     if(operator_data.unsteady_problem == true)
     {
-      mass_matrix_operator.reinit(matrix_free_data, operator_data.mass_matrix_operator_data);
+      mass_matrix_operator.reinit(matrix_free_data,
+                                  constraint_matrix,
+                                  operator_data.mass_matrix_operator_data);
     }
 
     // initialize DiffusiveOperator
-    diffusive_operator.reinit(mapping, matrix_free_data, operator_data.diffusive_operator_data);
+    diffusive_operator.reinit(matrix_free_data,
+                              constraint_matrix,
+                              operator_data.diffusive_operator_data);
 
     // initialize ConvectiveOperator
     if(operator_data.convective_problem == true)
     {
-      convective_operator.reinit(matrix_free_data, operator_data.convective_operator_data);
+      convective_operator.reinit(matrix_free_data,
+                                 constraint_matrix,
+                                 operator_data.convective_operator_data);
     }
   }
 

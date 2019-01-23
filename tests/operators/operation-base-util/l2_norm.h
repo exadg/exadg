@@ -1,7 +1,6 @@
 #ifndef OPERATOR_BASE_L2_NORM
 #define OPERATOR_BASE_L2_NORM
 
-
 template<int dim, int fe_degree, typename value_type>
 class L2Norm
 {
@@ -13,10 +12,12 @@ public:
   }
 
   double
-  run(parallel::distributed::Vector<value_type> & src) const
+  run(LinearAlgebra::distributed::Vector<value_type> & src) const
   {
+    src.update_ghost_values();
     tt = 0.0;
-    data->cell_loop(&This::cell_loop, this, src, src);
+    // data->cell_loop(&This::cell_loop, this, src, src);
+    cell_loop(*data, src, src, {0, data->n_macro_cells()});
     double temp = 0;
     for(unsigned int i = 0; i < VectorizedArray<double>::n_array_elements; i++)
       temp += tt[i];
@@ -24,6 +25,7 @@ public:
     double local = temp;
 
     MPI_Reduce(&local, &temp, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    src.zero_out_ghosts();
 
     return std::sqrt(temp);
   }
@@ -44,9 +46,9 @@ private:
 
   void
   cell_loop(MatrixFree<dim, value_type> const & data,
-            parallel::distributed::Vector<value_type> &,
-            parallel::distributed::Vector<value_type> const & src,
-            std::pair<unsigned int, unsigned int> const &     cell_range) const
+            LinearAlgebra::distributed::Vector<value_type> &,
+            LinearAlgebra::distributed::Vector<value_type> const & src,
+            std::pair<unsigned int, unsigned int> const &          cell_range) const
   {
     FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data);
 

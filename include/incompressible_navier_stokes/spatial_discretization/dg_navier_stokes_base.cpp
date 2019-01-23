@@ -7,6 +7,8 @@
 
 #include "dg_navier_stokes_base.h"
 
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
+
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -752,10 +754,8 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
 
   laplace_operator_data.bc = boundary_descriptor_streamfunction;
 
-  laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
-
   Poisson::LaplaceOperator<dim, degree_u, Number> laplace_operator;
-  laplace_operator.reinit(this->mapping, this->data, laplace_operator_data);
+  laplace_operator.reinit(this->data, constraint_p, laplace_operator_data);
 
   // setup preconditioner
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
@@ -763,21 +763,30 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::compute_streamfunction(
   // use multigrid preconditioner with Chebyshev smoother
   MultigridData mg_data;
 
-  typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
+  typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
   typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber> MG_OPERATOR;
 
-  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+  typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
 
-  preconditioner.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
+  preconditioner.reset(new MULTIGRID());
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
 
+  // explicit copy needed since function is called on const
+  auto periodic_face_pairs = this->periodic_face_pairs;
+
+  parallel::Triangulation<dim> const * tria =
+    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler_u_scalar.get_triangulation());
+  const FiniteElement<dim> & fe = dof_handler_u_scalar.get_fe();
+
   mg_preconditioner->initialize(mg_data,
-                                this->dof_handler_u_scalar,
+                                tria,
+                                fe,
                                 this->mapping,
-                                laplace_operator.get_operator_data().bc->dirichlet_bc,
-                                (void *)&laplace_operator.get_operator_data());
+                                laplace_operator.get_operator_data(),
+                                &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                &periodic_face_pairs);
 
   // setup solver
   CGSolverData solver_data;

@@ -96,8 +96,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_momentum_oper
   else
     momentum_operator_data.convective_problem = false;
 
-  momentum_operator_data.dof_index      = this->get_dof_index_velocity();
-  momentum_operator_data.quad_index_std = this->get_quad_index_velocity_linear();
+  momentum_operator_data.dof_index       = this->get_dof_index_velocity();
+  momentum_operator_data.quad_index_std  = this->get_quad_index_velocity_linear();
+  momentum_operator_data.quad_index_over = this->get_quad_index_velocity_nonlinear();
 
   momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
   momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -288,8 +289,6 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::get_compatible_laplace_o
   comp_laplace_operator_data.dof_handler_u            = &this->get_dof_handler_u();
   comp_laplace_operator_data.gradient_operator_data   = this->get_gradient_operator_data();
   comp_laplace_operator_data.divergence_operator_data = this->get_divergence_operator_data();
-  comp_laplace_operator_data.underlying_operator_dof_index_velocity =
-    this->get_dof_index_velocity();
 
   return comp_laplace_operator_data;
 }

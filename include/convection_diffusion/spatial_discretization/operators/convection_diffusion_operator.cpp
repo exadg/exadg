@@ -2,6 +2,7 @@
 
 #include <navierstokes/config.h>
 
+#include "../../../functionalities/constraints.h"
 #include "solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
 namespace ConvDiff
@@ -15,201 +16,52 @@ ConvectionDiffusionOperator<dim, degree, Number>::ConvectionDiffusionOperator()
 template<int dim, int degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, degree, Number>::reinit(
-  MatrixFree<dim, Number> const &                         mf_data,
-  ConvectionDiffusionOperatorData<dim> const &            operator_data,
-  MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
-  ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
-  DiffusiveOperator<dim, degree, Number> const &          diffusive_operator)
+  MatrixFree<dim, Number> const &              mf_data,
+  AffineConstraints<double> const &            constraint_matrix,
+  ConvectionDiffusionOperatorData<dim> const & operator_data) const
 {
-  Base::reinit(mf_data, operator_data);
-  this->mass_matrix_operator.reinit(mass_matrix_operator);
-  this->convective_operator.reinit(convective_operator);
-  this->diffusive_operator.reinit(diffusive_operator);
+  Base::reinit(mf_data, constraint_matrix, operator_data);
 
   // mass matrix term: set scaling factor time derivative term
   this->scaling_factor_time_derivative_term =
     this->operator_data.scaling_factor_time_derivative_term;
+
+  // use own data structures (TODO: no switch necessary)
+  this->mass_matrix_operator.reset();
+  this->convective_operator.reset();
+  this->diffusive_operator.reset();
+
+  // reinit mass-, convection- and diffusive-opertor
+  this->mass_matrix_operator->reinit(mf_data,
+                                     constraint_matrix,
+                                     operator_data.mass_matrix_operator_data);
+  this->convective_operator->reinit(mf_data,
+                                    constraint_matrix,
+                                    operator_data.convective_operator_data);
+  this->diffusive_operator->reinit(mf_data,
+                                   constraint_matrix,
+                                   operator_data.diffusive_operator_data);
+
+  // initialize temp-vector: this is done in this function because
+  // the vector temp is only used in the function vmult_add(), i.e.,
+  // when using the multigrid preconditioner
+  this->initialize_dof_vector(temp);
 }
 
 template<int dim, int degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, degree, Number>::reinit_multigrid_add_dof_handler(
-  DoFHandler<dim> const & dof_handler,
-  Mapping<dim> const &    mapping,
-  void *                  operator_data_in,
-  MGConstrainedDoFs const & /*mg_constrained_dofs*/,
-  unsigned int const      level,
-  DoFHandler<dim> const * add_dof_handler)
+ConvectionDiffusionOperator<dim, degree, Number>::reinit(
+  MatrixFree<dim, Number> const &                         mf_data,
+  AffineConstraints<double> const &                       constraint_matrix,
+  ConvectionDiffusionOperatorData<dim> const &            operator_data,
+  MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
+  ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
+  DiffusiveOperator<dim, degree, Number> const &          diffusive_operator) const
 {
-  // create copy of data and ...
-  auto operator_data = *static_cast<ConvectionDiffusionOperatorData<dim> *>(operator_data_in);
-  // set dof_index and quad_index to 0 since we only consider a subset
-  //  operator_data.dof_index          = 0;
-  //  operator_data.quad_index         = 0;
-  //  operator_data.dof_index_velocity = 1;
-
-  // check if DG or CG (for explanation: see above)
-  bool is_dg = dof_handler.get_fe().dofs_per_vertex == 0;
-
-  // setup MatrixFree::AdditionalData
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-
-  additional_data.level_mg_handler = level;
-
-  //  additional_data.mapping_update_flags = operator_data.mapping_update_flags;
-  //  if(is_dg)
-  //  {
-  //    additional_data.mapping_update_flags_inner_faces =
-  //      operator_data.mapping_update_flags_inner_faces;
-  //    additional_data.mapping_update_flags_boundary_faces =
-  //      operator_data.mapping_update_flags_boundary_faces;
-  //  }
-
-  //  additional_data.tasks_parallel_scheme =
-  //     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
-  additional_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  if(operator_data.use_cell_based_loops && is_dg)
-  {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-      &dof_handler.get_triangulation());
-    Categorization::do_cell_based_loops(*tria, additional_data, level);
-  }
-
-  auto & data_own = this->data.own();
-
-  if(operator_data.type_velocity_field == TypeVelocityField::Analytical)
-  {
-    AffineConstraints<double> constraint_dummy;
-    constraint_dummy.close();
-
-    // quadrature formula used to perform integrals
-    QGauss<1> quadrature(dof_handler.get_fe().degree + 1);
-
-    data_own.reinit(mapping, dof_handler, constraint_dummy, quadrature, additional_data);
-  }
-  // we need two dof-handlers in case the velocity field comes from the fluid solver.
-  else if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    std::vector<const DoFHandler<dim> *> dof_handler_vec;
-    dof_handler_vec.resize(2);
-    dof_handler_vec[0] = &dof_handler;
-    dof_handler_vec[1] = add_dof_handler;
-
-    std::vector<const AffineConstraints<double> *> constraint_vec;
-    constraint_vec.resize(2);
-    AffineConstraints<double> constraint_dummy;
-    constraint_dummy.close();
-    constraint_vec[0] = &constraint_dummy;
-    constraint_vec[1] = &constraint_dummy;
-
-    std::vector<Quadrature<1>> quadrature_vec;
-    quadrature_vec.resize(1);
-    quadrature_vec[0] = QGauss<1>(dof_handler.get_fe().degree + 1);
-
-    data_own.reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  // TODO
-
-  //  auto & constraint_own = this->constraint.own();
-  //
-  //  // setup constraint matrix for CG
-  //  if(!is_dg)
-  //  {
-  //    this->add_constraints(dof_handler, constraint_own, mg_constrained_dofs, operator_data,
-  //    level);
-  //  }
-  //
-  //  constraint_own.close();
-
-  AffineConstraints<double> constraint_own;
-  constraint_own.close();
-  Base::reinit_multigrid(data_own, constraint_own, operator_data, level);
-
-  // use own operators
-  mass_matrix_operator.reset();
-  convective_operator.reset();
-  diffusive_operator.reset();
-
-  // setup own mass matrix operator
-  {
-    auto & op_data = this->operator_data.mass_matrix_operator_data;
-    //    op_data.dof_index  = 0;
-    //    op_data.quad_index = 0;
-    mass_matrix_operator.own().reinit_multigrid(this->get_data(),
-                                                this->get_constraint_matrix(),
-                                                op_data,
-                                                level);
-  }
-
-  // setup own convective operator
-  {
-    auto & op_data = this->operator_data.convective_operator_data;
-    //    op_data.dof_index          = 0;
-    //    op_data.quad_index         = 0;
-    //    op_data.dof_index_velocity = 1;
-    convective_operator.own().reinit_multigrid(this->get_data(),
-                                               this->get_constraint_matrix(),
-                                               op_data,
-                                               level);
-  }
-
-  // setup own viscous operator
-  {
-    auto & op_data = this->operator_data.diffusive_operator_data;
-    //    op_data.dof_index  = 0;
-    //    op_data.quad_index = 0;
-    diffusive_operator.own().reinit_multigrid(
-      mapping, this->get_data(), this->get_constraint_matrix(), op_data, level);
-  }
-
-  // When solving the reaction-convection-diffusion equations, it might be possible
-  // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
-  // operator (which is symmetric, Chebyshev smoother, etc.) instead of the non-symmetric
-  // reaction-convection-diffusion operator. Accordingly, we have to reset which
-  // operators should be "active" for the multigrid preconditioner, independently of
-  // the actual equation type that is solved.
-  AssertThrow(this->operator_data.mg_operator_type != MultigridOperatorType::Undefined,
-              ExcMessage("Invalid parameter mg_operator_type."));
-
-  if(this->operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
-  {
-    // deactivate convective term for multigrid preconditioner
-    this->operator_data.convective_problem = false;
-    this->operator_data.diffusive_problem  = true;
-  }
-  else if(this->operator_data.mg_operator_type == MultigridOperatorType::ReactionConvection)
-  {
-    this->operator_data.convective_problem = true;
-    // deactivate viscous term for multigrid preconditioner
-    this->operator_data.diffusive_problem = false;
-  }
-  else if(this->operator_data.mg_operator_type ==
-          MultigridOperatorType::ReactionConvectionDiffusion)
-  {
-    this->operator_data.convective_problem = true;
-    this->operator_data.diffusive_problem  = true;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
+  Base::reinit(mf_data, constraint_matrix, operator_data);
+  this->mass_matrix_operator.reinit(mass_matrix_operator);
+  this->convective_operator.reinit(convective_operator);
+  this->diffusive_operator.reinit(diffusive_operator);
 
   // mass matrix term: set scaling factor time derivative term
   this->scaling_factor_time_derivative_term =
@@ -234,6 +86,13 @@ double
 ConvectionDiffusionOperator<dim, degree, Number>::get_scaling_factor_time_derivative_term() const
 {
   return this->scaling_factor_time_derivative_term;
+}
+
+template<int dim, int degree, typename Number>
+AffineConstraints<double> const &
+ConvectionDiffusionOperator<dim, degree, Number>::get_constraint_matrix() const
+{
+  return this->do_get_constraint_matrix();
 }
 
 template<int dim, int degree, typename Number>
@@ -283,6 +142,22 @@ void
 ConvectionDiffusionOperator<dim, degree, Number>::vmult(VectorType &       dst,
                                                         VectorType const & src) const
 {
+  this->apply(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::vmult_add(VectorType &       dst,
+                                                            VectorType const & src) const
+{
+  this->apply_add(dst, src);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::apply(VectorType &       dst,
+                                                        VectorType const & src) const
+{
   if(this->operator_data.unsteady_problem == true)
   {
     AssertThrow(scaling_factor_time_derivative_term > 0.0,
@@ -309,7 +184,16 @@ ConvectionDiffusionOperator<dim, degree, Number>::vmult(VectorType &       dst,
 
 template<int dim, int degree, typename Number>
 void
-ConvectionDiffusionOperator<dim, degree, Number>::vmult_add(VectorType &       dst,
+ConvectionDiffusionOperator<dim, degree, Number>::apply_add(VectorType &       dst,
+                                                            VectorType const & src,
+                                                            Number const       time) const
+{
+  Base::apply_add(dst, src, time);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::apply_add(VectorType &       dst,
                                                             VectorType const & src) const
 {
   if(this->operator_data.unsteady_problem == true)
@@ -357,6 +241,24 @@ ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
 template<int dim, int degree, typename Number>
 void
 ConvectionDiffusionOperator<dim, degree, Number>::calculate_system_matrix(
+  SparseMatrix & system_matrix) const
+{
+  this->do_calculate_system_matrix(system_matrix);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::do_calculate_system_matrix(
+  SparseMatrix & system_matrix,
+  Number const   time) const
+{
+  this->eval_time = time;
+  do_calculate_system_matrix(system_matrix);
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvectionDiffusionOperator<dim, degree, Number>::do_calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
   // clear content of matrix since the next calculate_system_matrix-commands add their result
@@ -573,7 +475,7 @@ ConvectionDiffusionOperator<dim, degree, Number>::add_block_diagonal_matrices(
 }
 
 template<int dim, int degree, typename Number>
-MultigridOperatorBase<dim, Number> *
+PreconditionableOperator<dim, Number> *
 ConvectionDiffusionOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)

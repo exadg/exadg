@@ -11,7 +11,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/point_value_history.h>
@@ -46,15 +46,16 @@
 #include <deal.II/lac/solver_cg.h>
 
 #include "../../../../include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.h"
+#include "../../../../include/convection_diffusion/spatial_discretization/operators/convective_operator.h"
 #include "../../../../include/convection_diffusion/spatial_discretization/operators/diffusive_operator.h"
 #include "../../../../include/convection_diffusion/spatial_discretization/operators/mass_operator.h"
 #include "../../../../include/poisson/spatial_discretization/laplace_operator.h"
 
 #include "include/operator_base_test.h"
-#include "include/tests.h"
 
 #include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
-#include "../../../../include/convection_diffusion/spatial_discretization/operators/convective_operator.h"
+
+#include "../../operation-base-util/operator_reinit_multigrid.h"
 
 using namespace dealii;
 using namespace Poisson;
@@ -144,7 +145,7 @@ public:
 
     if(fe_dgq.dofs_per_vertex == 0)
     {
-      additional_data.build_face_info = true;
+      // additional_data.build_face_info = true;
       additional_data.mapping_update_flags_inner_faces =
         (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
          update_values);
@@ -154,7 +155,7 @@ public:
          update_values);
     }
 
-    ConstraintMatrix dummy;
+    AffineConstraints<double> dummy;
 
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
     dirichlet_bc[0] = std::shared_ptr<Function<dim>>(new Functions::ZeroFunction<dim>());
@@ -177,7 +178,8 @@ public:
 
     if(CATEGORIZE)
     {
-      additional_data.build_face_info = true;
+      // TODO
+      // additional_data.build_face_info = true;
       Categorization::do_cell_based_loops(triangulation, additional_data);
     }
 
@@ -194,22 +196,35 @@ public:
       // Laplace operator
       Poisson::LaplaceOperator<dim, fe_degree, value_type> laplace;
       Poisson::LaplaceOperatorData<dim>                    laplace_additional_data;
-      laplace_additional_data.bc = bc_poisson;
+      laplace_additional_data.bc             = bc_poisson;
+      laplace_additional_data.degree_mapping = fe_degree;
       if(CATEGORIZE)
         laplace_additional_data.use_cell_based_loops = true;
+      std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+        periodic_face_pairs;
 
       // run through all multigrid level
       if(!CATEGORIZE || true)
         for(unsigned int level = 0; level <= global_refinements; level++)
         {
-          laplace.reinit(
-            dof_handler_dg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs, level);
+          MatrixFree<dim, value_type> matrixfree;
+          AffineConstraints<double>   contraint_matrix;
+          do_reinit_multigrid(dof_handler_dg,
+                              mapping,
+                              laplace_additional_data,
+                              mg_constrained_dofs,
+                              periodic_face_pairs,
+                              level,
+                              matrixfree,
+                              contraint_matrix);
+
+          laplace.reinit(matrixfree, contraint_matrix, laplace_additional_data);
           process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table, level);
         }
 
       // run on fine grid without multigrid
       {
-        laplace.initialize(mapping, data, dummy, laplace_additional_data);
+        laplace.reinit(data, dummy, laplace_additional_data);
         process(laplace, laplace_additional_data, size, is_dg, 0, convergence_table);
       }
     }
@@ -225,26 +240,29 @@ public:
       ConvDiff::MassMatrixOperatorData<dim>                    mass_data;
       if(CATEGORIZE)
         mass_data.use_cell_based_loops = true;
-      mass_matrix_operator.initialize(data, dummy, mass_data);
+      mass_matrix_operator.reinit(data, dummy, mass_data);
 
       ConvDiff::DiffusiveOperator<dim, fe_degree, value_type> diffusive_operator;
       ConvDiff::DiffusiveOperatorData<dim>                    diffusive_data;
-      diffusive_data.bc = bc_convdiff;
+      diffusive_data.bc             = bc_convdiff;
+      diffusive_data.degree_mapping = fe_degree;
       if(CATEGORIZE)
         diffusive_data.use_cell_based_loops = true;
-      diffusive_operator.initialize(mapping, data, dummy, diffusive_data);
+      diffusive_operator.reinit(data, dummy, diffusive_data);
 
       // Convective operator
-      ConvDiff::ConvectiveOperator<dim, fe_degree, value_type> convective_operator;
-      ConvDiff::ConvectiveOperatorData<dim>                    convective_data;
+      ConvDiff::ConvectiveOperator<dim, fe_degree, fe_degree, value_type> convective_operator;
+      ConvDiff::ConvectiveOperatorData<dim>                               convective_data;
       convective_data.bc = bc_convdiff;
       if(CATEGORIZE)
         convective_data.use_cell_based_loops = true;
       convective_data.numerical_flux_formulation =
         ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux; // LaxFriedrichsFlux,
                                                                       // CentralFlux
+      convective_data.type_velocity_field = ConvDiff::TypeVelocityField::Analytical;
+
       convective_data.velocity = std::shared_ptr<Function<dim>>(new VelocityField<dim>());
-      convective_operator.initialize(data, dummy, convective_data);
+      convective_operator.reinit(data, dummy, convective_data);
 
       // Convection diffusion operator
       ConvDiff::ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
@@ -253,10 +271,11 @@ public:
       conv_diff_operator_data.diffusive_operator_data   = diffusive_operator.get_operator_data();
       conv_diff_operator_data.update_mapping_update_flags();
       conv_diff_operator_data.scaling_factor_time_derivative_term = 1.0;
-      conv_diff_operator_data.bc                                  = bc_convdiff;
-      conv_diff_operator_data.unsteady_problem                    = true;
-      conv_diff_operator_data.diffusive_problem                   = true;
-      conv_diff_operator_data.convective_problem                  = true;
+      // TODO
+      // conv_diff_operator_data.bc                                  = bc_convdiff;
+      conv_diff_operator_data.unsteady_problem   = true;
+      conv_diff_operator_data.diffusive_problem  = true;
+      conv_diff_operator_data.convective_problem = true;
       conv_diff_operator_data.mg_operator_type =
         ConvDiff::MultigridOperatorType::ReactionConvectionDiffusion;
       if(CATEGORIZE)
@@ -267,13 +286,25 @@ public:
       process(convective_operator, convective_data, size, is_dg, 3, convergence_table);
 
       ConvDiff::ConvectionDiffusionOperator<dim, fe_degree, value_type> conv_diff_operator;
+      std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+        periodic_face_pairs;
 
       // run through all multigrid level
       if(!CATEGORIZE || true)
         for(unsigned int level = 0; level <= global_refinements; level++)
         {
-          conv_diff_operator.reinit(
-            dof_handler_dg, mapping, (void *)&conv_diff_operator_data, mg_constrained_dofs, level);
+          MatrixFree<dim, value_type> matrixfree;
+          AffineConstraints<double>   contraint_matrix;
+          do_reinit_multigrid(dof_handler_dg,
+                              mapping,
+                              conv_diff_operator_data,
+                              mg_constrained_dofs,
+                              periodic_face_pairs,
+                              level,
+                              matrixfree,
+                              contraint_matrix);
+          conv_diff_operator.reinit(matrixfree, contraint_matrix, conv_diff_operator_data);
+
           process(
             conv_diff_operator, conv_diff_operator_data, size, is_dg, 4, convergence_table, level);
         }
@@ -281,11 +312,12 @@ public:
       // run on fine grid without multigrid
 
       {
-        conv_diff_operator.initialize(data,
-                                      conv_diff_operator_data,
-                                      mass_matrix_operator,
-                                      convective_operator,
-                                      diffusive_operator);
+        conv_diff_operator.reinit(data,
+                                  dummy,
+                                  conv_diff_operator_data,
+                                  mass_matrix_operator,
+                                  convective_operator,
+                                  diffusive_operator);
         process(conv_diff_operator, conv_diff_operator_data, size, is_dg, 4, convergence_table);
       }
     }

@@ -21,7 +21,9 @@
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../spatial_discretization/momentum_operator.h"
+#include "compatible_laplace_multigrid_preconditioner.h"
 #include "multigrid_preconditioner.h"
 
 namespace IncNS
@@ -752,12 +754,16 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_multigrid_preconditi
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
-  mg_preconditioner->initialize(
-    preconditioner_data.multigrid_data_momentum_preconditioner,
-    underlying_operator->get_dof_handler_u(),
-    underlying_operator->get_mapping(),
-    /*underlying_operator->momentum_operator.get_operator_data().bc->dirichlet_bc,*/
-    (void *)&underlying_operator->momentum_operator.get_operator_data());
+  auto &                               dof_handler = underlying_operator->get_dof_handler_u();
+  parallel::Triangulation<dim> const * tria =
+    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+  const FiniteElement<dim> & fe = dof_handler.get_fe();
+
+  mg_preconditioner->initialize(preconditioner_data.multigrid_data_momentum_preconditioner,
+                                tria,
+                                fe,
+                                underlying_operator->get_mapping(),
+                                underlying_operator->momentum_operator.get_operator_data());
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -910,24 +916,31 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
     // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible
     // Laplace operator
-    typedef MultigridOperatorBase<dim, MultigridNumber>                         MG_BASE;
+    typedef PreconditionableOperator<dim, MultigridNumber>                      MG_BASE;
     typedef CompatibleLaplaceOperator<dim, degree_u, degree_p, MultigridNumber> MG_OPERATOR;
 
-    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+    typedef CompatibleLaplaceMultigridPreconditioner<dim,
+                                                     degree_u,
+                                                     degree_p,
+                                                     Number,
+                                                     MultigridNumber>
+      MULTIGRID;
 
-    multigrid_preconditioner_schur_complement.reset(
-      new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR())));
+    multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
     auto compatible_laplace_operator_data =
       underlying_operator->get_compatible_laplace_operator_data();
-    mg_preconditioner->initialize(mg_data,
-                                  underlying_operator->get_dof_handler_p(),
-                                  underlying_operator->get_mapping(),
-                                  /*underlying_operator->get_operator_data().bc->dirichlet_bc,*/
-                                  (void *)&compatible_laplace_operator_data);
+
+    auto &                               dof_handler = underlying_operator->get_dof_handler_p();
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    const FiniteElement<dim> & fe = dof_handler.get_fe();
+
+    mg_preconditioner->initialize(
+      mg_data, tria, fe, underlying_operator->get_mapping(), compatible_laplace_operator_data);
   }
   else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
   {
@@ -936,29 +949,36 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     laplace_operator_data.dof_index            = underlying_operator->get_dof_index_pressure();
     laplace_operator_data.quad_index           = underlying_operator->get_quad_index_pressure();
     laplace_operator_data.IP_factor            = 1.0;
+    laplace_operator_data.degree_mapping       = underlying_operator->param.degree_mapping;
     laplace_operator_data.operator_is_singular = underlying_operator->param.pure_dirichlet_bc;
 
     laplace_operator_data.bc = underlying_operator->boundary_descriptor_laplace;
-    laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
 
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-    typedef MultigridOperatorBase<dim, MultigridNumber>              MG_BASE;
+    typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
     typedef Poisson::LaplaceOperator<dim, degree_u, MultigridNumber> MG_OPERATOR;
 
-    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
 
-    multigrid_preconditioner_schur_complement.reset(
-      new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR())));
+    multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
+
+    auto &                               dof_handler = underlying_operator->get_dof_handler_p();
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    const FiniteElement<dim> & fe = dof_handler.get_fe();
+
     mg_preconditioner->initialize(mg_data,
-                                  underlying_operator->get_dof_handler_p(),
+                                  tria,
+                                  fe,
                                   underlying_operator->get_mapping(),
-                                  laplace_operator_data.bc->dirichlet_bc,
-                                  (void *)&laplace_operator_data);
+                                  laplace_operator_data,
+                                  &laplace_operator_data.bc->dirichlet_bc,
+                                  &underlying_operator->periodic_face_pairs);
   }
   else
   {
@@ -988,15 +1008,15 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
   if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical)
   {
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index  = underlying_operator->get_dof_index_pressure();
-    laplace_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
-    laplace_operator_data.IP_factor  = 1.0;
-    laplace_operator_data.bc         = underlying_operator->boundary_descriptor_laplace;
-    laplace_operator_data.periodic_face_pairs_level0 = underlying_operator->periodic_face_pairs;
+    laplace_operator_data.dof_index      = underlying_operator->get_dof_index_pressure();
+    laplace_operator_data.quad_index     = underlying_operator->get_quad_index_pressure();
+    laplace_operator_data.IP_factor      = 1.0;
+    laplace_operator_data.degree_mapping = underlying_operator->param.degree_mapping;
+    laplace_operator_data.bc             = underlying_operator->boundary_descriptor_laplace;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, degree_p, Number>());
-    laplace_operator_classical->reinit(underlying_operator->get_mapping(),
-                                       underlying_operator->get_data(),
+    laplace_operator_classical->reinit(underlying_operator->get_data(),
+                                       underlying_operator->constraint_p,
                                        laplace_operator_data);
 
     solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, degree_p, Number>,
@@ -1017,8 +1037,6 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
       underlying_operator->get_gradient_operator_data();
     compatible_laplace_operator_data.divergence_operator_data =
       underlying_operator->get_divergence_operator_data();
-    compatible_laplace_operator_data.underlying_operator_dof_index_velocity =
-      underlying_operator->get_dof_index_velocity();
 
     laplace_operator_compatible.reset(
       new CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>());
@@ -1081,10 +1099,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_pressure_convection_
 
   // b) diffusive operator
   ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
-  diffusive_operator_data.dof_index  = underlying_operator->get_dof_index_pressure();
-  diffusive_operator_data.quad_index = underlying_operator->get_quad_index_pressure();
-  diffusive_operator_data.IP_factor  = underlying_operator->param.IP_factor_viscous;
-  diffusive_operator_data.bc         = boundary_descriptor;
+  diffusive_operator_data.dof_index      = underlying_operator->get_dof_index_pressure();
+  diffusive_operator_data.quad_index     = underlying_operator->get_quad_index_pressure();
+  diffusive_operator_data.IP_factor      = underlying_operator->param.IP_factor_viscous;
+  diffusive_operator_data.degree_mapping = underlying_operator->param.degree_mapping;
+  diffusive_operator_data.bc             = boundary_descriptor;
   // TODO: the pressure convection-diffusion operator is initialized with constant viscosity, in
   // case of varying viscosities the pressure convection-diffusion operator (the diffusive
   // operator of the pressure convection-diffusion operator) has to be updated before applying
@@ -1116,7 +1135,8 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_pressure_convection_
     new PressureConvectionDiffusionOperator<dim, degree_p, degree_u, Number>(
       underlying_operator->mapping,
       underlying_operator->get_data(),
-      pressure_convection_diffusion_operator_data));
+      pressure_convection_diffusion_operator_data,
+      underlying_operator->constraint_p));
 
   if(underlying_operator->unsteady_problem_has_to_be_solved())
     pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(

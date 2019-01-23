@@ -10,7 +10,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/point_value_history.h>
@@ -123,8 +123,8 @@ private:
   MappingQGeneric<dim>                      mapping_1;
   MappingQGeneric<dim>                      mapping_2;
 
-  ConstraintMatrix dummy_1;
-  ConstraintMatrix dummy_2;
+  AffineConstraints<double> dummy_1;
+  AffineConstraints<double> dummy_2;
 
   QGauss<1>                                quadrature_1;
   QGauss<1>                                quadrature_2;
@@ -179,10 +179,19 @@ private:
   void
   init_matrixfree_and_constraint_matrix()
   {
+    LaplaceOperatorData<dim>                             laplace_additional_data;
     typename MatrixFree<dim, value_type>::AdditionalData additional_data_1;
-    additional_data_1.build_face_info = true;
+    additional_data_1.mapping_update_flags = laplace_additional_data.mapping_update_flags;
+    additional_data_1.mapping_update_flags_inner_faces =
+      laplace_additional_data.mapping_update_flags_inner_faces;
+    additional_data_1.mapping_update_flags_boundary_faces =
+      laplace_additional_data.mapping_update_flags_boundary_faces;
     typename MatrixFree<dim, value_type>::AdditionalData additional_data_2;
-    additional_data_2.build_face_info = true;
+    additional_data_2.mapping_update_flags = laplace_additional_data.mapping_update_flags;
+    additional_data_2.mapping_update_flags_inner_faces =
+      laplace_additional_data.mapping_update_flags_inner_faces;
+    additional_data_2.mapping_update_flags_boundary_faces =
+      laplace_additional_data.mapping_update_flags_boundary_faces;
 
     dummy_1.clear();
     dummy_2.clear();
@@ -211,8 +220,9 @@ private:
       convergence_table.add_value("deg2", fe_degree_2);
       convergence_table.add_value("lev", level);
 
-      LinearAlgebra::distributed::Vector<value_type> vec_sol_fine_delta, vec_sol_fine_delta2, vector_rhs,
-        vec_sol_fine_1, vec_sol_fine_2, vec_sol_fine_3, deflect, vec_rhs_coarse, vec_sol_coarse;
+      LinearAlgebra::distributed::Vector<value_type> vec_sol_fine_delta, vec_sol_fine_delta2,
+        vector_rhs, vec_sol_fine_1, vec_sol_fine_2, vec_sol_fine_3, deflect, vec_rhs_coarse,
+        vec_sol_coarse;
 
       data_1.initialize_dof_vector(vector_rhs);
       data_1.initialize_dof_vector(vec_sol_fine_1);
@@ -225,9 +235,10 @@ private:
       data_2.initialize_dof_vector(vec_rhs_coarse);
       data_2.initialize_dof_vector(vec_sol_coarse);
 
-      MGTransferMatrixFreeP<dim, fe_degree_1, fe_degree_2, value_type, VectorType> transfer(dof_handler_1,
-                                                                                            dof_handler_2,
-                                                                                            level);
+      MGTransferMFP<dim, value_type, VectorType> transfer(&data_1,
+                                                          &data_2,
+                                                          fe_degree_1,
+                                                          fe_degree_2);
 
       SolverControl        solver_control(1000, 1e-12);
       SolverCG<VectorType> solver(solver_control);
@@ -329,11 +340,16 @@ public:
     LaplaceOperator<dim, fe_degree_1, value_type> laplace_1;
     LaplaceOperator<dim, fe_degree_2, value_type> laplace_2;
     // ... its additional data
-    LaplaceOperatorData<dim> laplace_additional_data;
-    laplace_additional_data.bc = this->bc;
+    LaplaceOperatorData<dim> laplace_additional_data_1;
+    laplace_additional_data_1.bc             = this->bc;
+    laplace_additional_data_1.degree_mapping = fe_degree_1;
 
-    laplace_1.initialize(mapping_1, data_1, dummy_1, laplace_additional_data);
-    laplace_2.initialize(mapping_2, data_2, dummy_2, laplace_additional_data);
+    LaplaceOperatorData<dim> laplace_additional_data_2;
+    laplace_additional_data_2.bc             = this->bc;
+    laplace_additional_data_2.degree_mapping = fe_degree_2;
+
+    laplace_1.reinit(data_1, dummy_1, laplace_additional_data_1);
+    laplace_2.reinit(data_2, dummy_2, laplace_additional_data_2);
     run(laplace_1, laplace_2);
   }
 };
@@ -342,8 +358,8 @@ int
 main(int argc, char ** argv)
 {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-  ConditionalOStream               pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  int                              rank;
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  int                rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   {

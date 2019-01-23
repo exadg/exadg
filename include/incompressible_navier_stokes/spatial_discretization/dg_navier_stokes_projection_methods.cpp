@@ -7,6 +7,8 @@
 
 #include "dg_navier_stokes_projection_methods.h"
 
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
+
 namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -43,9 +45,10 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::initialize_lap
 {
   // setup Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.dof_index  = this->get_dof_index_pressure();
-  laplace_operator_data.quad_index = this->get_quad_index_pressure();
-  laplace_operator_data.IP_factor  = this->param.IP_factor_pressure;
+  laplace_operator_data.dof_index      = this->get_dof_index_pressure();
+  laplace_operator_data.quad_index     = this->get_quad_index_pressure();
+  laplace_operator_data.IP_factor      = this->param.IP_factor_pressure;
+  laplace_operator_data.degree_mapping = this->param.IP_factor_pressure;
 
   /*
    * In case of pure Dirichlet boundary conditions for the velocity (or more precisely pure Neumann
@@ -87,13 +90,13 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::initialize_lap
     laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
   }
 
-  laplace_operator_data.bc                         = this->boundary_descriptor_laplace;
-  laplace_operator_data.periodic_face_pairs_level0 = this->periodic_face_pairs;
-  laplace_operator_data.use_cell_based_loops       = this->param.use_cell_based_face_loops;
+  laplace_operator_data.bc                   = this->boundary_descriptor_laplace;
+  laplace_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+  laplace_operator_data.degree_mapping       = this->param.degree_mapping;
   laplace_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
-  laplace_operator.reinit(this->mapping, this->data, laplace_operator_data);
+  laplace_operator.reinit(this->data, this->constraint_p, laplace_operator_data);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -115,20 +118,26 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
     // use single precision for multigrid
     typedef float MultigridNumber;
 
-    typedef MultigridOperatorBase<dim, MultigridNumber>               MG_BASE;
-    typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber>  MG_OPERATOR;
-    typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> MULTIGRID;
+    typedef PreconditionableOperator<dim, MultigridNumber>                           MG_BASE;
+    typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber>                 MG_OPERATOR;
+    typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
 
-    preconditioner_pressure_poisson.reset(new MULTIGRID(std::shared_ptr<MG_BASE>(new MG_OPERATOR)));
+    preconditioner_pressure_poisson.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&this->dof_handler_p.get_triangulation());
+    const FiniteElement<dim> & fe = this->dof_handler_p.get_fe();
+
     mg_preconditioner->initialize(mg_data,
-                                  this->dof_handler_p,
+                                  tria,
+                                  fe,
                                   this->mapping,
-                                  laplace_operator.get_operator_data().bc->dirichlet_bc,
-                                  (void *)&laplace_operator.get_operator_data());
+                                  laplace_operator.get_operator_data(),
+                                  &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                  &this->periodic_face_pairs);
   }
   else
   {

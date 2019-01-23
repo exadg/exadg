@@ -27,21 +27,18 @@ using namespace dealii;
 #  define ENABLE_TIMING false
 #endif
 
-
+using namespace dealii;
 /*
  * Re-implementation of multigrid preconditioner (V-cycle) in order to have more direct control over
  * its individual components and avoid inner products and other expensive stuff.
  */
-template<typename VectorType,
-         typename MatrixType,
-         typename TransferType,
-         typename PreconditionerType>
+template<typename VectorType, typename MatrixType, typename PreconditionerType>
 class MultigridPreconditioner
 {
 public:
   MultigridPreconditioner(const MGLevelObject<std::shared_ptr<MatrixType>> &         matrix,
                           const MGCoarseGridBase<VectorType> &                       coarse,
-                          const MGLevelObject<std::shared_ptr<TransferType>> &       transfer,
+                          const MGTransferMF<VectorType> &                           transfer,
                           const MGLevelObject<std::shared_ptr<PreconditionerType>> & smooth,
                           const unsigned int                                         n_cycles = 1)
     : minlevel(matrix.min_level()),
@@ -52,7 +49,7 @@ public:
       defect2(minlevel, maxlevel),
       matrix(&matrix, typeid(*this).name()),
       coarse(&coarse, typeid(*this).name()),
-      transfer(&transfer, typeid(*this).name()),
+      transfer(transfer),
       smooth(&smooth, typeid(*this).name()),
       n_cycles(n_cycles)
 #if ENABLE_TIMING
@@ -144,13 +141,13 @@ private:
     t[level].sadd(-1.0, 1.0, defect[level]);
 
     // transfer to next level
-    (*transfer)[level]->restrict_and_add(level, defect[level - 1], t[level]);
+    transfer.restrict_and_add(level, defect[level - 1], t[level]);
 
     // coarse grid correction
     v_cycle(level - 1);
 
     // prolongate
-    (*transfer)[level]->prolongate(level, t[level], solution[level - 1]);
+    transfer.prolongate(level, t[level], solution[level - 1]);
     solution[level] += t[level];
 
     // smooth on the negative part of the residual
@@ -208,7 +205,7 @@ private:
   /**
    * Object for grid tranfer.
    */
-  SmartPointer<const MGLevelObject<std::shared_ptr<TransferType>>> transfer;
+  const MGTransferMF<VectorType> & transfer;
 
   /**
    * The smoothing object.

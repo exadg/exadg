@@ -64,10 +64,34 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
   MultigridOperatorType mg_operator_type;
 };
 
+/*
+ * The class ConvectionDiffusionOperatorAbstract is the interface to the multigrid preconditioner
+ * ConvDiff::MultigridPreconditioner. This interface is needed to remove the template argument
+ * degree of the class ConvectionDiffusionOperator, since ConvDiff::MultigridPreconditioner works
+ * on ConvectionDiffusionOperators of different degrees in the case of p-Multigrid.
+ *
+ */
+template<int dim, typename Number = double>
+class ConvectionDiffusionOperatorAbstract : virtual public PreconditionableOperator<dim, Number>
+{
+public:
+  virtual LinearAlgebra::distributed::Vector<Number> const &
+  get_velocity() const = 0;
+
+  virtual void
+  set_velocity(LinearAlgebra::distributed::Vector<Number> const & velocity) const = 0;
+
+  virtual void
+  set_scaling_factor_time_derivative_term(double const & factor) = 0;
+
+  virtual void
+  set_evaluation_time(double const evaluation_time_in) const = 0;
+};
+
 template<int dim, int degree, typename Number = double>
 class ConvectionDiffusionOperator
   : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>,
-    public MultigridOperatorBase<dim, Number>
+    virtual public ConvectionDiffusionOperatorAbstract<dim, Number>
 {
 public:
   static const int DIM = dim;
@@ -82,8 +106,11 @@ private:
   typedef typename Base::FEEvalFace FEEvalFace;
 
   typedef typename Base::BlockMatrix BlockMatrix;
-  typedef typename Base::VectorType  VectorType;
 
+public:
+  typedef typename Base::VectorType VectorType;
+
+private:
 #ifdef DEAL_II_WITH_TRILINOS
   typedef typename Base::SparseMatrix SparseMatrix;
 #endif
@@ -92,25 +119,17 @@ public:
   ConvectionDiffusionOperator();
 
   void
+  reinit(MatrixFree<dim, Number> const &              mf_data,
+         AffineConstraints<double> const &            constraint_matrix,
+         ConvectionDiffusionOperatorData<dim> const & operator_data) const;
+
+  void
   reinit(MatrixFree<dim, Number> const &                         mf_data,
+         AffineConstraints<double> const &                       constraint_matrix,
          ConvectionDiffusionOperatorData<dim> const &            operator_data,
          MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
          ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
-         DiffusiveOperator<dim, degree, Number> const &          diffusive_operator);
-
-
-  /*
-   *  This function is called by the multigrid algorithm to initialize the
-   *  matrices on all levels. Own operators (mass, convection, diffusion) are
-   *  created.
-   */
-  void
-  reinit_multigrid_add_dof_handler(DoFHandler<dim> const &   dof_handler,
-                                   Mapping<dim> const &      mapping,
-                                   void *                    operator_data,
-                                   MGConstrainedDoFs const & mg_constrained_dofs,
-                                   unsigned int const        level,
-                                   DoFHandler<dim> const *   add_dof_handler);
+         DiffusiveOperator<dim, degree, Number> const &          diffusive_operator) const;
 
   /*
    *  Scaling factor of time derivative term (mass matrix term)
@@ -120,6 +139,9 @@ public:
 
   double
   get_scaling_factor_time_derivative_term() const;
+
+  AffineConstraints<double> const &
+  get_constraint_matrix() const;
 
   MatrixFree<dim, Number> const &
   get_data() const;
@@ -146,6 +168,23 @@ public:
   void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
+  virtual void
+  apply(VectorType & dst, VectorType const & src) const;
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src) const;
+
+
+  virtual void
+  set_evaluation_time(double const evaluation_time_in) const
+  {
+    Base::set_evaluation_time(evaluation_time_in);
+  }
+
+
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(SparseMatrix & system_matrix) const;
@@ -155,6 +194,12 @@ public:
 
   void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
+
+  virtual void
+  do_calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
+
+  virtual void
+  do_calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
   /*
@@ -184,7 +229,7 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
-  MultigridOperatorBase<dim, Number> *
+  PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const;
 
 private:
@@ -207,7 +252,7 @@ private:
 
   mutable VectorType temp;
 
-  double scaling_factor_time_derivative_term;
+  mutable double scaling_factor_time_derivative_term;
 
   // Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
   typedef Elementwise::OperatorBase<dim, Number, This> ELEMENTWISE_OPERATOR;

@@ -8,30 +8,35 @@
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/multigrid/mg_base.h>
 
+#include "mg_transfer_mf.h"
+
 using namespace dealii;
 
-template<int dim, int fe_degree_1, int fe_degree_2, typename Number, typename VectorType>
-class MGTransferMatrixFreeP : virtual public MGTransferBase<VectorType>
+template<int dim, typename Number, typename VectorType, int components = 1>
+class MGTransferMFP : virtual public MGTransferMF<VectorType>
 {
 public:
   typedef Number value_type;
 
-  MGTransferMatrixFreeP();
+  MGTransferMFP();
 
-  MGTransferMatrixFreeP(const DoFHandler<dim> & dof_handler_1,
-                        const DoFHandler<dim> & dof_handler_2,
-                        const unsigned int      level);
-
-  virtual ~MGTransferMatrixFreeP();
-
-  void
-  reinit(const DoFHandler<dim> & dof_handler_1,
-         const DoFHandler<dim> & dof_handler_2,
-         const unsigned int      level);
+  MGTransferMFP(const MatrixFree<dim, value_type> * data_1_cm,
+                const MatrixFree<dim, value_type> * data_2_cm,
+                int                                 degree_1,
+                int                                 degree_2,
+                int                                 dof_handler_index = 0);
 
   void
-  initialize_dof_vector(VectorType & vec_1, VectorType & vec_2);
+  reinit(const MatrixFree<dim, value_type> * data_1_cm,
+         const MatrixFree<dim, value_type> * data_2_cm,
+         int                                 degree_1,
+         int                                 degree_2,
+         int                                 dof_handler_index = 0);
 
+  ~MGTransferMFP();
+
+  virtual void
+  interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;
 
   virtual void
   restrict_and_add(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
@@ -40,34 +45,29 @@ public:
   prolongate(const unsigned int /*level*/, VectorType & dst, const VectorType & src) const;
 
 private:
-  MatrixFree<dim, value_type> data_1;
-  MatrixFree<dim, value_type> data_2;
+  const MatrixFree<dim, value_type> *    data_1_cm;
+  const MatrixFree<dim, value_type> *    data_2_cm;
+  AlignedVector<VectorizedArray<Number>> prolongation_matrix_1d;
+  AlignedVector<VectorizedArray<Number>> interpolation_matrix_1d;
 
-  AlignedVector<VectorizedArray<Number>> shape_values_rest;
-  AlignedVector<VectorizedArray<Number>> shape_values_prol;
-
+  template<int fe_degree_1, int fe_degree_2>
   void
-  restrict_and_add_local(const MatrixFree<dim, value_type> & /*data*/,
-                         VectorType &                                  dst,
-                         const VectorType &                            src,
-                         const std::pair<unsigned int, unsigned int> & cell_range) const;
+  do_interpolate(VectorType & dst, const VectorType & src) const;
 
+  template<int fe_degree_1, int fe_degree_2>
   void
-  prolongate_local(const MatrixFree<dim, value_type> & /*data*/,
-                   VectorType &                                  dst,
-                   const VectorType &                            src,
-                   const std::pair<unsigned int, unsigned int> & cell_range) const;
+  do_restrict_and_add(VectorType & dst, const VectorType & src) const;
 
+  template<int fe_degree_1, int fe_degree_2>
   void
-  convert_to_eo(AlignedVector<VectorizedArray<Number>> & shape_values,
-                AlignedVector<VectorizedArray<Number>> & shape_values_eo,
-                unsigned int                             fe_degree,
-                unsigned int                             n_q_points_1d);
+  do_prolongate(VectorType & dst, const VectorType & src) const;
 
-  void
-  fill_shape_values(AlignedVector<VectorizedArray<Number>> & shape_values,
-                    unsigned int                             fe_degree_src,
-                    unsigned int                             fe_degree_dst);
+  int          degree_1;
+  int          degree_2;
+  int          dof_handler_index;
+  unsigned int quad_index;
+
+  bool is_dg;
 };
 
 #endif

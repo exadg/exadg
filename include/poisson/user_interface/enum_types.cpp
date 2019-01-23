@@ -15,6 +15,36 @@ namespace Poisson
 {
 /**************************************************************************************/
 /*                                                                                    */
+/*                              SPATIAL DISCRETIZATION                                */
+/*                                                                                    */
+/**************************************************************************************/
+
+std::string
+enum_to_string(SpatialDiscretization const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case SpatialDiscretization::Undefined:
+      string_type = "Undefined";
+      break;
+    case SpatialDiscretization::CG:
+      string_type = "FE_Q";
+      break;
+    case SpatialDiscretization::DG:
+      string_type = "FE_DGQ";
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*                                       SOLVER                                       */
 /*                                                                                    */
 /**************************************************************************************/

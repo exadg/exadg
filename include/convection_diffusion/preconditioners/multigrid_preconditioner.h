@@ -22,12 +22,13 @@ template<int dim, int degree, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
-  typedef MultigridOperatorBase<dim, MultigridNumber> MG_OPERATOR_BASE;
+  typedef PreconditionableOperator<dim, MultigridNumber> MG_OPERATOR_BASE;
 
   typedef ConvectionDiffusionOperator<dim, degree, Number>          PDEOperator;
   typedef ConvectionDiffusionOperator<dim, degree, MultigridNumber> MultigridOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
+  typedef typename BASE::Map                                        Map;
 
   typedef typename BASE::VectorType   VectorType;
   typedef typename BASE::VectorTypeMG VectorTypeMG;
@@ -38,7 +39,146 @@ public:
   {
   }
 
+  void
+  initialize(MultigridData const &                        mg_data,
+             const parallel::Triangulation<dim> *         tria,
+             const FiniteElement<dim> &                   fe,
+             Mapping<dim> const &                         mapping,
+             ConvectionDiffusionOperatorData<dim> const & operator_data_in,
+             Map const *                                  dirichlet_bc = nullptr,
+             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
+               periodic_face_pairs = nullptr)
+  {
+    auto operator_data       = operator_data_in;
+    operator_data.dof_index  = 0;
+    operator_data.quad_index = 0;
+
+    BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
+  }
+
   virtual ~MultigridPreconditioner(){};
+
+  virtual void
+  initialize_additional_mg_dof_handler_and_constraints(
+    bool is_singular,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                                                         periodic_face_pairs,
+    FiniteElement<dim> const &                                           fe,
+    parallel::Triangulation<dim> const *                                 tria,
+    std::vector<MGLevelInfo> &                                           global_levels,
+    std::vector<MGDofHandlerIdentifier> &                                p_levels,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
+    PreconditionableOperatorData<dim> const &                            operator_data_in)
+  {
+    (void)is_singular;
+    (void)dirichlet_bc;
+
+    const auto & operator_data =
+      static_cast<ConvectionDiffusionOperatorData<dim> const &>(operator_data_in);
+    if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      FESystem<dim> fe_vel(FE_DGQ<dim>(fe.degree), dim);
+      std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc_vel;
+      BASE::initialize_mg_dof_handler_and_constraints(false,
+                                                      periodic_face_pairs,
+                                                      fe_vel,
+                                                      tria,
+                                                      global_levels,
+                                                      p_levels,
+                                                      dirichlet_bc_vel,
+                                                      this->mg_dofhandler_vel,
+                                                      this->mg_constrained_dofs_vel,
+                                                      this->mg_constraints_vel);
+    }
+  }
+
+  void
+  initialize_matrixfree(std::vector<MGLevelInfo> &                global_levels,
+                        Mapping<dim> const &                      mapping,
+                        PreconditionableOperatorData<dim> const & operator_data_in)
+  {
+    const auto & operator_data =
+      static_cast<ConvectionDiffusionOperatorData<dim> const &>(operator_data_in);
+
+    this->mg_matrixfree.resize(this->min_level, this->max_level);
+
+    for(auto level = this->min_level; level <= this->max_level; ++level)
+    {
+      auto data = new MatrixFree<dim, MultigridNumber>;
+
+      typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+
+      additional_data.level_mg_handler = global_levels[level].level;
+      additional_data.tasks_parallel_scheme =
+        MatrixFree<dim, MultigridNumber>::AdditionalData::none;
+      additional_data.mapping_update_flags =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
+
+      if(global_levels[level].is_dg)
+      {
+        additional_data.mapping_update_flags_inner_faces =
+          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+           update_values);
+
+        additional_data.mapping_update_flags_boundary_faces =
+          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+           update_values);
+      }
+
+      if(operator_data.use_cell_based_loops && global_levels[level].is_dg)
+      {
+        auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+          &this->mg_dofhandler[level]->get_triangulation());
+        Categorization::do_cell_based_loops(*tria, additional_data, global_levels[level].level);
+      }
+
+      if(operator_data.type_velocity_field == TypeVelocityField::Analytical)
+      {
+        QGauss<1> quadrature(global_levels[level].degree + 1);
+        data->reinit(mapping,
+                     *this->mg_dofhandler[level],
+                     *this->mg_constraints[level],
+                     quadrature,
+                     additional_data);
+      }
+      // we need two dof-handlers in case the velocity field comes from the fluid solver.
+      else if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+      {
+        // collect dof-handlers
+        std::vector<const DoFHandler<dim> *> dof_handler_vec;
+        dof_handler_vec.resize(2);
+        dof_handler_vec[0] = &*this->mg_dofhandler[level];
+        dof_handler_vec[1] = &*this->mg_dofhandler_vel[level];
+
+        // collect affine matrices
+        std::vector<const AffineConstraints<double> *> constraint_vec;
+        constraint_vec.resize(2);
+        constraint_vec[0] = &*this->mg_constraints[level];
+        constraint_vec[1] = &*this->mg_constraints_vel[level];
+
+
+        std::vector<Quadrature<1>> quadrature_vec;
+        quadrature_vec.resize(1);
+        quadrature_vec[0] = QGauss<1>(global_levels[level].degree + 1);
+
+        data->reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+
+      this->mg_matrixfree[level].reset(data);
+    }
+
+    // setup velocity transfer operator
+    if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+      this->mg_transfer_vel.template reinit<MultigridNumber>(this->mg_matrixfree,
+                                                             this->mg_constraints_vel,
+                                                             this->mg_constrained_dofs_vel,
+                                                             1);
+  }
 
   /*
    *  This function updates the multigrid preconditioner.
@@ -115,44 +255,16 @@ private:
   void
   set_velocity(VectorTypeMG const & velocity)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
+    // copy velocity to finest level
+    this->get_matrix(this->max_level)->set_velocity(velocity);
+
+    // interpolate velocity from fine to coarse level
+    for(auto level = this->max_level; level > this->min_level; --level)
     {
-      if(level == (int)this->n_global_levels - 1) // finest level
-      {
-        // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
-        // so we have to dereference the shared_ptr, get the reference to it and
-        // finally we can cast it to pointer of type Operator
-        dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])->set_velocity(velocity);
-      }
-      else // all coarser levels
-      {
-        // restrict velocity from fine to coarse level
-        VectorTypeMG const & vector_fine_level =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level + 1])->get_velocity();
-        VectorTypeMG vector_coarse_level =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])->get_velocity();
-
-        unsigned int dof_index_velocity =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-            ->get_operator_data()
-            .dof_index_velocity;
-
-        DoFHandler<dim> const & dof_handler_velocity =
-          dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-            ->get_data()
-            .get_dof_handler(dof_index_velocity);
-
-        restrict_to_coarser_level<dim, MultigridNumber, VectorTypeMG>(vector_coarse_level,
-                                                                      vector_fine_level,
-                                                                      dof_handler_velocity,
-                                                                      level);
-
-        // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
-        // so we have to dereference the shared_ptr, get the reference to it and
-        // finally we can cast it to pointer of type Operator
-        dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-          ->set_velocity(vector_coarse_level);
-      }
+      auto & vector_fine_level   = this->get_matrix(level - 0)->get_velocity();
+      auto   vector_coarse_level = this->get_matrix(level - 1)->get_velocity();
+      mg_transfer_vel.interpolate(level, vector_coarse_level, vector_fine_level);
+      this->get_matrix(level - 1)->set_velocity(vector_coarse_level);
     }
   }
 
@@ -165,14 +277,8 @@ private:
   void
   set_evaluation_time(double const & evaluation_time)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
-    {
-      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
-      // so we have to dereference the shared_ptr, get the reference to it and
-      // finally we can cast it to pointer of type Operator
-      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-        ->set_evaluation_time(evaluation_time);
-    }
+    for(auto level = this->min_level; level <= this->max_level; ++level)
+      this->get_matrix(level)->set_evaluation_time(evaluation_time);
   }
 
   /*
@@ -182,16 +288,10 @@ private:
    *  the scaling factor of the derivative term is variable.
    */
   void
-  set_scaling_factor_time_derivative_term(double const & scaling_factor_time_derivative_term)
+  set_scaling_factor_time_derivative_term(double const & scaling_factor)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
-    {
-      // this->mg_matrices[level] is a std::shared_ptr<MultigridOperatorBase>:
-      // so we have to dereference the shared_ptr, get the reference to it and
-      // finally we can cast it to pointer of type Operator
-      dynamic_cast<MultigridOperator *>(&*this->mg_matrices[level])
-        ->set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
-    }
+    for(auto level = this->min_level; level <= this->max_level; ++level)
+      this->get_matrix(level)->set_scaling_factor_time_derivative_term(scaling_factor);
   }
 
   /*
@@ -203,12 +303,23 @@ private:
   void
   update_smoothers()
   {
-    // Start with level = 1!
-    for(unsigned int level = 1; level < this->n_global_levels; ++level)
-    {
+    // Skip coarsest level!
+    for(auto level = this->min_level + 1; level <= this->max_level; ++level)
       this->update_smoother(level);
-    }
   }
+
+  ConvectionDiffusionOperatorAbstract<dim, MultigridNumber> *
+  get_matrix(unsigned int level)
+  {
+    return dynamic_cast<ConvectionDiffusionOperatorAbstract<dim, MultigridNumber> *>(
+      &*this->mg_matrices[level]);
+  }
+
+  MGTransferMF_MGLevelObject<dim, VectorTypeMG> mg_transfer_vel;
+
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     mg_dofhandler_vel;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         mg_constrained_dofs_vel;
+  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> mg_constraints_vel;
 };
 
 } // namespace ConvDiff

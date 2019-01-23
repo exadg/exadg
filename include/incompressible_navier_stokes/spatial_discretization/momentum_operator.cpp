@@ -22,6 +22,34 @@ MomentumOperator<dim, degree, Number>::MomentumOperator()
 
 template<int dim, int degree, typename Number>
 void
+MomentumOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   data,
+                                              AffineConstraints<double> const & constraint_matrix,
+                                              MomentumOperatorData<dim> const & operator_data)
+{
+  (void)constraint_matrix;
+
+  // setup own mass matrix operator
+  own_mass_matrix_operator_storage.initialize(data, operator_data.mass_matrix_operator_data);
+
+  // TODO: refactor viscous operator, s.t. it does not need mappding
+  MappingQGeneric<dim> mapping(degree);
+  own_viscous_operator_storage.initialize(mapping, data, operator_data.viscous_operator_data);
+  own_convective_operator_storage.initialize(data, operator_data.convective_operator_data);
+
+  this->reinit(data,
+               operator_data,
+               own_mass_matrix_operator_storage,
+               own_viscous_operator_storage,
+               own_convective_operator_storage);
+
+  // initialize temp-vector: this is done in this function because
+  // the vector temp is only used in the function vmult_add(), i.e.,
+  // when using the multigrid preconditioner
+  this->initialize_dof_vector(temp_vector);
+}
+
+template<int dim, int degree, typename Number>
+void
 MomentumOperator<dim, degree, Number>::reinit(
   MatrixFree<dim, Number> const &                 data,
   MomentumOperatorData<dim> const &               operator_data,
@@ -43,124 +71,6 @@ MomentumOperator<dim, degree, Number>::reinit(
 
 template<int dim, int degree, typename Number>
 void
-MomentumOperator<dim, degree, Number>::reinit_multigrid(
-  DoFHandler<dim> const & dof_handler,
-  Mapping<dim> const &    mapping,
-  void *                  operator_data_in,
-  MGConstrainedDoFs const & /*mg_constrained_dofs*/,
-  unsigned int const level)
-{
-  auto operator_data = *static_cast<MomentumOperatorData<dim> *>(operator_data_in);
-
-  // setup own matrix free object
-
-  // dof_handler
-  std::vector<const DoFHandler<dim> *> dof_handler_vec;
-  dof_handler_vec.resize(1);
-  dof_handler_vec[0] = &dof_handler;
-
-  // constraint matrix
-  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
-  constraint_matrix_vec.resize(1);
-  AffineConstraints<double> constraints;
-  constraints.close();
-  constraint_matrix_vec[0] = &constraints;
-
-  // quadratures
-  std::vector<Quadrature<1>> quadrature_vec;
-  quadrature_vec.resize(2);
-  quadrature_vec[0] = QGauss<1>(dof_handler.get_fe().degree + 1);
-  quadrature_vec[1] =
-    QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
-
-  // additional data
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-  additional_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::none;
-
-  additional_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
-
-  additional_data.level_mg_handler = level;
-
-  if(operator_data.use_cell_based_loops)
-  {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-      &dof_handler.get_triangulation());
-    Categorization::do_cell_based_loops(*tria, additional_data);
-  }
-
-  // reinit
-  own_matrix_free_storage.reinit(
-    mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
-
-
-  // setup own mass matrix operator
-  MassMatrixOperatorData & mass_matrix_operator_data = operator_data.mass_matrix_operator_data;
-  // set dof index to zero since matrix free object only contains one dof-handler
-  mass_matrix_operator_data.dof_index = 0;
-  own_mass_matrix_operator_storage.initialize(own_matrix_free_storage, mass_matrix_operator_data);
-
-
-  // setup own viscous operator
-  ViscousOperatorData<dim> & viscous_operator_data = operator_data.viscous_operator_data;
-  // set dof index to zero since matrix free object only contains one dof-handler
-  viscous_operator_data.dof_index = 0;
-  own_viscous_operator_storage.initialize(mapping, own_matrix_free_storage, viscous_operator_data);
-
-
-  // setup own convective operator
-  ConvectiveOperatorData<dim> & convective_operator_data = operator_data.convective_operator_data;
-  // set dof index to zero since matrix free object only contains one dof-handler
-  convective_operator_data.dof_index = 0;
-  // set quad index to 1 since matrix free object only contains two quadrature formulas
-  convective_operator_data.quad_index = 1;
-  own_convective_operator_storage.initialize(own_matrix_free_storage, convective_operator_data);
-
-  // When solving the reaction-convection-diffusion problem, it might be possible
-  // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
-  // operator (which is symmetric, Chebyshev smoother, etc.) instead of the non-symmetric
-  // reaction-convection-diffusion operator. Accordingly, we have to reset which
-  // operators should be "active" for the multigrid preconditioner, independently of
-  // the actual equation type that is solved.
-  AssertThrow(operator_data.mg_operator_type != MultigridOperatorType::Undefined,
-              ExcMessage("Invalid parameter mg_operator_type."));
-
-  if(operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
-  {
-    // deactivate convective term for multigrid preconditioner
-    operator_data.convective_problem = false;
-  }
-  else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
-  {
-    AssertThrow(operator_data.convective_problem == true, ExcMessage("Invalid parameter."));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  reinit(own_matrix_free_storage,
-         operator_data,
-         own_mass_matrix_operator_storage,
-         own_viscous_operator_storage,
-         own_convective_operator_storage);
-
-  // initialize temp_vector: this is done in this function because temp_vector is only used in the
-  // function vmult_add(), i.e., when using the multigrid preconditioner
-  this->initialize_dof_vector(temp_vector);
-}
-
-template<int dim, int degree, typename Number>
-void
 MomentumOperator<dim, degree, Number>::set_scaling_factor_time_derivative_term(
   double const & factor)
 {
@@ -177,7 +87,7 @@ MomentumOperator<dim, degree, Number>::get_scaling_factor_time_derivative_term()
 template<int dim, int degree, typename Number>
 void
 MomentumOperator<dim, degree, Number>::set_solution_linearization(
-  VectorType const & solution_linearization) const
+  VectorType const & solution_linearization)
 {
   if(operator_data.convective_problem == true)
   {
@@ -198,7 +108,7 @@ MomentumOperator<dim, degree, Number>::get_solution_linearization() const
 
 template<int dim, int degree, typename Number>
 void
-MomentumOperator<dim, degree, Number>::set_evaluation_time(double const & evaluation_time_in)
+MomentumOperator<dim, degree, Number>::set_evaluation_time(double const evaluation_time_in)
 {
   evaluation_time = evaluation_time_in;
 }
@@ -637,11 +547,75 @@ MomentumOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
 }
 
 template<int dim, int degree, typename Number>
-MultigridOperatorBase<dim, Number> *
+PreconditionableOperator<dim, Number> *
 MomentumOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
-  AssertThrow(deg == degree, ExcMessage("Not compatible with p-MG!"));
-  return new MomentumOperator<dim, degree, Number>();
+  switch(deg)
+  {
+#if DEGREE_1
+    case 1:
+      return new MomentumOperator<dim, 1, Number>();
+#endif
+#if DEGREE_2
+    case 2:
+      return new MomentumOperator<dim, 2, Number>();
+#endif
+#if DEGREE_3
+    case 3:
+      return new MomentumOperator<dim, 3, Number>();
+#endif
+#if DEGREE_4
+    case 4:
+      return new MomentumOperator<dim, 4, Number>();
+#endif
+#if DEGREE_5
+    case 5:
+      return new MomentumOperator<dim, 5, Number>();
+#endif
+#if DEGREE_6
+    case 6:
+      return new MomentumOperator<dim, 6, Number>();
+#endif
+#if DEGREE_7
+    case 7:
+      return new MomentumOperator<dim, 7, Number>();
+#endif
+#if DEGREE_8
+    case 8:
+      return new MomentumOperator<dim, 8, Number>();
+#endif
+#if DEGREE_9
+    case 9:
+      return new MomentumOperator<dim, 9, Number>();
+#endif
+#if DEGREE_10
+    case 10:
+      return new MomentumOperator<dim, 10, Number>();
+#endif
+#if DEGREE_11
+    case 11:
+      return new MomentumOperator<dim, 11, Number>();
+#endif
+#if DEGREE_12
+    case 12:
+      return new MomentumOperator<dim, 12, Number>();
+#endif
+#if DEGREE_13
+    case 13:
+      return new MomentumOperator<dim, 13, Number>();
+#endif
+#if DEGREE_14
+    case 14:
+      return new MomentumOperator<dim, 14, Number>();
+#endif
+#if DEGREE_15
+    case 15:
+      return new MomentumOperator<dim, 15, Number>();
+#endif
+    default:
+      AssertThrow(false, ExcMessage("MomentumOperator not implemented for this degree!"));
+      return nullptr;
+  }
 }
 
 } // namespace IncNS

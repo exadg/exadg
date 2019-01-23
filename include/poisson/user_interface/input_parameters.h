@@ -31,10 +31,12 @@ public:
       // SPATIAL DISCRETIZATION
       degree_mapping(1),
       IP_factor(1.0),
+      spatial_discretization(SpatialDiscretization::DG),
 
       // SOLVER
       solver(Solver::Undefined),
       solver_data(SolverData(1e4, 1.e-20, 1.e-12)),
+      compute_performance_metrics(false),
       preconditioner(Preconditioner::Undefined),
       multigrid_data(MultigridData()),
       enable_cell_based_face_loops(false),
@@ -105,6 +107,8 @@ public:
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
     print_parameter(pcout, "IP factor viscous term", IP_factor);
+
+    print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
   }
 
   void
@@ -162,7 +166,8 @@ public:
 
   // Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0
-  double IP_factor;
+  double                IP_factor;
+  SpatialDiscretization spatial_discretization;
 
 
 
@@ -177,6 +182,7 @@ public:
 
   // solver data
   SolverData solver_data;
+  bool       compute_performance_metrics;
 
   // description: see enum declaration
   Preconditioner preconditioner;

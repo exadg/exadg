@@ -11,7 +11,7 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/lac/constraint_matrix.h>
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/point_value_history.h>
@@ -42,15 +42,21 @@
 #include <iostream>
 #include <memory>
 
+#include <deal.II/grid/manifold.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
 
-#include "../../../../include/poisson/spatial_discretization/laplace_operator.h"
+// from navier
+#include "include/poisson/spatial_discretization/laplace_operator.h"
+
+#include "applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+
+//
 #include "../../operation-base-util/l2_norm.h"
 #include "../../operation-base-util/sparse_matrix_util.h"
 #include "include/rhs_operator.h"
 
-#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+#include "../../operation-base-util/operator_reinit_multigrid.h"
 
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;
@@ -94,7 +100,7 @@ private:
   MatrixFree<dim, value_type>               data;
   std::shared_ptr<BoundaryDescriptor<dim>>  bc;
   MGConstrainedDoFs                         mg_constrained_dofs;
-  ConstraintMatrix                          dummy;
+  AffineConstraints<double>                 dummy;
 
   static int
   get_rank(MPI_Comm comm)
@@ -141,8 +147,15 @@ private:
   {
     typename MatrixFree<dim, value_type>::AdditionalData additional_data;
 
+    LaplaceOperatorData<dim> laplace_additional_data;
+    additional_data.mapping_update_flags = laplace_additional_data.mapping_update_flags;
     if(fe_dgq.dofs_per_vertex == 0)
-      additional_data.build_face_info = true;
+    {
+      additional_data.mapping_update_flags_inner_faces =
+        laplace_additional_data.mapping_update_flags_inner_faces;
+      additional_data.mapping_update_flags_boundary_faces =
+        laplace_additional_data.mapping_update_flags_boundary_faces;
+    }
 
     additional_data.level_mg_handler = global_refinements;
 
@@ -325,6 +338,7 @@ private:
 
       auto vec_rank = vec_sol_sm;
       vec_rank      = rank;
+      vec_rank.update_ghost_values();
       data_out.add_data_vector(vec_rank, "rank");
       data_out.build_patches(PATCHES);
 
@@ -346,18 +360,32 @@ public:
     LaplaceOperator<dim, fe_degree, value_type> laplace;
     // ... its additional data
     LaplaceOperatorData<dim> laplace_additional_data;
-    laplace_additional_data.bc = this->bc;
+    laplace_additional_data.bc             = this->bc;
+    laplace_additional_data.degree_mapping = fe_degree;
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+      periodic_face_pairs;
 
     // run through all multigrid level
     for(unsigned int level = 0; level <= global_refinements; level++)
     {
-      laplace.reinit(dof_handler_dg, mapping, (void *)&laplace_additional_data, mg_constrained_dofs, level);
+      MatrixFree<dim, value_type> matrixfree;
+      AffineConstraints<double>   contraint_matrix;
+      do_reinit_multigrid(dof_handler_dg,
+                          mapping,
+                          laplace_additional_data,
+                          mg_constrained_dofs,
+                          periodic_face_pairs,
+                          level,
+                          matrixfree,
+                          contraint_matrix);
+
+      laplace.reinit(matrixfree, contraint_matrix, laplace_additional_data);
       run(laplace, level);
     }
 
     // run on fine grid without multigrid
     {
-      laplace.initialize(mapping, data, dummy, laplace_additional_data);
+      laplace.reinit(data, dummy, laplace_additional_data);
       run(laplace);
     }
 
@@ -371,7 +399,7 @@ int
 main(int argc, char ** argv)
 {
   Utilities::MPI::MPI_InitFinalize mpi_initialization(argc, argv, 1);
-  ConditionalOStream               pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   {
     pcout << "2D 1st-order:" << std::endl;
     Runner<2, 1, FE_Q<2>> run_cg;

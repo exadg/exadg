@@ -257,9 +257,13 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  FE_DGQ<dim>             fe;
-  MappingQGeneric<dim>    mapping;
-  DoFHandler<dim>         dof_handler;
+  FE_DGQ<dim>          fe;
+  MappingQGeneric<dim> mapping;
+  DoFHandler<dim>      dof_handler;
+
+  AffineConstraints<double> constraint_matrix;
+
+
   MatrixFree<dim, Number> data;
 
   /*

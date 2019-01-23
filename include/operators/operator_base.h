@@ -14,12 +14,14 @@
 #include "operator_type.h"
 
 #include "../functionalities/lazy_ptr.h"
-#include "multigrid_operator_base.h"
+
+#include "../solvers_and_preconditioners/util/invert_diagonal.h"
+#include "operator_preconditionable.h"
 
 using namespace dealii;
 
 template<int dim>
-struct OperatorBaseData
+struct OperatorBaseData : public PreconditionableOperatorData<dim>
 {
   OperatorBaseData(const unsigned int dof_index,
                    const unsigned int quad_index,
@@ -99,32 +101,65 @@ struct OperatorBaseData
   UpdateFlags mapping_update_flags_inner_faces;
   UpdateFlags mapping_update_flags_boundary_faces;
 
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs_level0;
-
   bool use_cell_based_loops;
   bool implement_block_diagonal_preconditioner_matrix_free;
+
+  bool
+  do_use_cell_based_loops() const
+  {
+    return use_cell_based_loops;
+  }
+  void
+  set_dof_index(const int dof_index)
+  {
+    this->dof_index = dof_index;
+  }
+
+  void
+  set_quad_index(const int quad_index)
+  {
+    this->quad_index = quad_index;
+  }
+
+
+  UpdateFlags
+  get_mapping_update_flags() const
+  {
+    return mapping_update_flags;
+  }
+
+  UpdateFlags
+  get_mapping_update_flags_inner_faces() const
+  {
+    return get_mapping_update_flags() | mapping_update_flags_inner_faces;
+  }
+
+  UpdateFlags
+  get_mapping_update_flags_boundary_faces() const
+  {
+    return get_mapping_update_flags_inner_faces() | mapping_update_flags_boundary_faces;
+  }
 };
 
-template<int dim, int degree, typename Number, typename AdditionalData>
-class OperatorBase
+template<int dim, int degree, typename Number, typename AdditionalData, int n_components = 1>
+class OperatorBase : virtual public PreconditionableOperator<dim, Number>
 {
 public:
   static const int DIM = dim;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef OperatorBase<dim, degree, Number, AdditionalData> This;
+  typedef OperatorBase<dim, degree, Number, AdditionalData, n_components> This;
 
 #ifdef DEAL_II_WITH_TRILINOS
   typedef FullMatrix<TrilinosScalar>     FullMatrix_;
   typedef TrilinosWrappers::SparseMatrix SparseMatrix;
 #endif
 
-  typedef std::vector<LAPACKFullMatrix<Number>>                BlockMatrix;
-  typedef std::pair<unsigned int, unsigned int>                Range;
-  typedef FEEvaluation<dim, degree, degree + 1, 1, Number>     FEEvalCell;
-  typedef FEFaceEvaluation<dim, degree, degree + 1, 1, Number> FEEvalFace;
+  typedef std::vector<LAPACKFullMatrix<Number>>                           BlockMatrix;
+  typedef std::pair<unsigned int, unsigned int>                           Range;
+  typedef FEEvaluation<dim, degree, degree + 1, n_components, Number>     FEEvalCell;
+  typedef FEFaceEvaluation<dim, degree, degree + 1, n_components, Number> FEEvalFace;
   typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>
     PeriodicFacePairIterator;
 
@@ -138,26 +173,150 @@ public:
   }
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, AdditionalData const & operator_data) const;
+  reinit_preconditionable_operator_data(MatrixFree<dim, Number> const &           matrix_free,
+                                        AffineConstraints<double> const &         constraint_matrix,
+                                        PreconditionableOperatorData<dim> const & operator_data_in)
+  {
+    auto operator_data = *static_cast<AdditionalData const *>(&operator_data_in);
+    this->reinit(matrix_free, constraint_matrix, operator_data);
+  }
 
-
-  void
+  virtual void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          AdditionalData const &            operator_data) const;
 
-  void
-  reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
-                   AffineConstraints<double> const & constraint_matrix,
-                   AdditionalData const &            operator_data,
-                   unsigned int const                level) const;
+  virtual PreconditionableOperator<dim, Number> *
+  get_new(unsigned int /*deg*/) const
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
 
   void
-  do_reinit_multigrid(DoFHandler<dim> const &   dof_handler,
-                      Mapping<dim> const &      mapping,
-                      void *                    operator_data,
-                      MGConstrainedDoFs const & mg_constrained_dofs,
-                      unsigned int const        level);
+  vmult(VectorType & dst, VectorType const & src) const
+  {
+    this->apply(dst, src);
+  }
+
+  void
+  vmult_add(VectorType & dst, VectorType const & src) const
+  {
+    this->apply_add(dst, src);
+  }
+
+  void
+  vmult_interface_down(VectorType & dst, VectorType const & src) const
+  {
+    vmult(dst, src);
+  }
+
+  void
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
+  {
+    vmult_add(dst, src);
+  }
+
+  types::global_dof_index
+  m() const
+  {
+    return n();
+  }
+
+  types::global_dof_index
+  n() const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    return data.get_vector_partitioner(dof_index)->size();
+  }
+
+
+
+  Number
+  el(const unsigned int, const unsigned int) const
+  {
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
+  }
+
+  bool
+  is_empty_locally() const
+  {
+    MatrixFree<dim, Number> const & data = get_data();
+    return (data.n_macro_cells() == 0);
+  }
+
+  AffineConstraints<double> const &
+  get_constraint_matrix() const
+  {
+    return this->do_get_constraint_matrix();
+  }
+
+  MatrixFree<dim, Number> const &
+  get_data() const
+  {
+    return *this->data;
+  }
+
+  unsigned int
+  get_dof_index() const
+  {
+    return this->operator_data.dof_index;
+  }
+
+  void
+  calculate_inverse_diagonal(VectorType & diagonal) const
+  {
+    this->calculate_diagonal(diagonal);
+    invert_diagonal(diagonal);
+  }
+
+  void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
+  {
+    AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
+                ExcMessage("Not implemented."));
+
+    this->apply_inverse_block_diagonal_matrix_based(dst, src);
+  }
+
+  void
+  update_block_diagonal_preconditioner() const
+  {
+    this->do_update_block_diagonal_preconditioner();
+  }
+
+  bool
+  is_singular() const
+  {
+    return this->operator_is_singular();
+  }
+
+
+  void
+  initialize_dof_vector(VectorType & vector) const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    data.initialize_dof_vector(vector, dof_index);
+  }
+
+
+#ifdef DEAL_II_WITH_TRILINOS
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_init_system_matrix(system_matrix);
+  }
+
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+  {
+    this->do_calculate_system_matrix(system_matrix);
+  }
+#endif
 
   /*
    * Evaluate the homogeneous part of an operator. The homogeneous operator is the operator that is
@@ -165,13 +324,13 @@ public:
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
    * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
-  void
+  virtual void
   apply(VectorType & dst, VectorType const & src) const;
 
-  void
+  virtual void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
-  void
+  virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
 
   /*
@@ -243,6 +402,9 @@ public:
   void
   do_update_block_diagonal_preconditioner() const;
 
+  void
+  calculate_block_diagonal_matrices() const;
+
   // This function has to initialize everything related to the block diagonal preconditioner when
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
@@ -267,10 +429,10 @@ public:
   void
   do_init_system_matrix(SparseMatrix & system_matrix) const;
 
-  void
+  virtual void
   do_calculate_system_matrix(SparseMatrix & system_matrix) const;
 
-  void
+  virtual void
   do_calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
 #endif
 
@@ -290,7 +452,13 @@ public:
   get_level() const;
 
   AffineConstraints<double> const &
-  get_constraint_matrix() const;
+  do_get_constraint_matrix() const;
+
+  MatrixFree<dim, Number> const &
+  do_get_data() const;
+
+  void
+  do_initialize_dof_vector(VectorType & vector) const;
 
   /*
    * Returns whether the operator is singular, e.g., the Laplace operator with pure Neumann boundary
@@ -593,39 +761,14 @@ private:
   void
   set_constraint_diagonal(VectorType & diagonal) const;
 
-  void
-  add_constraints(DoFHandler<dim> const &     dof_handler,
-                  AffineConstraints<double> & constraint_own,
-                  MGConstrainedDoFs const &   mg_constrained_dofs,
-                  AdditionalData &            operator_data,
-                  unsigned int const          level);
-
-  /*
-   * Add periodic constraints: loop over all periodic face pairs on level 0
-   */
-  void
-  add_periodicity_constraints(DoFHandler<dim> const &                 dof_handler,
-                              unsigned int const                      level,
-                              std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0,
-                              AffineConstraints<double> &             constraint_own);
-
-  /*
-   * Add periodic constraints: for a given face pair on level 0 add recursively
-   * all subfaces on the given level
-   */
-  void
-  add_periodicity_constraints(unsigned int const                            level,
-                              unsigned int const                            target_level,
-                              typename DoFHandler<dim>::face_iterator const face1,
-                              typename DoFHandler<dim>::face_iterator const face2,
-                              AffineConstraints<double> &                   constraints);
-
+private:
   /*
    *  Verify that each boundary face is assigned exactly one boundary type.
    */
   void
-  verify_boundary_conditions(DoFHandler<dim> const & dof_handler,
-                             AdditionalData const &  operator_data) const;
+  verify_boundary_conditions(
+    DoFHandler<dim> const &                 dof_handler,
+    std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const;
 
   /*
    *  Since the type of boundary conditions depends on the operator, this function has
@@ -652,8 +795,10 @@ private:
   /*
    * Constraint matrix.
    */
+protected:
   mutable lazy_ptr<AffineConstraints<double>> constraint;
 
+private:
   /*
    * Is the discretization based on discontinuous Galerin method?
    */
@@ -688,6 +833,10 @@ private:
   mutable std::shared_ptr<FEEvalCell> fe_eval;
   mutable std::shared_ptr<FEEvalFace> fe_eval_m;
   mutable std::shared_ptr<FEEvalFace> fe_eval_p;
+
+  // for CG
+  mutable std::vector<unsigned int>              constrained_indices;
+  mutable std::vector<std::pair<Number, Number>> constrained_values;
 };
 
 #include "operator_base.cpp"

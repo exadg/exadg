@@ -54,6 +54,7 @@ SET( TARGET_SRC
      include/convection_diffusion/time_integration/time_int_bdf.cpp
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
+     include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
      include/incompressible_navier_stokes/user_interface/enum_types.cpp
      include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.cpp     
      include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp 
@@ -90,7 +91,7 @@ SET( TARGET_SRC
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp     
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
      include/solvers_and_preconditioners/mg_coarse/mg_coarse_ml.cpp
-     include/solvers_and_preconditioners/transfer/dg_to_cg_transfer.cpp
+     include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.cpp
    )
 
 # Set the include directory and the name of the project
@@ -99,7 +100,6 @@ INCLUDE_DIRECTORIES(include)
 PROJECT(exadg)
 
 ADD_LIBRARY(exadg  ${TARGET_SRC})
-
 
 # Define custom targets to easily switch the build type:
 ADD_CUSTOM_TARGET(debug
@@ -117,4 +117,6 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 DEAL_II_SETUP_TARGET(exadg)
 
 ADD_SUBDIRECTORY(applications)
+ADD_SUBDIRECTORY(tests)
+
 

@@ -14,31 +14,14 @@ DiffusiveOperator<dim, degree, Number>::DiffusiveOperator() : diffusivity(-1.0)
 
 template<int dim, int degree, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::reinit(Mapping<dim> const &               mapping,
-                                               MatrixFree<dim, Number> const &    mf_data,
-                                               DiffusiveOperatorData<dim> const & operator_data)
-{
-  Base::reinit(mf_data, operator_data);
-
-  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                       *this->data,
-                                                       mapping,
-                                                       this->operator_data.dof_index);
-
-  diffusivity = this->operator_data.diffusivity;
-}
-
-template<int dim, int degree, typename Number>
-void
-DiffusiveOperator<dim, degree, Number>::reinit_multigrid(
-  Mapping<dim> const &               mapping,
+DiffusiveOperator<dim, degree, Number>::reinit(
   MatrixFree<dim, Number> const &    mf_data,
   AffineConstraints<double> const &  constraint_matrix,
-  DiffusiveOperatorData<dim> const & operator_data,
-  unsigned int                       level)
+  DiffusiveOperatorData<dim> const & operator_data) const
 {
-  Base::reinit_multigrid(mf_data, constraint_matrix, operator_data, level);
+  Base::reinit(mf_data, constraint_matrix, operator_data);
 
+  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,
                                                        mapping,

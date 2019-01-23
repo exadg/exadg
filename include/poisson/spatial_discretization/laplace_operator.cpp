@@ -13,89 +13,17 @@ LaplaceOperator<dim, degree, Number>::LaplaceOperator()
 
 template<int dim, int degree, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::reinit(Mapping<dim> const &             mapping,
-                                             MatrixFree<dim, Number> const &  mf_data,
-                                             LaplaceOperatorData<dim> const & operator_data)
+LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
+                                             AffineConstraints<double> const & constraint_matrix,
+                                             LaplaceOperatorData<dim> const &  operator_data) const
 {
-  Base::reinit(mf_data, operator_data);
-
+  Base::reinit(mf_data, constraint_matrix, operator_data);
   // calculate penalty parameters
+  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
   IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
                                                        *this->data,
                                                        mapping,
                                                        this->operator_data.dof_index);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::reinit_multigrid(
-  DoFHandler<dim> const &   dof_handler,
-  Mapping<dim> const &      mapping,
-  void *                    operator_data,
-  MGConstrainedDoFs const & mg_constrained_dofs,
-  unsigned int const        level)
-{
-  Base::do_reinit_multigrid(dof_handler, mapping, operator_data, mg_constrained_dofs, level);
-
-  // calculate penalty parameters
-  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                       *this->data,
-                                                       mapping,
-                                                       this->operator_data.dof_index);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::vmult(VectorType & dst, VectorType const & src) const
-{
-  this->apply(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::vmult_add(VectorType & dst, VectorType const & src) const
-{
-  this->apply_add(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-MatrixFree<dim, Number> const &
-LaplaceOperator<dim, degree, Number>::get_data() const
-{
-  return *this->data;
-}
-
-template<int dim, int degree, typename Number>
-unsigned int
-LaplaceOperator<dim, degree, Number>::get_dof_index() const
-{
-  return this->operator_data.dof_index;
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::calculate_inverse_diagonal(VectorType & diagonal) const
-{
-  this->calculate_diagonal(diagonal);
-  invert_diagonal(diagonal);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::apply_inverse_block_diagonal(VectorType &       dst,
-                                                                   VectorType const & src) const
-{
-  AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
-              ExcMessage("Not implemented."));
-
-  this->apply_inverse_block_diagonal_matrix_based(dst, src);
-}
-
-template<int dim, int degree, typename Number>
-void
-LaplaceOperator<dim, degree, Number>::update_block_diagonal_preconditioner() const
-{
-  this->do_update_block_diagonal_preconditioner();
 }
 
 template<int dim, int degree, typename Number>
@@ -394,7 +322,7 @@ LaplaceOperator<dim, degree, Number>::do_boundary_integral(FEEvalFace &         
 }
 
 template<int dim, int degree, typename Number>
-MultigridOperatorBase<dim, Number> *
+PreconditionableOperator<dim, Number> *
 LaplaceOperator<dim, degree, Number>::get_new(unsigned int deg) const
 {
   switch(deg)

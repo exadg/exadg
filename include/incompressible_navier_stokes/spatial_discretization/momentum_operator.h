@@ -19,7 +19,7 @@
 
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/linear_operator_base.h"
-#include "../../operators/multigrid_operator_base.h"
+#include "../../operators/operator_preconditionable.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
@@ -31,13 +31,14 @@
 namespace IncNS
 {
 template<int dim>
-struct MomentumOperatorData
+struct MomentumOperatorData : public PreconditionableOperatorData<dim>
 {
   MomentumOperatorData()
     : unsteady_problem(true),
       convective_problem(true),
       dof_index(0),
       quad_index_std(0),
+      quad_index_over(1),
       scaling_factor_time_derivative_term(-1.0),
       implement_block_diagonal_preconditioner_matrix_free(false),
       use_cell_based_loops(false),
@@ -53,6 +54,7 @@ struct MomentumOperatorData
   unsigned int dof_index;
 
   unsigned int quad_index_std;
+  unsigned int quad_index_over;
 
   double scaling_factor_time_derivative_term;
 
@@ -74,8 +76,34 @@ struct MomentumOperatorData
   MultigridOperatorType mg_operator_type;
 };
 
+
+/*
+ * The class MomentumOperatorAbstract is the interface to the multigrid preconditioner
+ * IncNS::MultigridPreconditioner. This interface is needed to remove the template argument
+ * degree of the class MomentumOperator, since IncNS::MultigridPreconditioner works
+ * on MomentumOperators of different degrees in the case of p-Multigrid.
+ *
+ */
+template<int dim, typename Number = double>
+class MomentumOperatorAbstract //: public PreconditionableOperator<dim, Number>
+{
+public:
+  virtual LinearAlgebra::distributed::Vector<Number> const &
+  get_solution_linearization() const = 0;
+
+  virtual void
+  set_solution_linearization(LinearAlgebra::distributed::Vector<Number> const & velocity) = 0;
+
+  virtual void
+  set_scaling_factor_time_derivative_term(double const & factor) = 0;
+
+  virtual void
+  set_evaluation_time(double const time) = 0;
+};
+
 template<int dim, int degree, typename Number = double>
-class MomentumOperator : public MultigridOperatorBase<dim, Number>
+class MomentumOperator : public PreconditionableOperator<dim, Number>,
+                         public MomentumOperatorAbstract<dim, Number>
 {
 public:
   typedef MomentumOperator<dim, degree, Number> This;
@@ -94,22 +122,181 @@ public:
   }
 
   void
+  reinit_preconditionable_operator_data(MatrixFree<dim, Number> const &           matrix_free,
+                                        AffineConstraints<double> const &         constraint_matrix,
+                                        PreconditionableOperatorData<dim> const & operator_data_in)
+  {
+    auto operator_data = *static_cast<MomentumOperatorData<dim> const *>(&operator_data_in);
+    this->reinit(matrix_free, constraint_matrix, operator_data);
+  }
+
+  void
+  reinit(MatrixFree<dim, Number> const &   data,
+         AffineConstraints<double> const & constraint_matrix,
+         MomentumOperatorData<dim> const & operator_data);
+
+  void
   reinit(MatrixFree<dim, Number> const &                 data,
          MomentumOperatorData<dim> const &               operator_data,
          MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
          ViscousOperator<dim, degree, Number> const &    viscous_operator,
          ConvectiveOperator<dim, degree, Number> const & convective_operator);
 
-  /*
-   *  This function is called by the multigrid algorithm to initialize the
-   *  multigrid operators on all levels.
-   */
+
+  virtual void
+  apply(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+
+    AssertThrow(false, ExcMessage("MomentumOperator::apply should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::apply_add should be overwritten!"));
+  }
+
+  virtual void
+  apply_add(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+    AssertThrow(false, ExcMessage("MomentumOperator::apply_add should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs should be overwritten!"));
+  }
+
+  virtual void
+  rhs(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst) const
+  {
+    (void)dst;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs_add should be overwritten!"));
+  }
+
+  virtual void
+  rhs_add(VectorType & dst, Number const time) const
+  {
+    (void)dst;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::rhs_add should be overwritten!"));
+  }
+
+  virtual void
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::evaluate should be overwritten!"));
+  }
+
+  virtual void
+  evaluate_add(VectorType & dst, VectorType const & src, Number const time) const
+  {
+    (void)dst;
+    (void)src;
+    (void)time;
+    AssertThrow(false, ExcMessage("MomentumOperator::evaluate_add should be overwritten!"));
+  }
+
   void
-  reinit_multigrid(DoFHandler<dim> const & dof_handler,
-                   Mapping<dim> const &    mapping,
-                   void *                  operator_data,
-                   MGConstrainedDoFs const & /*mg_constrained_dofs*/,
-                   unsigned int const level);
+  vmult_interface_down(VectorType & dst, VectorType const & src) const
+  {
+    vmult(dst, src);
+  }
+
+  void
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
+  {
+    vmult_add(dst, src);
+  }
+
+  types::global_dof_index
+  m() const
+  {
+    return n();
+  }
+
+  types::global_dof_index
+  n() const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    return data.get_vector_partitioner(dof_index)->size();
+  }
+
+  Number
+  el(const unsigned int, const unsigned int) const
+  {
+    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+    return Number();
+  }
+
+  bool
+  is_empty_locally() const
+  {
+    MatrixFree<dim, Number> const & data = get_data();
+    return (data.n_macro_cells() == 0);
+  }
+
+  void
+  initialize_dof_vector(VectorType & vector) const
+  {
+    MatrixFree<dim, Number> const & data      = get_data();
+    unsigned int                    dof_index = get_dof_index();
+
+    data.initialize_dof_vector(vector, dof_index);
+  }
+
+  virtual AffineConstraints<double> const &
+  get_constraint_matrix() const
+  {
+    AssertThrow(false,
+                ExcMessage("MomentumOperator::get_constraint_matrix should be overwritten!"));
+    return *(new AffineConstraints<double>());
+  }
+
+  virtual bool
+  is_singular() const
+  {
+    // per default the operator is not singular
+    // if an operator can be singular, this method has to be overwritten
+    return false;
+  }
+
+#ifdef DEAL_II_WITH_TRILINOS
+  virtual void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
+  {
+    AssertThrow(false, ExcMessage("MomentumOperator::init_system_matrix should be overwritten!"));
+  }
+
+  virtual void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & /*system_matrix*/) const
+  {
+    AssertThrow(false,
+                ExcMessage("MomentumOperator::calculate_system_matrix should be overwritten!"));
+  }
+#endif
 
   /*
    * Setters and getters.
@@ -137,7 +324,7 @@ public:
    *  Linearized velocity field for convective operator
    */
   void
-  set_solution_linearization(VectorType const & solution_linearization) const;
+  set_solution_linearization(VectorType const & solution_linearization);
 
   VectorType const &
   get_solution_linearization() const;
@@ -146,7 +333,7 @@ public:
    *  Evaluation time that is needed for evaluation of linearized convective operator.
    */
   void
-  set_evaluation_time(double const & time);
+  set_evaluation_time(double const time);
 
   double
   get_evaluation_time() const;
@@ -217,7 +404,7 @@ public:
                                        VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size = 1) const;
 
-  virtual MultigridOperatorBase<dim, Number> *
+  virtual PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const;
 
 private:
@@ -282,14 +469,12 @@ private:
    * In that case, the VelocityConvDiffOperator has to be generated
    * for each level of the multigrid algorithm.
    * Accordingly, in a first step one has to setup own objects of
-   * MatrixFree, MassMatrixOperator, ViscousOperator,
-   *   e.g., own_matrix_free_storage.reinit(...);
+   * MassMatrixOperator, ViscousOperator,
+   *   e.g., own_mass_matrix_operator_storage.reinit(...);
    * and later initialize the VelocityConvDiffOperator with these
    * ojects by setting the above pointers to the own_objects_storage,
-   *   e.g., data = &own_matrix_free_storage;
+   *   e.g., data = &own_mass_matrix_operator_storage;
    */
-  MatrixFree<dim, Number> own_matrix_free_storage;
-
   MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
 
   ViscousOperator<dim, degree, Number> own_viscous_operator_storage;

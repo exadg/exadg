@@ -12,7 +12,7 @@ using namespace dealii;
 
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../../operators/linear_operator_base.h"
+#include "../../operators/operator_preconditionable.h"
 
 template<typename value_type>
 class PreconditionerBase

@@ -20,7 +20,8 @@ public:
           true,  true,        true,  true         // face
       ),
       // clang-format on
-      IP_factor(1.0)
+      IP_factor(1.0),
+      degree_mapping(1)
   {
     this->mapping_update_flags = update_gradients | update_JxW_values;
     this->mapping_update_flags_inner_faces =
@@ -30,65 +31,33 @@ public:
   }
 
   double IP_factor;
+  int    degree_mapping;
 
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, int degree, typename Number>
-class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>,
-                        public MultigridOperatorBase<dim, Number>
+class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
 {
-public:
-  typedef Number value_type;
-
 private:
   typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Base;
 
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
 
-  typedef typename Base::VectorType VectorType;
-
   typedef VectorizedArray<Number> scalar;
 
-  static const int DIM = Base::DIM;
-
 public:
+  static const int                  DIM = dim;
+  typedef Number                    value_type;
+  typedef typename Base::VectorType VectorType;
+
   LaplaceOperator();
 
   void
-  reinit(Mapping<dim> const &             mapping,
-         MatrixFree<dim, Number> const &  mf_data,
-         LaplaceOperatorData<dim> const & operator_data);
-
-  void
-  reinit_multigrid(DoFHandler<dim> const &   dof_handler,
-                   Mapping<dim> const &      mapping,
-                   void *                    operator_data,
-                   MGConstrainedDoFs const & mg_constrained_dofs,
-                   unsigned int const        level);
-
-  void
-  vmult(VectorType & dst, VectorType const & src) const;
-
-  void
-  vmult_add(VectorType & dst, VectorType const & src) const;
-
-  MatrixFree<dim, Number> const &
-  get_data() const;
-
-  unsigned int
-  get_dof_index() const;
-
-  void
-  calculate_inverse_diagonal(VectorType & diagonal) const;
-
-  // apply the inverse block diagonal operator (for matrix-based and matrix-free variants)
-  void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
-
-  void
-  update_block_diagonal_preconditioner() const;
+  reinit(MatrixFree<dim, Number> const &   mf_data,
+         AffineConstraints<double> const & constraint_matrix,
+         LaplaceOperatorData<dim> const &  operator_data) const;
 
   /*
    * Returns whether the operator is singular, e.g., in case of pure Neumann boundary conditions.
@@ -96,21 +65,8 @@ public:
   bool
   is_singular() const;
 
-#ifdef DEAL_II_WITH_TRILINOS
-  virtual void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
-  {
-    this->do_init_system_matrix(system_matrix);
-  }
 
-  virtual void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
-  {
-    this->do_calculate_system_matrix(system_matrix);
-  }
-#endif
-
-  MultigridOperatorBase<dim, Number> *
+  PreconditionableOperator<dim, Number> *
   get_new(unsigned int deg) const;
 
 private:
@@ -185,7 +141,7 @@ private:
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   // stores the penalty parameter of the interior penalty method for each cell
-  AlignedVector<scalar> array_penalty_parameter;
+  mutable AlignedVector<scalar> array_penalty_parameter;
 };
 
 } // namespace Poisson

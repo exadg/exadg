@@ -400,6 +400,8 @@ protected:
 
   MatrixFree<dim, Number> data;
 
+  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+
   /*
    * List of input parameters.
    */

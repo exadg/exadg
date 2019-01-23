@@ -18,6 +18,7 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim>
       ),
       // clang-format on
       IP_factor(1.0),
+      degree_mapping(1),
       diffusivity(1.0)
   {
     this->mapping_update_flags = update_gradients | update_JxW_values | update_quadrature_points;
@@ -27,6 +28,7 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim>
   }
 
   double IP_factor;
+  int    degree_mapping;
   double diffusivity;
 
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
@@ -36,22 +38,16 @@ template<int dim, int degree, typename Number>
 class DiffusiveOperator : public OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>>
 {
 public:
+  static const int                                                      DIM = dim;
   typedef OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>> Base;
   typedef typename Base::VectorType                                     VectorType;
 
   DiffusiveOperator();
 
   void
-  reinit(Mapping<dim> const &               mapping,
-         MatrixFree<dim, Number> const &    mf_data,
-         DiffusiveOperatorData<dim> const & operator_data);
-
-  void
-  reinit_multigrid(Mapping<dim> const &               mapping,
-                   MatrixFree<dim, Number> const &    mf_data,
-                   AffineConstraints<double> const &  constraint_matrx,
-                   DiffusiveOperatorData<dim> const & operator_data,
-                   unsigned int                       level);
+  reinit(MatrixFree<dim, Number> const &    mf_data,
+         AffineConstraints<double> const &  constraint_matrix,
+         DiffusiveOperatorData<dim> const & operator_data) const;
 
   void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
@@ -138,8 +134,8 @@ private:
                                 DiffusiveOperatorData<dim> const &   operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  AlignedVector<scalar> array_penalty_parameter;
-  double                diffusivity;
+  mutable AlignedVector<scalar> array_penalty_parameter;
+  mutable double                diffusivity;
 };
 } // namespace ConvDiff
 
