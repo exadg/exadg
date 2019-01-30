@@ -38,7 +38,9 @@
 #include <deal.II/grid/grid_out.h>
 
 #include <deal.II/base/convergence_table.h>
-#include <deal.II/lac/trilinos_sparse_matrix.h>
+#ifdef DEAL_II_WITH_TRILINOS
+#  include <deal.II/lac/trilinos_sparse_matrix.h>
+#endif
 #include <deal.II/multigrid/mg_base.h>
 #include <fstream>
 #include <iomanip>

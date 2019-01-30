@@ -35,7 +35,9 @@
 #include <deal.II/grid/grid_out.h>
 
 #include <deal.II/base/convergence_table.h>
-#include <deal.II/lac/trilinos_sparse_matrix.h>
+#ifdef DEAL_II_WITH_TRILINOS
+#  include <deal.II/lac/trilinos_sparse_matrix.h>
+#endif
 #include <deal.II/multigrid/mg_base.h>
 #include <fstream>
 #include <iomanip>
@@ -193,13 +195,16 @@ private:
     unsigned int level = std::min(global_refinements, mg_level);
 
     // System matrix
+
+#ifdef DEAL_II_WITH_TRILINOS
     TrilinosWrappers::SparseMatrix system_matrix;
     laplace.init_system_matrix(system_matrix);
     laplace.calculate_system_matrix(system_matrix);
 
-#ifdef DETAIL_OUTPUT
+#  ifdef DETAIL_OUTPUT
     print_ascii(system_matrix);
     print_matlab(system_matrix);
+#  endif
 #endif
 
     // Right hand side
@@ -232,7 +237,9 @@ private:
     // ... solve with sparse matrix
     try
     {
+#ifdef DEAL_II_WITH_TRILINOS
       solver.solve(system_matrix, vec_sol_sm, vec_rhs, PreconditionIdentity());
+#endif
     }
     catch(SolverControl::NoConvergence &)
     {
@@ -284,7 +291,9 @@ private:
 #endif
 
     // ... vmult with sparse matrix
+#ifdef DEAL_II_WITH_TRILINOS
     system_matrix.vmult(vec_dst_sm, vec_src);
+#endif
     // ... vmult matrix free
     laplace.vmult(vec_dst_mf, vec_src);
 

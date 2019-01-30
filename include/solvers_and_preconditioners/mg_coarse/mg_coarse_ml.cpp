@@ -92,7 +92,6 @@ MGCoarseML<Operator, Number>::vmult(VectorType &, VectorType const &) const
 
 template<typename Operator, typename Number>
 MGCoarseML<Operator, Number>::MGCoarseML(Operator const &,
-                                         Operator const &,
                                          bool,
                                          int,
                                          MGCoarseMLData)

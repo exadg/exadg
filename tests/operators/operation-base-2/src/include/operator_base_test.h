@@ -77,10 +77,12 @@ public:
     auto &       dof_handler = data.get_dof_handler(/*TODO*/);
     const int    fe_degree   = dof_handler.get_fe(/*TODO*/).degree;
 
+#ifdef DEAL_II_WITH_TRILINOS
     // compute system matrix
     TrilinosWrappers::SparseMatrix system_matrix;
     op.do_init_system_matrix(system_matrix);
     op.do_calculate_system_matrix(system_matrix);
+#endif
 
     // compute diagonal
     VectorType vec_diag;
@@ -90,6 +92,7 @@ public:
     convergence_table.add_value("degree", fe_degree);
     convergence_table.add_value("dofs", vec_diag.size());
 
+#ifdef DEAL_II_WITH_TRILINOS
     if(do_sm_vs_d)
     {
       // create temporal vector for diagonal of sparse matrix
@@ -104,6 +107,7 @@ public:
       // print l2-norms
       print_l2(convergence_table, vec_diag, vec_diag_sm, "(D)_L2", "(D-D(S))_L2");
     }
+#endif
 
     if(do_mf_vs_d)
     {
@@ -131,6 +135,7 @@ public:
       print_l2(convergence_table, vec_diag, vec_diag_mf, "", "(D-D(F))_L2");
     }
 
+#ifdef DEAL_II_WITH_TRILINOS
     if(do_sm_vs_mf)
     {
       // initialize vectors
@@ -150,6 +155,7 @@ public:
       // print l2-norms
       print_l2(convergence_table, vec_dst_sm, vec_dst_mf, "(S*v)_L2", "(S*v-F*v)_L2");
     }
+#endif
 
     // TODO: Block-Jacobi currently not working
     if(do_mf_vs_b)

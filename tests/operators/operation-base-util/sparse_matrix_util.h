@@ -1,6 +1,7 @@
 #ifndef OPERATOR_BASE_SM_UTIL
 #define OPERATOR_BASE_SM_UTIL
 
+#ifdef DEAL_II_WITH_TRILINOS
 void
 print_ascii(TrilinosWrappers::SparseMatrix & system_matrix)
 {
@@ -47,5 +48,6 @@ print_matlab(TrilinosWrappers::SparseMatrix & system_matrix)
 
   printf("\n\n");
 }
+#endif
 
 #endif
