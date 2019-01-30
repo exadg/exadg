@@ -35,7 +35,9 @@
 #include <deal.II/grid/grid_out.h>
 
 #include <deal.II/base/convergence_table.h>
-#include <deal.II/lac/trilinos_sparse_matrix.h>
+#ifdef DEAL_II_WITH_TRILINOS
+#  include <deal.II/lac/trilinos_sparse_matrix.h>
+#endif
 #include <deal.II/multigrid/mg_base.h>
 #include <fstream>
 #include <iomanip>
@@ -289,20 +291,28 @@ private:
       if(!rank)
         std::cout << "  -- " << entries_per_block * (dim * 2 + 1) * n_cells_glob << std::endl;
       time.restart();
+#ifdef DEAL_II_WITH_TRILINOS
       TrilinosWrappers::SparseMatrix system_matrix;
       laplace.init_system_matrix(system_matrix);
+#endif
       convergence_table.add_value("m-init", time.wall_time());
       convergence_table.set_scientific("m-init", true);
 
+#ifdef DEAL_II_WITH_TRILINOS
       convergence_table.add_value("m-nnz", system_matrix.n_nonzero_elements());
+#endif
 
       time.restart();
+#ifdef DEAL_II_WITH_TRILINOS
       laplace.calculate_system_matrix(system_matrix);
+#endif
       convergence_table.add_value("m-assembly", time.wall_time());
       convergence_table.set_scientific("m-assembly", true);
 
       repeat<dim, fe_degree>(convergence_table, "m-vmult", [&]() mutable {
+#ifdef DEAL_II_WITH_TRILINOS
         system_matrix.vmult(vec_dst_2, vec_src);
+#endif
       });
     }
     else

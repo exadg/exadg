@@ -278,15 +278,19 @@ public:
     }
 
     {
+#ifdef DEAL_II_WITH_TRILINOS
       TrilinosWrappers::SparseMatrix system_matrix;
       mm2.do_init_system_matrix(system_matrix);
       mm2.do_calculate_system_matrix(system_matrix);
+#endif
 
       LinearAlgebra::distributed::Vector<Number> v1, v2;
       mm2.do_initialize_dof_vector(v1);
       mm2.do_initialize_dof_vector(v2);
       v2 = 1.0;
+#ifdef DEAL_II_WITH_TRILINOS
       system_matrix.vmult(v1, v2);
+#endif
 
       // print_matlab(system_matrix);
 
