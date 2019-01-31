@@ -18,6 +18,9 @@ public:
 
   virtual void
   vmult(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
+  step(VectorType & dst, VectorType const & src) const = 0;
 };
 
 

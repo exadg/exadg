@@ -33,6 +33,12 @@ public:
   }
 
   void
+  step(VectorType & dst, VectorType const & src) const
+  {
+    smoother_object.step(dst, src);
+  }
+
+  void
   initialize(Operator const & matrix, AdditionalData const & additional_data)
   {
     smoother_object.initialize(matrix, additional_data);

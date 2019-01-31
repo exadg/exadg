@@ -32,15 +32,15 @@ using namespace dealii;
  * Re-implementation of multigrid preconditioner (V-cycle) in order to have more direct control over
  * its individual components and avoid inner products and other expensive stuff.
  */
-template<typename VectorType, typename MatrixType, typename PreconditionerType>
+template<typename VectorType, typename MatrixType, typename SmootherType>
 class MultigridPreconditioner
 {
 public:
-  MultigridPreconditioner(const MGLevelObject<std::shared_ptr<MatrixType>> &         matrix,
-                          const MGCoarseGridBase<VectorType> &                       coarse,
-                          const MGTransferMF<VectorType> &                           transfer,
-                          const MGLevelObject<std::shared_ptr<PreconditionerType>> & smooth,
-                          const unsigned int                                         n_cycles = 1)
+  MultigridPreconditioner(const MGLevelObject<std::shared_ptr<MatrixType>> &   matrix,
+                          const MGCoarseGridBase<VectorType> &                 coarse,
+                          const MGTransferMF<VectorType> &                     transfer,
+                          const MGLevelObject<std::shared_ptr<SmootherType>> & smoother,
+                          const unsigned int                                   n_cycles = 1)
     : minlevel(matrix.min_level()),
       maxlevel(matrix.max_level()),
       defect(minlevel, maxlevel),
@@ -50,7 +50,7 @@ public:
       matrix(&matrix, typeid(*this).name()),
       coarse(&coarse, typeid(*this).name()),
       transfer(transfer),
-      smooth(&smooth, typeid(*this).name()),
+      smoother(&smoother, typeid(*this).name()),
       n_cycles(n_cycles)
 #if ENABLE_TIMING
       ,
@@ -93,7 +93,10 @@ public:
 #endif
 
     for(unsigned int i = minlevel; i <= maxlevel; i++)
-      defect[i] = 0.0;
+    {
+      defect[i]   = 0.0;
+      solution[i] = 0.0;
+    }
     defect[maxlevel].copy_locally_owned_data_from(src);
 
 #if ENABLE_TIMING
@@ -128,33 +131,27 @@ private:
     if(level == minlevel)
     {
       (*coarse)(level, solution[level], defect[level]);
-
-#if ENABLE_TIMING
-      wall_time[level] += timer[level].wall_time();
-#endif
-      return;
     }
+    else
+    {
+      // pre-smoothing
+      (*smoother)[level]->step(solution[level], defect[level]);
+      (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
+      t[level].sadd(-1.0, 1.0, defect[level]);
 
-    // smoothing
-    (*smooth)[level]->vmult(solution[level], defect[level]);
-    (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
-    t[level].sadd(-1.0, 1.0, defect[level]);
+      // restriction
+      transfer.restrict_and_add(level, defect[level - 1], t[level]);
 
-    // transfer to next level
-    transfer.restrict_and_add(level, defect[level - 1], t[level]);
+      // coarse grid correction
+      v_cycle(level - 1);
 
-    // coarse grid correction
-    v_cycle(level - 1);
+      // prolongation
+      transfer.prolongate(level, t[level], solution[level - 1]);
+      solution[level] += t[level];
 
-    // prolongate
-    transfer.prolongate(level, t[level], solution[level - 1]);
-    solution[level] += t[level];
-
-    // smooth on the negative part of the residual
-    defect[level] *= -1.0;
-    (*matrix)[level]->vmult_add_interface_up(defect[level], solution[level]);
-    (*smooth)[level]->vmult(t[level], defect[level]);
-    solution[level] -= t[level];
+      // post-smoothing
+      (*smoother)[level]->step(solution[level], defect[level]);
+    }
 
 #if ENABLE_TIMING
     wall_time[level] += timer[level].wall_time();
@@ -203,14 +200,14 @@ private:
   SmartPointer<const MGCoarseGridBase<VectorType>> coarse;
 
   /**
-   * Object for grid tranfer.
+   * Object for grid transfer.
    */
   const MGTransferMF<VectorType> & transfer;
 
   /**
    * The smoothing object.
    */
-  SmartPointer<const MGLevelObject<std::shared_ptr<PreconditionerType>>> smooth;
+  SmartPointer<const MGLevelObject<std::shared_ptr<SmootherType>>> smoother;
 
   const unsigned int n_cycles;
 
