@@ -1,5 +1,5 @@
 /*
- * BlockJacobiSmoother.h
+ * jacobi_smoother.h
  *
  *  Created on: 2017 M03 8
  *      Author: fehn
@@ -90,14 +90,6 @@ public:
       preconditioner->update(underlying_operator);
   }
 
-  // same as step(), but sets dst-vector to zero
-  void
-  vmult(VectorType & dst, VectorType const & src) const
-  {
-    dst = 0;
-    step(dst, src);
-  }
-
   /*
    *  Approximately solve linear system of equations (b=src, x=dst)
    *
@@ -112,6 +104,34 @@ public:
    *    omega: damping factor
    *    P:     preconditioner
    */
+  void
+  vmult(VectorType & dst, VectorType const & src) const
+  {
+    dst = 0;
+
+    VectorType tmp(src), residual(src);
+
+    for(unsigned int k = 0; k < data.number_of_smoothing_steps; ++k)
+    {
+      if(k > 0)
+      {
+        // calculate residual r^{k} = src - A * x^{k}
+        underlying_operator->vmult(residual, dst);
+        residual.sadd(-1.0, 1.0, src);
+      }
+      else // we do not have to evaluate the residual for k=0 since dst = 0
+      {
+        residual = src;
+      }
+
+      // apply preconditioner: tmp = P^{-1} * residual
+      preconditioner->vmult(tmp, residual);
+
+      // x^{k+1} = x^{k} + damping_factor * tmp
+      dst.add(data.damping_factor, tmp);
+    }
+  }
+
   void
   step(VectorType & dst, VectorType const & src) const
   {

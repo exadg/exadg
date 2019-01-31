@@ -222,6 +222,8 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_solve_press
   VectorType &       dst,
   VectorType const & src) const
 {
+  // Check multigrid algorithm
+
   //  typedef float MultigridNumber;
   //  typedef MyMultigridPreconditionerLaplace<dim, Number,
   //      LaplaceOperator<dim, degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
@@ -232,6 +234,15 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_solve_press
   //  CheckMultigrid<dim,Number,LaplaceOperator<dim,degree_p, Number>,MULTIGRID>
   //    check_multigrid(this->laplace_operator,mg_preconditioner);
   //  check_multigrid.check();
+
+  // Use multigrid as a solver (use double precision here)
+
+//  typedef double MultigridNumber;
+//  typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
+//
+//  std::shared_ptr<MULTIGRID> mg_preconditioner
+//    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+//  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
   unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, false);
 

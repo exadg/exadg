@@ -86,7 +86,7 @@ public:
 
   template<class OtherVectorType>
   void
-  vmult(OtherVectorType & dst, const OtherVectorType & src) const
+  vmult(OtherVectorType & dst, OtherVectorType const & src) const
   {
 #if ENABLE_TIMING
     timer[maxlevel].restart();
@@ -94,8 +94,7 @@ public:
 
     for(unsigned int i = minlevel; i <= maxlevel; i++)
     {
-      defect[i]   = 0.0;
-      solution[i] = 0.0;
+      defect[i] = 0.0;
     }
     defect[maxlevel].copy_locally_owned_data_from(src);
 
@@ -103,7 +102,7 @@ public:
     wall_time[maxlevel] += timer[maxlevel].wall_time();
 #endif
 
-    v_cycle(maxlevel);
+    v_cycle(maxlevel, false);
 
 #if ENABLE_TIMING
     timer[maxlevel].restart();
@@ -116,12 +115,65 @@ public:
 #endif
   }
 
+  template<class OtherVectorType>
+  unsigned int
+  solve(OtherVectorType & dst, OtherVectorType const & src) const
+  {
+    defect[maxlevel] = 0.0;
+    defect[maxlevel].copy_locally_owned_data_from(src);
+
+    solution[maxlevel].copy_locally_owned_data_from(dst);
+
+    VectorType residual;
+    (*matrix)[maxlevel]->initialize_dof_vector(residual);
+
+    // calculate residual and check convergence
+    double const norm_r_0 = calculate_residual(residual);
+    double       norm_r   = norm_r_0;
+
+    int const    max_iter = 1000;
+    double const abstol   = 1.e-12;
+    double const reltol   = 1.e-6;
+
+    int  n_iter    = 0;
+    bool converged = norm_r_0 < abstol;
+    while(!converged)
+    {
+      for(unsigned int i = minlevel; i < maxlevel; i++)
+      {
+        defect[i] = 0.0;
+      }
+
+      v_cycle(maxlevel, true);
+
+      // calculate residual and check convergence
+      norm_r = calculate_residual(residual);
+      std::cout << "Norm of residual = " << norm_r << std::endl;
+      converged = (norm_r < abstol || norm_r / norm_r_0 < reltol || n_iter >= max_iter);
+
+      ++n_iter;
+    }
+
+    dst.copy_locally_owned_data_from(solution[maxlevel]);
+
+    return n_iter;
+  }
+
+  template<class OtherVectorType>
+  double
+  calculate_residual(OtherVectorType & residual) const
+  {
+    (*matrix)[maxlevel]->vmult(residual, solution[maxlevel]);
+    residual.sadd(-1.0, 1.0, defect[maxlevel]);
+    return residual.l2_norm();
+  }
+
 private:
   /**
    * Implements the V-cycle
    */
   void
-  v_cycle(const unsigned int level) const
+  v_cycle(unsigned int const level, bool const multigrid_is_a_solver) const
   {
 #if ENABLE_TIMING
     timer[level].restart();
@@ -135,7 +187,20 @@ private:
     else
     {
       // pre-smoothing
-      (*smoother)[level]->step(solution[level], defect[level]);
+      if(multigrid_is_a_solver)
+      {
+        // One has to take into account the initial guess of the solution when used as a solver
+        // and, therefore, call the function step().
+        (*smoother)[level]->step(solution[level], defect[level]);
+      }
+      else
+      {
+        // We can assume that solution[level] = 0 when used as a preconditioner
+        // and, therefore, call the function vmult(), which makes use of this assumption
+        // in order to apply optimizations (e.g., one does not need to evaluate the residual in
+        // the first iteration of the smoother).
+        (*smoother)[level]->vmult(solution[level], defect[level]);
+      }
       (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
       t[level].sadd(-1.0, 1.0, defect[level]);
 
@@ -143,7 +208,7 @@ private:
       transfer.restrict_and_add(level, defect[level - 1], t[level]);
 
       // coarse grid correction
-      v_cycle(level - 1);
+      v_cycle(level - 1, false);
 
       // prolongation
       transfer.prolongate(level, t[level], solution[level - 1]);
