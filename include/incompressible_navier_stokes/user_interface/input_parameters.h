@@ -550,7 +550,7 @@ public:
       if(use_scaling_continuity == true)
         AssertThrow(scaling_factor_continuity > 0.0, ExcMessage("Invalid parameter"));
 
-      if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
+      if(preconditioner_velocity_block == MomentumPreconditioner::Multigrid)
       {
         AssertThrow(multigrid_operator_type_velocity_block != MultigridOperatorType::Undefined,
                     ExcMessage("Parameter must be defined"));

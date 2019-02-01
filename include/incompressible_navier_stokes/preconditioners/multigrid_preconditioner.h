@@ -180,7 +180,9 @@ public:
     }
     else
     {
-      AssertThrow(false, ExcNotImplemented());
+      AssertThrow(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion ||
+                    mg_operator_type == MultigridOperatorType::ReactionDiffusion,
+                  ExcMessage("Multigrid operator type is invalid or not implemented."));
     }
 
     update_smoothers();
