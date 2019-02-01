@@ -1,5 +1,5 @@
 /*
- * BlockJacobiSmoother.h
+ * jacobi_smoother.h
  *
  *  Created on: 2017 M03 8
  *      Author: fehn
@@ -91,7 +91,7 @@ public:
   }
 
   /*
-   *  Approximately solve linear system of equations
+   *  Approximately solve linear system of equations (b=src, x=dst)
    *
    *    A*x = b   (r=b-A*x)
    *
@@ -107,25 +107,47 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const
   {
-    VectorType tmp(src), residual(src);
-
-    // residual = src - A * x^{0} =  src (since initial guess x^{0} = 0)
-    residual = src;
-
-    // set dst=0 since we want to add to the dst-vector: dst += ...
     dst = 0;
+
+    VectorType tmp(src), residual(src);
 
     for(unsigned int k = 0; k < data.number_of_smoothing_steps; ++k)
     {
+      if(k > 0)
+      {
+        // calculate residual r^{k} = src - A * x^{k}
+        underlying_operator->vmult(residual, dst);
+        residual.sadd(-1.0, 1.0, src);
+      }
+      else // we do not have to evaluate the residual for k=0 since dst = 0
+      {
+        residual = src;
+      }
+
       // apply preconditioner: tmp = P^{-1} * residual
       preconditioner->vmult(tmp, residual);
 
       // x^{k+1} = x^{k} + damping_factor * tmp
       dst.add(data.damping_factor, tmp);
+    }
+  }
 
-      // calculate new residual r^{k+1}
+  void
+  step(VectorType & dst, VectorType const & src) const
+  {
+    VectorType tmp(src), residual(src);
+
+    for(unsigned int k = 0; k < data.number_of_smoothing_steps; ++k)
+    {
+      // calculate residual r^{k} = src - A * x^{k}
       underlying_operator->vmult(residual, dst);
       residual.sadd(-1.0, 1.0, src);
+
+      // apply preconditioner: tmp = P^{-1} * residual
+      preconditioner->vmult(tmp, residual);
+
+      // x^{k+1} = x^{k} + damping_factor * tmp
+      dst.add(data.damping_factor, tmp);
     }
   }
 

@@ -77,6 +77,12 @@ public:
   void
   vmult(VectorType & dst, VectorType const & src) const;
 
+  /*
+   * Use multigrid as a solver.
+   */
+  unsigned int
+  solve(VectorType & dst, VectorType const & src) const;
+
   virtual void
   apply_smoother_on_fine_level(VectorTypeMG & dst, VectorTypeMG const & src) const;
 

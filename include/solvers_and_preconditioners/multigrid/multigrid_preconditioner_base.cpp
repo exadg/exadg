@@ -448,6 +448,14 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::vmult(VectorType &   
 }
 
 template<int dim, typename Number, typename MultigridNumber>
+unsigned int
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::solve(VectorType &       dst,
+                                                                 VectorType const & src) const
+{
+  return multigrid_preconditioner->solve(dst, src);
+}
+
+template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::apply_smoother_on_fine_level(
   VectorTypeMG &       dst,

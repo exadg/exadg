@@ -85,8 +85,16 @@ public:
       preconditioner->update(underlying_operator);
   }
 
+  // same as step(), but sets dst-vector to zero
   void
   vmult(VectorType & dst, VectorType const & src) const
+  {
+    dst = 0.0;
+    step(dst, src);
+  }
+
+  void
+  step(VectorType & dst, VectorType const & src) const
   {
     IterationNumberControl control(data.number_of_iterations, 1.e-20, 1.e-10);
 
@@ -94,7 +102,6 @@ public:
     additional_data.right_preconditioning = true;
     SolverGMRES<VectorType> solver(control, additional_data);
 
-    dst = 0.0;
     if(preconditioner != nullptr)
       solver.solve(*underlying_operator, dst, src, *preconditioner);
     else
