@@ -9,9 +9,7 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::CompatibleLaplaceOpe
   : data(nullptr),
     gradient_operator(nullptr),
     divergence_operator(nullptr),
-    inv_mass_matrix_operator(nullptr),
-    needs_mean_value_constraint(false),
-    apply_mean_value_constraint_in_matvec(false)
+    inv_mass_matrix_operator(nullptr)
 {
 }
 
@@ -21,7 +19,7 @@ void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::reinit(
   MatrixFree<dim, Number> const &                 data,
   AffineConstraints<double> const &               constraint_matrix,
-  CompatibleLaplaceOperatorData<dim> const &               operator_data)
+  CompatibleLaplaceOperatorData<dim> const &      operator_data)
 {
     (void) constraint_matrix;
 
@@ -47,78 +45,40 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::reinit(
                own_gradient_operator_storage,
                own_divergence_operator_storage,
                own_inv_mass_matrix_operator_storage);
-
-    // we do not need the mean value constraint for smoothers on the
-    // multigrid levels, so we can disable it
-    disable_mean_value_constraint();
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::
   initialize(
-    MatrixFree<dim, Number> const &                                                                   mf_data_in,
-    CompatibleLaplaceOperatorData<dim> const &                                                        compatible_laplace_operator_data_in,
+    MatrixFree<dim, Number> const &                             mf_data_in,
+    CompatibleLaplaceOperatorData<dim> const &                  operator_data_in,
     GradientOperator<dim, degree_u, degree_p, Number> const &   gradient_operator_in,
     DivergenceOperator<dim, degree_u, degree_p, Number> const & divergence_operator_in,
-    InverseMassMatrixOperator<dim, degree_u, Number> const &                                         inv_mass_matrix_operator_in)
+    InverseMassMatrixOperator<dim, degree_u, Number> const &    inv_mass_matrix_operator_in)
 {
   // copy parameters into element variables
   this->data                             = &mf_data_in;
-  this->compatible_laplace_operator_data = compatible_laplace_operator_data_in;
+  this->operator_data                    = operator_data_in;
   this->gradient_operator                = &gradient_operator_in;
   this->divergence_operator              = &divergence_operator_in;
   this->inv_mass_matrix_operator         = &inv_mass_matrix_operator_in;
 
-  
-  // initialize tmp_projection_vector vector
-  initialize_dof_vector_pressure(tmp_projection_vector);
-  
   // initialize tmp vector
   initialize_dof_vector_velocity(tmp);
-
-
-  // Check whether the Laplace matrix is singular when applied to a vector
-  // consisting of only ones (except for constrained entries)
-  VectorType in_vec, out_vec;
-  initialize_dof_vector(in_vec);
-  initialize_dof_vector(out_vec);
-  in_vec = 1;
-  vmult_add(out_vec, in_vec);
-  const double linfty_norm = out_vec.linfty_norm();
-
-  // since we cannot know the magnitude of the entries at this point (the
-  // diagonal entries would be a guideline but they are not available here),
-  // we instead multiply by a random vector
-  for(unsigned int i = 0; i < in_vec.local_size(); ++i)
-    in_vec.local_element(i) = (double)rand() / RAND_MAX;
-  vmult(out_vec, in_vec);
-  const double linfty_norm_compare = out_vec.linfty_norm();
-
-  // use mean value constraint if the infty norm with the one vector is very small
-  needs_mean_value_constraint =
-    linfty_norm / linfty_norm_compare < std::pow(std::numeric_limits<Number>::epsilon(), 2. / 3.);
-  apply_mean_value_constraint_in_matvec = needs_mean_value_constraint;
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
 bool
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::is_singular() const
 {
-  return needs_mean_value_constraint;
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::disable_mean_value_constraint()
-{
-  this->apply_mean_value_constraint_in_matvec = false;
+  return this->operator_data.operator_is_singular;
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult(VectorType &       dst,
-                                                                      VectorType const & src) const
+                                                                  VectorType const & src) const
 {
   dst = 0;
   vmult_add(dst, src);
@@ -127,7 +87,7 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult(VectorType &  
 template<int dim, int degree_u, int degree_p, typename Number>
 void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::Tvmult(VectorType &       dst,
-                                                                       VectorType const & src) const
+                                                                   VectorType const & src) const
 {
   vmult(dst, src);
 }
@@ -147,23 +107,12 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult_add(
   VectorType &       dst,
   VectorType const & src) const
 {
-  VectorType const * actual_src = &src;
-  if(apply_mean_value_constraint_in_matvec)
-  {
-    tmp_projection_vector = src;
-    set_zero_mean_value(tmp_projection_vector);
-    actual_src = &tmp_projection_vector;
-  }
-
   // compatible Laplace operator = B * M^{-1} * B^{T} = (-div) * M^{-1} * grad
-  gradient_operator->apply(tmp, *actual_src);
+  gradient_operator->apply(tmp, src);
   inv_mass_matrix_operator->apply(tmp, tmp);
   // NEGATIVE divergence operator
   tmp *= -1.0;
   divergence_operator->apply_add(dst, tmp);
-
-  if(apply_mean_value_constraint_in_matvec)
-    set_zero_mean_value(dst);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -188,20 +137,20 @@ template<int dim, int degree_u, int degree_p, typename Number>
 types::global_dof_index
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::m() const
 {
-  return data->get_vector_partitioner(compatible_laplace_operator_data.dof_index_pressure)->size();
+  return data->get_vector_partitioner(operator_data.dof_index_pressure)->size();
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
 types::global_dof_index
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::n() const
 {
-  return data->get_vector_partitioner(compatible_laplace_operator_data.dof_index_pressure)->size();
+  return data->get_vector_partitioner(operator_data.dof_index_pressure)->size();
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
 Number
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::el(const unsigned int,
-                                                                   const unsigned int) const
+                                                               const unsigned int) const
 {
   AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
   return Number();
@@ -219,6 +168,8 @@ void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::calculate_diagonal(
   VectorType & diagonal) const
 {
+  std::cout << "Calculation of diagonal for compatible Laplace operator ..." << std::flush;
+
   // naive implementation of calculation of diagonal (TODO)
   diagonal = 0.0;
   VectorType src(diagonal), dst(diagonal);
@@ -230,19 +181,7 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::calculate_diagonal(
     src.local_element(i)      = 0.0;
   }
 
-  if(apply_mean_value_constraint_in_matvec)
-  {
-    VectorType vec1;
-    vec1.reinit(diagonal, true);
-    for(unsigned int i = 0; i < vec1.local_size(); ++i)
-      vec1.local_element(i) = 1.;
-    VectorType d;
-    d.reinit(diagonal, true);
-    vmult(d, vec1);
-    double length = vec1 * vec1;
-    double factor = vec1 * d;
-    diagonal.add(-2. / length, d, factor / pow(length, 2.), vec1);
-  }
+  std::cout << " done." << std::endl;
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -268,7 +207,7 @@ void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::initialize_dof_vector_pressure(
   VectorType & vector) const
 {
-  data->initialize_dof_vector(vector, compatible_laplace_operator_data.dof_index_pressure);
+  data->initialize_dof_vector(vector, operator_data.dof_index_pressure);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -276,7 +215,7 @@ void
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::initialize_dof_vector_velocity(
   VectorType & vector) const
 {
-  data->initialize_dof_vector(vector, compatible_laplace_operator_data.dof_index_velocity);
+  data->initialize_dof_vector(vector, operator_data.dof_index_velocity);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -302,10 +241,10 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::update_inverse_block
 template<int dim, int degree_u, int degree_p, typename Number>
 PreconditionableOperator<dim, Number> *
 CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::get_new(unsigned int deg_p) const
-  {
-  const unsigned int offset = degree_u - degree_p;
-    
-  const unsigned int deg_u = deg_p+offset;
+{
+  unsigned int const offset = degree_u - degree_p;
+  unsigned int const deg_u = deg_p + offset;
+
   switch(deg_u)
   {
 #if DEGREE_1

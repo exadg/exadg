@@ -221,9 +221,6 @@ private:
   // preconditioner velocity/momentum block
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_momentum;
 
-  // required for multigrid (if multigrid is applied to HelmholtzOperator only)
-  MomentumOperatorData<dim> momentum_operator_data_multigrid;
-
   std::shared_ptr<IterativeSolverBase<VectorType>> solver_velocity_block;
 
   // preconditioner pressure/Schur-complement block
@@ -661,14 +658,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_inverse_negative_lap
     {
       tmp_projection_vector = src;
 
-      if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical &&
-         laplace_operator_classical->is_singular())
-      {
-        set_zero_mean_value(tmp_projection_vector);
-      }
-      else if(preconditioner_data.discretization_of_laplacian ==
-                DiscretizationOfLaplacian::Compatible &&
-              laplace_operator_compatible->is_singular())
+      if((preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Classical &&
+          laplace_operator_classical->is_singular()) ||
+         (preconditioner_data.discretization_of_laplacian ==
+            DiscretizationOfLaplacian::Compatible &&
+          laplace_operator_compatible->is_singular()))
       {
         set_zero_mean_value(tmp_projection_vector);
       }
@@ -914,10 +908,6 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
   if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Compatible)
   {
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
-    // use DGNavierStokesCoupled as underlying operator for multigrid applied to compatible
-    // Laplace operator
-    typedef PreconditionableOperator<dim, MultigridNumber>                      MG_BASE;
-    typedef CompatibleLaplaceOperator<dim, degree_u, degree_p, MultigridNumber> MG_OPERATOR;
 
     typedef CompatibleLaplaceMultigridPreconditioner<dim,
                                                      degree_u,
@@ -934,7 +924,8 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     auto compatible_laplace_operator_data =
       underlying_operator->get_compatible_laplace_operator_data();
 
-    auto &                               dof_handler = underlying_operator->get_dof_handler_p();
+    auto & dof_handler = underlying_operator->get_dof_handler_p();
+
     parallel::Triangulation<dim> const * tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
     const FiniteElement<dim> & fe = dof_handler.get_fe();
@@ -956,9 +947,6 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
 
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-    typedef PreconditionableOperator<dim, MultigridNumber>           MG_BASE;
-    typedef Poisson::LaplaceOperator<dim, degree_u, MultigridNumber> MG_OPERATOR;
-
     typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
 
     multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
@@ -966,8 +954,8 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
 
+    auto & dof_handler = underlying_operator->get_dof_handler_p();
 
-    auto &                               dof_handler = underlying_operator->get_dof_handler_p();
     parallel::Triangulation<dim> const * tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
     const FiniteElement<dim> & fe = dof_handler.get_fe();
@@ -1032,6 +1020,8 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
       underlying_operator->get_dof_index_velocity();
     compatible_laplace_operator_data.dof_index_pressure =
       underlying_operator->get_dof_index_pressure();
+    compatible_laplace_operator_data.operator_is_singular =
+      underlying_operator->param.pure_dirichlet_bc;
     compatible_laplace_operator_data.dof_handler_u = &underlying_operator->get_dof_handler_u();
     compatible_laplace_operator_data.gradient_operator_data =
       underlying_operator->get_gradient_operator_data();

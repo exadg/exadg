@@ -97,45 +97,29 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(
   VectorType &       dst,
   VectorType const & src) const
 {
-  VectorType const * actual_src = &src;
-  VectorType         tmp_projection_vector;
-  if(operator_is_singular() && !is_mg && is_dg)
-  {
-    tmp_projection_vector = src;
-    set_zero_mean_value(tmp_projection_vector);
-    actual_src = &tmp_projection_vector;
-  }
-
   if(is_dg && do_eval_faces)
   {
-    data->loop(&This::cell_loop,
-               &This::face_loop,
-               &This::boundary_face_loop_hom_operator,
-               this,
-               dst,
-               *actual_src);
+    data->loop(
+      &This::cell_loop, &This::face_loop, &This::boundary_face_loop_hom_operator, this, dst, src);
   }
   else
   {
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
-      constrained_values[i] =
-        std::pair<Number, Number>(actual_src->local_element(constrained_indices[i]),
-                                  dst.local_element(constrained_indices[i]));
-      const_cast<VectorType &>(*actual_src).local_element(constrained_indices[i]) = 0.;
+      constrained_values[i] = std::pair<Number, Number>(src.local_element(constrained_indices[i]),
+                                                        dst.local_element(constrained_indices[i]));
+
+      const_cast<VectorType &>(src).local_element(constrained_indices[i]) = 0.;
     }
-    data->cell_loop(&This::cell_loop, this, dst, *actual_src);
+    data->cell_loop(&This::cell_loop, this, dst, src);
     for(unsigned int i = 0; i < constrained_indices.size(); ++i)
     {
-      const_cast<VectorType &>(*actual_src).local_element(constrained_indices[i]) =
+      const_cast<VectorType &>(src).local_element(constrained_indices[i]) =
         constrained_values[i].first;
       dst.local_element(constrained_indices[i]) =
         constrained_values[i].second + constrained_values[i].first;
     }
   }
-
-  if(operator_is_singular() && !is_mg && is_dg)
-    set_zero_mean_value(dst);
 }
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
@@ -257,10 +241,6 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(
   // the cg case, so we have to sum them up
   if(!is_dg)
     diagonal.compress(VectorOperation::add);
-
-  // in case that the operator is singular, the diagonal has to be adjusted
-  if(operator_is_singular() && !is_mg)
-    adjust_diagonal_for_singular_operator(diagonal);
 
   // apply constraints in the case of cg
   if(!is_dg)
@@ -1589,22 +1569,6 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
 
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
-  adjust_diagonal_for_singular_operator(VectorType & diagonal) const
-{
-  VectorType vec1, d;
-  vec1.reinit(diagonal, true);
-  d.reinit(diagonal, true);
-  for(unsigned int i = 0; i < vec1.local_size(); ++i)
-    vec1.local_element(i) = 1.;
-  apply(d, vec1);
-  double length = vec1 * vec1;
-  double factor = vec1 * d;
-  diagonal.add(-2. / length, d, factor / pow(length, 2.), vec1);
-}
-
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
-void
 OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_constraint_diagonal(
   VectorType & diagonal) const
 {
@@ -1612,6 +1576,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_constraint_
   for(auto i : data->get_constrained_dofs())
     diagonal.local_element(i) = 1.0;
 }
+
 template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, degree, Number, AdditionalData, n_components>::verify_boundary_conditions(

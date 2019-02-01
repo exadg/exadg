@@ -286,6 +286,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::get_compatible_laplace_o
   CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
   comp_laplace_operator_data.dof_index_velocity       = this->get_dof_index_velocity();
   comp_laplace_operator_data.dof_index_pressure       = this->get_dof_index_pressure();
+  comp_laplace_operator_data.operator_is_singular     = this->param.pure_dirichlet_bc;
   comp_laplace_operator_data.dof_handler_u            = &this->get_dof_handler_u();
   comp_laplace_operator_data.gradient_operator_data   = this->get_gradient_operator_data();
   comp_laplace_operator_data.divergence_operator_data = this->get_divergence_operator_data();

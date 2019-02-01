@@ -22,12 +22,16 @@ template<int dim>
 struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
 {
   CompatibleLaplaceOperatorData()
-    : dof_index_velocity(0), dof_index_pressure(1), dof_handler_u(nullptr)
+    : dof_index_velocity(0),
+      dof_index_pressure(1),
+      operator_is_singular(false),
+      dof_handler_u(nullptr)
   {
   }
 
   unsigned int                dof_index_velocity;
   unsigned int                dof_index_pressure;
+  bool                        operator_is_singular;
   const DoFHandler<dim> *     dof_handler_u;
   GradientOperatorData<dim>   gradient_operator_data;
   DivergenceOperatorData<dim> divergence_operator_data;
@@ -43,6 +47,10 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   CompatibleLaplaceOperator();
+
+  virtual ~CompatibleLaplaceOperator()
+  {
+  }
 
   void
   initialize(MatrixFree<dim, Number> const &            mf_data_in,
@@ -198,9 +206,6 @@ public:
   bool
   is_singular() const;
 
-  void
-  disable_mean_value_constraint();
-
   // apply matrix vector multiplication
   void
   vmult(VectorType & dst, VectorType const & src) const;
@@ -263,14 +268,15 @@ public:
   get_new(unsigned int deg) const;
 
 private:
-  MatrixFree<dim, Number> const *                           data;
+  MatrixFree<dim, Number> const * data;
+
   GradientOperator<dim, degree_u, degree_p, Number> const * gradient_operator;
 
   DivergenceOperator<dim, degree_u, degree_p, Number> const * divergence_operator;
 
   InverseMassMatrixOperator<dim, degree_u, Number> const * inv_mass_matrix_operator;
 
-  CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
+  CompatibleLaplaceOperatorData<dim> operator_data;
 
   VectorType mutable tmp;
 
@@ -290,11 +296,6 @@ private:
   DivergenceOperator<dim, degree_u, degree_p, Number> own_divergence_operator_storage;
 
   InverseMassMatrixOperator<dim, degree_u, Number> own_inv_mass_matrix_operator_storage;
-
-  bool needs_mean_value_constraint;
-  bool apply_mean_value_constraint_in_matvec;
-
-  mutable VectorType tmp_projection_vector;
 };
 
 

@@ -190,6 +190,10 @@ public:
   get_new(unsigned int /*deg*/) const
   {
     AssertThrow(false, ExcMessage("Not implemented"));
+
+    // in order to avoid warnings ...
+    PreconditionableOperator<dim, Number> * ptr;
+    return ptr;
   }
 
   void
@@ -746,14 +750,6 @@ private:
                                              SparseMatrix const & /*src*/,
                                              Range const & /*range*/) const;
 #endif
-
-  /*
-   * For singular operators, a Krylov projection is applied onto the subspace of vectors with zero
-   * mean. This function calculates the diagonal for the projected system given the diagonal of the
-   * original system.
-   */
-  void
-  adjust_diagonal_for_singular_operator(VectorType & diagonal) const;
 
   /*
    * This function sets entries in the diagonal corresponding to constraint DoFs to one.
