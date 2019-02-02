@@ -1,7 +1,14 @@
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/timer.h>
+#include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/matrix_free.h>
 
+using namespace dealii;
+
+#include "../../../../include/functionalities/categorization.h"
 #include "operator_wrappers/comp_navier_stokes.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
@@ -27,7 +34,6 @@ const MPI_Comm comm = MPI_COMM_SELF;
 const MPI_Comm comm = MPI_COMM_WORLD;
 #  endif
 #endif
-using namespace dealii;
 
 
 template<int dim, int fe_degree, typename Function>
