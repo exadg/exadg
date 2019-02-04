@@ -43,14 +43,14 @@ public:
      * Constructor.
      */
     AdditionalData()
-      : preconditioner(PreconditionerJacobiSmoother::Undefined),
+      : preconditioner(PreconditionerSmoother::PointJacobi),
         number_of_smoothing_steps(5),
         damping_factor(1.0)
     {
     }
 
     // preconditioner
-    PreconditionerJacobiSmoother preconditioner;
+    PreconditionerSmoother preconditioner;
 
     // number of iterations per smoothing step
     unsigned int number_of_smoothing_steps;
@@ -66,18 +66,18 @@ public:
 
     data = additional_data_in;
 
-    if(data.preconditioner == PreconditionerJacobiSmoother::PointJacobi)
+    if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
       preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
     }
-    else if(data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi)
+    else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
       preconditioner = new BlockJacobiPreconditioner<Operator>(*underlying_operator);
     }
     else
     {
-      AssertThrow(data.preconditioner == PreconditionerJacobiSmoother::PointJacobi ||
-                    data.preconditioner == PreconditionerJacobiSmoother::BlockJacobi,
+      AssertThrow(data.preconditioner == PreconditionerSmoother::PointJacobi ||
+                    data.preconditioner == PreconditionerSmoother::BlockJacobi,
                   ExcMessage(
                     "Specified type of preconditioner for Jacobi smoother not implemented."));
     }

@@ -89,7 +89,7 @@ void InputParameters<dim>::set_input_parameters()
   start_with_low_order = true; // true; // false;
 
   // NUMERICAL PARAMETERS
-  implement_block_diagonal_preconditioner_matrix_free = true;
+  implement_block_diagonal_preconditioner_matrix_free = false;
   use_cell_based_face_loops = false;
 
   // SPATIAL DISCRETIZATION
@@ -131,8 +131,9 @@ void InputParameters<dim>::set_input_parameters()
   // pressure Poisson equation
   solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-//  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  multigrid_data_pressure_poisson.type = MultigridType::hMG;
+  multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
+  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
 
   // projection step
   solver_projection = SolverProjection::CG;
@@ -151,10 +152,9 @@ void InputParameters<dim>::set_input_parameters()
   solver_viscous = SolverViscous::CG;
   solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
-  multigrid_data_viscous.smoother = MultigridSmoother::Jacobi;
-  multigrid_data_viscous.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
-  multigrid_data_viscous.jacobi_smoother_data.damping_factor = 0.7;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Jacobi;
+  multigrid_data_viscous.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  multigrid_data_viscous.smoother_data.relaxation_factor = 0.7;
   update_preconditioner_viscous = false;
 
   // PRESSURE-CORRECTION SCHEME
@@ -171,8 +171,7 @@ void InputParameters<dim>::set_input_parameters()
   else
     solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
 
-  preconditioner_momentum = MomentumPreconditioner::Multigrid; //InverseMassMatrix;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   update_preconditioner_momentum = true;
 
   // formulation
@@ -195,12 +194,12 @@ void InputParameters<dim>::set_input_parameters()
 
   // preconditioner velocity/momentum block
   preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
-  multigrid_data_velocity_block.chebyshev_smoother_data.smoother_poly_degree = 5;
-  multigrid_data_velocity_block.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // preconditioner Schur-complement block
   preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion; //CahouetChabard;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  exact_inversion_of_laplace_operator = false;
+  solver_data_pressure_block = SolverData(1e4, 1.e-12, 1.e-6, 100);
 
 
   // OUTPUT AND POSTPROCESSING

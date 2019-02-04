@@ -1,5 +1,5 @@
 /*
- * MultigridInputParameters.h
+ * multigrid_input_parameters.h
  *
  *  Created on: Jun 20, 2016
  *      Author: fehn
@@ -8,25 +8,49 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 
+#include <string>
+
+// deal.II
+#include <deal.II/lac/trilinos_precondition.h>
+
+#include "../solvers/solver_data.h"
+
 #include "../../functionalities/print_functions.h"
-#include "../mg_coarse/mg_coarse_ml.h"
 
 enum class MultigridType
 {
+  Undefined,
   hMG,
   pMG,
   hpMG,
-  phMG,
-  undefined
+  phMG
 };
+
+std::string
+enum_to_string(MultigridType const enum_type);
+
 
 enum class PSequenceType
 {
-  GO_TO_ONE,
-  DECREASE_BY_ONE,
-  BISECTION,
-  MANUAL
+  GoToOne,
+  DecreaseByOne,
+  Bisect,
+  Manual
 };
+
+std::string
+enum_to_string(PSequenceType const enum_type);
+
+
+enum class DG_To_CG_Transfer
+{
+  None,
+  Fine,
+  Coarse
+};
+
+std::string
+enum_to_string(DG_To_CG_Transfer const enum_type);
 
 enum class MultigridSmoother
 {
@@ -37,236 +61,249 @@ enum class MultigridSmoother
   Jacobi
 };
 
-/*
- *  Multigrid coarse grid solver
- */
+std::string
+enum_to_string(MultigridSmoother const enum_type);
+
+
 enum class MultigridCoarseGridSolver
 {
   Chebyshev,
   ChebyshevNonsymmetricOperator,
-  PCG_NoPreconditioner,
-  PCG_PointJacobi,
-  PCG_BlockJacobi,
-  GMRES_NoPreconditioner,
-  GMRES_PointJacobi,
-  GMRES_BlockJacobi,
-  AMG_ML
+  CG,
+  GMRES,
+  AMG
 };
 
-struct ChebyshevSmootherData
+std::string
+enum_to_string(MultigridCoarseGridSolver const enum_type);
+
+
+enum class MultigridCoarseGridPreconditioner
 {
-  ChebyshevSmootherData()
-    : smoother_poly_degree(5), smoother_smoothing_range(20), eig_cg_n_iterations(20)
+  None,
+  PointJacobi,
+  BlockJacobi,
+  AMG
+};
+
+std::string
+enum_to_string(MultigridCoarseGridPreconditioner const enum_type);
+
+#ifndef DEAL_II_WITH_TRILINOS
+namespace dealii
+{
+namespace TrilinosWrappers
+{
+namespace PreconditionAMG
+{
+// copy of interface from deal.II (lac/trilinos_precondition.h)
+struct AdditionalData
+{
+  AdditionalData(
+    const bool                             elliptic              = true,
+    const bool                             higher_order_elements = false,
+    const unsigned int                     n_cycles              = 1,
+    const bool                             w_cyle                = false,
+    const double                           aggregation_threshold = 1e-4,
+    const std::vector<std::vector<bool>> & constant_modes   = std::vector<std::vector<bool>>(0),
+    const unsigned int                     smoother_sweeps  = 2,
+    const unsigned int                     smoother_overlap = 0,
+    const bool                             output_details   = false,
+    const char *                           smoother_type    = "Chebyshev",
+    const char *                           coarse_type      = "Amesos-KLU")
+    : elliptic(elliptic),
+      higher_order_elements(higher_order_elements),
+      n_cycles(n_cycles),
+      w_cycle(w_cycle),
+      aggregation_threshold(aggregation_threshold),
+      constant_modes(constant_modes),
+      smoother_sweeps(smoother_sweeps),
+      smoother_overlap(smoother_overlap),
+      output_details(output_details),
+      smoother_type(smooter_type),
+      coarse_type(coarse)
   {
   }
+
+  bool                           elliptic;
+  bool                           higher_order_elements;
+  unsigned int                   n_cycles;
+  bool                           w_cycle;
+  double                         aggregation_threshold;
+  std::vector<std::vector<bool>> constant_modes;
+  unsigned int                   smoother_sweeps;
+  unsigned int                   smoother_overlap;
+  bool                           output_details;
+  const char *                   smoother_type;
+  const char *                   coarse_type;
+};
+
+} // namespace PreconditionAMG
+} // namespace TrilinosWrappers
+} // namespace dealii
+#endif
+
+struct AMGData
+{
+  AMGData()
+  {
+    data.smoother_sweeps = 1;
+    data.n_cycles        = 1;
+    data.smoother_type   = "ILU";
+  };
 
   void
   print(ConditionalOStream & pcout)
   {
-    print_parameter(pcout, "Smoother polynomial degree", smoother_poly_degree);
-    print_parameter(pcout, "Smoothing range", smoother_smoothing_range);
-    print_parameter(pcout, "Iterations eigenvalue calculation", eig_cg_n_iterations);
+    print_parameter(pcout, "    Smoother sweeps", data.smoother_sweeps);
+    print_parameter(pcout, "    Number of cycles", data.n_cycles);
+    print_parameter(pcout, "    Smoother type", data.smoother_type);
   }
 
-  // Sets the polynomial degree of the Chebyshev smoother (Chebyshev accelerated Jacobi smoother)
-  double smoother_poly_degree;
-
-  // Sets the smoothing range of the Chebyshev smoother
-  double smoother_smoothing_range;
-
-  // number of CG iterations for estimation of eigenvalues
-  unsigned int eig_cg_n_iterations;
+  TrilinosWrappers::PreconditionAMG::AdditionalData data;
 };
 
-enum class PreconditionerGMRESSmoother
+enum class PreconditionerSmoother
 {
   None,
   PointJacobi,
   BlockJacobi
 };
 
-struct GMRESSmootherData
+std::string
+enum_to_string(PreconditionerSmoother const enum_type);
+
+struct SmootherData
 {
-  GMRESSmootherData() : preconditioner(PreconditionerGMRESSmoother::None), number_of_iterations(5)
-  {
-  }
-
-  void
-  print(ConditionalOStream & pcout)
-  {
-    std::string str_preconditioner[] = {"None", "PointJacobi", "BlockJacobi"};
-
-    print_parameter(pcout, "Preconditioner", str_preconditioner[(int)preconditioner]);
-    print_parameter(pcout, "Number of iterations", number_of_iterations);
-  }
-
-  // use Jacobi method as preconditioner
-  PreconditionerGMRESSmoother preconditioner;
-
-  // number of GMRES iterations per smoothing step
-  unsigned int number_of_iterations;
-};
-
-enum class PreconditionerCGSmoother
-{
-  None,
-  PointJacobi,
-  BlockJacobi
-};
-
-struct CGSmootherData
-{
-  CGSmootherData() : preconditioner(PreconditionerCGSmoother::None), number_of_iterations(5)
-  {
-  }
-
-  void
-  print(ConditionalOStream & pcout)
-  {
-    std::string str_preconditioner[] = {"None", "PointJacobi", "BlockJacobi"};
-
-    print_parameter(pcout, "Preconditioner", str_preconditioner[(int)preconditioner]);
-    print_parameter(pcout, "Number of iterations", number_of_iterations);
-  }
-
-  // use Jacobi method as preconditioner
-  PreconditionerCGSmoother preconditioner;
-
-  // number of GMRES iterations per smoothing step
-  unsigned int number_of_iterations;
-};
-
-enum class PreconditionerJacobiSmoother
-{
-  Undefined,
-  PointJacobi,
-  BlockJacobi
-};
-
-struct JacobiSmootherData
-{
-  JacobiSmootherData()
-    : preconditioner(PreconditionerJacobiSmoother::Undefined),
-      number_of_smoothing_steps(5),
-      damping_factor(1.0)
-  {
-  }
-
-  void
-  print(ConditionalOStream & pcout)
-  {
-    std::string str_preconditioner[] = {"Undefined", "PointJacobi", "BlockJacobi"};
-
-    print_parameter(pcout, "Preconditioner", str_preconditioner[(int)preconditioner]);
-    print_parameter(pcout, "Number of iterations", number_of_smoothing_steps);
-    print_parameter(pcout, "Damping factor", damping_factor);
-  }
-
-  // use Jacobi method as preconditioner
-  PreconditionerJacobiSmoother preconditioner;
-
-  // number of iterations per smoothing step
-  unsigned int number_of_smoothing_steps;
-
-  // damping factor
-  double damping_factor;
-};
-
-struct MultigridData
-{
-  MultigridData()
+  SmootherData()
     : smoother(MultigridSmoother::Chebyshev),
-      coarse_solver(MultigridCoarseGridSolver::Chebyshev),
-      type(MultigridType::hMG),
-      c_transfer_front(false),
-      c_transfer_back(false),
-      p_sequence(PSequenceType::BISECTION)
+      preconditioner(PreconditionerSmoother::PointJacobi),
+      iterations(5),
+      relaxation_factor(0.8),
+      smoothing_range(20),
+      iterations_eigenvalue_estimation(20)
   {
   }
 
   void
   print(ConditionalOStream & pcout)
   {
-    std::string str_smoother[] = {
-      "Chebyshev", "ChebyshevNonsymmetricOperator", "GMRES", "CG", "Jacobi"};
+    print_parameter(pcout, "Smoother", enum_to_string(smoother));
+    print_parameter(pcout, "Preconditioner smoother", enum_to_string(preconditioner));
+    print_parameter(pcout, "Iterations smoother", iterations);
 
-    print_parameter(pcout, "Multigrid smoother", str_smoother[(int)smoother]);
+    if(smoother == MultigridSmoother::Jacobi)
+    {
+      print_parameter(pcout, "Relaxation factor", relaxation_factor);
+    }
 
     if(smoother == MultigridSmoother::Chebyshev ||
        smoother == MultigridSmoother::ChebyshevNonsymmetricOperator)
     {
-      chebyshev_smoother_data.print(pcout);
-    }
-    else if(smoother == MultigridSmoother::GMRES)
-    {
-      gmres_smoother_data.print(pcout);
-    }
-    else if(smoother == MultigridSmoother::CG)
-    {
-      cg_smoother_data.print(pcout);
-    }
-    else if(smoother == MultigridSmoother::Jacobi)
-    {
-      jacobi_smoother_data.print(pcout);
-    }
-
-    std::string str_coarse_solver[] = {"Chebyshev",
-                                       "ChebyshevNonsymmetricOperator",
-                                       "PCG - no preconditioner",
-                                       "PCG - Point-Jacobi preconditioner",
-                                       "PCG - Block-Jacobi preconditioner",
-                                       "GMRES - No preconditioner",
-                                       "GMRES - Point-Jacobi preconditioner",
-                                       "GMRES - Block-Jacobi preconditioner",
-                                       "AMG - ML"};
-
-    print_parameter(pcout, "Multigrid coarse grid solver", str_coarse_solver[(int)coarse_solver]);
-
-    if(coarse_solver == MultigridCoarseGridSolver::AMG_ML)
-      coarse_ml_data.print(pcout);
-
-    std::string str_type[] = {"h-MG", "p-MG", "hp-MG", "ph-MG"};
-    print_parameter(pcout, "Multigrid type", str_type[(int)type]);
-
-    if(type != MultigridType::hMG) // i.e.: p-MG, ph-MG. hp-MG
-    {
-      std::string str_type[] = {"Go to one", "Decrease by one", "Bisect", "Manual"};
-      print_parameter(pcout, "Multigrid type", str_type[(int)p_sequence]);
+      print_parameter(pcout, "Smoothing range", smoothing_range);
+      print_parameter(pcout, "Iterations eigenvalue estimation", iterations_eigenvalue_estimation);
     }
   }
 
   // Type of smoother
   MultigridSmoother smoother;
 
-  // Chebyshev smoother (Chebyshev accelerated Jacobi smoother)
-  ChebyshevSmootherData chebyshev_smoother_data;
+  // Preconditioner used for smoother
+  PreconditionerSmoother preconditioner;
 
-  // GMRES smoother
-  GMRESSmootherData gmres_smoother_data;
+  // Number of iterations
+  unsigned int iterations;
 
-  // CG smoother
-  CGSmootherData cg_smoother_data;
+  // damping/relaxation factor for Jacobi smoother
+  double relaxation_factor;
 
-  // Jacobi smoother
-  JacobiSmootherData jacobi_smoother_data;
+  // Chebyshev smmother: sets the smoothing range (range of eigenvalues to be smoothed)
+  double smoothing_range;
 
-  // Sets the coarse grid solver
-  MultigridCoarseGridSolver coarse_solver;
+  // number of CG iterations for estimation of eigenvalues
+  unsigned int iterations_eigenvalue_estimation;
+};
+
+struct CoarseGridData
+{
+  CoarseGridData()
+    : solver(MultigridCoarseGridSolver::Chebyshev),
+      preconditioner(MultigridCoarseGridPreconditioner::PointJacobi),
+      solver_data(SolverData(1e4, 1.e-12, 1.e-3)),
+      amg_data(AMGData())
+  {
+  }
+
+  void
+  print(ConditionalOStream & pcout)
+  {
+    print_parameter(pcout, "Coarse grid solver", enum_to_string(solver));
+    print_parameter(pcout, "Coarse grid preconditioner", enum_to_string(preconditioner));
+
+    solver_data.print(pcout);
+
+    if(solver == MultigridCoarseGridSolver::AMG ||
+       preconditioner == MultigridCoarseGridPreconditioner::AMG)
+    {
+      amg_data.print(pcout);
+    }
+  }
+
+  // Coarse grid solver
+  MultigridCoarseGridSolver solver;
+
+  // Coarse grid preconditioner
+  MultigridCoarseGridPreconditioner preconditioner;
+
+  // Solver data for coarse grid solver
+  SolverData solver_data;
 
   // Configuration of AMG settings
-  MGCoarseMLData coarse_ml_data;
+  AMGData amg_data;
+};
+
+
+struct MultigridData
+{
+  MultigridData()
+    : type(MultigridType::hMG),
+      dg_to_cg_transfer(DG_To_CG_Transfer::None),
+      p_sequence(PSequenceType::Bisect),
+      smoother_data(SmootherData()),
+      coarse_problem(CoarseGridData())
+  {
+  }
+
+  void
+  print(ConditionalOStream & pcout)
+  {
+    print_parameter(pcout, "Multigrid type", enum_to_string(type));
+
+    print_parameter(pcout, "DG to CG transfer", enum_to_string(dg_to_cg_transfer));
+
+    if(type != MultigridType::hMG)
+    {
+      std::string str_type[] = {"Go to one", "Decrease by one", "Bisect", "Manual"};
+      print_parameter(pcout, "p-sequence", enum_to_string(p_sequence));
+    }
+
+    coarse_problem.print(pcout);
+  }
 
   // Multigrid type: p-MG vs. h-MG
   MultigridType type;
 
-  // transfer from discontinuous space (FE_DGQ) to continuous space (FE_Q) on the finest level
-  bool c_transfer_front;
-  
-  // ... on the coarsest level
-  bool c_transfer_back;
+  // Transfer from discontinuous space (FE_DGQ) to continuous space (FE_Q)
+  DG_To_CG_Transfer dg_to_cg_transfer;
 
-  // sequence of polynomial degrees during p-multigrid
+  // Sequence of polynomial degrees during p-multigrid
   PSequenceType p_sequence;
+
+  // Smoother data
+  SmootherData smoother_data;
+
+  // Coarse grid problem
+  CoarseGridData coarse_problem;
 };
 
 

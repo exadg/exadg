@@ -45,12 +45,12 @@ public:
     /**
      * Constructor.
      */
-    AdditionalData() : preconditioner(PreconditionerCGSmoother::None), number_of_iterations(5)
+    AdditionalData() : preconditioner(PreconditionerSmoother::None), number_of_iterations(5)
     {
     }
 
     // preconditioner
-    PreconditionerCGSmoother preconditioner;
+    PreconditionerSmoother preconditioner;
 
     // number of CG iterations per smoothing step
     unsigned int number_of_iterations;
@@ -62,17 +62,17 @@ public:
     underlying_operator = &operator_in;
     data                = additional_data_in;
 
-    if(data.preconditioner == PreconditionerCGSmoother::PointJacobi)
+    if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
       preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
     }
-    else if(data.preconditioner == PreconditionerCGSmoother::BlockJacobi)
+    else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
       preconditioner = new BlockJacobiPreconditioner<Operator>(*underlying_operator);
     }
     else
     {
-      AssertThrow(data.preconditioner == PreconditionerCGSmoother::None,
+      AssertThrow(data.preconditioner == PreconditionerSmoother::None,
                   ExcMessage("Specified preconditioner not implemented for CG smoother"));
     }
   }

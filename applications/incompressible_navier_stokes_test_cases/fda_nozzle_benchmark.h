@@ -355,8 +355,8 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   {
     solver_pressure_poisson = SolverPressurePoisson::FGMRES;
     preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-    multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev;
-    multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::PCG_PointJacobi;
+    multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
+    multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   }
 
   // projection step
@@ -423,8 +423,8 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 
   // Chebyshev moother
-  multigrid_data_pressure_block.smoother = MultigridSmoother::Chebyshev;
-  multigrid_data_pressure_block.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+  multigrid_data_pressure_block.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
 
 
   // OUTPUT AND POSTPROCESSING

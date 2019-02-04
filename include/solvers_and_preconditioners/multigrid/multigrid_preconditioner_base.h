@@ -56,8 +56,8 @@ public:
 
   void
   initialize(MultigridData const &                     mg_data,
-             const parallel::Triangulation<dim> *      tria,
-             const FiniteElement<dim> &                fe,
+             parallel::Triangulation<dim> const *      tria,
+             FiniteElement<dim> const &                fe,
              Mapping<dim> const &                      mapping,
              PreconditionableOperatorData<dim> const & operator_data,
              Map const *                               dirichlet_bc = nullptr,
@@ -66,7 +66,7 @@ public:
 
   /*
    * Update of multigrid preconditioner including mg_matrices, smoothers, etc. (e.g. for problems
-   * time-dependent coefficients).
+   * with time-dependent coefficients).
    */
   virtual void
   update(LinearOperatorBase const * /*linear_operator*/);
@@ -108,7 +108,7 @@ private:
                          std::vector<MGDofHandlerIdentifier> & p_levels,
                          unsigned int const                    degree,
                          MultigridType const                   mg_type,
-                         const bool                            is_dg);
+                         bool const                            is_dg);
 
   void
   check_mg_sequence(std::vector<MGLevelInfo> const & global_levels);
@@ -180,13 +180,14 @@ private:
    * Coarse grid solver.
    */
   void
-  initialize_coarse_solver(unsigned int const coarse_level);
+  initialize_coarse_solver();
 
   void
-  initialize_chebyshev_smoother_coarse_grid(Operator & matrix);
+  initialize_chebyshev_smoother_coarse_grid(Operator & matrix, SolverData const & solver_data);
 
   void
-  initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(Operator & matrix);
+  initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(Operator &         matrix,
+                                                                  SolverData const & solver_data);
 
   virtual void
   initialize_multigrid_preconditioner();

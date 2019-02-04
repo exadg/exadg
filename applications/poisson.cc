@@ -50,10 +50,10 @@ class PoissonProblem
 public:
   typedef double value_type;
   PoissonProblem(const unsigned int n_refine_space,
-                 PSequenceType      psqeuence = PSequenceType::MANUAL,
+                 PSequenceType      psqeuence = PSequenceType::Manual,
                  bool               use_amg   = true,
                  bool               use_dg    = true,
-                 MultigridType      mg_type   = MultigridType::undefined,
+                 MultigridType      mg_type   = MultigridType::Undefined,
                  bool               use_aux   = true,
                  bool               use_pcg   = true);
 
@@ -131,7 +131,7 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
                                                        bool               use_dg,
                                                        MultigridType      mg_type,
                                                        bool               use_aux,
-                                                       bool               use_pcg)
+                                                       bool /*use_pcg*/)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     triangulation(MPI_COMM_WORLD,
                   dealii::Triangulation<dim>::none,
@@ -146,20 +146,22 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
   else
     param.spatial_discretization = SpatialDiscretization::CG;
 
-  if(mg_type != MultigridType::undefined)
+  if(mg_type != MultigridType::Undefined)
     param.multigrid_data.type = mg_type;
 
-  param.multigrid_data.c_transfer_back                              = use_aux;
-  param.multigrid_data.coarse_ml_data.use_conjugate_gradient_solver = use_pcg;
+  if(use_aux)
+    param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Coarse;
+  // TODO
+  //  param.multigrid_data.coarse_ml_data.use_conjugate_gradient_solver = use_pcg;
 
   if(use_amg)
-    param.multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML; // GMRES_PointJacobi;
+    param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::AMG;
   else
   {
-    param.multigrid_data.coarse_solver   = MultigridCoarseGridSolver::Chebyshev;
-    param.multigrid_data.c_transfer_back = false;
+    param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
+    param.multigrid_data.dg_to_cg_transfer     = DG_To_CG_Transfer::None;
   }
-  if(!(psqeuence == PSequenceType::MANUAL))
+  if(!(psqeuence == PSequenceType::Manual))
     param.multigrid_data.p_sequence = psqeuence;
   param.check_input_parameters();
 
@@ -299,8 +301,8 @@ struct DataC
       norm_dg(false),
       use_amg(true),
       refinements_provided(false),
-      sequence(PSequenceType::MANUAL),
-      mg_type(MultigridType::undefined),
+      sequence(PSequenceType::Manual),
+      mg_type(MultigridType::Undefined),
       use_aux(true),
       use_pcg(true)
   {
@@ -540,11 +542,11 @@ main(int argc, char ** argv)
         {
           unsigned int temp = atoi(argv[argp++]);
           if(temp == 1)
-            d.sequence = PSequenceType::GO_TO_ONE;
+            d.sequence = PSequenceType::GoToOne;
           else if(temp == 2)
-            d.sequence = PSequenceType::DECREASE_BY_ONE;
+            d.sequence = PSequenceType::DecreaseByOne;
           else if(temp == 3)
-            d.sequence = PSequenceType::BISECTION;
+            d.sequence = PSequenceType::Bisect;
         }
         if(type == "--norm-dg")
         {
