@@ -16,10 +16,10 @@ SET( SOURCE_FILES
      transfer/p-transfer-2
      transfer/p-transfer-3
      transfer/p-transfer-4
-     #performance/operators
+     performance/operators
      performance/distance_computer
-     #performance/laplace
-     #performance/stream
+     performance/laplace
+     performance/stream
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
