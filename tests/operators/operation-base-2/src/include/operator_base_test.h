@@ -107,6 +107,8 @@ public:
       // print l2-norms
       print_l2(convergence_table, vec_diag, vec_diag_sm, "(D)_L2", "(D-D(S))_L2");
     }
+#else
+    (void)do_sm_vs_d;
 #endif
 
     if(do_mf_vs_d)
@@ -155,6 +157,8 @@ public:
       // print l2-norms
       print_l2(convergence_table, vec_dst_sm, vec_dst_mf, "(S*v)_L2", "(S*v-F*v)_L2");
     }
+#else
+    (void)do_sm_vs_mf;
 #endif
 
     // TODO: Block-Jacobi currently not working
