@@ -81,7 +81,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
   preconditioner = Preconditioner::Multigrid; //BlockJacobi;
   mg_operator_type = MultigridOperatorType::ReactionDiffusion;
-  multigrid_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
+  multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
 
   update_preconditioner = false;
 

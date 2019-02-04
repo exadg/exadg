@@ -220,9 +220,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   solver_pressure_poisson = SolverPressurePoisson::CG;
   solver_data_pressure_poisson = SolverData(1e4, 1.e-12, 1.e-6, 100);
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.smoother = MultigridSmoother::Chebyshev; //Chebyshev; //Jacobi; //GMRES;
-  //Chebyshev
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // projection step
   solver_projection = SolverProjection::CG;
@@ -281,10 +278,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   // preconditioner Schur-complement block
   preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-
-  // Chebyshev moother
-  multigrid_data_pressure_block.smoother = MultigridSmoother::Chebyshev;
-  multigrid_data_pressure_block.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // OUTPUT AND POSTPROCESSING
   if(domain_id == 1)

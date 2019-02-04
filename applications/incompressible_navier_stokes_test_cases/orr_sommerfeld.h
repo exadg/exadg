@@ -128,7 +128,6 @@ void InputParameters<dim>::set_input_parameters()
   solver_pressure_poisson = SolverPressurePoisson::CG;
   solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // projection step
   solver_projection = SolverProjection::CG;
@@ -144,7 +143,6 @@ void InputParameters<dim>::set_input_parameters()
   solver_viscous = SolverViscous::CG;
   solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
   preconditioner_viscous = PreconditionerViscous::Multigrid;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // PRESSURE-CORRECTION SCHEME
 
@@ -157,7 +155,6 @@ void InputParameters<dim>::set_input_parameters()
   solver_momentum = SolverMomentum::GMRES;
   solver_data_momentum = SolverData(1e4, 1.e-20, 1.e-6, 100);
   preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   update_preconditioner_momentum = false;
 
   // formulation
@@ -179,26 +176,16 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner_coupled = true;
 
   // preconditioner velocity/momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
-  multigrid_data_velocity_block.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
-
-  // GMRES smoother data
-  multigrid_data_velocity_block.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data_velocity_block.gmres_smoother_data.number_of_iterations = 5;
-
-  // Jacobi smoother data
-  multigrid_data_velocity_block.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data_velocity_block.jacobi_smoother_data.number_of_smoothing_steps = 5;
-  multigrid_data_velocity_block.jacobi_smoother_data.damping_factor = 0.7;
-
-  multigrid_data_velocity_block.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //NoPreconditioner; //Chebyshev;
+  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix; //Multigrid;
+  multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
+  multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  multigrid_data_velocity_block.smoother_data.iterations = 5;
+  multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
+  multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
   // preconditioner Schur-complement block
   preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-  multigrid_data_pressure_block.chebyshev_smoother_data.smoother_poly_degree = 5;
-  multigrid_data_pressure_block.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-
 
   // OUTPUT AND POSTPROCESSING
 
