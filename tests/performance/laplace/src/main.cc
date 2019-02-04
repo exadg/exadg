@@ -38,6 +38,8 @@ repeat(ConvergenceTable & convergence_table, std::string label, bool curv, Funct
   std::string likwid_label = label + "-" + std::to_string(dim) +
                              (curv ? std::string("-curv-") : std::string("-cart-")) +
                              std::to_string(fe_degree);
+#else
+  (void)curv;
 #endif
   for(int i = 0; i < best_of; i++)
   {

@@ -14,7 +14,13 @@ DEAL_II_SETUP_TARGET("performance-operators")
 
 
 # load likwid
-add_definitions(-DLIKWID_PERFMON)
-include_directories("$ENV{LIKWID_BASE}/include")
 FIND_LIBRARY(LIKWID likwid HINTS "$ENV{LIKWID_BASE}/lib")
-TARGET_LINK_LIBRARIES("performance-operators" ${LIKWID})
+
+IF(NOT LIKWID)
+    MESSAGE("performance-operators is compiled without LIKWID!")
+ELSE()
+    MESSAGE("performance-operators is compiled with LIKWID!")
+    add_definitions(-DLIKWID_PERFMON)
+    include_directories("$ENV{LIKWID_BASE}/include")
+    TARGET_LINK_LIBRARIES("performance-operators" ${LIKWID})
+ENDIF()

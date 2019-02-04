@@ -22,13 +22,13 @@ const int      best_of = 10;
 typedef double Number;
 
 #ifdef CORE
-    const MPI_Comm comm = MPI_COMM_SELF;
+const MPI_Comm comm = MPI_COMM_SELF;
 #else
-    #ifdef SELF
-        const MPI_Comm comm = MPI_COMM_SELF;
-    #else
-        const MPI_Comm comm = MPI_COMM_WORLD;
-    #endif
+#  ifdef SELF
+const MPI_Comm comm = MPI_COMM_SELF;
+#  else
+const MPI_Comm comm = MPI_COMM_WORLD;
+#  endif
 #endif
 using namespace dealii;
 
@@ -40,7 +40,11 @@ repeat(ConvergenceTable & convergence_table, std::string label, bool curv, Funct
   Timer  time;
   double min_time = std::numeric_limits<double>::max();
 #ifdef LIKWID_PERFMON
-  std::string likwid_label = label + "-" + std::to_string(dim) +  (curv ? std::string("-curv-") : std::string("-cart-")) + std::to_string(fe_degree);
+  std::string likwid_label = label + "-" + std::to_string(dim) +
+                             (curv ? std::string("-curv-") : std::string("-cart-")) +
+                             std::to_string(fe_degree);
+#else
+  (void)curv;
 #endif
   for(int i = 0; i < best_of; i++)
   {
@@ -98,35 +102,36 @@ public:
       periodic_faces;
     GridTools::collect_periodic_faces(triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
     GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
-    if(dim==3)
+    if(dim == 3)
       GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
     triangulation.add_periodicity(periodic_faces);
-    
-    
-    const double deformation = +0.1;
-    const double frequnency  = +2.0;
+
+
+    const double                     deformation = +0.1;
+    const double                     frequnency  = +2.0;
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
-    if(curv){
-        triangulation.set_all_manifold_ids(1);
-        triangulation.set_manifold(1, manifold);
+    if(curv)
+    {
+      triangulation.set_all_manifold_ids(1);
+      triangulation.set_manifold(1, manifold);
     }
-        
+
 
     int procs;
     MPI_Comm_size(MPI_COMM_WORLD, &procs);
-    int dofs = dim==2 ? 5e7 : 2e7;
-    if (comm==MPI_COMM_SELF)
-        dofs /= procs;
+    int dofs = dim == 2 ? 5e7 : 2e7;
+    if(comm == MPI_COMM_SELF)
+      dofs /= procs;
     int ref = log(std::pow(dofs, 1.0 / dim) / (fe_degree + 1)) / log(2);
-    
+
 #ifdef CORE
     ref = 1;
 #endif
-    
+
     triangulation.refine_global(ref);
 
     convergence_table.add_value("procs", procs);
-    convergence_table.add_value("self", MPI_COMM_SELF==comm);
+    convergence_table.add_value("self", MPI_COMM_SELF == comm);
     convergence_table.add_value("dim", dim);
     convergence_table.add_value("curv", curv);
     convergence_table.add_value("deg", fe_degree);
@@ -187,27 +192,29 @@ public:
     {
       CompNS::CombinedWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
         triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-comp-comb", curv, [&]() mutable { 
+      repeat<dim, fe_degree>(convergence_table, "ns-comp-comb", curv, [&]() mutable {
 #ifdef CORE
-          for(int i = 0; i < 100; i++)
+        for(int i = 0; i < 100; i++)
 #endif
-          ns.run(); 
+          ns.run();
       });
     }
 
-  /*
-    {
-      CompNS::ConvectiveWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
-        triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-comp-conv", curv, [&]() mutable { ns.run(); });
-    }
+    /*
+      {
+        CompNS::ConvectiveWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
+          triangulation);
+        repeat<dim, fe_degree>(convergence_table, "ns-comp-conv", curv, [&]() mutable { ns.run();
+      });
+      }
 
-    {
-      CompNS::ViscousWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
-        triangulation);
-      repeat<dim, fe_degree>(convergence_table, "ns-comp-visc", curv, [&]() mutable { ns.run(); });
-    }
-   */
+      {
+        CompNS::ViscousWrapper<dim, fe_degree, fe_degree + 1, fe_degree + 1, Number> ns(
+          triangulation);
+        repeat<dim, fe_degree>(convergence_table, "ns-comp-visc", curv, [&]() mutable { ns.run();
+      });
+      }
+     */
   }
 };
 
@@ -219,15 +226,15 @@ run(bool curv, MPI_Comm comm)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   ConvergenceTable convergence_table;
-  Run<dim,  1>::run(convergence_table, curv, comm);
-  Run<dim,  2>::run(convergence_table, curv, comm);
-  Run<dim,  3>::run(convergence_table, curv, comm);
-  Run<dim,  4>::run(convergence_table, curv, comm);
-  Run<dim,  5>::run(convergence_table, curv, comm);
-  Run<dim,  6>::run(convergence_table, curv, comm);
-  Run<dim,  7>::run(convergence_table, curv, comm);
-  Run<dim,  8>::run(convergence_table, curv, comm);
-  Run<dim,  9>::run(convergence_table, curv, comm);
+  Run<dim, 1>::run(convergence_table, curv, comm);
+  Run<dim, 2>::run(convergence_table, curv, comm);
+  Run<dim, 3>::run(convergence_table, curv, comm);
+  Run<dim, 4>::run(convergence_table, curv, comm);
+  Run<dim, 5>::run(convergence_table, curv, comm);
+  Run<dim, 6>::run(convergence_table, curv, comm);
+  Run<dim, 7>::run(convergence_table, curv, comm);
+  Run<dim, 8>::run(convergence_table, curv, comm);
+  Run<dim, 9>::run(convergence_table, curv, comm);
   Run<dim, 10>::run(convergence_table, curv, comm);
   Run<dim, 11>::run(convergence_table, curv, comm);
   Run<dim, 12>::run(convergence_table, curv, comm);
@@ -237,12 +244,13 @@ run(bool curv, MPI_Comm comm)
 
   if(!rank)
   {
-     std::string   file_name = "out." + (curv ? std::string("curv.") : std::string("cart.")) + std::to_string(dim) + ".csv";
-     std::ofstream outfile;
-     outfile.open(file_name.c_str());
+    std::string file_name =
+      "out." + (curv ? std::string("curv.") : std::string("cart.")) + std::to_string(dim) + ".csv";
+    std::ofstream outfile;
+    outfile.open(file_name.c_str());
     convergence_table.write_text(std::cout);
-     convergence_table.write_text(outfile);
-     outfile.close();
+    convergence_table.write_text(outfile);
+    outfile.close();
   }
 }
 
@@ -263,9 +271,9 @@ main(int argc, char ** argv)
 #endif
 
   run<2>(false, comm);
-  run<2>(true , comm);
+  run<2>(true, comm);
   run<3>(false, comm);
-  run<3>(true , comm);
+  run<3>(true, comm);
 
 #ifdef LIKWID_PERFMON
   LIKWID_MARKER_CLOSE;
