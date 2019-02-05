@@ -1,5 +1,5 @@
 /*
- * PreconditionerBase.h
+ * preconditioner_base.h
  *
  *  Created on: Nov 23, 2016
  *      Author: fehn
@@ -12,7 +12,7 @@ using namespace dealii;
 
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../../operators/operator_preconditionable.h"
+#include "../../operators/linear_operator_base.h"
 
 template<typename value_type>
 class PreconditionerBase

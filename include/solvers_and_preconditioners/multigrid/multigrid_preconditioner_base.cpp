@@ -12,7 +12,7 @@
 #include "../transfer/mg_transfer_mf_h.h"
 #include "../transfer/mg_transfer_mf_p.h"
 
-#include "../mg_coarse/mg_coarse_ml.h"
+#include "../preconditioner/preconditioner_amg.h"
 
 #include "../../functionalities/categorization.h"
 #include "../../functionalities/constraints.h"
@@ -35,8 +35,8 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   MultigridData const &                     mg_data,
-  const parallel::Triangulation<dim> *      tria,
-  const FiniteElement<dim> &                fe,
+  parallel::Triangulation<dim> const *      tria,
+  FiniteElement<dim> const &                fe,
   Mapping<dim> const &                      mapping,
   PreconditionableOperatorData<dim> const & operator_data,
   Map const *                               dirichlet_bc_in,
@@ -45,12 +45,14 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 {
   this->mg_data = mg_data;
 
-  if((/*is_cg ||*/ mg_data.coarse_solver == MultigridCoarseGridSolver::AMG_ML) &&
+  if((/*is_cg ||*/ mg_data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
      ((dirichlet_bc_in == nullptr) || (dirichlet_bc_in == nullptr)))
+  {
     AssertThrow(
-      mg_data.coarse_solver != MultigridCoarseGridSolver::AMG_ML,
+      mg_data.coarse_problem.solver != MultigridCoarseGridSolver::AMG,
       ExcMessage(
         "You have to provide Dirichlet BCs and periodic face pairs if you want to use CG or AMG!"));
+  }
 
   // in the case of nullptr initialize empty data structures
   Map dirichlet_bc;
@@ -65,9 +67,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   // dereference points
 
   // extract paramters
-  const auto   mg_type = this->mg_data.type;
+  auto const   mg_type = this->mg_data.type;
   unsigned int degree  = fe.degree;
-  const bool   is_dg   = fe.dofs_per_vertex == 0;
+  bool const   is_dg   = fe.dofs_per_vertex == 0;
 
   // setup sequence
   this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type, is_dg);
@@ -77,8 +79,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->max_level       = this->n_global_levels - 1;
 
   // setup of multigrid components
-
-
   this->initialize_mg_dof_handler_and_constraints(underlying_operator->is_singular(),
                                                   periodic_face_pairs,
                                                   fe,
@@ -102,7 +102,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->initialize_matrixfree(global_levels, mapping, operator_data);
   this->initialize_mg_matrices(global_levels, operator_data);
   this->initialize_smoothers();
-  this->initialize_coarse_solver(global_levels[0].level);
+  this->initialize_coarse_solver();
   this->mg_transfer.template reinit<MultigridNumber>(mg_matrixfree,
                                                      mg_constraints,
                                                      mg_constrained_dofs);
@@ -147,13 +147,13 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequence(
-  const parallel::Triangulation<dim> *  tria,
+  parallel::Triangulation<dim> const *  tria,
   std::vector<MGLevelInfo> &            global_levels,
   std::vector<unsigned int> &           h_levels,
   std::vector<MGDofHandlerIdentifier> & p_levels,
-  unsigned int                          degree,
-  MultigridType                         mg_type,
-  const bool                            is_dg)
+  unsigned int const                    degree,
+  MultigridType const                   mg_type,
+  bool const                            is_dg)
 {
   // setup h-levels
   if(mg_type == MultigridType::pMG) // p-MG is only working on the finest h-level
@@ -180,10 +180,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
       switch(this->mg_data.p_sequence)
       {
           // clang-format off
-        case PSequenceType::GO_TO_ONE:       temp = 1;                                                break;
-        case PSequenceType::DECREASE_BY_ONE: temp = std::max(temp-1, 1u);                             break;
-        case PSequenceType::BISECTION:       temp = std::max(temp/2, 1u);                             break;
-        case PSequenceType::MANUAL:          temp = (degree==3&&temp==3) ? 2 : std::max(degree/2, 1u);break;
+        case PSequenceType::GoToOne:       temp = 1;                                                break;
+        case PSequenceType::DecreaseByOne: temp = std::max(temp-1, 1u);                             break;
+        case PSequenceType::Bisect:        temp = std::max(temp/2, 1u);                             break;
+        case PSequenceType::Manual:        temp = (degree==3&&temp==3) ? 2 : std::max(degree/2, 1u);break;
         default:
           AssertThrow(false, ExcMessage("No valid p-sequence selected!"));
           // clang-format on
@@ -192,13 +192,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
     std::reverse(std::begin(p_levels), std::end(p_levels));
   }
 
-  AssertThrow(!(mg_data.c_transfer_front && mg_data.c_transfer_back),
-              ExcMessage("You can only use c_transfer once!"));
-
-  if(mg_data.c_transfer_back && is_dg)
+  if(mg_data.dg_to_cg_transfer == DG_To_CG_Transfer::Coarse && is_dg)
     p_levels.insert(p_levels.begin(), {p_levels.front().degree, false});
 
-  if(mg_data.c_transfer_front && is_dg)
+  if(mg_data.dg_to_cg_transfer == DG_To_CG_Transfer::Fine && is_dg)
   {
     for(auto & i : p_levels)
       i.is_dg = false;
@@ -208,8 +205,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
   // setup global-levels
   if(mg_type == MultigridType::pMG || mg_type == MultigridType::phMG)
   {
-    // top level: p-gmg
-    if(mg_type == MultigridType::phMG) // low level: h-gmg
+    // top level: p-MG
+    if(mg_type == MultigridType::phMG) // low level: h-MG
       for(unsigned int i = 0; i < h_levels.size() - 1; i++)
         global_levels.push_back({h_levels[i], p_levels.front()});
     for(auto deg : p_levels)
@@ -217,8 +214,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
   }
   else if(mg_type == MultigridType::hMG || mg_type == MultigridType::hpMG)
   {
-    // top level: h-gmg
-    if(mg_type == MultigridType::hpMG) // low level: p-gmg
+    // top level: h-MG
+    if(mg_type == MultigridType::hpMG) // low level: p-MG
       for(unsigned int i = 0; i < p_levels.size() - 1; i++)
         global_levels.push_back({h_levels.front(), p_levels[i]});
     for(auto geo : h_levels)
@@ -464,6 +461,77 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::apply_smoother_on_fin
   this->mg_smoother[this->mg_smoother.max_level()]->vmult(dst, src);
 }
 
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(Operator &   matrix,
+                                                                               unsigned int level)
+{
+  AssertThrow(level > 0,
+              ExcMessage("Multigrid level is invalid when initializing multigrid smoother!"));
+
+  switch(mg_data.smoother_data.smoother)
+  {
+    case MultigridSmoother::Chebyshev:
+    {
+      mg_smoother[level].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
+      initialize_chebyshev_smoother(matrix, level);
+      break;
+    }
+    case MultigridSmoother::ChebyshevNonsymmetricOperator:
+    {
+      mg_smoother[level].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
+      initialize_chebyshev_smoother_nonsymmetric_operator(matrix, level);
+      break;
+    }
+    case MultigridSmoother::GMRES:
+    {
+      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES_SMOOTHER;
+      mg_smoother[level].reset(new GMRES_SMOOTHER());
+
+      typename GMRES_SMOOTHER::AdditionalData smoother_data;
+      smoother_data.preconditioner       = mg_data.smoother_data.preconditioner;
+      smoother_data.number_of_iterations = mg_data.smoother_data.iterations;
+
+      std::shared_ptr<GMRES_SMOOTHER> smoother =
+        std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
+      smoother->initialize(matrix, smoother_data);
+      break;
+    }
+    case MultigridSmoother::CG:
+    {
+      typedef CGSmoother<Operator, VectorTypeMG> CG_SMOOTHER;
+      mg_smoother[level].reset(new CG_SMOOTHER());
+
+      typename CG_SMOOTHER::AdditionalData smoother_data;
+      smoother_data.preconditioner       = mg_data.smoother_data.preconditioner;
+      smoother_data.number_of_iterations = mg_data.smoother_data.iterations;
+
+      std::shared_ptr<CG_SMOOTHER> smoother =
+        std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
+      smoother->initialize(matrix, smoother_data);
+      break;
+    }
+    case MultigridSmoother::Jacobi:
+    {
+      typedef JacobiSmoother<Operator, VectorTypeMG> JACOBI_SMOOTHER;
+      mg_smoother[level].reset(new JACOBI_SMOOTHER());
+
+      typename JACOBI_SMOOTHER::AdditionalData smoother_data;
+      smoother_data.preconditioner            = mg_data.smoother_data.preconditioner;
+      smoother_data.number_of_smoothing_steps = mg_data.smoother_data.iterations;
+      smoother_data.damping_factor            = mg_data.smoother_data.relaxation_factor;
+
+      std::shared_ptr<JACOBI_SMOOTHER> smoother =
+        std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
+      smoother->initialize(matrix, smoother_data);
+      break;
+    }
+    default:
+    {
+      AssertThrow(false, ExcMessage("Specified MultigridSmoother not implemented!"));
+    }
+  }
+}
 
 template<int dim, typename Number, typename MultigridNumber>
 void
@@ -472,7 +540,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_smoother(unsig
   AssertThrow(level > 0,
               ExcMessage("Multigrid level is invalid when initializing multigrid smoother!"));
 
-  switch(mg_data.smoother)
+  switch(mg_data.smoother_data.smoother)
   {
     case MultigridSmoother::Chebyshev:
     {
@@ -522,56 +590,48 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver()
 {
-  switch(mg_data.coarse_solver)
+  switch(mg_data.coarse_problem.solver)
   {
     case MultigridCoarseGridSolver::Chebyshev:
     {
-      initialize_chebyshev_smoother_coarse_grid(*mg_matrices[0]);
+      AssertThrow(
+        mg_data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
+        ExcMessage(
+          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
+
+      initialize_chebyshev_smoother_coarse_grid(*mg_matrices[0],
+                                                mg_data.coarse_problem.solver_data);
       break;
     }
     case MultigridCoarseGridSolver::ChebyshevNonsymmetricOperator:
     {
-      initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(*mg_matrices[0]);
+      AssertThrow(
+        mg_data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
+        ExcMessage(
+          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
+
+      initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(
+        *mg_matrices[0], mg_data.coarse_problem.solver_data);
       break;
     }
-    case MultigridCoarseGridSolver::PCG_NoPreconditioner:
+    case MultigridCoarseGridSolver::CG:
+    case MultigridCoarseGridSolver::GMRES:
     {
-      // do nothing
-      break;
-    }
-    case MultigridCoarseGridSolver::PCG_PointJacobi:
-    {
-      std::shared_ptr<MGCoarsePCG<Operator>> coarse_solver =
-        std::dynamic_pointer_cast<MGCoarsePCG<Operator>>(mg_coarse);
-      coarse_solver->update_preconditioner(*this->mg_matrices[0]);
+      if(mg_data.coarse_problem.preconditioner != MultigridCoarseGridPreconditioner::None)
+      {
+        std::shared_ptr<MGCoarseKrylov<Operator>> coarse_solver =
+          std::dynamic_pointer_cast<MGCoarseKrylov<Operator>>(mg_coarse);
+        coarse_solver->update(*this->mg_matrices[0]);
+      }
 
       break;
     }
-    case MultigridCoarseGridSolver::PCG_BlockJacobi:
+    case MultigridCoarseGridSolver::AMG:
     {
-      std::shared_ptr<MGCoarsePCG<Operator>> coarse_solver =
-        std::dynamic_pointer_cast<MGCoarsePCG<Operator>>(mg_coarse);
-      coarse_solver->update_preconditioner(*this->mg_matrices[0]);
+      std::shared_ptr<MGCoarseAMG<Operator>> coarse_solver =
+        std::dynamic_pointer_cast<MGCoarseAMG<Operator>>(mg_coarse);
+      coarse_solver->update(&(*this->mg_matrices[0]));
 
-      break;
-    }
-    case MultigridCoarseGridSolver::GMRES_NoPreconditioner:
-    {
-      // do nothing
-      break;
-    }
-    case MultigridCoarseGridSolver::GMRES_PointJacobi:
-    {
-      std::shared_ptr<MGCoarseGMRES<Operator>> coarse_solver =
-        std::dynamic_pointer_cast<MGCoarseGMRES<Operator>>(mg_coarse);
-      coarse_solver->update_preconditioner(*this->mg_matrices[0]);
-      break;
-    }
-    case MultigridCoarseGridSolver::GMRES_BlockJacobi:
-    {
-      std::shared_ptr<MGCoarseGMRES<Operator>> coarse_solver =
-        std::dynamic_pointer_cast<MGCoarseGMRES<Operator>>(mg_coarse);
-      coarse_solver->update_preconditioner(*this->mg_matrices[0]);
       break;
     }
     default:
@@ -583,154 +643,61 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(Operator &   matrix,
-                                                                               unsigned int level)
-{
-  AssertThrow(level > 0,
-              ExcMessage("Multigrid level is invalid when initializing multigrid smoother!"));
-
-  switch(mg_data.smoother)
-  {
-    case MultigridSmoother::Chebyshev:
-    {
-      mg_smoother[level].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
-      initialize_chebyshev_smoother(matrix, level);
-      break;
-    }
-    case MultigridSmoother::ChebyshevNonsymmetricOperator:
-    {
-      mg_smoother[level].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
-      initialize_chebyshev_smoother_nonsymmetric_operator(matrix, level);
-      break;
-    }
-    case MultigridSmoother::GMRES:
-    {
-      typedef GMRESSmoother<Operator, VectorTypeMG> GMRES_SMOOTHER;
-      mg_smoother[level].reset(new GMRES_SMOOTHER());
-
-      typename GMRES_SMOOTHER::AdditionalData smoother_data;
-      smoother_data.preconditioner       = mg_data.gmres_smoother_data.preconditioner;
-      smoother_data.number_of_iterations = mg_data.gmres_smoother_data.number_of_iterations;
-
-      std::shared_ptr<GMRES_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<GMRES_SMOOTHER>(mg_smoother[level]);
-      smoother->initialize(matrix, smoother_data);
-      break;
-    }
-    case MultigridSmoother::CG:
-    {
-      typedef CGSmoother<Operator, VectorTypeMG> CG_SMOOTHER;
-      mg_smoother[level].reset(new CG_SMOOTHER());
-
-      typename CG_SMOOTHER::AdditionalData smoother_data;
-      smoother_data.preconditioner       = mg_data.cg_smoother_data.preconditioner;
-      smoother_data.number_of_iterations = mg_data.cg_smoother_data.number_of_iterations;
-
-      std::shared_ptr<CG_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<CG_SMOOTHER>(mg_smoother[level]);
-      smoother->initialize(matrix, smoother_data);
-      break;
-    }
-    case MultigridSmoother::Jacobi:
-    {
-      typedef JacobiSmoother<Operator, VectorTypeMG> JACOBI_SMOOTHER;
-      mg_smoother[level].reset(new JACOBI_SMOOTHER());
-
-      typename JACOBI_SMOOTHER::AdditionalData smoother_data;
-      smoother_data.preconditioner = mg_data.jacobi_smoother_data.preconditioner;
-      smoother_data.number_of_smoothing_steps =
-        mg_data.jacobi_smoother_data.number_of_smoothing_steps;
-      smoother_data.damping_factor = mg_data.jacobi_smoother_data.damping_factor;
-
-      std::shared_ptr<JACOBI_SMOOTHER> smoother =
-        std::dynamic_pointer_cast<JACOBI_SMOOTHER>(mg_smoother[level]);
-      smoother->initialize(matrix, smoother_data);
-      break;
-    }
-    default:
-    {
-      AssertThrow(false, ExcMessage("Specified MultigridSmoother not implemented!"));
-    }
-  }
-}
-
-template<int dim, typename Number, typename MultigridNumber>
-void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_solver(
-  unsigned int const coarse_level)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_solver()
 {
   Operator & matrix = *mg_matrices[0];
 
-  switch(mg_data.coarse_solver)
+  switch(mg_data.coarse_problem.solver)
   {
     case MultigridCoarseGridSolver::Chebyshev:
     {
+      AssertThrow(
+        mg_data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
+        ExcMessage(
+          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
+
       mg_smoother[0].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
-      initialize_chebyshev_smoother_coarse_grid(matrix);
+      initialize_chebyshev_smoother_coarse_grid(matrix, mg_data.coarse_problem.solver_data);
 
       mg_coarse.reset(new MGCoarseChebyshev<VectorTypeMG, SMOOTHER>(mg_smoother[0]));
       break;
     }
     case MultigridCoarseGridSolver::ChebyshevNonsymmetricOperator:
     {
+      AssertThrow(
+        mg_data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
+        ExcMessage(
+          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
+
       mg_smoother[0].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
-      initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(matrix);
+      initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(
+        matrix, mg_data.coarse_problem.solver_data);
 
       mg_coarse.reset(new MGCoarseChebyshev<VectorTypeMG, SMOOTHER>(mg_smoother[0]));
       break;
     }
-    case MultigridCoarseGridSolver::PCG_NoPreconditioner:
+    case MultigridCoarseGridSolver::CG:
+    case MultigridCoarseGridSolver::GMRES:
     {
-      typename MGCoarsePCG<Operator>::AdditionalData additional_data;
-      additional_data.preconditioner = PreconditionerCoarseGridSolver::None;
+      typename MGCoarseKrylov<Operator>::AdditionalData additional_data;
 
-      mg_coarse.reset(new MGCoarsePCG<Operator>(matrix, additional_data));
+      if(mg_data.coarse_problem.solver == MultigridCoarseGridSolver::CG)
+        additional_data.solver_type = KrylovSolverType::CG;
+      else if(mg_data.coarse_problem.solver == MultigridCoarseGridSolver::GMRES)
+        additional_data.solver_type = KrylovSolverType::GMRES;
+      else
+        AssertThrow(false, ExcMessage("Not implemented."));
+
+      additional_data.solver_data    = mg_data.coarse_problem.solver_data;
+      additional_data.preconditioner = mg_data.coarse_problem.preconditioner;
+      additional_data.amg_data       = mg_data.coarse_problem.amg_data;
+
+      mg_coarse.reset(new MGCoarseKrylov<Operator>(matrix, additional_data));
       break;
     }
-    case MultigridCoarseGridSolver::PCG_PointJacobi:
+    case MultigridCoarseGridSolver::AMG:
     {
-      typename MGCoarsePCG<Operator>::AdditionalData additional_data;
-      additional_data.preconditioner = PreconditionerCoarseGridSolver::PointJacobi;
-
-      mg_coarse.reset(new MGCoarsePCG<Operator>(matrix, additional_data));
-      break;
-    }
-    case MultigridCoarseGridSolver::PCG_BlockJacobi:
-    {
-      typename MGCoarsePCG<Operator>::AdditionalData additional_data;
-      additional_data.preconditioner = PreconditionerCoarseGridSolver::BlockJacobi;
-
-      mg_coarse.reset(new MGCoarsePCG<Operator>(matrix, additional_data));
-      break;
-    }
-    case MultigridCoarseGridSolver::GMRES_NoPreconditioner:
-    {
-      typename MGCoarseGMRES<Operator>::AdditionalData additional_data;
-      additional_data.preconditioner = PreconditionerCoarseGridSolver::None;
-
-      mg_coarse.reset(new MGCoarseGMRES<Operator>(matrix, additional_data));
-      break;
-    }
-    case MultigridCoarseGridSolver::GMRES_PointJacobi:
-    {
-      typename MGCoarseGMRES<Operator>::AdditionalData additional_data;
-      additional_data.preconditioner = PreconditionerCoarseGridSolver::PointJacobi;
-
-      mg_coarse.reset(new MGCoarseGMRES<Operator>(matrix, additional_data));
-      break;
-    }
-    case MultigridCoarseGridSolver::GMRES_BlockJacobi:
-    {
-      typename MGCoarseGMRES<Operator>::AdditionalData additional_data;
-      additional_data.preconditioner = PreconditionerCoarseGridSolver::BlockJacobi;
-
-      mg_coarse.reset(new MGCoarseGMRES<Operator>(matrix, additional_data));
-      break;
-    }
-    case MultigridCoarseGridSolver::AMG_ML:
-    {
-      mg_coarse.reset(
-        new MGCoarseML<Operator, Number>(matrix, true, coarse_level, this->mg_data.coarse_ml_data));
+      mg_coarse.reset(new MGCoarseAMG<Operator>(matrix, mg_data.coarse_problem.amg_data));
       return;
     }
     default:
@@ -776,9 +743,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_chebyshev_
   }
   */
 
-  smoother_data.smoothing_range     = mg_data.chebyshev_smoother_data.smoother_smoothing_range;
-  smoother_data.degree              = mg_data.chebyshev_smoother_data.smoother_poly_degree;
-  smoother_data.eig_cg_n_iterations = mg_data.chebyshev_smoother_data.eig_cg_n_iterations;
+  smoother_data.smoothing_range     = mg_data.smoother_data.smoothing_range;
+  smoother_data.degree              = mg_data.smoother_data.iterations;
+  smoother_data.eig_cg_n_iterations = mg_data.smoother_data.iterations_eigenvalue_estimation;
 
   std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother =
     std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(mg_smoother[level]);
@@ -788,7 +755,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_chebyshev_
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_chebyshev_smoother_coarse_grid(Operator & matrix)
+  initialize_chebyshev_smoother_coarse_grid(Operator & matrix, SolverData const & solver_data)
 {
   // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
   typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
@@ -814,7 +781,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   double sigma = (1. - std::sqrt(1. / smoother_data.smoothing_range)) /
                  (1. + std::sqrt(1. / smoother_data.smoothing_range));
 
-  double const eps = 1.e-3;
+  // calculate/estimate the number of Chebyshev iterations needed to reach a specified relative
+  // solver tolerance
+  double const eps = solver_data.rel_tol;
 
   smoother_data.degree = std::log(1. / eps + std::sqrt(1. / eps / eps - 1.)) / std::log(1. / sigma);
   smoother_data.eig_cg_n_iterations = 0;
@@ -858,8 +827,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   double const factor = 1.1;
 
   smoother_data.max_eigenvalue      = factor * std::abs(eigenvalues.second);
-  smoother_data.smoothing_range     = mg_data.chebyshev_smoother_data.smoother_smoothing_range;
-  smoother_data.degree              = mg_data.chebyshev_smoother_data.smoother_poly_degree;
+  smoother_data.smoothing_range     = mg_data.smoother_data.smoothing_range;
+  smoother_data.degree              = mg_data.smoother_data.iterations;
   smoother_data.eig_cg_n_iterations = 0;
 
   std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother =
@@ -870,7 +839,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(Operator & matrix)
+  initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(Operator &         matrix,
+                                                                  SolverData const & solver_data)
 {
   // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
   typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
@@ -897,7 +867,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   double sigma = (1. - std::sqrt(1. / smoother_data.smoothing_range)) /
                  (1. + std::sqrt(1. / smoother_data.smoothing_range));
 
-  double const eps = 1e-3;
+  // calculate/estimate the number of Chebyshev iterations needed to reach a specified relative
+  // solver tolerance
+  double const eps = solver_data.rel_tol;
 
   smoother_data.degree = std::log(1. / eps + std::sqrt(1. / eps / eps - 1)) / std::log(1. / sigma);
   smoother_data.eig_cg_n_iterations = 0;

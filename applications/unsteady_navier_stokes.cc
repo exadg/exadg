@@ -50,7 +50,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/vortex.h"
+//#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
@@ -63,7 +63,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
-//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 

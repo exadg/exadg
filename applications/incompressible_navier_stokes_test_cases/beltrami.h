@@ -58,13 +58,13 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //Explicit; //Implicit;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection; //BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   max_velocity = 3.5;
   cfl = 1.0e-1;
   time_step_size = 1.0e-3; // 1.0e-4;
-  order_time_integrator = 3; // 1; // 2; // 3;
+  order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = false; // true; // false;
 
 
@@ -88,7 +88,6 @@ void InputParameters<dim>::set_input_parameters()
   solver_pressure_poisson = SolverPressurePoisson::CG;
   solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-8,100);
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // projection step
   solver_projection = SolverProjection::CG;
@@ -104,7 +103,6 @@ void InputParameters<dim>::set_input_parameters()
   solver_viscous = SolverViscous::CG;
   solver_data_viscous = SolverData(1000,1.e-12,1.e-8);
   preconditioner_viscous = PreconditionerViscous::Multigrid;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // PRESSURE-CORRECTION SCHEME
 
@@ -117,11 +115,10 @@ void InputParameters<dim>::set_input_parameters()
   solver_momentum = SolverMomentum::GMRES;
   solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-8, 100);
   preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
   update_preconditioner_momentum = false;
 
   // formulation
-  order_pressure_extrapolation = 0;
+  order_pressure_extrapolation = 1;
   rotational_formulation = true;
 
 

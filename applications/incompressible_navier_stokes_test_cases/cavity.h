@@ -32,15 +32,15 @@ unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 6;
-unsigned int const REFINE_STEPS_SPACE_MAX = 6; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 4;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
+const ProblemType PROBLEM_TYPE = ProblemType::Steady;
 const double L = 1.0;
 
 std::string OUTPUT_FOLDER = "output/cavity/";
@@ -61,13 +61,13 @@ void InputParameters<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 10.0;
-  viscosity = 1.0e-5;
+  viscosity = 1.0e-1;
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  solver_type = SolverType::Steady;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   adaptive_time_stepping = false;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -106,7 +106,6 @@ void InputParameters<dim>::set_input_parameters()
   // pressure Poisson equation
   solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-8,100);
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // projection step
   solver_projection = SolverProjection::CG;
@@ -123,7 +122,6 @@ void InputParameters<dim>::set_input_parameters()
   solver_viscous = SolverViscous::CG;
   solver_data_viscous = SolverData(1000,1.e-12,1.e-8);
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //Multigrid;
-  multigrid_data_viscous.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -141,11 +139,11 @@ void InputParameters<dim>::set_input_parameters()
     solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
   preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   update_preconditioner_momentum = true;
-  multigrid_data_momentum.smoother = MultigridSmoother::Jacobi;
-  multigrid_data_momentum.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
-  multigrid_data_momentum.jacobi_smoother_data.number_of_smoothing_steps = 5;
-  multigrid_data_momentum.jacobi_smoother_data.damping_factor = 0.7;
-  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner;
+  multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+  multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  multigrid_data_momentum.smoother_data.iterations = 5;
+  multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
+  multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
   // formulation
   order_pressure_extrapolation = 1;
@@ -158,7 +156,7 @@ void InputParameters<dim>::set_input_parameters()
   newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-10);
 
   // linear solver
-  solver_coupled = SolverCoupled::GMRES; //FGMRES;
+  solver_coupled = SolverCoupled::FGMRES; //FGMRES;
   solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 1000);
 
   // preconditioning linear solver
@@ -167,18 +165,13 @@ void InputParameters<dim>::set_input_parameters()
 
   // preconditioner velocity/momentum block
   preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
-  multigrid_data_velocity_block.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
+  multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionConvectionDiffusion;
+  multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::GMRES;
+  multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  multigrid_data_velocity_block.smoother_data.iterations = 5;
+  multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
 
-  // GMRES smoother data
-  multigrid_data_velocity_block.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data_velocity_block.gmres_smoother_data.number_of_iterations = 5;
-
-  // Jacobi smoother data
-  multigrid_data_velocity_block.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data_velocity_block.jacobi_smoother_data.number_of_smoothing_steps = 5;
-  multigrid_data_velocity_block.jacobi_smoother_data.damping_factor = 0.7;
-
-  multigrid_data_velocity_block.coarse_solver = MultigridCoarseGridSolver::Chebyshev; //NoPreconditioner; //Chebyshev; //Chebyshev; //ChebyshevNonsymmetricOperator;
+  multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
   exact_inversion_of_velocity_block = false; // true;
   solver_data_velocity_block = SolverData(1e4, 1.e-12, 1.e-6, 100);
@@ -186,9 +179,8 @@ void InputParameters<dim>::set_input_parameters()
   // preconditioner Schur-complement block
   preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-  multigrid_data_pressure_block.chebyshev_smoother_data.smoother_poly_degree = 5;
-  multigrid_data_pressure_block.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
-  exact_inversion_of_laplace_operator = false; // true;
+  multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
+  exact_inversion_of_laplace_operator = false;
   solver_data_pressure_block = SolverData(1e4, 1.e-12, 1.e-6, 100);
 
   // OUTPUT AND POSTPROCESSING

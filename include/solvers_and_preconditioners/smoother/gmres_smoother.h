@@ -45,12 +45,12 @@ public:
     /**
      * Constructor.
      */
-    AdditionalData() : preconditioner(PreconditionerGMRESSmoother::None), number_of_iterations(5)
+    AdditionalData() : preconditioner(PreconditionerSmoother::None), number_of_iterations(5)
     {
     }
 
     // preconditioner
-    PreconditionerGMRESSmoother preconditioner;
+    PreconditionerSmoother preconditioner;
 
     // number of GMRES iterations per smoothing step
     unsigned int number_of_iterations;
@@ -63,17 +63,17 @@ public:
 
     data = additional_data_in;
 
-    if(data.preconditioner == PreconditionerGMRESSmoother::PointJacobi)
+    if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
       preconditioner = new JacobiPreconditioner<Operator>(*underlying_operator);
     }
-    else if(data.preconditioner == PreconditionerGMRESSmoother::BlockJacobi)
+    else if(data.preconditioner == PreconditionerSmoother::BlockJacobi)
     {
       preconditioner = new BlockJacobiPreconditioner<Operator>(*underlying_operator);
     }
     else
     {
-      AssertThrow(data.preconditioner == PreconditionerGMRESSmoother::None,
+      AssertThrow(data.preconditioner == PreconditionerSmoother::None,
                   ExcMessage("Specified preconditioner not implemented for GMRES smoother"));
     }
   }

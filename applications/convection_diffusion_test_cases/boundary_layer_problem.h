@@ -69,23 +69,20 @@ void ConvDiff::InputParameters::set_input_parameters()
   IP_factor = 1.0;
 
   // SOLVER
+  use_cell_based_face_loops = true;
   solver = Solver::GMRES;
   solver_data = SolverData(1e4, 1.e-20, 1.e-8, 100);
   preconditioner = Preconditioner::Multigrid;//Preconditioner::PointJacobi;
-  multigrid_data.type = MultigridType::hMG;
-  use_cell_based_face_loops = true;
   mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
+  multigrid_data.type = MultigridType::hMG;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::Jacobi; //Chebyshev;
+  multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi; //Chebyshev;
   // MG smoother data
-  multigrid_data.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi;
-  multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 5;
-//  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::None;
-//  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+  multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  multigrid_data.smoother_data.iterations = 5;
 
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi;
-  //multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML;
+  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES; //AMG;
   
   update_preconditioner = false;
 
@@ -98,7 +95,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.output_folder = "output_conv_diff/boundary_layer_problem/";
   output_data.output_name = "boundary_layer_problem";
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time) /20;
+  output_data.output_interval_time = (end_time-start_time)/20;
   output_data.degree = FE_DEGREE;
 
   error_data.analytical_solution_available = true;

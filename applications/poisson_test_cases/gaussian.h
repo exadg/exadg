@@ -41,15 +41,12 @@ Poisson::InputParameters::set_input_parameters()
   compute_performance_metrics = true;
   preconditioner              = Preconditioner::Multigrid;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::Chebyshev;
-  // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
-  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+  multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML; // GMRES_PointJacobi;
-  multigrid_data.type          = MultigridType::pMG;
+  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::AMG;
+  multigrid_data.type                  = MultigridType::pMG;
 
-  multigrid_data.c_transfer_back = true;
+  multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Coarse;
 
   // write output for visualization of results
   output_data.write_output  = true;

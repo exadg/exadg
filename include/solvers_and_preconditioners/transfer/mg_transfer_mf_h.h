@@ -13,6 +13,8 @@
 
 #include "../../operators/operator_preconditionable.h"
 
+#include "mg_transfer_mf.h"
+
 using namespace dealii;
 
 // Specialized matrix-free implementation that overloads the copy_to_mg

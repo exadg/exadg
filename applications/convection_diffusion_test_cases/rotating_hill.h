@@ -86,23 +86,17 @@ void ConvDiff::InputParameters::set_input_parameters()
   block_jacobi_solver_data = SolverData(1000,1.e-12,1.e-2,1000);
 
   // Multigrid
-  multigrid_data.type = MultigridType::hMG;
   mg_operator_type = MultigridOperatorType::ReactionConvection;
+  multigrid_data.type = MultigridType::hMG;
 
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::Jacobi; //GMRES; //Chebyshev; //ChebyshevNonsymmetricOperator;
-
-  // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
-  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
-
-  // MG smoother data: Jacobi smoother
-  multigrid_data.jacobi_smoother_data.preconditioner = PreconditionerJacobiSmoother::BlockJacobi; //None; //PointJacobi; //BlockJacobi;
-  multigrid_data.jacobi_smoother_data.number_of_smoothing_steps = 5;
-  multigrid_data.jacobi_smoother_data.damping_factor = 0.8;
+  multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
+  multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  multigrid_data.smoother_data.iterations = 5;
+  multigrid_data.smoother_data.relaxation_factor = 0.8;
 
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_NoPreconditioner; //GMRES_NoPreconditioner; //Chebyshev; //GMRES_Jacobi;
+  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
 
   // NUMERICAL PARAMETERS
