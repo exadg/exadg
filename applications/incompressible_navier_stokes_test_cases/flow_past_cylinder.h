@@ -26,7 +26,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 4;
+unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1; // FE_DEGREE_VELOCITY; // FE_DEGREE_VELOCITY - 1;
 
 // set the number of refine levels for spatial convergence tests
@@ -72,9 +72,10 @@ void InputParameters<dim>::set_input_parameters()
   temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
+  adaptive_time_stepping = true;
   max_velocity = Um;
-  cfl = 0.2;//0.6;//2.5e-1;
-  cfl_exponent_fe_degree_velocity = 1.0;
+  cfl = 0.7;//0.6;//2.5e-1;
+  cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-3;
   order_time_integrator = 2; // 1; // 2; // 3;
   start_with_low_order = true; // true; // false;
@@ -98,17 +99,19 @@ void InputParameters<dim>::set_input_parameters()
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  solver_pressure_poisson = SolverPressurePoisson::FGMRES; //PCG; //FGMRES;
-  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-8,60);
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid; //Jacobi; //Multigrid;
+  solver_pressure_poisson = SolverPressurePoisson::CG; //FGMRES;
+  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,30);
+  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   multigrid_data_pressure_poisson.type = MultigridType::pMG;
+  multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
   multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  multigrid_data_pressure_poisson.smoother_data.iterations = 5;
   multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
-  
+  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+ 
   // projection step
   solver_projection = SolverProjection::CG;
-  solver_data_projection = SolverData(1000, 1.e-20, 1.e-12);
+  solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
   preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -118,8 +121,12 @@ void InputParameters<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::CG;
-  solver_data_viscous = SolverData(1000,1.e-12,1.e-8);
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+  solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //BlockJacobi; //Multigrid;
+  update_preconditioner_viscous = true;
+  update_preconditioner_viscous_every_time_steps = 10;
+  multigrid_data_viscous.type = MultigridType::pMG;
+  multigrid_data_viscous.dg_to_cg_transfer = DG_To_CG_Transfer::Coarse;
   multigrid_data_viscous.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   multigrid_data_viscous.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
 
