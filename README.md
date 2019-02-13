@@ -146,9 +146,10 @@ Next, adapt the directory settings at the top of the script and switch on trilin
 -D DEAL_II_WITH_TRILINOS:BOOL="ON"
 ...
 ```
-Run the script
+Run the config-script (**Remark**: If you later change settings and want to run the cmake script again, remove *CMakeCache.txt* and *CMakeFiles/* in advance)
 
 ```bash
+rm -rf CMakeCache.txt CMakeFiles/
 bash ./config_dealii.sh
 ```
 
@@ -156,13 +157,6 @@ Build the **deal.II** code
 
 ```bash
 make -j2
-```
-
-**Remark**: If you later change settings and want to run the cmake script again, remove *CMakeCache.txt* and *CMakeFiles/* in advance
-
-```bash
-rm -rf CMakeCache.txt CMakeFiles/
-./config_dealii.sh
 ```
 
 #### fftw code (optional)
@@ -176,7 +170,7 @@ cd /working_directory/sw/
 wget http://fftw.org/fftw-3.3.7.tar.gz
 tar -xf fftw-3.3.7.tar.gz
 cd fftw-3.3.7
-./configure --enable-mpi --prefix=/scratch/students_name/sw/fftw-3.3.7-install
+./configure --enable-mpi --prefix=/working_directory/sw/fftw-3.3.7-install
 make
 make install
 cd ../fftw-3.3.7-install/lib/
@@ -191,7 +185,7 @@ cp /working_directory/workspace/navierstokes/scripts/combine_fftw.sh .
 Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_mpi.a*
 
 ```bash
-./combine_fftw.sh
+bash ./combine_fftw.sh
 ```
 
 ### navierstokes code continued (part 2)
@@ -201,16 +195,20 @@ Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_
 ```bash
 cd navierstokes/
 ```
-Run *cmake* (standard)
+
+Copy the script *config_navierstokes.sh* from the folder *navierstokes/scripts/* to the current folder, e.g.,
 
 ```bash
-cmake -D DEAL_II_DIR=/working_directory/sw/build .
+cp /working_directory/workspace/navierstokes/scripts/config_navierstokes.sh .
 ```
-or use the following command if **fftw** is to be used (optional)
+
+Remove the **fftw** related lines in *config_navierstokes.sh* if not needed  and run the config-script (**Remark**: If you later change settings and want to run the cmake script again, remove *CMakeCache.txt* and *CMakeFiles/* in advance)
 
 ```bash
-cmake -D FFTW_INC=/working_directory/sw/fftw-3.3.7-install/include -D FFTW_LIB=/working_directory/sw/fftw-3.3.7-install/lib/combined -D USE_DEAL_SPECTRUM=ON -D DEAL_II_DIR=/working_directory/sw/build .
+rm -rf CMakeCache.txt CMakeFiles/
+bash ./config_navierstokes.sh
 ```
+
 In folder *navierstokes*, run the command
 
 ```bash
