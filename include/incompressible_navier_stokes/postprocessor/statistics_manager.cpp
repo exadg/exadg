@@ -30,10 +30,10 @@ void
 StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid_transform,
                               TurbulentChannelData const &                  turb_channel_data_in)
 {
+  turb_channel_data = turb_channel_data_in;
+
   if(turb_channel_data.calculate_statistics == true)
   {
-    turb_channel_data = turb_channel_data_in;
-
     // note: this code only works on structured meshes where the faces in
     // y-direction are faces 2 and 3
 
