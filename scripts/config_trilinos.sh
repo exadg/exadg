@@ -4,6 +4,7 @@ EXTRA_ARGS=$@
 MPIDIR=/usr/lib64/openmpi
 WORKING_DIRECTORY=/home/fehn
 
+rm -rf CMakeFiles/ CMakeCache.txt
 
 cmake \
     -D CMAKE_BUILD_TYPE:STRING="RELEASE" \
