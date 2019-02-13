@@ -54,7 +54,11 @@ double const DIMENSIONS_X3 = numbers::PI;
 // nu = 1/950
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
 
-double const MAX_VELOCITY = 18.3; //18.3 for Re_tau = 180; //22.0;
+//18.3 for Re_tau = 180
+//20.1 for Re_tau = 395
+//21.3 for Re_tau = 590
+//22.4 for Re_tau = 950
+double const MAX_VELOCITY = 18.3;
 
 // flow-through time based on mean centerline velocity
 const double CHARACTERISTIC_TIME = DIMENSIONS_X1/MAX_VELOCITY;
