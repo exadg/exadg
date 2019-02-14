@@ -335,11 +335,11 @@ public:
   {
     return _is_dummy;
   }
-  
+
   virtual int
   get_intersections()
   {
-      return get_length() / get_radius();
+    return get_length() / get_radius();
   }
 
 public:
@@ -382,7 +382,7 @@ public:
                       this->right_child->to) /
            2;
   }
-  
+
 
   dealii::Tensor<1, 3>
   get_tangential_vector()
@@ -392,14 +392,13 @@ public:
 
     return left_dir / left_dir.norm() + right_dir / right_dir.norm();
   }
-  
-  
+
+
   virtual int
   get_intersections()
   {
-      return 0;
+    return 0;
   }
-  
 };
 
 #endif

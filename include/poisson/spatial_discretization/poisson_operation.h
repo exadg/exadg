@@ -97,7 +97,7 @@ private:
 
 public:
   Poisson::LaplaceOperator<dim, degree, Number> laplace_operator;
-  std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
+  std::shared_ptr<PreconditionerBase<Number>>   preconditioner;
 
 private:
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;

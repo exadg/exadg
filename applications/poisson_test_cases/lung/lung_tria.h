@@ -102,8 +102,8 @@ create_cylinder(double                     radius1,
   cell_data_3d.clear();
   cell_data_3d.resize(n_sections * cell_data.size());
 
-  AssertThrow(LUNG_NUMBER_OF_VERTICES_2D == tria_2d.n_vertices(), 
-          ExcMessage("Number of vertices in 2D does not match with the expectation!"));
+  AssertThrow(LUNG_NUMBER_OF_VERTICES_2D == tria_2d.n_vertices(),
+              ExcMessage("Number of vertices in 2D does not match with the expectation!"));
 
   std::vector<Point<3>> vertices_3d_temp(2 * tria_2d.n_vertices());
   for(auto & v : vertices_3d_temp)
@@ -281,19 +281,25 @@ process_node(Node *                     node,
     catch(const std::exception & e)
     {
       std::cout << e.what();
-      
+
       std::ostringstream stream;
-      stream << "Problematic branch:" << std::endl << "   " << node->get_source()  << std::endl << "   " << node->get_target();
-      
+      stream << "Problematic branch:" << std::endl
+             << "   " << node->get_source() << std::endl
+             << "   " << node->get_target();
+
       AssertThrow(false, ExcMessage(stream.str()));
     }
 
     // WARNING: This section is only reached if the creation of the
     // triangulation was successful (i.e. the cells are not too much deformed)
 
-    unsigned int range_local  = (node->get_intersections() + 1) * LUNG_NUMBER_OF_VERTICES_2D;
-    unsigned int range_global = ((node->get_parent()->get_intersections()+ (node->is_left() ? 0 : node->get_parent()->get_left_child()->get_intersections())) + 2) * LUNG_NUMBER_OF_VERTICES_2D;
-    
+    unsigned int range_local = (node->get_intersections() + 1) * LUNG_NUMBER_OF_VERTICES_2D;
+    unsigned int range_global =
+      ((node->get_parent()->get_intersections() +
+        (node->is_left() ? 0 : node->get_parent()->get_left_child()->get_intersections())) +
+       2) *
+      LUNG_NUMBER_OF_VERTICES_2D;
+
     // mark all vertices of local branch with -1
     std::map<unsigned int, unsigned int> map;
     for(unsigned int i = 0; i < range_local; i++)
@@ -301,15 +307,18 @@ process_node(Node *                     node,
 
     // check if vertex is already available (i.e. already created by parent or left neighbor)
     for(unsigned int i = 0; i < range_local; i++)
-        for(unsigned int j = parent_os; (j < parent_os + range_global) && (j <
-        vertices_3d_global.size()); j++){
-            auto t = vertices_3d[i];
-            t-=vertices_3d_global[j];
-            if(t.norm() < 1e-2){
-                map[i]=j;
-                break;
-            }
+      for(unsigned int j = parent_os;
+          (j < parent_os + range_global) && (j < vertices_3d_global.size());
+          j++)
+      {
+        auto t = vertices_3d[i];
+        t -= vertices_3d_global[j];
+        if(t.norm() < 1e-2)
+        {
+          map[i] = j;
+          break;
         }
+      }
 
     // assign actual new vertices new ids and save the position of these vertices
     int cou = os;

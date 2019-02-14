@@ -139,7 +139,7 @@ main(int argc, char ** argv)
   for(int i = 4; i < argc; ++i)
     files.push_back(argv[i]);
 
-  if (files.size() == 0)
+  if(files.size() == 0)
     get_lung_files_from_environment(files);
 
   run(generations, refinements1, refinements2, files);

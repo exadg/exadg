@@ -25,7 +25,7 @@ private:
 public:
   // distributed sparse system matrix
   TrilinosWrappers::SparseMatrix system_matrix;
-  
+
 private:
   TrilinosWrappers::PreconditionAMG amg;
 #endif

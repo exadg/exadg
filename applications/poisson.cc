@@ -285,7 +285,7 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(bool               is_not_
 
   convergence_table.add_value("cycles", cycles);
 
-   if(param.output_data.write_output && is_not_convergence_study)
+  if(param.output_data.write_output && is_not_convergence_study)
   {
     this->output_data(param.output_data.output_folder + param.output_data.output_name + "1.vtu",
                       solution);

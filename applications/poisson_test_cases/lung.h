@@ -35,24 +35,25 @@ Poisson::InputParameters::set_input_parameters()
   // SPATIAL DISCRETIZATION
   IP_factor = 1.0;
 
-  // SOLVER  
-  solver                      = Poisson::Solver::CG;
-  solver_data.abs_tol                     = 1.e-20;
-  solver_data.rel_tol                     = 1.e-8;
-  solver_data.max_iter                    = 1e4;
-  
-  preconditioner              = Preconditioner::Multigrid;
-  // MG smoother
-  //multigrid_data.smoother = MultigridSmoother::Chebyshev;
-  // MG smoother data
-  //multigrid_data.chebyshev_smoother_data.smoother_smoothing_range = 30;
-  //multigrid_data.chebyshev_smoother_data.smoother_poly_degree     = 5;
+  // SOLVER
+  solver               = Poisson::Solver::CG;
+  solver_data.abs_tol  = 1.e-20;
+  solver_data.rel_tol  = 1.e-8;
+  solver_data.max_iter = 1e4;
 
-  //multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
-  //multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+  preconditioner = Preconditioner::Multigrid;
+  // MG smoother
+  // multigrid_data.smoother = MultigridSmoother::Chebyshev;
+  // MG smoother data
+  // multigrid_data.chebyshev_smoother_data.smoother_smoothing_range = 30;
+  // multigrid_data.chebyshev_smoother_data.smoother_poly_degree     = 5;
+
+  // multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
+  // multigrid_data.gmres_smoother_data.number_of_iterations = 5;
   // MG coarse grid solver
-  //multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; // GMRES_PointJacobi;
-  multigrid_data.type          = MultigridType::pMG;
+  // multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; //
+  // GMRES_PointJacobi;
+  multigrid_data.type = MultigridType::pMG;
 
   multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Coarse;
 
@@ -295,7 +296,7 @@ create_grid_and_set_boundary_conditions(
   // set boundary conditions
   std::shared_ptr<Function<dim>> zero_function_scalar;
   zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
-  //boundary_descriptor->neumann_bc.insert({0, zero_function_scalar});
+  // boundary_descriptor->neumann_bc.insert({0, zero_function_scalar});
   boundary_descriptor->dirichlet_bc.insert({0, zero_function_scalar});
   boundary_descriptor->dirichlet_bc.insert({1, zero_function_scalar});
   boundary_descriptor->dirichlet_bc.insert({2, zero_function_scalar});
