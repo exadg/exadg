@@ -25,7 +25,7 @@
 #include <fstream>
 #include <iostream>
 
-#include "poisson_test_cases/lung/lung_environment.h"
+#include "grid_tools/lung/lung_environment.h"
 
 #include <limits>
 
@@ -33,7 +33,7 @@ using namespace dealii;
 
 //#define TEST_LUNG_MANUAL
 
-#include "poisson_test_cases/lung/lung_grid.h"
+#include "grid_tools/lung/lung_grid.h"
 
 
 void

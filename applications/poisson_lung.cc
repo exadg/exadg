@@ -33,9 +33,9 @@
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
 #include "poisson_test_cases/lung.h"
-#include "poisson_test_cases/lung/alternative.h"
+#include "grid_tools/lung/alternative.h"
 
-#include "poisson_test_cases/lung/lung_environment.h"
+#include "grid_tools/lung/lung_environment.h"
 
 #define MANUAL
 #define VERSION 4

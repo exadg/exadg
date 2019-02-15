@@ -59,10 +59,12 @@ lung_files_to_node(std::vector<std::string> files)
       lung_to_node(generations, points, cells, cells_additional_data, roots);
     }
 
+#ifdef DEBUG
     // check the read data
     for(auto & root : roots)
       Assert(root->check_if_planar(), ExcMessage("Bifurcation is not planar!"));
     std::cout << "Check:   All bifurcations are planar!" << std::endl;
+#endif
 
 #ifdef USE_FLAT_ROOT
     std::vector<Node *> roots_temp = roots;

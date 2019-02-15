@@ -1,8 +1,8 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include "../incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
-#include "lung/lung_environment.h"
-#include "lung/lung_grid.h"
+#include "../grid_tools/lung/lung_environment.h"
+#include "../grid_tools/lung/lung_grid.h"
 
 /******************************************************************************/
 /*                                                                            */
@@ -234,7 +234,7 @@ public:
 
 template<int dim>
 double
-RightHandSide<dim>::value(const Point<dim> & p, const unsigned int) const
+RightHandSide<dim>::value(const Point<dim> & /*p*/, const unsigned int) const
 {
   return 1.0;
 }
