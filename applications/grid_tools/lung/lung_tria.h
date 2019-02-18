@@ -294,7 +294,7 @@ process_node(Node *                     node,
     // triangulation was successful (i.e. the cells are not too much deformed)
 
     unsigned int range_local = (node->get_intersections() + 1) * LUNG_NUMBER_OF_VERTICES_2D;
-    unsigned int range_global =
+    unsigned int range_global = node->is_root() ? 0 :
       ((node->get_parent()->get_intersections() +
         (node->is_left() ? 0 : node->get_parent()->get_left_child()->get_intersections())) +
        2) *

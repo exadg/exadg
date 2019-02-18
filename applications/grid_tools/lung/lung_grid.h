@@ -1,7 +1,11 @@
 #ifndef LUNG_GRID
 #define LUNG_GRID
 
-#define USE_FLAT_ROOT
+// merge every second root such that they have a flat starting points
+//#define USE_FLAT_ROOT
+
+// create a dummy root for every second root such that there is only a single inlet
+#define DUMMY_ROOT
 
 //#define DEBUG_INFO
 #include <metis.h>
@@ -71,6 +75,20 @@ lung_files_to_node(std::vector<std::string> files)
     roots.clear();
     for(unsigned int i = 0; i < roots_temp.size(); i += 2)
       roots.push_back(new DummyNode(roots_temp[i + 1], roots_temp[i]));
+#endif
+
+#ifdef DUMMY_ROOT
+    std::vector<Node *> roots_temp = roots;
+    roots.clear();
+    for(unsigned int i = 0; i < roots_temp.size(); i += 2)
+    {
+      Point<3> dst = roots_temp[i]->from;
+      Point<3> norm = (roots_temp[i]->to+ roots_temp[i + 1]->to);
+      norm = norm/2;
+      norm = Point<3>(norm - dst);
+      Point<3> src = Point<3>(dst-norm);
+      roots.push_back(new Node(roots_temp[i + 1], roots_temp[i], src, true));
+    }
 #endif
   };
 }
