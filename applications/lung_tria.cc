@@ -1,4 +1,11 @@
-//#include <deal.II/grid/tria.h>
+/*
+ * lung_tria.cc
+ * 
+ * program for visualization of lung triangulation
+ *
+ *  Created on: 2018
+ *      Author: münch
+ */
 
 #include <deal.II/base/mpi.h>
 #include <stdio.h>

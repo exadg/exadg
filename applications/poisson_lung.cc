@@ -1,5 +1,7 @@
 /*
- * poisson.cc
+ * poisson_lung.cc
+ *
+ * program to test different solver configurations on lung triangulation 
  *
  *  Created on: 2018
  *      Author: münch
