@@ -20,9 +20,9 @@ print_MPI_info(ConditionalOStream const & pcout)
 // print grid info
 template<int dim>
 void
-print_grid_data(ConditionalOStream const &                        pcout,
-                unsigned int const                                n_refine_space,
-                parallel::distributed::Triangulation<dim> const & triangulation)
+print_grid_data(ConditionalOStream const &           pcout,
+                unsigned int const                   n_refine_space,
+                parallel::Triangulation<dim> const & triangulation)
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl
@@ -34,11 +34,11 @@ print_grid_data(ConditionalOStream const &                        pcout,
 
 template<int dim>
 void
-print_grid_data(ConditionalOStream const &                        pcout,
-                unsigned int const                                n_refine_space_1,
-                parallel::distributed::Triangulation<dim> const & triangulation_1,
-                unsigned int const                                n_refine_space_2,
-                parallel::distributed::Triangulation<dim> const & triangulation_2)
+print_grid_data(ConditionalOStream const &           pcout,
+                unsigned int const                   n_refine_space_1,
+                parallel::Triangulation<dim> const & triangulation_1,
+                unsigned int const                   n_refine_space_2,
+                parallel::Triangulation<dim> const & triangulation_2)
 {
   pcout << std::endl
         << "Generating grid for DOMAIN 1 for " << dim << "-dimensional problem:" << std::endl

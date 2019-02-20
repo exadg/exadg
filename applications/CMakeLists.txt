@@ -24,6 +24,11 @@ SET( SOURCE_FILES
      poisson.cc
      poisson_dual.cc
      laplace_operator_matrix_free.cc
+
+     # Lung applications
+     poisson_lung.cc
+     lung_tria.cc
+
      #multigrid_solver.cc
 
      # Scalar reaction-convection-diffusion

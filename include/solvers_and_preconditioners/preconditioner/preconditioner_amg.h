@@ -22,12 +22,12 @@ private:
   AMGData amg_data;
 
 #ifdef DEAL_II_WITH_TRILINOS
-private:
-  TrilinosWrappers::PreconditionAMG amg;
-
 public:
   // distributed sparse system matrix
   TrilinosWrappers::SparseMatrix system_matrix;
+
+private:
+  TrilinosWrappers::PreconditionAMG amg;
 #endif
 
 public:

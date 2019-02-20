@@ -35,7 +35,8 @@
 // laplace problems
 //#include "poisson_test_cases/cosinus.h"
 //#include "poisson_test_cases/cosinus_dual.h"
-#include "poisson_test_cases/gaussian.h"
+//#include "poisson_test_cases/gaussian.h"
+#include "poisson_test_cases/lung.h"
 //#include "poisson_test_cases/hyper_l.h"
 //#include "poisson_test_cases/torus.h"
 
@@ -87,6 +88,7 @@ private:
   {
     DataOut<dim> data_out;
     data_out.attach_dof_handler(poisson_operation->get_dof_handler());
+    solution.update_ghost_values();
     data_out.add_data_vector(solution, "solution");
 
     {
@@ -98,21 +100,21 @@ private:
       data_out.add_data_vector(ref_solution, "reference");
     }
 
-    auto ranks = solution;
-    int  rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    ranks = rank;
-    data_out.add_data_vector(ranks, "ranks");
+    // auto ranks = solution;
+    // int  rank;
+    // MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    // ranks = rank;
+    // data_out.add_data_vector(ranks, "ranks");
 
     data_out.build_patches(fe_degree);
 
     data_out.write_vtu_in_parallel(filename.c_str(), MPI_COMM_WORLD);
   }
 
-  ConditionalOStream                        pcout;
-  parallel::distributed::Triangulation<dim> triangulation;
-  const unsigned int                        n_refine_space;
-  Poisson::InputParameters                  param;
+  ConditionalOStream                            pcout;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
+  const unsigned int                            n_refine_space;
+  Poisson::InputParameters                      param;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
@@ -133,13 +135,17 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
                                                        bool               use_aux,
                                                        bool /*use_pcg*/)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    triangulation(MPI_COMM_WORLD,
-                  dealii::Triangulation<dim>::none,
-                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(n_refine_space_in)
 {
   print_header();
   param.set_input_parameters();
+
+  triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  //  triangulation.reset(new parallel::distributed::Triangulation<dim>(MPI_COMM_WORLD,
+  //                                                                    dealii::Triangulation<dim>::none,
+  //                                                                    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+
+
   param.degree_mapping = fe_degree;
   if(use_dg)
     param.spatial_discretization = SpatialDiscretization::DG;
@@ -177,7 +183,7 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
 
   boundary_descriptor.reset(new Poisson::BoundaryDescriptor<dim>());
 
-  poisson_operation.reset(new Poisson::DGOperation<dim, fe_degree, Number>(triangulation, param));
+  poisson_operation.reset(new Poisson::DGOperation<dim, fe_degree, Number>(*triangulation, param));
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -204,9 +210,9 @@ PoissonProblem<dim, fe_degree, Number>::print_grid_data()
         << std::endl;
 
   print_parameter(pcout, "Number of refinements", n_refine_space);
-  print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
-  print_parameter(pcout, "Number of faces", triangulation.n_active_faces());
-  print_parameter(pcout, "Number of vertices", triangulation.n_vertices());
+  print_parameter(pcout, "Number of cells", triangulation->n_global_active_cells());
+  print_parameter(pcout, "Number of faces", triangulation->n_active_faces());
+  print_parameter(pcout, "Number of vertices", triangulation->n_vertices());
 }
 
 template<int dim, int fe_degree, typename Number>

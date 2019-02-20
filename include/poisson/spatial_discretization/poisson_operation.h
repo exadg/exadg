@@ -33,8 +33,8 @@ class DGOperation : public dealii::Subscriptor
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
-              Poisson::InputParameters const &                  param_in);
+  DGOperation(parallel::Triangulation<dim> const & triangulation,
+              Poisson::InputParameters const &     param_in);
 
   void
   setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
@@ -97,9 +97,9 @@ private:
 
 public:
   Poisson::LaplaceOperator<dim, degree, Number> laplace_operator;
+  std::shared_ptr<PreconditionerBase<Number>>   preconditioner;
 
 private:
-  std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 };
 } // namespace Poisson
