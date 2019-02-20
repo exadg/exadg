@@ -10,7 +10,7 @@ void
 interpolate(const DoFHandlerType<dim, spacedim> &                       dof,
             const Function<spacedim, typename VectorType::value_type> & function,
             VectorType &                                                vec,
-            unsigned                                                    level = numbers::invalid_unsigned_int)
+            unsigned level = numbers::invalid_unsigned_int)
 {
   if(level == numbers::invalid_unsigned_int)
   {
@@ -40,11 +40,13 @@ interpolate(const DoFHandlerType<dim, spacedim> &                       dof,
           coefficient_list[i] = coefficient_list_[i];
 
         std::vector<types::global_dof_index> dof_indices_dg(fe.dofs_per_cell);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         cell1->get_mg_dof_indices(dof_indices_dg);
-        
+#pragma GCC diagnostic pop
+
         for(unsigned int i = 0; i < dof_indices_dg.size(); i++)
           vec[dof_indices_dg[i]] = coefficient_list[i];
-
       }
   }
 }

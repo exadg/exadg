@@ -9,7 +9,6 @@
 #define INCLUDE_CONVECTION_DIFFUSION_TIME_INT_BDF_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/lac/vector_view.h>
 
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"

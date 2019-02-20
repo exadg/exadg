@@ -21,8 +21,11 @@ add_periodicity_constraints(unsigned int const                            level,
     std::vector<types::global_dof_index> dofs_1(dofs_per_face);
     std::vector<types::global_dof_index> dofs_2(dofs_per_face);
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     face1->get_mg_dof_indices(target_level, dofs_1, 0);
     face2->get_mg_dof_indices(target_level, dofs_2, 0);
+#pragma GCC diagnostic pop
 
     for(unsigned int i = 0; i < dofs_per_face; ++i)
     {

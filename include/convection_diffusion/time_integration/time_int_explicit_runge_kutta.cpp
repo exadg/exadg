@@ -5,8 +5,6 @@
  *      Author: fehn
  */
 
-#include <deal.II/lac/vector_view.h>
-
 #include "time_int_explicit_runge_kutta.h"
 
 #include "../interface_space_time/operator.h"
