@@ -377,7 +377,7 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
     }
   }
 
-  // solve discrete temporal derivative term for intermediate velocity u_hat (if not STS approach)
+  // solve discrete temporal derivative term for intermediate velocity u_hat
   velocity_np.add(1.0, this->sum_alphai_ui);
   velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
@@ -593,12 +593,17 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   // compute right-hand-side vector
   rhs_projection();
 
+  // apply inverse mass matrix: this is the solution if no penalty terms are applied
+  // and serves as a good initial guess for the case with penalty terms
+  this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs_vec_projection);
+
+  // penalty terms
   VectorType velocity_extrapolated;
 
   unsigned int iterations_projection = 0;
 
   // extrapolate velocity to time t_n+1 and use this velocity field to
-  // caculate the penalty parameter for the divergence and continuity penalty term
+  // calculate the penalty parameter for the divergence and continuity penalty term
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
   {
     velocity_extrapolated.reinit(velocity[0]);
@@ -616,10 +621,6 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
     iterations_projection =
       this->operator_base->solve_projection(velocity_np, rhs_vec_projection, update_preconditioner);
   }
-  else // no penalty terms, simply apply inverse mass matrix
-  {
-    this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs_vec_projection);
-  }
 
   // write output
   if(this->print_solver_info())
@@ -632,7 +633,8 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
 
   // write velocity_np into intermediate_velocity which is needed for
   // postprocessing reasons
-  if(this->param.output_data.write_divergence == true ||
+  if((this->param.output_data.write_output == true &&
+      this->param.output_data.write_divergence == true) ||
      this->param.mass_data.calculate_error == true)
   {
     intermediate_velocity = velocity_np;

@@ -518,9 +518,9 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step()
   if(extra_pressure_gradient.get_order() > 0)
   {
     // Subtract extrapolation of pressure since the PPE is solved for the
-    // pressure increment phi = p_{n+1} - sum_i (beta_pressure_extra_i * pressure_i)
-    // where p_{n+1} is approximated by extrapolation of order J (=order of BDF scheme).
-    // Note that divergence correction term in case of rotational formulation is not
+    // pressure increment phi = p_{n+1} - sum_i (beta_pressure_extra_i * pressure_i),
+    // where p_{n+1} is approximated by an extrapolation of order J (=order of BDF scheme).
+    // Note that the divergence correction term in case of the rotational formulation is not
     // considered when calculating a good initial guess for the solution of the PPE,
     // which will slightly increase the number of iterations compared to the standard
     // formulation of the pressure-correction scheme.
@@ -709,6 +709,7 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_projection()
   {
     // evaluate inhomogeneous parts of boundary face integrals
     double const current_time = this->get_previous_time(i);
+    // note that the function rhs_...() already includes a factor of -1.0
     pde_operator->rhs_pressure_gradient_term(rhs_vec_projection_temp, current_time);
 
     rhs_vec_projection.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
@@ -727,6 +728,11 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step()
   // compute right-hand-side vector
   rhs_projection();
 
+  // apply inverse mass matrix: this is the solution if no penalty terms are applied
+  // and serves as a good initial guess for the case with penalty terms
+  this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs_vec_projection);
+
+  // penalty terms
   VectorType velocity_extrapolated;
 
   unsigned int iterations_projection = 0;
@@ -749,10 +755,6 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step()
 
     iterations_projection =
       this->operator_base->solve_projection(velocity_np, rhs_vec_projection, update_preconditioner);
-  }
-  else // no penalty terms, simply apply inverse mass matrix
-  {
-    this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs_vec_projection);
   }
 
   // write output
