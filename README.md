@@ -101,6 +101,26 @@ make -j2
 make install
 ```
 
+#### Metis code (optional)
+
+For some functionalities in the **navierstokes** code (e.g., graph partitioning), **metis** is required. The default setting is to not install **metis** and installing this package is optional.
+
+If you want to use **metis**, go to the *sw*-folder in your working directory
+
+```bash
+cd /working_directory/sw/
+```
+
+Download **metis** and run the following commands
+
+```bash
+git clone https://github.com/scibuilder/metis.git
+cd metis
+cmake .
+make
+```
+
+
 #### deal.II code
 
 The **navierstokes** code uses the **deal.II** library (https://www.dealii.org/), which is an open source finite element library based on the object-oriented C++ programming language.
@@ -139,11 +159,12 @@ cp /working_directory/workspace/navierstokes/scripts/config_dealii.sh .
 ```
 **N.B.**: To get these scripts, you first have to perform the first steps of the **navierstokes** installation described above, i.e., you have to fork and clone the **navierstokes** project.
 
-Next, adapt the directory settings at the top of the script and switch on trilinos if desired (and adjust the trilinos folder if necessary)
+Next, adapt the directory settings at the top of the script and switch on trilinos/metis if desired (and adjust the folder if necessary)
 
 ```bash
 ...
--D DEAL_II_WITH_TRILINOS:BOOL="ON"
+-D DEAL_II_WITH_TRILINOS:BOOL="ON" \
+-D DEAL_II_WITH_METIS:BOOL="ON" \
 ...
 ```
 Run the config-script

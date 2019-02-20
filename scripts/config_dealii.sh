@@ -1,7 +1,7 @@
 # path to infrastructure folders
 WORKING_DIRECTORY=/home/fehn
 # name of deal.II library directory
-DEAL=deal.II
+DEAL=matrixfree
 
 rm -rf CMakeFiles/ CMakeCache.txt
 
@@ -15,6 +15,8 @@ cmake \
     -D DEAL_II_LINKER_FLAGS="-lpthread" \
     -D DEAL_II_WITH_TRILINOS:BOOL="OFF" \
     -D TRILINOS_DIR:FILEPATH="$WORKING_DIRECTORY/sw/trilinos-install" \
+    -D DEAL_II_WITH_METIS:BOOL="OFF" \
+    -D METIS_DIR:FILEPATH="$WORKING_DIRECTORY/sw/metis" \  
     -D DEAL_II_FORCE_BUNDLED_BOOST="OFF" \
     -D DEAL_II_WITH_GSL="OFF" \
     -D DEAL_II_WITH_NETCDF="OFF" \

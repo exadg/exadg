@@ -78,7 +78,7 @@ private:
   evaluate_residual();
 
   void
-  postprocess_velocity();
+  projection_step();
 
   void
   postprocessing() const;

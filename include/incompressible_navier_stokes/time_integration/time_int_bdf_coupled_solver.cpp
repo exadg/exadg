@@ -367,12 +367,12 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
   // If the penalty terms are applied in a postprocessing step
   if(this->param.add_penalty_terms_to_monolithic_system == false)
   {
-    // postprocess velocity field using divergence and/or continuity penalty terms
+    // projection of velocity field using divergence and/or continuity penalty terms
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {
       timer.restart();
 
-      postprocess_velocity();
+      projection_step();
 
       computing_times[1] += timer.wall_time();
     }
@@ -381,13 +381,14 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
 
 template<int dim, typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::postprocess_velocity()
+TimeIntBDFCoupled<dim, Number>::projection_step()
 {
   Timer timer;
   timer.restart();
 
-  VectorType temp(solution_np.block(0));
-  this->operator_base->apply_mass_matrix(temp, solution_np.block(0));
+  // right-hand side term: apply mass matrix
+  VectorType rhs(solution_np.block(0));
+  this->operator_base->apply_mass_matrix(rhs, solution_np.block(0));
 
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // caculate the penalty parameter for the divergence and continuity penalty term
@@ -400,13 +401,13 @@ TimeIntBDFCoupled<dim, Number>::postprocess_velocity()
   this->operator_base->update_projection_operator(velocity_extrapolated,
                                                   this->get_time_step_size());
 
-  // solve projection (where also the preconditioner is updated)
   bool const update_preconditioner =
     this->param.update_preconditioner_projection &&
     (this->time_step_number % this->param.update_preconditioner_projection_every_time_steps == 0);
 
+  // solve projection (where also the preconditioner is updated)
   unsigned int iterations_postprocessing =
-    this->operator_base->solve_projection(solution_np.block(0), temp, update_preconditioner);
+    this->operator_base->solve_projection(solution_np.block(0), rhs, update_preconditioner);
 
   iterations[1] += iterations_postprocessing;
 
@@ -414,7 +415,7 @@ TimeIntBDFCoupled<dim, Number>::postprocess_velocity()
   if(this->print_solver_info())
   {
     this->pcout << std::endl
-                << "Postprocessing of velocity field:" << std::endl
+                << "Solve projection step:" << std::endl
                 << "  Iterations: " << std::setw(6) << std::right << iterations_postprocessing
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
@@ -630,7 +631,7 @@ template<int dim, typename Number>
 void
 TimeIntBDFCoupled<dim, Number>::analyze_computing_times() const
 {
-  std::string  names[2]     = {"Coupled system ", "Postprocessing "};
+  std::string  names[2]     = {"Coupled system ", "Projection step "};
   unsigned int N_time_steps = this->get_time_step_number() - 1;
 
   // iterations
