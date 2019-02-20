@@ -361,16 +361,10 @@ template<typename Number>
 void
 TimeIntBDF<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorView<Number> vector_view(solution[i].local_size(), solution[i].begin());
-    oa << vector_view;
+    oa << solution[i];
   }
-
-#pragma GCC diagnostic pop
 }
 
 template<typename Number>

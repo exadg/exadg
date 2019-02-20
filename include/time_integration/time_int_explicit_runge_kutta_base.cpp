@@ -5,8 +5,6 @@
  *      Author: fehn
  */
 
-#include <deal.II/lac/vector_view.h>
-
 #include "time_int_explicit_runge_kutta_base.h"
 
 template<typename Number>
@@ -130,11 +128,7 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
   oa & time_step;
 
   // 4. solution vectors
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  VectorView<Number> vector_view(solution_n.local_size(), solution_n.begin());
-  oa << vector_view;
-#pragma GCC diagnostic pop
+  oa << solution_n;
 
   write_restart_file(oss, filename);
 }

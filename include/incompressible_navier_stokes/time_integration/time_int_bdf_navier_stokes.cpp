@@ -5,11 +5,9 @@
  *      Author: fehn
  */
 
-#include <deal.II/lac/vector_view.h>
-
+#include "time_int_bdf_navier_stokes.h"
 #include "../interface_space_time/operator.h"
 #include "../user_interface/input_parameters.h"
-#include "time_int_bdf_navier_stokes.h"
 #include "time_integration/time_step_calculation.h"
 
 namespace IncNS
@@ -146,21 +144,14 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorView<Number> vector_view(get_velocity(i).local_size(), get_velocity(i).begin());
-    oa << vector_view;
+    oa << get_velocity(i);
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
-    VectorView<Number> vector_view(get_pressure(i).local_size(), get_pressure(i).begin());
-    oa << vector_view;
+    oa << get_pressure(i);
   }
-
-#pragma GCC diagnostic pop
 }
 
 template<int dim, typename Number>

@@ -49,7 +49,10 @@ restrict_to_coarser_level(VectorType &            vector_coarse_level,
 
       for(unsigned int child = 0; child < cell->n_children(); ++child)
       {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         cell->child(child)->get_mg_dof_indices(dof_indices);
+#pragma GCC diagnostic pop
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
           dof_values_fine(i) = ghosted_vector(dof_indices[i]);
 
@@ -65,7 +68,10 @@ restrict_to_coarser_level(VectorType &            vector_coarse_level,
             dof_values_coarse[i] = tmp[i];
         }
       }
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       cell->get_mg_dof_indices(dof_indices);
+#pragma GCC diagnostic pop
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
         vector_coarse_level(dof_indices[i]) = dof_values_coarse[i];
     }
