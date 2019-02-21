@@ -11,9 +11,9 @@ namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
 DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::DGNavierStokesPressureCorrection(
-  parallel::distributed::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &                      parameters_in,
-  std::shared_ptr<Postprocessor>                    postprocessor_in)
+  parallel::Triangulation<dim> const & triangulation,
+  InputParameters<dim> const &         parameters_in,
+  std::shared_ptr<Postprocessor>       postprocessor_in)
   : PROJECTION_METHODS_BASE(triangulation, parameters_in, postprocessor_in),
     rhs_vector(nullptr),
     evaluation_time(0.0),

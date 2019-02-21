@@ -73,6 +73,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -277,7 +280,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -285,10 +288,10 @@ void create_grid_and_set_boundary_conditions(
       Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
   const double left = -1.0, right = 1.0;
-  GridGenerator::hyper_cube(triangulation,left,right);
+  GridGenerator::hyper_cube(*triangulation,left,right);
 
   // set boundary indicator
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
@@ -298,7 +301,7 @@ void create_grid_and_set_boundary_conditions(
     }
   }
 
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 

@@ -11,9 +11,9 @@ namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::DGNavierStokesCoupled(
-  parallel::distributed::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &                      parameters_in,
-  std::shared_ptr<Postprocessor>                    postprocessor_in)
+  parallel::Triangulation<dim> const & triangulation,
+  InputParameters<dim> const &         parameters_in,
+  std::shared_ptr<Postprocessor>       postprocessor_in)
   : BASE(triangulation, parameters_in, postprocessor_in),
     sum_alphai_ui(nullptr),
     vector_linearization(nullptr),

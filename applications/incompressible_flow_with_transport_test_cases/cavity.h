@@ -96,6 +96,9 @@ void IncNS::InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mappping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -239,6 +242,10 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
+
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // convective term
   numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
@@ -292,18 +299,18 @@ void ConvDiff::InputParameters::set_input_parameters()
 
 template<int dim>
 void create_grid_and_set_boundary_ids(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
   const double left = 0.0, right = L;
-  GridGenerator::hyper_cube(triangulation,left,right);
-  triangulation.refine_global(n_refine_space);
+  GridGenerator::hyper_cube(*triangulation,left,right);
+  triangulation->refine_global(n_refine_space);
 
   // set boundary IDs: 0 by default, set upper boundary to 1
   typename Triangulation<dim>::cell_iterator cell;
-  for(cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+  for(cell = triangulation->begin(); cell != triangulation->end(); ++cell)
   {
     for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
     {

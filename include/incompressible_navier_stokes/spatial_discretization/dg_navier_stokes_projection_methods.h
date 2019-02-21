@@ -30,9 +30,9 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesProjectionMethods(parallel::distributed::Triangulation<dim> const & triangulation,
-                                  InputParameters<dim> const &                      parameters_in,
-                                  std::shared_ptr<Postprocessor> postprocessor_in);
+  DGNavierStokesProjectionMethods(parallel::Triangulation<dim> const & triangulation,
+                                  InputParameters<dim> const &         parameters_in,
+                                  std::shared_ptr<Postprocessor>       postprocessor_in);
 
   /*
    * Desctructor.

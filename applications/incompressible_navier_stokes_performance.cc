@@ -1,5 +1,5 @@
 /*
- * navier_stokes_operator_matrix_free.cc
+ * incompressible_navier_stokes_performance.cc
  *
  *  Created on: May 5, 2017
  *      Author: fehn
@@ -31,6 +31,8 @@
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+
+#include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -110,15 +112,9 @@ private:
   void
   print_header();
 
-  void
-  print_mpi_info();
-
-  void
-  print_grid_data();
-
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
@@ -160,21 +156,35 @@ template<int dim, int degree_u, int degree_p, typename Number>
 NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   unsigned int const refine_steps_space)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    triangulation(MPI_COMM_WORLD,
-                  dealii::Triangulation<dim>::none,
-                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(refine_steps_space),
     n_repetitions_inner(N_REPETITIONS_INNER),
     n_repetitions_outer(N_REPETITIONS_OUTER)
 {
   print_header();
-  print_mpi_info();
 
+  // input parameters
   param.set_input_parameters();
   param.check_input_parameters();
 
   if(param.print_input_parameters == true)
     param.print(pcout);
+
+  // triangulation
+  if(param.triangulation_type == TriangulationType::Distributed)
+  {
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(param.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
 
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
@@ -193,21 +203,21 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   // initialize navier_stokes_operation
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    navier_stokes_operation_coupled.reset(new DGCoupled(triangulation, param, postprocessor));
+    navier_stokes_operation_coupled.reset(new DGCoupled(*triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     navier_stokes_operation_dual_splitting.reset(
-      new DGDualSplitting(triangulation, param, postprocessor));
+      new DGDualSplitting(*triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_dual_splitting;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     navier_stokes_operation_pressure_correction.reset(
-      new DGPressureCorrection(triangulation, param, postprocessor));
+      new DGPressureCorrection(*triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_pressure_correction;
   }
@@ -267,28 +277,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header()
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_mpi_info()
-{
-  pcout << std::endl << "MPI info:" << std::endl << std::endl;
-  print_parameter(pcout, "Number of processes", Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_grid_data()
-{
-  pcout << std::endl
-        << "Generating grid for " << dim << "-dimensional problem:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "Number of refinements", n_refine_space);
-  print_parameter(pcout, "Number of cells", triangulation.n_global_active_cells());
-  print_parameter(pcout, "Number of faces", triangulation.n_active_faces());
-  print_parameter(pcout, "Number of vertices", triangulation.n_vertices());
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
 NavierStokesProblem<dim, degree_u, degree_p, Number>::setup()
 {
   // this function has to be defined in the header file that implements all
@@ -299,7 +287,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup()
                                           boundary_descriptor_pressure,
                                           periodic_faces);
 
-  print_grid_data();
+  print_grid_data(pcout, n_refine_space, *triangulation);
 
   // setup Navier-Stokes operation
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));

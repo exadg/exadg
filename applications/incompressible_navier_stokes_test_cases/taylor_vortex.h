@@ -74,6 +74,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -260,7 +263,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        /*boundary_descriptor_velocity*/,
     std::shared_ptr<BoundaryDescriptorP<dim> >        /*boundary_descriptor_pressure*/,
@@ -268,7 +271,7 @@ void create_grid_and_set_boundary_conditions(
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
   const double left = -1.0, right = 1.0;
-  GridGenerator::hyper_cube(triangulation,left,right);
+  GridGenerator::hyper_cube(*triangulation,left,right);
 
   // use Dirichlet boundary conditions
 //  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
@@ -281,17 +284,18 @@ void create_grid_and_set_boundary_conditions(
 
   // use periodic boundary conditions
   // x-direction
-  triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
-  triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
+  triangulation->begin()->face(0)->set_all_boundary_ids(0+10);
+  triangulation->begin()->face(1)->set_all_boundary_ids(1+10);
   // y-direction
-  triangulation.begin()->face(2)->set_all_boundary_ids(2+10);
-  triangulation.begin()->face(3)->set_all_boundary_ids(3+10);
+  triangulation->begin()->face(2)->set_all_boundary_ids(2+10);
+  triangulation->begin()->face(3)->set_all_boundary_ids(3+10);
 
-  GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
-  GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 1, periodic_faces);
-  triangulation.add_periodicity(periodic_faces);
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 1, periodic_faces);
+  triangulation->add_periodicity(periodic_faces);
 
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 }
 
 

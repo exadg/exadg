@@ -66,6 +66,10 @@ void ConvDiff::InputParameters::set_input_parameters()
   diffusion_number = 0.01;
 
   // SPATIAL DISCRETIZATION
+
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // convective term
   numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
@@ -231,15 +235,15 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>           &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
     unsigned int const                                  n_refine_space,
     std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
-  GridGenerator::hyper_cube(triangulation,left,right);
+  GridGenerator::hyper_cube(*triangulation,left,right);
 
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 

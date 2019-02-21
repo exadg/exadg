@@ -94,6 +94,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   if(MESH_TYPE == MeshType::Cartesian)
     degree_mapping = 1;
@@ -309,7 +312,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        /*boundary_descriptor_velocity*/,
     std::shared_ptr<BoundaryDescriptorP<dim> >        /*boundary_descriptor_pressure*/,
@@ -323,7 +326,7 @@ void create_grid_and_set_boundary_conditions(
                                          N_CELLS_1D_COARSE_GRID});
 
   Point<dim> point1(left,left,left), point2(right,right,right);
-  GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
 
   if(MESH_TYPE == MeshType::Cartesian)
   {
@@ -334,16 +337,16 @@ void create_grid_and_set_boundary_conditions(
     AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
         ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
 
-    triangulation.set_all_manifold_ids(1);
+    triangulation->set_all_manifold_ids(1);
     double const deformation = 0.5;
     unsigned int const frequency = 2;
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-    triangulation.set_manifold(1, manifold);
+    triangulation->set_manifold(1, manifold);
   }
 
   AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
@@ -365,14 +368,16 @@ void create_grid_and_set_boundary_conditions(
        cell->face(face_number)->set_all_boundary_ids (5);
    }
   }
-  GridTools::collect_periodic_faces(triangulation, 0, 1, 0 /*x-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(triangulation, 4, 5, 2 /*z-direction*/, periodic_faces);
 
-  triangulation.add_periodicity(periodic_faces);
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
+
+  triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   // test case with pure periodic BC
   // boundary descriptors remain empty for velocity and pressure

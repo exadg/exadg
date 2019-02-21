@@ -81,6 +81,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -388,7 +391,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -400,7 +403,7 @@ void create_grid_and_set_boundary_conditions(
   if(MESH_TYPE == MeshType::UniformCartesian)
   {
     // Uniform Cartesian grid
-    GridGenerator::subdivided_hyper_cube(triangulation,2,left,right);
+    GridGenerator::subdivided_hyper_cube(*triangulation,2,left,right);
   }
   else if(MESH_TYPE == MeshType::ComplexSurfaceManifold)
   {
@@ -409,14 +412,15 @@ void create_grid_and_set_boundary_conditions(
     const double radius = (right-left)*0.25;
     const double width = right-left;
     GridGenerator::hyper_shell(tria1, Point<dim>(), radius, 0.5*width*std::sqrt(dim), 2*dim);
+    tria1.reset_all_manifolds();
     if (dim == 2)
     {
       GridTools::rotate(numbers::PI/4, tria1);
     }
     GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
-    GridGenerator::merge_triangulations(tria1, tria2, triangulation);
-    triangulation.set_all_manifold_ids(0);
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
+    GridGenerator::merge_triangulations(tria1, tria2, *triangulation);
+    triangulation->set_all_manifold_ids(0);
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin();cell != triangulation->end(); ++cell)
     {
       for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -433,10 +437,10 @@ void create_grid_and_set_boundary_conditions(
       }
     }
     static const SphericalManifold<dim> spherical_manifold;
-    triangulation.set_manifold(1, spherical_manifold);
+    triangulation->set_manifold(1, spherical_manifold);
 
     // refine globally due to boundary conditions for vortex problem
-    triangulation.refine_global(1);
+    triangulation->refine_global(1);
   }
   else if(MESH_TYPE == MeshType::ComplexVolumeManifold)
   {
@@ -447,19 +451,20 @@ void create_grid_and_set_boundary_conditions(
     Point<dim> center = Point<dim>();
 
     GridGenerator::hyper_shell(tria1, Point<dim>(), radius, 0.5*width*std::sqrt(dim), 2*dim);
+    tria1.reset_all_manifolds();
     if (dim == 2)
     {
       GridTools::rotate(numbers::PI/4, tria1);
     }
     GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
-    GridGenerator::merge_triangulations(tria1, tria2, triangulation);
-    triangulation.set_all_manifold_ids(0);
+    GridGenerator::merge_triangulations(tria1, tria2, *triangulation);
+    triangulation->set_all_manifold_ids(0);
 
     // first fill vectors of manifold_ids and face_ids
     std::vector<unsigned int> manifold_ids;
     std::vector<unsigned int> face_ids;
 
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin();cell != triangulation->end(); ++cell)
     {
       for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
       {
@@ -485,22 +490,22 @@ void create_grid_and_set_boundary_conditions(
 
     for(unsigned int i=0;i<manifold_ids.size();++i)
     {
-      for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+      for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
       {
         if(cell->manifold_id() == manifold_ids[i])
         {
           manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
               static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
-          triangulation.set_manifold(manifold_ids[i],*(manifold_vec[i]));
+          triangulation->set_manifold(manifold_ids[i],*(manifold_vec[i]));
         }
       }
     }
 
     // refine globally due to boundary conditions for vortex problem
-    triangulation.refine_global(1);
+    triangulation->refine_global(1);
   }
 
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
@@ -512,7 +517,7 @@ void create_grid_and_set_boundary_conditions(
          cell->face(face_number)->set_boundary_id (1);
     }
   }
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 

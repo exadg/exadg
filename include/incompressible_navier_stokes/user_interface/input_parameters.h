@@ -205,6 +205,9 @@ public:
 
       // SPATIAL DISCRETIZATION
 
+      // triangulation
+      triangulation_type(TriangulationType::Undefined),
+
       // mapping
       degree_mapping(1),
 
@@ -458,6 +461,9 @@ public:
     }
 
     // SPATIAL DISCRETIZATION
+    AssertThrow(triangulation_type != TriangulationType::Undefined,
+                ExcMessage("parameter must be defined"));
+
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
 
     AssertThrow(IP_formulation_viscous != InteriorPenaltyFormulation::Undefined,
@@ -732,6 +738,8 @@ public:
   print_parameters_spatial_discretization(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Spatial discretization:" << std::endl;
+
+    print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
@@ -1277,6 +1285,9 @@ public:
   /*                              SPATIAL DISCRETIZATION                                */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // triangulation type
+  TriangulationType triangulation_type;
 
   // Polynomial degree of shape functions used for geometry approximation (mapping from
   // parameter space to physical space)

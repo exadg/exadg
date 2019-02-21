@@ -62,9 +62,9 @@ public:
   /*
    * Constructor.
    */
-  DGOperation(parallel::distributed::Triangulation<dim> const & triangulation,
-              InputParameters const &                           param_in,
-              std::shared_ptr<PostProcessor<dim, degree>>       postprocessor_in);
+  DGOperation(parallel::Triangulation<dim> const &        triangulation,
+              InputParameters const &                     param_in,
+              std::shared_ptr<PostProcessor<dim, degree>> postprocessor_in);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic

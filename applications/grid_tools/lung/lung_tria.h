@@ -7,13 +7,13 @@
 #define LUNG_NUMBER_OF_VERTICES_2D 17
 
 void
-create_cylinder(double                     radius1,
-                double                     radius2,
-                double                     length,
-                Tensor<2, 3>               transform,
-                Tensor<2, 3>               transform_parent,
-                Point<3>                   offset,
-                dealii::Tensor<1, 3>       /*direction*/,
+create_cylinder(double       radius1,
+                double       radius2,
+                double       length,
+                Tensor<2, 3> transform,
+                Tensor<2, 3> transform_parent,
+                Point<3>     offset,
+                dealii::Tensor<1, 3> /*direction*/,
                 std::vector<Point<3>> &    vertices_3d,
                 std::vector<CellData<3>> & cell_data_3d,
                 double                     deg0,
@@ -294,11 +294,13 @@ process_node(Node *                     node,
     // triangulation was successful (i.e. the cells are not too much deformed)
 
     unsigned int range_local = (node->get_intersections() + 1) * LUNG_NUMBER_OF_VERTICES_2D;
-    unsigned int range_global = node->is_root() ? 0 :
-      ((node->get_parent()->get_intersections() +
-        (node->is_left() ? 0 : node->get_parent()->get_left_child()->get_intersections())) +
-       2) *
-      LUNG_NUMBER_OF_VERTICES_2D;
+    unsigned int range_global =
+      node->is_root() ?
+        0 :
+        ((node->get_parent()->get_intersections() +
+          (node->is_left() ? 0 : node->get_parent()->get_left_child()->get_intersections())) +
+         2) *
+          LUNG_NUMBER_OF_VERTICES_2D;
 
     // mark all vertices of local branch with -1
     std::map<unsigned int, unsigned int> map;
@@ -313,7 +315,7 @@ process_node(Node *                     node,
       {
         auto t = vertices_3d[i];
         t -= vertices_3d_global[j];
-        if(t.norm() < 1e-2)
+        if(t.norm() < 1e-5)
         {
           map[i] = j;
           break;

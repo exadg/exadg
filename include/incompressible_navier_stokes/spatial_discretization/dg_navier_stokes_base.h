@@ -118,9 +118,9 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesBase(parallel::distributed::Triangulation<dim> const & triangulation,
-                     InputParameters<dim> const &                      parameters_in,
-                     std::shared_ptr<Postprocessor>                    postprocessor_in);
+  DGNavierStokesBase(parallel::Triangulation<dim> const & triangulation,
+                     InputParameters<dim> const &         parameters_in,
+                     std::shared_ptr<Postprocessor>       postprocessor_in);
 
   /*
    * Desctructor.
@@ -146,7 +146,7 @@ public:
    * by derived class.
    */
   virtual void
-  setup_solvers(double const & scaling_factor_time_derivative_term) = 0;
+  setup_solvers(double const & scaling_factor_time_derivative_term = 1.0) = 0;
 
   /*
    * Getters and setters.

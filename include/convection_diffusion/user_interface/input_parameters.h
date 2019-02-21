@@ -57,6 +57,7 @@ public:
       exponent_fe_degree_diffusion(3.0),
 
       // SPATIAL DISCRETIZATION
+      triangulation_type(TriangulationType::Undefined),
       degree_mapping(1),
       numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
       IP_factor(1.0),
@@ -203,6 +204,8 @@ public:
     }
 
     // SPATIAL DISCRETIZATION
+    AssertThrow(triangulation_type != TriangulationType::Undefined, ExcMessage("parameter must be defined"));
+
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
 
     if(equation_type == EquationType::Convection ||
@@ -368,6 +371,8 @@ public:
   print_parameters_spatial_discretization(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Spatial Discretization:" << std::endl;
+
+    print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
@@ -564,6 +569,9 @@ public:
   /*                              SPATIAL DISCRETIZATION                                */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // triangulation type
+  TriangulationType triangulation_type;
 
   // Polynomial degree of shape functions used for geometry approximation (mapping from
   // parameter space to physical space)

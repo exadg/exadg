@@ -95,6 +95,9 @@ void CompNS::InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // viscous term
   IP_factor = 1.0; //10.0;
 
@@ -508,7 +511,7 @@ double Solution<dim>::value(const Point<dim>    &p,
 
  template<int dim>
  void create_grid_and_set_boundary_conditions(
-   parallel::distributed::Triangulation<dim>                &triangulation,
+   std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
 	 unsigned int const                                       n_refine_space,
 	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
 	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
@@ -519,9 +522,9 @@ double Solution<dim>::value(const Point<dim>    &p,
  {
    // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
    const double left = -1.0 , right = 0.5;
-   GridGenerator::hyper_cube(triangulation,left,right);
+   GridGenerator::hyper_cube(*triangulation,left,right);
 
-   typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
    for(;cell!=endc;++cell)
    {
      for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
@@ -537,10 +540,11 @@ double Solution<dim>::value(const Point<dim>    &p,
      }
    }
 
-   GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 1, periodic_faces);
-   triangulation.add_periodicity(periodic_faces);
+   auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+   GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 1, periodic_faces);
+   triangulation->add_periodicity(periodic_faces);
 
-   triangulation.refine_global(n_refine_space);
+   triangulation->refine_global(n_refine_space);
 
    std::shared_ptr<Function<dim> > density_bc;
    density_bc.reset(new DensityBC<dim>());

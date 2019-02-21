@@ -1,5 +1,5 @@
 /*
- * unsteady_compressible_navier_stokes.cc
+ * compressible_navier_stokes.cc
  *
  *  Created on: 2018
  *      Author: fehn
@@ -37,9 +37,9 @@
 //#include "compressible_navier_stokes_test_cases/channel_flow.h"
 //#include "compressible_navier_stokes_test_cases/couette_flow.h"
 //#include "compressible_navier_stokes_test_cases/steady_shear_flow.h"
-//#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
+#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
 //#include "compressible_navier_stokes_test_cases/flow_past_cylinder.h"
-#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;
@@ -69,7 +69,7 @@ private:
 
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
@@ -97,9 +97,6 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
   unsigned int const n_refine_space_in,
   unsigned int const n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    triangulation(MPI_COMM_WORLD,
-                  dealii::Triangulation<dim>::none,
-                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(n_refine_space_in),
     n_refine_time(n_refine_time_in)
 {
@@ -111,6 +108,23 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
 
   if(param.print_input_parameters == true)
     param.print(pcout);
+
+  // triangulation
+  if(param.triangulation_type == TriangulationType::Distributed)
+  {
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(param.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
 
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
@@ -131,7 +145,7 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
     construct_postprocessor<dim, degree, n_q_points_conv, n_q_points_vis, Number>(param);
 
   // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(new DG_OPERATOR(triangulation, param, postprocessor));
+  comp_navier_stokes_operator.reset(new DG_OPERATOR(*triangulation, param, postprocessor));
 
   // initialize time integrator
   time_integrator.reset(new TIME_INT(comp_navier_stokes_operator, param, n_refine_time));
@@ -166,7 +180,7 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve_problem(boo
                                           boundary_descriptor_energy,
                                           periodic_faces);
 
-  print_grid_data(pcout, n_refine_space, triangulation);
+  print_grid_data(pcout, n_refine_space, *triangulation);
 
   comp_navier_stokes_operator->setup(boundary_descriptor_density,
                                      boundary_descriptor_velocity,

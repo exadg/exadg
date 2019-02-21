@@ -72,6 +72,10 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
+  // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term - currently no parameters
@@ -235,7 +239,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -244,10 +248,10 @@ void create_grid_and_set_boundary_conditions(
 {
   std::vector<unsigned int> repetitions({2,1});
   Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
-  GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
 
   // set boundary indicator
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
@@ -256,7 +260,7 @@ void create_grid_and_set_boundary_conditions(
         cell->face(face_number)->set_boundary_id (1);
     }
   }
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 

@@ -1,5 +1,5 @@
 /*
- * unsteady_convection_diffusion.cc
+ * convection_diffusion.cc
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
@@ -23,6 +23,8 @@
 #include "convection_diffusion/time_integration/time_int_bdf.h"
 #include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
 
+#include "convection_diffusion/time_integration/driver_steady_problems.h"
+
 // user interface, etc.
 #include "convection_diffusion/user_interface/analytical_solution.h"
 #include "convection_diffusion/user_interface/boundary_descriptor.h"
@@ -37,7 +39,7 @@
 // convection problems
 
 //#include "convection_diffusion_test_cases/propagating_sine_wave.h"
-#include "convection_diffusion_test_cases/rotating_hill.h"
+//#include "convection_diffusion_test_cases/rotating_hill.h"
 //#include "convection_diffusion_test_cases/deforming_hill.h"
 
 // diffusion problems
@@ -48,7 +50,7 @@
 
 //#include "convection_diffusion_test_cases/constant_rhs.h"
 //#include "convection_diffusion_test_cases/boundary_layer_problem.h"
-//#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
+#include "convection_diffusion_test_cases/const_rhs_const_and_circular_wind.h"
 
 using namespace dealii;
 using namespace ConvDiff;
@@ -60,7 +62,10 @@ public:
   ConvDiffProblem(const unsigned int n_refine_space, const unsigned int n_refine_time);
 
   void
-  solve_problem(bool const do_restart);
+  setup(bool const do_restart);
+
+  void
+  solve();
 
 private:
   void
@@ -68,7 +73,7 @@ private:
 
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
@@ -89,15 +94,14 @@ private:
   std::shared_ptr<PostProcessor<dim, degree>> postprocessor;
 
   std::shared_ptr<TimeIntBase> time_integrator;
+
+  std::shared_ptr<DriverSteadyProblems<Number>> driver_steady;
 };
 
 template<int dim, int degree, typename Number>
 ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refine_space_in,
                                                       const unsigned int n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    triangulation(MPI_COMM_WORLD,
-                  dealii::Triangulation<dim>::none,
-                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(n_refine_space_in),
     n_refine_time(n_refine_time_in)
 {
@@ -106,11 +110,26 @@ ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refin
 
   param.set_input_parameters();
   param.check_input_parameters();
-  AssertThrow(param.problem_type == ProblemType::Unsteady,
-              ExcMessage("ProblemType must be unsteady!"));
 
   if(param.print_input_parameters)
     param.print(pcout);
+
+  // triangulation
+  if(param.triangulation_type == TriangulationType::Distributed)
+  {
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(param.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
 
   field_functions.reset(new FieldFunctions<dim>());
   // this function has to be defined in the header file that implements
@@ -126,22 +145,34 @@ ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refin
   postprocessor.reset(new PostProcessor<dim, degree>());
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(new OPERATOR(triangulation, param, postprocessor));
+  conv_diff_operator.reset(new OPERATOR(*triangulation, param, postprocessor));
 
-  // initialize time integrator
-  if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+  if(param.problem_type == ProblemType::Unsteady)
   {
-    time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param, n_refine_time));
+    // initialize time integrator
+    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param, n_refine_time));
+    }
+    else if(param.temporal_discretization == TemporalDiscretization::BDF)
+    {
+      time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param, n_refine_time));
+    }
+    else
+    {
+      AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
+                    param.temporal_discretization == TemporalDiscretization::BDF,
+                  ExcMessage("Specified time integration scheme is not implemented!"));
+    }
   }
-  else if(param.temporal_discretization == TemporalDiscretization::BDF)
+  else if(param.problem_type == ProblemType::Steady)
   {
-    time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param, n_refine_time));
+    // initialize driver for steady convection-diffusion problems
+    driver_steady.reset(new DriverSteadyProblems<Number>(conv_diff_operator, param));
   }
   else
   {
-    AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
-                  param.temporal_discretization == TemporalDiscretization::BDF,
-                ExcMessage("Specified time integration scheme is not implemented!"));
+    AssertThrow(false, ExcMessage("Not implemented"));
   }
 }
 
@@ -162,33 +193,62 @@ ConvDiffProblem<dim, degree, Number>::print_header()
 
 template<int dim, int degree, typename Number>
 void
-ConvDiffProblem<dim, degree, Number>::solve_problem(bool const do_restart)
+ConvDiffProblem<dim, degree, Number>::setup(bool const do_restart)
 {
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor);
 
-  print_grid_data(pcout, n_refine_space, triangulation);
+  print_grid_data(pcout, n_refine_space, *triangulation);
 
   conv_diff_operator->setup(periodic_faces,
                             boundary_descriptor,
                             field_functions,
                             analytical_solution);
 
-  // setup time integrator
-  time_integrator->setup(do_restart);
-
-  // setup solvers in case of BDF time integration
-  if(param.temporal_discretization == TemporalDiscretization::BDF)
+  if(param.problem_type == ProblemType::Unsteady)
   {
-    std::shared_ptr<TimeIntBDF<Number>> time_integrator_bdf =
-      std::dynamic_pointer_cast<TimeIntBDF<Number>>(time_integrator);
+    // setup time integrator
+    time_integrator->setup(do_restart);
 
-    conv_diff_operator->setup_solver(
-      time_integrator_bdf->get_scaling_factor_time_derivative_term());
+    // setup solvers in case of BDF time integration
+    if(param.temporal_discretization == TemporalDiscretization::BDF)
+    {
+      std::shared_ptr<TimeIntBDF<Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<TimeIntBDF<Number>>(time_integrator);
+
+      conv_diff_operator->setup_solver(
+        time_integrator_bdf->get_scaling_factor_time_derivative_term());
+    }
   }
+  else if(param.problem_type == ProblemType::Steady)
+  {
+    conv_diff_operator->setup_solver(/*no parameter since this is a steady problem*/);
 
-  time_integrator->timeloop();
+    driver_steady->setup();
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+}
+
+template<int dim, int degree, typename Number>
+void
+ConvDiffProblem<dim, degree, Number>::solve()
+{
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    time_integrator->timeloop();
+  }
+  else if(param.problem_type == ProblemType::Steady)
+  {
+    driver_steady->solve_problem();
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
 }
 
 int
@@ -232,10 +292,11 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        ConvDiffProblem<DIMENSION, FE_DEGREE> conv_diff_problem(refine_steps_space,
-                                                                refine_steps_time);
+        ConvDiffProblem<DIMENSION, FE_DEGREE> problem(refine_steps_space, refine_steps_time);
 
-        conv_diff_problem.solve_problem(do_restart);
+        problem.setup(do_restart);
+
+        problem.solve();
       }
     }
   }

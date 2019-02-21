@@ -41,9 +41,9 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesDualSplitting(parallel::distributed::Triangulation<dim> const & triangulation,
-                              InputParameters<dim> const &                      parameters_in,
-                              std::shared_ptr<Postprocessor>                    postprocessor_in);
+  DGNavierStokesDualSplitting(parallel::Triangulation<dim> const & triangulation,
+                              InputParameters<dim> const &         parameters_in,
+                              std::shared_ptr<Postprocessor>       postprocessor_in);
 
   /*
    * Destructor.

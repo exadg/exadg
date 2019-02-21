@@ -185,6 +185,9 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -694,7 +697,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_1(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -713,7 +716,7 @@ void create_grid_and_set_boundary_conditions_1(
   center[0] = - (LENGTH_BFS_UP + GAP_CHANNEL_BFS + LENGTH_CHANNEL/2.0);
   center[1] = HEIGHT_CHANNEL/2.0;
 
-  GridGenerator::subdivided_hyper_rectangle (triangulation,
+  GridGenerator::subdivided_hyper_rectangle (*triangulation,
                                              std::vector<unsigned int>({2,1,1}), //refinements
                                              Point<dim>(center-dimensions/2.0),
                                              Point<dim>(center+dimensions/2.0));
@@ -722,18 +725,18 @@ void create_grid_and_set_boundary_conditions_1(
   {
     // manifold
     unsigned int manifold_id = 1;
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
     {
       cell->set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const ManifoldTurbulentChannel<dim> manifold;
-    triangulation.set_manifold(manifold_id, manifold);
+    triangulation->set_manifold(manifold_id, manifold);
   }
 
   // set boundary ID's: periodicity
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
     for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
@@ -754,12 +757,13 @@ void create_grid_and_set_boundary_conditions_1(
     }
   }
 
-  GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
-  GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
-  triangulation.add_periodicity(periodic_faces);
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
+  triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements: use one level finer for the channel
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
@@ -774,7 +778,7 @@ void create_grid_and_set_boundary_conditions_1(
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_2(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -810,11 +814,11 @@ void create_grid_and_set_boundary_conditions_2(
 
     Triangulation<dim> tmp1;
     GridGenerator::merge_triangulations (tria_1, tria_2, tmp1);
-    GridGenerator::merge_triangulations (tmp1, tria_3, triangulation);
+    GridGenerator::merge_triangulations (tmp1, tria_3, *triangulation);
   }
 
   // set boundary ID's
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
     for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
@@ -839,22 +843,23 @@ void create_grid_and_set_boundary_conditions_2(
   {
     // manifold
     unsigned int manifold_id = 1;
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
     {
       cell->set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const ManifoldTurbulentChannel<dim> manifold;
-    triangulation.set_manifold(manifold_id, manifold);
+    triangulation->set_manifold(manifold_id, manifold);
   }
 
   // periodicity in z-direction
-  GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
-  triangulation.add_periodicity(periodic_faces);
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
+  triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
