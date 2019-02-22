@@ -24,7 +24,7 @@
 typedef double VALUE_TYPE;
 
 // set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 3;
+unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
 unsigned int const FE_DEGREE_VELOCITY = 5;
@@ -42,7 +42,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 const double VISCOSITY = 1.0e-6;
 
 enum class MeshType{ UniformCartesian, Complex };
-const MeshType MESH_TYPE = MeshType::UniformCartesian;
+const MeshType MESH_TYPE = MeshType::Complex; //UniformCartesian;
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
@@ -73,6 +73,9 @@ void InputParameters<dim>::set_input_parameters()
   start_with_low_order = false; // true; // false;
 
   // SPATIAL DISCRETIZATION
+
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
 
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
@@ -152,7 +155,7 @@ void InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_data.write_output = false; //true;
+  output_data.write_output = true;
   output_data.output_folder = "output/stokes_guermond/";
   output_data.output_name = "stokes_guermond";
   output_data.output_start_time = start_time;
@@ -317,7 +320,7 @@ template<int dim>
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -328,61 +331,66 @@ void create_grid_and_set_boundary_conditions(
   {
     // Uniform Cartesian grid
     const double left = 0.0, right = 1.0;
-    GridGenerator::hyper_cube(triangulation,left,right);
+    GridGenerator::hyper_cube(*triangulation,left,right);
 
     /****** test one-sided spherical manifold *********/
-//    Point<dim> center = Point<dim>();
-//    center[0] = 1.15;
-//    center[1] = 0.5;
-//    typename Triangulation<dim>::cell_iterator cell = triangulation.begin();
-//    cell->set_all_manifold_ids(10);
-//    //    cell->vertex(0)[1] = -1.0;
-//    //    cell->vertex(2)[1] = 2.0;
-//    //    cell->vertex(4)[1] = -1.0;
-//    //    cell->vertex(6)[1] = 2.0;
-//
-//    static std::shared_ptr<Manifold<dim> > my_manifold =
-//      std::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,1,center)));
-//    triangulation.set_manifold(10,*my_manifold);
+    if(false)
+    {
+      Point<dim> center = Point<dim>();
+      center[0] = 1.15;
+      center[1] = 0.5;
+      typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
+      cell->set_all_manifold_ids(10);
+      //    cell->vertex(0)[1] = -1.0;
+      //    cell->vertex(2)[1] = 2.0;
+      //    cell->vertex(4)[1] = -1.0;
+      //    cell->vertex(6)[1] = 2.0;
+
+      static std::shared_ptr<Manifold<dim> > my_manifold =
+        std::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,1,center)));
+      triangulation->set_manifold(10,*my_manifold);
+    }
     /****** test one-sided spherical manifold *********/
 
-    triangulation.refine_global(n_refine_space);
+    triangulation->refine_global(n_refine_space);
   }
-//  else if(MESH_TYPE == MeshType::Complex)
-//  {
-//    // Complex Geometry
-//    Triangulation<dim> tria1, tria2;
-//    GridGenerator::hyper_shell(tria1, Point<dim>(), 0.4, std::sqrt(dim), 2*dim);
-//    if (dim == 2)
-//      GridTools::rotate(numbers::PI/4, tria1);
-//    GridGenerator::hyper_ball(tria2, Point<dim>(), 0.4);
-//    GridGenerator::merge_triangulations(tria1, tria2, triangulation);
-//    triangulation.set_all_manifold_ids(0);
-//    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin();cell != triangulation.end(); ++cell)
-//    {
-//      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
-//      {
-//        bool face_at_sphere_boundary = true;
-//        for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
-//        {
-//          if (std::abs(cell->face(f)->vertex(v).norm()-0.4) > 1e-12)
-//            face_at_sphere_boundary = false;
-//        }
-//        if (face_at_sphere_boundary)
-//        {
-//          cell->face(f)->set_all_manifold_ids(1);
-//        }
-//      }
-//      if (cell->center().norm() > 0.4)
-//        cell->set_material_id(1);
-//      else
-//        cell->set_material_id(0);
-//    }
-//    static const SphericalManifold<dim> spherical_manifold;
-//    triangulation.set_manifold(1, spherical_manifold);
-//    triangulation.set_boundary(0);
-//    triangulation.refine_global(n_refine_space);
-//  }
+  else if(MESH_TYPE == MeshType::Complex)
+  {
+    // Complex Geometry
+    const double left = -1.0, right = 1.0;
+    Triangulation<dim> tria1, tria2;
+    const double radius = (right-left)*0.25;
+    const double width = right-left;
+    GridGenerator::hyper_shell(tria1, Point<dim>(), radius, 0.5*width*std::sqrt(dim), 2*dim);
+    tria1.reset_all_manifolds();
+    if (dim == 2)
+    {
+      GridTools::rotate(numbers::PI/4, tria1);
+    }
+    GridGenerator::hyper_ball(tria2, Point<dim>(), radius);
+    GridGenerator::merge_triangulations(tria1, tria2, *triangulation);
+    triangulation->set_all_manifold_ids(0);
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin();cell != triangulation->end(); ++cell)
+    {
+      for (unsigned int f=0; f<GeometryInfo<dim>::faces_per_cell; ++f)
+      {
+        bool face_at_sphere_boundary = true;
+        for (unsigned int v=0; v<GeometryInfo<dim-1>::vertices_per_cell; ++v)
+        {
+          if (std::abs(cell->face(f)->vertex(v).norm()-radius) > 1e-12)
+            face_at_sphere_boundary = false;
+        }
+        if (face_at_sphere_boundary)
+        {
+          cell->face(f)->set_all_manifold_ids(1);
+        }
+      }
+    }
+    static const SphericalManifold<dim> spherical_manifold;
+    triangulation->set_manifold(1, spherical_manifold);
+
+    triangulation->refine_global(n_refine_space);
+  }
 
 
   // test case with pure Dirichlet boundary conditions for velocity

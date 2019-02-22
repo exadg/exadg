@@ -86,9 +86,9 @@ public:
   static const unsigned int n_q_points_l2_projections =
     (quad_index_l2_projections == quad_index_standard) ? degree + 1 : n_q_points_conv;
 
-  DGOperator(parallel::distributed::Triangulation<dim> const & triangulation,
-             InputParameters<dim> const &                      param_in,
-             std::shared_ptr<Postprocessor>                    postprocessor_in)
+  DGOperator(parallel::Triangulation<dim> const & triangulation,
+             InputParameters<dim> const &         param_in,
+             std::shared_ptr<Postprocessor>       postprocessor_in)
     : dealii::Subscriptor(),
       fe(new FESystem<dim>(FE_DGQ<dim>(degree), dim + 2)),
       fe_vector(new FESystem<dim>(FE_DGQ<dim>(degree), dim)),

@@ -9,6 +9,8 @@ load_files(std::vector<std::string>          files,
            std::vector<CellData<1>> &        cells,
            std::vector<CellAdditionalInfo> & cells_additional_data)
 {
+  double const mm_to_m = 0.001;
+
   for(auto filename : files)
   {
     std::ifstream infile(filename);
@@ -32,7 +34,7 @@ load_files(std::vector<std::string>          files,
         break;
       } // error
 
-      points.push_back({x, y, z});
+      points.push_back({x * mm_to_m, y * mm_to_m, z * mm_to_m}); // in meter
     }
 
     while(std::getline(infile, line))
@@ -96,7 +98,7 @@ load_files(std::vector<std::string>          files,
 
       CellAdditionalInfo cai;
       cai.generation = generation_val;
-      cai.radius     = std::pow(area_val / numbers::PI, 0.5);
+      cai.radius     = std::pow(area_val / numbers::PI, 0.5) * mm_to_m; // in meter
       cells_additional_data.push_back(cai);
     }
   }

@@ -1,5 +1,5 @@
 /*
- * unsteady_incompressible_flow_with_transport.cc
+ * incompressible_flow_with_transport.cc
  *
  *  Created on: Nov 6, 2018
  *      Author: fehn
@@ -91,7 +91,7 @@ private:
 
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
@@ -152,9 +152,6 @@ template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const refine_steps_space,
                                                             unsigned int const refine_steps_time)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    triangulation(MPI_COMM_WORLD,
-                  dealii::Triangulation<dim>::none,
-                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(refine_steps_space),
     use_adaptive_time_stepping(false)
 {
@@ -167,6 +164,32 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
 
   if(fluid_param.print_input_parameters == true)
     fluid_param.print(pcout);
+
+  // triangulation
+  if(fluid_param.triangulation_type == IncNS::TriangulationType::Distributed)
+  {
+    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::Distributed,
+                ExcMessage(
+                  "Parameter triangulation_type is different for fluid field and scalar field"));
+
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(fluid_param.triangulation_type == IncNS::TriangulationType::FullyDistributed)
+  {
+    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::FullyDistributed,
+                ExcMessage(
+                  "Parameter triangulation_type is different for fluid field and scalar field"));
+
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
+
 
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
   // this function has to be defined in the header file
@@ -196,7 +219,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
     std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
 
     navier_stokes_operation_coupled.reset(
-      new DGCoupled(triangulation, fluid_param, fluid_postprocessor));
+      new DGCoupled(*triangulation, fluid_param, fluid_postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
 
@@ -211,7 +234,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
     std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
 
     navier_stokes_operation_dual_splitting.reset(
-      new DGDualSplitting(triangulation, fluid_param, fluid_postprocessor));
+      new DGDualSplitting(*triangulation, fluid_param, fluid_postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_dual_splitting;
 
@@ -226,7 +249,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
     std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
 
     navier_stokes_operation_pressure_correction.reset(
-      new DGPressureCorrection(triangulation, fluid_param, fluid_postprocessor));
+      new DGPressureCorrection(*triangulation, fluid_param, fluid_postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_pressure_correction;
 
@@ -265,7 +288,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   scalar_postprocessor.reset(new ConvDiff::PostProcessor<dim, degree_s>());
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(triangulation,
+  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(*triangulation,
                                                                             scalar_param,
                                                                             scalar_postprocessor));
 
@@ -321,7 +344,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup_navier_stokes(bool con
   IncNS::set_boundary_conditions(fluid_boundary_descriptor_velocity,
                                  fluid_boundary_descriptor_pressure);
 
-  print_grid_data(pcout, n_refine_space, triangulation);
+  print_grid_data(pcout, n_refine_space, *triangulation);
 
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,

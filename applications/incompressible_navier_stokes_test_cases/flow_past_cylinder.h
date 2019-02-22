@@ -83,6 +83,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -306,7 +309,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-   parallel::distributed::Triangulation<dim>        &triangulation,
+   std::shared_ptr<parallel::Triangulation<dim>>    triangulation,
    unsigned int const                               n_refine_space,
    std::shared_ptr<BoundaryDescriptorU<dim> >       boundary_descriptor_velocity,
    std::shared_ptr<BoundaryDescriptorP<dim> >       boundary_descriptor_pressure,
@@ -342,8 +345,8 @@ void create_grid_and_set_boundary_conditions(
        ExcMessage("Specified manifold type not implemented"));
  }
 
- create_triangulation(triangulation);
- triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
+ create_triangulation(*triangulation);
+ triangulation->set_manifold(MANIFOLD_ID, *cylinder_manifold);
 
  // generate vector of manifolds and apply manifold to all cells that have been marked
  static std::vector<std::shared_ptr<Manifold<dim> > > manifold_vec;
@@ -351,19 +354,20 @@ void create_grid_and_set_boundary_conditions(
 
  for(unsigned int i=0;i<manifold_ids.size();++i)
  {
-   for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+   for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
    {
      if(cell->manifold_id() == manifold_ids[i])
      {
        manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
            static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
-       triangulation.set_manifold(manifold_ids[i],*(manifold_vec[i]));
+       triangulation->set_manifold(manifold_ids[i],*(manifold_vec[i]));
      }
    }
  }
 
- triangulation.refine_global(n_refine_space);
+ triangulation->refine_global(n_refine_space);
 
+ // set boundary conditions
  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
  // fill boundary descriptor velocity

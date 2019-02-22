@@ -154,6 +154,19 @@ enum_to_string(TimeStepCalculation const enum_type);
 /**************************************************************************************/
 
 /*
+ * Triangulation type
+ */
+enum class TriangulationType
+{
+  Undefined,
+  Distributed,
+  FullyDistributed
+};
+
+std::string
+enum_to_string(TriangulationType const enum_type);
+
+/*
  *  Numerical flux formulation of convective term
  */
 

@@ -147,6 +147,9 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -500,7 +503,7 @@ private:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_1(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -518,7 +521,7 @@ void create_grid_and_set_boundary_conditions_1(
 
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
     std::vector<unsigned int> refinements(dim, 1);
-    GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(),coordinates);
+    GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(),coordinates);
   }
   else if (GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
   {
@@ -530,43 +533,44 @@ void create_grid_and_set_boundary_conditions_1(
 
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
     std::vector<unsigned int> refinements(dim, 1);
-    GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(-dimensions/2.0),Point<dim>(dimensions/2.0));
+    GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(-dimensions/2.0),Point<dim>(dimensions/2.0));
 
     // manifold
     unsigned int manifold_id = 1;
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
     {
       cell->set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-    triangulation.set_manifold(manifold_id, manifold);
+    triangulation->set_manifold(manifold_id, manifold);
   }
 
    //periodicity in x- and z-direction (add 10 to avoid conflicts with dirichlet boundary, which is 0)
-   triangulation.begin()->face(0)->set_all_boundary_ids(0+10);
-   triangulation.begin()->face(1)->set_all_boundary_ids(1+10);
+   triangulation->begin()->face(0)->set_all_boundary_ids(0+10);
+   triangulation->begin()->face(1)->set_all_boundary_ids(1+10);
    //periodicity in z-direction
    if (dim == 3)
    {
-     triangulation.begin()->face(4)->set_all_boundary_ids(2+10);
-     triangulation.begin()->face(5)->set_all_boundary_ids(3+10);
+     triangulation->begin()->face(4)->set_all_boundary_ids(2+10);
+     triangulation->begin()->face(5)->set_all_boundary_ids(3+10);
    }
 
-   GridTools::collect_periodic_faces(triangulation, 0+10, 1+10, 0, periodic_faces);
+   auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+   GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
    if (dim == 3)
-     GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
+     GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
 
-   triangulation.add_periodicity(periodic_faces);
+   triangulation->add_periodicity(periodic_faces);
 
    // perform global refinements
-   triangulation.refine_global(n_refine_space);
+   triangulation->refine_global(n_refine_space);
 
    if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
    {
      // perform grid transform
-     GridTools::transform (&grid_transform<dim>, triangulation);
+     GridTools::transform (&grid_transform<dim>, *triangulation);
    }
 
    typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
@@ -582,7 +586,7 @@ void create_grid_and_set_boundary_conditions_1(
 
 template<int dim>
 void create_grid_and_set_boundary_conditions_2(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -600,7 +604,7 @@ void create_grid_and_set_boundary_conditions_2(
 
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
     std::vector<unsigned int> refinements(dim, 1);
-    GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(),coordinates);
+    GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(),coordinates);
   }
   else if (GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
   {
@@ -615,10 +619,10 @@ void create_grid_and_set_boundary_conditions_2(
 
     // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
     std::vector<unsigned int> refinements(dim, 1);
-    GridGenerator::subdivided_hyper_rectangle (triangulation, refinements,Point<dim>(-dimensions/2.0+offset),Point<dim>(dimensions/2.0+offset));
+    GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(-dimensions/2.0+offset),Point<dim>(dimensions/2.0+offset));
 
     // set boundary ID's
-    typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+    typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
     for(;cell!=endc;++cell)
     {
       for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
@@ -635,32 +639,33 @@ void create_grid_and_set_boundary_conditions_2(
 
     // manifold
     unsigned int manifold_id = 1;
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
     {
       cell->set_all_manifold_ids(manifold_id);
     }
 
     // apply mesh stretching towards no-slip boundaries in y-direction
     static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-    triangulation.set_manifold(manifold_id, manifold);
+    triangulation->set_manifold(manifold_id, manifold);
   }
 
   // periodicity in z-direction
   // add 10 to avoid conflicts with dirichlet boundary
-  triangulation.begin()->face(4)->set_all_boundary_ids(2+10);
-  triangulation.begin()->face(5)->set_all_boundary_ids(3+10);
+  triangulation->begin()->face(4)->set_all_boundary_ids(2+10);
+  triangulation->begin()->face(5)->set_all_boundary_ids(3+10);
 
-  GridTools::collect_periodic_faces(triangulation, 2+10, 3+10, 2, periodic_faces);
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
 
-  triangulation.add_periodicity(periodic_faces);
+  triangulation->add_periodicity(periodic_faces);
 
   // perform global refinements
-  triangulation.refine_global(n_refine_space);
+  triangulation->refine_global(n_refine_space);
 
   if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
   {
     // perform grid transform
-    GridTools::transform (&grid_transform<dim>, triangulation);
+    GridTools::transform (&grid_transform<dim>, *triangulation);
   }
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;

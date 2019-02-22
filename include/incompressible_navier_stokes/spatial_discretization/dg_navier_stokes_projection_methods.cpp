@@ -13,9 +13,9 @@ namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
 DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::DGNavierStokesProjectionMethods(
-  parallel::distributed::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &                      parameters_in,
-  std::shared_ptr<Postprocessor>                    postprocessor_in)
+  parallel::Triangulation<dim> const & triangulation,
+  InputParameters<dim> const &         parameters_in,
+  std::shared_ptr<Postprocessor>       postprocessor_in)
   : BASE(triangulation, parameters_in, postprocessor_in)
 {
   AssertThrow(degree_p > 0,
@@ -237,12 +237,12 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_solve_press
 
   // Use multigrid as a solver (use double precision here)
 
-//  typedef double MultigridNumber;
-//  typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
-//
-//  std::shared_ptr<MULTIGRID> mg_preconditioner
-//    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
-//  unsigned int n_iter = mg_preconditioner->solve(dst,src);
+  //  typedef double MultigridNumber;
+  //  typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
+  //
+  //  std::shared_ptr<MULTIGRID> mg_preconditioner
+  //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+  //  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
   unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, false);
 

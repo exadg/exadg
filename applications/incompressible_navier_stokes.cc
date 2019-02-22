@@ -1,5 +1,5 @@
 /*
- * unsteady_navier_stokes.cc
+ * incompressible_navier_stokes.cc
  *
  *  Created on: Oct 10, 2016
  *      Author: fehn
@@ -26,6 +26,8 @@
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
+#include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
+
 // Parameters, BCs, etc.
 #include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
@@ -48,7 +50,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
-//#include "incompressible_navier_stokes_test_cases/cavity.h"
+#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
 //#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
@@ -63,9 +65,11 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
-#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
+//#include "incompressible_navier_stokes_test_cases/turbulent_channel_L2_vs_Hdiv.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+//#include "incompressible_navier_stokes_test_cases/lung.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
@@ -86,7 +90,7 @@ private:
 
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
@@ -110,12 +114,18 @@ private:
 
   std::shared_ptr<Postprocessor> postprocessor;
 
+  // unsteady solvers
   typedef TimeIntBDF<dim, Number>                   TimeInt;
   typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
   typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
   typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> time_integrator;
+
+  // steady solver
+  typedef DriverSteadyProblems<dim, Number> DriverSteady;
+
+  std::shared_ptr<DriverSteady> driver_steady;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -123,24 +133,37 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   unsigned int const refine_steps_space,
   unsigned int const refine_steps_time)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    triangulation(MPI_COMM_WORLD,
-                  dealii::Triangulation<dim>::none,
-                  parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space(refine_steps_space)
 {
   print_header();
   print_MPI_info(pcout);
 
+  // input parameters
   param.set_input_parameters();
   param.check_input_parameters();
 
   if(param.print_input_parameters == true)
     param.print(pcout);
 
+  // triangulation
+  if(param.triangulation_type == TriangulationType::Distributed)
+  {
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(param.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
+
+  // field functions and boundary conditions
   field_functions.reset(new FieldFunctions<dim>());
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
   analytical_solution.reset(new AnalyticalSolution<dim>());
@@ -152,8 +175,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
-  AssertThrow(param.solver_type == SolverType::Unsteady,
-              ExcMessage("This is an unsteady solver. Check input parameters."));
+  // TODO
+  //  AssertThrow(param.solver_type == SolverType::Unsteady,
+  //              ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize postprocessor
   // this function has to be defined in the header file
@@ -161,45 +185,68 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   // parameters, geometry, boundary conditions, etc.
   postprocessor = construct_postprocessor<dim, degree_u, degree_p, Number>(param);
 
-  // initialize navier_stokes_operation
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  if(param.solver_type == SolverType::Unsteady)
   {
+    // initialize navier_stokes_operation
+    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    {
+      std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
+
+      navier_stokes_operation_coupled.reset(new DGCoupled(*triangulation, param, postprocessor));
+
+      navier_stokes_operation = navier_stokes_operation_coupled;
+
+      time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
+                                               navier_stokes_operation_coupled,
+                                               param,
+                                               refine_steps_time));
+    }
+    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
+
+      navier_stokes_operation_dual_splitting.reset(
+        new DGDualSplitting(*triangulation, param, postprocessor));
+
+      navier_stokes_operation = navier_stokes_operation_dual_splitting;
+
+      time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
+                                                     navier_stokes_operation_dual_splitting,
+                                                     param,
+                                                     refine_steps_time));
+    }
+    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
+
+      navier_stokes_operation_pressure_correction.reset(
+        new DGPressureCorrection(*triangulation, param, postprocessor));
+
+      navier_stokes_operation = navier_stokes_operation_pressure_correction;
+
+      time_integrator.reset(
+        new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
+                                      navier_stokes_operation_pressure_correction,
+                                      param,
+                                      refine_steps_time));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+  else if(param.solver_type == SolverType::Steady)
+  {
+    // initialize navier_stokes_operation
     std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
 
-    navier_stokes_operation_coupled.reset(new DGCoupled(triangulation, param, postprocessor));
+    navier_stokes_operation_coupled.reset(new DGCoupled(*triangulation, param, postprocessor));
 
     navier_stokes_operation = navier_stokes_operation_coupled;
 
-    time_integrator.reset(new TimeIntCoupled(
-      navier_stokes_operation_coupled, navier_stokes_operation_coupled, param, refine_steps_time));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
-
-    navier_stokes_operation_dual_splitting.reset(
-      new DGDualSplitting(triangulation, param, postprocessor));
-
-    navier_stokes_operation = navier_stokes_operation_dual_splitting;
-
-    time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
-                                                   navier_stokes_operation_dual_splitting,
-                                                   param,
-                                                   refine_steps_time));
-  }
-  else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-  {
-    std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
-
-    navier_stokes_operation_pressure_correction.reset(
-      new DGPressureCorrection(triangulation, param, postprocessor));
-
-    navier_stokes_operation = navier_stokes_operation_pressure_correction;
-
-    time_integrator.reset(new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
-                                                        navier_stokes_operation_pressure_correction,
-                                                        param,
-                                                        refine_steps_time));
+    // initialize driver for steady state problem that depends on navier_stokes_operation
+    driver_steady.reset(
+      new DriverSteady(navier_stokes_operation_coupled, navier_stokes_operation_coupled, param));
   }
   else
   {
@@ -216,8 +263,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
   << "_________________________________________________________________________________" << std::endl
   << "                                                                                 " << std::endl
   << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
-  << "                     based on a matrix-free implementation                       " << std::endl
+  << "                     incompressible Navier-Stokes equations                      " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
   // clang-format on
@@ -235,7 +281,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
                                           boundary_descriptor_pressure,
                                           periodic_faces);
 
-  print_grid_data(pcout, n_refine_space, triangulation);
+  print_grid_data(pcout, n_refine_space, *triangulation);
 
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
@@ -244,30 +290,54 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
                                  field_functions,
                                  analytical_solution);
 
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
-  time_integrator->setup(do_restart);
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    // setup time integrator before calling setup_solvers
+    // (this is necessary since the setup of the solvers
+    // depends on quantities such as the time_step_size or gamma0!!!)
+    time_integrator->setup(do_restart);
 
-  navier_stokes_operation->setup_solvers(
-    time_integrator->get_scaling_factor_time_derivative_term());
+    navier_stokes_operation->setup_solvers(
+      time_integrator->get_scaling_factor_time_derivative_term());
+  }
+  else if(param.solver_type == SolverType::Steady)
+  {
+    driver_steady->setup();
+
+    navier_stokes_operation->setup_solvers();
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
 void
 NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
 {
-  // stability analysis (uncomment if desired)
-  // time_integrator->postprocessing_stability_analysis();
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    // stability analysis (uncomment if desired)
+    // time_integrator->postprocessing_stability_analysis();
 
-  // run time loop
+    // run time loop
 
-  if(this->param.problem_type == ProblemType::Steady)
-    time_integrator->timeloop_steady_problem();
-  else if(this->param.problem_type == ProblemType::Unsteady)
-    time_integrator->timeloop();
+    if(this->param.problem_type == ProblemType::Steady)
+      time_integrator->timeloop_steady_problem();
+    else if(this->param.problem_type == ProblemType::Unsteady)
+      time_integrator->timeloop();
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
+  }
+  else if(param.solver_type == SolverType::Steady)
+  {
+    driver_steady->solve_steady_problem();
+  }
   else
+  {
     AssertThrow(false, ExcMessage("Not implemented."));
+  }
 }
 
 int

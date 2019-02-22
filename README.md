@@ -238,7 +238,7 @@ and build **navierstokes** code
 cd applications/
 make -j2
 ```
-You can now run your first simulations by selecting a test case in one of the *my_application.cc* files (e.g., *unsteady_navier_stokes.cc*), setting the desired parameters in the *my_application_test_cases/my_test_case.h* header-file, and running
+You can now run your first simulations by selecting a test case in one of the *my_application.cc* files (e.g., *incompressible_navier_stokes.cc*), setting the desired parameters in the *my_application_test_cases/my_test_case.h* header-file, and running
 
 ```bash
 mpirun -np xxx ./my_application

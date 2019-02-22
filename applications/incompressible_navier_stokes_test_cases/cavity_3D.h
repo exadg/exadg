@@ -74,6 +74,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -217,7 +220,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
-    parallel::distributed::Triangulation<dim>         &triangulation,
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -227,19 +230,20 @@ void create_grid_and_set_boundary_conditions(
   if(dim == 2)
   {
     Point<dim> point1(0.0,0.0), point2(L,L);
-    GridGenerator::hyper_rectangle(triangulation,point1,point2);
-    triangulation.refine_global(n_refine_space);
+    GridGenerator::hyper_rectangle(*triangulation,point1,point2);
+    triangulation->refine_global(n_refine_space);
   }
   else if(dim == 3)
   {
     const double left = 0.0, right = L;
-    GridGenerator::hyper_cube(triangulation,left,right);
-    triangulation.refine_global(n_refine_space);
+    GridGenerator::hyper_cube(*triangulation,left,right);
+    triangulation->refine_global(n_refine_space);
   }
 
-  // all boundaries have ID = 0 by default -> Dirichlet boundaries
-
+  // set boundary conditions
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
+  // all boundaries have ID = 0 by default -> Dirichlet boundaries
 
   // fill boundary descriptor velocity
   boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new AnalyticalSolutionVelocity<dim>()));

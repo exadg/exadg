@@ -89,6 +89,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -237,7 +240,7 @@ public:
 
  template<int dim>
  void create_grid_and_set_boundary_conditions(
-     parallel::distributed::Triangulation<dim>         &triangulation,
+     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
      unsigned int const                                n_refine_space,
      std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
      std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
@@ -296,10 +299,10 @@ public:
     GridGenerator::merge_triangulations (tmp1, tria_v3, tmp2);
     GridGenerator::merge_triangulations (tmp2, tria_h3, tmp1);
     GridGenerator::merge_triangulations (tmp1, tria_v4, tmp2);
-    GridGenerator::merge_triangulations (tmp2, tria_v5, triangulation);
+    GridGenerator::merge_triangulations (tmp2, tria_v5, *triangulation);
 
     // global refinements
-    triangulation.refine_global(n_refine_space);
+    triangulation->refine_global(n_refine_space);
   }
   else if(dim == 3)
   {
@@ -308,7 +311,7 @@ public:
 
   // set boundary indicator
   // all boundaries have ID = 0 by default -> Dirichlet boundaries
-  typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)

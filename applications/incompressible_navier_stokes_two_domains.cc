@@ -69,7 +69,7 @@ private:
 
   ConditionalOStream pcout;
 
-  parallel::distributed::Triangulation<dim> triangulation_1, triangulation_2;
+  std::shared_ptr<parallel::Triangulation<dim>> triangulation_1, triangulation_2;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_1, periodic_faces_2;
 
@@ -112,12 +112,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   unsigned int const refine_steps_space2,
   unsigned int const refine_steps_time)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    triangulation_1(MPI_COMM_WORLD,
-                    dealii::Triangulation<dim>::none,
-                    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
-    triangulation_2(MPI_COMM_WORLD,
-                    dealii::Triangulation<dim>::none,
-                    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy),
     n_refine_space_domain1(refine_steps_space1),
     n_refine_space_domain2(refine_steps_space2),
     use_adaptive_time_stepping(false)
@@ -140,6 +134,40 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     pcout << std::endl << "List of input parameters for DOMAIN 2:" << std::endl;
     param_2.print(pcout);
   }
+
+  // triangulation
+  if(param_1.triangulation_type == TriangulationType::Distributed)
+  {
+    triangulation_1.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(param_1.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    triangulation_1.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
+
+  if(param_2.triangulation_type == TriangulationType::Distributed)
+  {
+    triangulation_2.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(param_2.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    triangulation_2.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
+
 
   field_functions_1.reset(new FieldFunctions<dim>());
   field_functions_2.reset(new FieldFunctions<dim>());
@@ -184,7 +212,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     std::shared_ptr<DGCoupled> navier_stokes_operation_coupled_1;
 
     navier_stokes_operation_coupled_1.reset(
-      new DGCoupled(triangulation_1, param_1, postprocessor_1));
+      new DGCoupled(*triangulation_1, param_1, postprocessor_1));
 
     navier_stokes_operation_1 = navier_stokes_operation_coupled_1;
 
@@ -198,7 +226,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting_1;
 
     navier_stokes_operation_dual_splitting_1.reset(
-      new DGDualSplitting(triangulation_1, param_1, postprocessor_1));
+      new DGDualSplitting(*triangulation_1, param_1, postprocessor_1));
 
     navier_stokes_operation_1 = navier_stokes_operation_dual_splitting_1;
 
@@ -212,7 +240,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction_1;
 
     navier_stokes_operation_pressure_correction_1.reset(
-      new DGPressureCorrection(triangulation_1, param_1, postprocessor_1));
+      new DGPressureCorrection(*triangulation_1, param_1, postprocessor_1));
 
     navier_stokes_operation_1 = navier_stokes_operation_pressure_correction_1;
 
@@ -233,7 +261,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     std::shared_ptr<DGCoupled> navier_stokes_operation_coupled_2;
 
     navier_stokes_operation_coupled_2.reset(
-      new DGCoupled(triangulation_2, param_2, postprocessor_2));
+      new DGCoupled(*triangulation_2, param_2, postprocessor_2));
 
     navier_stokes_operation_2 = navier_stokes_operation_coupled_2;
 
@@ -247,7 +275,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting_2;
 
     navier_stokes_operation_dual_splitting_2.reset(
-      new DGDualSplitting(triangulation_2, param_2, postprocessor_2));
+      new DGDualSplitting(*triangulation_2, param_2, postprocessor_2));
 
     navier_stokes_operation_2 = navier_stokes_operation_dual_splitting_2;
 
@@ -261,7 +289,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction_2;
 
     navier_stokes_operation_pressure_correction_2.reset(
-      new DGPressureCorrection(triangulation_2, param_2, postprocessor_2));
+      new DGPressureCorrection(*triangulation_2, param_2, postprocessor_2));
 
     navier_stokes_operation_2 = navier_stokes_operation_pressure_correction_2;
 
@@ -364,7 +392,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
                                             periodic_faces_2);
 
   print_grid_data(
-    pcout, n_refine_space_domain1, triangulation_1, n_refine_space_domain2, triangulation_2);
+    pcout, n_refine_space_domain1, *triangulation_1, n_refine_space_domain2, *triangulation_2);
 
   // setup navier_stokes_operation
 

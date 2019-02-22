@@ -13,9 +13,9 @@ namespace IncNS
 {
 template<int dim, int degree_u, int degree_p, typename Number>
 DGNavierStokesBase<dim, degree_u, degree_p, Number>::DGNavierStokesBase(
-  parallel::distributed::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &                      parameters_in,
-  std::shared_ptr<Postprocessor>                    postprocessor_in)
+  parallel::Triangulation<dim> const & triangulation,
+  InputParameters<dim> const &         parameters_in,
+  std::shared_ptr<Postprocessor>       postprocessor_in)
   : fe_u(new FESystem<dim>(FE_DGQ<dim>(degree_u), dim)),
     fe_p(degree_p),
     fe_u_scalar(degree_u),

@@ -211,6 +211,19 @@ enum_to_string(ConvergenceCriterionSteadyProblem const enum_type);
 /**************************************************************************************/
 
 /*
+ * Triangulation type
+ */
+enum class TriangulationType
+{
+  Undefined,
+  Distributed,
+  FullyDistributed
+};
+
+std::string
+enum_to_string(TriangulationType const enum_type);
+
+/*
  *  Type of imposition of Dirichlet BC's:
  *
  *  direct: u⁺ = g

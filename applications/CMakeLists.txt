@@ -10,33 +10,28 @@ INCLUDE_DIRECTORIES(
         )
 
 SET( SOURCE_FILES
-     # Compressible Navier-Stokes
-     compressible_navier_stokes_operator_matrix_free.cc 
-     unsteady_compressible_navier_stokes.cc
-     
-     # Incompressible Navier-Stokes
-     navier_stokes_operator_matrix_free.cc
-     steady_navier_stokes.cc
-     unsteady_navier_stokes.cc
-     unsteady_navier_stokes_two_domains.cc
-     
      # Poisson
      poisson.cc
      poisson_dual.cc
      laplace_operator_matrix_free.cc
-
-     # Lung applications
+     #multigrid_solver.cc
      poisson_lung.cc
      lung_tria.cc
 
-     #multigrid_solver.cc
-
      # Scalar reaction-convection-diffusion
-     steady_convection_diffusion.cc
-     unsteady_convection_diffusion.cc
+     convection_diffusion.cc
+
+     # Incompressible Navier-Stokes
+     incompressible_navier_stokes_performance.cc
+     incompressible_navier_stokes.cc
+     incompressible_navier_stokes_two_domains.cc
 
      # incompressible flow with scalar transport
-     unsteady_incompressible_flow_with_transport.cc
+     incompressible_flow_with_transport.cc
+
+     # Compressible Navier-Stokes
+     compressible_navier_stokes_performance.cc 
+     compressible_navier_stokes.cc
 
      # Other
      gmres_test.cc

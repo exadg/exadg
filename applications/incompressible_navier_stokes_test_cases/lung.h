@@ -12,6 +12,9 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 
+#include "../grid_tools/lung/lung_environment.h"
+#include "../grid_tools/lung/lung_grid.h"
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 INPUT PARAMETERS                                   */
@@ -30,33 +33,30 @@ unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 4;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
+
+// number of lung generations
+unsigned int const GENERATIONS = 4;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
-const double Re = 1600.0;
+const double VISCOSITY = 1.7e-5; //1.7e-5; // m^2/s
+const double MAX_VELOCITY = 3.0; //20.0; // m/s
+const double PERIOD = 0.1; // 100 ms
+double const END_TIME = PERIOD;// TODO // * 8.0;
+double const PEEP = 3.0; //TODO //8.0 * 98.0665; // 8 cmH20, 1 cmH20 = 98.0665 Pa
 
-const double V_0 = 1.0;
-const double L = 1.0;
-const double p_0 = 0.0;
-
-const double VISCOSITY = V_0*L/Re;
-const double MAX_VELOCITY = V_0;
-const double CHARACTERISTIC_TIME = L/V_0;
-
-std::string OUTPUT_FOLDER = "output/taylor_green_vortex/"; //"output/taylor_green_vortex/coupled_solver_BDF2_monolithic/divergence_formulation/";
+std::string OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "test"; //"Re1600_N8_k9_CFL_0-15_div_normal_conti_penalty_1-0";
+std::string OUTPUT_NAME = "test";
 
-enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Cartesian;
-
-// only relevant for Cartesian mesh
-const unsigned int N_CELLS_1D_COARSE_GRID = 1;
+// solver tolerances
+const double ABS_TOL = 1.e-12;
+const double REL_TOL = 1.e-3;
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
@@ -66,27 +66,29 @@ void InputParameters<dim>::set_input_parameters()
   equation_type = EquationType::NavierStokes;
   formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  use_outflow_bc_convective_term = true;
   right_hand_side = false;
 
   // PHYSICAL QUANTITIES
   start_time = 0.0;
-  end_time = 20.0*CHARACTERISTIC_TIME;
+  end_time = END_TIME;
   viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
+  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
+  adaptive_time_stepping = true;
   max_velocity = MAX_VELOCITY;
-  cfl_oif = 0.5; //0.2; //0.125;
+  cfl_oif = 0.4;
   cfl = cfl_oif * 1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
-  time_step_size = 1.0e-3; // 1.0e-4;
-  order_time_integrator = 2; // 1; // 2; // 3;
-  start_with_low_order = true; // true; // false;
+  time_step_size = 1.0e-3;
+  order_time_integrator = 2;
+  start_with_low_order = true;
 
   // NUMERICAL PARAMETERS
   implement_block_diagonal_preconditioner_matrix_free = false;
@@ -95,13 +97,10 @@ void InputParameters<dim>::set_input_parameters()
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  triangulation_type = TriangulationType::Distributed;
+  triangulation_type = TriangulationType::FullyDistributed;
 
   // mapping
-  if(MESH_TYPE == MeshType::Cartesian)
-    degree_mapping = 1;
-  else
-    degree_mapping = FE_DEGREE_VELOCITY;
+  degree_mapping = 1; //FE_DEGREE_VELOCITY; //TODO
 
   // convective term
   if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -111,7 +110,7 @@ void InputParameters<dim>::set_input_parameters()
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // special case: pure DBC's (only periodic BCs -> pure_dirichlet_bc = true)
-  pure_dirichlet_bc = true;
+  pure_dirichlet_bc = false;
 
   // div-div and continuity penalty
   use_divergence_penalty = true;
@@ -132,19 +131,19 @@ void InputParameters<dim>::set_input_parameters()
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
+  solver_data_pressure_poisson = SolverData(1000,ABS_TOL,REL_TOL,100);
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.type = MultigridType::hMG;
-  multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
-  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
+  multigrid_data_pressure_poisson.type = MultigridType::phMG;
+  multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
+  multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
+  multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG; //Chebyshev;
+  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG; //PointJacobi;
 
   // projection step
   solver_projection = SolverProjection::CG;
-  solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //BlockJacobi;
-  preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
-  solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2,1000);
-  update_preconditioner_projection = true;
+  solver_data_projection = SolverData(1000, ABS_TOL, REL_TOL);
+  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  update_preconditioner_projection = false;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -153,12 +152,16 @@ void InputParameters<dim>::set_input_parameters()
 
   // viscous step
   solver_viscous = SolverViscous::CG;
-  solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
+  solver_data_viscous = SolverData(1000,ABS_TOL,REL_TOL);
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
-  multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Jacobi;
-  multigrid_data_viscous.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-  multigrid_data_viscous.smoother_data.relaxation_factor = 0.7;
-  update_preconditioner_viscous = false;
+//  preconditioner_viscous = PreconditionerViscous::Multigrid;
+  multigrid_data_viscous.type = MultigridType::hpMG;
+  multigrid_data_viscous.p_sequence = PSequenceType::Bisect;
+  multigrid_data_viscous.dg_to_cg_transfer = DG_To_CG_Transfer::None;
+  multigrid_data_viscous.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  multigrid_data_viscous.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
+  update_preconditioner_viscous = true;
+  update_preconditioner_viscous_every_time_steps = 1;
 
   // PRESSURE-CORRECTION SCHEME
 
@@ -196,7 +199,7 @@ void InputParameters<dim>::set_input_parameters()
   preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
   // preconditioner Schur-complement block
   preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion; //CahouetChabard;
@@ -208,11 +211,11 @@ void InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
+  output_data.output_interval_time = PERIOD/20;
   output_data.write_vorticity = true;
   output_data.write_divergence = true;
   output_data.write_velocity_magnitude = true;
@@ -225,22 +228,12 @@ void InputParameters<dim>::set_input_parameters()
   error_data.analytical_solution_available = false;
 
   // calculate div and mass error
-  mass_data.calculate_error = false; //true;
+  mass_data.calculate_error = false;
   mass_data.start_time = 0.0;
   mass_data.sample_every_time_steps = 1e2;
   mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
   mass_data.reference_length_scale = 1.0;
 
-  // kinetic energy
-  kinetic_energy_data.calculate = true;
-  kinetic_energy_data.evaluate_individual_terms = true;
-  kinetic_energy_data.calculate_every_time_steps = 1;
-  kinetic_energy_data.viscosity = VISCOSITY;
-  kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
-
-  kinetic_energy_spectrum_data.calculate = false; // true;
-  kinetic_energy_spectrum_data.calculate_every_time_steps = 100;
-  kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
 
   // output of solver information
   output_solver_info_every_timesteps = 1; //1e5;
@@ -252,54 +245,6 @@ void InputParameters<dim>::set_input_parameters()
 /*                                                                                    */
 /**************************************************************************************/
 
-/*
- *  This function is used to prescribe initial conditions for the velocity field
- */
-template<int dim>
-class InitialSolutionVelocity : public Function<dim>
-{
-public:
-  InitialSolutionVelocity (const unsigned int  n_components = dim,
-                           const double        time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {}
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    double result = 0.0;
-
-    if (component == 0)
-      result = V_0*std::sin(p[0]/L)*std::cos(p[1]/L)*std::cos(p[2]/L);
-    else if (component == 1)
-      result = -V_0*std::cos(p[0]/L)*std::sin(p[1]/L)*std::cos(p[2]/L);
-    else if (component == 2)
-      result = 0.0;
-
-    return result;
-  }
-};
-
-template<int dim>
-class InitialSolutionPressure : public Function<dim>
-{
-public:
-  InitialSolutionPressure (const double time = 0.)
-    :
-    Function<dim>(1 /*n_components*/, time)
-  {}
-
-  double value (const Point<dim>   &p,
-                const unsigned int /*component*/) const
-  {
-    double result = 0.0;
-
-    result = p_0 + V_0 * V_0 / 16.0 * (std::cos(2.0*p[0]/L) + std::cos(2.0*p[1]/L)) * (std::cos(2.0*p[2]/L) + 2.0);
-
-    return result;
-  }
-};
 
 
 /**************************************************************************************/
@@ -308,88 +253,112 @@ public:
 /*                                                                                    */
 /**************************************************************************************/
 
-#include "deformed_cube_manifold.h"
+template<int dim>
+class VelocityInlet : public Function<dim>
+{
+public:
+  VelocityInlet (const unsigned int  n_components = dim,
+                              const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {}
+
+  double value (const Point<dim>    &/*p*/,
+                const unsigned int  component = 0) const
+  {
+    if(component == 2)
+      return -1.0;
+    else
+      return 1.0;
+  }
+};
+
+template<int dim>
+class PressureInlet : public Function<dim>
+{
+public:
+  PressureInlet (const double time = 0.)
+    :
+    Function<dim>(1 /*n_components*/, time)
+  {}
+
+  double value (const Point<dim>   &/*p*/,
+                const unsigned int /*component*/) const
+  {
+    double t = this->get_time();
+    double pressure = 0.0;
+
+    if((int(t/(PERIOD/2)))%2 == 0)
+    {
+      pressure = PEEP;
+    }
+    else
+    {
+      pressure = -PEEP;
+    }
+
+    return pressure;
+  }
+};
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        /*boundary_descriptor_velocity*/,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        /*boundary_descriptor_pressure*/,
+    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
-  const double pi = numbers::PI;
-  const double left = - pi * L, right = pi * L;
-  std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
-                                         N_CELLS_1D_COARSE_GRID,
-                                         N_CELLS_1D_COARSE_GRID});
-
-  Point<dim> point1(left,left,left), point2(right,right,right);
-  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
-
-  if(MESH_TYPE == MeshType::Cartesian)
-  {
-    // do nothing
-  }
-  else if(MESH_TYPE == MeshType::Curvilinear)
-  {
-    AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
-        ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
-
-    triangulation->set_all_manifold_ids(1);
-    double const deformation = 0.5;
-    unsigned int const frequency = 2;
-    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-    triangulation->set_manifold(1, manifold);
-  }
-
   AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
+  std::vector<std::string> files;
+  get_lung_files_from_environment(files);
+  auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
+
+  std::map<std::string, double> timings;
+
+  // create triangulation
+  if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
-   for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-   {
-     // x-direction
-     if((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (0);
-     else if((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (1);
-     // y-direction
-     else if((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (2);
-     else if((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (3);
-     // z-direction
-     else if((std::fabs(cell->face(face_number)->center()(2) - left)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (4);
-     else if((std::fabs(cell->face(face_number)->center()(2) - right)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (5);
-   }
+    dealii::GridGenerator::lung(
+      *tria, GENERATIONS, n_refine_space, n_refine_space, tree_factory, timings);
+  }
+  else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+  {
+    dealii::GridGenerator::lung(*tria, GENERATIONS, n_refine_space, tree_factory, timings);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Unknown triangulation!"));
   }
 
-  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
+  // set boundary conditions
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
-  triangulation->add_periodicity(periodic_faces);
+  // 0 = walls
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
 
-  // perform global refinements
-  triangulation->refine_global(n_refine_space);
+  // 1 = inlet
+  boundary_descriptor_velocity->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor_pressure->dirichlet_bc.insert(pair(1, new PressureInlet<dim>()));
 
-  // test case with pure periodic BC
-  // boundary descriptors remain empty for velocity and pressure
+//  boundary_descriptor_velocity->dirichlet_bc.insert(pair(1, new VelocityInlet<dim>()));
+//  boundary_descriptor_pressure->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+
+  // 2 = outlet
+  boundary_descriptor_velocity->neumann_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor_pressure->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
 }
 
 
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-  field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
-  field_functions->analytical_solution_pressure.reset(new InitialSolutionPressure<dim>());
+  field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 

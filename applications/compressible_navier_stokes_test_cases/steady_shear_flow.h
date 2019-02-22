@@ -91,6 +91,9 @@ void CompNS::InputParameters<dim>::set_input_parameters()
 
   // SPATIAL DISCRETIZATION
 
+  // triangulation
+  triangulation_type = TriangulationType::Distributed;
+
   // viscous term
   IP_factor = 1.0e0;
 
@@ -261,7 +264,7 @@ double Solution<dim>::value(const Point<dim>    &p,
 
  template<int dim>
  void create_grid_and_set_boundary_conditions(
-   parallel::distributed::Triangulation<dim>                &triangulation,
+   std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
 	 unsigned int const                                       n_refine_space,
 	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
 	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
@@ -272,10 +275,10 @@ double Solution<dim>::value(const Point<dim>    &p,
  {
    std::vector<unsigned int> repetitions({1,1});
    Point<dim> point1(0.0,0.0), point2(L,H);
-   GridGenerator::subdivided_hyper_rectangle(triangulation,repetitions,point1,point2);
+   GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
 
 //   // set boundary indicator
-//   typename Triangulation<dim>::cell_iterator cell = triangulation.begin(), endc = triangulation.end();
+//   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
 //   for(;cell!=endc;++cell)
 //   {
 //     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
@@ -285,7 +288,7 @@ double Solution<dim>::value(const Point<dim>    &p,
 //     }
 //   }
 
-   triangulation.refine_global(n_refine_space);
+   triangulation->refine_global(n_refine_space);
 
    // zero function scalar
    std::shared_ptr<Function<dim> > zero_function_scalar;

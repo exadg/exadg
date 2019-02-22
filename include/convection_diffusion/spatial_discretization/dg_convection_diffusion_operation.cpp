@@ -14,9 +14,9 @@ namespace ConvDiff
 {
 template<int dim, int degree, typename Number>
 DGOperation<dim, degree, Number>::DGOperation(
-  parallel::distributed::Triangulation<dim> const & triangulation,
-  InputParameters const &                           param_in,
-  std::shared_ptr<PostProcessor<dim, degree>>       postprocessor_in)
+  parallel::Triangulation<dim> const &        triangulation,
+  InputParameters const &                     param_in,
+  std::shared_ptr<PostProcessor<dim, degree>> postprocessor_in)
   : dealii::Subscriptor(),
     fe(degree),
     mapping(param_in.degree_mapping),
