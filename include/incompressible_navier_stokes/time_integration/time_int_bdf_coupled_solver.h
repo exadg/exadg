@@ -47,10 +47,14 @@ public:
                     unsigned int const             n_refine_time_in);
 
   void
-  analyze_computing_times() const;
+  postprocessing_stability_analysis();
 
   void
-  postprocessing_stability_analysis();
+  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
+
+  void
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
 
 private:
   void

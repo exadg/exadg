@@ -79,10 +79,6 @@ TimeIntBDFBase::timeloop_steady_problem()
   solve_steady_problem();
 
   postprocessing_steady_problem();
-
-  this->total_time += this->global_timer.wall_time();
-
-  analyze_computing_times();
 }
 
 double

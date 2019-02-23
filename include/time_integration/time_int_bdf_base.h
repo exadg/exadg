@@ -79,6 +79,13 @@ public:
   void
   setup(bool const do_restart);
 
+  /*
+   * fills a vector of number of iterations (if several equations have to be solved) with
+   * a list of names describing the equations/sub-steps that are solved
+   */
+  virtual void
+  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const = 0;
+
 protected:
   /*
    * Get time at the end of the current time step t_{n+1}.

@@ -14,7 +14,6 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
   : start_time(start_time_),
     end_time(end_time_),
     time(start_time_),
-    total_time(0.0),
     eps(1.e-10),
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     time_step_number(1),
@@ -39,11 +38,7 @@ TimeIntBase::timeloop()
     postprocessing();
   }
 
-  total_time += global_timer.wall_time();
-
   pcout << std::endl << "... finished time loop!" << std::endl;
-
-  analyze_computing_times();
 }
 
 bool
@@ -81,11 +76,7 @@ TimeIntBase::advance_one_timestep(bool write_final_output)
   // for the statistics
   if(finished && write_final_output)
   {
-    total_time += global_timer.wall_time();
-
     pcout << std::endl << "... done!" << std::endl;
-
-    analyze_computing_times();
   }
 
   return finished;
@@ -95,6 +86,12 @@ double
 TimeIntBase::get_time() const
 {
   return time;
+}
+
+double
+TimeIntBase::get_number_of_time_steps() const
+{
+  return this->get_time_step_number() - 1;
 }
 
 unsigned int
@@ -165,8 +162,8 @@ TimeIntBase::output_solver_info_header() const
 
 /*
  *  This function estimates the remaining wall time based on the overall time interval to be
- * simulated and the measured wall time already needed to simulate from the start time until the
- * current time.
+ *  simulated and the measured wall time already needed to simulate from the start time until the
+ *  current time.
  */
 void
 TimeIntBase::output_remaining_time() const
@@ -178,9 +175,13 @@ TimeIntBase::output_remaining_time() const
       double const remaining_time =
         global_timer.wall_time() * (end_time - time) / (time - start_time);
 
+      int const hours   = int(remaining_time / 3600.0);
+      int const minutes = int((remaining_time - hours * 3600.0) / 60.0);
+      int const seconds = int((remaining_time - hours * 3600.0 - minutes * 60.0));
+
       pcout << std::endl
-            << "Estimated time until completion is " << remaining_time << " s / "
-            << remaining_time / 3600. << " h." << std::endl;
+            << "Estimated time until completion is " << hours << " h " << minutes << " min "
+            << seconds << " s." << std::endl;
     }
   }
 }

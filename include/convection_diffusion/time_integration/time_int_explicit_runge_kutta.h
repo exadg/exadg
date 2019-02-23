@@ -40,6 +40,9 @@ public:
                 InputParameters const &   param_in,
                 unsigned int const        n_refine_time_in);
 
+  void
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
 private:
   void
   initialize_vectors();
@@ -65,9 +68,6 @@ private:
   void
   initialize_time_integrator();
 
-  void
-  analyze_computing_times() const;
-
   std::shared_ptr<Operator> pde_operator;
 
   std::shared_ptr<ExplicitTimeIntegrator<Operator, VectorType>> rk_time_integrator;
@@ -81,6 +81,8 @@ private:
   unsigned int const n_refine_time;
   double const       cfl;
   double const       diffusion_number;
+
+  double wall_time;
 };
 
 } // namespace ConvDiff

@@ -28,8 +28,22 @@ TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
     time_step_diff(1.0),
     n_refine_time(n_refine_time_in),
     cfl(param.cfl / std::pow(2.0, n_refine_time)),
-    diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time))
+    diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time)),
+    wall_time(0.0)
 {
+}
+
+template<typename Number>
+void
+TimeIntExplRK<Number>::get_wall_times(std::vector<std::string> & name,
+                                      std::vector<double> &      wall_time_vector) const
+{
+  name.resize(1);
+  std::vector<std::string> names = {"Explicit time integrator"};
+  name                           = names;
+
+  wall_time_vector.resize(1);
+  wall_time_vector[0] = wall_time;
 }
 
 template<typename Number>
@@ -280,6 +294,8 @@ TimeIntExplRK<Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
+  wall_time += timer.wall_time();
+
   // write output
   if(print_solver_info())
   {
@@ -294,29 +310,6 @@ void
 TimeIntExplRK<Number>::postprocessing() const
 {
   pde_operator->do_postprocessing(this->solution_n, this->time, this->time_step_number);
-}
-
-template<typename Number>
-void
-TimeIntExplRK<Number>::analyze_computing_times() const
-{
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl
-              << "Computing times:          min        avg        max        rel      p_min  p_max "
-              << std::endl;
-
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  this->pcout << "  Global time:         " << std::scientific << std::setprecision(4)
-              << std::setw(10) << data.min << " " << std::setprecision(4) << std::setw(10)
-              << data.avg << " " << std::setprecision(4) << std::setw(10) << data.max << " "
-              << "          "
-              << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6)
-              << std::left << data.max_index << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
 }
 
 // instantiations

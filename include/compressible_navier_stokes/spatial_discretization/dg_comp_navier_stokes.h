@@ -131,6 +131,12 @@ public:
     pcout << std::endl << "... done!" << std::endl;
   }
 
+  unsigned int
+  get_number_of_dofs() const
+  {
+    return dof_handler.n_dofs();
+  }
+
   // initialization of DoF vectors
   void
   initialize_dof_vector(VectorType & src) const

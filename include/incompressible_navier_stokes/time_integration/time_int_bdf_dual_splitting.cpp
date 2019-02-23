@@ -847,84 +847,38 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
+template<int dim, typename Number>
+void
+TimeIntBDFDualSplitting<dim, Number>::get_iterations(std::vector<std::string> & name,
+                                                     std::vector<double> &      iteration) const
+{
+  name.resize(4);
+  std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
+  name                           = names;
+
+  unsigned int N_time_steps = this->get_time_step_number() - 1;
+
+  iteration.resize(4);
+  for(unsigned int i = 0; i < this->iterations.size(); ++i)
+  {
+    iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
+  }
+}
 
 template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::analyze_computing_times() const
+TimeIntBDFDualSplitting<dim, Number>::get_wall_times(std::vector<std::string> & name,
+                                                     std::vector<double> &      wall_time) const
 {
-  std::string  names[5]     = {"Convection   ", "Pressure     ", "Projection   ", "Viscous      "};
-  unsigned int N_time_steps = this->get_time_step_number() - 1;
+  name.resize(4);
+  std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
+  name                           = names;
 
-  // iterations
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl
-              << "Average number of iterations:" << std::endl;
-
-  for(unsigned int i = 0; i < iterations.size(); ++i)
+  wall_time.resize(4);
+  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
   {
-    this->pcout << "  Step " << i + 1 << ": " << names[i] << std::scientific << std::setprecision(4)
-                << std::setw(10) << (double)iterations[i] / (double)N_time_steps << std::endl;
+    wall_time[i] = this->computing_times[i];
   }
-  this->pcout << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-
-  // Computing times
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl
-              << "Computing times [s]:      min        avg        max        rel      p_min  p_max "
-              << std::endl;
-
-  double total_avg_time = 0.0;
-
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data =
-      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
-    total_avg_time += data.avg;
-  }
-
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data =
-      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
-    this->pcout << "  Step " << i + 1 << ": " << names[i] << std::scientific << std::setprecision(4)
-                << std::setw(10) << data.min << " " << std::setprecision(4) << std::setw(10)
-                << data.avg << " " << std::setprecision(4) << std::setw(10) << data.max << " "
-                << std::setprecision(4) << std::setw(10) << data.avg / total_avg_time << "  "
-                << std::setw(6) << std::left << data.min_index << " " << std::setw(6) << std::left
-                << data.max_index << std::endl;
-  }
-
-  this->pcout << "  Time in steps 1-" << computing_times.size() << ":              "
-              << std::setprecision(4) << std::setw(10) << total_avg_time << "            "
-              << std::setprecision(4) << std::setw(10) << total_avg_time / total_avg_time
-              << std::endl;
-
-  this->pcout << std::endl
-              << "Number of time steps =            " << std::left << N_time_steps << std::endl
-              << "Average wall time per time step = " << std::scientific << std::setprecision(4)
-              << total_avg_time / (double)N_time_steps << std::endl;
-
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  this->pcout << "Total wall time in [s] =          " << std::scientific << std::setprecision(4)
-              << data.avg << std::endl;
-
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-
-  this->pcout << "Number of MPI processes =         " << N_mpi_processes << std::endl
-              << "Computational costs in [CPUs] =   " << data.avg * (double)N_mpi_processes
-              << std::endl
-              << "Computational costs in [CPUh] =   " << data.avg * (double)N_mpi_processes / 3600.0
-              << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
 }
 
 // instantiations

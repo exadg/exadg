@@ -147,7 +147,20 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::initialize_dof_handler()
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_pressure);
   print_parameter(pcout, "number of dofs (total)", dof_handler_p.n_dofs());
 
+  pcout << "Velocity and pressure:" << std::endl;
+  print_parameter(pcout,
+                  "number of dofs per cell",
+                  ndofs_per_cell_velocity + ndofs_per_cell_pressure);
+  print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs() + dof_handler_p.n_dofs());
+
   pcout << std::flush;
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+unsigned int
+DGNavierStokesBase<dim, degree_u, degree_p, Number>::get_number_of_dofs() const
+{
+  return dof_handler_u.n_dofs() + dof_handler_p.n_dofs();
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>

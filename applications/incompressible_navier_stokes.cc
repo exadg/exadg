@@ -50,9 +50,9 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
-#include "incompressible_navier_stokes_test_cases/cavity.h"
+//#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
@@ -84,6 +84,9 @@ public:
   void
   solve() const;
 
+  void
+  analyze_computing_times() const;
+
 private:
   void
   print_header() const;
@@ -94,7 +97,7 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  const unsigned int n_refine_space;
+  const unsigned int n_refine_space, n_refine_time;
 
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
@@ -126,6 +129,13 @@ private:
   typedef DriverSteadyProblems<dim, Number> DriverSteady;
 
   std::shared_ptr<DriverSteady> driver_steady;
+
+  /*
+   * Computation time (wall clock time).
+   */
+  Timer          timer;
+  mutable double overall_time;
+  double         setup_time;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -133,8 +143,34 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   unsigned int const refine_steps_space,
   unsigned int const refine_steps_time)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    n_refine_space(refine_steps_space)
+    n_refine_space(refine_steps_space),
+    n_refine_time(refine_steps_time),
+    overall_time(0.0),
+    setup_time(0.0)
 {
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
+{
+  // clang-format off
+  pcout << std::endl << std::endl << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << "                                                                                 " << std::endl
+  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
+  << "                     incompressible Navier-Stokes equations                      " << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << std::endl;
+  // clang-format on
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restart)
+{
+  timer.restart();
+
   print_header();
   print_MPI_info(pcout);
 
@@ -175,10 +211,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
-  // TODO
-  //  AssertThrow(param.solver_type == SolverType::Unsteady,
-  //              ExcMessage("This is an unsteady solver. Check input parameters."));
-
   // initialize postprocessor
   // this function has to be defined in the header file
   // that implements all problem specific things like
@@ -196,10 +228,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
 
       navier_stokes_operation = navier_stokes_operation_coupled;
 
-      time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
-                                               navier_stokes_operation_coupled,
-                                               param,
-                                               refine_steps_time));
+      time_integrator.reset(new TimeIntCoupled(
+        navier_stokes_operation_coupled, navier_stokes_operation_coupled, param, n_refine_time));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -213,7 +243,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
                                                      navier_stokes_operation_dual_splitting,
                                                      param,
-                                                     refine_steps_time));
+                                                     n_refine_time));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
@@ -228,7 +258,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
         new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
                                       navier_stokes_operation_pressure_correction,
                                       param,
-                                      refine_steps_time));
+                                      n_refine_time));
     }
     else
     {
@@ -252,27 +282,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-}
 
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                     incompressible Navier-Stokes equations                      " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restart)
-{
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions(triangulation,
@@ -310,6 +320,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
+
+  setup_time = timer.wall_time();
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -322,7 +334,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
     // time_integrator->postprocessing_stability_analysis();
 
     // run time loop
-
     if(this->param.problem_type == ProblemType::Steady)
       time_integrator->timeloop_steady_problem();
     else if(this->param.problem_type == ProblemType::Unsteady)
@@ -332,12 +343,154 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
   }
   else if(param.solver_type == SolverType::Steady)
   {
+    // solve steady problem
     driver_steady->solve_steady_problem();
   }
   else
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
+
+  overall_time += this->timer.wall_time();
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times() const
+{
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
+
+  this->pcout << "Performance results for incompressible Navier-Stokes solver:" << std::endl;
+
+  // Iterations
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    this->pcout << std::endl << "Average number of iterations:" << std::endl;
+
+    std::vector<std::string> names;
+    std::vector<double>      iterations;
+
+    this->time_integrator->get_iterations(names, iterations);
+
+    unsigned int length = 1;
+    for(unsigned int i = 0; i < names.size(); ++i)
+    {
+      length = length > names[i].length() ? length : names[i].length();
+    }
+
+    for(unsigned int i = 0; i < iterations.size(); ++i)
+    {
+      this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                  << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
+                  << std::endl;
+    }
+  }
+
+  // overall wall time including postprocessing
+  Utilities::MPI::MinMaxAvg overall_time_data =
+    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
+  double const overall_time_avg = overall_time_data.avg;
+
+  // wall times
+  this->pcout << std::endl << "Wall times:" << std::endl;
+
+  std::vector<std::string> names;
+  std::vector<double>      computing_times;
+
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    this->time_integrator->get_wall_times(names, computing_times);
+  }
+  else
+  {
+    this->driver_steady->get_wall_times(names, computing_times);
+  }
+
+  unsigned int length = 1;
+  for(unsigned int i = 0; i < names.size(); ++i)
+  {
+    length = length > names[i].length() ? length : names[i].length();
+  }
+
+  double sum_of_substeps = 0.0;
+  for(unsigned int i = 0; i < computing_times.size(); ++i)
+  {
+    Utilities::MPI::MinMaxAvg data =
+      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
+                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
+                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                << data.avg / overall_time_avg * 100 << " %" << std::endl;
+
+    sum_of_substeps += data.avg;
+  }
+
+  Utilities::MPI::MinMaxAvg setup_time_data =
+    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
+  double const setup_time_avg = setup_time_data.avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << other << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << other / overall_time_avg * 100 << " %" << std::endl;
+
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  // computational costs in CPUh
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  this->pcout << std::endl
+              << "Computational costs (including setup + postprocessing):" << std::endl
+              << "  Number of MPI processes = " << N_mpi_processes << std::endl
+              << "  Wall time               = " << std::scientific << std::setprecision(2)
+              << overall_time_avg << " s" << std::endl
+              << "  Computational costs     = " << std::scientific << std::setprecision(2)
+              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
+
+  // Throughput in DoFs/s per time step per core
+  unsigned int const DoFs = this->navier_stokes_operation->get_number_of_dofs();
+
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    unsigned int N_time_steps      = this->time_integrator->get_number_of_time_steps();
+    double const time_per_timestep = overall_time_avg / (double)N_time_steps;
+    this->pcout << std::endl
+                << "Throughput per time step (including setup + postprocessing):" << std::endl
+                << "  Degrees of freedom      = " << DoFs << std::endl
+                << "  Wall time               = " << std::scientific << std::setprecision(2)
+                << overall_time_avg << " s" << std::endl
+                << "  Time steps              = " << std::left << N_time_steps << std::endl
+                << "  Wall time per time step = " << std::scientific << std::setprecision(2)
+                << time_per_timestep << " s" << std::endl
+                << "  Throughput              = " << std::scientific << std::setprecision(2)
+                << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
+  }
+  else
+  {
+    this->pcout << std::endl
+                << "Throughput (including setup + postprocessing):" << std::endl
+                << "  Degrees of freedom      = " << DoFs << std::endl
+                << "  Wall time               = " << std::scientific << std::setprecision(2)
+                << overall_time_avg << " s" << std::endl
+                << "  Throughput              = " << std::scientific << std::setprecision(2)
+                << DoFs / (overall_time_avg * N_mpi_processes) << " DoFs/s/core" << std::endl;
+  }
+
+
+  this->pcout << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
 }
 
 int
@@ -386,6 +539,8 @@ main(int argc, char ** argv)
         problem.setup(do_restart);
 
         problem.solve();
+
+        problem.analyze_computing_times();
       }
     }
   }

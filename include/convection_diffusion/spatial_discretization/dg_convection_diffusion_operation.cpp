@@ -642,6 +642,13 @@ DGOperation<dim, degree, Number>::get_polynomial_degree() const
 }
 
 template<int dim, int degree, typename Number>
+unsigned int
+DGOperation<dim, degree, Number>::get_number_of_dofs() const
+{
+  return dof_handler.n_dofs();
+}
+
+template<int dim, int degree, typename Number>
 void
 DGOperation<dim, degree, Number>::set_velocity(VectorType const & velocity) const
 {

@@ -258,7 +258,7 @@ TimeIntExplRK<dim, Number>::solve_timestep()
                                      this->time,
                                      this->time_step);
 
-  double const wall_time = timer.wall_time();
+  double wall_time = timer.wall_time();
 
   // output
   if(print_solver_info())
@@ -278,55 +278,16 @@ TimeIntExplRK<dim, Number>::print_solver_info() const
 
 template<int dim, typename Number>
 void
-TimeIntExplRK<dim, Number>::analyze_computing_times() const
+TimeIntExplRK<dim, Number>::get_wall_times(std::vector<std::string> & name,
+                                           std::vector<double> &      wall_time_vector) const
 {
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl
-              << "Computing times:                                                                 "
-              << std::endl;
+  name.resize(2);
+  std::vector<std::string> names = {"Operator evaluation", "Postprocessing"};
+  name                           = names;
 
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  this->pcout << std::scientific << std::setprecision(4)
-              << " Total wall time in [s] =          " << data.avg << std::endl;
-
-  // time spent with operator evaluation
-  double time_operator_evaluation = pde_operator->get_wall_time_operator_evaluation();
-  Utilities::MPI::MinMaxAvg data_op =
-    Utilities::MPI::min_max_avg(time_operator_evaluation, MPI_COMM_WORLD);
-  this->pcout << std::scientific << std::setprecision(4)
-              << " Wall time operator eval. in [s] = " << data_op.avg << " -> " << std::fixed
-              << std::setprecision(2) << data_op.avg / data.avg * 100. << " %" << std::endl;
-
-  // time spent with postprocessing
-  Utilities::MPI::MinMaxAvg data_post =
-    Utilities::MPI::min_max_avg(this->time_postprocessing, MPI_COMM_WORLD);
-  this->pcout << std::scientific << std::setprecision(4)
-              << " Wall time postprocessing in [s] = " << data_post.avg << " -> " << std::fixed
-              << std::setprecision(2) << data_post.avg / data.avg * 100. << " %" << std::endl;
-
-  // Wall time per time step
-  unsigned int N_time_steps = this->time_step_number - 1;
-  this->pcout << std::endl
-              << "Time steps:" << std::endl
-              << " Number of time steps =            " << std::left << N_time_steps << std::endl
-              << " Wall time per time step in [s] =  " << std::scientific << std::setprecision(4)
-              << data.avg / (double)N_time_steps << std::endl;
-
-  // Computational costs
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-  this->pcout << std::scientific << std::setprecision(4) << std::endl
-              << "Computational costs = t_wall * N_cores:" << std::endl
-              << " Number of MPI processes =         " << N_mpi_processes << std::endl
-              << " Computational costs in [CPUs] =   " << data.avg * (double)N_mpi_processes
-              << std::endl
-              << " Computational costs in [CPUh] =   "
-              << data.avg * (double)N_mpi_processes / 3600.0 << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
+  wall_time_vector.resize(2);
+  wall_time_vector[0] = pde_operator->get_wall_time_operator_evaluation();
+  wall_time_vector[1] = time_postprocessing;
 }
 
 // instantiations

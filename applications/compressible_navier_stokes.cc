@@ -61,7 +61,13 @@ public:
   Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
 
   void
-  solve_problem(bool const do_restart);
+  setup(bool const do_restart);
+
+  void
+  solve();
+
+  void
+  analyze_computing_times() const;
 
 private:
   void
@@ -90,6 +96,13 @@ private:
   std::shared_ptr<POSTPROCESSOR> postprocessor;
 
   std::shared_ptr<TIME_INT> time_integrator;
+
+  /*
+   * Computation time (wall clock time).
+   */
+  Timer          timer;
+  mutable double overall_time;
+  double         setup_time;
 };
 
 template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
@@ -98,8 +111,33 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
   unsigned int const n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(n_refine_space_in),
-    n_refine_time(n_refine_time_in)
+    n_refine_time(n_refine_time_in),
+    overall_time(0.0),
+    setup_time(0.0)
 {
+}
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+void
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
+{
+  // clang-format off
+  pcout << std::endl << std::endl << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << "                                                                                 " << std::endl
+  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
+  << "                 unsteady, compressible Navier-Stokes equations                  " << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << std::endl;
+  // clang-format on
+}
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+void
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup(bool const do_restart)
+{
+  timer.restart();
+
   print_header();
   print_MPI_info(pcout);
 
@@ -149,27 +187,7 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
 
   // initialize time integrator
   time_integrator.reset(new TIME_INT(comp_navier_stokes_operator, param, n_refine_time));
-}
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
-void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                 unsteady, compressible Navier-Stokes equations                  " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
-
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
-void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve_problem(bool const do_restart)
-{
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
   create_grid_and_set_boundary_conditions(triangulation,
@@ -190,7 +208,111 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve_problem(boo
                                      analytical_solution);
 
   time_integrator->setup(do_restart);
+
+  setup_time = timer.wall_time();
+}
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+void
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve()
+{
   time_integrator->timeloop();
+
+  overall_time += this->timer.wall_time();
+}
+
+template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+void
+Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::analyze_computing_times() const
+{
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
+
+  this->pcout << "Performance results for compressible Navier-Stokes solver:" << std::endl;
+
+  // overall wall time including postprocessing
+  Utilities::MPI::MinMaxAvg overall_time_data =
+    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
+  double const overall_time_avg = overall_time_data.avg;
+
+  // wall times
+  this->pcout << std::endl << "Wall times:" << std::endl;
+
+  std::vector<std::string> names;
+  std::vector<double>      computing_times;
+
+  this->time_integrator->get_wall_times(names, computing_times);
+
+  unsigned int length = 1;
+  for(unsigned int i = 0; i < names.size(); ++i)
+  {
+    length = length > names[i].length() ? length : names[i].length();
+  }
+
+  double sum_of_substeps = 0.0;
+  for(unsigned int i = 0; i < computing_times.size(); ++i)
+  {
+    Utilities::MPI::MinMaxAvg data =
+      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
+                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
+                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                << data.avg / overall_time_avg * 100 << " %" << std::endl;
+
+    sum_of_substeps += data.avg;
+  }
+
+  Utilities::MPI::MinMaxAvg setup_time_data =
+    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
+  double const setup_time_avg = setup_time_data.avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << other << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << other / overall_time_avg * 100 << " %" << std::endl;
+
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  // computational costs in CPUh
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  this->pcout << std::endl
+              << "Computational costs (including setup + postprocessing):" << std::endl
+              << "  Number of MPI processes = " << N_mpi_processes << std::endl
+              << "  Wall time               = " << std::scientific << std::setprecision(2)
+              << overall_time_avg << " s" << std::endl
+              << "  Computational costs     = " << std::scientific << std::setprecision(2)
+              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
+
+  // Throughput in DoFs/s per time step per core
+  unsigned int const DoFs              = comp_navier_stokes_operator->get_number_of_dofs();
+  unsigned int       N_time_steps      = time_integrator->get_number_of_time_steps();
+  double const       time_per_timestep = overall_time_avg / (double)N_time_steps;
+  this->pcout << std::endl
+              << "Throughput per time step (including setup + postprocessing):" << std::endl
+              << "  Degrees of freedom      = " << DoFs << std::endl
+              << "  Wall time               = " << std::scientific << std::setprecision(2)
+              << overall_time_avg << " s" << std::endl
+              << "  Time steps              = " << std::left << N_time_steps << std::endl
+              << "  Wall time per time step = " << std::scientific << std::setprecision(2)
+              << time_per_timestep << " s" << std::endl
+              << "  Throughput              = " << std::scientific << std::setprecision(2)
+              << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
+
+
+  this->pcout << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
 }
 
 } // namespace CompNS
@@ -238,7 +360,11 @@ main(int argc, char ** argv)
         Problem<DIMENSION, FE_DEGREE, QPOINTS_CONV, QPOINTS_VIS> navier_stokes_problem(
           refine_steps_space, refine_steps_time);
 
-        navier_stokes_problem.solve_problem(do_restart);
+        navier_stokes_problem.setup(do_restart);
+
+        navier_stokes_problem.solve();
+
+        navier_stokes_problem.analyze_computing_times();
       }
     }
   }

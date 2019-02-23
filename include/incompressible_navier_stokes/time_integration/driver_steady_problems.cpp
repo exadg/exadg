@@ -21,7 +21,11 @@ DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
   std::shared_ptr<OperatorBase> operator_base_in,
   std::shared_ptr<OperatorPDE>  operator_in,
   InputParameters<dim> const &  param_in)
-  : operator_base(operator_base_in), pde_operator(operator_in), param(param_in), total_time(0.0)
+  : operator_base(operator_base_in),
+    pde_operator(operator_in),
+    param(param_in),
+    computing_times(1),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
 {
 }
 
@@ -62,13 +66,12 @@ template<int dim, typename Number>
 void
 DriverSteadyProblems<dim, Number>::solve()
 {
+  pcout << std::endl << "Solving steady state problem ..." << std::endl;
+
   Timer timer;
   timer.restart();
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "Solving steady state problem ..." << std::endl;
-
-  // Update divegence and continuity penalty operator in case
+  // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations
   // instead of applying these terms in a postprocessing step.
   if(this->param.add_penalty_terms_to_monolithic_system == true)
@@ -86,6 +89,9 @@ DriverSteadyProblems<dim, Number>::solve()
     }
   }
 
+  unsigned int N_iter_nonlinear = 0;
+  unsigned int N_iter_linear    = 0;
+
   // Steady Stokes equations
   if(this->param.equation_type == EquationType::Stokes)
   {
@@ -93,45 +99,18 @@ DriverSteadyProblems<dim, Number>::solve()
     pde_operator->rhs_stokes_problem(rhs_vector);
 
     // solve coupled system of equations
-    unsigned int iterations =
+    N_iter_linear =
       pde_operator->solve_linear_stokes_problem(solution,
                                                 rhs_vector,
                                                 this->param.update_preconditioner_coupled);
-    // write output
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << std::endl
-                << "Solve linear Stokes problem:" << std::endl
-                << "  Iterations:   " << std::setw(12) << std::right << iterations << std::endl
-                << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
-                << timer.wall_time() << std::endl;
-    }
   }
   else // Steady Navier-Stokes equations
   {
     // Newton solver
-    unsigned int newton_iterations;
-    unsigned int linear_iterations;
     pde_operator->solve_nonlinear_steady_problem(solution,
                                                  this->param.update_preconditioner_coupled,
-                                                 newton_iterations,
-                                                 linear_iterations);
-
-    // write output
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << std::endl
-                << "Solve nonlinear Navier-Stokes problem:" << std::endl
-                << "  Newton iterations:      " << std::setw(12) << std::right << newton_iterations
-                << std::endl
-                << "  Linear iterations (avg):" << std::setw(12) << std::scientific
-                << std::setprecision(4) << std::right
-                << double(linear_iterations) / double(newton_iterations) << std::endl
-                << "  Linear iterations (tot):" << std::setw(12) << std::scientific
-                << std::setprecision(4) << std::right << linear_iterations << std::endl
-                << "  Wall time [s]:          " << std::setw(12) << std::scientific
-                << std::setprecision(4) << timer.wall_time() << std::endl;
-    }
+                                                 N_iter_nonlinear,
+                                                 N_iter_linear);
   }
 
   // special case: pure Dirichlet BC's
@@ -143,25 +122,60 @@ DriverSteadyProblems<dim, Number>::solve()
       set_zero_mean_value(solution.block(1));
   }
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "... done!" << std::endl;
+  computing_times[0] += timer.wall_time();
+
+  // write output
+  if(this->param.equation_type == EquationType::Stokes)
+  {
+    pcout << std::endl
+          << "Solve linear Stokes problem:" << std::endl
+          << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
+          << computing_times[0] << std::endl;
+  }
+  else // Steady Navier-Stokes equations
+  {
+    pcout << std::endl
+          << "Solve nonlinear Navier-Stokes problem:" << std::endl
+          << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear
+          << std::endl
+          << "  Linear iterations (avg):" << std::setw(12) << std::scientific
+          << std::setprecision(4) << std::right << double(N_iter_linear) / double(N_iter_nonlinear)
+          << std::endl
+          << "  Linear iterations (tot):" << std::setw(12) << std::scientific
+          << std::setprecision(4) << std::right << N_iter_linear << std::endl
+          << "  Wall time [s]:          " << std::setw(12) << std::scientific
+          << std::setprecision(4) << computing_times[0] << std::endl;
+  }
+
+  pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, typename Number>
+void
+DriverSteadyProblems<dim, Number>::get_wall_times(std::vector<std::string> & name,
+                                                  std::vector<double> &      wall_time) const
+{
+  name.resize(1);
+  std::vector<std::string> names = {"Coupled system"};
+  name                           = names;
+
+  wall_time.resize(1);
+  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
+  {
+    wall_time[i] = this->computing_times[i];
+  }
 }
 
 template<int dim, typename Number>
 void
 DriverSteadyProblems<dim, Number>::solve_steady_problem()
 {
-  global_timer.restart();
-
   postprocessing();
 
   solve();
 
   postprocessing();
-
-  total_time += global_timer.wall_time();
-
-  analyze_computing_times();
 }
 
 template<int dim, typename Number>
@@ -169,30 +183,6 @@ void
 DriverSteadyProblems<dim, Number>::postprocessing()
 {
   pde_operator->do_postprocessing_steady_problem(solution.block(0), solution.block(1));
-}
-
-template<int dim, typename Number>
-void
-DriverSteadyProblems<dim, Number>::analyze_computing_times() const
-{
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max "
-        << std::endl;
-
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  pcout << "  Global time:         " << std::scientific << std::setprecision(4) << std::setw(10)
-        << data.min << " " << std::setprecision(4) << std::setw(10) << data.avg << " "
-        << std::setprecision(4) << std::setw(10) << data.max << " "
-        << "          "
-        << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6) << std::left
-        << data.max_index << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl;
 }
 
 // instantiations

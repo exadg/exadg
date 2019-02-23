@@ -40,6 +40,12 @@ public:
              InputParameters const &   param_in,
              unsigned int const        n_refine_time_in);
 
+  void
+  get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
+
+  void
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
 private:
   void
   allocate_vectors();
@@ -93,9 +99,6 @@ private:
   void
   postprocessing() const;
 
-  void
-  analyze_computing_times() const;
-
   std::shared_ptr<Operator> pde_operator;
 
   InputParameters const & param;
@@ -112,8 +115,8 @@ private:
   VectorType rhs_vector;
 
   // iteration counts and solver time
-  double N_iter_average;
-  double solver_time_average;
+  double iterations;
+  double wall_time;
 
   // Operator-integration-factor (OIF) splitting
 

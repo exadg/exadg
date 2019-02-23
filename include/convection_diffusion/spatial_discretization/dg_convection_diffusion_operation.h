@@ -191,6 +191,9 @@ public:
   unsigned int
   get_polynomial_degree() const;
 
+  unsigned int
+  get_number_of_dofs() const;
+
   /*
    * Numerical velocity field.
    */

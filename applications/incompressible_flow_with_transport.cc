@@ -75,6 +75,9 @@ public:
   void
   solve() const;
 
+  void
+  analyze_computing_times() const;
+
 private:
   // GENERAL (FLUID + TRANSPORT)
   void
@@ -89,13 +92,25 @@ private:
   void
   synchronize_time_step_size() const;
 
+  double
+  analyze_computing_times_fluid(double const overall_time) const;
+
+  void
+  analyze_iterations_fluid() const;
+
+  double
+  analyze_computing_times_transport(double const overall_time) const;
+
+  void
+  analyze_iterations_transport() const;
+
   ConditionalOStream pcout;
 
   std::shared_ptr<parallel::Triangulation<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  const unsigned int n_refine_space;
+  const unsigned int n_refine_space, n_refine_time;
 
   bool use_adaptive_time_stepping;
 
@@ -146,6 +161,15 @@ private:
   std::shared_ptr<ConvDiff::PostProcessor<dim, degree_s>> scalar_postprocessor;
 
   std::shared_ptr<TimeIntBase> scalar_time_integrator;
+
+  /*
+   * Computation time (wall clock time).
+   */
+  Timer          timer;
+  mutable double overall_time;
+  double         setup_time;
+
+  unsigned int const length = 15;
 };
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -153,172 +177,11 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
                                                             unsigned int const refine_steps_time)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(refine_steps_space),
-    use_adaptive_time_stepping(false)
+    n_refine_time(refine_steps_time),
+    use_adaptive_time_stepping(false),
+    overall_time(0.0),
+    setup_time(0.0)
 {
-  print_header();
-  print_MPI_info(pcout);
-
-  // FLUID
-  fluid_param.set_input_parameters();
-  fluid_param.check_input_parameters();
-
-  if(fluid_param.print_input_parameters == true)
-    fluid_param.print(pcout);
-
-  // triangulation
-  if(fluid_param.triangulation_type == IncNS::TriangulationType::Distributed)
-  {
-    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::Distributed,
-                ExcMessage(
-                  "Parameter triangulation_type is different for fluid field and scalar field"));
-
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(fluid_param.triangulation_type == IncNS::TriangulationType::FullyDistributed)
-  {
-    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::FullyDistributed,
-                ExcMessage(
-                  "Parameter triangulation_type is different for fluid field and scalar field"));
-
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
-
-
-  fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
-  IncNS::set_field_functions(fluid_field_functions);
-
-  fluid_analytical_solution.reset(new IncNS::AnalyticalSolution<dim>());
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
-  IncNS::set_analytical_solution(fluid_analytical_solution);
-
-  fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
-  fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
-
-  AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
-              ExcMessage("This is an unsteady solver. Check input parameters."));
-
-  // initialize postprocessor
-  fluid_postprocessor =
-    IncNS::construct_postprocessor<dim, degree_u, degree_p, Number>(fluid_param);
-
-  // initialize navier_stokes_operation
-  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
-  {
-    std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
-
-    navier_stokes_operation_coupled.reset(
-      new DGCoupled(*triangulation, fluid_param, fluid_postprocessor));
-
-    navier_stokes_operation = navier_stokes_operation_coupled;
-
-    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
-                                                   navier_stokes_operation_coupled,
-                                                   fluid_param,
-                                                   refine_steps_time));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
-
-    navier_stokes_operation_dual_splitting.reset(
-      new DGDualSplitting(*triangulation, fluid_param, fluid_postprocessor));
-
-    navier_stokes_operation = navier_stokes_operation_dual_splitting;
-
-    fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
-                                                         navier_stokes_operation_dual_splitting,
-                                                         fluid_param,
-                                                         refine_steps_time));
-  }
-  else if(this->fluid_param.temporal_discretization ==
-          IncNS::TemporalDiscretization::BDFPressureCorrection)
-  {
-    std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
-
-    navier_stokes_operation_pressure_correction.reset(
-      new DGPressureCorrection(*triangulation, fluid_param, fluid_postprocessor));
-
-    navier_stokes_operation = navier_stokes_operation_pressure_correction;
-
-    fluid_time_integrator.reset(
-      new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
-                                    navier_stokes_operation_pressure_correction,
-                                    fluid_param,
-                                    refine_steps_time));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-
-  // SCALAR TRANSPORT
-  scalar_param.set_input_parameters();
-  scalar_param.check_input_parameters();
-  AssertThrow(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady,
-              ExcMessage("ProblemType must be unsteady!"));
-
-  if(scalar_param.print_input_parameters)
-    scalar_param.print(pcout);
-
-  scalar_field_functions.reset(new ConvDiff::FieldFunctions<dim>());
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
-  ConvDiff::set_field_functions(scalar_field_functions);
-
-  scalar_analytical_solution.reset(new ConvDiff::AnalyticalSolution<dim>());
-  ConvDiff::set_analytical_solution(scalar_analytical_solution);
-
-  scalar_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
-
-  // initialize postprocessor
-  scalar_postprocessor.reset(new ConvDiff::PostProcessor<dim, degree_s>());
-
-  // initialize convection diffusion operation
-  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(*triangulation,
-                                                                            scalar_param,
-                                                                            scalar_postprocessor));
-
-  // initialize time integrator
-  if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
-  {
-    scalar_time_integrator.reset(
-      new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator, scalar_param, refine_steps_time));
-  }
-  else if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
-  {
-    scalar_time_integrator.reset(
-      new ConvDiff::TimeIntBDF<Number>(conv_diff_operator, scalar_param, refine_steps_time));
-  }
-  else
-  {
-    AssertThrow(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK ||
-                  scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
-                ExcMessage("Specified time integration scheme is not implemented!"));
-  }
-
-  if(fluid_param.adaptive_time_stepping == true)
-  {
-    AssertThrow(
-      scalar_param.adaptive_time_stepping == true,
-      ExcMessage(
-        "Adaptive time stepping has to be used for both fluid and scalar transport solvers."));
-
-    use_adaptive_time_stepping = true;
-  }
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -504,6 +367,175 @@ template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
 Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
 {
+  timer.restart();
+
+  print_header();
+  print_MPI_info(pcout);
+
+  // parameters (fluid + scalar)
+  fluid_param.set_input_parameters();
+  fluid_param.check_input_parameters();
+
+  if(fluid_param.print_input_parameters == true)
+    fluid_param.print(pcout);
+
+  scalar_param.set_input_parameters();
+  scalar_param.check_input_parameters();
+  AssertThrow(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady,
+              ExcMessage("ProblemType must be unsteady!"));
+
+  if(scalar_param.print_input_parameters)
+    scalar_param.print(pcout);
+
+  // FLUID
+
+  // triangulation
+  if(fluid_param.triangulation_type == IncNS::TriangulationType::Distributed)
+  {
+    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::Distributed,
+                ExcMessage(
+                  "Parameter triangulation_type is different for fluid field and scalar field"));
+
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(fluid_param.triangulation_type == IncNS::TriangulationType::FullyDistributed)
+  {
+    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::FullyDistributed,
+                ExcMessage(
+                  "Parameter triangulation_type is different for fluid field and scalar field"));
+
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
+
+
+  fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
+  // this function has to be defined in the header file
+  // that implements all problem specific things like
+  // parameters, geometry, boundary conditions, etc.
+  IncNS::set_field_functions(fluid_field_functions);
+
+  fluid_analytical_solution.reset(new IncNS::AnalyticalSolution<dim>());
+  // this function has to be defined in the header file
+  // that implements all problem specific things like
+  // parameters, geometry, boundary conditions, etc.
+  IncNS::set_analytical_solution(fluid_analytical_solution);
+
+  fluid_boundary_descriptor_velocity.reset(new IncNS::BoundaryDescriptorU<dim>());
+  fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
+
+  AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
+              ExcMessage("This is an unsteady solver. Check input parameters."));
+
+  // initialize postprocessor
+  fluid_postprocessor =
+    IncNS::construct_postprocessor<dim, degree_u, degree_p, Number>(fluid_param);
+
+  // initialize navier_stokes_operation
+  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
+  {
+    std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
+
+    navier_stokes_operation_coupled.reset(
+      new DGCoupled(*triangulation, fluid_param, fluid_postprocessor));
+
+    navier_stokes_operation = navier_stokes_operation_coupled;
+
+    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
+                                                   navier_stokes_operation_coupled,
+                                                   fluid_param,
+                                                   n_refine_time));
+  }
+  else if(this->fluid_param.temporal_discretization ==
+          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
+
+    navier_stokes_operation_dual_splitting.reset(
+      new DGDualSplitting(*triangulation, fluid_param, fluid_postprocessor));
+
+    navier_stokes_operation = navier_stokes_operation_dual_splitting;
+
+    fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
+                                                         navier_stokes_operation_dual_splitting,
+                                                         fluid_param,
+                                                         n_refine_time));
+  }
+  else if(this->fluid_param.temporal_discretization ==
+          IncNS::TemporalDiscretization::BDFPressureCorrection)
+  {
+    std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
+
+    navier_stokes_operation_pressure_correction.reset(
+      new DGPressureCorrection(*triangulation, fluid_param, fluid_postprocessor));
+
+    navier_stokes_operation = navier_stokes_operation_pressure_correction;
+
+    fluid_time_integrator.reset(
+      new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
+                                    navier_stokes_operation_pressure_correction,
+                                    fluid_param,
+                                    n_refine_time));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+
+  // SCALAR TRANSPORT
+  scalar_field_functions.reset(new ConvDiff::FieldFunctions<dim>());
+  // this function has to be defined in the header file that implements
+  // all problem specific things like parameters, geometry, boundary conditions, etc.
+  ConvDiff::set_field_functions(scalar_field_functions);
+
+  scalar_analytical_solution.reset(new ConvDiff::AnalyticalSolution<dim>());
+  ConvDiff::set_analytical_solution(scalar_analytical_solution);
+
+  scalar_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
+
+  // initialize postprocessor
+  scalar_postprocessor.reset(new ConvDiff::PostProcessor<dim, degree_s>());
+
+  // initialize convection diffusion operation
+  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(*triangulation,
+                                                                            scalar_param,
+                                                                            scalar_postprocessor));
+
+  // initialize time integrator
+  if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  {
+    scalar_time_integrator.reset(
+      new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator, scalar_param, n_refine_time));
+  }
+  else if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  {
+    scalar_time_integrator.reset(
+      new ConvDiff::TimeIntBDF<Number>(conv_diff_operator, scalar_param, n_refine_time));
+  }
+  else
+  {
+    AssertThrow(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK ||
+                  scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
+                ExcMessage("Specified time integration scheme is not implemented!"));
+  }
+
+  if(fluid_param.adaptive_time_stepping == true)
+  {
+    AssertThrow(
+      scalar_param.adaptive_time_stepping == true,
+      ExcMessage(
+        "Adaptive time stepping has to be used for both fluid and scalar transport solvers."));
+
+    use_adaptive_time_stepping = true;
+  }
+
   // The parameter start_with_low_order has to be true.
   // This is due to the fact that the setup function of the time integrator initializes
   // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
@@ -519,6 +551,8 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
   setup_navier_stokes(do_restart);
 
   setup_convection_diffusion(do_restart);
+
+  setup_time = timer.wall_time();
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -526,6 +560,221 @@ void
 Problem<dim, degree_u, degree_p, degree_s, Number>::solve() const
 {
   run_timeloop();
+
+  overall_time += this->timer.wall_time();
+}
+
+template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+double
+Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times_fluid(
+  double const overall_time_avg) const
+{
+  this->pcout << std::endl << "Incompressible Navier-Stokes solver:" << std::endl;
+
+  // wall times
+  std::vector<std::string> names;
+  std::vector<double>      computing_times;
+
+  if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
+  {
+    this->fluid_time_integrator->get_wall_times(names, computing_times);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  double sum_of_substeps = 0.0;
+  for(unsigned int i = 0; i < computing_times.size(); ++i)
+  {
+    Utilities::MPI::MinMaxAvg data =
+      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
+                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
+                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                << data.avg / overall_time_avg * 100 << " %" << std::endl;
+
+    sum_of_substeps += data.avg;
+  }
+
+  return sum_of_substeps;
+}
+
+template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+void
+Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_fluid() const
+{
+  this->pcout << std::endl << "Incompressible Navier-Stokes solver:" << std::endl;
+
+  // Iterations
+  if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
+  {
+    std::vector<std::string> names;
+    std::vector<double>      iterations;
+
+    this->fluid_time_integrator->get_iterations(names, iterations);
+
+    for(unsigned int i = 0; i < iterations.size(); ++i)
+    {
+      this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                  << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
+                  << std::endl;
+    }
+  }
+}
+
+template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+double
+Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times_transport(
+  double const overall_time_avg) const
+{
+  this->pcout << std::endl << "Convection-diffusion solver:" << std::endl;
+
+  // wall times
+  std::vector<std::string> names;
+  std::vector<double>      computing_times;
+
+  if(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady)
+  {
+    this->scalar_time_integrator->get_wall_times(names, computing_times);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  double sum_of_substeps = 0.0;
+  for(unsigned int i = 0; i < computing_times.size(); ++i)
+  {
+    Utilities::MPI::MinMaxAvg data =
+      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
+                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
+                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                << data.avg / overall_time_avg * 100 << " %" << std::endl;
+
+    sum_of_substeps += data.avg;
+  }
+
+  return sum_of_substeps;
+}
+
+template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+void
+Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_transport() const
+{
+  this->pcout << std::endl << "Convection-diffusion solver:" << std::endl;
+
+  // Iterations are only relevant for BDF time integrator
+  if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  {
+    // Iterations
+    if(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady)
+    {
+      std::vector<std::string> names;
+      std::vector<double>      iterations;
+
+      std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator);
+      time_integrator_bdf->get_iterations(names, iterations);
+
+      for(unsigned int i = 0; i < iterations.size(); ++i)
+      {
+        this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                    << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
+                    << std::endl;
+      }
+    }
+  }
+}
+
+template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+void
+Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times() const
+{
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
+
+  // Iterations
+  this->pcout << std::endl << "Average number of iterations:" << std::endl;
+
+  analyze_iterations_fluid();
+  analyze_iterations_transport();
+
+  // Wall times
+
+  this->pcout << std::endl << "Wall times:" << std::endl;
+  Utilities::MPI::MinMaxAvg overall_time_data =
+    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
+  double const overall_time_avg = overall_time_data.avg;
+
+  double const time_fluid_avg  = analyze_computing_times_fluid(overall_time_avg);
+  double const time_scalar_avg = analyze_computing_times_transport(overall_time_avg);
+
+  this->pcout << std::endl;
+
+  Utilities::MPI::MinMaxAvg setup_time_data =
+    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
+  double const setup_time_avg = setup_time_data.avg;
+  this->pcout << "  " << std::setw(length) << std::left << "Setup" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  double const other = overall_time_avg - time_fluid_avg - time_scalar_avg - setup_time_avg;
+  this->pcout << "  " << std::setw(length) << std::left << "Other" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << other << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << other / overall_time_avg * 100 << " %" << std::endl;
+
+  this->pcout << "  " << std::setw(length) << std::left << "Overall" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  // computational costs in CPUh
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  this->pcout << std::endl
+              << "Computational costs (fluid + transport, including setup + postprocessing):"
+              << std::endl
+              << "  Number of MPI processes = " << N_mpi_processes << std::endl
+              << "  Wall time               = " << std::scientific << std::setprecision(2)
+              << overall_time_avg << " s" << std::endl
+              << "  Computational costs     = " << std::scientific << std::setprecision(2)
+              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
+
+  // Throughput in DoFs/s per time step per core
+  unsigned int const DoFs = this->navier_stokes_operation->get_number_of_dofs() +
+                            this->conv_diff_operator->get_number_of_dofs();
+
+  if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
+  {
+    unsigned int N_time_steps      = this->fluid_time_integrator->get_number_of_time_steps();
+    double const time_per_timestep = overall_time_avg / (double)N_time_steps;
+    this->pcout << std::endl
+                << "Throughput per time step (fluid + transport, including setup + postprocessing):"
+                << std::endl
+                << "  Degrees of freedom      = " << DoFs << std::endl
+                << "  Wall time               = " << std::scientific << std::setprecision(2)
+                << overall_time_avg << " s" << std::endl
+                << "  Time steps              = " << std::left << N_time_steps << std::endl
+                << "  Wall time per time step = " << std::scientific << std::setprecision(2)
+                << time_per_timestep << " s" << std::endl
+                << "  Throughput              = " << std::scientific << std::setprecision(2)
+                << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+
+  this->pcout << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
 }
 
 int
@@ -558,6 +807,8 @@ main(int argc, char ** argv)
     problem.setup(do_restart);
 
     problem.solve();
+
+    problem.analyze_computing_times();
   }
   catch(std::exception & exc)
   {
