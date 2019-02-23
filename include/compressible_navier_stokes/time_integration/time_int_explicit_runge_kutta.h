@@ -42,6 +42,9 @@ public:
                 InputParameters<dim> const & param_in,
                 unsigned int const           n_refine_time_in);
 
+  void
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
 private:
   void
   initialize_time_integrator();
@@ -69,9 +72,6 @@ private:
 
   double
   recalculate_time_step_size() const;
-
-  void
-  analyze_computing_times() const;
 
   void
   calculate_pressure();

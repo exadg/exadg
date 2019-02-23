@@ -39,9 +39,9 @@ using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
+#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
 //#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
-#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
@@ -56,6 +56,9 @@ public:
 
   void
   solve() const;
+
+  void
+  analyze_computing_times() const;
 
 private:
   void
@@ -73,7 +76,7 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_1, periodic_faces_2;
 
-  const unsigned int n_refine_space_domain1, n_refine_space_domain2;
+  const unsigned int n_refine_space_domain1, n_refine_space_domain2, n_refine_time;
 
   bool use_adaptive_time_stepping;
 
@@ -104,6 +107,23 @@ private:
   typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> time_integrator_1, time_integrator_2;
+
+  /*
+   * Computation time (wall clock time).
+   */
+  Timer          timer;
+  mutable double overall_time;
+  double         setup_time;
+
+  unsigned int const length = 15;
+
+  void
+  analyze_iterations(InputParameters<dim> const &   param,
+                     std::shared_ptr<TimeInt> const time_integrator) const;
+
+  double
+  analyze_computing_times(InputParameters<dim> const &   param,
+                          std::shared_ptr<TimeInt> const time_integrator) const;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -114,8 +134,85 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space_domain1(refine_steps_space1),
     n_refine_space_domain2(refine_steps_space2),
-    use_adaptive_time_stepping(false)
+    n_refine_time(refine_steps_time),
+    use_adaptive_time_stepping(false),
+    overall_time(0.0),
+    setup_time(0.0)
 {
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
+{
+  // clang-format off
+  pcout << std::endl << std::endl << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << "                                                                                 " << std::endl
+  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
+  << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
+  << "                     based on a matrix-free implementation                       " << std::endl
+  << "_________________________________________________________________________________" << std::endl
+  << std::endl;
+  // clang-format on
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time() const
+{
+  // Setup time integrator and get time step size
+  double time_1 = param_1.start_time, time_2 = param_2.start_time;
+
+  double time = std::min(time_1, time_2);
+
+  // Set the same time step size for both time integrators (for the two domains)
+  time_integrator_1->reset_time(time);
+  time_integrator_2->reset_time(time);
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size() const
+{
+  double const EPSILON = 1.e-10;
+
+  // Setup time integrator and get time step size
+  double time_step_size_1 = std::numeric_limits<double>::max();
+  double time_step_size_2 = std::numeric_limits<double>::max();
+
+  // get time step sizes
+  if(time_integrator_1->get_time() > param_1.start_time - EPSILON)
+    time_step_size_1 = time_integrator_1->get_time_step_size();
+
+  if(time_integrator_2->get_time() > param_2.start_time - EPSILON)
+    time_step_size_2 = time_integrator_2->get_time_step_size();
+
+  // take the minimum
+  double time_step_size = std::min(time_step_size_1, time_step_size_2);
+
+  // decrease time_step in order to exactly hit end_time
+  if(use_adaptive_time_stepping == false)
+  {
+    // assume that domain 1 is the first to start and the last to end
+    time_step_size =
+      adjust_time_step_to_hit_end_time(param_1.start_time, param_1.end_time, time_step_size);
+
+    pcout << std::endl
+          << "Combined time step size for both domains: " << time_step_size << std::endl;
+  }
+
+  // set the time step size
+  time_integrator_1->set_time_step_size(time_step_size);
+  time_integrator_2->set_time_step_size(time_step_size);
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restart)
+{
+  timer.restart();
+
   param_1.set_input_parameters(1);
   param_1.check_input_parameters();
 
@@ -219,7 +316,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_1.reset(new TimeIntCoupled(navier_stokes_operation_coupled_1,
                                                navier_stokes_operation_coupled_1,
                                                param_1,
-                                               refine_steps_time));
+                                               n_refine_time));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -233,7 +330,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_1.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_1,
                                                      navier_stokes_operation_dual_splitting_1,
                                                      param_1,
-                                                     refine_steps_time));
+                                                     n_refine_time));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -248,7 +345,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_1,
                                     navier_stokes_operation_pressure_correction_1,
                                     param_1,
-                                    refine_steps_time));
+                                    n_refine_time));
   }
   else
   {
@@ -268,7 +365,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_2.reset(new TimeIntCoupled(navier_stokes_operation_coupled_2,
                                                navier_stokes_operation_coupled_2,
                                                param_2,
-                                               refine_steps_time));
+                                               n_refine_time));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -282,7 +379,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
     time_integrator_2.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_2,
                                                      navier_stokes_operation_dual_splitting_2,
                                                      param_2,
-                                                     refine_steps_time));
+                                                     n_refine_time));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -297,84 +394,13 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_2,
                                     navier_stokes_operation_pressure_correction_2,
                                     param_2,
-                                    refine_steps_time));
+                                    n_refine_time));
   }
   else
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-}
 
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
-{
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                unsteady, incompressible Navier-Stokes equations                 " << std::endl
-  << "                     based on a matrix-free implementation                       " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time() const
-{
-  // Setup time integrator and get time step size
-  double time_1 = param_1.start_time, time_2 = param_2.start_time;
-
-  double time = std::min(time_1, time_2);
-
-  // Set the same time step size for both time integrators (for the two domains)
-  time_integrator_1->reset_time(time);
-  time_integrator_2->reset_time(time);
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size() const
-{
-  double const EPSILON = 1.e-10;
-
-  // Setup time integrator and get time step size
-  double time_step_size_1 = std::numeric_limits<double>::max();
-  double time_step_size_2 = std::numeric_limits<double>::max();
-
-  // get time step sizes
-  if(time_integrator_1->get_time() > param_1.start_time - EPSILON)
-    time_step_size_1 = time_integrator_1->get_time_step_size();
-
-  if(time_integrator_2->get_time() > param_2.start_time - EPSILON)
-    time_step_size_2 = time_integrator_2->get_time_step_size();
-
-  // take the minimum
-  double time_step_size = std::min(time_step_size_1, time_step_size_2);
-
-  // decrease time_step in order to exactly hit end_time
-  if(use_adaptive_time_stepping == false)
-  {
-    // assume that domain 1 is the first to start and the last to end
-    time_step_size =
-      adjust_time_step_to_hit_end_time(param_1.start_time, param_1.end_time, time_step_size);
-
-    pcout << std::endl
-          << "Combined time step size for both domains: " << time_step_size << std::endl;
-  }
-
-  // set the time step size
-  time_integrator_1->set_time_step_size(time_step_size);
-  time_integrator_2->set_time_step_size(time_step_size);
-}
-
-template<int dim, int degree_u, int degree_p, typename Number>
-void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restart)
-{
   // create grid
 
   // this function has to be defined in the header file that implements all problem specific things
@@ -435,6 +461,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
 
   navier_stokes_operation_2->setup_solvers(
     time_integrator_2->get_scaling_factor_time_derivative_term());
+
+  setup_time = timer.wall_time();
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -469,6 +497,170 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
       synchronize_time_step_size();
     }
   }
+
+  overall_time += this->timer.wall_time();
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_iterations(
+  InputParameters<dim> const &   param,
+  std::shared_ptr<TimeInt> const time_integrator) const
+{
+  // Iterations
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    std::vector<std::string> names;
+    std::vector<double>      iterations;
+
+    time_integrator->get_iterations(names, iterations);
+
+    for(unsigned int i = 0; i < iterations.size(); ++i)
+    {
+      this->pcout << "  " << std::setw(length) << std::left << names[i] << std::fixed
+                  << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
+                  << std::endl;
+    }
+  }
+}
+template<int dim, int degree_u, int degree_p, typename Number>
+double
+NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times(
+  InputParameters<dim> const &   param,
+  std::shared_ptr<TimeInt> const time_integrator) const
+{
+  // overall wall time including postprocessing
+  Utilities::MPI::MinMaxAvg overall_time_data =
+    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
+  double const overall_time_avg = overall_time_data.avg;
+
+  std::vector<std::string> names;
+  std::vector<double>      computing_times;
+
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    time_integrator->get_wall_times(names, computing_times);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter"));
+  }
+
+  double sum_of_substeps = 0.0;
+  for(unsigned int i = 0; i < computing_times.size(); ++i)
+  {
+    Utilities::MPI::MinMaxAvg data =
+      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
+                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
+                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                << data.avg / overall_time_avg * 100 << " %" << std::endl;
+
+    sum_of_substeps += data.avg;
+  }
+
+  return sum_of_substeps;
+}
+
+template<int dim, int degree_u, int degree_p, typename Number>
+void
+NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times() const
+{
+  this->pcout << std::endl
+              << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
+
+  this->pcout << std::endl
+              << "Average number of iterations for incompressible Navier-Stokes solver:"
+              << std::endl;
+
+  this->pcout << std::endl << "Domain 1:" << std::endl;
+
+  analyze_iterations(param_1, time_integrator_1);
+
+  this->pcout << std::endl << "Domain 2:" << std::endl;
+
+  analyze_iterations(param_2, time_integrator_2);
+
+  // overall wall time including postprocessing
+  Utilities::MPI::MinMaxAvg overall_time_data =
+    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
+  double const overall_time_avg = overall_time_data.avg;
+
+  this->pcout << std::endl << "Wall times for incompressible Navier-Stokes solver:" << std::endl;
+
+  // wall times
+  this->pcout << std::endl << "Domain 1:" << std::endl;
+
+  double const time_domain_1_avg = analyze_computing_times(param_1, time_integrator_1);
+
+  // wall times
+  this->pcout << std::endl << "Domain 2:" << std::endl;
+
+  double const time_domain_2_avg = analyze_computing_times(param_2, time_integrator_2);
+
+  this->pcout << std::endl;
+
+  Utilities::MPI::MinMaxAvg setup_time_data =
+    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
+  double const setup_time_avg = setup_time_data.avg;
+  this->pcout << "  " << std::setw(length) << std::left << "Setup" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  double const other = overall_time_avg - time_domain_1_avg - time_domain_2_avg - setup_time_avg;
+  this->pcout << "  " << std::setw(length) << std::left << "Other" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << other << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << other / overall_time_avg * 100 << " %" << std::endl;
+
+  this->pcout << "  " << std::setw(length) << std::left << "Overall" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
+
+  // computational costs in CPUh
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+
+  this->pcout << std::endl
+              << "Computational costs (both domains, including setup + postprocessing):"
+              << std::endl
+              << "  Number of MPI processes = " << N_mpi_processes << std::endl
+              << "  Wall time               = " << std::scientific << std::setprecision(2)
+              << overall_time_avg << " s" << std::endl
+              << "  Computational costs     = " << std::scientific << std::setprecision(2)
+              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
+
+  // Throughput in DoFs/s per time step per core
+  unsigned int const DoFs = navier_stokes_operation_1->get_number_of_dofs() +
+                            navier_stokes_operation_2->get_number_of_dofs();
+
+  if(param_1.solver_type == SolverType::Unsteady)
+  {
+    unsigned int N_time_steps      = time_integrator_1->get_number_of_time_steps();
+    double const time_per_timestep = overall_time_avg / (double)N_time_steps;
+    this->pcout << std::endl
+                << "Throughput per time step (both domains, including setup + postprocessing):"
+                << std::endl
+                << "  Degrees of freedom      = " << DoFs << std::endl
+                << "  Wall time               = " << std::scientific << std::setprecision(2)
+                << overall_time_avg << " s" << std::endl
+                << "  Time steps              = " << std::left << N_time_steps << std::endl
+                << "  Wall time per time step = " << std::scientific << std::setprecision(2)
+                << time_per_timestep << " s" << std::endl
+                << "  Throughput              = " << std::scientific << std::setprecision(2)
+                << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter"));
+  }
+
+  this->pcout << "_________________________________________________________________________________"
+              << std::endl
+              << std::endl;
 }
 
 int
@@ -512,6 +704,8 @@ main(int argc, char ** argv)
       problem.setup(do_restart);
 
       problem.solve();
+
+      problem.analyze_computing_times();
     }
   }
   catch(std::exception & exc)

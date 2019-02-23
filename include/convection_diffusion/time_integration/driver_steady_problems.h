@@ -40,7 +40,7 @@ public:
   solve_problem();
 
   void
-  analyze_computing_times() const;
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
 private:
   void
@@ -59,9 +59,9 @@ private:
 
   InputParameters const & param;
 
-  // timer
-  Timer  global_timer;
-  double total_time;
+  ConditionalOStream pcout;
+
+  std::vector<double> computing_times;
 
   // vectors
   VectorType solution;

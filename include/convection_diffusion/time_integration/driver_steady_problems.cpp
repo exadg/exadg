@@ -14,7 +14,10 @@ namespace ConvDiff
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(std::shared_ptr<Operator> operator_in,
                                                    InputParameters const &   param_in)
-  : pde_operator(operator_in), param(param_in), total_time(0.0)
+  : pde_operator(operator_in),
+    param(param_in),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+    computing_times(1)
 {
 }
 
@@ -33,41 +36,11 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::solve_problem()
 {
-  global_timer.restart();
-
   postprocessing();
 
   solve();
 
   postprocessing();
-
-  total_time += global_timer.wall_time();
-
-  analyze_computing_times();
-}
-
-template<typename Number>
-void
-DriverSteadyProblems<Number>::analyze_computing_times() const
-{
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-  pcout << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max "
-        << std::endl;
-
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(this->total_time, MPI_COMM_WORLD);
-  pcout << "  Global time:         " << std::scientific << std::setprecision(4) << std::setw(10)
-        << data.min << " " << std::setprecision(4) << std::setw(10) << data.avg << " "
-        << std::setprecision(4) << std::setw(10) << data.max << " "
-        << "          "
-        << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6) << std::left
-        << data.max_index << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl;
 }
 
 template<typename Number>
@@ -93,11 +66,10 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::solve()
 {
+  pcout << std::endl << "Solving steady state problem ..." << std::endl;
+
   Timer timer;
   timer.restart();
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "Solving steady state problem ..." << std::endl;
 
   // calculate rhs vector
   pde_operator->rhs(rhs_vector);
@@ -106,18 +78,16 @@ DriverSteadyProblems<Number>::solve()
   unsigned int iterations =
     pde_operator->solve(solution, rhs_vector, /* update_preconditioner = */ false);
 
-  // write output
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << std::endl
-              << "Solve linear system of equations:" << std::endl
-              << "  Iterations: " << std::setw(6) << std::right << iterations
-              << "\t Wall time [s]: " << std::scientific << std::setprecision(4)
-              << timer.wall_time() << std::endl;
-  }
+  computing_times[0] += timer.wall_time();
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    std::cout << std::endl << "... done!" << std::endl;
+  // write output
+  pcout << std::endl
+        << "Solve linear system of equations:" << std::endl
+        << "  Iterations: " << std::setw(6) << std::right << iterations
+        << "\t Wall time [s]: " << std::scientific << std::setprecision(4) << computing_times[0]
+        << std::endl;
+
+  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<typename Number>
@@ -125,6 +95,19 @@ void
 DriverSteadyProblems<Number>::postprocessing() const
 {
   pde_operator->do_postprocessing(solution);
+}
+
+template<typename Number>
+void
+DriverSteadyProblems<Number>::get_wall_times(std::vector<std::string> & name,
+                                             std::vector<double> &      wall_time) const
+{
+  name.resize(1);
+  std::vector<std::string> names = {"Linear system"};
+  name                           = names;
+
+  wall_time.resize(1);
+  wall_time[0] = computing_times[0];
 }
 
 // instantiations

@@ -49,7 +49,7 @@ public:
   solve_steady_problem();
 
   void
-  analyze_computing_times() const;
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
 private:
   void
@@ -69,8 +69,9 @@ private:
 
   InputParameters<dim> const & param;
 
-  Timer  global_timer;
-  double total_time;
+  std::vector<double> computing_times;
+
+  ConditionalOStream pcout;
 
   BlockVectorType solution;
   BlockVectorType rhs_vector;

@@ -77,6 +77,12 @@ public:
   get_time() const;
 
   /*
+   * Get number of computed time steps
+   */
+  double
+  get_number_of_time_steps() const;
+
+  /*
    * Do one time step including different updates before and after the actual solution of the
    * current time step.
    */
@@ -90,10 +96,11 @@ public:
   postprocessing() const = 0;
 
   /*
-   * Analysis of computation times called after having performed the time loop.
+   * fills a vector of wall times (if several equations have to be solved) with
+   * a list of names describing the equations/sub-steps that are solved
    */
   virtual void
-  analyze_computing_times() const = 0;
+  get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const = 0;
 
 protected:
   /*
@@ -147,8 +154,7 @@ protected:
   /*
    * Computation time (wall clock time).
    */
-  Timer  global_timer;
-  double total_time;
+  Timer global_timer;
 
   /*
    * A small number which is much smaller than the time step size.

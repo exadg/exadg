@@ -32,8 +32,8 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator> operator_in,
     cfl(param.cfl / std::pow(2.0, n_refine_time_in)),
     solution(param_in.order_time_integrator),
     vec_convective_term(param_in.order_time_integrator),
-    N_iter_average(0.0),
-    solver_time_average(0.0),
+    iterations(0.0),
+    wall_time(0.0),
     cfl_oif(param.cfl_oif / std::pow(2.0, n_refine_time_in))
 {
 }
@@ -419,14 +419,13 @@ TimeIntBDF<Number>::solve_timestep()
     this->param.update_preconditioner &&
     (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
 
-  unsigned int iterations = pde_operator->solve(solution_np,
-                                                rhs_vector,
-                                                update_preconditioner,
-                                                bdf.get_gamma0() / this->get_time_step_size(),
-                                                this->get_next_time());
+  iterations += pde_operator->solve(solution_np,
+                                    rhs_vector,
+                                    update_preconditioner,
+                                    bdf.get_gamma0() / this->get_time_step_size(),
+                                    this->get_next_time());
 
-  N_iter_average += iterations;
-  solver_time_average += timer.wall_time();
+  wall_time += timer.wall_time();
 
   // write output
   if(print_solver_info())
@@ -480,32 +479,30 @@ TimeIntBDF<Number>::postprocessing() const
 
 template<typename Number>
 void
-TimeIntBDF<Number>::analyze_computing_times() const
+TimeIntBDF<Number>::get_iterations(std::vector<std::string> & name,
+                                   std::vector<double> &      iteration) const
 {
-  pcout << std::endl
-        << "Number of time steps = " << (get_time_step_number() - 1) << std::endl
-        << "Average number of iterations = " << std::scientific << std::setprecision(3)
-        << N_iter_average / (get_time_step_number() - 1) << std::endl
-        << "Average wall time per time step = " << std::scientific << std::setprecision(3)
-        << solver_time_average / (get_time_step_number() - 1) << std::endl;
+  unsigned int N_time_steps = this->get_time_step_number() - 1;
 
-  pcout << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl
-        << "Computing times:          min        avg        max        rel      p_min  p_max"
-        << std::endl;
+  name.resize(1);
+  std::vector<std::string> names = {"Linear system"};
+  name                           = names;
 
-  Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(total_time, MPI_COMM_WORLD);
-  pcout << "  Time loop:           " << std::scientific << std::setprecision(4) << std::setw(10)
-        << data.min << " " << std::setprecision(4) << std::setw(10) << data.avg << " "
-        << std::setprecision(4) << std::setw(10) << data.max << " "
-        << "          "
-        << "  " << std::setw(6) << std::left << data.min_index << " " << std::setw(6) << std::left
-        << data.max_index << std::endl
-        << "_________________________________________________________________________________"
-        << std::endl
-        << std::endl;
+  iteration.resize(1);
+  iteration[0] = (double)iterations / (double)N_time_steps;
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::get_wall_times(std::vector<std::string> & name,
+                                   std::vector<double> &      wall_time_vector) const
+{
+  name.resize(1);
+  std::vector<std::string> names = {"Linear system"};
+  name                           = names;
+
+  wall_time_vector.resize(1);
+  wall_time_vector[0] = this->wall_time;
 }
 
 // instantiations

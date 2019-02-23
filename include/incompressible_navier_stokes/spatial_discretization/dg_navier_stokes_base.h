@@ -190,6 +190,9 @@ public:
   DoFHandler<dim> const &
   get_dof_handler_p() const;
 
+  unsigned int
+  get_number_of_dofs() const;
+
   double
   get_viscosity() const;
 
