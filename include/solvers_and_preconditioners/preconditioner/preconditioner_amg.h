@@ -35,13 +35,13 @@ public:
   {
     amg_data = data;
 
+#ifdef DEAL_II_WITH_TRILINOS
     // initialize system matrix
     pde_operator.init_system_matrix(system_matrix);
 
     // calculate_matrix
     pde_operator.calculate_system_matrix(system_matrix);
 
-#ifdef DEAL_II_WITH_TRILINOS
     // initialize Trilinos' AMG
     amg.initialize(system_matrix, amg_data.data);
 #else
@@ -72,8 +72,8 @@ public:
 #ifdef DEAL_II_WITH_TRILINOS
     amg.vmult(dst, src);
 #else
-    void(dst);
-    void(src);
+    (void)dst;
+    (void)src;
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
   }
