@@ -8,7 +8,9 @@
 #define DUMMY_ROOT
 
 //#define DEBUG_INFO
-#include <metis.h>
+#ifdef DEAL_II_WITH_METIS
+#  include <metis.h>
+#endif
 
 #include <deal.II/grid/grid_reordering.h>
 
@@ -82,11 +84,11 @@ lung_files_to_node(std::vector<std::string> files)
     roots.clear();
     for(unsigned int i = 0; i < roots_temp.size(); i += 2)
     {
-      Point<3> dst = roots_temp[i]->from;
-      Point<3> norm = (roots_temp[i]->to+ roots_temp[i + 1]->to);
-      norm = norm/2;
-      norm = Point<3>(norm - dst);
-      Point<3> src = Point<3>(dst-norm);
+      Point<3> dst  = roots_temp[i]->from;
+      Point<3> norm = (roots_temp[i]->to + roots_temp[i + 1]->to);
+      norm          = norm / 2;
+      norm          = Point<3>(norm - dst);
+      Point<3> src  = Point<3>(dst - norm);
       roots.push_back(new Node(roots_temp[i + 1], roots_temp[i], src, true));
     }
 #endif
