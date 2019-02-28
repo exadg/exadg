@@ -49,12 +49,7 @@ DEAL_II_INITIALIZE_CACHED_VARIABLES()
 PROJECT(${TARGET})
 DEAL_II_INVOKE_AUTOPILOT()
 
-include_directories(/lrz/sys/libraries/fftw/3.3.3/sse/include)
-
-FIND_LIBRARY(LIKWID_LIBRARIES1 fftw3_mpi HINTS /lrz/sys/libraries/fftw/3.3.3/intelmpi/lib)
-FIND_LIBRARY(LIKWID_LIBRARIES2 fftw3 HINTS /lrz/sys/libraries/fftw/3.3.3/sse/lib)
-
-MESSAGE(${LIKWID_LIBRARIES1})
-MESSAGE(${LIKWID_LIBRARIES2})
-
-target_link_libraries(main ${LIKWID_LIBRARIES2} ${LIKWID_LIBRARIES1})
+include_directories($ENV{FFTW_INC} )
+FIND_LIBRARY(FFTW fftw3 HINTS $ENV{FFTW_LIB})
+MESSAGE(${FFTW})
+target_link_libraries(main ${FFTW})

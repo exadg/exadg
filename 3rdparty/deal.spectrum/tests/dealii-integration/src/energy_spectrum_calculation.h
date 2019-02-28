@@ -60,18 +60,16 @@ public:
   setup(KineticEnergySpectrumData const &           data_in,
         parallel::distributed::Triangulation<dim> & triangulation)
   {
-    data = data_in;
+    data         = data_in;
+    int cells_1D = std::pow(triangulation.n_global_active_cells(), 1.0 / dim) + 0.49;
 
-    int cells       = Utilities::fixed_int_power<2, n_global_refinements>::value;
-    int local_cells = triangulation.n_locally_owned_active_cells();
-
-    dsw.init(dim, cells, fe_degree + 1, fe_degree + 1, local_cells);
+    dsw.init(dim, cells_1D, fe_degree + 1, fe_degree + 1, triangulation);
   }
 
   void
-  evaluate(parallel::distributed::Vector<Number> const & velocity,
-           double                                        time,
-           unsigned int                                  time_step_number)
+  evaluate(LinearAlgebra::distributed::Vector<Number> const & velocity,
+           double                                             time,
+           unsigned int                                       time_step_number)
   {
     if(data.calculate == true)
       do_evaluate(velocity, time, time_step_number);
@@ -79,7 +77,7 @@ public:
 
 private:
   void
-  do_evaluate(parallel::distributed::Vector<Number> const & velocity,
+  do_evaluate(LinearAlgebra::distributed::Vector<Number> const & velocity,
               double,
               unsigned int time_step_number)
   {

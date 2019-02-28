@@ -57,15 +57,16 @@ public:
    * @param local_cells   number of cells this process owns
    *
    */
+  template<class Tria>
   void
-  init(int dim, int cells, int points_src, int points_dst, int local_cells)
+  init(int dim, int cells, int points_src, int points_dst, Tria & tria)
   {
     // init setup ...
     s.init(dim, cells, points_src, points_dst);
 
     // ... mapper
     timer.start("Init-Map");
-    h.init(local_cells);
+    h.init(tria);
     timer.stop("Init-Map");
 
     // ... fftw

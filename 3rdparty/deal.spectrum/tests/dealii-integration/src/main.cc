@@ -16,7 +16,6 @@
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
-#include <deal.II/lac/constraint_matrix.h>
 #include <deal.II/lac/lapack_full_matrix.h>
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/point_value_history.h>
@@ -49,7 +48,8 @@ using namespace dealii;
 
 const unsigned int dimension            = 2;
 const unsigned int fe_degree            = 2;
-const unsigned int n_global_refinements = 3;
+const unsigned int n_global_refinements = 4;
+const unsigned int n_subdivisions       = 3;
 
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
@@ -129,7 +129,7 @@ private:
   void
   make_grid()
   {
-    GridGenerator::hyper_cube(triangulation, 0, 2 * numbers::PI);
+    GridGenerator::subdivided_hyper_cube(triangulation, n_subdivisions, 0, 2 * numbers::PI);
 
     // set periodic boundary conditions in all directions
     for(typename Triangulation<dim>::cell_iterator cell = triangulation.begin();

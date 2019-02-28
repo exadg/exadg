@@ -66,6 +66,7 @@ public:
 
   void
   setup(MatrixFree<dim, Number> const & matrix_free_data_in,
+        const Triangulation<dim, dim> & tria,
         DofQuadIndexData const & /*dof_quad_index_data_in*/,
         KineticEnergySpectrumData const & data_in)
   {
@@ -81,7 +82,7 @@ public:
       unsigned int evaluation_points =
         std::max(fe_degree + 1, (int)data.evaluation_points_per_cell);
 
-      deal_spectrum_wrapper.init(dim, cells, fe_degree + 1, evaluation_points, local_cells);
+      deal_spectrum_wrapper.init(dim, cells, fe_degree + 1, evaluation_points, tria);
     }
   }
 

@@ -106,6 +106,7 @@ public:
                                     pp_data.kinetic_energy_data);
 
     kinetic_energy_spectrum_calculator.setup(matrix_free_data_in,
+                                             dof_handler_in.get_triangulation(),
                                              dof_quad_index_data_in,
                                              pp_data.kinetic_energy_spectrum_data);
   }

@@ -38,8 +38,8 @@ if __name__ == "__main__":
     if args.dim == 2:
         # values
         xx, yy = np.meshgrid(x, x)
-        xval = np.cos(1*xx)*np.cos(2*yy);
-        yval = np.cos(4*xx)*np.cos(3*yy);
+        xval = xx#np.cos(1*xx)*np.cos(2*yy);
+        yval = 0*np.cos(4*xx)*np.cos(3*yy);
         
         # pad values
         xxval = np.zeros((N,Nx)); xxval[:,:N-Nx] = xval;
