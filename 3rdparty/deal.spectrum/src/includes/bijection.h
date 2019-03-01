@@ -133,10 +133,11 @@ public:
             z = std::min(z, vertex[2]);
         }
 
-        unsigned int x_index = int(x / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
-        unsigned int y_index = int(y / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
+        // domain is between -pi and +pi
+        unsigned int x_index = int((x+dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
+        unsigned int y_index = int((y+dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
         unsigned int z_index =
-          s.dim == 2 ? 0 : int(z / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
+          s.dim == 2 ? 0 : int((z+dealii::numbers::PI) / (2 * dealii::numbers::PI / n_active_cells_1d) + 0.5);
 
         temp_indices.push_back(n_active_cells_1d * n_active_cells_1d * z_index +
                                n_active_cells_1d * y_index + x_index);
