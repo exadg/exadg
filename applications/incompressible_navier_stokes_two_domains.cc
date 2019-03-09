@@ -182,11 +182,19 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size
   double time_step_size_2 = std::numeric_limits<double>::max();
 
   // get time step sizes
-  if(time_integrator_1->get_time() > param_1.start_time - EPSILON)
-    time_step_size_1 = time_integrator_1->get_time_step_size();
+  if(use_adaptive_time_stepping == true)
+  {
+    if(time_integrator_1->get_time() > param_1.start_time - EPSILON)
+      time_step_size_1 = time_integrator_1->get_time_step_size();
 
-  if(time_integrator_2->get_time() > param_2.start_time - EPSILON)
+    if(time_integrator_2->get_time() > param_2.start_time - EPSILON)
+      time_step_size_2 = time_integrator_2->get_time_step_size();
+  }
+  else
+  {
+    time_step_size_1 = time_integrator_1->get_time_step_size();
     time_step_size_2 = time_integrator_2->get_time_step_size();
+  }
 
   // take the minimum
   double time_step_size = std::min(time_step_size_1, time_step_size_2);
@@ -289,7 +297,12 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   boundary_descriptor_pressure_2.reset(new BoundaryDescriptorP<dim>());
 
   // constant vs. adaptive time stepping
+  use_adaptive_time_stepping = param_1.adaptive_time_stepping;
+
   AssertThrow(param_1.calculation_of_time_step_size == param_2.calculation_of_time_step_size,
+              ExcMessage("Type of time step calculation has to be the same for both domains."));
+
+  AssertThrow(param_1.adaptive_time_stepping == param_2.adaptive_time_stepping,
               ExcMessage("Type of time step calculation has to be the same for both domains."));
 
   AssertThrow(param_1.solver_type == SolverType::Unsteady &&
