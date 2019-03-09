@@ -344,23 +344,20 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   // PROJECTION METHODS
 
   // pressure Poisson equation
+  IP_factor_pressure = 1.0;
   solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-3,100);
+  solver_pressure_poisson = SolverPressurePoisson::CG; //FGMRES;
+  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  multigrid_data_pressure_poisson.type = MultigridType::phMG;
+  if(domain_id == 1)
+    multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::None;
+  else if(domain_id == 2)
+    multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
+  multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  multigrid_data_pressure_poisson.smoother_data.iterations = 5;
+  multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
-  // Best practice: use PCG with Jacobi preconditioner for refine level l=0,
-  // and FGMRES solver with Chebyshev smoother and PCG_PointJaocbi coarse grid solver for
-  // refinement levels l=1 and larger.
-  if(REFINE_STEPS_SPACE_MIN == 0)
-  {
-    solver_pressure_poisson = SolverPressurePoisson::CG;
-    preconditioner_pressure_poisson = PreconditionerPressurePoisson::PointJacobi;
-  }
-  else
-  {
-    solver_pressure_poisson = SolverPressurePoisson::FGMRES;
-    preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-    multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
-    multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-  }
 
   // projection step
   solver_projection = SolverProjection::CG;
