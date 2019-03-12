@@ -53,7 +53,7 @@ std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME = "test"; //"Re1600_N8_k9_CFL_0-15_div_normal_conti_penalty_1-0";
 
 enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Cartesian;
+const MeshType MESH_TYPE = MeshType::Curvilinear;
 
 // only relevant for Cartesian mesh
 const unsigned int N_CELLS_1D_COARSE_GRID = 1;
@@ -208,7 +208,7 @@ void InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME;
   output_data.output_start_time = start_time;
@@ -308,7 +308,7 @@ public:
 /*                                                                                    */
 /**************************************************************************************/
 
-#include "deformed_cube_manifold.h"
+#include "../grid_tools/deformed_cube_manifold.h"
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(

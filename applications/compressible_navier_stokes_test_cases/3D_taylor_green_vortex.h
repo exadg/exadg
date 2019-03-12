@@ -38,8 +38,8 @@ const unsigned int QPOINTS_VIS = QPOINTS_CONV;
 //const unsigned int QPOINTS_VIS = FE_DEGREE + 1;
 
 // set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-const unsigned int REFINE_STEPS_SPACE_MAX = 3;
+const unsigned int REFINE_STEPS_SPACE_MIN = 4;
+const unsigned int REFINE_STEPS_SPACE_MAX = 4;
 
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
@@ -150,7 +150,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   calculate_velocity = true; // activate this for kinetic energy calculations (see below)
-  output_data.write_output = true; //false;
+  output_data.write_output = false;
   output_data.write_pressure = true;
   output_data.write_velocity = true;
   output_data.write_temperature = true;
@@ -245,7 +245,7 @@ double Solution<dim>::value(const Point<dim>    &x,
  /*                                                                                    */
  /**************************************************************************************/
 
-#include "../incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+#include "../grid_tools/deformed_cube_manifold.h"
 
  template<int dim>
  void create_grid_and_set_boundary_conditions(

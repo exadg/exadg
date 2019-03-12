@@ -2,9 +2,9 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/grid/grid_generator.h>
 
+#include "../../../../applications/grid_tools/deformed_cube_manifold.h"
 #include "operator_wrappers/laplace_wrapper.h"
 
-#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
 
 //#define CORE
 //#define SELF

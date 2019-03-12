@@ -38,7 +38,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = 0; //REFINE_STEPS_TIME_MIN;
 
 // mesh
-#include "mesh_flow_past_cylinder.h"
+#include "../grid_tools/mesh_flow_past_cylinder.h"
 
 // set problem specific parameters like physical dimensions, etc.
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady;

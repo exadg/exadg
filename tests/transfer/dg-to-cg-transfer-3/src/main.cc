@@ -52,7 +52,7 @@
 
 #include "../../../operators/operation-base-1/src/include/rhs_operator.h"
 
-#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+#include "../../../../applications/grid_tools/deformed_cube_manifold.h"
 #include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
 
 #include "../../../operators/operation-base-util/operator_reinit_multigrid.h"
