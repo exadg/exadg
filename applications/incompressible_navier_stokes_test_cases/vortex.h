@@ -43,7 +43,7 @@ const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear; //UniformCartesian;
+const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
