@@ -42,8 +42,8 @@ const double U_X_MAX = 1.0;
 const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
-enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold };
-const MeshType MESH_TYPE = MeshType::UniformCartesian;
+enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold, Curvilinear };
+const MeshType MESH_TYPE = MeshType::Curvilinear; //UniformCartesian;
 
 template<int dim>
 void InputParameters<dim>::set_input_parameters()
@@ -198,7 +198,7 @@ void InputParameters<dim>::set_input_parameters()
   print_input_parameters = true; //false;
 
   // write output for visualization of results
-  output_data.write_output = false;
+  output_data.write_output = true;
   output_data.output_folder = "output/vortex/vtu/";
   output_data.output_name = "vortex";
   output_data.output_start_time = start_time;
@@ -212,6 +212,7 @@ void InputParameters<dim>::set_input_parameters()
   output_data.mean_velocity.sample_start_time = start_time;
   output_data.mean_velocity.sample_end_time = end_time;
   output_data.mean_velocity.sample_every_timesteps = 1;
+  output_data.write_higher_order = true;
   output_data.degree = FE_DEGREE_VELOCITY;
 
   // calculation of error
@@ -388,6 +389,7 @@ public:
 /**************************************************************************************/
 
 #include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+#include "../grid_tools/deformed_cube_manifold.h"
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
@@ -503,6 +505,15 @@ void create_grid_and_set_boundary_conditions(
 
     // refine globally due to boundary conditions for vortex problem
     triangulation->refine_global(1);
+  }
+  else if(MESH_TYPE == MeshType::Curvilinear)
+  {
+    GridGenerator::subdivided_hyper_cube(*triangulation,2,left,right);
+    triangulation->set_all_manifold_ids(1);
+    double const deformation = 0.1;
+    unsigned int const frequency = 2;
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+    triangulation->set_manifold(1, manifold);
   }
 
   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();

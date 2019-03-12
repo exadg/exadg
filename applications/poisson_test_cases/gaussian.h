@@ -1,6 +1,7 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
-#include "../incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+
+#include "../grid_tools/deformed_cube_manifold.h"
 
 /******************************************************************************/
 /*                                                                            */

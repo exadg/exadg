@@ -53,7 +53,7 @@
 
 #include "../../../operators/operation-base-util/interpolate.h"
 
-#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+#include "../../../../applications/grid_tools/deformed_cube_manifold.h"
 
 //#define DETAIL_OUTPUT
 const int          PATCHES              = 10;

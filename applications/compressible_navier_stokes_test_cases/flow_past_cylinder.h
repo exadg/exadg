@@ -39,7 +39,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // mesh
-#include "../incompressible_navier_stokes_test_cases/mesh_flow_past_cylinder.h"
+#include "../grid_tools/mesh_flow_past_cylinder.h"
 
 // set problem specific parameters like physical dimensions, etc.
 const unsigned int TEST_CASE = 3; // 1, 2 or 3

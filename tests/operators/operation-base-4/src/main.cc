@@ -51,7 +51,7 @@
 #include "../../operation-base-util/l2_norm.h"
 #include "../../operation-base-util/sparse_matrix_util.h"
 
-#include "../../../../applications/incompressible_navier_stokes_test_cases/deformed_cube_manifold.h"
+#include "../../../../applications/grid_tools/deformed_cube_manifold.h"
 
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>

@@ -309,7 +309,7 @@ public:
 /*                                                                                    */
 /**************************************************************************************/
 
-#include "../incompressible_navier_stokes_test_cases/grid_functions_turbulent_channel.h"
+#include "../grid_tools/grid_functions_turbulent_channel.h"
 
 template<int dim>
 void create_grid_and_set_boundary_conditions(
