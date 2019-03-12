@@ -26,7 +26,7 @@ write_output(OutputDataNavierStokes const &                     output_data,
   DataOut<dim> data_out;
 
   DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = true;
+  flags.write_higher_order_cells = output_data.write_higher_order;
   data_out.set_flags(flags);
 
   std::vector<std::string> velocity_names(dim, "velocity");
