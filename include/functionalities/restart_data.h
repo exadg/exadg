@@ -47,10 +47,8 @@ struct RestartData
              unsigned int const time_step_number,
              bool const         reset_counter) const
   {
-    // After a restart, the counter is reset to 1. If the restart is controlled by
-    // the variable interval_time, we have to reinitialize the counter because the variable time
-    // is time-start_time which does not necessarily start with zero after a restart. Otherwise,
-    // we would repeat all the restarts that have been written before. There is nothing to do
+    // After a restart, the counter is reset to 1, but time = current_time - start time != 0 after a
+    // restart. Hence, we have to explicitly reset the counter in that case. There is nothing to do
     // if the restart is controlled by the wall time or the time_step_number because these
     // variables are reinitialized after a restart anyway.
     if(reset_counter)

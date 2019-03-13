@@ -430,7 +430,8 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   // OUTPUT AND POSTPROCESSING
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e3; //1e5;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = T_0;
 
   if(domain_id == 1)
   {

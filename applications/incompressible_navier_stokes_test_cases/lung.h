@@ -37,7 +37,7 @@ unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const GENERATIONS = 4;
+unsigned int const GENERATIONS = 9;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -52,7 +52,7 @@ double const PEEP = 3.0; //TODO //8.0 * 98.0665; // 8 cmH20, 1 cmH20 = 98.0665 P
 
 std::string OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "test";
+std::string OUTPUT_NAME = "test_geoemtry";
 
 // solver tolerances
 const double ABS_TOL = 1.e-12;
@@ -234,9 +234,9 @@ void InputParameters<dim>::set_input_parameters()
   mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
   mass_data.reference_length_scale = 1.0;
 
-
   // output of solver information
-  output_solver_info_every_timesteps = 1; //1e5;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = PERIOD/20;
 }
 
 /**************************************************************************************/

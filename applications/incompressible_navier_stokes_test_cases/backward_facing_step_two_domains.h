@@ -282,6 +282,10 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion;
   discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 
+  // output of solver information
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (END_TIME-START_TIME)/100;
+
   // OUTPUT AND POSTPROCESSING
   if(domain_id == 1)
   {
@@ -294,9 +298,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.write_divergence = true;
     output_data.write_q_criterion = true;
     output_data.degree = FE_DEGREE_VELOCITY;
-
-    // output of solver information
-    output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 
     // turbulent channel statistics
     turb_ch_data.calculate_statistics = true;
@@ -328,9 +329,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.write_divergence = true;
     output_data.write_q_criterion = true;
     output_data.degree = FE_DEGREE_VELOCITY;
-
-    // output of solver information
-    output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
 
     // line plot data: calculate statistics along lines
     line_plot_data.write_output = true;

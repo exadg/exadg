@@ -12,6 +12,7 @@
 
 #include "../../functionalities/print_functions.h"
 #include "../../functionalities/restart_data.h"
+#include "../../functionalities/solver_info_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_spectrum_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/lift_and_drag_data.h"
@@ -349,7 +350,7 @@ public:
       error_data(ErrorCalculationData()),
 
       // output of solver information
-      output_solver_info_every_timesteps(1),
+      solver_info_data(SolverInfoData()),
 
       // restart
       restart_data(RestartData()),
@@ -672,7 +673,7 @@ public:
     pcout << std::endl << "Physical quantities:" << std::endl;
 
     // start and end time
-    if(problem_type == ProblemType::Unsteady)
+    if(solver_type == SolverType::Unsteady)
     {
       print_parameter(pcout, "Start time", start_time);
       print_parameter(pcout, "End time", end_time);
@@ -1123,15 +1124,13 @@ public:
     error_data.print(pcout, problem_type == ProblemType::Unsteady);
 
     // output of solver information
-    if(problem_type == ProblemType::Unsteady)
+    if(solver_type == SolverType::Unsteady)
     {
-      print_parameter(pcout,
-                      "Output solver info every timesteps",
-                      output_solver_info_every_timesteps);
+      solver_info_data.print(pcout);
     }
 
     // restart
-    if(problem_type == ProblemType::Unsteady)
+    if(solver_type == SolverType::Unsteady)
     {
       restart_data.print(pcout);
     }
@@ -1633,7 +1632,7 @@ public:
   ErrorCalculationData error_data;
 
   // show solver performance (wall time, number of iterations) every ... timesteps
-  unsigned int output_solver_info_every_timesteps;
+  SolverInfoData solver_info_data;
 
   // restart
   RestartData restart_data;

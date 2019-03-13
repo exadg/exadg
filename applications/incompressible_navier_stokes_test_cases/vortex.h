@@ -145,7 +145,7 @@ void InputParameters<dim>::set_input_parameters()
   // linear solver
   solver_momentum = SolverMomentum::FGMRES;
   solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
-  preconditioner_momentum = MomentumPreconditioner::Multigrid; //BlockJacobi; //InverseMassMatrix;
+  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
   multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
   update_preconditioner_momentum = true;
@@ -220,7 +220,7 @@ void InputParameters<dim>::set_input_parameters()
   error_data.calculate_relative_errors = true;
   error_data.calculate_H1_seminorm_velocity = false;
   error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = end_time - start_time;
+  error_data.error_calc_interval_time = (end_time - start_time)/20;
   error_data.write_errors_to_file = false;
   error_data.filename_prefix = "output/vortex/error";
 
@@ -231,11 +231,14 @@ void InputParameters<dim>::set_input_parameters()
   mass_data.filename_prefix = "test";
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  solver_info_data.print_to_screen = true;
+//  solver_info_data.interval_time_steps = 10;
+//  solver_info_data.interval_time = 0.1;
+  solver_info_data.interval_wall_time = 2;
 
   // restart
-  restart_data.write_restart = false;
-  restart_data.interval_time = 0.75;
+  restart_data.write_restart = true;
+  restart_data.interval_time = 0.25;
   restart_data.interval_wall_time = 1.e6;
   restart_data.interval_time_steps = 1e8;
   restart_data.filename = "output/vortex/vortex";

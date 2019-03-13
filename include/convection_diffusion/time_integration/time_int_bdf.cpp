@@ -342,18 +342,18 @@ template<typename Number>
 bool
 TimeIntBDF<Number>::print_solver_info() const
 {
-  return this->get_time_step_number() % param.output_solver_info_every_timesteps == 0;
+  return param.solver_info_data.write(this->global_timer.wall_time(),
+                                      this->time,
+                                      this->time_step_number);
 }
 
 template<typename Number>
 void
 TimeIntBDF<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
-  Vector<double> tmp;
   for(unsigned int i = 0; i < this->order; i++)
   {
-    ia >> tmp;
-    std::copy(tmp.begin(), tmp.end(), solution[i].begin());
+    ia >> solution[i];
   }
 }
 

@@ -123,20 +123,17 @@ template<int dim, typename Number>
 void
 TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
-  Vector<double> tmp;
   for(unsigned int i = 0; i < this->order; i++)
   {
+    VectorType tmp = get_velocity(i);
     ia >> tmp;
-    VectorType velocity_copy = get_velocity(i);
-    std::copy(tmp.begin(), tmp.end(), velocity_copy.begin());
-    set_velocity(velocity_copy, i);
+    set_velocity(tmp, i);
   }
   for(unsigned int i = 0; i < this->order; i++)
   {
+    VectorType tmp = get_pressure(i);
     ia >> tmp;
-    VectorType pressure_copy = get_pressure(i);
-    std::copy(tmp.begin(), tmp.end(), pressure_copy.begin());
-    set_pressure(pressure_copy, i);
+    set_pressure(tmp, i);
   }
 }
 
@@ -266,7 +263,11 @@ template<int dim, typename Number>
 bool
 TimeIntBDF<dim, Number>::print_solver_info() const
 {
-  return get_time_step_number() % param.output_solver_info_every_timesteps == 0;
+  //  return get_time_step_number() % param.output_solver_info_every_timesteps == 0;
+
+  return param.solver_info_data.write(this->global_timer.wall_time(),
+                                      this->time - this->start_time,
+                                      this->time_step_number);
 }
 
 template<int dim, typename Number>

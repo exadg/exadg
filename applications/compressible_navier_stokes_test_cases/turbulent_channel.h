@@ -153,7 +153,9 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   output_data.output_interval_time = 1.0;
   output_data.degree = FE_DEGREE;
 
-  output_solver_info_every_timesteps = 1e3;
+  // output of solver information
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = CHARACTERISTIC_TIME;
 
   // turbulent channel statistics
   turb_ch_data.calculate_statistics = true;

@@ -130,7 +130,8 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e3; // 1e5;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (end_time-start_time)/20;
 
   // lift and drag
   lift_and_drag_data.calculate_lift_and_drag = false;
