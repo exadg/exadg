@@ -279,7 +279,9 @@ template<typename Number>
 bool
 TimeIntExplRK<Number>::print_solver_info() const
 {
-  return this->get_time_step_number() % param.output_solver_info_every_timesteps == 0;
+  return param.solver_info_data.write(this->global_timer.wall_time(),
+                                      this->time,
+                                      this->time_step_number);
 }
 
 template<typename Number>

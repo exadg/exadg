@@ -181,7 +181,8 @@ void InputParameters<dim>::set_input_parameters()
   output_data.degree = FE_DEGREE_VELOCITY;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1; //1e2;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (end_time-start_time)/200;
 
   // kinetic energy
   kinetic_energy_data.calculate = true;

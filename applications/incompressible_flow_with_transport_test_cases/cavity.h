@@ -205,7 +205,8 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
-  output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
 
   // restart
   restart_data.write_restart = WRITE_RESTART;
@@ -283,7 +284,9 @@ void ConvDiff::InputParameters::set_input_parameters()
   output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
   output_data.degree = FE_DEGREE_SCALAR;
 
-  output_solver_info_every_timesteps = OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS;
+  // output of solver information
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
 
   // restart
   restart_data.write_restart = WRITE_RESTART;

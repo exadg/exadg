@@ -26,7 +26,7 @@ write_output(OutputDataNavierStokes const &                     output_data,
   DataOut<dim> data_out;
 
   DataOutBase::VtkFlags flags;
-  flags.write_higher_order_cells = true;
+  flags.write_higher_order_cells = output_data.write_higher_order;
   data_out.set_flags(flags);
 
   std::vector<std::string> velocity_names(dim, "velocity");
@@ -145,8 +145,9 @@ public:
         // small number which is much smaller than the time step size
         const double EPSILON = 1.0e-10;
 
-        // The current time might be larger than output_start_time. In that case, we first have to
-        // reset the counter in order to avoid that output is written every time step.
+        // In the first time step, the current time might be larger than output_start_time. In that
+        // case, we first have to reset the counter in order to avoid that output is written every
+        // time step.
         if(reset_counter)
         {
           output_counter += int((time - output_data.output_start_time + EPSILON) /

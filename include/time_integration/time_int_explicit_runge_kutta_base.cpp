@@ -163,9 +163,7 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   ia & time_step;
 
   // 4. solution vectors
-  Vector<double> tmp;
-  ia >> tmp;
-  std::copy(tmp.begin(), tmp.end(), solution_n.begin());
+  ia >> solution_n;
 }
 
 // instantiations

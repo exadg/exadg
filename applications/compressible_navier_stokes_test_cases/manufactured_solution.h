@@ -126,10 +126,14 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   error_data.error_calc_start_time = start_time;
   error_data.error_calc_interval_time = output_data.output_interval_time;
 
-  output_solver_info_every_timesteps = 1e5; //1e6;
+  // output of solver information
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (end_time-start_time)/10;
 
-  lift_and_drag_data.calculate_lift_and_drag = false;
-  pressure_difference_data.calculate_pressure_difference = false;
+  // restart
+  restart_data.write_restart = false;
+  restart_data.interval_time = 0.5;
+  restart_data.filename = OUTPUT_FOLDER + FILENAME + "_restart";
 }
 
 

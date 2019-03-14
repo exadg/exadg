@@ -243,7 +243,8 @@ void InputParameters<dim>::set_input_parameters()
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
 
   // output of solver information
-  output_solver_info_every_timesteps = 1; //1e5;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = CHARACTERISTIC_TIME;
 }
 
 /**************************************************************************************/

@@ -187,7 +187,8 @@ void InputParameters<dim>::set_input_parameters()
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e5;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (end_time-start_time)/10;
 }
 
 /**************************************************************************************/

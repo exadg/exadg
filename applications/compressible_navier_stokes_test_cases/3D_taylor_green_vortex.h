@@ -79,7 +79,7 @@ const double CHARACTERISTIC_TIME = L/V_0;
 
 // output folders and filenames
 std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/";
-std::string FILENAME = "after_refactoring_runge_kutta"; // "Re1600_l2_k15_overint";
+std::string FILENAME = "test_restart"; // "Re1600_l2_k15_overint";
 
 template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
@@ -176,11 +176,13 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   kinetic_energy_spectrum_data.evaluation_points_per_cell = (FE_DEGREE+1)*1;
   kinetic_energy_spectrum_data.output_tolerance = 1.e-12;
 
-  output_solver_info_every_timesteps = 1e3; //1e6;
+  // output of solver information
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (end_time-start_time)/20;
 
   // restart
   restart_data.write_restart = false;
-  restart_data.interval_time = 8.0;
+  restart_data.interval_time = 1.0;
   restart_data.filename = OUTPUT_FOLDER + FILENAME + "_restart";
 }
 

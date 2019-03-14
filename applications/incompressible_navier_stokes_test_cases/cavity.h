@@ -32,8 +32,8 @@ unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 4;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4; //REFINE_STEPS_SPACE_MIN;
+unsigned int const REFINE_STEPS_SPACE_MIN = 2;
+unsigned int const REFINE_STEPS_SPACE_MAX = 2; //REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -65,8 +65,8 @@ void InputParameters<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Steady;
-  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  solver_type = SolverType::Unsteady;
+  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   adaptive_time_stepping = false;
@@ -103,6 +103,13 @@ void InputParameters<dim>::set_input_parameters()
 
   // special case: pure DBC's
   pure_dirichlet_bc = true;
+
+  // div-div and continuity penalty
+  use_divergence_penalty = false;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = false;
+  continuity_penalty_factor = divergence_penalty_factor;
+  add_penalty_terms_to_monolithic_system = false;
 
   // PROJECTION METHODS
 
@@ -200,7 +207,8 @@ void InputParameters<dim>::set_input_parameters()
   output_data.degree = FE_DEGREE_VELOCITY;
 
   // output of solver information
-  output_solver_info_every_timesteps = 1e2;
+  solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time = (end_time-start_time)/10;
 
   // line plot data
   line_plot_data.write_output = false;
@@ -232,6 +240,13 @@ void InputParameters<dim>::set_input_parameters()
   hor_line.quantities.push_back(quantity_u);
   //hor_line.quantities.push_back(quantity_p);
   line_plot_data.lines.push_back(hor_line);
+
+  // restart
+  restart_data.write_restart = true;
+  restart_data.interval_time = 5.0;
+  restart_data.interval_wall_time = 1.e6;
+  restart_data.interval_time_steps = 1e8;
+  restart_data.filename = "output/cavity/cavity_restart";
 }
 
 /**************************************************************************************/

@@ -46,6 +46,8 @@ double const DIMENSIONS_X3 = numbers::PI;
 double const MAX_VELOCITY = 22.0;
 double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75. //1./180.; //1./395.; //1./590.; //1./950;
 
+const double CHARACTERISTIC_TIME = 1.0;
+
 double const START_TIME = 0.0;
 double const SAMPLE_START_TIME = 30.0;
 double const END_TIME = 50.0;
@@ -252,7 +254,8 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.degree = FE_DEGREE_VELOCITY;
 
     // output of solver information
-    output_solver_info_every_timesteps = 1e3; //1e4;
+    solver_info_data.print_to_screen = true;
+    solver_info_data.interval_time = CHARACTERISTIC_TIME;
 
     // turbulent channel statistics
     turb_ch_data.calculate_statistics = true;
@@ -286,7 +289,8 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
     output_data.degree = FE_DEGREE_VELOCITY;
 
     // output of solver information
-    output_solver_info_every_timesteps = 1e3; //1e4;
+    solver_info_data.print_to_screen = true;
+    solver_info_data.interval_time = CHARACTERISTIC_TIME;
 
     // turbulent channel statistics
     turb_ch_data.calculate_statistics = true;

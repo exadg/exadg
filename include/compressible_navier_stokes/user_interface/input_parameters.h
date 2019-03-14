@@ -15,6 +15,7 @@
 #include "../../incompressible_navier_stokes/postprocessor/turbulent_channel_data.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/restart_data.h"
+#include "functionalities/solver_info_data.h"
 #include "postprocessor/error_calculation_data.h"
 #include "postprocessor/output_data.h"
 
@@ -128,7 +129,7 @@ public:
       // calculation of errors
       error_data(ErrorCalculationData()),
 
-      output_solver_info_every_timesteps(1),
+      solver_info_data(SolverInfoData()),
 
       // lift and drag
       lift_and_drag_data(LiftAndDragData()),
@@ -353,6 +354,9 @@ public:
 
     // restart
     restart_data.print(pcout);
+
+    // solver info
+    solver_info_data.print(pcout);
   }
 
 
@@ -501,8 +505,8 @@ public:
   // calculation of errors
   ErrorCalculationData error_data;
 
-  // show solver performance (wall time, number of iterations) every ... timesteps
-  unsigned int output_solver_info_every_timesteps;
+  // show solver performance (wall time, number of iterations)
+  SolverInfoData solver_info_data;
 
   // computation of lift and drag coefficients
   LiftAndDragData lift_and_drag_data;

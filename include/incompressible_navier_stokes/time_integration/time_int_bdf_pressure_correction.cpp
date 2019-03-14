@@ -804,7 +804,8 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
   if(this->param.convergence_criterion_steady_problem ==
      ConvergenceCriterionSteadyProblem::SolutionIncrement)
   {
-    while(!converged && this->get_time_step_number() <= this->param.max_number_of_time_steps)
+    while(!converged && this->time < (this->end_time - this->eps) &&
+          this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       // save solution from previous time step
       velocity_tmp = velocity[0];
@@ -856,7 +857,8 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
   {
     double const initial_residual = evaluate_residual();
 
-    while(!converged && this->get_time_step_number() <= this->param.max_number_of_time_steps)
+    while(!converged && this->time < (this->end_time - this->eps) &&
+          this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
       this->do_timestep();
 
@@ -879,8 +881,8 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
   AssertThrow(
     converged == true,
     ExcMessage(
-      "Maximum number of time steps exceeded! This might be due to the fact that "
-      "(i) the maximum number of iterations is simply too small to reach a steady solution, "
+      "Maximum number of time steps or end time exceeded! This might be due to the fact that "
+      "(i) the maximum number of time steps is simply too small to reach a steady solution, "
       "(ii) the problem is unsteady so that the applied solution approach is inappropriate, "
       "(iii) some of the solver tolerances are in conflict."));
 
@@ -900,7 +902,7 @@ TimeIntBDFPressureCorrection<dim, Number>::evaluate_residual()
   double residual = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
   // write output
-  if((this->get_time_step_number() - 1) % this->param.output_solver_info_every_timesteps == 0)
+  if(this->print_solver_info())
   {
     this->pcout << std::endl
                 << "Norm of residual of steady Navier-Stokes equations:" << std::endl

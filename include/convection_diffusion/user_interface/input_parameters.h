@@ -11,6 +11,7 @@
 #include <deal.II/base/exceptions.h>
 #include "../../functionalities/print_functions.h"
 #include "../../functionalities/restart_data.h"
+#include "../../functionalities/solver_info_data.h"
 #include "../../postprocessor/error_calculation_data.h"
 #include "../../postprocessor/output_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
@@ -87,7 +88,7 @@ public:
       // calculation of errors
       error_data(ErrorCalculationData()),
 
-      output_solver_info_every_timesteps(1),
+      solver_info_data(SolverInfoData()),
 
       // restart
       restart_data(RestartData())
@@ -204,7 +205,8 @@ public:
     }
 
     // SPATIAL DISCRETIZATION
-    AssertThrow(triangulation_type != TriangulationType::Undefined, ExcMessage("parameter must be defined"));
+    AssertThrow(triangulation_type != TriangulationType::Undefined,
+                ExcMessage("parameter must be defined"));
 
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
 
@@ -454,6 +456,8 @@ public:
     error_data.print(pcout, problem_type == ProblemType::Unsteady);
 
     restart_data.print(pcout);
+
+    solver_info_data.print(pcout);
   }
 
 
@@ -672,8 +676,8 @@ public:
   // calculation of errors
   ErrorCalculationData error_data;
 
-  // show solver performance (wall time, number of iterations) every ... timesteps
-  unsigned int output_solver_info_every_timesteps;
+  // show solver performance (wall time, number of iterations)
+  SolverInfoData solver_info_data;
 
   // Restart
   RestartData restart_data;
