@@ -67,7 +67,9 @@ template<int dim, int degree_u, int degree_p, int degree_s, typename Number = do
 class Problem
 {
 public:
-  Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
+  Problem(unsigned int const refine_steps_space,
+          unsigned int const refine_steps_time = 0,
+          unsigned int const n_scalars         = 1);
 
   void
   setup(bool const do_restart);
@@ -110,7 +112,11 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  const unsigned int n_refine_space, n_refine_time;
+  // refinements in space or time
+  unsigned int const n_refine_space, n_refine_time;
+
+  // number of scalar quantities
+  unsigned int const n_scalars;
 
   bool use_adaptive_time_stepping;
 
@@ -148,19 +154,19 @@ private:
   void
   setup_convection_diffusion(bool const do_restart);
 
-  ConvDiff::InputParameters scalar_param;
+  std::vector<ConvDiff::InputParameters> scalar_param;
 
-  std::shared_ptr<ConvDiff::FieldFunctions<dim>>     scalar_field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> scalar_boundary_descriptor;
+  std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
+  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
 
-  std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> scalar_analytical_solution;
+  std::vector<std::shared_ptr<ConvDiff::AnalyticalSolution<dim>>> scalar_analytical_solution;
 
   typedef ConvDiff::DGOperation<dim, degree_s, Number> ConvDiffOperator;
-  std::shared_ptr<ConvDiffOperator>                    conv_diff_operator;
+  std::vector<std::shared_ptr<ConvDiffOperator>>       conv_diff_operator;
 
-  std::shared_ptr<ConvDiff::PostProcessor<dim, degree_s>> scalar_postprocessor;
+  std::vector<std::shared_ptr<ConvDiff::PostProcessor<dim, degree_s>>> scalar_postprocessor;
 
-  std::shared_ptr<TimeIntBase> scalar_time_integrator;
+  std::vector<std::shared_ptr<TimeIntBase>> scalar_time_integrator;
 
   /*
    * Computation time (wall clock time).
@@ -174,14 +180,24 @@ private:
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const refine_steps_space,
-                                                            unsigned int const refine_steps_time)
+                                                            unsigned int const refine_steps_time,
+                                                            unsigned int const n_scalars)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(refine_steps_space),
     n_refine_time(refine_steps_time),
+    n_scalars(n_scalars),
     use_adaptive_time_stepping(false),
     overall_time(0.0),
     setup_time(0.0)
 {
+  scalar_param.resize(n_scalars);
+  scalar_field_functions.resize(n_scalars);
+  scalar_boundary_descriptor.resize(n_scalars);
+  scalar_analytical_solution.resize(n_scalars);
+
+  conv_diff_operator.resize(n_scalars);
+  scalar_postprocessor.resize(n_scalars);
+  scalar_time_integrator.resize(n_scalars);
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -230,22 +246,25 @@ void
 Problem<dim, degree_u, degree_p, degree_s, Number>::setup_convection_diffusion(
   bool const do_restart)
 {
-  ConvDiff::set_boundary_conditions(scalar_boundary_descriptor);
-
-  conv_diff_operator->setup(periodic_faces,
-                            scalar_boundary_descriptor,
-                            scalar_field_functions,
-                            scalar_analytical_solution);
-
-  scalar_time_integrator->setup(do_restart);
-
-  if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
-      std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator);
+    ConvDiff::set_boundary_conditions(scalar_boundary_descriptor[i], i);
 
-    conv_diff_operator->setup_solver(
-      scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term());
+    conv_diff_operator[i]->setup(periodic_faces,
+                                 scalar_boundary_descriptor[i],
+                                 scalar_field_functions[i],
+                                 scalar_analytical_solution[i]);
+
+    scalar_time_integrator[i]->setup(do_restart);
+
+    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+    {
+      std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
+        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+
+      conv_diff_operator[i]->setup_solver(
+        scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term());
+    }
   }
 }
 
@@ -254,10 +273,15 @@ void
 Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
-  double const fluid_time  = fluid_time_integrator->get_time(),
-               scalar_time = scalar_time_integrator->get_time();
+  double const fluid_time = fluid_time_integrator->get_time();
 
-  double const time = std::min(fluid_time, scalar_time);
+  double time = fluid_time;
+
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    double const scalar_time = scalar_time_integrator[i]->get_time();
+    time                     = std::min(time, scalar_time);
+  }
 
   // Set the same start time for both solvers
 
@@ -265,7 +289,10 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time() const
   fluid_time_integrator->reset_time(time);
 
   // scalar transport
-  scalar_time_integrator->reset_time(time);
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    scalar_time_integrator[i]->reset_time(time);
+  }
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
@@ -275,18 +302,23 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
   double const EPSILON = 1.e-10;
 
   // Setup time integrator and get time step size
-  double time_step_size_fluid  = std::numeric_limits<double>::max();
-  double time_step_size_scalar = std::numeric_limits<double>::max();
+  double time_step_size_fluid = std::numeric_limits<double>::max();
 
   // fluid
   if(fluid_time_integrator->get_time() > fluid_param.start_time - EPSILON)
     time_step_size_fluid = fluid_time_integrator->get_time_step_size();
 
-  // scalar transport
-  if(scalar_time_integrator->get_time() > scalar_param.start_time - EPSILON)
-    time_step_size_scalar = scalar_time_integrator->get_time_step_size();
+  double time_step_size = time_step_size_fluid;
 
-  double time_step_size = std::min(time_step_size_fluid, time_step_size_scalar);
+  // scalar transport
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    double time_step_size_scalar = std::numeric_limits<double>::max();
+    if(scalar_time_integrator[i]->get_time() > scalar_param[i].start_time - EPSILON)
+      time_step_size_scalar = scalar_time_integrator[i]->get_time_step_size();
+
+    time_step_size = std::min(time_step_size, time_step_size_scalar);
+  }
 
   if(use_adaptive_time_stepping == false)
   {
@@ -303,41 +335,53 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
   fluid_time_integrator->set_time_step_size(time_step_size);
 
   // scalar transport
-  scalar_time_integrator->set_time_step_size(time_step_size);
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    scalar_time_integrator[i]->set_time_step_size(time_step_size);
+  }
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
 Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop() const
 {
-  AssertThrow(scalar_param.type_velocity_field == ConvDiff::TypeVelocityField::Numerical,
-              ExcMessage("Type of velocity field has to be TypeVelocityField::Numerical."));
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    AssertThrow(scalar_param[i].type_velocity_field == ConvDiff::TypeVelocityField::Numerical,
+                ExcMessage("Type of velocity field has to be TypeVelocityField::Numerical."));
+  }
 
-  bool finished_fluid = false, finished_scalar = false;
+  bool              finished_fluid = false;
+  std::vector<bool> finished_scalar(n_scalars, false);
+  bool              finished_all_scalars = false;
 
   set_start_time();
 
   synchronize_time_step_size();
 
-  while(!finished_fluid || !finished_scalar)
+  while(!finished_fluid || !finished_all_scalars)
   {
     // We need to communicate between fluid solver and scalar transport solver, i.e.,
     // ask the fluid solver for the velocity field and hand it over to the scalar transport solver
 
-    if(scalar_param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Explicit)
+    for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      // get velocity at time t_{n}
-      conv_diff_operator->set_velocity(fluid_time_integrator->get_velocity());
-    }
-    else if(scalar_param.treatment_of_convective_term ==
-            ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
-    {
-      std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
-      std::vector<double>                                             times;
+      if(scalar_param[i].treatment_of_convective_term ==
+         ConvDiff::TreatmentOfConvectiveTerm::Explicit)
+      {
+        // get velocity at time t_{n}
+        conv_diff_operator[i]->set_velocity(fluid_time_integrator->get_velocity());
+      }
+      else if(scalar_param[i].treatment_of_convective_term ==
+              ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
+      {
+        std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
+        std::vector<double>                                             times;
 
-      fluid_time_integrator->get_velocities_and_times(velocities, times);
+        fluid_time_integrator->get_velocities_and_times(velocities, times);
 
-      conv_diff_operator->set_velocities_and_times(velocities, times);
+        conv_diff_operator[i]->set_velocities_and_times(velocities, times);
+      }
     }
 
     // fluid: advance one time step
@@ -345,20 +389,32 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop() const
 
     // in case of an implicit treatment we first have to solve the fluid before sending the
     // velocity field to the scalar convection-diffusion solver
-    if(scalar_param.treatment_of_convective_term == ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+    for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      // get velocity at time t_{n+1}
-      conv_diff_operator->set_velocity(fluid_time_integrator->get_velocity());
-    }
+      if(scalar_param[i].treatment_of_convective_term ==
+         ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+      {
+        // get velocity at time t_{n+1}
+        conv_diff_operator[i]->set_velocity(fluid_time_integrator->get_velocity());
+      }
 
-    // scalar transport: advance one time step
-    finished_scalar = scalar_time_integrator->advance_one_timestep(!finished_scalar);
+      // scalar transport: advance one time step
+      finished_scalar[i] = scalar_time_integrator[i]->advance_one_timestep(!finished_scalar[i]);
+    }
 
     if(use_adaptive_time_stepping == true)
     {
       // Both solvers have already calculated the new, adaptive time step size individually in
       // function advance_one_timestep(). Here, we only have to synchronize the time step size.
       synchronize_time_step_size();
+    }
+
+    // all scalars finished?
+    finished_all_scalars = true;
+    for(unsigned int i = 0; i < n_scalars; ++i)
+    {
+      if(finished_scalar[i] == false)
+        finished_all_scalars = false;
     }
   }
 }
@@ -379,22 +435,28 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
   if(fluid_param.print_input_parameters == true)
     fluid_param.print(pcout);
 
-  scalar_param.set_input_parameters();
-  scalar_param.check_input_parameters();
-  AssertThrow(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady,
-              ExcMessage("ProblemType must be unsteady!"));
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    scalar_param[i].set_input_parameters(i);
+    scalar_param[i].check_input_parameters();
+    AssertThrow(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady,
+                ExcMessage("ProblemType must be unsteady!"));
 
-  if(scalar_param.print_input_parameters)
-    scalar_param.print(pcout);
+    if(scalar_param[i].print_input_parameters)
+      scalar_param[i].print(pcout);
+  }
 
   // FLUID
 
   // triangulation
   if(fluid_param.triangulation_type == IncNS::TriangulationType::Distributed)
   {
-    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::Distributed,
-                ExcMessage(
-                  "Parameter triangulation_type is different for fluid field and scalar field"));
+    for(unsigned int i = 0; i < n_scalars; ++i)
+    {
+      AssertThrow(scalar_param[i].triangulation_type == ConvDiff::TriangulationType::Distributed,
+                  ExcMessage(
+                    "Parameter triangulation_type is different for fluid field and scalar field"));
+    }
 
     triangulation.reset(new parallel::distributed::Triangulation<dim>(
       MPI_COMM_WORLD,
@@ -403,9 +465,12 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
   }
   else if(fluid_param.triangulation_type == IncNS::TriangulationType::FullyDistributed)
   {
-    AssertThrow(scalar_param.triangulation_type == ConvDiff::TriangulationType::FullyDistributed,
-                ExcMessage(
-                  "Parameter triangulation_type is different for fluid field and scalar field"));
+    for(unsigned int i = 0; i < n_scalars; ++i)
+    {
+      AssertThrow(
+        scalar_param[i].triangulation_type == ConvDiff::TriangulationType::FullyDistributed,
+        ExcMessage("Parameter triangulation_type is different for fluid field and scalar field"));
+    }
 
     triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
   }
@@ -488,63 +553,67 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-
-  // SCALAR TRANSPORT
-  scalar_field_functions.reset(new ConvDiff::FieldFunctions<dim>());
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
-  ConvDiff::set_field_functions(scalar_field_functions);
-
-  scalar_analytical_solution.reset(new ConvDiff::AnalyticalSolution<dim>());
-  ConvDiff::set_analytical_solution(scalar_analytical_solution);
-
-  scalar_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
-
-  // initialize postprocessor
-  scalar_postprocessor.reset(new ConvDiff::PostProcessor<dim, degree_s>());
-
-  // initialize convection diffusion operation
-  conv_diff_operator.reset(new ConvDiff::DGOperation<dim, degree_s, Number>(*triangulation,
-                                                                            scalar_param,
-                                                                            scalar_postprocessor));
-
-  // initialize time integrator
-  if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+  for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_time_integrator.reset(
-      new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator, scalar_param, n_refine_time));
-  }
-  else if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
-  {
-    scalar_time_integrator.reset(
-      new ConvDiff::TimeIntBDF<Number>(conv_diff_operator, scalar_param, n_refine_time));
-  }
-  else
-  {
-    AssertThrow(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK ||
-                  scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF,
-                ExcMessage("Specified time integration scheme is not implemented!"));
-  }
+    // SCALAR TRANSPORT
+    scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());
+    // this function has to be defined in the header file that implements
+    // all problem specific things like parameters, geometry, boundary conditions, etc.
+    ConvDiff::set_field_functions(scalar_field_functions[i], i);
 
-  if(fluid_param.adaptive_time_stepping == true)
-  {
-    AssertThrow(
-      scalar_param.adaptive_time_stepping == true,
-      ExcMessage(
-        "Adaptive time stepping has to be used for both fluid and scalar transport solvers."));
+    scalar_analytical_solution[i].reset(new ConvDiff::AnalyticalSolution<dim>());
+    ConvDiff::set_analytical_solution(scalar_analytical_solution[i], i);
 
-    use_adaptive_time_stepping = true;
+    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<dim>());
+
+    // initialize postprocessor
+    scalar_postprocessor[i].reset(new ConvDiff::PostProcessor<dim, degree_s>());
+
+    // initialize convection diffusion operation
+    conv_diff_operator[i].reset(new ConvDiff::DGOperation<dim, degree_s, Number>(
+      *triangulation, scalar_param[i], scalar_postprocessor[i]));
+
+    // initialize time integrator
+    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+    {
+      scalar_time_integrator[i].reset(
+        new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i], scalar_param[i], n_refine_time));
+    }
+    else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+    {
+      scalar_time_integrator[i].reset(
+        new ConvDiff::TimeIntBDF<Number>(conv_diff_operator[i], scalar_param[i], n_refine_time));
+    }
+    else
+    {
+      AssertThrow(scalar_param[i].temporal_discretization ==
+                      ConvDiff::TemporalDiscretization::ExplRK ||
+                    scalar_param[i].temporal_discretization ==
+                      ConvDiff::TemporalDiscretization::BDF,
+                  ExcMessage("Specified time integration scheme is not implemented!"));
+    }
+
+    if(fluid_param.adaptive_time_stepping == true)
+    {
+      AssertThrow(
+        scalar_param[i].adaptive_time_stepping == true,
+        ExcMessage(
+          "Adaptive time stepping has to be used for both fluid and scalar transport solvers."));
+
+      use_adaptive_time_stepping = true;
+    }
+
+    // The parameter start_with_low_order has to be true.
+    // This is due to the fact that the setup function of the time integrator initializes
+    // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
+    // start_with_low_order == false. However, the combined time step size
+    // is not known at this point since we have to first communicate the time step size
+    // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
+    // inconsistencies is to preclude the case start_with_low_order == false.
+    AssertThrow(fluid_param.start_with_low_order == true &&
+                  scalar_param[i].start_with_low_order == true,
+                ExcMessage("start_with_low_order has to be true for this solver."));
   }
-
-  // The parameter start_with_low_order has to be true.
-  // This is due to the fact that the setup function of the time integrator initializes
-  // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
-  // start_with_low_order == false. However, the combined time step size
-  // is not known at this point since we have to first communicate the time step size
-  // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
-  // inconsistencies is to preclude the case start_with_low_order == false.
-  AssertThrow(fluid_param.start_with_low_order == true && scalar_param.start_with_low_order == true,
-              ExcMessage("start_with_low_order has to be true for this solver."));
 
   create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
 
@@ -628,61 +697,71 @@ double
 Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times_transport(
   double const overall_time_avg) const
 {
-  this->pcout << std::endl << "Convection-diffusion solver:" << std::endl;
+  double wall_time_summed_over_all_scalars = 0.0;
 
-  // wall times
-  std::vector<std::string> names;
-  std::vector<double>      computing_times;
-
-  if(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady)
+  for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    this->scalar_time_integrator->get_wall_times(names, computing_times);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    this->pcout << std::endl << "Convection-diffusion solver for scalar " << i << ":" << std::endl;
+
+    // wall times
+    std::vector<std::string> names;
+    std::vector<double>      computing_times;
+
+    if(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady)
+    {
+      this->scalar_time_integrator[i]->get_wall_times(names, computing_times);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    double sum_of_substeps = 0.0;
+    for(unsigned int i = 0; i < computing_times.size(); ++i)
+    {
+      Utilities::MPI::MinMaxAvg data =
+        Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+      this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
+                  << std::scientific << std::setw(10) << std::right << data.avg << " s  "
+                  << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                  << data.avg / overall_time_avg * 100 << " %" << std::endl;
+
+      sum_of_substeps += data.avg;
+    }
+
+    wall_time_summed_over_all_scalars += sum_of_substeps;
   }
 
-  double sum_of_substeps = 0.0;
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data =
-      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
-    this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
-                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-                << data.avg / overall_time_avg * 100 << " %" << std::endl;
-
-    sum_of_substeps += data.avg;
-  }
-
-  return sum_of_substeps;
+  return wall_time_summed_over_all_scalars;
 }
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
 void
 Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_transport() const
 {
-  this->pcout << std::endl << "Convection-diffusion solver:" << std::endl;
-
-  // Iterations are only relevant for BDF time integrator
-  if(scalar_param.temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+  for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    // Iterations
-    if(scalar_param.problem_type == ConvDiff::ProblemType::Unsteady)
+    this->pcout << std::endl << "Convection-diffusion solver for scalar " << i << ":" << std::endl;
+
+    // Iterations are only relevant for BDF time integrator
+    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
-      std::vector<std::string> names;
-      std::vector<double>      iterations;
-
-      std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_integrator_bdf =
-        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator);
-      time_integrator_bdf->get_iterations(names, iterations);
-
-      for(unsigned int i = 0; i < iterations.size(); ++i)
+      // Iterations
+      if(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady)
       {
-        this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                    << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
-                    << std::endl;
+        std::vector<std::string> names;
+        std::vector<double>      iterations;
+
+        std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_integrator_bdf =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+        time_integrator_bdf->get_iterations(names, iterations);
+
+        for(unsigned int i = 0; i < iterations.size(); ++i)
+        {
+          this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
+                      << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
+                      << std::endl;
+        }
       }
     }
   }
@@ -747,8 +826,12 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times() co
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 
   // Throughput in DoFs/s per time step per core
-  unsigned int const DoFs = this->navier_stokes_operation->get_number_of_dofs() +
-                            this->conv_diff_operator->get_number_of_dofs();
+  unsigned int DoFs = this->navier_stokes_operation->get_number_of_dofs();
+
+  for(unsigned int i = 0; i < n_scalars; ++i)
+  {
+    DoFs += this->conv_diff_operator[i]->get_number_of_dofs();
+  }
 
   if(fluid_param.solver_type == IncNS::SolverType::Unsteady)
   {
@@ -802,7 +885,7 @@ main(int argc, char ** argv)
     AssertThrow(FE_DEGREE_VELOCITY == FE_DEGREE_SCALAR, ExcMessage("Invalid parameters!"));
 
     Problem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_SCALAR, VALUE_TYPE>
-      problem(REFINE_STEPS_SPACE);
+      problem(REFINE_STEPS_SPACE, 0 /*no time refinements*/, N_SCALARS);
 
     problem.setup(do_restart);
 

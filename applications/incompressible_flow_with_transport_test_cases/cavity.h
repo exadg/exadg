@@ -30,7 +30,10 @@ unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 unsigned int const FE_DEGREE_SCALAR = FE_DEGREE_VELOCITY;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE = 6;
+unsigned int const REFINE_STEPS_SPACE = 4;
+
+// number of scalar quantities
+unsigned int const N_SCALARS = 1;
 
 // set problem specific parameters like physical dimensions, etc.
 double const L = 1.0; // Length of cavity
@@ -214,7 +217,7 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_fluid";
 }
 
-void ConvDiff::InputParameters::set_input_parameters()
+void ConvDiff::InputParameters::set_input_parameters(unsigned int scalar_index)
 {
   // MATHEMATICAL MODEL
   problem_type = ProblemType::Unsteady;
@@ -225,7 +228,14 @@ void ConvDiff::InputParameters::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = START_TIME;
   end_time = END_TIME;
-  diffusivity = 1.e-5;
+  if(scalar_index == 0)
+  {
+    diffusivity = 1.e-5;
+  }
+  else
+  {
+    diffusivity = 1.e-3;
+  }
 
   // TEMPORAL DISCRETIZATION
   temporal_discretization = TemporalDiscretization::BDF;
@@ -279,7 +289,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   print_input_parameters = true;
   output_data.write_output = WRITE_OUTPUT;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name = OUTPUT_NAME + "_scalar";
+  output_data.output_name = OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
   output_data.output_start_time = OUTPUT_START_TIME;
   output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
   output_data.degree = FE_DEGREE_SCALAR;
@@ -291,7 +301,7 @@ void ConvDiff::InputParameters::set_input_parameters()
   // restart
   restart_data.write_restart = WRITE_RESTART;
   restart_data.interval_time = RESTART_INTERVAL_TIME;
-  restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_scalar";
+  restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
 }
 
 /**************************************************************************************/
@@ -440,8 +450,10 @@ public:
 
 template<int dim>
 void
-set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
+set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor, unsigned int scalar_index = 0)
 {
+  (void)scalar_index; // only one scalar quantity considered
+
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
@@ -450,8 +462,10 @@ set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boun
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
+set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions, unsigned int scalar_index = 0)
 {
+  (void)scalar_index; // only one scalar quantity considered
+
   field_functions->analytical_solution.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
@@ -459,8 +473,10 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functi
 
 template<int dim>
 void
-set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
+set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution, unsigned int scalar_index = 0)
 {
+  (void)scalar_index; // only one scalar quantity considered
+
   analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
 }
 

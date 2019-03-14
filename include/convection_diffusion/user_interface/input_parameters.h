@@ -103,6 +103,9 @@ public:
   set_input_parameters();
 
   void
+  set_input_parameters(unsigned int scalar_index);
+
+  void
   check_input_parameters()
   {
     // MATHEMATICAL MODEL
