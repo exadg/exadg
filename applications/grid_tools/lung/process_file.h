@@ -105,14 +105,14 @@ load_files(std::vector<std::string>          files,
 }
 
 void
-call_METIS_MeshToDual(idx_t *  ne,
-                      idx_t *  nn,
-                      idx_t *  eptr,
-                      idx_t *  eind,
-                      idx_t *  ncommon,
-                      idx_t *  numflag,
-                      idx_t ** xadj,
-                      idx_t ** adjency)
+call_METIS_MeshToDual(int *  ne,
+                      int *  nn,
+                      int *  eptr,
+                      int *  eind,
+                      int *  ncommon,
+                      int *  numflag,
+                      int ** xadj,
+                      int ** adjency)
 {
 #ifdef DEBUG_INFO
   printf("ne      = %4d\n", *ne);
@@ -129,7 +129,19 @@ call_METIS_MeshToDual(idx_t *  ne,
   }
 #endif
 
+#ifdef DEAL_II_WITH_METIS
   METIS_MeshToDual(ne, nn, eptr, eind, ncommon, numflag, xadj, adjency);
+#else
+  (void)ne;
+  (void)nn;
+  (void)eptr;
+  (void)eind;
+  (void)ncommon;
+  (void)numflag;
+  (void)xadj;
+  (void)adjency;
+  AssertThrow(false, ExcMessage("Not comiled with METIS!"));
+#endif
 
 #ifdef DEBUG_INFO
   printf("xadj\n");

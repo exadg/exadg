@@ -9,6 +9,7 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRIDINPUTPARAMETERS_H_
 
 #include <string>
+#include <vector>
 
 // deal.II
 #include <deal.II/lac/trilinos_precondition.h>
@@ -100,17 +101,17 @@ namespace PreconditionAMG
 struct AdditionalData
 {
   AdditionalData(
-    const bool                             elliptic              = true,
-    const bool                             higher_order_elements = false,
-    const unsigned int                     n_cycles              = 1,
-    const bool                             w_cyle                = false,
-    const double                           aggregation_threshold = 1e-4,
-    const std::vector<std::vector<bool>> & constant_modes   = std::vector<std::vector<bool>>(0),
-    const unsigned int                     smoother_sweeps  = 2,
-    const unsigned int                     smoother_overlap = 0,
-    const bool                             output_details   = false,
-    const char *                           smoother_type    = "Chebyshev",
-    const char *                           coarse_type      = "Amesos-KLU")
+    const bool                           elliptic              = true,
+    const bool                           higher_order_elements = false,
+    const unsigned int                   n_cycles              = 1,
+    const bool                           w_cycle               = false,
+    const double                         aggregation_threshold = 1e-4,
+    const std::vector<std::vector<bool>> constant_modes        = std::vector<std::vector<bool>>(0),
+    const unsigned int                   smoother_sweeps       = 2,
+    const unsigned int                   smoother_overlap      = 0,
+    const bool                           output_details        = false,
+    const char *                         smoother_type         = "Chebyshev",
+    const char *                         coarse_type           = "Amesos-KLU")
     : elliptic(elliptic),
       higher_order_elements(higher_order_elements),
       n_cycles(n_cycles),
@@ -120,8 +121,8 @@ struct AdditionalData
       smoother_sweeps(smoother_sweeps),
       smoother_overlap(smoother_overlap),
       output_details(output_details),
-      smoother_type(smooter_type),
-      coarse_type(coarse)
+      smoother_type(smoother_type),
+      coarse_type(coarse_type)
   {
   }
 

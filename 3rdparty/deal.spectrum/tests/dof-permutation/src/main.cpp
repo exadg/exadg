@@ -71,4 +71,6 @@ main(int argc, char ** argv)
   s_.writeHeader(a.c_str());
   // ... write data
   fftw.serialize(a.c_str());
+
+  MPI_Finalize();
 }
