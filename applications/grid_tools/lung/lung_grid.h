@@ -5,7 +5,7 @@
 //#define USE_FLAT_ROOT
 
 // create a dummy root for every second root such that there is only a single inlet
-#define DUMMY_ROOT
+//#define DUMMY_ROOT
 
 //#define DEBUG_INFO
 #ifdef DEAL_II_WITH_METIS
@@ -92,7 +92,93 @@ lung_files_to_node(std::vector<std::string> files)
       roots.push_back(new Node(roots_temp[i + 1], roots_temp[i], src, true));
     }
 #endif
+    
+        if(roots.size() != 10)
+            return;
+    
+        std::vector<Node*> roots_temp = roots;
+        roots.clear();
+        
+//        roots.push_back(new Node(
+//            new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+//            new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),{8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false)
+//        );
+////        
+//        
+////        roots.push_back(new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false));
+////        roots.push_back(new Node(
+////                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
+////                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
+////                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true));
+//        
+//        roots.push_back(new Node(
+//            new Node(
+//                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
+//                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
+//                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
+//            new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false),
+//            { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false
+//        ));
+
+            
+            
+//        roots.push_back(new Node(
+//            new Node(
+//                new Node(
+//                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
+//                    new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
+//                    {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
+//                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false), 
+//                { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
+//            new Node(
+//                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+//                new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+//                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
+//            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
+            
+        roots.push_back(new Node(
+            new Node(
+                new Node(
+                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
+                    new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
+                    {-24.3016e-3,  156.6774e-3, -201.6689e-3}, true),
+                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3, -201.6689e-3},false), 
+                { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
+            new Node(
+                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+                new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
+            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
   };
+}
+
+template<typename T>
+bool mark(T cell, const int number)
+{
+    // is not at boundary
+    if(!cell->at_boundary(4))
+        return false;
+    
+    // already visited
+    if(cell->face(4)->boundary_id()>0)
+        return false;
+    
+    // set boundary id
+    cell->face(4)->set_all_boundary_ids(number);
+    
+    // mark all neighbors
+    for(unsigned int d = 0; d < 6; d++)
+    {
+      // face is at boundary: there is no neighbor to mark
+      if(cell->at_boundary(d))
+        continue;
+      
+      // mark neighbor
+      mark(cell->neighbor(d), number);
+    }
+    
+    // cell has been marked
+    return true;
 }
 
 void lung(dealii::Triangulation<3> &                                     tria,
@@ -123,7 +209,7 @@ void lung(dealii::Triangulation<3> &                                     tria,
   for(unsigned int i = 0; i < roots.size(); i++)
   {
     process_node(roots[i], cell_data_3d, vertices_3d, vertices_3d.size());
-    break;
+    //break;
   }
 
   timings["create_triangulation_2_mesh"] = timer.wall_time();
@@ -138,12 +224,14 @@ void lung(dealii::Triangulation<3> &                                     tria,
   timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
   // set boundary ids
+  unsigned int counter = 2; // counter for outlets
   for(auto cell : tria.active_cell_iterators())
   {
     if(cell->at_boundary(5)) // inlet
       cell->face(5)->set_all_boundary_ids(1);
-    if(cell->at_boundary(4)) // outlet
-      cell->face(4)->set_all_boundary_ids(2);
+    if(cell->at_boundary(4)) // outlets (>1)
+        if(mark(cell, counter))
+            counter++;
   }
 
   timer.restart();

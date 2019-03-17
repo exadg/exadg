@@ -19,11 +19,20 @@ create_cylinder(double       radius1,
                 double                     deg0,
                 double                     deg1,
                 double                     deg2,
+                double                     degree_seperation,
                 bool                       is_left,
                 bool                       do_rotate,
                 bool                       has_no_children,
                 unsigned int               n_sections = 1)
 {
+    
+  // printf("%7.4f %7.4f %7.4f %7.4f  \n", 
+  //         deg0 / numbers::PI / 2 *360, 
+  //         deg1 / numbers::PI / 2 *360, 
+  //         deg2 / numbers::PI / 2 *360, 
+  //         degree_seperation / numbers::PI / 2 *360
+  //         );
+    
   //        std::cout << "aaa " << radius << " " << length << std::endl;
   //        radius = 1;
   //        length = 3;
@@ -148,7 +157,12 @@ create_cylinder(double       radius1,
           vertices_3d_temp[shift + i][1] += beta * (-tria_2d.get_vertices()[i][0] * radius1);
           if(tria_2d.get_vertices()[i][1] > 0)
           {
-            vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
+            //auto deg4 = 22.5/360.0*2*numbers::PI;
+            auto deg4 = degree_seperation;
+            //vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
+            vertices_3d_temp[shift + i][0] -= beta * +std::sin(deg4) * (-tria_2d.get_vertices()[i][1] * radius1);
+            vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1)
+              -beta * (std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
           }
           else
           {
@@ -162,7 +176,12 @@ create_cylinder(double       radius1,
           vertices_3d_temp[shift + i][1] += beta * (+tria_2d.get_vertices()[i][0] * radius1);
           if(tria_2d.get_vertices()[i][1] > 0)
           {
-            vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
+            //vertices_3d_temp[shift + i][0] += beta * (+std::tan(deg0 / 1)) * (-tria_2d.get_vertices()[i][1] * radius1);
+            //auto deg4 = 22.5/360.0*2*numbers::PI;
+            auto deg4 = degree_seperation;
+            vertices_3d_temp[shift + i][0] -= 1.0*beta  * (+std::sin(deg4)) * (-tria_2d.get_vertices()[i][1] * radius1);
+            vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1)
+              -beta * (+std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
           }
           else
           {
@@ -215,7 +234,8 @@ process_node(Node *                     node,
              std::vector<Point<3>> &    vertices_3d_global,
              const int                  parent_os        = 0,
              Tensor<2, 3>               transform_parent = Tensor<2, 3>(),
-             double                     degree_parent    = 0.0)
+             double                     degree_parent    = 0.0,
+             double                     degree_seperation    = 0.0)
 {
   // normal and tangential vector in the reference system
   dealii::Tensor<1, 3> src_n({0, 1, 0});
@@ -265,6 +285,7 @@ process_node(Node *                     node,
                     degree_parent / 2,
                     degree_1,
                     degree_2,
+                    degree_seperation,
                     node->is_left(),
                     !node->is_root(),
                     !node->has_children(),
@@ -347,7 +368,7 @@ process_node(Node *                     node,
     try
     {
       process_node(
-        node->get_left_child(), cell_data_3d_global, vertices_3d_global, os, transform, degree_1);
+        node->get_left_child(), cell_data_3d_global, vertices_3d_global, os, transform, degree_1, (degree_2-degree_1)/2);
     }
     catch(const std::exception & e)
     {
@@ -358,7 +379,7 @@ process_node(Node *                     node,
     try
     {
       process_node(
-        node->get_right_child(), cell_data_3d_global, vertices_3d_global, os, transform, degree_2);
+        node->get_right_child(), cell_data_3d_global, vertices_3d_global, os, transform, degree_2, (degree_2-degree_1)/2);
     }
     catch(const std::exception & e)
     {

@@ -52,7 +52,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/vortex.h"
+//#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
@@ -69,7 +69,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel_L2_vs_Hdiv.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
-//#include "incompressible_navier_stokes_test_cases/lung.h"
+#include "incompressible_navier_stokes_test_cases/lung.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
