@@ -20,7 +20,7 @@ struct MGDofHandlerIdentifier
   bool
   operator==(const MGDofHandlerIdentifier & rhs) const
   {
-    return (degree >= rhs.degree) && (is_dg >= rhs.is_dg);
+    return (degree == rhs.degree) && (is_dg == rhs.is_dg);
   }
 };
 
