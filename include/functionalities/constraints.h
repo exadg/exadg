@@ -101,6 +101,11 @@ add_constraints(
   // 0) clear old content (to be on the safe side)
   constraint_own.clear();
 
+  // ... and set local dofs
+  IndexSet relevant_dofs;
+  DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+  constraint_own.reinit(relevant_dofs);
+
   // 1) add periodic BCs
   add_periodicity_constraints<dim>(dof_handler, level, periodic_face_pairs, constraint_own);
 
