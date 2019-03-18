@@ -45,8 +45,12 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 {
   this->mg_data = mg_data;
 
-  if((/*is_cg ||*/ mg_data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
-     ((dirichlet_bc_in == nullptr) || (dirichlet_bc_in == nullptr)))
+  bool const is_dg = fe.dofs_per_vertex == 0;
+  if((!is_dg ||
+      (is_dg && (mg_data.dg_to_cg_transfer == DG_To_CG_Transfer::Coarse ||
+                 mg_data.dg_to_cg_transfer == DG_To_CG_Transfer::Fine)) ||
+      mg_data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
+     ((dirichlet_bc_in == nullptr) || (periodic_face_pairs_in == nullptr)))
   {
     AssertThrow(
       mg_data.coarse_problem.solver != MultigridCoarseGridSolver::AMG,
@@ -64,12 +68,18 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   if(dirichlet_bc_in != nullptr)
     periodic_face_pairs = *periodic_face_pairs_in;
 
+  if((mg_data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
+     (periodic_face_pairs.size() > 0))
+  {
+    AssertThrow(mg_data.coarse_problem.solver != MultigridCoarseGridSolver::AMG,
+                ExcMessage("WIP: Currently periodic boundaries cannot be handled by AMG!"));
+  }
+
   // dereference points
 
   // extract paramters
   auto const   mg_type = this->mg_data.type;
   unsigned int degree  = fe.degree;
-  bool const   is_dg   = fe.dofs_per_vertex == 0;
 
   // setup sequence
   this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type, is_dg);
