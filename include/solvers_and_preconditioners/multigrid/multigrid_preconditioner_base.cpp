@@ -46,9 +46,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->mg_data = mg_data;
 
   bool const is_dg = fe.dofs_per_vertex == 0;
-  if((!is_dg ||
-      (is_dg && (mg_data.dg_to_cg_transfer == DG_To_CG_Transfer::Coarse ||
-                 mg_data.dg_to_cg_transfer == DG_To_CG_Transfer::Fine)) ||
+  if((!is_dg || (is_dg && (mg_data.dg_to_cg_transfer != DG_To_CG_Transfer::None)) ||
       mg_data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
      ((dirichlet_bc_in == nullptr) || (periodic_face_pairs_in == nullptr)))
   {
