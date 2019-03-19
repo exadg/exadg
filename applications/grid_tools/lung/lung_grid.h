@@ -92,93 +92,225 @@ lung_files_to_node(std::vector<std::string> files)
       roots.push_back(new Node(roots_temp[i + 1], roots_temp[i], src, true));
     }
 #endif
-    
-        if(roots.size() != 10)
-            return;
-    
-        std::vector<Node*> roots_temp = roots;
-        roots.clear();
-        
-//        roots.push_back(new Node(
-//            new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-//            new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),{8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false)
-//        );
-////        
-//        
-////        roots.push_back(new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false));
-////        roots.push_back(new Node(
-////                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-////                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-////                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true));
-//        
-//        roots.push_back(new Node(
-//            new Node(
-//                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-//                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-//                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
-//            new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false),
-//            { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false
-//        ));
+    std::vector<Node *> roots_temp = roots;
+    roots.clear();
+    //        roots.push_back(roots_temp[0]);
+    //        roots.push_back(roots_temp[1]);
+    //        roots.push_back(roots_temp[2]);
+    //        roots.push_back(roots_temp[3]);
 
-            
-            
-//        roots.push_back(new Node(
-//            new Node(
-//                new Node(
-//                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-//                    new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-//                    {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
-//                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false), 
-//                { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-//            new Node(
-//                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-//                new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-//                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-//            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
-            
-        roots.push_back(new Node(
-            new Node(
-                new Node(
-                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-                    new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-                    {-24.3016e-3,  156.6774e-3, -201.6689e-3}, true),
-                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3, -201.6689e-3},false), 
-                { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-            new Node(
-                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-                new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
+    //        roots.push_back(new Node(roots_temp[1], roots_temp[0],Point<3>({0.004894151748164817,
+    //        0.03723150327901492, 0.0008904181300876433}),true)); roots.push_back(new
+    //        Node(roots_temp[3], roots_temp[2],Point<3>({0.004894151748164817, 0.03723150327901492,
+    //        0.0008904181300876433}),false));
+
+    //        roots.push_back(new Node(
+    //                new Node(roots_temp[3], roots_temp[2],Point<3>({0.004894151748164817,
+    //                0.03723150327901492, 0.0008904181300876433}),false), new Node(roots_temp[1],
+    //                roots_temp[0],Point<3>({0.004894151748164817,  0.03723150327901492,
+    //                0.0008904181300876433}),false),
+    //                {-0.00876064681897349,  0.03269315981334528, 0.010104936601351125},false));
+    //
+    ////
+    ////                roots.push_back(new Node(roots_temp[6],
+    ///roots_temp[7],Point<3>({-0.020078857242792125,  0.03550154535819331,
+    ///-0.005019867864101988}),true)); /                roots.push_back(new Node(roots_temp[4],
+    ///roots_temp[5],Point<3>({-0.02006799972599759,  0.03454677364439095,
+    ///-0.004842597123745052}),false));
+    //
+    //
+    ////                roots.push_back(new Node(
+    ////                    new Node(roots_temp[6], roots_temp[7],Point<3>({-0.020078857242792125,
+    ///0.03550154535819331, -0.005019867864101988}),true), /                    new
+    ///Node(roots_temp[4], roots_temp[5],Point<3>({-0.020078857242792125,  0.03550154535819331,
+    ///-0.005019867864101988}),false), /                    {-0.015498252301352227,
+    ///0.03528111472752536, 0.005287772646390085}, true) /                );
+    //
+    //                    roots.push_back(new Node(
+    //                new Node(
+    //                    new Node(roots_temp[6], roots_temp[7],Point<3>({-0.020078857242792125,
+    //                    0.03550154535819331, -0.005019867864101988}),true), new
+    //                    Node(roots_temp[4], roots_temp[5],Point<3>({-0.020078857242792125,
+    //                    0.03550154535819331, -0.005019867864101988}),false),
+    //                    {-0.015498252301352227,  0.03528111472752536, 0.005287772646390085},
+    //                    true),
+    //                new Node(roots_temp[8], roots_temp[9],{-0.015498252301352227,
+    //                0.03528111472752536, 0.005287772646390085},false),
+    //                {-0.00876064681897349,  0.03269315981334528, 0.010104936601351125},false));
+
+
+
+    //        roots.push_back(new Node(
+    //            new Node(
+    //                new Node(
+    //                    new Node(roots_temp[6], roots_temp[7],Point<3>({-0.020078857242792125,
+    //                    0.03550154535819331, -0.005019867864101988}),true), new
+    //                    Node(roots_temp[4], roots_temp[5],Point<3>({-0.020078857242792125,
+    //                    0.03550154535819331, -0.005019867864101988}),false),
+    //                    {-0.015498252301352227,  0.03528111472752536, 0.005287772646390085},
+    //                    true),
+    //                new Node(roots_temp[8], roots_temp[9],{-0.015498252301352227,
+    //                0.03528111472752536, 0.005287772646390085},false), { -0.00876064681897349,
+    //                0.03269315981334528, 0.010104936601351125},false),
+    //            new Node(
+    //                new Node(roots_temp[3], roots_temp[2],Point<3>({0.004894151748164817,
+    //                0.03723150327901492, 0.0008904181300876433}),false), new Node(roots_temp[1],
+    //                roots_temp[0],Point<3>({0.004894151748164817,  0.03723150327901492,
+    //                0.0008904181300876433}),false),
+    //                {-0.00876064681897349,  0.03269315981334528, 0.010104936601351125},false),
+    //            { -0.004691444584156128, 0.012111498522501644,  0.040161793504990745},true));
+
+    //        roots.push_back(new Node(
+    //            new Node(
+    //                new Node(roots_temp[8], roots_temp[9],{-0.015498252301352227,
+    //                0.03528111472752536, 0.005287772646390085},false), new Node(
+    //                    new Node(roots_temp[6], roots_temp[7],Point<3>({-0.020078857242792125,
+    //                    0.03550154535819331, -0.005019867864101988}),true), new
+    //                    Node(roots_temp[5], roots_temp[4],Point<3>({-0.020078857242792125,
+    //                    0.03550154535819331, -0.005019867864101988}),false),
+    //                    {-0.015498252301352227,  0.03528111472752536, 0.005287772646390085},
+    //                    true),
+    //                { -0.00876064681897349,  0.03269315981334528, 0.010104936601351125},false),
+    //            new Node(
+    //                new Node(roots_temp[2], roots_temp[3],Point<3>({0.004894151748164817,
+    //                0.03723150327901492, 0.0008904181300876433}),false), new Node(roots_temp[1],
+    //                roots_temp[0],Point<3>({0.004894151748164817,  0.03723150327901492,
+    //                0.0008904181300876433}),false),
+    //                {-0.00876064681897349,  0.03269315981334528, 0.010104936601351125},false),
+    //            { -0.004691444584156128, 0.012111498522501644,  0.040161793504990745},true));
+
+    roots.push_back(new Node(
+      new Node(
+        new Node(roots_temp[8],
+                 roots_temp[9],
+                 {-0.012978481772800358, 0.03523408779189564, 0.007048238472570871},
+                 false),
+        new Node(
+          new Node(roots_temp[6],
+                   roots_temp[7],
+                   Point<3>({-0.01820662231978939, 0.03544419220009717, -0.001789115751719632}),
+                   true),
+          new Node(roots_temp[5],
+                   roots_temp[4],
+                   Point<3>({-0.01820662231978939, 0.03544419220009717, -0.001789115751719632}),
+                   false),
+          {-0.012978481772800358, 0.03523408779189564, 0.007048238472570871},
+          true),
+        {-0.00876064681897349, 0.03269315981334528, 0.010104936601351125},
+        false),
+      new Node(
+        new Node(roots_temp[2],
+                 roots_temp[3],
+                 Point<3>({0.004894151748164817, 0.03723150327901492, 0.0008904181300876433}),
+                 false),
+        new Node(roots_temp[1],
+                 roots_temp[0],
+                 Point<3>({0.004894151748164817, 0.03723150327901492, 0.0008904181300876433}),
+                 false),
+        {-0.00876064681897349, 0.03269315981334528, 0.010104936601351125},
+        false),
+      {-0.004691444584156128, 0.012111498522501644, 0.040161793504990745},
+      true));
+
+
+    return;
+
+    //        if(roots.size() != 10)
+    //            return;
+    //
+    //        std::vector<Node*> roots_temp = roots;
+    //        roots.clear();
+    //
+    ////        roots.push_back(new Node(
+    ////            new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3,
+    ///-201.9566e-3}),false), /            new Node(roots_temp[3],
+    ///roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3,
+    ///-201.9566e-3}),false),{8.826887618228566e-3, 157.61678106896196e-3,
+    ///-187.4708043895141e-3},false) /        );
+    //////
+    ////
+    //////        roots.push_back(new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3,
+    ///-198.6689e-3},false));
+    //////        roots.push_back(new Node(
+    //////                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3,
+    ///-208.6529e-3}),false),
+    //////                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3,
+    ///-208.6529e-3}),true),
+    //////                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true));
+    ////
+    ////        roots.push_back(new Node(
+    ////            new Node(
+    ////                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3,
+    ///-208.6529e-3}),false), /                new Node(roots_temp[6],
+    ///roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true), / {-24.3016e-3,
+    ///156.6774e-3, -198.6689e-3}, true), /            new Node(roots_temp[9],
+    ///roots_temp[8],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false), / { 8.826887618228566e-3,
+    ///157.61678106896196e-3, -187.4708043895141e-3},false /        ));
+    //
+    //
+    //
+    ////        roots.push_back(new Node(
+    ////            new Node(
+    ////                new Node(
+    ////                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,
+    ///155.9265e-3, -208.6529e-3}),true), /                    new Node(roots_temp[4],
+    ///roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false), / {-24.3016e-3,
+    ///156.6774e-3, -198.6689e-3}, true), /                new Node(roots_temp[8],
+    ///roots_temp[9],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false), / { 8.826887618228566e-3,
+    ///157.61678106896196e-3, -187.4708043895141e-3},false), /            new Node( / new
+    ///Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+    ////                new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3,
+    ///-201.9566e-3}),false), /                {8.826887618228566e-3, 157.61678106896196e-3,
+    ///-187.4708043895141e-3},false), /            { 8.864201963148962e-3, 200.1647444329594e-3,
+    ///-69.43970578881185e-3},true));
+    //
+    //        roots.push_back(new Node(
+    //            new Node(
+    //                new Node(
+    //                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3,
+    //                    -208.6529e-3}),true), new Node(roots_temp[4],
+    //                    roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
+    //                    {-24.3016e-3,  156.6774e-3, -201.6689e-3}, true),
+    //                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3,
+    //                -201.6689e-3},false), { 8.826887618228566e-3, 157.61678106896196e-3,
+    //                -187.4708043895141e-3},false),
+    //            new Node(
+    //                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3,
+    //                -201.9566e-3}),false), new Node(roots_temp[1],
+    //                roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+    //                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
+    //            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
   };
 }
 
 template<typename T>
-bool mark(T cell, const int number)
+bool
+mark(T cell, const int number)
 {
-    // is not at boundary
-    if(!cell->at_boundary(4))
-        return false;
-    
-    // already visited
-    if(cell->face(4)->boundary_id()>0)
-        return false;
-    
-    // set boundary id
-    cell->face(4)->set_all_boundary_ids(number);
-    
-    // mark all neighbors
-    for(unsigned int d = 0; d < 6; d++)
-    {
-      // face is at boundary: there is no neighbor to mark
-      if(cell->at_boundary(d))
-        continue;
-      
-      // mark neighbor
-      mark(cell->neighbor(d), number);
-    }
-    
-    // cell has been marked
-    return true;
+  // is not at boundary
+  if(!cell->at_boundary(4))
+    return false;
+
+  // already visited
+  if(cell->face(4)->boundary_id() > 0)
+    return false;
+
+  // set boundary id
+  cell->face(4)->set_all_boundary_ids(number);
+
+  // mark all neighbors
+  for(unsigned int d = 0; d < 6; d++)
+  {
+    // face is at boundary: there is no neighbor to mark
+    if(cell->at_boundary(d))
+      continue;
+
+    // mark neighbor
+    mark(cell->neighbor(d), number);
+  }
+
+  // cell has been marked
+  return true;
 }
 
 void lung(dealii::Triangulation<3> &                                     tria,
@@ -209,7 +341,7 @@ void lung(dealii::Triangulation<3> &                                     tria,
   for(unsigned int i = 0; i < roots.size(); i++)
   {
     process_node(roots[i], cell_data_3d, vertices_3d, vertices_3d.size());
-    //break;
+    // break;
   }
 
   timings["create_triangulation_2_mesh"] = timer.wall_time();
@@ -230,8 +362,8 @@ void lung(dealii::Triangulation<3> &                                     tria,
     if(cell->at_boundary(5)) // inlet
       cell->face(5)->set_all_boundary_ids(1);
     if(cell->at_boundary(4)) // outlets (>1)
-        if(mark(cell, counter))
-            counter++;
+      if(mark(cell, counter))
+        counter++;
   }
 
   timer.restart();
