@@ -23,11 +23,13 @@ create_cylinder(double       radius1,
                 bool                       is_left,
                 bool                       do_rotate,
                 bool                       has_no_children,
+                bool                       do_twist,
                 unsigned int               n_sections = 1)
 {
   bool is_right      = !is_left;
   bool has_children  = !has_no_children;
   bool do_not_rotate = !do_rotate;
+  // bool do_twist = false;
 
   // printf("%7.4f %7.4f %7.4f %7.4f  \n",
   //         deg0 / numbers::PI / 2 *360,
@@ -127,29 +129,62 @@ create_cylinder(double       radius1,
     const unsigned int shift = s * tria_2d.n_vertices();
     for(unsigned int i = 0; i < tria_2d.n_vertices(); ++i)
     {
-      // top part
-      if(has_no_children && is_left)
+      if(do_twist)
       {
-        vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
-        vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
-      }
-      if(has_no_children && is_right)
-      {
-        vertices_3d_temp[shift + i][0] += alpha * (-tria_2d.get_vertices()[i][1] * radius2);
-        vertices_3d_temp[shift + i][1] += alpha * (+tria_2d.get_vertices()[i][0] * radius2);
-      }
-      if(has_children)
-      {
-        vertices_3d_temp[shift + i][0] += alpha * (tria_2d.get_vertices()[i][0] * radius2);
-        vertices_3d_temp[shift + i][1] += alpha * (tria_2d.get_vertices()[i][1] * radius2);
-      }
+        // top part
+        if(has_no_children && is_left)
+        {
+          vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
+          vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
+        }
+        if(has_no_children && is_right)
+        {
+          vertices_3d_temp[shift + i][0] += alpha * (-tria_2d.get_vertices()[i][1] * radius2);
+          vertices_3d_temp[shift + i][1] += alpha * (+tria_2d.get_vertices()[i][0] * radius2);
+        }
+        if(has_children)
+        {
+          vertices_3d_temp[shift + i][0] += alpha * (tria_2d.get_vertices()[i][0] * radius2);
+          vertices_3d_temp[shift + i][1] += alpha * (tria_2d.get_vertices()[i][1] * radius2);
+        }
 
-      if(tria_2d.get_vertices()[i][0] > 0)
-        vertices_3d_temp[shift + i][2] +=
-          alpha * (-length + std::tan(deg2 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
+        if(tria_2d.get_vertices()[i][0] > 0)
+          vertices_3d_temp[shift + i][2] +=
+            alpha *
+            (-length + std::tan(deg2 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
+        else
+          vertices_3d_temp[shift + i][2] +=
+            alpha *
+            (-length + std::tan(deg1 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
+      }
       else
-        vertices_3d_temp[shift + i][2] +=
-          alpha * (-length + std::tan(deg1 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
+      {
+        // top part
+        if(has_no_children && is_left)
+        {
+          vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
+          vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
+        }
+        if(has_no_children && is_right)
+        {
+          vertices_3d_temp[shift + i][0] += alpha * (-tria_2d.get_vertices()[i][1] * radius2);
+          vertices_3d_temp[shift + i][1] += alpha * (+tria_2d.get_vertices()[i][0] * radius2);
+        }
+        if(has_children)
+        {
+          vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
+          vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
+        }
+
+        if(tria_2d.get_vertices()[i][1] > 0)
+          vertices_3d_temp[shift + i][2] +=
+            alpha *
+            (-length + std::tan(deg2 / 2) * std::abs(tria_2d.get_vertices()[i][1]) * radius2);
+        else
+          vertices_3d_temp[shift + i][2] +=
+            alpha *
+            (-length + std::tan(deg1 / 2) * std::abs(tria_2d.get_vertices()[i][1]) * radius2);
+      }
 
       // bottom part
       if(do_rotate && is_left)
@@ -292,6 +327,7 @@ process_node(Node *                     node,
                     node->is_left(),
                     !node->is_root(),
                     !node->has_children(),
+                    node->do_twist,
                     node->get_intersections());
 
     // create triangulation
