@@ -65,11 +65,11 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
-//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel_L2_vs_Hdiv.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
-#include "incompressible_navier_stokes_test_cases/lung.h"
+//#include "incompressible_navier_stokes_test_cases/lung.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem

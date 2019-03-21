@@ -179,6 +179,13 @@ lung_files_to_node(std::vector<std::string> files)
     //                {-0.00876064681897349,  0.03269315981334528, 0.010104936601351125},false),
     //            { -0.004691444584156128, 0.012111498522501644,  0.040161793504990745},true));
 
+    
+    auto temp                            = roots_temp[4]->right_child;
+    roots_temp[4]->right_child           = roots_temp[4]->left_child;
+    roots_temp[4]->left_child            = temp;
+    roots_temp[4]->left_child->_is_left  = true;
+    roots_temp[4]->right_child->_is_left = false;
+    
     roots.push_back(new Node(
       new Node(
         new Node(roots_temp[9],
@@ -189,11 +196,11 @@ lung_files_to_node(std::vector<std::string> files)
           new Node(roots_temp[6],
                    roots_temp[7],
                    Point<3>({-0.01820662231978939, 0.03544419220009717, -0.001789115751719632}),
-                   true),
-          new Node(roots_temp[4],
-                   roots_temp[5],
+                   false),
+          new Node(roots_temp[5],
+                   roots_temp[4],
                    Point<3>({-0.01820662231978939, 0.03544419220009717, -0.001789115751719632}),
-                   false,false),
+                   false,false, true),
           {-0.012978481772800358, 0.03523408779189564, 0.007048238472570871},
           true),
         {-0.00876064681897349, 0.03269315981334528, 0.010104936601351125},

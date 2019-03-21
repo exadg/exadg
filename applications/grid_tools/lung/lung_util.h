@@ -93,7 +93,7 @@ public:
     right_child->_is_left = false;
   }
 
-  Node(Node * left_child, Node * right_child, Point<3> from, bool _is_left, bool do_twist = true)
+  Node(Node * left_child, Node * right_child, Point<3> from, bool _is_left, bool do_twist = true, bool do_rot = false)
     : id(0),
       generation(left_child->get_generation() - 1),
       radius((left_child->get_radius() + right_child->get_radius()) / 2 / 0.7),
@@ -112,6 +112,7 @@ public:
     this->from = from;
     
     this->do_twist = do_twist;
+    this->do_rot   = do_rot;
   }
 
   static Node *
@@ -356,6 +357,7 @@ public:
   Node *       right_child;
   bool         _is_dummy;
   bool         do_twist = true;
+  bool         do_rot = false;
 };
 
 class DummyNode : public Node
