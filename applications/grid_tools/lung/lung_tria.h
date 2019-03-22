@@ -6,43 +6,15 @@
 
 #define LUNG_NUMBER_OF_VERTICES_2D 17
 
+
 void
-create_cylinder(double       radius1,
-                double       radius2,
-                double       length,
-                Tensor<2, 3> transform,
-                Tensor<2, 3> transform_parent,
-                Point<3>     offset,
-                dealii::Tensor<1, 3> /*direction*/,
-                std::vector<Point<3>> &    vertices_3d,
-                std::vector<CellData<3>> & cell_data_3d,
-                double                     deg0,
-                double                     deg1,
-                double                     deg2,
-                double                     degree_seperation,
-                bool                       is_left,
-                bool                       do_rotate,
-                bool                       has_no_children,
-                bool                       do_twist,
-                bool                       do_rot,
-                bool                       do_rot_parent,
-                unsigned int               n_sections = 1)
+create_reference_cylinder(const bool                 do_transition,
+                          const unsigned int         n_sections,
+                          std::vector<Point<3>> &    vertices_3d,
+                          std::vector<CellData<3>> & cell_data_3d)
 {
-  bool is_right      = !is_left;
-  bool has_children  = !has_no_children;
-  bool do_not_rotate = !do_rotate;
-  // bool do_twist = false;
-
-  // printf("%7.4f %7.4f %7.4f %7.4f  \n",
-  //         deg0 / numbers::PI / 2 *360,
-  //         deg1 / numbers::PI / 2 *360,
-  //         deg2 / numbers::PI / 2 *360,
-  //         degree_seperation / numbers::PI / 2 *360
-  //         );
-
-  //        std::cout << "aaa " << radius << " " << length << std::endl;
-  //        radius = 1;
-  //        length = 3;
+  if(do_transition)
+    printf("WARNING: Transition has not been implemented yet (TODO)!\n");
 
   // position of auxiliary point to achieve an angle of 120 degrees in corner
   // of inner cell
@@ -104,302 +76,28 @@ create_cylinder(double       radius1,
     cell_data[5 + a * 2].vertices[3] = a == 3 ? 3 : 7 + a * 4;
   }
   SubCellData subcell_data;
-  // must reorder cells to get valid 2d triangulation
   GridReordering<2>::reorder_cells(cell_data, true);
 
   Triangulation<2> tria_2d;
   tria_2d.create_triangulation(vertices, cell_data, subcell_data);
 
-  // create 3d vertices, first two layers of the 2d mesh with the usual
-  // extrusion.
-  // std::vector<Point<dim>> vertices_3d(2*tria_2d.n_vertices());
   vertices_3d.clear();
   vertices_3d.resize((n_sections + 1) * tria_2d.n_vertices());
   cell_data_3d.clear();
   cell_data_3d.resize(n_sections * cell_data.size());
 
-  AssertThrow(LUNG_NUMBER_OF_VERTICES_2D == tria_2d.n_vertices(),
-              ExcMessage("Number of vertices in 2D does not match with the expectation!"));
-
-  std::vector<Point<3>> vertices_3d_temp(2 * tria_2d.n_vertices());
-  for(auto & v : vertices_3d_temp)
-    v = {0, 0, 0};
-  for(unsigned int s = 0; s <= 1; s++)
-  {
-    const double       beta  = (1.0 * s) / 1;
-    const double       alpha = 1.0 - beta;
-    const unsigned int shift = s * tria_2d.n_vertices();
-    for(unsigned int i = 0; i < tria_2d.n_vertices(); ++i)
-    {
-      if(do_twist)
-      {
-        // top part
-        if(has_no_children && is_left)
-        {
-          vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
-          vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
-        }
-        if(has_no_children && is_right)
-        {
-          vertices_3d_temp[shift + i][0] += alpha * (-tria_2d.get_vertices()[i][1] * radius2);
-          vertices_3d_temp[shift + i][1] += alpha * (+tria_2d.get_vertices()[i][0] * radius2);
-        }
-        if(has_children)
-        {
-          vertices_3d_temp[shift + i][0] += alpha * (tria_2d.get_vertices()[i][0] * radius2);
-          vertices_3d_temp[shift + i][1] += alpha * (tria_2d.get_vertices()[i][1] * radius2);
-        }
-
-        if(tria_2d.get_vertices()[i][0] > 0)
-          vertices_3d_temp[shift + i][2] +=
-            alpha *
-            (-length + std::tan(deg2 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
-        else
-          vertices_3d_temp[shift + i][2] +=
-            alpha *
-            (-length + std::tan(deg1 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
-      }
-      else if(do_rot)
-      {
-        vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
-        vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
-
-        if(tria_2d.get_vertices()[i][0] > 0)
-          vertices_3d_temp[shift + i][2] +=
-            alpha *
-            (-length + std::tan(deg2 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
-        else
-          vertices_3d_temp[shift + i][2] +=
-            alpha *
-            (-length + std::tan(deg1 / 2) * std::abs(tria_2d.get_vertices()[i][0]) * radius2);
-          
-      }
-      else
-      {
-        // top part
-        if(has_no_children && is_left)
-        {
-          vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
-          vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
-        }
-        if(has_no_children && is_right)
-        {
-          vertices_3d_temp[shift + i][0] += alpha * (-tria_2d.get_vertices()[i][1] * radius2);
-          vertices_3d_temp[shift + i][1] += alpha * (+tria_2d.get_vertices()[i][0] * radius2);
-        }
-        if(has_children)
-        {
-          vertices_3d_temp[shift + i][0] += alpha * (+tria_2d.get_vertices()[i][1] * radius2);
-          vertices_3d_temp[shift + i][1] += alpha * (-tria_2d.get_vertices()[i][0] * radius2);
-        }
-
-        if(tria_2d.get_vertices()[i][1] > 0)
-          vertices_3d_temp[shift + i][2] +=
-            alpha *
-            (-length + std::tan(deg2 / 2) * std::abs(tria_2d.get_vertices()[i][1]) * radius2);
-        else
-          vertices_3d_temp[shift + i][2] +=
-            alpha *
-            (-length + std::tan(deg1 / 2) * std::abs(tria_2d.get_vertices()[i][1]) * radius2);
-      }
-
-      // bottom part
-      if(do_rot_parent)
-      {
-      if(do_rotate && is_left)
-      {
-        if(tria_2d.get_vertices()[i][0] > 0) // side
-        {
-          vertices_3d_temp[shift + i][1] += beta * (-(tria_2d.get_vertices()[i][0]*1.0) * radius1);
-          vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-          //vertices_3d_temp[shift + i][2] += 0.00;
-          vertices_3d_temp[shift + i][2] -= beta * (tria_2d.get_vertices()[i][0] * radius1)*1.0;
-        }
-        else // main
-        {
-          vertices_3d_temp[shift + i][1] += beta * (-tria_2d.get_vertices()[i][0] * radius1);
-          vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-          vertices_3d_temp[shift + i][2] +=
-            beta * (std::tan(deg0) * std::abs(tria_2d.get_vertices()[i][0]) * radius1);
-          //vertices_3d_temp[shift + i][2] -=
-          //  beta * (std::abs(tria_2d.get_vertices()[i][0]) * radius1);
-        }
-      }
-      else 
-      {
-        if(tria_2d.get_vertices()[i][0] < 0) // side
-        {
-          vertices_3d_temp[shift + i][1] += beta * ((-tria_2d.get_vertices()[i][0]*0.0 ) * radius1);
-          vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-          //vertices_3d_temp[shift + i][2] += 0.00;
-          vertices_3d_temp[shift + i][2] += beta * (tria_2d.get_vertices()[i][0] * radius1)*1.5;              
-            //-beta * (std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][0]) * radius1);
-        }
-        else // main
-        {
-          vertices_3d_temp[shift + i][1] += beta * (-tria_2d.get_vertices()[i][0] * radius1);
-          vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-          vertices_3d_temp[shift + i][2] +=
-            beta * (std::tan(deg0) * std::abs(tria_2d.get_vertices()[i][0]) * radius1);
-          //vertices_3d_temp[shift + i][2] +=
-          //  beta * (std::abs(tria_2d.get_vertices()[i][0]) * radius1);
-        }
-      }
-        
-        
-        
-//      if(do_rotate && is_left)
-//      {
-//        vertices_3d_temp[shift + i][1] += beta * (-tria_2d.get_vertices()[i][0] * radius1);
-//        if(tria_2d.get_vertices()[i][1] > 0)
-//        {
-//          // auto deg4 = 22.5/360.0*2*numbers::PI;
-//          auto deg4 = degree_seperation;
-//          // vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][0] -=
-//            beta * +std::sin(deg4) * (-tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][2] +=
-//            //beta * (-tria_2d.get_vertices()[i][1] * radius1) 
-//            -
-//            beta * (std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-//        }
-//        else
-//        {
-//          vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][2] +=
-//            beta * (std::tan(deg0 / 1) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-//        }
-//      }
-//      else
-//      {
-//        vertices_3d_temp[shift + i][1] += beta * (-tria_2d.get_vertices()[i][0] * radius1);
-//        
-//        vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-//        vertices_3d_temp[shift + i][2] += 1; // set: 0
-//          
-//      }
-        
-//        
-//      if(do_rotate && is_left)
-//      {
-//        vertices_3d_temp[shift + i][1] += beta * (-tria_2d.get_vertices()[i][0] * radius1);
-//        if(tria_2d.get_vertices()[i][1] > 0)
-//        {
-//          // auto deg4 = 22.5/360.0*2*numbers::PI;
-//          auto deg4 = degree_seperation;
-//          // vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][0] -=
-//            beta * +std::sin(deg4) * (-tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][2] +=
-//            //beta * (-tria_2d.get_vertices()[i][1] * radius1) 
-//            -
-//            beta * (std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-//        }
-//        else
-//        {
-//          vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][2] +=
-//            beta * (std::tan(deg0 / 1) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-//        }
-//      }
-//      if(do_rotate && is_right)
-//      {
-//        vertices_3d_temp[shift + i][1] += beta * (+tria_2d.get_vertices()[i][0] * radius1);
-//        if(tria_2d.get_vertices()[i][1] > 0)
-//        {
-//          // vertices_3d_temp[shift + i][0] += beta * (+std::tan(deg0 / 1)) *
-//          // (-tria_2d.get_vertices()[i][1] * radius1); auto deg4 = 22.5/360.0*2*numbers::PI;
-//          auto deg4 = degree_seperation;
-//          vertices_3d_temp[shift + i][0] -=
-//            1.0 * beta * (+std::sin(deg4)) * (-tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][2] +=
-//            //beta * (-tria_2d.get_vertices()[i][1] * radius1) 
-//            -
-//            beta * (+std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-//        }
-//        else
-//        {
-//          vertices_3d_temp[shift + i][0] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
-//          vertices_3d_temp[shift + i][2] +=
-//            beta * (+std::tan(deg0 / 1) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-//        }
-//      }
-//      if(do_not_rotate)
-//      {
-//        for(unsigned int d = 0; d < 2; ++d)
-//          vertices_3d_temp[shift + i][d] += beta * (tria_2d.get_vertices()[i][d] * radius1);
-//      }
-          
-      }
-      else
-      {
-      if(do_rotate && is_left)
-      {
-        vertices_3d_temp[shift + i][1] += beta * (-tria_2d.get_vertices()[i][0] * radius1);
-        if(tria_2d.get_vertices()[i][1] > 0)
-        {
-          // auto deg4 = 22.5/360.0*2*numbers::PI;
-          auto deg4 = degree_seperation;
-          // vertices_3d_temp[shift + i][2] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
-          vertices_3d_temp[shift + i][0] -=
-            beta * +std::sin(deg4) * (-tria_2d.get_vertices()[i][1] * radius1);
-          vertices_3d_temp[shift + i][2] +=
-            beta * (-tria_2d.get_vertices()[i][1] * radius1) -
-            beta * (std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-        }
-        else
-        {
-          vertices_3d_temp[shift + i][0] += beta * (tria_2d.get_vertices()[i][1] * radius1);
-          vertices_3d_temp[shift + i][2] +=
-            beta * (std::tan(deg0 / 1) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-        }
-      }
-      if(do_rotate && is_right)
-      {
-        vertices_3d_temp[shift + i][1] += beta * (+tria_2d.get_vertices()[i][0] * radius1);
-        if(tria_2d.get_vertices()[i][1] > 0)
-        {
-          // vertices_3d_temp[shift + i][0] += beta * (+std::tan(deg0 / 1)) *
-          // (-tria_2d.get_vertices()[i][1] * radius1); auto deg4 = 22.5/360.0*2*numbers::PI;
-          auto deg4 = degree_seperation;
-          vertices_3d_temp[shift + i][0] -=
-            1.0 * beta * (+std::sin(deg4)) * (-tria_2d.get_vertices()[i][1] * radius1);
-          vertices_3d_temp[shift + i][2] +=
-            beta * (-tria_2d.get_vertices()[i][1] * radius1) -
-            beta * (+std::sin(std::abs(deg4)) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-        }
-        else
-        {
-          vertices_3d_temp[shift + i][0] += beta * (-tria_2d.get_vertices()[i][1] * radius1);
-          vertices_3d_temp[shift + i][2] +=
-            beta * (+std::tan(deg0 / 1) * std::abs(tria_2d.get_vertices()[i][1]) * radius1);
-        }
-      }
-      if(do_not_rotate)
-      {
-        for(unsigned int d = 0; d < 2; ++d)
-          vertices_3d_temp[shift + i][d] += beta * (tria_2d.get_vertices()[i][d] * radius1);
-      }
-      }
-    }
-    auto tr = transform * alpha + transform_parent * beta;
-    for(unsigned int i = 0; i < tria_2d.n_vertices(); ++i)
-    {
-      vertices_3d_temp[shift + i] = Point<3>(offset + tr * vertices_3d_temp[shift + i]);
-    }
-  }
-
   for(unsigned int s = 0; s <= n_sections; s++)
   {
     const double       beta  = (1.0 * s) / n_sections;
-    const double       alpha = 1.0 - beta;
     const unsigned int shift = s * tria_2d.n_vertices();
     for(unsigned int i = 0; i < tria_2d.n_vertices(); ++i)
     {
-      vertices_3d[shift + i] =
-        alpha * vertices_3d_temp[i] + beta * vertices_3d_temp[tria_2d.n_vertices() + i];
+      vertices_3d[shift + i][0] = tria_2d.get_vertices()[i][0];
+      vertices_3d[shift + i][1] = tria_2d.get_vertices()[i][1];
+      vertices_3d[shift + i][2] = beta;
     }
   }
+
 
   for(unsigned int s = 0; s < n_sections; s++)
     for(unsigned int i = 0; i < cell_data.size(); ++i)
@@ -411,6 +109,211 @@ create_cylinder(double       radius1,
         cell_data_3d[cell_data.size() * s + i].vertices[4 + v] =
           (s + 1) * vertices.size() + cell_data[i].vertices[v];
     }
+}
+
+
+void
+create_cylinder(double       radius1,
+                double       radius2,
+                double       length,
+                Tensor<2, 3> transform,
+                Tensor<2, 3> transform_parent,
+                Point<3>     offset,
+                dealii::Tensor<1, 3> /*direction*/,
+                std::vector<Point<3>> &    vertices_3d,
+                std::vector<CellData<3>> & cell_data_3d,
+                double                     deg0,
+                double                     deg1,
+                double                     deg2,
+                double                     degree_seperation,
+                bool                       is_left,
+                bool                       do_rotate,
+                bool                       has_no_children,
+                bool                       do_twist,
+                bool                       do_rot,
+                bool                       do_rot_parent,
+                unsigned int               n_sections = 1)
+{
+  bool is_right      = !is_left;
+  bool has_children  = !has_no_children;
+  bool do_not_rotate = !do_rotate;
+
+  bool do_transition = false;
+  std::vector<Point<3>> vertices_3d_temp;
+  create_reference_cylinder(do_transition, n_sections, vertices_3d_temp, cell_data_3d);
+  vertices_3d.resize(vertices_3d_temp.size());
+  
+    for(unsigned int i = 0; i < vertices_3d_temp.size(); ++i)
+    {
+      auto & point_in  = vertices_3d_temp[i];
+      auto & point_out = vertices_3d[i];
+      
+      Point<3> point_out_alph;
+      Point<3> point_out_beta;
+        
+      const double beta  = point_in[2];
+      const double alpha = 1.0 - beta;
+      
+      /************************************************************************
+       * Top part
+       ************************************************************************/     
+      if(do_twist)
+      {
+        if(has_no_children && is_left)
+        {
+          point_out_alph[0] += (+point_in[1] * radius2);
+          point_out_alph[1] += (-point_in[0] * radius2);
+        }
+        if(has_no_children && is_right)
+        {
+          point_out_alph[0] += (-point_in[1] * radius2);
+          point_out_alph[1] += (+point_in[0] * radius2);
+        }
+        if(has_children)
+        {
+          point_out_alph[0] += (point_in[0] * radius2);
+          point_out_alph[1] += (point_in[1] * radius2);
+        }
+
+        if(point_in[0] > 0)
+          point_out_alph[2] +=
+            (-length + std::tan(deg2 / 2) * std::abs(point_in[0]) * radius2);
+        else
+          point_out_alph[2] +=
+            (-length + std::tan(deg1 / 2) * std::abs(point_in[0]) * radius2);
+      }
+      else if(do_rot)
+      {
+        point_out_alph[0] += (+point_in[1] * radius2);
+        point_out_alph[1] += (-point_in[0] * radius2);
+
+        if(point_in[0] > 0)
+          point_out_alph[2] +=
+            (-length + std::tan(deg2 / 2) * std::abs(point_in[0]) * radius2);
+        else
+          point_out_alph[2] +=
+            (-length + std::tan(deg1 / 2) * std::abs(point_in[0]) * radius2);
+          
+      }
+      else
+      {
+        // top part
+        if(has_no_children && is_left)
+        {
+          point_out_alph[0] += (+point_in[1] * radius2);
+          point_out_alph[1] += (-point_in[0] * radius2);
+        }
+        if(has_no_children && is_right)
+        {
+          point_out_alph[0] += (-point_in[1] * radius2);
+          point_out_alph[1] += (+point_in[0] * radius2);
+        }
+        if(has_children)
+        {
+          point_out_alph[0] += (+point_in[1] * radius2);
+          point_out_alph[1] += (-point_in[0] * radius2);
+        }
+
+        if(point_in[1] > 0)
+          point_out_alph[2] +=
+            (-length + std::tan(deg2 / 2) * std::abs(point_in[1]) * radius2);
+        else
+          point_out_alph[2] +=
+            (-length + std::tan(deg1 / 2) * std::abs(point_in[1]) * radius2);
+      }
+
+      /************************************************************************
+       * Bottom part
+       ************************************************************************/     
+      if(do_rot_parent)
+      {
+      if(do_rotate && is_left)
+      {
+        if(point_in[0] > 0) // side
+        {
+          point_out_beta[1] += (-(point_in[0]*1.0) * radius1);
+          point_out_beta[0] += (point_in[1] * radius1);
+          point_out_beta[2] -= (point_in[0] * radius1)*1.0;
+        }
+        else // main
+        {
+          point_out_beta[1] += (-point_in[0] * radius1);
+          point_out_beta[0] += (point_in[1] * radius1);
+          point_out_beta[2] +=
+            (std::tan(deg0) * std::abs(point_in[0]) * radius1);
+        }
+      }
+      else 
+      {
+        if(point_in[0] < 0) // side
+        {
+          point_out_beta[1] += ((-point_in[0]*0.0 ) * radius1);
+          point_out_beta[0] += (point_in[1] * radius1);
+          point_out_beta[2] += (point_in[0] * radius1)*1.5;              
+        }
+        else // main
+        {
+          point_out_beta[1] += (-point_in[0] * radius1);
+          point_out_beta[0] += (point_in[1] * radius1);
+          point_out_beta[2] +=
+            (std::tan(deg0) * std::abs(point_in[0]) * radius1);
+        }
+      }
+        
+      }
+      else
+      {
+      if(do_rotate && is_left)
+      {
+        point_out_beta[1] += (-point_in[0] * radius1);
+        if(point_in[1] > 0)
+        {
+          auto deg4 = degree_seperation;
+          point_out_beta[0] -=
+            +std::sin(deg4) * (-point_in[1] * radius1);
+          point_out_beta[2] +=
+            (-point_in[1] * radius1) -
+            (std::sin(std::abs(deg4)) * std::abs(point_in[1]) * radius1);
+        }
+        else
+        {
+          point_out_beta[0] += (point_in[1] * radius1);
+          point_out_beta[2] +=
+            (std::tan(deg0 / 1) * std::abs(point_in[1]) * radius1);
+        }
+      }
+      if(do_rotate && is_right)
+      {
+        point_out_beta[1] += (+point_in[0] * radius1);
+        if(point_in[1] > 0)
+        {
+          auto deg4 = degree_seperation;
+          point_out_beta[0] -=
+            1.0 * (+std::sin(deg4)) * (-point_in[1] * radius1);
+          point_out_beta[2] +=
+            (-point_in[1] * radius1) -
+            (+std::sin(std::abs(deg4)) * std::abs(point_in[1]) * radius1);
+        }
+        else
+        {
+          point_out_beta[0] += (-point_in[1] * radius1);
+          point_out_beta[2] +=
+            (+std::tan(deg0 / 1) * std::abs(point_in[1]) * radius1);
+        }
+      }
+      if(do_not_rotate)
+      {
+        for(unsigned int d = 0; d < 2; ++d)
+          point_out_beta[d] += (point_in[d] * radius1);
+      }
+      }
+
+      /************************************************************************
+       * Combine points and blend
+       ************************************************************************/     
+      point_out = alpha * Point<3>(offset + transform * point_out_alph) + beta * Point<3>(offset + transform_parent * point_out_beta);
+    }
+
 }
 
 void
