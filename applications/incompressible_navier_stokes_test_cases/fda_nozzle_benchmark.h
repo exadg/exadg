@@ -43,8 +43,8 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // prescribe velocity inflow profile for nozzle domain via precursor simulation?
-// USE_PRECURSOR_SIMULATION == true:  use solver unsteady_navier_stokes_two_domains.cc
-// USE_PRECURSOR_SIMULATION == false: use solver unsteady_navier_stokes.cc
+// USE_PRECURSOR_SIMULATION == true:  use solver incompressible_navier_stokes_two_domains.cc
+// USE_PRECURSOR_SIMULATION == false: use solver incompressible_navier_stokes.cc
 bool const USE_PRECURSOR_SIMULATION = true;
 
 // use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
@@ -204,9 +204,11 @@ void initialize_r_and_phi_values()
   AssertThrow(N_POINTS_R >= 2, ExcMessage("Variable N_POINTS_R is invalid"));
   AssertThrow(N_POINTS_PHI >= 2, ExcMessage("Variable N_POINTS_PHI is invalid"));
 
+  // 0 <= radius <= R_OUTER
   for(unsigned int i=0; i<N_POINTS_R; ++i)
     R_VALUES[i] = double(i)/double(N_POINTS_R-1)*R_OUTER;
 
+  // - pi <= phi <= pi
   for(unsigned int i=0; i<N_POINTS_PHI; ++i)
     PHI_VALUES[i] = -numbers::PI + double(i)/double(N_POINTS_PHI-1)*2.0*numbers::PI;
 }
@@ -231,7 +233,7 @@ void initialize_velocity_values()
         velocity[2] += perturbation;
       }
 
-      VELOCITY_VALUES[iy*N_POINTS_R + iz] = velocity;
+      VELOCITY_VALUES[iy*N_POINTS_PHI + iz] = velocity;
     }
   }
 }
@@ -1338,6 +1340,8 @@ public:
     }
     else
     {
+      // in case of random perturbations, the velocity field at the inflow boundary
+      // has to be recomputed after each time step
       if(USE_RANDOM_PERTURBATION==true)
         initialize_velocity_values();
     }
