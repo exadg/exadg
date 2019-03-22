@@ -134,25 +134,32 @@ create_cylinder(double       radius1,
                 bool                       do_rot_parent,
                 unsigned int               n_sections = 1)
 {
+  // create some short cuts
   bool is_right      = !is_left;
   bool has_children  = !has_no_children;
   bool do_not_rotate = !do_rotate;
 
+  /**************************************************************************
+   * Create reference cylinder
+   **************************************************************************/
   bool                  do_transition = false;
   std::vector<Point<3>> vertices_3d_temp;
   create_reference_cylinder(do_transition, n_sections, vertices_3d_temp, cell_data_3d);
   vertices_3d.resize(vertices_3d_temp.size());
 
+  /**************************************************************************
+   * Loop over all points and transform
+   **************************************************************************/
   for(unsigned int i = 0; i < vertices_3d_temp.size(); ++i)
   {
-    auto & point_in  = vertices_3d_temp[i];
-    auto & point_out = vertices_3d[i];
+    // get reference to input and output
+    auto &point_in = vertices_3d_temp[i], &point_out = vertices_3d[i];
 
-    Point<3> point_out_alph;
-    Point<3> point_out_beta;
+    // transform point in both coordinate system
+    Point<3> point_out_alph, point_out_beta;
 
-    const double beta  = point_in[2];
-    const double alpha = 1.0 - beta;
+    // get blending factor
+    const double beta = point_in[2];
 
     /************************************************************************
      * Top part
@@ -295,7 +302,7 @@ create_cylinder(double       radius1,
     /************************************************************************
      * Combine points and blend
      ************************************************************************/
-    point_out = alpha * Point<3>(offset + transform * point_out_alph) +
+    point_out = (1 - beta) * Point<3>(offset + transform * point_out_alph) +
                 beta * Point<3>(offset + transform_parent * point_out_beta);
   }
 }
