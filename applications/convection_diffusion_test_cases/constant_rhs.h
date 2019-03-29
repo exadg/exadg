@@ -95,6 +95,38 @@ void ConvDiff::InputParameters::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
+    unsigned int const                                  n_refine_space)
+{
+  // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
+  const double left = -1.0, right = 1.0;
+  GridGenerator::hyper_cube(*triangulation,left,right);
+
+  // set boundary indicator to 1 on all boundaries (Neumann BCs)
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+    {
+      // apply Neumann BC on all boundaries
+      if ((std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12)||
+          (std::fabs(cell->face(face_number)->center()(0) - left) < 1e-12) ||
+          (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)||
+          (std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12))
+       cell->face(face_number)->set_boundary_id(1);
+    }
+  }
+  triangulation->refine_global(n_refine_space);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
@@ -166,38 +198,9 @@ public:
   }
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
-    unsigned int const                                  n_refine_space,
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
+void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
-  // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-  const double left = -1.0, right = 1.0;
-  GridGenerator::hyper_cube(*triangulation,left,right);
-
-  // set boundary indicator to 1 on all boundaries (Neumann BCs)
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-      // apply Neumann BC on all boundaries
-      if ((std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12)||
-          (std::fabs(cell->face(face_number)->center()(0) - left) < 1e-12) ||
-          (std::fabs(cell->face(face_number)->center()(1) - right) < 1e-12)||
-          (std::fabs(cell->face(face_number)->center()(1) - left) < 1e-12))
-       cell->face(face_number)->set_boundary_id(1);
-    }
-  }
-  triangulation->refine_global(n_refine_space);
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   boundary_descriptor->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(1)));
