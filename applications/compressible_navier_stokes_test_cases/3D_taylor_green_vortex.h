@@ -186,6 +186,82 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   restart_data.filename = OUTPUT_FOLDER + FILENAME + "_restart";
 }
 
+/**************************************************************************************/
+/*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+#include "../grid_tools/deformed_cube_manifold.h"
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+  std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
+  unsigned int const                                       n_refine_space,
+  std::vector<GridTools::PeriodicFacePair<typename
+    Triangulation<dim>::cell_iterator> >                   &periodic_faces)
+{
+  const double pi = numbers::PI;
+  const double left = - pi * L, right = pi * L;
+  std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
+                                        N_CELLS_1D_COARSE_GRID,
+                                        N_CELLS_1D_COARSE_GRID});
+
+  Point<dim> point1(left,left,left), point2(right,right,right);
+  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+
+  if(MESH_TYPE == MeshType::Cartesian)
+  {
+   // do nothing
+  }
+  else if(MESH_TYPE == MeshType::Curvilinear)
+  {
+   AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
+       ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
+
+   triangulation->set_all_manifold_ids(1);
+   double const deformation = 0.5;
+   unsigned const frequency = 2;
+   static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+   triangulation->set_manifold(1, manifold);
+  }
+
+  // set boundary indicators
+  AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
+
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+   for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+   {
+     // x-direction
+     if((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (0);
+     else if((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (1);
+     // y-direction
+     else if((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (2);
+     else if((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (3);
+     // z-direction
+     else if((std::fabs(cell->face(face_number)->center()(2) - left)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (4);
+     else if((std::fabs(cell->face(face_number)->center()(2) - right)< 1e-12))
+       cell->face(face_number)->set_all_boundary_ids (5);
+   }
+  }
+
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
+
+  triangulation->add_periodicity(periodic_faces);
+
+  // perform global refinements
+  triangulation->refine_global(n_refine_space);
+}
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -241,88 +317,19 @@ double Solution<dim>::value(const Point<dim>    &x,
   return result;
 }
 
- /**************************************************************************************/
- /*                                                                                    */
- /*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
- /*                                                                                    */
- /**************************************************************************************/
 
-#include "../grid_tools/deformed_cube_manifold.h"
+namespace CompNS
+{
 
- template<int dim>
- void create_grid_and_set_boundary_conditions(
-   std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
-   unsigned int const                                       n_refine_space,
-   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        /*boundary_descriptor_density*/,
-   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        /*boundary_descriptor_velocity*/,
-   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        /*boundary_descriptor_pressure*/,
-   std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  /*boundary_descriptor_energy*/,
-   std::vector<GridTools::PeriodicFacePair<typename
-     Triangulation<dim>::cell_iterator> >                   &periodic_faces)
- {
-   const double pi = numbers::PI;
-   const double left = - pi * L, right = pi * L;
-   std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
-                                          N_CELLS_1D_COARSE_GRID,
-                                          N_CELLS_1D_COARSE_GRID});
-
-   Point<dim> point1(left,left,left), point2(right,right,right);
-   GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
-   
-   if(MESH_TYPE == MeshType::Cartesian)
-   {
-     // do nothing
-   }
-   else if(MESH_TYPE == MeshType::Curvilinear)
-   {
-     AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
-         ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
-
-     triangulation->set_all_manifold_ids(1);
-     double const deformation = 0.5;
-     unsigned const frequency = 2;
-     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-     triangulation->set_manifold(1, manifold);
-   }
-
-   // set boundary indicators
-   AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
-
-   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-   for(;cell!=endc;++cell)
-   {
-     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-     {
-       // x-direction
-       if((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (0);
-       else if((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (1);
-       // y-direction
-       else if((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (2);
-       else if((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (3);
-       // z-direction
-       else if((std::fabs(cell->face(face_number)->center()(2) - left)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (4);
-       else if((std::fabs(cell->face(face_number)->center()(2) - right)< 1e-12))
-         cell->face(face_number)->set_all_boundary_ids (5);
-     }
-   }
-
-   auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
-   GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
-   GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
-   GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
-
-   triangulation->add_periodicity(periodic_faces);
-
-   // perform global refinements
-   triangulation->refine_global(n_refine_space);
-
-   // test case with periodics BC -> boundary descriptors remain empty
- }
+template<int dim>
+void set_boundary_conditions(
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        /*boundary_descriptor_density*/,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        /*boundary_descriptor_velocity*/,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        /*boundary_descriptor_pressure*/,
+  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  /*boundary_descriptor_energy*/)
+{
+  // test case with periodic BC -> boundary descriptors remain empty
+}
 
 template<int dim>
 void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_functions)
@@ -377,5 +384,6 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_ */

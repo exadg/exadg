@@ -126,6 +126,36 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   solver_info_data.interval_time = (end_time-start_time)/20;
 }
 
+/**************************************************************************************/
+/*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+  std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
+  unsigned int const                                       n_refine_space,
+  std::vector<GridTools::PeriodicFacePair<typename
+    Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
+{
+  std::vector<unsigned int> repetitions({1,1});
+  Point<dim> point1(0.0,0.0), point2(L,H);
+  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+
+//   // set boundary indicator
+//   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+//   for(;cell!=endc;++cell)
+//   {
+//     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+//     {
+//      if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
+//         cell->face(face_number)->set_boundary_id (1);
+//     }
+//   }
+
+  triangulation->refine_global(n_refine_space);
+}
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -255,64 +285,40 @@ double Solution<dim>::value(const Point<dim>    &p,
    return RHO_0;
  }
 
- /**************************************************************************************/
- /*                                                                                    */
- /*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
- /*                                                                                    */
- /**************************************************************************************/
+namespace CompNS
+{
 
- template<int dim>
- void create_grid_and_set_boundary_conditions(
-   std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
-	 unsigned int const                                       n_refine_space,
-	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
-	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
-	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
-	 std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy,
-	 std::vector<GridTools::PeriodicFacePair<typename
-	   Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
- {
-   std::vector<unsigned int> repetitions({1,1});
-   Point<dim> point1(0.0,0.0), point2(L,H);
-   GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+template<int dim>
+void set_boundary_conditions(
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
+  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy)
+{
+  // zero function scalar
+  std::shared_ptr<Function<dim> > zero_function_scalar;
+  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
 
-//   // set boundary indicator
-//   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-//   for(;cell!=endc;++cell)
-//   {
-//     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-//     {
-//      if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
-//         cell->face(face_number)->set_boundary_id (1);
-//     }
-//   }
+  // density
+  std::shared_ptr<Function<dim> > density_bc;
+  density_bc.reset(new DensityBC<dim>());
+  boundary_descriptor_density->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,density_bc));
 
-   triangulation->refine_global(n_refine_space);
+  // velocity
+  std::shared_ptr<Function<dim> > velocity_bc;
+  velocity_bc.reset(new VelocityBC<dim>());
+  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,velocity_bc));
 
-   // zero function scalar
-   std::shared_ptr<Function<dim> > zero_function_scalar;
-   zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
+  // pressure
+  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
 
-   // density
-   std::shared_ptr<Function<dim> > density_bc;
-   density_bc.reset(new DensityBC<dim>());
-   boundary_descriptor_density->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,density_bc));
+  // energy: prescribe energy
+  boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Energy));
 
-   // velocity
-   std::shared_ptr<Function<dim> > velocity_bc;
-   velocity_bc.reset(new VelocityBC<dim>());
-   boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,velocity_bc));
-
-   // pressure
-   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
-
-   // energy: prescribe energy
-   boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Energy));
-
-   std::shared_ptr<Function<dim> > energy_bc;
-   energy_bc.reset(new EnergyBC<dim>());
-   boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
- }
+  std::shared_ptr<Function<dim> > energy_bc;
+  energy_bc.reset(new EnergyBC<dim>());
+  boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
+}
 
 template<int dim>
 void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_functions)
@@ -365,6 +371,8 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   pp.reset(new CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data));
 
   return pp;
+}
+
 }
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COMP_NS_H_ */
