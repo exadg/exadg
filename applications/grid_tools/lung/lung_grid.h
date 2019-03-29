@@ -92,102 +92,123 @@ lung_files_to_node(std::vector<std::string> files)
       roots.push_back(new Node(roots_temp[i + 1], roots_temp[i], src, true));
     }
 #endif
-    
-        if(roots.size() != 10)
-            return;
-    
-        std::vector<Node*> roots_temp = roots;
-        roots.clear();
-        
-//        roots.push_back(new Node(
-//            new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-//            new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),{8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false)
-//        );
-////        
-//        
-////        roots.push_back(new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false));
-////        roots.push_back(new Node(
-////                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-////                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-////                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true));
-//        
-//        roots.push_back(new Node(
-//            new Node(
-//                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-//                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-//                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
-//            new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false),
-//            { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false
-//        ));
 
-            
-            
-//        roots.push_back(new Node(
-//            new Node(
-//                new Node(
-//                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-//                    new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-//                    {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
-//                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3, -198.6689e-3},false), 
-//                { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-//            new Node(
-//                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-//                new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-//                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-//            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
-            
-        roots.push_back(new Node(
-            new Node(
-                new Node(
-                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
-                    new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-                    {-24.3016e-3,  156.6774e-3, -201.6689e-3}, true),
-                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3, -201.6689e-3},false), 
-                { 8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-            new Node(
-                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-                new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
-                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
+    if(roots.size() != 10)
+      return;
+
+    std::vector<Node *> roots_temp = roots;
+    roots.clear();
+
+    //        roots.push_back(new Node(
+    //            new Node(roots_temp[1], roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3,
+    //            -201.9566e-3}),false), new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,
+    //            147.2595e-3, -201.9566e-3}),false),{8.826887618228566e-3, 157.61678106896196e-3,
+    //            -187.4708043895141e-3},false)
+    //        );
+    ////
+    //
+    ////        roots.push_back(new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3,
+    ///-198.6689e-3},false)); /        roots.push_back(new Node( /                new
+    ///Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
+    ////                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3,
+    ///-208.6529e-3}),true), /                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true));
+    //
+    //        roots.push_back(new Node(
+    //            new Node(
+    //                new Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3,
+    //                -208.6529e-3}),false), new Node(roots_temp[6],
+    //                roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true),
+    //                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
+    //            new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3,
+    //            -198.6689e-3},false), { 8.826887618228566e-3, 157.61678106896196e-3,
+    //            -187.4708043895141e-3},false
+    //        ));
+
+
+
+    //        roots.push_back(new Node(
+    //            new Node(
+    //                new Node(
+    //                    new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3,
+    //                    -208.6529e-3}),true), new Node(roots_temp[4],
+    //                    roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
+    //                    {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true),
+    //                new Node(roots_temp[8], roots_temp[9],{-24.3016e-3,  156.6774e-3,
+    //                -198.6689e-3},false), { 8.826887618228566e-3, 157.61678106896196e-3,
+    //                -187.4708043895141e-3},false),
+    //            new Node(
+    //                new Node(roots_temp[3], roots_temp[2],Point<3>({47.4151e-3,  147.2595e-3,
+    //                -201.9566e-3}),false), new Node(roots_temp[1],
+    //                roots_temp[0],Point<3>({47.4151e-3,  147.2595e-3, -201.9566e-3}),false),
+    //                {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
+    //            { 8.864201963148962e-3, 200.1647444329594e-3,  -69.43970578881185e-3},true));
+
+    roots.push_back(new Node(
+      new Node(
+        new Node(new Node(roots_temp[6],
+                          roots_temp[7],
+                          Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}),
+                          true),
+                 new Node(roots_temp[4],
+                          roots_temp[5],
+                          Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}),
+                          false),
+                 {-24.3016e-3, 156.6774e-3, -201.6689e-3},
+                 true),
+        new Node(roots_temp[8], roots_temp[9], {-24.3016e-3, 156.6774e-3, -201.6689e-3}, false),
+        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},
+        false),
+      new Node(
+        new Node(
+          roots_temp[3], roots_temp[2], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
+        new Node(
+          roots_temp[1], roots_temp[0], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
+        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},
+        false),
+      {8.864201963148962e-3, 200.1647444329594e-3, -69.43970578881185e-3},
+      true));
   };
 }
 
 template<typename T>
-bool mark(T cell, const int number)
+bool
+mark(T cell, const int number)
 {
-    // is not at boundary
-    if(!cell->at_boundary(4))
-        return false;
-    
-    // already visited
-    if(cell->face(4)->boundary_id()>0)
-        return false;
-    
-    // set boundary id
-    cell->face(4)->set_all_boundary_ids(number);
-    
-    // mark all neighbors
-    for(unsigned int d = 0; d < 6; d++)
-    {
-      // face is at boundary: there is no neighbor to mark
-      if(cell->at_boundary(d))
-        continue;
-      
-      // mark neighbor
-      mark(cell->neighbor(d), number);
-    }
-    
-    // cell has been marked
-    return true;
+  // is not at boundary
+  if(!cell->at_boundary(4))
+    return false;
+
+  // already visited
+  if(cell->face(4)->boundary_id() > 0)
+    return false;
+
+  // set boundary id
+  cell->face(4)->set_all_boundary_ids(number);
+
+  // mark all neighbors
+  for(unsigned int d = 0; d < 6; d++)
+  {
+    // face is at boundary: there is no neighbor to mark
+    if(cell->at_boundary(d))
+      continue;
+
+    // mark neighbor
+    mark(cell->neighbor(d), number);
+  }
+
+  // cell has been marked
+  return true;
 }
 
 void lung(dealii::Triangulation<3> &                                     tria,
           int                                                            generations,
           int                                                            refinements,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings)
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last)
 {
-  Timer timer, timer2;
+  Timer timer;
 
   timer.restart();
   std::vector<Node *> roots;
@@ -199,8 +220,6 @@ void lung(dealii::Triangulation<3> &                                     tria,
   ad.partition_group_size = 1;
   ad.partition_group      = parallel::fullydistributed::single;
 
-  timer2.restart();
-
   timer.restart();
   // ... by processing each tree
   std::vector<CellData<3>> cell_data_3d;
@@ -209,7 +228,7 @@ void lung(dealii::Triangulation<3> &                                     tria,
   for(unsigned int i = 0; i < roots.size(); i++)
   {
     process_node(roots[i], cell_data_3d, vertices_3d, vertices_3d.size());
-    //break;
+    // break;
   }
 
   timings["create_triangulation_2_mesh"] = timer.wall_time();
@@ -224,15 +243,20 @@ void lung(dealii::Triangulation<3> &                                     tria,
   timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
   // set boundary ids
-  unsigned int counter = 2; // counter for outlets
+  unsigned int counter = outlet_id_first; // counter for outlets
   for(auto cell : tria.active_cell_iterators())
   {
+    // the mesh is generated in a way that inlet/outlets are one faces with normal vector
+    // in positive or negative z-direction (faces 4/5)
     if(cell->at_boundary(5)) // inlet
       cell->face(5)->set_all_boundary_ids(1);
     if(cell->at_boundary(4)) // outlets (>1)
-        if(mark(cell, counter))
-            counter++;
+      if(mark(cell, counter))
+        counter++;
   }
+
+  // set outlet_id_last which is needed by the application setting the boundary conditions
+  outlet_id_last = counter;
 
   timer.restart();
   tria.refine_global(refinements);
@@ -245,15 +269,19 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
           int                                                            generations,
           int                                                            refinements,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings)
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last)
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
-  lung(tria_seq, generations, 0, create_tree, timings);
+  lung(tria_seq, generations, 0, create_tree, timings, outlet_id_first, outlet_id_last);
   // copy coarse grid to distributed triangulation and ...
   tria.copy_triangulation(tria_seq);
   // ... refine
   tria.refine_global(refinements);
+
+  outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
 }
 
 void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
@@ -261,7 +289,9 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
           int                                                            refinements1,
           int                                                            refinements2,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings)
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last)
 {
   Timer timer;
   timer.restart();
@@ -269,8 +299,10 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
   // create partitioned triangulation ...
   tria.reinit(refinements2, [&](auto & tria) mutable {
     // ... by creating a refined sequential triangulation and partition it
-    lung(tria, generations, refinements1, create_tree, timings);
+    lung(tria, generations, refinements1, create_tree, timings, outlet_id_first, outlet_id_last);
   });
+
+  outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
 
   timings["create_triangulation_0_overall"] = timer.wall_time();
 }

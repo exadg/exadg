@@ -156,9 +156,45 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+{
+  std::vector<unsigned int> repetitions({1,1});
+  Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
+  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+
+  // left boundary has ID=1, right boundary has ID=2, all other boundaries have ID=0
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+    {
+     if ((std::fabs(cell->face(face_number)->center()(0) - 0.0)< 1e-12))
+         cell->face(face_number)->set_boundary_id (1);
+     if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
+        cell->face(face_number)->set_boundary_id (2);
+    }
+  }
+
+  triangulation->refine_global(n_refine_space);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
+
+namespace IncNS
+{
 
 template<int dim>
 class PressureInflowBC : public Function<dim>
@@ -183,40 +219,12 @@ public:
   }
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
 
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  std::vector<unsigned int> repetitions({1,1});
-  Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
-  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
-
-  // left boundary has ID=1, right boundary has ID=2, all other boundaries have ID=0
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-     if ((std::fabs(cell->face(face_number)->center()(0) - 0.0)< 1e-12))
-         cell->face(face_number)->set_boundary_id (1);
-     if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
-        cell->face(face_number)->set_boundary_id (2);
-    }
-  }
-
-  triangulation->refine_global(n_refine_space);
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
@@ -267,6 +275,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
 
   return pp;
+}
+
 }
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_POISEUILLE_H_ */

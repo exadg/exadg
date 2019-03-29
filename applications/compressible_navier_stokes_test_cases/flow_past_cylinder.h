@@ -168,6 +168,67 @@ void CompNS::InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+  std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
+  unsigned int const                                       n_refine_space,
+  std::vector<GridTools::PeriodicFacePair<typename
+    Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
+{
+  Point<dim> center;
+  center[0] = X_C;
+  center[1] = Y_C;
+
+  // apply this manifold for all mesh types
+  Point<dim> direction;
+  direction[dim-1] = 1.;
+
+  static std::shared_ptr<Manifold<dim> > cylinder_manifold;
+
+  if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+  {
+   cylinder_manifold = std::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
+                                           static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(direction, center)));
+  }
+  else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+  {
+   cylinder_manifold = std::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new MyCylindricalManifold<dim>(center)));
+  }
+  else
+  {
+   AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
+       ExcMessage("Specified manifold type not implemented"));
+  }
+
+  create_triangulation(*triangulation);
+  triangulation->set_manifold(MANIFOLD_ID, *cylinder_manifold);
+
+  // generate vector of manifolds and apply manifold to all cells that have been marked
+  static std::vector<std::shared_ptr<Manifold<dim> > > manifold_vec;
+  manifold_vec.resize(manifold_ids.size());
+
+  for(unsigned int i=0;i<manifold_ids.size();++i)
+  {
+   for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
+   {
+     if(cell->manifold_id() == manifold_ids[i])
+     {
+       manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
+           static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
+       triangulation->set_manifold(manifold_ids[i],*(manifold_vec[i]));
+     }
+   }
+  }
+
+  triangulation->refine_global(n_refine_space);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
@@ -335,112 +396,59 @@ double TempGradientBC<dim>::value(const Point<dim>   &/*p*/,
   return result;
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
+
+namespace CompNS
+{
 
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-  std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
-  unsigned int const                                       n_refine_space,
+void set_boundary_conditions(
   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
-  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy,
-  std::vector<GridTools::PeriodicFacePair<typename
-    Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
+  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy)
 {
- Point<dim> center;
- center[0] = X_C;
- center[1] = Y_C;
+  //inflow and upper/lower walls: 0, outflow: 1, cylinder: 2
 
- // apply this manifold for all mesh types
- Point<dim> direction;
- direction[dim-1] = 1.;
+  // zero function scalar
+  std::shared_ptr<Function<dim> > zero_function_scalar;
+  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
 
- static std::shared_ptr<Manifold<dim> > cylinder_manifold;
+  // zero function vectorial
+  std::shared_ptr<Function<dim> > zero_function_vectorial;
+  zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
 
- if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
- {
-   cylinder_manifold = std::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
-                                           static_cast<Manifold<dim>*>(new CylindricalManifold<dim>(direction, center)));
- }
- else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
- {
-   cylinder_manifold = std::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new MyCylindricalManifold<dim>(center)));
- }
- else
- {
-   AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-       ExcMessage("Specified manifold type not implemented"));
- }
+  // density
 
- create_triangulation(*triangulation);
- triangulation->set_manifold(MANIFOLD_ID, *cylinder_manifold);
+  // For Neumann boundaries, no value is prescribed (only first derivative of density occurs in equations).
+  // Hence the specified function is irrelevant (i.e., it is not used).
+  boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
+  boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_scalar));
+  boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_scalar));
 
- // generate vector of manifolds and apply manifold to all cells that have been marked
- static std::vector<std::shared_ptr<Manifold<dim> > > manifold_vec;
- manifold_vec.resize(manifold_ids.size());
+  // velocity
+  std::shared_ptr<Function<dim> > velocity_bc;
+  velocity_bc.reset(new VelocityBC<dim>());
+  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,velocity_bc));
+  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,velocity_bc));
+  boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_vectorial));
 
- for(unsigned int i=0;i<manifold_ids.size();++i)
- {
-   for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
-   {
-     if(cell->manifold_id() == manifold_ids[i])
-     {
-       manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
-           static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
-       triangulation->set_manifold(manifold_ids[i],*(manifold_vec[i]));
-     }
-   }
- }
+  // pressure
+  std::shared_ptr<Function<dim> > pressure_bc;
+  pressure_bc.reset(new PressureBC<dim>());
+  boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,pressure_bc));
+  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
+  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_scalar));
 
- triangulation->refine_global(n_refine_space);
+  // energy: prescribe temperature
+  boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Temperature));
+  boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(1,CompNS::EnergyBoundaryVariable::Temperature));
+  boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(2,CompNS::EnergyBoundaryVariable::Temperature));
 
- //inflow and upper/lower walls: 0, outflow: 1, cylinder: 2
-
- // zero function scalar
- std::shared_ptr<Function<dim> > zero_function_scalar;
- zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
-
- // zero function vectorial
- std::shared_ptr<Function<dim> > zero_function_vectorial;
- zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
-
- // density
-
- // For Neumann boundaries, no value is prescribed (only first derivative of density occurs in equations).
- // Hence the specified function is irrelevant (i.e., it is not used).
- boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
- boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_scalar));
- boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_scalar));
-
- // velocity
- std::shared_ptr<Function<dim> > velocity_bc;
- velocity_bc.reset(new VelocityBC<dim>());
- boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,velocity_bc));
- boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,velocity_bc));
- boundary_descriptor_velocity->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_vectorial));
-
- // pressure
- std::shared_ptr<Function<dim> > pressure_bc;
- pressure_bc.reset(new PressureBC<dim>());
- boundary_descriptor_pressure->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,pressure_bc));
- boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
- boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,zero_function_scalar));
-
- // energy: prescribe temperature
- boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Temperature));
- boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(1,CompNS::EnergyBoundaryVariable::Temperature));
- boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(2,CompNS::EnergyBoundaryVariable::Temperature));
-
- std::shared_ptr<Function<dim> > energy_bc;
- energy_bc.reset(new EnergyBC<dim>());
- boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
- boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,energy_bc));
- boundary_descriptor_energy->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_scalar));
+  std::shared_ptr<Function<dim> > energy_bc;
+  energy_bc.reset(new EnergyBC<dim>());
+  boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
+  boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(2,energy_bc));
+  boundary_descriptor_energy->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_scalar));
 
  // test alternative temperature boundary conditions with heat flux
 // std::shared_ptr<Function<dim> > energy_bc;
@@ -505,6 +513,6 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   return pp;
 }
 
-
+}
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_ */

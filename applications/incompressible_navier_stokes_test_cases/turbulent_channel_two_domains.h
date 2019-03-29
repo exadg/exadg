@@ -307,100 +307,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
 /**************************************************************************************/
 /*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
-/*                                                                                    */
-/**************************************************************************************/
-
-template<int dim>
-class InitialSolutionVelocity : public Function<dim>
-{
-public:
-  InitialSolutionVelocity (const unsigned int  n_components = dim,
-                           const double        time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {
-  }
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    double result = 0.0;
-
-    const double tol = 1.e-12;
-    AssertThrow(std::abs(p[1])<DIMENSIONS_X2/2.0+tol,ExcMessage("Invalid geometry parameters."));
-
-    if(dim==3)
-    {
-      if(component == 0)
-      {
-        double factor = 1.0;
-        result = -MAX_VELOCITY*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Dimension has to be dim==3."));
-    }
-
-    return result;
-  }
-};
-
-#include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
-
-template<int dim>
-class InflowProfile : public Function<dim>
-{
-public:
-  InflowProfile (const unsigned int  n_components = dim,
-                 const double        time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {
-    initialize_y_and_z_values();
-    initialize_velocity_values();
-  }
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    double result = linear_interpolation_2d_cartesian(p,Y_VALUES,Z_VALUES,VELOCITY_VALUES,component);
-
-    return result;
-  }
-};
-
-/*
- *  Right-hand side function: Implements the body force vector occuring on the
- *  right-hand side of the momentum equation of the Navier-Stokes equations
- */
-template<int dim>
-class RightHandSide : public Function<dim>
-{
-public:
-  RightHandSide (const double time = 0.)
-    :
-    Function<dim>(dim, time)
-  {}
-
-  double value (const Point<dim>    &/*p*/,
-                const unsigned int  component = 0) const
-  {
-    double result = 0.0;
-
-    //channel flow with periodic bc
-    if(component==0)
-      return 1.0;
-    else
-      return 0.0;
-
-    return result;
-  }
-};
-
-/**************************************************************************************/
-/*                                                                                    */
 /*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
 /*                                                                                    */
 /**************************************************************************************/
@@ -506,11 +412,9 @@ private:
 };
 
 template<int dim>
-void create_grid_and_set_boundary_conditions_1(
+void create_grid_and_set_boundary_ids_1(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
@@ -576,24 +480,12 @@ void create_grid_and_set_boundary_conditions_1(
      // perform grid transform
      GridTools::transform (&grid_transform<dim>, *triangulation);
    }
-
-   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
-
-   // fill boundary descriptor velocity
-   // no slip boundaries at lower and upper wall with ID=0
-   boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
-
-   // fill boundary descriptor pressure
-   // no slip boundaries at lower and upper wall with ID=0
-   boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 }
 
 template<int dim>
-void create_grid_and_set_boundary_conditions_2(
+void create_grid_and_set_boundary_ids_2(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
@@ -671,7 +563,129 @@ void create_grid_and_set_boundary_conditions_2(
     // perform grid transform
     GridTools::transform (&grid_transform<dim>, *triangulation);
   }
+}
 
+/**************************************************************************************/
+/*                                                                                    */
+/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
+/*                                                                                    */
+/**************************************************************************************/
+
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
+
+namespace IncNS
+{
+
+template<int dim>
+class InitialSolutionVelocity : public Function<dim>
+{
+public:
+  InitialSolutionVelocity (const unsigned int  n_components = dim,
+                           const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {
+  }
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
+
+    const double tol = 1.e-12;
+    AssertThrow(std::abs(p[1])<DIMENSIONS_X2/2.0+tol,ExcMessage("Invalid geometry parameters."));
+
+    if(dim==3)
+    {
+      if(component == 0)
+      {
+        double factor = 1.0;
+        result = -MAX_VELOCITY*(pow(p[1],2.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Dimension has to be dim==3."));
+    }
+
+    return result;
+  }
+};
+
+#include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
+
+template<int dim>
+class InflowProfile : public Function<dim>
+{
+public:
+  InflowProfile (const unsigned int  n_components = dim,
+                 const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {
+    initialize_y_and_z_values();
+    initialize_velocity_values();
+  }
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double result = linear_interpolation_2d_cartesian(p,Y_VALUES,Z_VALUES,VELOCITY_VALUES,component);
+
+    return result;
+  }
+};
+
+/*
+ *  Right-hand side function: Implements the body force vector occuring on the
+ *  right-hand side of the momentum equation of the Navier-Stokes equations
+ */
+template<int dim>
+class RightHandSide : public Function<dim>
+{
+public:
+  RightHandSide (const double time = 0.)
+    :
+    Function<dim>(dim, time)
+  {}
+
+  double value (const Point<dim>    &/*p*/,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
+
+    //channel flow with periodic bc
+    if(component==0)
+      return 1.0;
+    else
+      return 0.0;
+
+    return result;
+  }
+};
+
+template<int dim>
+void set_boundary_conditions_1(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
+{
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
+  // fill boundary descriptor velocity
+  // no slip boundaries at lower and upper wall with ID=0
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
+
+  // fill boundary descriptor pressure
+  // no slip boundaries at lower and upper wall with ID=0
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
+}
+
+template<int dim>
+void set_boundary_conditions_2(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
+{
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
@@ -697,7 +711,6 @@ void create_grid_and_set_boundary_conditions_2(
   // outflow boundary condition at right boundary with ID=1: set pressure to zero
   boundary_descriptor_pressure->dirichlet_bc.insert(pair(1,new Functions::ZeroFunction<dim>(1)));
 }
-
 
 template<int dim>
 void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions)
@@ -728,9 +741,6 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 }
 
 // Postprocessor
-
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
 
 template<int dim>
 struct PostProcessorDataTurbulentChannel
@@ -836,5 +846,6 @@ construct_postprocessor(InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */

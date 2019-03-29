@@ -233,91 +233,16 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
-/*                                                                                    */
-/**************************************************************************************/
-
-template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
-{
-public:
-  AnalyticalSolutionVelocity (const unsigned int  n_components = dim,
-                              const double        time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {
-    /*
-     * Use the following line to obtain different initial velocity fields.
-     * Without this line, the initial field is always the same as long as the
-     * same number of processors is used.
-     */
-//    srand(std::time(NULL));
-  }
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    double result = 0.0;
-
-    const double tol = 1.e-12;
-    AssertThrow(std::abs(p[1])<DIMENSIONS_X2/2.0+tol,ExcMessage("Invalid geometry parameters."));
-
-    AssertThrow(dim==3, ExcMessage("Dimension has to be dim==3."));
-
-    // TODO
-    if(component == 0)
-      result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./MAX_VELOCITY*std::sin(p[2]*8.));
-    else if(component == 2)
-      result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
-
-  //  if(component == 0)
-  //  {
-  //    double factor = 1.0;
-  //    result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
-  //  }
-
-    return result;
-  }
-};
-
-template<int dim>
-class RightHandSide : public Function<dim>
-{
-public:
-  RightHandSide (const double time = 0.)
-    :
-    Function<dim>(dim, time)
-  {}
-
-  double value (const Point<dim>    &/*p*/,
-                const unsigned int  component = 0) const
-  {
-    double result = 0.0;
-
-    //channel flow with periodic bc
-    if(component==0)
-      return 1.0;
-    else
-      return 0.0;
-
-    return result;
-  }
-};
-
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
 /*                                                                                    */
 /**************************************************************************************/
 
 #include "../grid_tools/grid_functions_turbulent_channel.h"
 
 template<int dim>
-void create_grid_and_set_boundary_conditions(
+void create_grid_and_set_boundary_ids(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
@@ -406,7 +331,93 @@ void create_grid_and_set_boundary_conditions(
      // perform grid transform
      GridTools::transform (&grid_transform<dim>, *triangulation);
    }
+}
 
+/**************************************************************************************/
+/*                                                                                    */
+/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
+/*                                                                                    */
+/**************************************************************************************/
+
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
+
+namespace IncNS
+{
+
+template<int dim>
+class AnalyticalSolutionVelocity : public Function<dim>
+{
+public:
+  AnalyticalSolutionVelocity (const unsigned int  n_components = dim,
+                              const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {
+    /*
+     * Use the following line to obtain different initial velocity fields.
+     * Without this line, the initial field is always the same as long as the
+     * same number of processors is used.
+     */
+//    srand(std::time(NULL));
+  }
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
+
+    const double tol = 1.e-12;
+    AssertThrow(std::abs(p[1])<DIMENSIONS_X2/2.0+tol,ExcMessage("Invalid geometry parameters."));
+
+    AssertThrow(dim==3, ExcMessage("Dimension has to be dim==3."));
+
+    // TODO
+    if(component == 0)
+      result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./MAX_VELOCITY*std::sin(p[2]*8.));
+    else if(component == 2)
+      result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
+
+  //  if(component == 0)
+  //  {
+  //    double factor = 1.0;
+  //    result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
+  //  }
+
+    return result;
+  }
+};
+
+template<int dim>
+class RightHandSide : public Function<dim>
+{
+public:
+  RightHandSide (const double time = 0.)
+    :
+    Function<dim>(dim, time)
+  {}
+
+  double value (const Point<dim>    &/*p*/,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
+
+    //channel flow with periodic bc
+    if(component==0)
+      return 1.0;
+    else
+      return 0.0;
+
+    return result;
+  }
+};
+
+
+template<int dim>
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
+{
    // set boundary conditions
    typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
@@ -435,9 +446,6 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 }
 
 // Postprocessor
-
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
 
 template<int dim>
 struct PostProcessorDataTurbulentChannel
@@ -526,5 +534,6 @@ construct_postprocessor(InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */

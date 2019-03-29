@@ -505,6 +505,17 @@ public:
                   ExcMessage("Parameter must be defined"));
     }
 
+    if(solver_type == SolverType::Steady)
+    {
+      if(use_divergence_penalty == true || use_continuity_penalty == true)
+      {
+        AssertThrow(add_penalty_terms_to_monolithic_system == true,
+                    ExcMessage(
+                      "Use add_penalty_terms_to_monolithic_system = true, "
+                      "otherwise the penalty terms will be ignored by the steady solver."));
+      }
+    }
+
     // HIGH-ORDER DUAL SPLITTING SCHEME
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -1664,8 +1675,11 @@ public:
   // plot along lines
   LinePlotData<dim> line_plot_data;
 
-  // mean flow
+  // mean velocity or flow rate
   MeanVelocityCalculatorData<dim> mean_velocity_data;
+
+  // flow rate for a vector of boundaries
+  FlowRateCalculatorData<dim> flow_rate_data;
 };
 
 } // namespace IncNS

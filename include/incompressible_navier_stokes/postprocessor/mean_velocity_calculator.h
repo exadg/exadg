@@ -95,7 +95,7 @@ public:
         area_has_been_initialized = true;
       }
 
-      Number flow_rate = do_calculate_flow_rate(velocity);
+      Number flow_rate = do_calculate_flow_rate_area(velocity);
 
       AssertThrow(area_has_been_initialized == true, ExcMessage("Area has not been initialized."));
       AssertThrow(this->area != 0.0, ExcMessage("Area has not been initialized."));
@@ -111,6 +111,10 @@ public:
     }
   }
 
+  /*
+   * Calculate mean velocity (only makes sense if the domain has a constant cross-section area in
+   * streamwise direction
+   */
   Number
   calculate_mean_velocity_volume(VectorType const & velocity, double const & time)
   {
@@ -128,6 +132,29 @@ public:
       write_output(mean_velocity, time, "Mean velocity [m/s]");
 
       return mean_velocity;
+    }
+    else
+    {
+      return -1.0;
+    }
+  }
+
+  /*
+   * Calculate flow rate in m^3/s, for example for problems with non-constant cross-section area. To
+   * obtain the flow rate, the length of the domain in streamwise direction has to be specified.
+   */
+  Number
+  calculate_flow_rate_volume(VectorType const & velocity,
+                             double const &     time,
+                             double const &     length)
+  {
+    if(data.calculate == true)
+    {
+      Number flow_rate = 1.0 / length * do_calculate_flow_rate_volume(velocity);
+
+      write_output(flow_rate, time, "Flow rate [m^3/s]");
+
+      return flow_rate;
     }
     else
     {
@@ -195,19 +222,20 @@ private:
 
     Number area = 0.0;
 
-    for(unsigned int face = matrix_free_data.n_macro_inner_faces();
-        face < (matrix_free_data.n_macro_inner_faces() + matrix_free_data.n_macro_boundary_faces());
+    for(unsigned int face = matrix_free_data.n_inner_face_batches();
+        face <
+        (matrix_free_data.n_inner_face_batches() + matrix_free_data.n_boundary_face_batches());
         face++)
     {
-      fe_eval_velocity.reinit(face);
-      fe_eval_velocity.fill_JxW_values(JxW_values);
-
       typename std::set<types::boundary_id>::iterator it;
       types::boundary_id boundary_id = matrix_free_data.get_boundary_id(face);
 
       it = data.boundary_IDs.find(boundary_id);
       if(it != data.boundary_IDs.end())
       {
+        fe_eval_velocity.reinit(face);
+        fe_eval_velocity.fill_JxW_values(JxW_values);
+
         VectorizedArray<Number> area_local = make_vectorized_array<Number>(0.0);
 
         for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
@@ -295,21 +323,22 @@ private:
     // initialize with zero since we accumulate into this variable
     Number flow_rate = 0.0;
 
-    for(unsigned int face = matrix_free_data.n_macro_inner_faces();
-        face < (matrix_free_data.n_macro_inner_faces() + matrix_free_data.n_macro_boundary_faces());
+    for(unsigned int face = matrix_free_data.n_inner_face_batches();
+        face <
+        (matrix_free_data.n_inner_face_batches() + matrix_free_data.n_boundary_face_batches());
         face++)
     {
-      fe_eval_velocity.reinit(face);
-      fe_eval_velocity.read_dof_values(velocity);
-      fe_eval_velocity.evaluate(true, false);
-      fe_eval_velocity.fill_JxW_values(JxW_values);
-
       typename std::set<types::boundary_id>::iterator it;
       types::boundary_id boundary_id = matrix_free_data.get_boundary_id(face);
 
       it = data.boundary_IDs.find(boundary_id);
       if(it != data.boundary_IDs.end())
       {
+        fe_eval_velocity.reinit(face);
+        fe_eval_velocity.read_dof_values(velocity);
+        fe_eval_velocity.evaluate(true, false);
+        fe_eval_velocity.fill_JxW_values(JxW_values);
+
         VectorizedArray<Number> flow_rate_face = make_vectorized_array<Number>(0.0);
 
         for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
@@ -349,6 +378,22 @@ private:
     mean_velocity /= this->volume;
 
     return mean_velocity;
+  }
+
+  Number
+  do_calculate_flow_rate_volume(VectorType const & velocity)
+  {
+    std::vector<Number> dst(1, 0.0);
+    matrix_free_data.cell_loop(
+      &MeanVelocityCalculator<dim, fe_degree, Number>::local_calculate_flow_rate_volume,
+      this,
+      dst,
+      velocity);
+
+    // sum over all MPI processes
+    Number flow_rate_times_length = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
+
+    return flow_rate_times_length;
   }
 
   void
@@ -400,6 +445,199 @@ private:
   bool                                    clear_files;
 };
 
+/*
+ * In contrast to the above class, a vector of flow rates is calculated where the different entries
+ * of the vector correspond to different boundary IDs, i.e., one outflow boundary may only consist
+ * of faces with the same boundary ID
+ */
+template<int dim>
+struct FlowRateCalculatorData
+{
+  FlowRateCalculatorData() : calculate(false), write_to_file(false), filename_prefix("flow_rate")
+  {
+  }
+
+  void
+  print(ConditionalOStream & pcout)
+  {
+    if(calculate == true)
+    {
+      pcout << "  Flow rate calculator:" << std::endl;
+
+      print_parameter(pcout, "Calculate flow rate", calculate);
+      print_parameter(pcout, "Write results to file", write_to_file);
+      if(write_to_file == true)
+        print_parameter(pcout, "Filename", filename_prefix);
+    }
+  }
+
+  // calculate?
+  bool calculate;
+
+  // Set containing boundary ID's of the surface area
+  // for which we want to calculate the mean velocity.
+  std::set<types::boundary_id> boundary_IDs;
+
+  // write results to file?
+  bool write_to_file;
+
+  // filename
+  std::string filename_prefix;
+};
+
+template<int dim, int fe_degree, typename Number>
+class FlowRateCalculator
+{
+public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  FlowRateCalculator(MatrixFree<dim, Number> const &     matrix_free_data_in,
+                     const DoFHandler<dim> &             dof_handler_velocity_in,
+                     DofQuadIndexData const &            dof_quad_index_data_in,
+                     FlowRateCalculatorData<dim> const & data_in)
+    : data(data_in),
+      matrix_free_data(matrix_free_data_in),
+      dof_quad_index_data(dof_quad_index_data_in),
+      clear_files(true),
+      communicator(dynamic_cast<const parallel::Triangulation<dim> *>(
+                     &dof_handler_velocity_in.get_triangulation()) ?
+                     (dynamic_cast<const parallel::Triangulation<dim> *>(
+                        &dof_handler_velocity_in.get_triangulation())
+                        ->get_communicator()) :
+                     MPI_COMM_SELF)
+  {
+  }
+
+  Number
+  calculate_flow_rates(VectorType const &                     velocity,
+                       double const &                         time,
+                       std::map<types::boundary_id, Number> & flow_rates)
+  {
+    if(data.calculate == true)
+    {
+      do_calculate_flow_rates(velocity, flow_rates);
+
+      // initialize with zero since we accumulate into this variable
+      Number flow_rate = 0.0;
+      for(auto it = flow_rates.begin(); it != flow_rates.end(); ++it)
+      {
+        flow_rate += it->second;
+      }
+
+      write_output(flow_rate, time, "Flow rate [m^3/s]");
+
+      return flow_rate;
+    }
+    else
+    {
+      return -1.0;
+    }
+  }
+
+
+private:
+  void
+  write_output(Number const & value, double const & time, std::string const & name)
+  {
+    // write output file
+    if(data.write_to_file == true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::ostringstream filename;
+      filename << data.filename_prefix;
+
+      std::ofstream f;
+      if(clear_files == true)
+      {
+        f.open(filename.str().c_str(), std::ios::trunc);
+        f << std::endl << "  Time                " + name << std::endl;
+
+        clear_files = false;
+      }
+      else
+      {
+        f.open(filename.str().c_str(), std::ios::app);
+      }
+
+      unsigned int precision = 12;
+      f << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << time
+        << std::setw(precision + 8) << value << std::endl;
+    }
+  }
+
+  void
+  do_calculate_flow_rates(VectorType const &                     velocity,
+                          std::map<types::boundary_id, Number> & flow_rates)
+  {
+    // zero flow rates since we sum into these variables
+    for(auto iterator = flow_rates.begin(); iterator != flow_rates.end(); ++iterator)
+    {
+      iterator->second = 0.0;
+    }
+
+    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval_velocity(
+      matrix_free_data,
+      true,
+      dof_quad_index_data.dof_index_velocity,
+      dof_quad_index_data.quad_index_velocity);
+
+    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval_velocity.n_q_points);
+
+    for(unsigned int face = matrix_free_data.n_inner_face_batches();
+        face <
+        (matrix_free_data.n_inner_face_batches() + matrix_free_data.n_boundary_face_batches());
+        face++)
+    {
+      typename std::set<types::boundary_id>::iterator it;
+      types::boundary_id boundary_id = matrix_free_data.get_boundary_id(face);
+
+      it = data.boundary_IDs.find(boundary_id);
+      if(it != data.boundary_IDs.end())
+      {
+        fe_eval_velocity.reinit(face);
+        fe_eval_velocity.read_dof_values(velocity);
+        fe_eval_velocity.evaluate(true, false);
+        fe_eval_velocity.fill_JxW_values(JxW_values);
+
+        VectorizedArray<Number> flow_rate_face = make_vectorized_array<Number>(0.0);
+
+        for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
+        {
+          flow_rate_face +=
+            JxW_values[q] * fe_eval_velocity.get_value(q) * fe_eval_velocity.get_normal_vector(q);
+        }
+
+        // sum over all entries of VectorizedArray
+        for(unsigned int n = 0; n < matrix_free_data.n_active_entries_per_face_batch(face); ++n)
+          flow_rates.at(boundary_id) += flow_rate_face[n];
+      }
+    }
+
+    std::vector<Number> flow_rates_vector(flow_rates.size());
+    auto                iterator = flow_rates.begin();
+    for(unsigned int counter = 0; counter < flow_rates.size(); ++counter)
+    {
+      flow_rates_vector[counter] = (iterator++)->second;
+    }
+
+    Utilities::MPI::sum(ArrayView<const double>(&(*flow_rates_vector.begin()),
+                                                flow_rates_vector.size()),
+                        communicator,
+                        ArrayView<double>(&(*flow_rates_vector.begin()), flow_rates_vector.size()));
+
+    iterator = flow_rates.begin();
+    for(unsigned int counter = 0; counter < flow_rates.size(); ++counter)
+    {
+      (iterator++)->second = flow_rates_vector[counter];
+    }
+  }
+
+  FlowRateCalculatorData<dim> const & data;
+  MatrixFree<dim, Number> const &     matrix_free_data;
+  DofQuadIndexData                    dof_quad_index_data;
+  bool                                clear_files;
+
+  MPI_Comm communicator;
+};
 
 } // namespace IncNS
 

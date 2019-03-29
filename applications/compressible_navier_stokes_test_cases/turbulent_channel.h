@@ -170,6 +170,106 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   turb_ch_data.filename_prefix = OUTPUT_FOLDER + FILENAME;
 }
 
+/**************************************************************************************/
+/*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+#include "../grid_tools/grid_functions_turbulent_channel.h"
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+  std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
+  unsigned int const                                       n_refine_space,
+  std::vector<GridTools::PeriodicFacePair<typename
+    Triangulation<dim>::cell_iterator> >                   &periodic_faces)
+{
+  /* --------------- Generate grid ------------------- */
+  if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
+  {
+    Point<dim> coordinates;
+    coordinates[0] = DIMENSIONS_X1;
+    coordinates[1] = DIMENSIONS_X2/2.0; // dimension in y-direction is 2.0, see also function grid_transform() that maps the y-coordinate from [0,1] to [-1,1]
+    if (dim == 3)
+      coordinates[2] = DIMENSIONS_X3;
+
+    // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
+    std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
+    GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(),coordinates);
+
+    typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+    for(;cell!=endc;++cell)
+    {
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+        // x-direction
+        if((std::fabs(cell->face(face_number)->center()(0) - 0.0)< 1e-12))
+          cell->face(face_number)->set_all_boundary_ids (0+10);
+        else if((std::fabs(cell->face(face_number)->center()(0) - DIMENSIONS_X1)< 1e-12))
+          cell->face(face_number)->set_all_boundary_ids (1+10);
+        // z-direction
+        else if((std::fabs(cell->face(face_number)->center()(2) - 0-0)< 1e-12))
+          cell->face(face_number)->set_all_boundary_ids (2+10);
+        else if((std::fabs(cell->face(face_number)->center()(2) - DIMENSIONS_X3)< 1e-12))
+          cell->face(face_number)->set_all_boundary_ids (3+10);
+      }
+    }
+  }
+  else if (GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
+  {
+    Tensor<1,dim> dimensions;
+    dimensions[0] = DIMENSIONS_X1;
+    dimensions[1] = DIMENSIONS_X2;
+    if(dim==3)
+      dimensions[2] = DIMENSIONS_X3;
+
+    // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
+    AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
+        ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
+
+    std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
+    GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(-dimensions/2.0),Point<dim>(dimensions/2.0));
+
+    // manifold
+    unsigned int manifold_id = 1;
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
+    {
+      cell->set_all_manifold_ids(manifold_id);
+    }
+
+    // apply mesh stretching towards no-slip boundaries in y-direction
+    static const ManifoldTurbulentChannel<dim> manifold(dimensions);
+    triangulation->set_manifold(manifold_id, manifold);
+
+    //periodicity in x- and z-direction
+    //add 10 to avoid conflicts with dirichlet boundary, which is 0
+    triangulation->begin()->face(0)->set_all_boundary_ids(0+10);
+    triangulation->begin()->face(1)->set_all_boundary_ids(1+10);
+    //periodicity in z-direction
+    if (dim == 3)
+    {
+      triangulation->begin()->face(4)->set_all_boundary_ids(2+10);
+      triangulation->begin()->face(5)->set_all_boundary_ids(3+10);
+    }
+  }
+
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
+  if (dim == 3)
+    GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
+
+  triangulation->add_periodicity(periodic_faces);
+
+  // perform global refinements
+  triangulation->refine_global(n_refine_space);
+
+  if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
+  {
+    // perform grid transform
+    GridTools::transform (&grid_transform<dim>, *triangulation);
+  }
+}
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -253,166 +353,75 @@ public:
 };
 
 template<int dim>
- class RightHandSideVelocity : public Function<dim>
+class RightHandSideVelocity : public Function<dim>
+{
+public:
+ RightHandSideVelocity (const unsigned int   n_components = dim,
+                        const double         time = 0.)
+   :
+   Function<dim>(n_components, time)
+ {}
+
+ virtual ~RightHandSideVelocity(){};
+
+ virtual double value (const Point<dim>    &p,
+                       const unsigned int  component = 0) const;
+};
+
+template<int dim>
+double RightHandSideVelocity<dim>::value(const Point<dim>   &/*p*/,
+                                        const unsigned int component) const
+{
+ double result = 0.0;
+
+ if(component==0)
  {
- public:
-   RightHandSideVelocity (const unsigned int   n_components = dim,
-                          const double         time = 0.)
-     :
-     Function<dim>(n_components, time)
-   {}
-
-   virtual ~RightHandSideVelocity(){};
-
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
-
- template<int dim>
- double RightHandSideVelocity<dim>::value(const Point<dim>   &/*p*/,
-                                          const unsigned int component) const
- {
-   double result = 0.0;
-
-   if(component==0)
-   {
-     result = RHO_0;
-   }
-
-   return result;
+   result = RHO_0;
  }
 
- /**************************************************************************************/
- /*                                                                                    */
- /*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
- /*                                                                                    */
- /**************************************************************************************/
+ return result;
+}
 
-#include "../grid_tools/grid_functions_turbulent_channel.h"
+// postprocessor
+#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
 
- template<int dim>
- void create_grid_and_set_boundary_conditions(
-   std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
-   unsigned int const                                       n_refine_space,
-   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
-   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
-   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
-   std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy,
-   std::vector<GridTools::PeriodicFacePair<typename
-     Triangulation<dim>::cell_iterator> >                   &periodic_faces)
- {
-    /* --------------- Generate grid ------------------- */
-    if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
-    {
-      Point<dim> coordinates;
-      coordinates[0] = DIMENSIONS_X1;
-      coordinates[1] = DIMENSIONS_X2/2.0; // dimension in y-direction is 2.0, see also function grid_transform() that maps the y-coordinate from [0,1] to [-1,1]
-      if (dim == 3)
-        coordinates[2] = DIMENSIONS_X3;
+namespace CompNS
+{
 
-      // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-      std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
-      GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(),coordinates);
+template<int dim>
+void set_boundary_conditions(
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
+  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy)
+{
+  // fill boundary descriptors
 
-      typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-      for(;cell!=endc;++cell)
-      {
-        for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-        {
-          // x-direction
-          if((std::fabs(cell->face(face_number)->center()(0) - 0.0)< 1e-12))
-            cell->face(face_number)->set_all_boundary_ids (0+10);
-          else if((std::fabs(cell->face(face_number)->center()(0) - DIMENSIONS_X1)< 1e-12))
-            cell->face(face_number)->set_all_boundary_ids (1+10);
-          // z-direction
-          else if((std::fabs(cell->face(face_number)->center()(2) - 0-0)< 1e-12))
-            cell->face(face_number)->set_all_boundary_ids (2+10);
-          else if((std::fabs(cell->face(face_number)->center()(2) - DIMENSIONS_X3)< 1e-12))
-            cell->face(face_number)->set_all_boundary_ids (3+10);
-        }
-      }
-    }
-    else if (GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
-    {
-      Tensor<1,dim> dimensions;
-      dimensions[0] = DIMENSIONS_X1;
-      dimensions[1] = DIMENSIONS_X2;
-      if(dim==3)
-        dimensions[2] = DIMENSIONS_X3;
+  // zero function scalar
+  std::shared_ptr<Function<dim> > zero_function_scalar;
+  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
 
-      // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-      AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
-          ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
+  // zero function vectorial
+  std::shared_ptr<Function<dim> > zero_function_vectorial;
+  zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
 
-      std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
-      GridGenerator::subdivided_hyper_rectangle (*triangulation, refinements,Point<dim>(-dimensions/2.0),Point<dim>(dimensions/2.0));
+  // For Neumann boundaries, no value is prescribed (only first derivative of density occurs in equations).
+  // Hence the specified function is irrelevant (i.e., it is not used).
+  boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
 
-      // manifold
-      unsigned int manifold_id = 1;
-      for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
-      {
-        cell->set_all_manifold_ids(manifold_id);
-      }
+  // velocity
+  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_vectorial));
 
-      // apply mesh stretching towards no-slip boundaries in y-direction
-      static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-      triangulation->set_manifold(manifold_id, manifold);
+  // pressure
+  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
 
-      //periodicity in x- and z-direction
-      //add 10 to avoid conflicts with dirichlet boundary, which is 0
-      triangulation->begin()->face(0)->set_all_boundary_ids(0+10);
-      triangulation->begin()->face(1)->set_all_boundary_ids(1+10);
-      //periodicity in z-direction
-      if (dim == 3)
-      {
-        triangulation->begin()->face(4)->set_all_boundary_ids(2+10);
-        triangulation->begin()->face(5)->set_all_boundary_ids(3+10);
-      }
-    }
+  // energy: prescribe temperature
+  boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Temperature));
 
-    auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
-    GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
-    if (dim == 3)
-      GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
-
-    triangulation->add_periodicity(periodic_faces);
-
-    // perform global refinements
-    triangulation->refine_global(n_refine_space);
-
-    if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
-    {
-      // perform grid transform
-      GridTools::transform (&grid_transform<dim>, *triangulation);
-    }
-
-    // fill boundary descriptors
-
-    // zero function scalar
-    std::shared_ptr<Function<dim> > zero_function_scalar;
-    zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
-
-    // zero function vectorial
-    std::shared_ptr<Function<dim> > zero_function_vectorial;
-    zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
-
-    // For Neumann boundaries, no value is prescribed (only first derivative of density occurs in equations).
-    // Hence the specified function is irrelevant (i.e., it is not used).
-    boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
-
-    // velocity
-    boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_vectorial));
-
-    // pressure
-    boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
-
-    // energy: prescribe temperature
-    boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Temperature));
-
-    std::shared_ptr<Function<dim> > energy_bc;
-    energy_bc.reset(new EnergyBC<dim>());
-    boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
- }
+  std::shared_ptr<Function<dim> > energy_bc;
+  energy_bc.reset(new EnergyBC<dim>());
+  boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
+}
 
 template<int dim>
 void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_functions)
@@ -447,9 +456,6 @@ void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > a
 {
   analytical_solution->solution.reset(new Solution<dim>());
 }
-
-// postprocessor
-#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
 
 template<int dim>
 struct PostProcessorDataTurbulentChannel
@@ -540,5 +546,6 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */

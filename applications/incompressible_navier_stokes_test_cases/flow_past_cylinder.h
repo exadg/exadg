@@ -229,9 +229,78 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+   std::shared_ptr<parallel::Triangulation<dim>>    triangulation,
+   unsigned int const                               n_refine_space,
+   std::vector<GridTools::PeriodicFacePair<typename
+     Triangulation<dim>::cell_iterator> >           &/*periodic_faces*/)
+{
+ Point<dim> center;
+ center[0] = X_C;
+ center[1] = Y_C;
+
+ Point<3> center_cyl_manifold;
+ center_cyl_manifold[0] = center[0];
+ center_cyl_manifold[1] = center[1];
+
+ // apply this manifold for all mesh types
+ Point<3> direction;
+ direction[2] = 1.;
+
+ static std::shared_ptr<Manifold<dim> > cylinder_manifold;
+
+ if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
+ {
+   cylinder_manifold = std::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
+                                           reinterpret_cast<Manifold<dim>*>(new CylindricalManifold<3>(direction, center_cyl_manifold)));
+ }
+ else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
+ {
+   cylinder_manifold = std::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new MyCylindricalManifold<dim>(center)));
+ }
+ else
+ {
+   AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
+       ExcMessage("Specified manifold type not implemented"));
+ }
+
+ create_triangulation(*triangulation);
+ triangulation->set_manifold(MANIFOLD_ID, *cylinder_manifold);
+
+ // generate vector of manifolds and apply manifold to all cells that have been marked
+ static std::vector<std::shared_ptr<Manifold<dim> > > manifold_vec;
+ manifold_vec.resize(manifold_ids.size());
+
+ for(unsigned int i=0;i<manifold_ids.size();++i)
+ {
+   for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
+   {
+     if(cell->manifold_id() == manifold_ids[i])
+     {
+       manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
+           static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
+       triangulation->set_manifold(manifold_ids[i],*(manifold_vec[i]));
+     }
+   }
+ }
+
+ triangulation->refine_global(n_refine_space);
+}
+
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
+
+namespace IncNS
+{
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -307,67 +376,11 @@ public:
   }
 };
 
-
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-   std::shared_ptr<parallel::Triangulation<dim>>    triangulation,
-   unsigned int const                               n_refine_space,
-   std::shared_ptr<BoundaryDescriptorU<dim> >       boundary_descriptor_velocity,
-   std::shared_ptr<BoundaryDescriptorP<dim> >       boundary_descriptor_pressure,
-   std::vector<GridTools::PeriodicFacePair<typename
-     Triangulation<dim>::cell_iterator> >           &/*periodic_faces*/)
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
- Point<dim> center;
- center[0] = X_C;
- center[1] = Y_C;
-
- Point<3> center_cyl_manifold;
- center_cyl_manifold[0] = center[0];
- center_cyl_manifold[1] = center[1];
-
- // apply this manifold for all mesh types
- Point<3> direction;
- direction[2] = 1.;
-
- static std::shared_ptr<Manifold<dim> > cylinder_manifold;
-
- if(MANIFOLD_TYPE == ManifoldType::SurfaceManifold)
- {
-   cylinder_manifold = std::shared_ptr<Manifold<dim> >(dim == 2 ? static_cast<Manifold<dim>*>(new SphericalManifold<dim>(center)) :
-                                           reinterpret_cast<Manifold<dim>*>(new CylindricalManifold<3>(direction, center_cyl_manifold)));
- }
- else if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
- {
-   cylinder_manifold = std::shared_ptr<Manifold<dim> >(static_cast<Manifold<dim>*>(new MyCylindricalManifold<dim>(center)));
- }
- else
- {
-   AssertThrow(MANIFOLD_TYPE == ManifoldType::SurfaceManifold || MANIFOLD_TYPE == ManifoldType::VolumeManifold,
-       ExcMessage("Specified manifold type not implemented"));
- }
-
- create_triangulation(*triangulation);
- triangulation->set_manifold(MANIFOLD_ID, *cylinder_manifold);
-
- // generate vector of manifolds and apply manifold to all cells that have been marked
- static std::vector<std::shared_ptr<Manifold<dim> > > manifold_vec;
- manifold_vec.resize(manifold_ids.size());
-
- for(unsigned int i=0;i<manifold_ids.size();++i)
- {
-   for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
-   {
-     if(cell->manifold_id() == manifold_ids[i])
-     {
-       manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
-           static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
-       triangulation->set_manifold(manifold_ids[i],*(manifold_vec[i]));
-     }
-   }
- }
-
- triangulation->refine_global(n_refine_space);
-
  // set boundary conditions
  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
@@ -419,6 +432,6 @@ construct_postprocessor(InputParameters<dim> const &param)
   return pp;
 }
 
-
+}
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_ */

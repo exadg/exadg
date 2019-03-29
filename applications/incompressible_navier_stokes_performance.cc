@@ -281,13 +281,14 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup()
 {
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions(triangulation,
-                                          n_refine_space,
-                                          boundary_descriptor_velocity,
-                                          boundary_descriptor_pressure,
-                                          periodic_faces);
+  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
 
   print_grid_data(pcout, n_refine_space, *triangulation);
+
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
+
+  IncNS::set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
 
   // setup Navier-Stokes operation
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));

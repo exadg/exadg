@@ -55,7 +55,7 @@ void InputParameters<dim>::set_input_parameters()
   // PHYSICAL QUANTITIES
   start_time = 0.0;
   end_time = 10.0;
-  viscosity = 2.0e-2;
+  viscosity = 1;
 
 
   // TEMPORAL DISCRETIZATION
@@ -85,6 +85,9 @@ void InputParameters<dim>::set_input_parameters()
 
   // special case: pure DBC's
   pure_dirichlet_bc = false;
+
+  // divergence and continuity penalty terms
+  add_penalty_terms_to_monolithic_system = true;
 
   // PROJECTION METHODS
 
@@ -140,6 +143,8 @@ void InputParameters<dim>::set_input_parameters()
 
   // preconditioner velocity/momentum block
   preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+  multigrid_data_velocity_block.type = MultigridType::hMG;
   multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi;
   multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
   multigrid_data_velocity_block.smoother_data.iterations = 5;
@@ -175,9 +180,42 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+{
+  std::vector<unsigned int> repetitions({2,1});
+  Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
+  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+
+  // set boundary indicator
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+    {
+     if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
+        cell->face(face_number)->set_boundary_id (1);
+    }
+  }
+  triangulation->refine_global(n_refine_space);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
+
+namespace IncNS
+{
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -231,38 +269,11 @@ public:
   }
 };
 
-
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  std::vector<unsigned int> repetitions({2,1});
-  Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
-  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
-
-  // set boundary indicator
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-     if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
-        cell->face(face_number)->set_boundary_id (1);
-    }
-  }
-  triangulation->refine_global(n_refine_space);
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
@@ -312,5 +323,6 @@ construct_postprocessor(InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_COUETTE_H_ */

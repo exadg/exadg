@@ -1,7 +1,7 @@
 /*
  * poisson_lung.cc
  *
- * program to test different solver configurations on lung triangulation 
+ * program to test different solver configurations on lung triangulation
  *
  *  Created on: 2018
  *      Author: münch
@@ -34,8 +34,8 @@
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-#include "poisson_test_cases/lung.h"
 #include "grid_tools/lung/alternative.h"
+#include "poisson_test_cases/lung.h"
 
 #include "grid_tools/lung/lung_environment.h"
 
@@ -254,8 +254,17 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
 #if VERSION == 0 || VERSION == 1 || VERSION == 4
   // create triangulation
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
-    dealii::GridGenerator::lung(
-      *tria, generations, n_refine_space, n_refine_space, create_tree, timings);
+  {
+    unsigned int outlet_id_first = 2, outlet_id_last = 2;
+    dealii::GridGenerator::lung(*tria,
+                                generations,
+                                n_refine_space,
+                                n_refine_space,
+                                create_tree,
+                                timings,
+                                outlet_id_first,
+                                outlet_id_last);
+  }
   else
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
 #elif VERSION == 2 || VERSION == 3
