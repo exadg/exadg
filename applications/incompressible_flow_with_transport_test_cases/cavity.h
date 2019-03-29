@@ -30,7 +30,12 @@ unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 unsigned int const FE_DEGREE_SCALAR = FE_DEGREE_VELOCITY;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE = 4;
+unsigned int const REFINE_STEPS_SPACE_MIN = 4;
+unsigned int const REFINE_STEPS_SPACE_MAX = 4;
+
+// set the number of refine levels for temporal convergence tests
+unsigned int const REFINE_STEPS_TIME_MIN = 0;
+unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
@@ -427,6 +432,10 @@ construct_postprocessor(InputParameters<dim> const &param)
 }
 
 }
+
+#include "convection_diffusion/user_interface/analytical_solution.h"
+#include "convection_diffusion/user_interface/boundary_descriptor.h"
+#include "convection_diffusion/user_interface/field_functions.h"
 
 namespace ConvDiff
 {
