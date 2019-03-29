@@ -193,9 +193,53 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+{
+  AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
+
+  const double left = 0.0, right = 1.0;
+  GridGenerator::hyper_cube(*triangulation,left,right);
+
+  // periodicity in x-,y-, and z-direction
+
+  // x-direction
+  triangulation->begin()->face(0)->set_all_boundary_ids(0);
+  triangulation->begin()->face(1)->set_all_boundary_ids(1);
+  // y-direction
+  triangulation->begin()->face(2)->set_all_boundary_ids(2);
+  triangulation->begin()->face(3)->set_all_boundary_ids(3);
+  // z-direction
+  triangulation->begin()->face(4)->set_all_boundary_ids(4);
+  triangulation->begin()->face(5)->set_all_boundary_ids(5);
+
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
+
+  triangulation->add_periodicity(periodic_faces);
+
+  // global refinements
+  triangulation->refine_global(n_refine_space);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
+
+namespace IncNS
+{
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -317,50 +361,13 @@ public:
   }
 };
 
-
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        /*boundary_descriptor_velocity*/,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        /*boundary_descriptor_pressure*/,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > /*boundary_descriptor_velocity*/,
+    std::shared_ptr<BoundaryDescriptorP<dim> > /*boundary_descriptor_pressure*/)
 {
-  AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
-  const double left = 0.0, right = 1.0;
-  GridGenerator::hyper_cube(*triangulation,left,right);
-
-  // periodicity in x-,y-, and z-direction
-
-  // x-direction
-  triangulation->begin()->face(0)->set_all_boundary_ids(0);
-  triangulation->begin()->face(1)->set_all_boundary_ids(1);
-  // y-direction
-  triangulation->begin()->face(2)->set_all_boundary_ids(2);
-  triangulation->begin()->face(3)->set_all_boundary_ids(3);
-  // z-direction
-  triangulation->begin()->face(4)->set_all_boundary_ids(4);
-  triangulation->begin()->face(5)->set_all_boundary_ids(5);
-
-  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
-
-  triangulation->add_periodicity(periodic_faces);
-
-  // global refinements
-  triangulation->refine_global(n_refine_space);
 }
-
 
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
@@ -397,6 +404,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
 
   return pp;
+}
+
 }
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_UNSTABLE_BELTRAMI_H_ */

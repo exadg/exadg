@@ -486,9 +486,271 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
 /**************************************************************************************/
 /*                                                                                    */
+/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
+/*                                                                                    */
+/**************************************************************************************/
+
+/*
+ *  maps eta in [-H, 2*H] --> y in [-H,2*H]
+ */
+double grid_transform_y(const double &eta)
+{
+  double y = 0.0;
+  double gamma, xi;
+  if (eta < 0.0)
+  {
+    gamma = GAMMA_LOWER;
+    xi = -0.5*H;
+  }
+  else
+  {
+    gamma = GAMMA_UPPER;
+    xi = H;
+  }
+  y = xi * (1.0 - (std::tanh(gamma*(xi-eta))/std::tanh(gamma*xi)));
+  return y;
+}
+
+/*
+ *  grid transform function for turbulent channel statistics
+ *  requires that the input parameter is 0 < xi < 1
+ */
+double grid_transform_turb_channel(const double &xi)
+{
+  // map xi in [0,1] --> eta in [0, 2H]
+  double eta = HEIGHT_CHANNEL * xi;
+  return grid_transform_y(eta);
+}
+
+/*
+ * inverse mapping:
+ *
+ *  maps y in [-H,2*H] --> eta in [-H,2*H]
+ */
+double inverse_grid_transform_y(const double &y)
+{
+  double eta = 0.0;
+  double gamma, xi;
+  if (y < 0.0)
+  {
+    gamma = GAMMA_LOWER;
+    xi = -0.5*H;
+  }
+  else
+  {
+    gamma = GAMMA_UPPER;
+    xi = H;
+  }
+  eta = xi - (1.0/gamma)*std::atanh((1.0-y/xi)*std::tanh(gamma*xi));
+  return eta;
+}
+
+#include <deal.II/grid/manifold_lib.h>
+
+template <int dim>
+class ManifoldTurbulentChannel : public ChartManifold<dim,dim,dim>
+{
+public:
+  ManifoldTurbulentChannel()
+  { }
+
+  /*
+   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
+   *  point x in physical coordinates
+   */
+  Point<dim> push_forward(const Point<dim> &xi) const
+  {
+    Point<dim> x = xi;
+    x[1] = grid_transform_y(xi[1]);
+
+    return x;
+  }
+
+  /*
+   *  pull_back operation that maps point x in physical coordinates
+   *  to point xi in reference coordinates [0,1]^d
+   */
+  Point<dim> pull_back(const Point<dim> &x) const
+  {
+    Point<dim> xi = x;
+    xi[1] = inverse_grid_transform_y(x[1]);
+
+    return xi;
+  }
+
+  std::unique_ptr<Manifold<dim>>
+  clone() const override
+  {
+    return std_cxx14::make_unique<ManifoldTurbulentChannel<dim>>();
+  }
+};
+
+template<int dim>
+void create_grid_and_set_boundary_ids_1(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+{
+  /* --------------- Generate grid ------------------- */
+  AssertThrow(dim==3, ExcMessage("NotImplemented"));
+
+  Tensor<1,dim> dimensions;
+  dimensions[0] = LENGTH_CHANNEL;
+  dimensions[1] = HEIGHT_CHANNEL;
+  dimensions[2] = WIDTH_CHANNEL;
+
+  Tensor<1,dim> center;
+  center[0] = - (LENGTH_BFS_UP + GAP_CHANNEL_BFS + LENGTH_CHANNEL/2.0);
+  center[1] = HEIGHT_CHANNEL/2.0;
+
+  GridGenerator::subdivided_hyper_rectangle (*triangulation,
+                                             std::vector<unsigned int>({2,1,1}), //refinements
+                                             Point<dim>(center-dimensions/2.0),
+                                             Point<dim>(center+dimensions/2.0));
+
+  if(use_grid_stretching_in_y_direction == true)
+  {
+    // manifold
+    unsigned int manifold_id = 1;
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
+    {
+      cell->set_all_manifold_ids(manifold_id);
+    }
+
+    // apply mesh stretching towards no-slip boundaries in y-direction
+    static const ManifoldTurbulentChannel<dim> manifold;
+    triangulation->set_manifold(manifold_id, manifold);
+  }
+
+  // set boundary ID's: periodicity
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+    for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
+    {
+      // periodicity in x-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(0) - (center[0] - dimensions[0]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (0+10);
+      // periodicity in x-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(0) - (center[0] + dimensions[0]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (1+10);
+
+      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(2) - (center[2] - dimensions[2]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (2+10);
+      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
+      if(std::fabs(cell->face(face_number)->center()(2) - (center[2] + dimensions[2]/2.0)) < 1.e-12)
+        cell->face(face_number)->set_all_boundary_ids (3+10);
+    }
+  }
+
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
+  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
+  triangulation->add_periodicity(periodic_faces);
+
+  // perform global refinements: use one level finer for the channel
+  triangulation->refine_global(n_refine_space);
+}
+
+template<int dim>
+void create_grid_and_set_boundary_ids_2(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+{
+  /* --------------- Generate grid ------------------- */
+  if(dim==2)
+  {
+    AssertThrow(false, ExcMessage("NotImplemented"));
+  }
+  else if(dim==3)
+  {
+    Triangulation<dim> tria_1, tria_2, tria_3;
+
+    // inflow part of BFS
+    GridGenerator::subdivided_hyper_rectangle(tria_1,
+                                              std::vector<unsigned int>({1,1,1}),
+                                              Point<dim>(-LENGTH_BFS_UP,0.0,-WIDTH_BFS/2.0),
+                                              Point<dim>(0.0,HEIGHT_BFS_INFLOW,WIDTH_BFS/2.0));
+
+    // downstream part of BFS (upper)
+    GridGenerator::subdivided_hyper_rectangle(tria_2,
+                                              std::vector<unsigned int>({10,1,1}),
+                                              Point<dim>(0.0,0.0,-WIDTH_BFS/2.0),
+                                              Point<dim>(LENGTH_BFS_DOWN,HEIGHT_BFS_INFLOW,WIDTH_BFS/2.0));
+
+    // downstream part of BFS (lower = step)
+    GridGenerator::subdivided_hyper_rectangle(tria_3,
+                                              std::vector<unsigned int>({10,1,1}),
+                                              Point<dim>(0.0,0.0,-WIDTH_BFS/2.0),
+                                              Point<dim>(LENGTH_BFS_DOWN,-HEIGHT_BFS_STEP,WIDTH_BFS/2.0));
+
+    Triangulation<dim> tmp1;
+    GridGenerator::merge_triangulations (tria_1, tria_2, tmp1);
+    GridGenerator::merge_triangulations (tmp1, tria_3, *triangulation);
+  }
+
+  // set boundary ID's
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+    for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
+    {
+      // outflow boundary on the right has ID = 1
+      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_OUTFLOW)< 1.e-12))
+        cell->face(face_number)->set_boundary_id (1);
+      // inflow boundary on the left has ID = 2
+      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_INFLOW)< 1.e-12))
+        cell->face(face_number)->set_boundary_id (2);
+
+      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
+      if((std::fabs(cell->face(face_number)->center()(2) - WIDTH_BFS/2.0)< 1.e-12))
+        cell->face(face_number)->set_all_boundary_ids (2+10);
+      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
+      if((std::fabs(cell->face(face_number)->center()(2) + WIDTH_BFS/2.0)< 1.e-12))
+        cell->face(face_number)->set_all_boundary_ids (3+10);
+    }
+  }
+
+  if(use_grid_stretching_in_y_direction == true)
+  {
+    // manifold
+    unsigned int manifold_id = 1;
+    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
+    {
+      cell->set_all_manifold_ids(manifold_id);
+    }
+
+    // apply mesh stretching towards no-slip boundaries in y-direction
+    static const ManifoldTurbulentChannel<dim> manifold;
+    triangulation->set_manifold(manifold_id, manifold);
+  }
+
+  // periodicity in z-direction
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
+  triangulation->add_periodicity(periodic_faces);
+
+  // perform global refinements
+  triangulation->refine_global(n_refine_space);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
+
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
+
+namespace IncNS
+{
 
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
@@ -592,177 +854,11 @@ public:
   }
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  maps eta in [-H, 2*H] --> y in [-H,2*H]
- */
-double grid_transform_y(const double &eta)
-{
-  double y = 0.0;
-  double gamma, xi;
-  if (eta < 0.0)
-  {
-    gamma = GAMMA_LOWER;
-    xi = -0.5*H;
-  }
-  else
-  {
-    gamma = GAMMA_UPPER;
-    xi = H;
-  }
-  y = xi * (1.0 - (std::tanh(gamma*(xi-eta))/std::tanh(gamma*xi)));
-  return y;
-}
-
-/*
- *  grid transform function for turbulent channel statistics
- *  requires that the input parameter is 0 < xi < 1
- */
-double grid_transform_turb_channel(const double &xi)
-{
-  // map xi in [0,1] --> eta in [0, 2H]
-  double eta = HEIGHT_CHANNEL * xi;
-  return grid_transform_y(eta);
-}
-
-/*
- * inverse mapping:
- *
- *  maps y in [-H,2*H] --> eta in [-H,2*H]
- */
-double inverse_grid_transform_y(const double &y)
-{
-  double eta = 0.0;
-  double gamma, xi;
-  if (y < 0.0)
-  {
-    gamma = GAMMA_LOWER;
-    xi = -0.5*H;
-  }
-  else
-  {
-    gamma = GAMMA_UPPER;
-    xi = H;
-  }
-  eta = xi - (1.0/gamma)*std::atanh((1.0-y/xi)*std::tanh(gamma*xi));
-  return eta;
-}
-
-#include <deal.II/grid/manifold_lib.h>
-
-template <int dim>
-class ManifoldTurbulentChannel : public ChartManifold<dim,dim,dim>
-{
-public:
-  ManifoldTurbulentChannel()
-  { }
-
-  /*
-   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
-   *  point x in physical coordinates
-   */
-  Point<dim> push_forward(const Point<dim> &xi) const
-  {
-    Point<dim> x = xi;
-    x[1] = grid_transform_y(xi[1]);
-
-    return x;
-  }
-
-  /*
-   *  pull_back operation that maps point x in physical coordinates
-   *  to point xi in reference coordinates [0,1]^d
-   */
-  Point<dim> pull_back(const Point<dim> &x) const
-  {
-    Point<dim> xi = x;
-    xi[1] = inverse_grid_transform_y(x[1]);
-
-    return xi;
-  }
-
-  std::unique_ptr<Manifold<dim>>
-  clone() const override
-  {
-    return std_cxx14::make_unique<ManifoldTurbulentChannel<dim>>();
-  }
-};
-
 template<int dim>
-void create_grid_and_set_boundary_conditions_1(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+void set_boundary_conditions_1(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  /* --------------- Generate grid ------------------- */
-  AssertThrow(dim==3, ExcMessage("NotImplemented"));
-
-  Tensor<1,dim> dimensions;
-  dimensions[0] = LENGTH_CHANNEL;
-  dimensions[1] = HEIGHT_CHANNEL;
-  dimensions[2] = WIDTH_CHANNEL;
-
-  Tensor<1,dim> center;
-  center[0] = - (LENGTH_BFS_UP + GAP_CHANNEL_BFS + LENGTH_CHANNEL/2.0);
-  center[1] = HEIGHT_CHANNEL/2.0;
-
-  GridGenerator::subdivided_hyper_rectangle (*triangulation,
-                                             std::vector<unsigned int>({2,1,1}), //refinements
-                                             Point<dim>(center-dimensions/2.0),
-                                             Point<dim>(center+dimensions/2.0));
-
-  if(use_grid_stretching_in_y_direction == true)
-  {
-    // manifold
-    unsigned int manifold_id = 1;
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
-    {
-      cell->set_all_manifold_ids(manifold_id);
-    }
-
-    // apply mesh stretching towards no-slip boundaries in y-direction
-    static const ManifoldTurbulentChannel<dim> manifold;
-    triangulation->set_manifold(manifold_id, manifold);
-  }
-
-  // set boundary ID's: periodicity
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
-    {
-      // periodicity in x-direction (add 10 to avoid conflicts with other boundaries)
-      if(std::fabs(cell->face(face_number)->center()(0) - (center[0] - dimensions[0]/2.0)) < 1.e-12)
-        cell->face(face_number)->set_all_boundary_ids (0+10);
-      // periodicity in x-direction (add 10 to avoid conflicts with other boundaries)
-      if(std::fabs(cell->face(face_number)->center()(0) - (center[0] + dimensions[0]/2.0)) < 1.e-12)
-        cell->face(face_number)->set_all_boundary_ids (1+10);
-
-      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
-      if(std::fabs(cell->face(face_number)->center()(2) - (center[2] - dimensions[2]/2.0)) < 1.e-12)
-        cell->face(face_number)->set_all_boundary_ids (2+10);
-      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
-      if(std::fabs(cell->face(face_number)->center()(2) - (center[2] + dimensions[2]/2.0)) < 1.e-12)
-        cell->face(face_number)->set_all_boundary_ids (3+10);
-    }
-  }
-
-  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
-  triangulation->add_periodicity(periodic_faces);
-
-  // perform global refinements: use one level finer for the channel
-  triangulation->refine_global(n_refine_space);
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
@@ -775,90 +871,10 @@ void create_grid_and_set_boundary_conditions_1(
 }
 
 template<int dim>
-void create_grid_and_set_boundary_conditions_2(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+void set_boundary_conditions_2(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  /* --------------- Generate grid ------------------- */
-  if(dim==2)
-  {
-    AssertThrow(false, ExcMessage("NotImplemented"));
-  }
-  else if(dim==3)
-  {
-    Triangulation<dim> tria_1, tria_2, tria_3;
-
-    // inflow part of BFS
-    GridGenerator::subdivided_hyper_rectangle(tria_1,
-                                              std::vector<unsigned int>({1,1,1}),
-                                              Point<dim>(-LENGTH_BFS_UP,0.0,-WIDTH_BFS/2.0),
-                                              Point<dim>(0.0,HEIGHT_BFS_INFLOW,WIDTH_BFS/2.0));
-
-    // downstream part of BFS (upper)
-    GridGenerator::subdivided_hyper_rectangle(tria_2,
-                                              std::vector<unsigned int>({10,1,1}),
-                                              Point<dim>(0.0,0.0,-WIDTH_BFS/2.0),
-                                              Point<dim>(LENGTH_BFS_DOWN,HEIGHT_BFS_INFLOW,WIDTH_BFS/2.0));
-
-    // downstream part of BFS (lower = step)
-    GridGenerator::subdivided_hyper_rectangle(tria_3,
-                                              std::vector<unsigned int>({10,1,1}),
-                                              Point<dim>(0.0,0.0,-WIDTH_BFS/2.0),
-                                              Point<dim>(LENGTH_BFS_DOWN,-HEIGHT_BFS_STEP,WIDTH_BFS/2.0));
-
-    Triangulation<dim> tmp1;
-    GridGenerator::merge_triangulations (tria_1, tria_2, tmp1);
-    GridGenerator::merge_triangulations (tmp1, tria_3, *triangulation);
-  }
-
-  // set boundary ID's
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
-    {
-      // outflow boundary on the right has ID = 1
-      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_OUTFLOW)< 1.e-12))
-        cell->face(face_number)->set_boundary_id (1);
-      // inflow boundary on the left has ID = 2
-      if ((std::fabs(cell->face(face_number)->center()(0) - X1_COORDINATE_INFLOW)< 1.e-12))
-        cell->face(face_number)->set_boundary_id (2);
-
-      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
-      if((std::fabs(cell->face(face_number)->center()(2) - WIDTH_BFS/2.0)< 1.e-12))
-        cell->face(face_number)->set_all_boundary_ids (2+10);
-      // periodicity in z-direction (add 10 to avoid conflicts with other boundaries)
-      if((std::fabs(cell->face(face_number)->center()(2) + WIDTH_BFS/2.0)< 1.e-12))
-        cell->face(face_number)->set_all_boundary_ids (3+10);
-    }
-  }
-
-  if(use_grid_stretching_in_y_direction == true)
-  {
-    // manifold
-    unsigned int manifold_id = 1;
-    for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
-    {
-      cell->set_all_manifold_ids(manifold_id);
-    }
-
-    // apply mesh stretching towards no-slip boundaries in y-direction
-    static const ManifoldTurbulentChannel<dim> manifold;
-    triangulation->set_manifold(manifold_id, manifold);
-  }
-
-  // periodicity in z-direction
-  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 2, periodic_faces);
-  triangulation->add_periodicity(periodic_faces);
-
-  // perform global refinements
-  triangulation->refine_global(n_refine_space);
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
@@ -884,7 +900,6 @@ void create_grid_and_set_boundary_conditions_2(
   // outflow boundary condition at right boundary with ID=1: set pressure to zero
   boundary_descriptor_pressure->dirichlet_bc.insert(pair(1,new Functions::ZeroFunction<dim>(1)));
 }
-
 
 template<int dim>
 void set_field_functions_1(std::shared_ptr<FieldFunctions<dim> > field_functions)
@@ -915,11 +930,6 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 }
 
 // Postprocessor
-
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
 
 template<int dim>
 struct PostProcessorDataBFS
@@ -1040,5 +1050,6 @@ construct_postprocessor(InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */
