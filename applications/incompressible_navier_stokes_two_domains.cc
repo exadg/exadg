@@ -39,9 +39,9 @@ using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
-#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
+//#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
 //#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
-//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
@@ -273,6 +273,27 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
+  // create grid
+
+  // this function has to be defined in the header file that implements all problem specific things
+  // like parameters, geometry, boundary conditions, etc.
+  create_grid_and_set_boundary_ids_1(triangulation_1, n_refine_space_domain1, periodic_faces_1);
+
+  create_grid_and_set_boundary_ids_2(triangulation_2, n_refine_space_domain2, periodic_faces_2);
+
+  print_grid_data(
+    pcout, n_refine_space_domain1, *triangulation_1, n_refine_space_domain2, *triangulation_2);
+
+  boundary_descriptor_velocity_1.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure_1.reset(new BoundaryDescriptorP<dim>());
+
+  IncNS::set_boundary_conditions_1(boundary_descriptor_velocity_1, boundary_descriptor_pressure_1);
+
+  boundary_descriptor_velocity_2.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure_2.reset(new BoundaryDescriptorP<dim>());
+
+  IncNS::set_boundary_conditions_2(boundary_descriptor_velocity_2, boundary_descriptor_pressure_2);
+
 
   field_functions_1.reset(new FieldFunctions<dim>());
   field_functions_2.reset(new FieldFunctions<dim>());
@@ -289,12 +310,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   // parameters, geometry, boundary conditions, etc.
   set_analytical_solution(analytical_solution_1);
   set_analytical_solution(analytical_solution_2);
-
-  boundary_descriptor_velocity_1.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure_1.reset(new BoundaryDescriptorP<dim>());
-
-  boundary_descriptor_velocity_2.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure_2.reset(new BoundaryDescriptorP<dim>());
 
   // constant vs. adaptive time stepping
   use_adaptive_time_stepping = param_1.adaptive_time_stepping;
@@ -413,25 +428,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-
-  // create grid
-
-  // this function has to be defined in the header file that implements all problem specific things
-  // like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions_1(triangulation_1,
-                                            n_refine_space_domain1,
-                                            boundary_descriptor_velocity_1,
-                                            boundary_descriptor_pressure_1,
-                                            periodic_faces_1);
-
-  create_grid_and_set_boundary_conditions_2(triangulation_2,
-                                            n_refine_space_domain2,
-                                            boundary_descriptor_velocity_2,
-                                            boundary_descriptor_pressure_2,
-                                            periodic_faces_2);
-
-  print_grid_data(
-    pcout, n_refine_space_domain1, *triangulation_1, n_refine_space_domain2, *triangulation_2);
 
   // setup navier_stokes_operation
 
