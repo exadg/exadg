@@ -600,7 +600,13 @@ DGNavierStokesBase<dim, degree_u, degree_p, Number>::calculate_time_step_cfl(
   double const       exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, degree_u, Number>(
-    data, dof_index_u, quad_index_u, velocity, cfl, exponent_degree);
+    data,
+    dof_index_u,
+    quad_index_u,
+    velocity,
+    cfl,
+    exponent_degree,
+    param.adaptive_time_stepping_cfl_type);
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>

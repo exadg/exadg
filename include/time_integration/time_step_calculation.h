@@ -8,14 +8,14 @@
 #ifndef INCLUDE_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
 #define INCLUDE_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_
 
-#define CFL_BASED_ON_MINIMUM_COMPONENT
-
 #include <deal.II/base/function.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
 #include "../functionalities/calculate_characteristic_element_length.h"
+#include "enum_types.h"
 
 using namespace dealii;
+
 
 /*
  *  limit the maximum increase/decrease of the time step size
@@ -165,7 +165,8 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
                               std::shared_ptr<Function<dim>> const velocity,
                               double const                         time,
                               double const                         cfl,
-                              double const                         exponent_fe_degree)
+                              double const                         exponent_fe_degree,
+                              CFLConditionType const               cfl_condition_type)
 {
   FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(data, dof_index, quad_index);
 
@@ -192,12 +193,19 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
       invJ                                              = transpose(invJ);
       Tensor<1, dim, VectorizedArray<value_type>> ut_xi = invJ * u_x;
 
-#ifdef CFL_BASED_ON_MINIMUM_COMPONENT
-      for(unsigned int d = 0; d < dim; ++d)
-        delta_t_cell = std::min(delta_t_cell, cfl_p / (std::abs(ut_xi[d])));
-#else
-      delta_t_cell = std::min(delta_t_cell, cfl_p / ut_xi.norm());
-#endif
+      if(cfl_condition_type == CFLConditionType::VelocityNorm)
+      {
+        delta_t_cell = std::min(delta_t_cell, cfl_p / ut_xi.norm());
+      }
+      else if(cfl_condition_type == CFLConditionType::VelocityComponents)
+      {
+        for(unsigned int d = 0; d < dim; ++d)
+          delta_t_cell = std::min(delta_t_cell, cfl_p / (std::abs(ut_xi[d])));
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
     }
 
     // loop over vectorized array
@@ -227,7 +235,8 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
                               unsigned int const                                     quad_index,
                               LinearAlgebra::distributed::Vector<value_type> const & velocity,
                               double const                                           cfl,
-                              double const exponent_fe_degree)
+                              double const           exponent_fe_degree,
+                              CFLConditionType const cfl_condition_type)
 {
   FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(data, dof_index, quad_index);
 
@@ -257,12 +266,19 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
       invJ  = transpose(invJ);
       ut_xi = invJ * u_x;
 
-#ifdef CFL_BASED_ON_MINIMUM_COMPONENT
-      for(unsigned int d = 0; d < dim; ++d)
-        delta_t_cell = std::min(delta_t_cell, cfl_p / (std::abs(ut_xi[d])));
-#else
-      delta_t_cell = std::min(delta_t_cell, cfl_p / ut_xi.norm());
-#endif
+      if(cfl_condition_type == CFLConditionType::VelocityNorm)
+      {
+        delta_t_cell = std::min(delta_t_cell, cfl_p / ut_xi.norm());
+      }
+      else if(cfl_condition_type == CFLConditionType::VelocityComponents)
+      {
+        for(unsigned int d = 0; d < dim; ++d)
+          delta_t_cell = std::min(delta_t_cell, cfl_p / (std::abs(ut_xi[d])));
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
     }
 
     // loop over vectorized array
@@ -280,73 +296,5 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
 
   return new_time_step;
 }
-
-
-// template<int dim, int fe_degree, typename value_type>
-// double
-// calculate_adaptive_time_step_diffusion(MatrixFree<dim, value_type> const & data,
-//                                       unsigned int const                  dof_index,
-//                                       unsigned int const                  quad_index,
-//                                       LinearAlgebra::distributed::Vector<value_type> const & vt,
-//                                       double const viscosity,
-//                                       double const d,
-//                                       double const last_time_step,
-//                                       bool const   use_limiter        = true,
-//                                       double const exponent_fe_degree = 3)
-//{
-//  FEEvaluation<dim, fe_degree, fe_degree + 1, 1, value_type> fe_eval(data, dof_index, quad_index);
-//
-//  double new_time_step = std::numeric_limits<value_type>::max();
-//
-//  double const d_p = d / pow(fe_degree, exponent_fe_degree);
-//
-//  // loop over cells of processor
-//  for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
-//  {
-//    VectorizedArray<value_type> h;
-//    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; v++)
-//    {
-//      typename DoFHandler<dim>::cell_iterator dcell = data.get_cell_iterator(cell, v);
-//
-//      h[v] = dcell->minimum_vertex_distance();
-//    }
-//    VectorizedArray<value_type> delta_t_cell =
-//      make_vectorized_array<value_type>(std::numeric_limits<value_type>::max());
-//    VectorizedArray<value_type> vt_val;
-//
-//    fe_eval.reinit(cell);
-//    fe_eval.read_dof_values(vt);
-//    fe_eval.evaluate(true, false);
-//
-//    // loop over quadrature points
-//    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-//    {
-//      vt_val = fe_eval.get_value(q);
-//
-//      // TODO Benjamin: use local shortest length, not global one
-//      // vt should be larger than zero
-//      delta_t_cell = std::min(delta_t_cell, d_p * h * h / (std::abs((vt_val + viscosity) * 1.5)));
-//    }
-//
-//    // loop over vectorized array
-//    value_type dt = std::numeric_limits<value_type>::max();
-//    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
-//    {
-//      dt = std::min(dt, delta_t_cell[v]);
-//    }
-//
-//    new_time_step = std::min(new_time_step, dt);
-//  }
-//
-//  // find minimum over all processors
-//  new_time_step = Utilities::MPI::min(new_time_step, MPI_COMM_WORLD);
-//
-//  // TODO
-//  double const factor = 1.2;
-//  limit_time_step_change(new_time_step, last_time_step, factor);
-//
-//  return new_time_step;
-//}
-
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_STEP_CALCULATION_H_ */
