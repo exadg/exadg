@@ -16,6 +16,7 @@
 #include "../../postprocessor/output_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
+#include "../../time_integration/enum_types.h"
 
 #include "enum_types.h"
 
@@ -46,6 +47,7 @@ public:
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       adaptive_time_stepping(false),
       adaptive_time_stepping_limiting_factor(1.2),
+      adaptive_time_stepping_cfl_type(CFLConditionType::VelocityNorm),
       time_step_size(-1.),
       max_number_of_time_steps(std::numeric_limits<unsigned int>::max()),
       cfl(-1.),
@@ -364,6 +366,10 @@ public:
       print_parameter(pcout,
                       "Adaptive time stepping limiting factor",
                       adaptive_time_stepping_limiting_factor);
+
+      print_parameter(pcout,
+                      "Type of CFL condition",
+                      enum_to_string(adaptive_time_stepping_cfl_type));
     }
 
 
@@ -532,6 +538,10 @@ public:
   // change at all, while a factor towards infinity implies that arbitrary changes in
   // the time step size are allowed from one time step to the next.
   double adaptive_time_stepping_limiting_factor;
+
+  // Different variants are available for calculating the time step size based on a local CFL
+  // criterion.
+  CFLConditionType adaptive_time_stepping_cfl_type;
 
   // user specified time step size:  note that this time_step_size is the first
   // in a series of time_step_size's when performing temporal convergence tests,

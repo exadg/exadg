@@ -41,6 +41,7 @@ SET( TARGET_SRC
      include/time_integration/time_int_base.cpp
      include/time_integration/time_int_bdf_base.cpp
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
+     include/time_integration/enum_types.cpp
      include/poisson/user_interface/enum_types.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp     
      include/convection_diffusion/user_interface/enum_types.cpp

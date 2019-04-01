@@ -24,6 +24,7 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
+#include "../../time_integration/enum_types.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
 
@@ -189,6 +190,7 @@ public:
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       adaptive_time_stepping(false),
       adaptive_time_stepping_limiting_factor(1.2),
+      adaptive_time_stepping_cfl_type(CFLConditionType::VelocityNorm),
       max_velocity(-1.),
       cfl(-1.),
       cfl_oif(-1.),
@@ -724,6 +726,10 @@ public:
       print_parameter(pcout,
                       "Adaptive time stepping limiting factor",
                       adaptive_time_stepping_limiting_factor);
+
+      print_parameter(pcout,
+                      "Type of CFL condition",
+                      enum_to_string(adaptive_time_stepping_cfl_type));
     }
 
 
@@ -1237,6 +1243,10 @@ public:
   // change at all, while a factor towards infinity implies that arbitrary changes in
   // the time step size are allowed from one time step to the next.
   double adaptive_time_stepping_limiting_factor;
+
+  // Different variants are available for calculating the time step size based on a local CFL
+  // criterion.
+  CFLConditionType adaptive_time_stepping_cfl_type;
 
   // maximum velocity needed when calculating the time step according to cfl-condition
   double max_velocity;
