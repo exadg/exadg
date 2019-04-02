@@ -28,6 +28,12 @@ For other users, the working directory might for example be
 ```bash
 cd /home/username/
 ```
+
+Insert the following line into your *bashrc*-file
+```bash
+export WORKING_DIRECTORY=/working_directory
+```
+
 We now create a folder called *workspace* in the *working_directory/* where we will later install the **navierstokes** code
 
 ```bash
@@ -206,6 +212,13 @@ Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_
 
 ```bash
 bash ./combine_fftw.sh
+```
+Insert the following lines into your *bashrc*-file
+
+```bash
+export FFTW_INC="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/include"
+export FFTW_LIB="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/lib/combined"
+
 ```
 
 ### navierstokes code continued (part 2)
