@@ -62,7 +62,20 @@ lung_files_to_node(std::vector<std::string> files)
       std::vector<CellAdditionalInfo> cells_additional_data;
       load_files({file}, points, cells, cells_additional_data);
 
-      lung_to_node(generations, points, cells, cells_additional_data, roots);
+      int n_bifurcations = generations;
+
+      if(file.find("leftbot") != std::string::npos || file.find("lefttop") != std::string::npos ||
+         file.find("righttop") != std::string::npos)
+      {
+        n_bifurcations = generations - 4;
+      }
+      else if(file.find("rightbot") != std::string::npos ||
+              file.find("rightmid") != std::string::npos)
+      {
+        n_bifurcations = generations - 5;
+      }
+
+      lung_to_node(n_bifurcations, points, cells, cells_additional_data, roots);
     }
 
 #ifdef DEBUG
@@ -109,9 +122,10 @@ lung_files_to_node(std::vector<std::string> files)
     //
     ////        roots.push_back(new Node(roots_temp[9], roots_temp[8],{-24.3016e-3,  156.6774e-3,
     ///-198.6689e-3},false)); /        roots.push_back(new Node( /                new
-    ///Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),false),
-    ////                new Node(roots_temp[6], roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3,
-    ///-208.6529e-3}),true), /                {-24.3016e-3,  156.6774e-3, -198.6689e-3}, true));
+    /// Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3,
+    /// -208.6529e-3}),false), /                new Node(roots_temp[6],
+    ///roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true), / {-24.3016e-3,
+    ///156.6774e-3, -198.6689e-3}, true));
     //
     //        roots.push_back(new Node(
     //            new Node(
@@ -262,7 +276,10 @@ void lung(dealii::Triangulation<3> &                                     tria,
   tria.refine_global(refinements);
   timings["create_triangulation_5_serial_refinement"] = timer.wall_time();
 
-  print_tria_statistics(tria);
+  // TODO only print if desired
+  bool print = false;
+  if(print)
+    print_tria_statistics(tria);
 }
 
 void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
