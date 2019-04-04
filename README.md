@@ -29,7 +29,7 @@ For other users, the working directory might for example be
 cd /home/username/
 ```
 
-Insert the following line into your *bashrc*-file
+Add the following variable to your environment (in case you want to make the setting permanent, e.g. by inserting the following line into your *bashrc*-file)
 ```bash
 export WORKING_DIRECTORY=/working_directory
 ```
@@ -213,7 +213,7 @@ Run the script in order to combine the two libraries *libfftw3.a* and *libfftw3_
 ```bash
 bash ./combine_fftw.sh
 ```
-Insert the following lines into your *bashrc*-file
+Add the following variable to your environment (in case you want to make the setting permanent, e.g. by inserting the following lines into your *bashrc*-file)
 
 ```bash
 export FFTW_INC="$WORKING_DIRECTORY/sw/fftw-3.3.7-install/include"
