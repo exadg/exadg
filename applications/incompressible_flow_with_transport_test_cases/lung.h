@@ -42,7 +42,6 @@ unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
 unsigned int const GENERATIONS = 5;
-unsigned int const GENERATIONS_MIN = 4;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -50,13 +49,15 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters
 double const VISCOSITY = 1.7e-5; // m^2/s
+double const D_OXYGEN = 0.219e-4; // 0.219 cm^2/s = 0.219e-4 m^2/s
 double const PERIOD = 0.1; // 100 ms
-unsigned int const N_PERIODS = 20; //8; //TODO
+unsigned int const N_PERIODS = 20;
 double const START_TIME = 0.0;
 double const END_TIME = PERIOD*N_PERIODS;
 double const PEEP = 8.0 * 98.0665; // 8 cmH20, 1 cmH20 = 98.0665 Pa
-double const DELTA_P_INITIAL = PEEP/30.0; // TODO
 double const TIDAL_VOLUME = 6.6e-6; // 6.6 ml = 6.6 * 10^{-6} m^3
+double const C_RS = 20.93e-9; // total respiratory compliance C_rs = 20.93 ml/kPa
+double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS; // TODO
 
 double const CFL_OIF = 0.35;
 double const CFL = CFL_OIF;
@@ -64,18 +65,18 @@ double const MAX_VELOCITY = 3.0;
 bool const ADAPTIVE_TIME_STEPPING = true;
 
 // solver tolerances
-const double ABS_TOL = 1.e-12;
-const double REL_TOL = 1.e-3;
+double const ABS_TOL = 1.e-12;
+double const REL_TOL = 1.e-3;
 
 // outlet boundary IDs
 types::boundary_id const OUTLET_ID_FIRST = 2;
 types::boundary_id OUTLET_ID_LAST = 2;
 
 // output
-bool const WRITE_OUTPUT = false;
-std::string OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/5_generations_CI_0-01/";
-std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "test_full_lung";
+bool const WRITE_OUTPUT = true;
+std::string const OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/test_with_resistance_long/";
+std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
+std::string const OUTPUT_NAME = "test_with_resistance";
 double const OUTPUT_START_TIME = START_TIME;
 double const OUTPUT_INTERVAL_TIME = PERIOD/20;
 
@@ -163,8 +164,8 @@ set_input_parameters()
   multigrid_data_pressure_poisson.type = MultigridType::phMG;
   multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
   multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
-  multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG; //Chebyshev;
-  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG; //PointJacobi;
+  multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
   // projection step
   solver_projection = SolverProjection::CG;
@@ -181,14 +182,6 @@ set_input_parameters()
   solver_viscous = SolverViscous::CG;
   solver_data_viscous = SolverData(1000,ABS_TOL,REL_TOL);
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
-//  preconditioner_viscous = PreconditionerViscous::Multigrid;
-  multigrid_data_viscous.type = MultigridType::hpMG;
-  multigrid_data_viscous.p_sequence = PSequenceType::Bisect;
-  multigrid_data_viscous.dg_to_cg_transfer = DG_To_CG_Transfer::None;
-  multigrid_data_viscous.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-  multigrid_data_viscous.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
-  update_preconditioner_viscous = true;
-  update_preconditioner_viscous_every_time_steps = 1;
 
   // PRESSURE-CORRECTION SCHEME
 
@@ -287,11 +280,11 @@ set_input_parameters(unsigned int scalar_index)
   end_time = END_TIME;
   if(scalar_index == 0)
   {
-    diffusivity = 1.e-5;
+    diffusivity = D_OXYGEN;
   }
   else
   {
-    diffusivity = 1.e-3;
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
   // TEMPORAL DISCRETIZATION
@@ -371,11 +364,12 @@ public:
     :
       pressure_difference(DELTA_P_INITIAL),
       pressure_difference_last_period(DELTA_P_INITIAL),
+      pressure_difference_damping(0.0),
       volume_max(std::numeric_limits<double>::min()),
       volume_min(std::numeric_limits<double>::max()),
       tidal_volume_last(TIDAL_VOLUME),
-      C_I(0.01), // choose C_I <= 0.01 (instabilities detected for C_I = 0.02 and larger)
-      C_D(C_I*0.0), // C_I*0.2
+      C_I(0.1), // choose C_I <= 0.1 (instabilities detected for C_I = 1 and larger)
+      C_D(C_I*0.2),
       counter(0),
       counter_last(0)
   {}
@@ -386,7 +380,7 @@ public:
     // 0 <= (t-t_period_start) <= PERIOD/3
     if((int(time/(PERIOD/3)))%3 == 0)
     {
-      return PEEP + pressure_difference;
+      return PEEP + pressure_difference + pressure_difference_damping;
     }
     else // rest of the period
     {
@@ -434,9 +428,9 @@ private:
   void
   recalculate_pressure_difference()
   {
-    pressure_difference = pressure_difference_last_period
-        + C_I * (TIDAL_VOLUME - (volume_max-volume_min))/TIDAL_VOLUME * PEEP // I-controller
-        - C_D * ((volume_max-volume_min) - tidal_volume_last)/TIDAL_VOLUME * PEEP; // D-controller
+    pressure_difference = pressure_difference_last_period + C_I * (TIDAL_VOLUME - (volume_max-volume_min))/TIDAL_VOLUME * PEEP; // I-controller
+
+    pressure_difference_damping = - C_D * ((volume_max-volume_min) - tidal_volume_last)/TIDAL_VOLUME * PEEP; // D-controller
 
     pressure_difference_last_period = pressure_difference;
     tidal_volume_last = volume_max-volume_min;
@@ -444,6 +438,7 @@ private:
 
   double pressure_difference;
   double pressure_difference_last_period;
+  double pressure_difference_damping;
   double volume_max;
   double volume_min;
   double tidal_volume_last;
@@ -484,8 +479,9 @@ public:
   OutflowBoundary(types::boundary_id const id)
     :
       boundary_id(id),
-      compliance(1.0e-7), // TODO
-      volume(compliance * PEEP), // p = 1/C * V -> V = C * p
+      resistance(1.0e7), // TODO use a reasonable value here depending on the number of generations
+      compliance(C_RS/std::pow(2.0, GENERATIONS)), // TODO use statistical distribution as in Roth et al. (2018)
+      volume(compliance * PEEP), // p = 1/C * V -> V = C * p (initialize volume so that p(t=0) = PEEP)
       flow_rate(0.0),
       time_old(START_TIME)
   {}
@@ -507,7 +503,7 @@ public:
   double
   get_pressure() const
   {
-    return volume/compliance;
+    return resistance*flow_rate + volume/compliance;
   }
 
   double
@@ -523,6 +519,7 @@ public:
 
 private:
   types::boundary_id const boundary_id;
+  double resistance;
   double compliance;
   double volume;
   double flow_rate;
@@ -576,11 +573,13 @@ void create_grid_and_set_boundary_ids(
 
   std::map<std::string, double> timings;
 
+  AssertThrow(GENERATIONS >= 5, ExcMessage("rightbot and rightmid require at least 5 lung generations."));
+
   // create triangulation
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                GENERATIONS-GENERATIONS_MIN,
+                                GENERATIONS,
                                 n_refine_space,
                                 n_refine_space,
                                 tree_factory,
@@ -591,7 +590,7 @@ void create_grid_and_set_boundary_ids(
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                GENERATIONS-GENERATIONS_MIN,
+                                GENERATIONS,
                                 n_refine_space,
                                 tree_factory,
                                 timings,
