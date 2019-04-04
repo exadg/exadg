@@ -66,15 +66,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   if(dirichlet_bc_in != nullptr)
     periodic_face_pairs = *periodic_face_pairs_in;
 
-  if((mg_data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
-     (periodic_face_pairs.size() > 0))
-  {
-    AssertThrow(mg_data.coarse_problem.solver != MultigridCoarseGridSolver::AMG,
-                ExcMessage("WIP: Currently periodic boundaries cannot be handled by AMG!"));
-  }
-
-  // dereference points
-
   // extract paramters
   auto const   mg_type = this->mg_data.type;
   unsigned int degree  = fe.degree;
