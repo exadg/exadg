@@ -41,7 +41,7 @@ unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const GENERATIONS = 5;
+unsigned int const GENERATIONS = 10;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -57,7 +57,7 @@ double const END_TIME = PERIOD*N_PERIODS;
 double const PEEP = 8.0 * 98.0665; // 8 cmH20, 1 cmH20 = 98.0665 Pa
 double const TIDAL_VOLUME = 6.6e-6; // 6.6 ml = 6.6 * 10^{-6} m^3
 double const C_RS = 20.93e-9; // total respiratory compliance C_rs = 20.93 ml/kPa
-double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS; // TODO
+double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS;
 
 double const CFL_OIF = 0.35;
 double const CFL = CFL_OIF;
@@ -74,9 +74,9 @@ types::boundary_id OUTLET_ID_LAST = 2;
 
 // output
 bool const WRITE_OUTPUT = true;
-std::string const OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/test_with_resistance_long/";
+std::string const OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/test/";
 std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string const OUTPUT_NAME = "test_with_resistance";
+std::string const OUTPUT_NAME = "10_gen";
 double const OUTPUT_START_TIME = START_TIME;
 double const OUTPUT_INTERVAL_TIME = PERIOD/20;
 
@@ -110,6 +110,7 @@ set_input_parameters()
   time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
+  time_step_size_max = 5.e-5;
   max_velocity = MAX_VELOCITY;
   cfl_oif = CFL_OIF;
   cfl = CFL;
@@ -368,7 +369,7 @@ public:
       volume_max(std::numeric_limits<double>::min()),
       volume_min(std::numeric_limits<double>::max()),
       tidal_volume_last(TIDAL_VOLUME),
-      C_I(0.1), // choose C_I <= 0.1 (instabilities detected for C_I = 1 and larger)
+      C_I(0.4), // choose C_I = 0.1-1.0 (larger value might improve speed of convergence to desired value; instabilities detected for C_I = 1 and larger)
       C_D(C_I*0.2),
       counter(0),
       counter_last(0)
@@ -398,7 +399,7 @@ public:
     // recalculate pressure difference only once every period
     if(new_period(time))
     {
-      if(counter >= 2)
+      if(counter >= 1)
       {
         recalculate_pressure_difference();
       }
@@ -430,7 +431,10 @@ private:
   {
     pressure_difference = pressure_difference_last_period + C_I * (TIDAL_VOLUME - (volume_max-volume_min))/TIDAL_VOLUME * PEEP; // I-controller
 
-    pressure_difference_damping = - C_D * ((volume_max-volume_min) - tidal_volume_last)/TIDAL_VOLUME * PEEP; // D-controller
+    if(counter >= 2)
+      pressure_difference_damping = - C_D * ((volume_max-volume_min) - tidal_volume_last)/TIDAL_VOLUME * PEEP; // D-controller
+    else
+      pressure_difference_damping = 0.0;
 
     pressure_difference_last_period = pressure_difference;
     tidal_volume_last = volume_max-volume_min;

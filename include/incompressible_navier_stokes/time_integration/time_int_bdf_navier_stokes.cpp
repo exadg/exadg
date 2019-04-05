@@ -248,6 +248,9 @@ TimeIntBDF<dim, Number>::recalculate_time_step_size() const
                                            cfl,
                                            param.cfl_exponent_fe_degree_velocity);
 
+  // make sure that time step size does not exceed maximum allowable time step size
+  new_time_step_size = std::min(new_time_step_size, param.time_step_size_max);
+
   bool use_limiter = true;
   if(use_limiter)
   {
