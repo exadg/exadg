@@ -1,6 +1,29 @@
 #ifndef LUNG_LUNG_UTIL
 #define LUNG_LUNG_UTIL
 
+namespace LungID
+{
+int
+create_root()
+{
+  return 0;
+}
+
+int
+generate(int num, bool left)
+{
+  int generation_parent = (num << 27) >> 27;
+  int generation        = generation_parent + 1;
+
+  if(left)
+    return (num + 1) | (1 << (31 - generation));
+  else
+    return (num + 1);
+}
+
+} // namespace LungID
+
+
 struct CellAdditionalInfo
 {
   CellAdditionalInfo() : radius(0), generation(0)

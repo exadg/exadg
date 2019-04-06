@@ -309,6 +309,7 @@ void
 process_node(Node *                     node,
              std::vector<CellData<3>> & cell_data_3d_global,
              std::vector<Point<3>> &    vertices_3d_global,
+             const int                  id                = LungID::create_root(),
              const int                  parent_os         = 0,
              Tensor<2, 3>               transform_parent  = Tensor<2, 3>(),
              double                     degree_parent     = 0.0,
@@ -437,6 +438,7 @@ process_node(Node *                     node,
     {
       for(int i = 0; i < 8; i++)
         c.vertices[i] = map[c.vertices[i]];
+      c.material_id = id;
       cell_data_3d_global.push_back(c);
     }
   }
@@ -450,6 +452,7 @@ process_node(Node *                     node,
       process_node(node->get_left_child(),
                    cell_data_3d_global,
                    vertices_3d_global,
+                   LungID::generate(id, true),
                    os,
                    transform,
                    degree_1,
@@ -466,6 +469,7 @@ process_node(Node *                     node,
       process_node(node->get_right_child(),
                    cell_data_3d_global,
                    vertices_3d_global,
+                   LungID::generate(id, false),
                    os,
                    transform,
                    degree_2,
