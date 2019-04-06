@@ -19,14 +19,12 @@ create_reference_cylinder(const bool                 do_transition,
   // position of auxiliary point to achieve an angle of 120 degrees in corner
   // of inner cell
   const double radius = 1;
-  const double ycord  = 0.55 * radius * std::cos(numbers::PI / 12) /
+  const double ycord  = 0.55 * std::sqrt(0.5) * radius * std::cos(numbers::PI / 12) /
                        (std::sin(numbers::PI / 12) + std::cos(numbers::PI / 12));
   // vertices for quarter of circle
-  std::vector<Point<2>> vertices{{0, 0},
-                                 {0.55 * radius, 0},
-                                 {ycord, ycord},
-                                 {radius, 0},
-                                 {radius * std::sqrt(0.5), radius * std::sqrt(0.5)}};
+  std::vector<Point<2>> vertices{
+    {0, 0}, {0.5 * radius, 0}, {ycord, ycord}, {radius, 0}, {radius * 0.5, radius * 0.5}};
+
 
   // create additional vertices for other three quarters of circle -> gives 17
   // vertices in total
