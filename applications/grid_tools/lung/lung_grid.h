@@ -351,6 +351,12 @@ void lung(dealii::Triangulation<3> &                                     tria,
     // break;
   }
 
+#ifdef DEBUG
+  for(unsigned int i = 0; i < roots.size(); i++)
+    for(auto v : roots[i]->skeleton)
+      printf("%+10.6f, %+10.6f, %+10.6f\n",v[0],v[1],v[2]);
+#endif  
+
   timings["create_triangulation_2_mesh"] = timer.wall_time();
 
   // clean up

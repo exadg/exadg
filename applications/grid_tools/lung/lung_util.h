@@ -381,6 +381,8 @@ public:
   bool         _is_dummy;
   bool         do_twist = true;
   bool         do_rot = false;
+  
+  std::vector<Point<3>> skeleton;
 };
 
 class DummyNode : public Node

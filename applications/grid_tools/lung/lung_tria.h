@@ -119,6 +119,7 @@ create_cylinder(double       radius1,
                 Point<3>     offset,
                 dealii::Tensor<1, 3> /*direction*/,
                 std::vector<Point<3>> &    vertices_3d,
+                std::vector<Point<3>> &    skeleton,
                 std::vector<CellData<3>> & cell_data_3d,
                 double                     deg0,
                 double                     deg1,
@@ -302,6 +303,9 @@ create_cylinder(double       radius1,
      ************************************************************************/
     point_out = (1 - beta) * Point<3>(offset + transform * point_out_alph) +
                 beta * Point<3>(offset + transform_parent * point_out_beta);
+    
+    if((beta==0.0 || beta==1.0) && (std::abs(point_in[0])==1.0 || std::abs(point_in[1])==1.0))
+      skeleton.push_back(point_out);
   }
 }
 
@@ -359,6 +363,7 @@ process_node(Node *                     node,
                     source,
                     dst_t,
                     vertices_3d,
+                    node->skeleton,
                     cell_data_3d,
                     degree_parent / 2,
                     degree_1,
