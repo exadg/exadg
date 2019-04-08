@@ -1,4 +1,7 @@
 
+#ifndef DEFORM_VIA_SPLINES_H
+#define DEFORM_VIA_SPLINES_H
+
 #include <deal.II/base/geometry_info.h>
 #include <deal.II/base/point.h>
 #include <deal.II/grid/tria.h>
@@ -13,8 +16,23 @@ template <int dim>
 class DeformTransfinitelyViaSplines
 {
 public:
+  DeformTransfinitelyViaSplines() = default;
+
+  DeformTransfinitelyViaSplines(const DeformTransfinitelyViaSplines &other)
+    :
+      splines(other.splines)
+  {
+    triangulation.copy_triangulation(other.triangulation);
+  }
+
   DeformTransfinitelyViaSplines(const std::string &bspline_file,
                                 std::vector<Point<dim>> &surrounding_points)
+  {
+    reinit(bspline_file, surrounding_points);
+  }
+
+  void reinit(const std::string &bspline_file,
+              std::vector<Point<dim>> &surrounding_points)
   {
     std::ifstream file(bspline_file.c_str(), std::ios::binary);
     unsigned int n_splines;
@@ -23,6 +41,33 @@ public:
     for (unsigned int s=0; s<n_splines; ++s)
       splines[s].read_from_file(file);
 
+    AssertThrow(surrounding_points.size() == GeometryInfo<dim>::vertices_per_cell,
+                ExcDimensionMismatch(surrounding_points.size(),
+                                     GeometryInfo<dim>::vertices_per_cell));
+
+    std::vector<CellData<dim>> cell_data(1);
+    for (unsigned int v=0; v<GeometryInfo<dim>::vertices_per_cell; ++v)
+      cell_data[0].vertices[v] = v;
+
+    SubCellData subcell_data;
+    triangulation.create_triangulation(surrounding_points, cell_data, subcell_data);
+  }
+
+  DeformTransfinitelyViaSplines(const std::vector<BSpline2D<dim,3>> &splines_in,
+                                const unsigned int first_spline_index,
+                                std::vector<Point<dim>> &surrounding_points)
+  {
+    reinit(splines_in, first_spline_index, surrounding_points);
+  }
+
+  void reinit(const std::vector<BSpline2D<dim,3>> &splines_in,
+              const unsigned int first_spline_index,
+              std::vector<Point<dim>> &surrounding_points)
+  {
+    splines.clear();
+    splines.insert(splines.end(),
+                   splines_in.begin()+first_spline_index,
+                   splines_in.begin()+4+first_spline_index);
     AssertThrow(surrounding_points.size() == GeometryInfo<dim>::vertices_per_cell,
                 ExcDimensionMismatch(surrounding_points.size(),
                                      GeometryInfo<dim>::vertices_per_cell));
@@ -119,28 +164,10 @@ public:
     //             reference[0] * reference[1] * splines[0].value(1.0, reference[2]));
   }
 
-  Point<dim> transform_with_output(const Point<dim> &untransformed) const
-  {
-    Point<dim> reference = GeometryInfo<dim>::project_to_unit_cell
-      (auxiliary_mapping.transform_real_to_unit_cell(triangulation.begin(), untransformed));
-    std::cout << "reference " << reference << " ";
-
-    // deform reference according to splines
-    AssertThrow(splines.size() >= 4,
-                ExcNotImplemented("Need at least 4 splines"));
-    return
-      Point<dim>((1. - reference[1]) * splines[2].value(1.0-reference[0], reference[2]) +
-                 reference[0] * splines[1].value(1.0-reference[1], reference[2]) +
-                 reference[1] * splines[0].value(reference[0], reference[2]) +
-                 (1. - reference[0]) * splines[3].value(reference[1], reference[2]) -
-                 (1. - reference[0]) * (1.-reference[1]) * splines[2].value(1.0, reference[2]) -
-                 (1. - reference[0]) * reference[1] * splines[0].value(0., reference[2]) -
-                 reference[0] * (1. - reference[1]) * splines[2].value(0., reference[2]) -
-                 reference[0] * reference[1] * splines[0].value(1.0, reference[2]));
-  }
-
 private:
   std::vector<BSpline2D<dim,3>> splines;
   Triangulation<dim> triangulation;
   MappingQ1<dim> auxiliary_mapping;
 };
+
+#endif

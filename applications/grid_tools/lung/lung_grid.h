@@ -18,9 +18,10 @@
 #include "lung_util.h"
 #include "process_file.h"
 #include "triangulation_util.h"
+#include "deform_via_splines.h"
 
-//#define USE_CHILD_GEOMETRY
-#define USE_ADULT_GEOMETRY
+#define USE_CHILD_GEOMETRY
+//#define USE_ADULT_GEOMETRY
 //#define USE_ADULT_GEOMETRY_OLD
 
 namespace dealii
@@ -220,7 +221,8 @@ void lung(dealii::Triangulation<3> &                                     tria,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last)
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file)
 {
   Timer timer;
 
@@ -253,14 +255,28 @@ void lung(dealii::Triangulation<3> &                                     tria,
 
   timings["create_triangulation_2_mesh"] = timer.wall_time();
 
-  // clean up
-  for(unsigned int i = 0; i < roots.size(); i++)
-    delete roots[i];
+  std::vector<BSpline2D<3,3>> splines;
+  {
+    std::ifstream file(bspline_file.c_str());
+    unsigned int n_splines;
+    file.read(reinterpret_cast<char*>(&n_splines), sizeof(unsigned int));
+    splines.resize(n_splines);
+    for (unsigned int s=0; s<n_splines; ++s)
+      splines[s].read_from_file(file);
+  }
+
 
   timer.restart();
   // GridReordering<3>::reorder_cells(cell_data_3d, true);
   tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
   timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
+
+  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 10)->vertex(1) << std::endl;
+  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 4)->vertex(1) << std::endl;
+  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 8)->vertex(1) << std::endl;
+  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 6)->vertex(1) << std::endl;
+
+
 
   // set boundary ids
   unsigned int counter = outlet_id_first; // counter for outlets
@@ -282,6 +298,32 @@ void lung(dealii::Triangulation<3> &                                     tria,
   tria.refine_global(refinements);
   timings["create_triangulation_5_serial_refinement"] = timer.wall_time();
 
+  std::vector<DeformTransfinitelyViaSplines<3>> deform;
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton));
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton));
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton));
+
+  // clean up
+  for(unsigned int i = 0; i < roots.size(); i++)
+    delete roots[i];
+
+  //std::vector<Point<3>> & tria_points = const_cast<std::vector<Point<3>>&>(tria.get_vertices());
+  //for (Point<3> &p : tria_points)
+  //  p = deform.transform_to_deformed(p);
+  std::map<types::material_id,unsigned int> map_to_splines;
+  map_to_splines[LungID::create_root()] = 0;
+  map_to_splines[LungID::generate(LungID::create_root(), false)] = 1;
+  //map_to_splines[LungID::generate(LungID::create_root(), true)] = 2;
+  std::vector<bool> touched(tria.n_vertices(), false);
+  for (auto cell : tria.active_cell_iterators())
+    if (map_to_splines.find(cell->material_id()) != map_to_splines.end())
+      for (unsigned int v=0; v<GeometryInfo<3>::vertices_per_cell; ++v)
+        if (touched[cell->vertex_index(v)] == false)
+          {
+            cell->vertex(v) = deform[map_to_splines[cell->material_id()]].transform_to_deformed(cell->vertex(v));
+            touched[cell->vertex_index(v)] = true;
+          }
+
   // TODO only print if desired
   bool print = false;
   if(print)
@@ -294,11 +336,12 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last)
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file)
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
-  lung(tria_seq, generations, 0, create_tree, timings, outlet_id_first, outlet_id_last);
+  lung(tria_seq, generations, 0, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file);
   // copy coarse grid to distributed triangulation and ...
   tria.copy_triangulation(tria_seq);
   // ... refine
@@ -314,7 +357,8 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
-          unsigned int &                                                 outlet_id_last)
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file)
 {
   Timer timer;
   timer.restart();
@@ -322,7 +366,7 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
   // create partitioned triangulation ...
   tria.reinit(refinements2, [&](auto & tria) mutable {
     // ... by creating a refined sequential triangulation and partition it
-    lung(tria, generations, refinements1, create_tree, timings, outlet_id_first, outlet_id_last);
+    lung(tria, generations, refinements1, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file);
   });
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);

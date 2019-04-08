@@ -74,31 +74,24 @@ create_reference_cylinder(const bool                 do_transition,
     cell_data[5 + a * 2].vertices[3] = a == 3 ? 3 : 7 + a * 4;
   }
   SubCellData subcell_data;
-  //GridReordering<2>::reorder_cells(cell_data, true);
+  GridReordering<2>::reorder_cells(cell_data, true);
 
-  //Triangulation<2> tria_2d;
-  //tria_2d.create_triangulation(vertices, cell_data, subcell_data);
+  Triangulation<2> tria_2d;
+  tria_2d.create_triangulation(vertices, cell_data, subcell_data);
 
   vertices_3d.clear();
-  vertices_3d.resize((n_sections + 1) * vertices.size());
+  vertices_3d.resize((n_sections + 1) * tria_2d.n_vertices());
   cell_data_3d.clear();
   cell_data_3d.resize(n_sections * cell_data.size());
 
-  AssertThrow(LUNG_NUMBER_OF_VERTICES_2D == vertices.size(),
-              ExcMessage("Number of vertices in 2D does not match with the expectation!"));
-
-  std::vector<Point<3>> vertices_3d_temp(2 * vertices.size());
-  for(auto & v : vertices_3d_temp)
-    v = {0, 0, 0};
-  for(unsigned int s = 0; s <= 1; s++)
+  for(unsigned int s = 0; s <= n_sections; s++)
   {
-    const double       beta  = (1.0 * s) / 1;
-    const double       alpha = 1.0 - beta;
-    const unsigned int shift = s * vertices.size();
-    for(unsigned int i = 0; i < vertices.size(); ++i)
+    const double       beta  = (1.0 * s) / n_sections;
+    const unsigned int shift = s * tria_2d.n_vertices();
+    for(unsigned int i = 0; i < tria_2d.n_vertices(); ++i)
     {
-      vertices_3d[shift + i][0] = vertices[i][0];
-      vertices_3d[shift + i][1] = vertices[i][1];
+      vertices_3d[shift + i][0] = tria_2d.get_vertices()[i][0];
+      vertices_3d[shift + i][1] = tria_2d.get_vertices()[i][1];
       vertices_3d[shift + i][2] = beta;
     }
   }
@@ -152,6 +145,9 @@ create_cylinder(double       radius1,
   std::vector<Point<3>> vertices_3d_temp;
   create_reference_cylinder(do_transition, n_sections, vertices_3d_temp, cell_data_3d);
   vertices_3d.resize(vertices_3d_temp.size());
+
+  skeleton.clear();
+  skeleton.resize(8);
 
   /**************************************************************************
    * Loop over all points and transform
@@ -310,9 +306,16 @@ create_cylinder(double       radius1,
      ************************************************************************/
     point_out = (1 - beta) * Point<3>(offset + transform * point_out_alph) +
                 beta * Point<3>(offset + transform_parent * point_out_beta);
-
+    
     if((beta==0.0 || beta==1.0) && (std::abs(point_in[0])==1.0 || std::abs(point_in[1])==1.0))
-      skeleton.push_back(point_out);
+      {
+        std::cout << point_in[0] << "    " << point_in[1] << "   " << beta << "   ";
+        const unsigned int idz = beta == 0.0 ? 1 : 0;
+        const unsigned int idy = (point_in[1] == -1 || point_in[0] == -1) ? 1 : 0;
+        const unsigned int idx = (point_in[0] == 1 || point_in[1] == -1) ? 1 : 0;
+        std::cout << idz*4+idy*2+idx << std::endl;
+        skeleton[idz*4+idy*2+idx] = point_out;
+      }
   }
 }
 

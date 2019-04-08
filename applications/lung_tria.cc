@@ -95,15 +95,17 @@ run(int generations,
   // dealii::GridGenerator::lung(tria_dist, generations, refinements2, tree_factory,
   // timings,outlet_id_first,outlet_id_last);
 
-  parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
+//  parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
+  Triangulation<3> tria;
   dealii::GridGenerator::lung(tria,
                               generations,
                               refinements1,
-                              refinements2,
+                              //refinements2,
                               tree_factory,
                               timings,
                               outlet_id_first,
-                              outlet_id_last);
+                              outlet_id_last,
+                              bspline_file);
 
 //  Triangulation<3> tria;//(MPI_COMM_WORLD);
 //  dealii::GridGenerator::lung(tria, generations, refinements1/*, refinements2*/, tree_factory, timings);

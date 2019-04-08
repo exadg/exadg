@@ -1,8 +1,13 @@
 
+#ifndef READ_BSPLINE_H
+#define READ_BSPLINE_H
+
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
 
 using namespace dealii;
+
+const double convert_mm_to_m = 0.001;
 
 template <int dim, int degree=3>
 class BSpline2D
@@ -112,6 +117,8 @@ public:
     control_points.resize(nx*ny);
     file.read(reinterpret_cast<char*>(control_points.data()),
               sizeof(Point<dim>)*control_points.size());
+    for (auto &p : control_points)
+      p *= convert_mm_to_m;
   }
 
 private:
@@ -125,6 +132,7 @@ private:
 };
 
 
+inline
 void create_bspline_from_file(const std::string &filename)
 {
   std::ifstream file(filename.c_str());
@@ -138,3 +146,5 @@ void create_bspline_from_file(const std::string &filename)
                 << "    " << splines[s].value(0.2, 0.1) << std::endl;
     }
 }
+
+#endif
