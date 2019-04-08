@@ -75,12 +75,13 @@ public:
   // related to spatial discretization (which is why this function can be found in this interface
   // class)
   virtual double
-  calculate_time_step_cfl(double const time,
-                          double const cfl,
-                          double const exponent_fe_degree) const = 0;
+  calculate_time_step_cfl_analytical_velocity(double const time,
+                                              double const cfl,
+                                              double const exponent_fe_degree) const = 0;
 
   virtual double
-  calculate_time_step_cfl(double const cfl, double const exponent_fe_degree) const = 0;
+  calculate_time_step_cfl_numerical_velocity(double const cfl,
+                                             double const exponent_fe_degree) const = 0;
 
   // needed for time step calculation
   virtual double

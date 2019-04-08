@@ -162,11 +162,13 @@ public:
 
   // use numerical velocity field
   double
-  calculate_time_step_cfl(double const cfl, double const exponent_degree) const;
+  calculate_time_step_cfl_numerical_velocity(double const cfl, double const exponent_degree) const;
 
   // use analytical velocity field
   double
-  calculate_time_step_cfl(double const time, double const cfl, double const exponent_degree) const;
+  calculate_time_step_cfl_analytical_velocity(double const time,
+                                              double const cfl,
+                                              double const exponent_degree) const;
 
   // Calculate maximum velocity (required for global CFL criterion).
   double
