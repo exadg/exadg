@@ -114,9 +114,9 @@ public:
                                    splines[2].value(1., reference[2]),
                                    splines[2].value(0., reference[2]) };
     const Point<dim> mid_point =
-      (1.-reference[2]) * (bounds[bifurcation_indices[0]] + bounds[bifurcation_indices[1]])
+      (1.-reference[2]) * 0.5 * (bounds[bifurcation_indices[0]] + bounds[bifurcation_indices[1]])
       +
-      reference[2] * (bounds[bifurcation_indices[2]] + bounds[bifurcation_indices[3]]);
+      reference[2] * 0.5 * (bounds[bifurcation_indices[2]] + bounds[bifurcation_indices[3]]);
 
     if (std::abs(reference[0]-0.5) < 1e-12 && std::abs(reference[1]-0.5) < 1e-12)
       return mid_point;
