@@ -193,6 +193,9 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
       // use adaptive time step size only if it is smaller, otherwise use temporary time step size
       time_step = std::min(time_step_adap, time_step_global);
 
+      // make sure that the maximum allowable time step size is not exceeded
+      time_step = std::min(time_step, param.time_step_size_max);
+
       print_parameter(pcout, "Time step size (adaptive)", time_step);
     }
     else
@@ -243,10 +246,17 @@ template<int dim, typename Number>
 double
 TimeIntBDF<dim, Number>::recalculate_time_step_size() const
 {
+  AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
+              ExcMessage(
+                "Adaptive time step is not implemented for this type of time step calculation."));
+
   double new_time_step_size =
     operator_base->calculate_time_step_cfl(get_velocity(),
                                            cfl,
                                            param.cfl_exponent_fe_degree_velocity);
+
+  // make sure that time step size does not exceed maximum allowable time step size
+  new_time_step_size = std::min(new_time_step_size, param.time_step_size_max);
 
   bool use_limiter = true;
   if(use_limiter)

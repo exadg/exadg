@@ -59,8 +59,8 @@
 using namespace dealii;
 
 // select the test case
-//#include "incompressible_flow_with_transport_test_cases/cavity.h"
-#include "incompressible_flow_with_transport_test_cases/lung.h"
+#include "incompressible_flow_with_transport_test_cases/cavity.h"
+//#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 
 template<int dim, int degree_u, int degree_p, int degree_s, typename Number = double>
@@ -736,6 +736,14 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_transport
                       << std::endl;
         }
       }
+    }
+    else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+    {
+      this->pcout << "  Explicit solver (no systems of equations have to be solved)" << std::endl;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
     }
   }
 }
