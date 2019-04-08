@@ -2,7 +2,6 @@ TRILINOS_HOME=../
 EXTRA_ARGS=$@
 
 MPIDIR=/usr/lib64/openmpi
-WORKING_DIRECTORY=/home/fehn
 
 rm -rf CMakeFiles/ CMakeCache.txt
 

@@ -1,5 +1,3 @@
-# path to infrastructure folders
-WORKING_DIRECTORY=/home/fehn
 # name of deal.II library directory
 DEAL=matrixfree
 

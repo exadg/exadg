@@ -586,7 +586,8 @@ DGOperation<dim, degree, Number>::calculate_time_step_cfl(double const cfl,
     /*quad_index = */ 0,
     convective_operator.get_velocity(),
     cfl,
-    exponent_degree);
+    exponent_degree,
+    param.adaptive_time_stepping_cfl_type);
 }
 
 template<int dim, int degree, typename Number>
@@ -595,8 +596,14 @@ DGOperation<dim, degree, Number>::calculate_time_step_cfl(double const time,
                                                           double const cfl,
                                                           double const exponent_degree) const
 {
-  return calculate_time_step_cfl_local<dim, degree, Number>(
-    data, 0 /*dof_index*/, 0 /*quad_index*/, field_functions->velocity, time, cfl, exponent_degree);
+  return calculate_time_step_cfl_local<dim, degree, Number>(data,
+                                                            0 /*dof_index*/,
+                                                            0 /*quad_index*/,
+                                                            field_functions->velocity,
+                                                            time,
+                                                            cfl,
+                                                            exponent_degree,
+                                                            param.adaptive_time_stepping_cfl_type);
 }
 
 template<int dim, int degree, typename Number>

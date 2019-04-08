@@ -251,6 +251,33 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+{
+  if(dim == 2)
+  {
+    Point<dim> point1(0.0,0.0), point2(L,L);
+    GridGenerator::hyper_rectangle(*triangulation,point1,point2);
+    triangulation->refine_global(n_refine_space);
+  }
+  else if(dim == 3)
+  {
+    const double left = 0.0, right = L;
+    GridGenerator::hyper_cube(*triangulation,left,right);
+    triangulation->refine_global(n_refine_space);
+  }
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
@@ -290,34 +317,11 @@ public:
 };
 
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  if(dim == 2)
-  {
-    Point<dim> point1(0.0,0.0), point2(L,L);
-    GridGenerator::hyper_rectangle(*triangulation,point1,point2);
-    triangulation->refine_global(n_refine_space);
-  }
-  else if(dim == 3)
-  {
-    const double left = 0.0, right = L;
-    GridGenerator::hyper_cube(*triangulation,left,right);
-    triangulation->refine_global(n_refine_space);
-  }
-
   // all boundaries have ID = 0 by default -> Dirichlet boundaries
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;

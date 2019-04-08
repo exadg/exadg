@@ -130,7 +130,27 @@ void CompNS::InputParameters<dim>::set_input_parameters()
 }
 
 
-/**************************************************************************************/
+ /**************************************************************************************/
+ /*                                                                                    */
+ /*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+ /*                                                                                    */
+ /**************************************************************************************/
+
+ template<int dim>
+ void create_grid_and_set_boundary_ids(
+   std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
+   unsigned int const                                       n_refine_space,
+   std::vector<GridTools::PeriodicFacePair<typename
+     Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
+ {
+   std::vector<unsigned int> repetitions({1,1});
+   Point<dim> point1(X_0-L/2.0,Y_0-H/2.0), point2(X_0+L/2.0,Y_0+H/2.0);
+   GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+
+   triangulation->refine_global(n_refine_space);
+ }
+
+ /**************************************************************************************/
 /*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
@@ -218,146 +238,133 @@ double Solution<dim>::value(const Point<dim>    &p,
 
 
 /*
- *  prescribe a parabolic velocity profile at the inflow and
- *  zero velocity at the wall boundaries
- */
- template<int dim>
- class VelocityBC : public Function<dim>
- {
- public:
-   VelocityBC (const unsigned int  n_components = dim,
-               const double        time = 0.)
-     :
-     Function<dim>(n_components, time)
-   {}
+*  prescribe a parabolic velocity profile at the inflow and
+*  zero velocity at the wall boundaries
+*/
+template<int dim>
+class VelocityBC : public Function<dim>
+{
+public:
+ VelocityBC (const unsigned int  n_components = dim,
+             const double        time = 0.)
+   :
+   Function<dim>(n_components, time)
+ {}
 
-   virtual ~VelocityBC(){};
+ virtual ~VelocityBC(){};
 
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
+ virtual double value (const Point<dim>    &p,
+                       const unsigned int  component = 0) const;
+};
 
- template<int dim>
- double VelocityBC<dim>::value(const Point<dim>   &p,
-                               const unsigned int component) const
- {
-   const double t = this->get_time();
-   const double r_sq = get_r_square(p[0],p[1],t);
+template<int dim>
+double VelocityBC<dim>::value(const Point<dim>   &p,
+                             const unsigned int component) const
+{
+ const double t = this->get_time();
+ const double r_sq = get_r_square(p[0],p[1],t);
 
-   double result = 0.0;
-   if (component==0)
-     result = get_u(p[1],r_sq);
-   else if (component==1)
-     result = get_v(p[0],t,r_sq);
+ double result = 0.0;
+ if (component==0)
+   result = get_u(p[1],r_sq);
+ else if (component==1)
+   result = get_v(p[0],t,r_sq);
 
-   return result;
- }
+ return result;
+}
 
- /*
-  *  prescribe a constant temperature at the channel walls
-  */
- template<int dim>
- class EnergyBC : public Function<dim>
- {
- public:
-   EnergyBC (const double time = 0.)
-     :
-     Function<dim>(1, time)
-   {}
+/*
+*  prescribe a constant temperature at the channel walls
+*/
+template<int dim>
+class EnergyBC : public Function<dim>
+{
+public:
+ EnergyBC (const double time = 0.)
+   :
+   Function<dim>(1, time)
+ {}
 
-   virtual ~EnergyBC(){};
+ virtual ~EnergyBC(){};
 
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
+ virtual double value (const Point<dim>    &p,
+                       const unsigned int  component = 0) const;
+};
 
- template<int dim>
- double EnergyBC<dim>::value(const Point<dim>   &p,
-                             const unsigned int /*component*/) const
- {
-   const double t = this->get_time();
-   const double r_sq = get_r_square(p[0],p[1],t);
-   const double rho =  get_rho(r_sq);
-   const double u = get_u(p[1],r_sq);
-   const double v = get_v(p[0],t,r_sq);
-   double energy = get_energy(rho,u,v);
+template<int dim>
+double EnergyBC<dim>::value(const Point<dim>   &p,
+                           const unsigned int /*component*/) const
+{
+ const double t = this->get_time();
+ const double r_sq = get_r_square(p[0],p[1],t);
+ const double rho =  get_rho(r_sq);
+ const double u = get_u(p[1],r_sq);
+ const double v = get_v(p[0],t,r_sq);
+ double energy = get_energy(rho,u,v);
 
-   return energy;
- }
+ return energy;
+}
 
- template<int dim>
- class DensityBC : public Function<dim>
- {
- public:
-   DensityBC (const double time = 0.)
-     :
-     Function<dim>(1, time)
-   {}
+template<int dim>
+class DensityBC : public Function<dim>
+{
+public:
+ DensityBC (const double time = 0.)
+   :
+   Function<dim>(1, time)
+ {}
 
-   virtual ~DensityBC(){};
+ virtual ~DensityBC(){};
 
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
- };
+ virtual double value (const Point<dim>    &p,
+                       const unsigned int  component = 0) const;
+};
 
- template<int dim>
- double DensityBC<dim>::value(const Point<dim>   &p,
-                              const unsigned int /*component*/) const
- {
-   const double t = this->get_time();
-   const double r_sq = get_r_square(p[0],p[1],t);
-   const double rho =  get_rho(r_sq);
+template<int dim>
+double DensityBC<dim>::value(const Point<dim>   &p,
+                            const unsigned int /*component*/) const
+{
+ const double t = this->get_time();
+ const double r_sq = get_r_square(p[0],p[1],t);
+ const double rho =  get_rho(r_sq);
 
-   return rho;
- }
+ return rho;
+}
 
- /**************************************************************************************/
- /*                                                                                    */
- /*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
- /*                                                                                    */
- /**************************************************************************************/
+namespace CompNS
+{
 
- template<int dim>
- void create_grid_and_set_boundary_conditions(
-   std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
-	 unsigned int const                                       n_refine_space,
-	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
-	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
-	 std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
-	 std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy,
-	 std::vector<GridTools::PeriodicFacePair<typename
-	   Triangulation<dim>::cell_iterator> >                   &/*periodic_faces*/)
- {
-   std::vector<unsigned int> repetitions({1,1});
-   Point<dim> point1(X_0-L/2.0,Y_0-H/2.0), point2(X_0+L/2.0,Y_0+H/2.0);
-   GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+template<int dim>
+void set_boundary_conditions(
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_density,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_velocity,
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
+  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy)
+{
+  // zero function scalar
+  std::shared_ptr<Function<dim> > zero_function_scalar;
+  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
 
-   triangulation->refine_global(n_refine_space);
+  // density
+  std::shared_ptr<Function<dim> > density_bc;
+  density_bc.reset(new DensityBC<dim>());
+  boundary_descriptor_density->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,density_bc));
 
-   // zero function scalar
-   std::shared_ptr<Function<dim> > zero_function_scalar;
-   zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
+  // velocity
+  std::shared_ptr<Function<dim> > velocity_bc;
+  velocity_bc.reset(new VelocityBC<dim>());
+  boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,velocity_bc));
 
-   // density
-   std::shared_ptr<Function<dim> > density_bc;
-   density_bc.reset(new DensityBC<dim>());
-   boundary_descriptor_density->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,density_bc));
+  // pressure
+  boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
 
-   // velocity
-   std::shared_ptr<Function<dim> > velocity_bc;
-   velocity_bc.reset(new VelocityBC<dim>());
-   boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,velocity_bc));
+  // energy: prescribe energy
+  boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Energy));
 
-   // pressure
-   boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
-
-   // energy: prescribe energy
-   boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Energy));
-
-   std::shared_ptr<Function<dim> > energy_bc;
-   energy_bc.reset(new EnergyBC<dim>());
-   boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
- }
+  std::shared_ptr<Function<dim> > energy_bc;
+  energy_bc.reset(new EnergyBC<dim>());
+  boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,energy_bc));
+}
 
 template<int dim>
 void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_functions)
@@ -410,6 +417,8 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   pp.reset(new CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data));
 
   return pp;
+}
+
 }
 
 #endif /* APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COMP_NS_H_ */

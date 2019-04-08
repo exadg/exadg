@@ -114,7 +114,8 @@ ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refin
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(n_refine_space_in),
     n_refine_time(n_refine_time_in),
-    overall_time(0.0)
+    overall_time(0.0),
+    setup_time(0.0)
 {
 }
 
@@ -165,6 +166,15 @@ ConvDiffProblem<dim, degree, Number>::setup(bool const do_restart)
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
+  // this function has to be defined in the header file that implements
+  // all problem specific things like parameters, geometry, boundary conditions, etc.
+  create_grid_and_set_boundary_ids(triangulation, n_refine_space);
+
+  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
+  set_boundary_conditions(boundary_descriptor);
+
+  print_grid_data(pcout, n_refine_space, *triangulation);
+
   field_functions.reset(new FieldFunctions<dim>());
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
@@ -172,8 +182,6 @@ ConvDiffProblem<dim, degree, Number>::setup(bool const do_restart)
 
   analytical_solution.reset(new AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
-
-  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
 
   // initialize postprocessor
   postprocessor.reset(new PostProcessor<dim, degree>());
@@ -208,12 +216,6 @@ ConvDiffProblem<dim, degree, Number>::setup(bool const do_restart)
   {
     AssertThrow(false, ExcMessage("Not implemented"));
   }
-
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions(triangulation, n_refine_space, boundary_descriptor);
-
-  print_grid_data(pcout, n_refine_space, *triangulation);
 
   conv_diff_operator->setup(periodic_faces,
                             boundary_descriptor,

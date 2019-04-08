@@ -53,7 +53,7 @@ std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME = "test"; //"Re1600_N8_k9_CFL_0-15_div_normal_conti_penalty_1-0";
 
 enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear;
+const MeshType MESH_TYPE = MeshType::Cartesian;
 
 // only relevant for Cartesian mesh
 const unsigned int N_CELLS_1D_COARSE_GRID = 1;
@@ -250,74 +250,16 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
-/*                                                                                    */
-/**************************************************************************************/
-
-/*
- *  This function is used to prescribe initial conditions for the velocity field
- */
-template<int dim>
-class InitialSolutionVelocity : public Function<dim>
-{
-public:
-  InitialSolutionVelocity (const unsigned int  n_components = dim,
-                           const double        time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {}
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    double result = 0.0;
-
-    if (component == 0)
-      result = V_0*std::sin(p[0]/L)*std::cos(p[1]/L)*std::cos(p[2]/L);
-    else if (component == 1)
-      result = -V_0*std::cos(p[0]/L)*std::sin(p[1]/L)*std::cos(p[2]/L);
-    else if (component == 2)
-      result = 0.0;
-
-    return result;
-  }
-};
-
-template<int dim>
-class InitialSolutionPressure : public Function<dim>
-{
-public:
-  InitialSolutionPressure (const double time = 0.)
-    :
-    Function<dim>(1 /*n_components*/, time)
-  {}
-
-  double value (const Point<dim>   &p,
-                const unsigned int /*component*/) const
-  {
-    double result = 0.0;
-
-    result = p_0 + V_0 * V_0 / 16.0 * (std::cos(2.0*p[0]/L) + std::cos(2.0*p[1]/L)) * (std::cos(2.0*p[2]/L) + 2.0);
-
-    return result;
-  }
-};
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
 /*                                                                                    */
 /**************************************************************************************/
 
 #include "../grid_tools/deformed_cube_manifold.h"
 
 template<int dim>
-void create_grid_and_set_boundary_conditions(
+void create_grid_and_set_boundary_ids(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        /*boundary_descriptor_velocity*/,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        /*boundary_descriptor_pressure*/,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
@@ -380,7 +322,72 @@ void create_grid_and_set_boundary_conditions(
 
   // perform global refinements
   triangulation->refine_global(n_refine_space);
+}
 
+/**************************************************************************************/
+/*                                                                                    */
+/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
+/*                                                                                    */
+/**************************************************************************************/
+
+namespace IncNS
+{
+
+/*
+ *  This function is used to prescribe initial conditions for the velocity field
+ */
+template<int dim>
+class InitialSolutionVelocity : public Function<dim>
+{
+public:
+  InitialSolutionVelocity (const unsigned int  n_components = dim,
+                           const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {}
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
+
+    if (component == 0)
+      result = V_0*std::sin(p[0]/L)*std::cos(p[1]/L)*std::cos(p[2]/L);
+    else if (component == 1)
+      result = -V_0*std::cos(p[0]/L)*std::sin(p[1]/L)*std::cos(p[2]/L);
+    else if (component == 2)
+      result = 0.0;
+
+    return result;
+  }
+};
+
+template<int dim>
+class InitialSolutionPressure : public Function<dim>
+{
+public:
+  InitialSolutionPressure (const double time = 0.)
+    :
+    Function<dim>(1 /*n_components*/, time)
+  {}
+
+  double value (const Point<dim>   &p,
+                const unsigned int /*component*/) const
+  {
+    double result = 0.0;
+
+    result = p_0 + V_0 * V_0 / 16.0 * (std::cos(2.0*p[0]/L) + std::cos(2.0*p[1]/L)) * (std::cos(2.0*p[2]/L) + 2.0);
+
+    return result;
+  }
+};
+
+
+template<int dim>
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > /*boundary_descriptor_velocity*/,
+    std::shared_ptr<BoundaryDescriptorP<dim> > /*boundary_descriptor_pressure*/)
+{
   // test case with pure periodic BC
   // boundary descriptors remain empty for velocity and pressure
 }
@@ -422,6 +429,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp.reset(new PostProcessor<dim,fe_degree_u,fe_degree_p,Number>(pp_data));
 
   return pp;
+}
+
 }
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_ */

@@ -65,11 +65,13 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
-#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel_L2_vs_Hdiv.h"
+//#include "incompressible_navier_stokes_test_cases/periodic_hill.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
-//#include "incompressible_navier_stokes_test_cases/lung.h"
+
+// incompressible flow with scalar transport (but can be used for pure fluid simulations also)
+#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
 class NavierStokesProblem
@@ -198,6 +200,17 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
+  // this function has to be defined in the header file that implements all
+  // problem specific things like parameters, geometry, boundary conditions, etc.
+  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
+
+  print_grid_data(pcout, n_refine_space, *triangulation);
+
+  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
+
+  IncNS::set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
+
   // field functions and boundary conditions
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
@@ -207,9 +220,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
   set_analytical_solution(analytical_solution);
-
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
   // initialize postprocessor
   // this function has to be defined in the header file
@@ -282,16 +292,6 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-
-  // this function has to be defined in the header file that implements all
-  // problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions(triangulation,
-                                          n_refine_space,
-                                          boundary_descriptor_velocity,
-                                          boundary_descriptor_pressure,
-                                          periodic_faces);
-
-  print_grid_data(pcout, n_refine_space, *triangulation);
 
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,

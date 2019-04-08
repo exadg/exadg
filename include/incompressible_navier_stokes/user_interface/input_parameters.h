@@ -24,6 +24,7 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
+#include "../../time_integration/enum_types.h"
 #include "../postprocessor/line_plot_data.h"
 #include "../postprocessor/mean_velocity_calculator.h"
 
@@ -189,6 +190,7 @@ public:
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       adaptive_time_stepping(false),
       adaptive_time_stepping_limiting_factor(1.2),
+      adaptive_time_stepping_cfl_type(CFLConditionType::VelocityNorm),
       max_velocity(-1.),
       cfl(-1.),
       cfl_oif(-1.),
@@ -505,6 +507,17 @@ public:
                   ExcMessage("Parameter must be defined"));
     }
 
+    if(solver_type == SolverType::Steady)
+    {
+      if(use_divergence_penalty == true || use_continuity_penalty == true)
+      {
+        AssertThrow(add_penalty_terms_to_monolithic_system == true,
+                    ExcMessage(
+                      "Use add_penalty_terms_to_monolithic_system = true, "
+                      "otherwise the penalty terms will be ignored by the steady solver."));
+      }
+    }
+
     // HIGH-ORDER DUAL SPLITTING SCHEME
     if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -713,6 +726,10 @@ public:
       print_parameter(pcout,
                       "Adaptive time stepping limiting factor",
                       adaptive_time_stepping_limiting_factor);
+
+      print_parameter(pcout,
+                      "Type of CFL condition",
+                      enum_to_string(adaptive_time_stepping_cfl_type));
     }
 
 
@@ -1227,6 +1244,10 @@ public:
   // the time step size are allowed from one time step to the next.
   double adaptive_time_stepping_limiting_factor;
 
+  // Different variants are available for calculating the time step size based on a local CFL
+  // criterion.
+  CFLConditionType adaptive_time_stepping_cfl_type;
+
   // maximum velocity needed when calculating the time step according to cfl-condition
   double max_velocity;
 
@@ -1664,8 +1685,11 @@ public:
   // plot along lines
   LinePlotData<dim> line_plot_data;
 
-  // mean flow
+  // mean velocity or flow rate
   MeanVelocityCalculatorData<dim> mean_velocity_data;
+
+  // flow rate for a vector of boundaries
+  FlowRateCalculatorData<dim> flow_rate_data;
 };
 
 } // namespace IncNS

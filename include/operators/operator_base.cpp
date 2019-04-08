@@ -496,9 +496,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_init_system_
   else if(is_dg && !is_mg)
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   else if(/*!is_dg &&*/ is_mg)
-    MGTools::make_sparsity_pattern(dof_handler, dsp, this->level_mg_handler);
+    MGTools::make_sparsity_pattern(dof_handler, dsp, this->level_mg_handler, *this->constraint);
   else /* if (!is_dg && !is_mg)*/
-    DoFTools::make_sparsity_pattern(dof_handler, dsp);
+    DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 
   dsp.compress();
   system_matrix.reinit(dsp);

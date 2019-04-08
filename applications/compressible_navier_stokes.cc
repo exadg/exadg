@@ -164,16 +164,27 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup(bool const 
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  field_functions.reset(new FieldFunctions<dim>());
-  set_field_functions(field_functions);
+  // this function has to be defined in the header file that implements
+  // all problem specific things like parameters, geometry, boundary conditions, etc.
+  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
 
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  set_analytical_solution(analytical_solution);
+  print_grid_data(pcout, n_refine_space, *triangulation);
 
   boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
   boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptor<dim>());
   boundary_descriptor_energy.reset(new BoundaryDescriptorEnergy<dim>());
+
+  CompNS::set_boundary_conditions(boundary_descriptor_density,
+                                  boundary_descriptor_velocity,
+                                  boundary_descriptor_pressure,
+                                  boundary_descriptor_energy);
+
+  field_functions.reset(new FieldFunctions<dim>());
+  set_field_functions(field_functions);
+
+  analytical_solution.reset(new AnalyticalSolution<dim>());
+  set_analytical_solution(analytical_solution);
 
   // initialize postprocessor
   // this function has to be defined in the header file
@@ -187,18 +198,6 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup(bool const 
 
   // initialize time integrator
   time_integrator.reset(new TIME_INT(comp_navier_stokes_operator, param, n_refine_time));
-
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions(triangulation,
-                                          n_refine_space,
-                                          boundary_descriptor_density,
-                                          boundary_descriptor_velocity,
-                                          boundary_descriptor_pressure,
-                                          boundary_descriptor_energy,
-                                          periodic_faces);
-
-  print_grid_data(pcout, n_refine_space, *triangulation);
 
   comp_navier_stokes_operator->setup(boundary_descriptor_density,
                                      boundary_descriptor_velocity,

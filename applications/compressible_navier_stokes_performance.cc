@@ -20,7 +20,7 @@
 // temporal discretization
 #include "../include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.h"
 
-// Paramters, BCs, etc.
+// Parameters, BCs, etc.
 #include "../include/compressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/compressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/compressible_navier_stokes/user_interface/field_functions.h"
@@ -158,51 +158,6 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
     n_repetitions_inner(N_REPETITIONS_INNER),
     n_repetitions_outer(N_REPETITIONS_OUTER)
 {
-  param.set_input_parameters();
-  param.check_input_parameters();
-
-  print_header();
-  print_MPI_info(pcout);
-  if(param.print_input_parameters == true)
-    param.print(pcout);
-
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
-
-  field_functions.reset(new FieldFunctions<dim>());
-  set_field_functions(field_functions);
-
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  set_analytical_solution(analytical_solution);
-
-  boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
-  boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptor<dim>());
-  boundary_descriptor_energy.reset(new BoundaryDescriptorEnergy<dim>());
-
-  // initialize postprocessor
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
-  postprocessor =
-    construct_postprocessor<dim, degree, n_q_points_conv, n_q_points_vis, Number>(param);
-
-  // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(new DG_OPERATOR(*triangulation, param, postprocessor));
 }
 
 template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
@@ -224,17 +179,63 @@ template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename 
 void
 Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup()
 {
+  print_header();
+  print_MPI_info(pcout);
+
+  param.set_input_parameters();
+  param.check_input_parameters();
+
+  if(param.print_input_parameters == true)
+    param.print(pcout);
+
+  // triangulation
+  if(param.triangulation_type == TriangulationType::Distributed)
+  {
+    triangulation.reset(new parallel::distributed::Triangulation<dim>(
+      MPI_COMM_WORLD,
+      dealii::Triangulation<dim>::none,
+      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+  }
+  else if(param.triangulation_type == TriangulationType::FullyDistributed)
+  {
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
+  }
+
   // this function has to be defined in the header file that implements
   // all problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_conditions(triangulation,
-                                          n_refine_space,
-                                          boundary_descriptor_density,
-                                          boundary_descriptor_velocity,
-                                          boundary_descriptor_pressure,
-                                          boundary_descriptor_energy,
-                                          periodic_faces);
+  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
 
   print_grid_data(pcout, n_refine_space, *triangulation);
+
+  boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_pressure.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor_energy.reset(new BoundaryDescriptorEnergy<dim>());
+
+  CompNS::set_boundary_conditions(boundary_descriptor_density,
+                                  boundary_descriptor_velocity,
+                                  boundary_descriptor_pressure,
+                                  boundary_descriptor_energy);
+
+  field_functions.reset(new FieldFunctions<dim>());
+  set_field_functions(field_functions);
+
+  analytical_solution.reset(new AnalyticalSolution<dim>());
+  set_analytical_solution(analytical_solution);
+
+  // initialize postprocessor
+  // this function has to be defined in the header file
+  // that implements all problem specific things like
+  // parameters, geometry, boundary conditions, etc.
+  postprocessor =
+    construct_postprocessor<dim, degree, n_q_points_conv, n_q_points_vis, Number>(param);
+
+  // initialize compressible Navier-Stokes operator
+  comp_navier_stokes_operator.reset(new DG_OPERATOR(*triangulation, param, postprocessor));
 
   comp_navier_stokes_operator->setup(boundary_descriptor_density,
                                      boundary_descriptor_velocity,

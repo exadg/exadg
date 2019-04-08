@@ -43,8 +43,8 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // prescribe velocity inflow profile for nozzle domain via precursor simulation?
-// USE_PRECURSOR_SIMULATION == true:  use solver unsteady_navier_stokes_two_domains.cc
-// USE_PRECURSOR_SIMULATION == false: use solver unsteady_navier_stokes.cc
+// USE_PRECURSOR_SIMULATION == true:  use solver incompressible_navier_stokes_two_domains.cc
+// USE_PRECURSOR_SIMULATION == false: use solver incompressible_navier_stokes.cc
 bool const USE_PRECURSOR_SIMULATION = true;
 
 // use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
@@ -204,9 +204,11 @@ void initialize_r_and_phi_values()
   AssertThrow(N_POINTS_R >= 2, ExcMessage("Variable N_POINTS_R is invalid"));
   AssertThrow(N_POINTS_PHI >= 2, ExcMessage("Variable N_POINTS_PHI is invalid"));
 
+  // 0 <= radius <= R_OUTER
   for(unsigned int i=0; i<N_POINTS_R; ++i)
     R_VALUES[i] = double(i)/double(N_POINTS_R-1)*R_OUTER;
 
+  // - pi <= phi <= pi
   for(unsigned int i=0; i<N_POINTS_PHI; ++i)
     PHI_VALUES[i] = -numbers::PI + double(i)/double(N_POINTS_PHI-1)*2.0*numbers::PI;
 }
@@ -231,7 +233,7 @@ void initialize_velocity_values()
         velocity[2] += perturbation;
       }
 
-      VELOCITY_VALUES[iy*N_POINTS_R + iz] = velocity;
+      VELOCITY_VALUES[iy*N_POINTS_PHI + iz] = velocity;
     }
   }
 }
@@ -612,141 +614,9 @@ void InputParameters<dim>::set_input_parameters()
   this->set_input_parameters(2);
 }
 
-
 /**************************************************************************************/
 /*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
-/*                                                                                    */
-/**************************************************************************************/
-
-template<int dim>
-class InitialSolutionVelocity : public Function<dim>
-{
-public:
-  InitialSolutionVelocity (const unsigned int  n_components = dim,
-                           const double        time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {
-    srand(0); // initialize rand() to obtain reproducible results
-  }
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    AssertThrow(dim==3, ExcMessage("Dimension has to be dim==3."));
-
-    double result = 0.0;
-
-    // flow in z-direction
-    if(component == 2)
-    {
-      double radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
-
-      // assume parabolic profile u(r) = u_max * [1-(r/R)^2]
-      //  -> u_max = 2 * u_mean = 2 * flow_rate / area
-      double const RADIUS = radius_function(p[2]);
-      if(radius > RADIUS)
-        radius = RADIUS;
-
-      // parabolic velocity profile
-      double const max_velocity_z = MAX_VELOCITY * std::pow(R_OUTER/RADIUS,2.0);
-      result = max_velocity_z*(1.0-pow(radius/RADIUS,2.0));
-
-      // Add perturbation (sine + random) for the precursor to initiate
-      // a turbulent flow in case the Reynolds number is large enough
-      // (otherwise, the perturbations will be damped and the flow becomes laminar).
-      // According to first numerical results, the perturbed flow returns to a laminar
-      // steady state in the precursor domain for Reynolds numbers Re_t = 500, 2000,
-      // 3500, 5000, and 6500.
-      if(p[2] <= Z2_PRECURSOR)
-      {
-        double const phi = std::atan2(p[1],p[0]);
-        double const factor = 0.5;
-        double perturbation = factor * max_velocity_z * std::sin(4.0*phi) * std::sin(8.0*numbers::PI*p[2]/LENGTH_PRECURSOR)
-                              + factor * max_velocity_z * ((double)rand()/RAND_MAX-0.5)/0.5;
-
-        // the perturbations should fulfill the Dirichlet boundary conditions
-        perturbation *= (1.0-pow(radius/RADIUS,6.0));
-
-        result += perturbation;
-      }
-
-    }
-
-    return result;
-  }
-};
-
-#include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
-
-template<int dim>
-class InflowProfile : public Function<dim>
-{
-public:
-  InflowProfile (const unsigned int n_components = dim,
-                 const double       time = 0.)
-    :
-    Function<dim>(n_components, time)
-  {
-    initialize_r_and_phi_values();
-    initialize_velocity_values();
-  }
-
-  double value (const Point<dim>   &p,
-                const unsigned int component = 0) const
-  {
-    // compute polar coordinates (r, phi) from point p
-    // given in Cartesian coordinates (x, y) = inflow plane
-    double const r = std::sqrt(p[0]*p[0] + p[1]*p[1]);
-    double const phi = std::atan2(p[1],p[0]);
-
-    double const result = linear_interpolation_2d_cylindrical(r,
-                                                              phi,
-                                                              R_VALUES,
-                                                              PHI_VALUES,
-                                                              VELOCITY_VALUES,
-                                                              component);
-
-    return result;
-  }
-};
-
-
-/*
- *  Right-hand side function: Implements the body force vector occurring on the
- *  right-hand side of the momentum equation of the Navier-Stokes equations.
- *  Only relevant for precursor simulation.
- */
- template<int dim>
- class RightHandSide : public Function<dim>
- {
- public:
-   RightHandSide (const double time = 0.)
-     :
-     Function<dim>(dim, time)
-   {}
-
-   double value (const Point<dim>    & /*p*/,
-                 const unsigned int  component = 0) const
-   {
-     double result = 0.0;
-
-     // Channel flow with periodic bc in z-direction:
-     // The flow is driven by body force in z-direction
-     if(component==2)
-     {
-       result = FLOW_RATE_CONTROLLER.get_body_force();
-     }
-
-     return result;
-   }
- };
-
-
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
 /*                                                                                    */
 /**************************************************************************************/
 
@@ -756,11 +626,9 @@ public:
  *  Create grid for precursor domain (DOMAIN 1)
  */
 template<int dim>
-void create_grid_and_set_boundary_conditions_1(
+void create_grid_and_set_boundary_ids_1(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
@@ -850,30 +718,15 @@ void create_grid_and_set_boundary_conditions_1(
 
   // perform global refinements
   triangulation->refine_global(n_refine_space);
-
-  /*
-   *  FILL BOUNDARY DESCRIPTORS
-   */
-  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
-
-  // fill boundary descriptor velocity
-  // no slip boundaries at lower and upper wall with ID=0
-  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
-
-  // fill boundary descriptor pressure
-  // no slip boundaries at lower and upper wall with ID=0
-  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
 }
 
 /*
  *  Create grid for precursor domain (DOMAIN 2)
  */
 template<int dim>
-void create_grid_and_set_boundary_conditions_2(
+void create_grid_and_set_boundary_ids_2(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
 {
@@ -1172,7 +1025,178 @@ void create_grid_and_set_boundary_conditions_2(
 
   // perform global refinements
   triangulation->refine_global(n_refine_space);
+}
 
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+{
+  // call respective function for DOMAIN 2
+  create_grid_and_set_boundary_ids_2(triangulation,
+                                     n_refine_space,
+                                     periodic_faces);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
+/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
+/*                                                                                    */
+/**************************************************************************************/
+
+namespace IncNS
+{
+
+template<int dim>
+class InitialSolutionVelocity : public Function<dim>
+{
+public:
+  InitialSolutionVelocity (const unsigned int  n_components = dim,
+                           const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {
+    srand(0); // initialize rand() to obtain reproducible results
+  }
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    AssertThrow(dim==3, ExcMessage("Dimension has to be dim==3."));
+
+    double result = 0.0;
+
+    // flow in z-direction
+    if(component == 2)
+    {
+      double radius = std::sqrt(p[0]*p[0]+p[1]*p[1]);
+
+      // assume parabolic profile u(r) = u_max * [1-(r/R)^2]
+      //  -> u_max = 2 * u_mean = 2 * flow_rate / area
+      double const RADIUS = radius_function(p[2]);
+      if(radius > RADIUS)
+        radius = RADIUS;
+
+      // parabolic velocity profile
+      double const max_velocity_z = MAX_VELOCITY * std::pow(R_OUTER/RADIUS,2.0);
+      result = max_velocity_z*(1.0-pow(radius/RADIUS,2.0));
+
+      // Add perturbation (sine + random) for the precursor to initiate
+      // a turbulent flow in case the Reynolds number is large enough
+      // (otherwise, the perturbations will be damped and the flow becomes laminar).
+      // According to first numerical results, the perturbed flow returns to a laminar
+      // steady state in the precursor domain for Reynolds numbers Re_t = 500, 2000,
+      // 3500, 5000, and 6500.
+      if(p[2] <= Z2_PRECURSOR)
+      {
+        double const phi = std::atan2(p[1],p[0]);
+        double const factor = 0.5;
+        double perturbation = factor * max_velocity_z * std::sin(4.0*phi) * std::sin(8.0*numbers::PI*p[2]/LENGTH_PRECURSOR)
+                              + factor * max_velocity_z * ((double)rand()/RAND_MAX-0.5)/0.5;
+
+        // the perturbations should fulfill the Dirichlet boundary conditions
+        perturbation *= (1.0-pow(radius/RADIUS,6.0));
+
+        result += perturbation;
+      }
+
+    }
+
+    return result;
+  }
+};
+
+#include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
+
+template<int dim>
+class InflowProfile : public Function<dim>
+{
+public:
+  InflowProfile (const unsigned int n_components = dim,
+                 const double       time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {
+    initialize_r_and_phi_values();
+    initialize_velocity_values();
+  }
+
+  double value (const Point<dim>   &p,
+                const unsigned int component = 0) const
+  {
+    // compute polar coordinates (r, phi) from point p
+    // given in Cartesian coordinates (x, y) = inflow plane
+    double const r = std::sqrt(p[0]*p[0] + p[1]*p[1]);
+    double const phi = std::atan2(p[1],p[0]);
+
+    double const result = linear_interpolation_2d_cylindrical(r,
+                                                              phi,
+                                                              R_VALUES,
+                                                              PHI_VALUES,
+                                                              VELOCITY_VALUES,
+                                                              component);
+
+    return result;
+  }
+};
+
+
+/*
+ *  Right-hand side function: Implements the body force vector occurring on the
+ *  right-hand side of the momentum equation of the Navier-Stokes equations.
+ *  Only relevant for precursor simulation.
+ */
+template<int dim>
+class RightHandSide : public Function<dim>
+{
+public:
+ RightHandSide (const double time = 0.)
+   :
+   Function<dim>(dim, time)
+ {}
+
+ double value (const Point<dim>    & /*p*/,
+               const unsigned int  component = 0) const
+ {
+   double result = 0.0;
+
+   // Channel flow with periodic bc in z-direction:
+   // The flow is driven by body force in z-direction
+   if(component==2)
+   {
+     result = FLOW_RATE_CONTROLLER.get_body_force();
+   }
+
+   return result;
+ }
+};
+
+template<int dim>
+void set_boundary_conditions_1(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
+{
+  /*
+   *  FILL BOUNDARY DESCRIPTORS
+   */
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
+  // fill boundary descriptor velocity
+  // no slip boundaries at lower and upper wall with ID=0
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
+
+  // fill boundary descriptor pressure
+  // no slip boundaries at lower and upper wall with ID=0
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
+}
+
+template<int dim>
+void set_boundary_conditions_2(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
+{
   /*
    *  FILL BOUNDARY DESCRIPTORS
    */
@@ -1203,20 +1227,12 @@ void create_grid_and_set_boundary_conditions_2(
 }
 
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  // call respective function for DOMAIN 2
-  create_grid_and_set_boundary_conditions_2(triangulation,
-                                            n_refine_space,
-                                            boundary_descriptor_velocity,
-                                            boundary_descriptor_pressure,
-                                            periodic_faces);
+  set_boundary_conditions_2(boundary_descriptor_velocity,
+                            boundary_descriptor_pressure);
 }
 
 template<int dim>
@@ -1338,6 +1354,8 @@ public:
     }
     else
     {
+      // in case of random perturbations, the velocity field at the inflow boundary
+      // has to be recomputed after each time step
       if(USE_RANDOM_PERTURBATION==true)
         initialize_velocity_values();
     }
@@ -1402,5 +1420,6 @@ construct_postprocessor(InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_ */

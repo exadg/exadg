@@ -110,10 +110,27 @@ void ConvDiff::InputParameters::set_input_parameters()
   solver_info_data.interval_time = (end_time-start_time)/20;
 }
 
+/**************************************************************************************/
+/*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
+    unsigned int const                                  n_refine_space)
+{
+  // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
+  const double left = -1.0, right = 1.0;
+  GridGenerator::hyper_cube(*triangulation,left,right);
+
+  triangulation->refine_global(n_refine_space);
+}
 
 /**************************************************************************************/
 /*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
+/*          FUNCTIONS (ANALYTICAL/INITIAL SOLUTION, BOUNDARY CONDITIONS, etc.)        */
 /*                                                                                    */
 /**************************************************************************************/
 
@@ -204,24 +221,9 @@ public:
   }
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
-    unsigned int const                                  n_refine_space,
-    std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
+void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
-  // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-  const double left = -1.0, right = 1.0;
-  GridGenerator::hyper_cube(*triangulation,left,right);
-
-  triangulation->refine_global(n_refine_space);
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   if(BOUNDARY_TYPE == BoundaryConditionType::HomogeneousDBC)

@@ -1,6 +1,6 @@
 /*
  * lung_tria.cc
- * 
+ *
  * program for visualization of lung triangulation
  *
  *  Created on: 2018
@@ -84,11 +84,21 @@ run(int generations, int refinements1, int refinements2, std::vector<std::string
   auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
 #endif
 
+  unsigned int outlet_id_first = 2, outlet_id_last = 2;
+
   // parallel::distributed::Triangulation<3> tria_dist(MPI_COMM_WORLD);
-  // dealii::GridGenerator::lung(tria_dist, generations, refinements2, tree_factory, timings);
+  // dealii::GridGenerator::lung(tria_dist, generations, refinements2, tree_factory,
+  // timings,outlet_id_first,outlet_id_last);
 
   parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
-  dealii::GridGenerator::lung(tria, generations, refinements1, refinements2, tree_factory, timings);
+  dealii::GridGenerator::lung(tria,
+                              generations,
+                              refinements1,
+                              refinements2,
+                              tree_factory,
+                              timings,
+                              outlet_id_first,
+                              outlet_id_last);
 
 
   {

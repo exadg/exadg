@@ -190,9 +190,105 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+{
+ if(dim == 2)
+ {
+   Triangulation<dim> tria_h1, tria_h2, tria_h3, tria_v1, tria_v2, tria_v3, tria_v4, tria_v5;
+
+   GridGenerator::subdivided_hyper_rectangle(tria_h1,
+                                             std::vector<unsigned int>({4,1}),
+                                             Point<dim>(0.0,0.0),
+                                             Point<dim>(4.0*L,-1.0*L));
+
+   GridGenerator::subdivided_hyper_rectangle(tria_h2,
+                                             std::vector<unsigned int>({1,1}),
+                                             Point<dim>(4.0*L,-4.0*L),
+                                             Point<dim>(5.0*L,-5.0*L));
+
+   GridGenerator::subdivided_hyper_rectangle(tria_h3,
+                                             std::vector<unsigned int>({5,1}),
+                                             Point<dim>(5.0*L,0.0*L),
+                                             Point<dim>(10.0*L,-1.0*L));
+
+   GridGenerator::subdivided_hyper_rectangle(tria_v1,
+                                             std::vector<unsigned int>({1,4}),
+                                             Point<dim>(1.0*L,-1.0*L),
+                                             Point<dim>(2.0*L,-5.0*L));
+
+   GridGenerator::subdivided_hyper_rectangle(tria_v2,
+                                             std::vector<unsigned int>({1,4}),
+                                             Point<dim>(3.0*L,-1.0*L),
+                                             Point<dim>(4.0*L,-5.0*L));
+
+   GridGenerator::subdivided_hyper_rectangle(tria_v3,
+                                             std::vector<unsigned int>({1,4}),
+                                             Point<dim>(5.0*L,-1.0*L),
+                                             Point<dim>(6.0*L,-5.0*L));
+
+   GridGenerator::subdivided_hyper_rectangle(tria_v4,
+                                             std::vector<unsigned int>({1,4}),
+                                             Point<dim>(7.0*L,-1.0*L),
+                                             Point<dim>(8.0*L,-5.0*L));
+
+   GridGenerator::subdivided_hyper_rectangle(tria_v5,
+                                             std::vector<unsigned int>({1,4}),
+                                             Point<dim>(9.0*L,-1.0*L),
+                                             Point<dim>(10.0*L,-5.0*L));
+
+   // merge
+   Triangulation<dim> tmp1, tmp2;
+   GridGenerator::merge_triangulations (tria_h1, tria_v1, tmp1);
+   GridGenerator::merge_triangulations (tmp1, tria_v2, tmp2);
+   GridGenerator::merge_triangulations (tmp2, tria_h2, tmp1);
+   GridGenerator::merge_triangulations (tmp1, tria_v3, tmp2);
+   GridGenerator::merge_triangulations (tmp2, tria_h3, tmp1);
+   GridGenerator::merge_triangulations (tmp1, tria_v4, tmp2);
+   GridGenerator::merge_triangulations (tmp2, tria_v5, *triangulation);
+
+   // global refinements
+   triangulation->refine_global(n_refine_space);
+ }
+ else if(dim == 3)
+ {
+   AssertThrow(false, ExcMessage("NotImplemented"));
+ }
+
+ // set boundary indicator
+ // all boundaries have ID = 0 by default -> Dirichlet boundaries
+ typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+ for(;cell!=endc;++cell)
+ {
+   for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+   {
+     // inflow boundary
+    if ((std::fabs(cell->face(face_number)->center()(0))< 1e-12))
+       cell->face(face_number)->set_boundary_id (1);
+
+    // outflow boundary
+    if ((std::fabs(cell->face(face_number)->center()(1) - (-5.0*L))< 1e-12) && (cell->face(face_number)->center()(0)- 9.0*L)>=0)
+       cell->face(face_number)->set_boundary_id (2);
+   }
+ }
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
+
+namespace IncNS
+{
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -233,100 +329,11 @@ public:
 };
 
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
- template<int dim>
- void create_grid_and_set_boundary_conditions(
-     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-     unsigned int const                                n_refine_space,
-     std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-     std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-     std::vector<GridTools::PeriodicFacePair<typename
-       Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+template<int dim>
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
  {
-  if(dim == 2)
-  {
-    Triangulation<dim> tria_h1, tria_h2, tria_h3, tria_v1, tria_v2, tria_v3, tria_v4, tria_v5;
-
-    GridGenerator::subdivided_hyper_rectangle(tria_h1,
-                                              std::vector<unsigned int>({4,1}),
-                                              Point<dim>(0.0,0.0),
-                                              Point<dim>(4.0*L,-1.0*L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_h2,
-                                              std::vector<unsigned int>({1,1}),
-                                              Point<dim>(4.0*L,-4.0*L),
-                                              Point<dim>(5.0*L,-5.0*L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_h3,
-                                              std::vector<unsigned int>({5,1}),
-                                              Point<dim>(5.0*L,0.0*L),
-                                              Point<dim>(10.0*L,-1.0*L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_v1,
-                                              std::vector<unsigned int>({1,4}),
-                                              Point<dim>(1.0*L,-1.0*L),
-                                              Point<dim>(2.0*L,-5.0*L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_v2,
-                                              std::vector<unsigned int>({1,4}),
-                                              Point<dim>(3.0*L,-1.0*L),
-                                              Point<dim>(4.0*L,-5.0*L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_v3,
-                                              std::vector<unsigned int>({1,4}),
-                                              Point<dim>(5.0*L,-1.0*L),
-                                              Point<dim>(6.0*L,-5.0*L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_v4,
-                                              std::vector<unsigned int>({1,4}),
-                                              Point<dim>(7.0*L,-1.0*L),
-                                              Point<dim>(8.0*L,-5.0*L));
-
-    GridGenerator::subdivided_hyper_rectangle(tria_v5,
-                                              std::vector<unsigned int>({1,4}),
-                                              Point<dim>(9.0*L,-1.0*L),
-                                              Point<dim>(10.0*L,-5.0*L));
-
-    // merge
-    Triangulation<dim> tmp1, tmp2;
-    GridGenerator::merge_triangulations (tria_h1, tria_v1, tmp1);
-    GridGenerator::merge_triangulations (tmp1, tria_v2, tmp2);
-    GridGenerator::merge_triangulations (tmp2, tria_h2, tmp1);
-    GridGenerator::merge_triangulations (tmp1, tria_v3, tmp2);
-    GridGenerator::merge_triangulations (tmp2, tria_h3, tmp1);
-    GridGenerator::merge_triangulations (tmp1, tria_v4, tmp2);
-    GridGenerator::merge_triangulations (tmp2, tria_v5, *triangulation);
-
-    // global refinements
-    triangulation->refine_global(n_refine_space);
-  }
-  else if(dim == 3)
-  {
-    AssertThrow(false, ExcMessage("NotImplemented"));
-  }
-
-  // set boundary indicator
-  // all boundaries have ID = 0 by default -> Dirichlet boundaries
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-      // inflow boundary
-     if ((std::fabs(cell->face(face_number)->center()(0))< 1e-12))
-        cell->face(face_number)->set_boundary_id (1);
-
-     // outflow boundary
-     if ((std::fabs(cell->face(face_number)->center()(1) - (-5.0*L))< 1e-12) && (cell->face(face_number)->center()(0)- 9.0*L)>=0)
-        cell->face(face_number)->set_boundary_id (2);
-    }
-  }
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
@@ -379,6 +386,7 @@ construct_postprocessor(InputParameters<dim> const &param)
   return pp;
 }
 
+}
 
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TUM_H_ */

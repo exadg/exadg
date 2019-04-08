@@ -178,9 +178,42 @@ void InputParameters<dim>::set_input_parameters()
 
 /**************************************************************************************/
 /*                                                                                    */
+/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
+/*                                                                                    */
+/**************************************************************************************/
+
+template<int dim>
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    unsigned int const                                n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+{
+  const double left = -1.0, right = 1.0;
+  GridGenerator::hyper_cube(*triangulation,left,right);
+
+  // set boundary indicator
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+    {
+      if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
+       cell->face(face_number)->set_boundary_id (1);
+    }
+  }
+
+  triangulation->refine_global(n_refine_space);
+}
+
+/**************************************************************************************/
+/*                                                                                    */
 /*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
 /*                                                                                    */
 /**************************************************************************************/
+
+namespace IncNS
+{
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -273,37 +306,11 @@ public:
   }
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*         GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR        */
-/*                                                                                    */
-/**************************************************************************************/
-
 template<int dim>
-void create_grid_and_set_boundary_conditions(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::shared_ptr<BoundaryDescriptorU<dim> >        boundary_descriptor_velocity,
-    std::shared_ptr<BoundaryDescriptorP<dim> >        boundary_descriptor_pressure,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  const double left = -1.0, right = 1.0;
-  GridGenerator::hyper_cube(*triangulation,left,right);
-
-  // set boundary indicator
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
-  {
-    for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-    {
-      if ((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-       cell->face(face_number)->set_boundary_id (1);
-    }
-  }
-
-  triangulation->refine_global(n_refine_space);
-
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
@@ -313,7 +320,6 @@ void create_grid_and_set_boundary_conditions(
   // fill boundary descriptor pressure
   boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
   boundary_descriptor_pressure->dirichlet_bc.insert(pair(1,new AnalyticalSolutionPressure<dim>()));
-
 }
 
 
@@ -364,6 +370,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
 
   return pp;
+}
+
 }
 
 #endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_KOVASZNAY_H_ */

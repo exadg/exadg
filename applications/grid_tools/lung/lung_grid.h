@@ -65,7 +65,20 @@ lung_files_to_node(std::vector<std::string> files)
       std::vector<CellAdditionalInfo> cells_additional_data;
       load_files({file}, points, cells, cells_additional_data);
 
-      lung_to_node(generations, points, cells, cells_additional_data, roots);
+      int n_bifurcations = generations;
+
+      if(file.find("leftbot") != std::string::npos || file.find("lefttop") != std::string::npos ||
+         file.find("righttop") != std::string::npos)
+      {
+        n_bifurcations = generations - 4;
+      }
+      else if(file.find("rightbot") != std::string::npos ||
+              file.find("rightmid") != std::string::npos)
+      {
+        n_bifurcations = generations - 5;
+      }
+
+      lung_to_node(n_bifurcations, points, cells, cells_additional_data, roots);
     }
 
 #ifdef DEBUG
@@ -95,6 +108,10 @@ lung_files_to_node(std::vector<std::string> files)
       roots.push_back(new Node(roots_temp[i + 1], roots_temp[i], src, true));
     }
 #endif
+
+    if(roots.size() != 10)
+      return;
+        
     std::vector<Node *> roots_temp = roots;
     roots.clear();
 
@@ -193,9 +210,11 @@ void lung(dealii::Triangulation<3> &                                     tria,
           int                                                            generations,
           int                                                            refinements,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings)
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last)
 {
-  Timer timer, timer2;
+  Timer timer;
 
   timer.restart();
   std::vector<Node *> roots;
@@ -206,8 +225,6 @@ void lung(dealii::Triangulation<3> &                                     tria,
   parallel::fullydistributed::AdditionalData ad;
   ad.partition_group_size = 1;
   ad.partition_group      = parallel::fullydistributed::single;
-
-  timer2.restart();
 
   timer.restart();
   // ... by processing each tree
@@ -238,9 +255,11 @@ void lung(dealii::Triangulation<3> &                                     tria,
   timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
   // set boundary ids
-  unsigned int counter = 2; // counter for outlets
+  unsigned int counter = outlet_id_first; // counter for outlets
   for(auto cell : tria.active_cell_iterators())
   {
+    // the mesh is generated in a way that inlet/outlets are one faces with normal vector
+    // in positive or negative z-direction (faces 4/5)
     if(cell->at_boundary(5)) // inlet
       cell->face(5)->set_all_boundary_ids(1);
     if(cell->at_boundary(4)) // outlets (>1)
@@ -248,26 +267,36 @@ void lung(dealii::Triangulation<3> &                                     tria,
         counter++;
   }
 
+  // set outlet_id_last which is needed by the application setting the boundary conditions
+  outlet_id_last = counter;
+
   timer.restart();
   tria.refine_global(refinements);
   timings["create_triangulation_5_serial_refinement"] = timer.wall_time();
 
-  print_tria_statistics(tria);
+  // TODO only print if desired
+  bool print = false;
+  if(print)
+    print_tria_statistics(tria);
 }
 
 void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
           int                                                            generations,
           int                                                            refinements,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings)
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last)
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
-  lung(tria_seq, generations, 0, create_tree, timings);
+  lung(tria_seq, generations, 0, create_tree, timings, outlet_id_first, outlet_id_last);
   // copy coarse grid to distributed triangulation and ...
   tria.copy_triangulation(tria_seq);
   // ... refine
   tria.refine_global(refinements);
+
+  outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
 }
 
 void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
@@ -275,7 +304,9 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
           int                                                            refinements1,
           int                                                            refinements2,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
-          std::map<std::string, double> &                                timings)
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last)
 {
   Timer timer;
   timer.restart();
@@ -283,8 +314,10 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
   // create partitioned triangulation ...
   tria.reinit(refinements2, [&](auto & tria) mutable {
     // ... by creating a refined sequential triangulation and partition it
-    lung(tria, generations, refinements1, create_tree, timings);
+    lung(tria, generations, refinements1, create_tree, timings, outlet_id_first, outlet_id_last);
   });
+
+  outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
 
   timings["create_triangulation_0_overall"] = timer.wall_time();
 }
