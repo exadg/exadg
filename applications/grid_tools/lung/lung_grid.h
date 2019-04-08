@@ -258,6 +258,8 @@ void lung(dealii::Triangulation<3> &                                     tria,
   std::vector<BSpline2D<3,3>> splines;
   {
     std::ifstream file(bspline_file.c_str());
+    AssertThrow(file.good(), ExcMessage("BSpline does not exist!"));
+    
     unsigned int n_splines;
     file.read(reinterpret_cast<char*>(&n_splines), sizeof(unsigned int));
     splines.resize(n_splines);
