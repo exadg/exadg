@@ -21,6 +21,7 @@
 
 //#define USE_CHILD_GEOMETRY
 #define USE_ADULT_GEOMETRY
+//#define USE_ADULT_GEOMETRY_OLD
 
 namespace dealii
 {
@@ -141,23 +142,30 @@ lung_files_to_node(std::vector<std::string> files)
 
 #endif
 
-#ifdef USE_ADULT_GEOMETRY
-
-    // clang-format off
-//    roots.push_back(new Node(
-//      new Node(
-//        new Node(new Node(roots_temp[6], roots_temp[7], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), true),
-//                 new Node(roots_temp[4], roots_temp[5], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), false),
-//                 {-24.3016e-3, 156.6774e-3, -201.6689e-3}, true),
-//        new Node(roots_temp[8], roots_temp[9], {-24.3016e-3, 156.6774e-3, -201.6689e-3}, false),
-//        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
-//      new Node(
-//        new Node(roots_temp[3], roots_temp[2], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
-//        new Node(roots_temp[1], roots_temp[0], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
-//        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3}, false),
-//      {8.864201963148962e-3, 200.1647444329594e-3, -69.43970578881185e-3},
-//      true));
+#ifdef USE_ADULT_GEOMETRY_OLD
+    // with twist in generation 1
       
+    // clang-format off
+    roots.push_back(new Node(
+      new Node(
+        new Node(new Node(roots_temp[6], roots_temp[7], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), true),
+                 new Node(roots_temp[4], roots_temp[5], Point<3>({-33.9827e-3, 155.9265e-3, -208.6529e-3}), false),
+                 {-24.3016e-3, 156.6774e-3, -201.6689e-3}, true),
+        new Node(roots_temp[8], roots_temp[9], {-24.3016e-3, 156.6774e-3, -201.6689e-3}, false),
+        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3},false),
+      new Node(
+        new Node(roots_temp[3], roots_temp[2], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
+        new Node(roots_temp[1], roots_temp[0], Point<3>({47.4151e-3, 147.2595e-3, -201.9566e-3}), false),
+        {8.826887618228566e-3, 157.61678106896196e-3, -187.4708043895141e-3}, false),
+      {8.864201963148962e-3, 200.1647444329594e-3, -69.43970578881185e-3},
+      true));
+    // clang-format on
+#endif
+      
+#ifdef USE_ADULT_GEOMETRY
+    // without twist in generation 1
+      
+    // clang-format off
     roots.push_back(new Node(
       new Node(
         new Node(roots_temp[8], roots_temp[9], {-24.3016e-3, 156.6774e-3, -201.6689e-3}, true, false),
