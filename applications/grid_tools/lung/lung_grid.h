@@ -113,7 +113,7 @@ lung_files_to_node(std::vector<std::string> files)
 
     if(roots.size() != 10)
       return;
-        
+
     std::vector<Node *> roots_temp = roots;
     roots.clear();
 
@@ -125,7 +125,7 @@ lung_files_to_node(std::vector<std::string> files)
     roots_temp[4]->left_child            = temp;
     roots_temp[4]->left_child->_is_left  = true;
     roots_temp[4]->right_child->_is_left = false;
-    
+
     roots.push_back(new Node(
       new Node(
         new Node(roots_temp[9], roots_temp[8], {-0.012978481772800358, 0.03523408779189564, 0.007048238472570871}, true,false),
@@ -145,7 +145,7 @@ lung_files_to_node(std::vector<std::string> files)
 
 #ifdef USE_ADULT_GEOMETRY_OLD
     // with twist in generation 1
-      
+
     // clang-format off
     roots.push_back(new Node(
       new Node(
@@ -162,10 +162,10 @@ lung_files_to_node(std::vector<std::string> files)
       true));
     // clang-format on
 #endif
-      
+
 #ifdef USE_ADULT_GEOMETRY
     // without twist in generation 1
-      
+
     // clang-format off
     roots.push_back(new Node(
       new Node(
@@ -273,12 +273,6 @@ void lung(dealii::Triangulation<3> &                                     tria,
   tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
   timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
-  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 10)->vertex(1) << std::endl;
-  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 4)->vertex(1) << std::endl;
-  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 8)->vertex(1) << std::endl;
-  std::cout << Triangulation<3>::cell_iterator(&tria, 0, 6)->vertex(1) << std::endl;
-
-
 
   // set boundary ids
   unsigned int counter = outlet_id_first; // counter for outlets
@@ -301,9 +295,12 @@ void lung(dealii::Triangulation<3> &                                     tria,
   timings["create_triangulation_5_serial_refinement"] = timer.wall_time();
 
   std::vector<DeformTransfinitelyViaSplines<3>> deform;
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton));
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton));
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton));
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton,
+                                                    {0, 3, 0, 3}));
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton,
+                                                    {0, 3, 0, 3}));
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton,
+                                                    {0, 3, 0, 3}));
 
   // clean up
   for(unsigned int i = 0; i < roots.size(); i++)

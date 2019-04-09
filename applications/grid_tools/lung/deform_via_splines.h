@@ -20,19 +20,22 @@ public:
 
   DeformTransfinitelyViaSplines(const DeformTransfinitelyViaSplines &other)
     :
-      splines(other.splines)
+    splines(other.splines),
+    bifurcation_indices(other.bifurcation_indices)
   {
     triangulation.copy_triangulation(other.triangulation);
   }
 
   DeformTransfinitelyViaSplines(const std::string &bspline_file,
-                                std::vector<Point<dim>> &surrounding_points)
+                                const std::vector<Point<dim>> &surrounding_points,
+                                const std::array<unsigned int,4> &bifurcation_indices_in)
   {
-    reinit(bspline_file, surrounding_points);
+    reinit(bspline_file, surrounding_points, bifurcation_indices_in);
   }
 
   void reinit(const std::string &bspline_file,
-              std::vector<Point<dim>> &surrounding_points)
+              const std::vector<Point<dim>> &surrounding_points,
+              const std::array<unsigned int,4> &bifurcation_indices_in)
   {
     std::ifstream file(bspline_file.c_str(), std::ios::binary);
     unsigned int n_splines;
@@ -51,18 +54,28 @@ public:
 
     SubCellData subcell_data;
     triangulation.create_triangulation(surrounding_points, cell_data, subcell_data);
+
+    bifurcation_indices = bifurcation_indices_in;
+    for (unsigned int i=0; i<bifurcation_indices.size(); ++i)
+      AssertThrow(bifurcation_indices[i] < 4,
+                  ExcInternalError("Bifurcation index must be between 0 and 3"));
+    AssertThrow(bifurcation_indices[0] != bifurcation_indices[1] &&
+                bifurcation_indices[2] != bifurcation_indices[3],
+                ExcMessage("Must not use the same index on each side of bifurcation"));
   }
 
   DeformTransfinitelyViaSplines(const std::vector<BSpline2D<dim,3>> &splines_in,
                                 const unsigned int first_spline_index,
-                                std::vector<Point<dim>> &surrounding_points)
+                                const std::vector<Point<dim>> &surrounding_points,
+                                const std::array<unsigned int,4> &bifurcation_indices_in)
   {
-    reinit(splines_in, first_spline_index, surrounding_points);
+    reinit(splines_in, first_spline_index, surrounding_points, bifurcation_indices_in);
   }
 
   void reinit(const std::vector<BSpline2D<dim,3>> &splines_in,
               const unsigned int first_spline_index,
-              std::vector<Point<dim>> &surrounding_points)
+              const std::vector<Point<dim>> &surrounding_points,
+              const std::array<unsigned int,4> &bifurcation_indices_in)
   {
     splines.clear();
     splines.insert(splines.end(),
@@ -78,6 +91,14 @@ public:
 
     SubCellData subcell_data;
     triangulation.create_triangulation(surrounding_points, cell_data, subcell_data);
+
+    bifurcation_indices = bifurcation_indices_in;
+    for (unsigned int i=0; i<bifurcation_indices.size(); ++i)
+      AssertThrow(bifurcation_indices[i] < 4,
+                  ExcInternalError("Bifurcation index must be between 0 and 3"));
+    AssertThrow(bifurcation_indices[0] != bifurcation_indices[1] &&
+                bifurcation_indices[2] != bifurcation_indices[3],
+                ExcMessage("Must not use the same index on each side of bifurcation"));
   }
 
   Point<dim> transform_to_deformed(const Point<dim> &untransformed) const
@@ -92,7 +113,10 @@ public:
                                    splines[0].value(1., reference[2]),
                                    splines[2].value(1., reference[2]),
                                    splines[2].value(0., reference[2]) };
-    const Point<dim> mid_point = 0.25 * (bounds[0] + bounds[1] + bounds[2] + bounds[3]);
+    const Point<dim> mid_point =
+      (1.-reference[2]) * 0.5 * (bounds[bifurcation_indices[0]] + bounds[bifurcation_indices[1]])
+      +
+      reference[2] * 0.5 * (bounds[bifurcation_indices[2]] + bounds[bifurcation_indices[3]]);
 
     if (std::abs(reference[0]-0.5) < 1e-12 && std::abs(reference[1]-0.5) < 1e-12)
       return mid_point;
@@ -168,6 +192,7 @@ private:
   std::vector<BSpline2D<dim,3>> splines;
   Triangulation<dim> triangulation;
   MappingQ1<dim> auxiliary_mapping;
+  std::array<unsigned int,4> bifurcation_indices;
 };
 
 #endif
