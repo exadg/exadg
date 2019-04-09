@@ -308,6 +308,51 @@ create_cylinder(double       radius1,
                 beta * Point<3>(offset + transform_parent * point_out_beta);
     
     if((beta==0.0 || beta==1.0) && (std::abs(point_in[0])==1.0 || std::abs(point_in[1])==1.0))
+    {
+        
+      if(is_right && do_rotate)
+      {
+        unsigned int f = 0;
+        if(beta==1.0 && point_in[0] == -1)
+           f = 3;  
+        if(beta==1.0 && point_in[0] == +1)
+           f = 0;  
+        if(beta==1.0 && point_in[1] == -1)
+           f = 1;  
+        if(beta==1.0 && point_in[1] == +1)
+           f = 2;  
+        if(beta==0.0 && point_in[0] == -1)
+           f = 7;  
+        if(beta==0.0 && point_in[0] == +1)
+           f = 4;  
+        if(beta==0.0 && point_in[1] == -1)
+           f = 5;  
+        if(beta==0.0 && point_in[1] == +1)
+           f = 6;  
+        skeleton[f] = point_out;
+      }
+      else if(is_left && do_rotate)
+      {
+        unsigned int f = 0;
+        if(beta==1.0 && point_in[0] == -1)
+           f = 3;  
+        if(beta==1.0 && point_in[0] == +1)
+           f = 0;  
+        if(beta==1.0 && point_in[1] == -1)
+           f = 1;  
+        if(beta==1.0 && point_in[1] == +1)
+           f = 2;  
+        if(beta==0.0 && point_in[0] == -1)
+           f = 7;  
+        if(beta==0.0 && point_in[0] == +1)
+           f = 4;  
+        if(beta==0.0 && point_in[1] == -1)
+           f = 5;  
+        if(beta==0.0 && point_in[1] == +1)
+           f = 6;  
+        skeleton[f] = point_out;
+      }
+      else
       {
         std::cout << point_in[0] << "    " << point_in[1] << "   " << beta << "   ";
         const unsigned int idz = beta == 0.0 ? 1 : 0;
@@ -316,6 +361,7 @@ create_cylinder(double       radius1,
         std::cout << idz*4+idy*2+idx << std::endl;
         skeleton[idz*4+idy*2+idx] = point_out;
       }
+    }
   }
 }
 

@@ -315,7 +315,7 @@ void lung(dealii::Triangulation<3> &                                     tria,
   std::map<types::material_id,unsigned int> map_to_splines;
   map_to_splines[LungID::create_root()] = 0;
   map_to_splines[LungID::generate(LungID::create_root(), false)] = 1;
-  //map_to_splines[LungID::generate(LungID::create_root(), true)] = 2;
+  map_to_splines[LungID::generate(LungID::create_root(), true)] = 2;
   std::vector<bool> touched(tria.n_vertices(), false);
   for (auto cell : tria.active_cell_iterators())
     if (map_to_splines.find(cell->material_id()) != map_to_splines.end())
