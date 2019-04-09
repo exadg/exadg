@@ -163,7 +163,7 @@ types::boundary_id const OUTLET_ID_FIRST = 2;
 types::boundary_id OUTLET_ID_LAST = 2;
 
 // output
-bool const WRITE_OUTPUT = true;
+bool const WRITE_OUTPUT = false;
 double const OUTPUT_START_TIME = START_TIME;
 double const OUTPUT_INTERVAL_TIME = PERIOD/20;
 
@@ -796,7 +796,8 @@ public:
   PostProcessorLung(PostProcessorDataLung<dim> const & pp_data_in)
     :
     Base(pp_data_in.pp_data),
-    pp_data_lung(pp_data_in)
+    pp_data_lung(pp_data_in),
+    time_last(START_TIME)
   {
   }
 
@@ -869,6 +870,12 @@ public:
       std::ostringstream filename;
       filename << OUTPUT_FOLDER + "volume";
       write_output(volume, time, "Volume in [m^3]", time_step_number, filename);
+
+      // write time step size
+      std::ostringstream filename_dt;
+      filename_dt << OUTPUT_FOLDER + "time_step_size";
+      write_output(time-time_last, time, "Time step size in [s]", time_step_number, filename_dt);
+      time_last = time;
     }
 
     // update the ventilator using the new volume
@@ -913,6 +920,8 @@ private:
 
   // calculate flow rates for all outflow boundaries
   std::shared_ptr<FlowRateCalculator<dim,degree_u,Number> > flow_rate_calculator;
+
+  double time_last;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>
