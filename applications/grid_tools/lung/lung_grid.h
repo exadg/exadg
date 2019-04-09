@@ -74,6 +74,10 @@ lung_files_to_node(std::vector<std::string> files)
       {
         n_bifurcations = generations - 5;
       }
+      else
+      {
+        AssertThrow(false, ExcMessage("Filename specified for generation of lung mesh is wrong."));
+      }
 
       lung_to_node(n_bifurcations, points, cells, cells_additional_data, roots);
     }
@@ -124,8 +128,8 @@ lung_files_to_node(std::vector<std::string> files)
     ///-198.6689e-3},false)); /        roots.push_back(new Node( /                new
     /// Node(roots_temp[4], roots_temp[5],Point<3>({-33.9827e-3,  155.9265e-3,
     /// -208.6529e-3}),false), /                new Node(roots_temp[6],
-    ///roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true), / {-24.3016e-3,
-    ///156.6774e-3, -198.6689e-3}, true));
+    /// roots_temp[7],Point<3>({-33.9827e-3,  155.9265e-3, -208.6529e-3}),true), / {-24.3016e-3,
+    /// 156.6774e-3, -198.6689e-3}, true));
     //
     //        roots.push_back(new Node(
     //            new Node(
