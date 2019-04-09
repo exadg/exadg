@@ -77,6 +77,7 @@ double const TIDAL_VOLUME = 6.6e-6; // 6.6 ml = 6.6 * 10^{-6} m^3
 double const C_RS_KINEMATIC = DENSITY * 20.93e-9; // total respiratory compliance C_rs = 20.93 ml/kPa
 double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS_KINEMATIC;
 unsigned int const MAX_GENERATION = 24;
+// Menache et al. (2008): Extract diameter and length of airways from Table A1 (0.25-year-old female) and compute resistance of airways assuming laminar flow
 double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^3/s)]
 {
     9.59E+03, // GENERATION 0
@@ -116,6 +117,7 @@ double const TIDAL_VOLUME = 500.0e-6; // 500 ml = 500 * 10^{-6} m^3
 double const C_RS_KINEMATIC = DENSITY * 100.0e-6/98.0665; // total respiratory compliance C_rs = 100 ml/cm H20
 double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS_KINEMATIC;
 unsigned int const MAX_GENERATION = 25;
+// Menache et al. (2008): Extract diameter and length of airways from Table A11 (21-year-old male) and compute resistance of airways assuming laminar flow
 double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^3/s)]
 {
     5.96E+02, // GENERATION 0
