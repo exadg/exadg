@@ -251,6 +251,17 @@ void lung(dealii::Triangulation<3> &                                     tria,
   for(unsigned int i = 0; i < roots.size(); i++)
     for(auto v : roots[i]->skeleton)
       printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+  printf("\n");
+  
+  for(unsigned int i = 0; i < roots.size(); i++)
+    for(auto v : roots[i]->right_child->skeleton)
+      printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+  printf("\n");
+  
+  for(unsigned int i = 0; i < roots.size(); i++)
+    for(auto v : roots[i]->left_child->skeleton)
+      printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+  printf("\n");
 #endif
 
   timings["create_triangulation_2_mesh"] = timer.wall_time();
@@ -298,9 +309,9 @@ void lung(dealii::Triangulation<3> &                                     tria,
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton,
                                                     {0, 3, 0, 3}));
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton,
-                                                    {0, 3, 0, 3}));
+                                                    {0, 3, 0, 3},true));
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton,
-                                                    {0, 3, 0, 3}));
+                                                    {0, 3, 0, 3},true));
 
   // clean up
   for(unsigned int i = 0; i < roots.size(); i++)

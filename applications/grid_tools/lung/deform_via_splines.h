@@ -21,7 +21,8 @@ public:
   DeformTransfinitelyViaSplines(const DeformTransfinitelyViaSplines &other)
     :
     splines(other.splines),
-    bifurcation_indices(other.bifurcation_indices)
+    bifurcation_indices(other.bifurcation_indices),
+    do_blend(other.do_blend)
   {
     triangulation.copy_triangulation(other.triangulation);
   }
@@ -67,16 +68,19 @@ public:
   DeformTransfinitelyViaSplines(const std::vector<BSpline2D<dim,3>> &splines_in,
                                 const unsigned int first_spline_index,
                                 const std::vector<Point<dim>> &surrounding_points,
-                                const std::array<unsigned int,4> &bifurcation_indices_in)
+                                const std::array<unsigned int,4> &bifurcation_indices_in,
+                                const bool do_blend = false)
   {
-    reinit(splines_in, first_spline_index, surrounding_points, bifurcation_indices_in);
+    reinit(splines_in, first_spline_index, surrounding_points, bifurcation_indices_in, do_blend);
   }
 
   void reinit(const std::vector<BSpline2D<dim,3>> &splines_in,
               const unsigned int first_spline_index,
               const std::vector<Point<dim>> &surrounding_points,
-              const std::array<unsigned int,4> &bifurcation_indices_in)
+              const std::array<unsigned int,4> &bifurcation_indices_in,
+              const bool do_blend = false)
   {
+      this->do_blend = do_blend;
     splines.clear();
     splines.insert(splines.end(),
                    splines_in.begin()+first_spline_index,
@@ -158,10 +162,15 @@ public:
     const Tensor<1,dim> vbar21 = bounds[quadrant] + (mid_point - bounds[quadrant]) * lambda[0];
     const Tensor<1,dim> vbar31 = bounds[(quadrant+1)%4] + (mid_point - bounds[(quadrant+1)%4]) * lambda[0];
     const Tensor<1,dim> vbar32 = splines[quadrant].value(1-lambda[1], reference[2]);
-    return Point<dim>(lambda[0] * (vbar12 + vbar13 - mid_point) +
+    auto transformed =  Point<dim>(lambda[0] * (vbar12 + vbar13 - mid_point) +
                       lambda[1] * (vbar23 + vbar21 - bounds[quadrant]) +
                       lambda[2] * (vbar31 + vbar32 - bounds[(quadrant+1)%4]));
-
+    
+    if(!this->do_blend)
+      return transformed;
+    else
+      return Point<dim>(untransformed*reference[2]+transformed*(1.0-reference[2]));
+    
     // compute angle and radius of the new point to correct for the fact that
     // we are going to map back to a circle with a single element
     //const double angle = std::atan2(reference[1]-0.5, reference[0]-0.5);
@@ -193,6 +202,7 @@ private:
   Triangulation<dim> triangulation;
   MappingQ1<dim> auxiliary_mapping;
   std::array<unsigned int,4> bifurcation_indices;
+  bool do_blend = false;
 };
 
 #endif
