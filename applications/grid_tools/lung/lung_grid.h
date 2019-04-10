@@ -215,14 +215,14 @@ mark(T cell, const int number)
   return true;
 }
 
-void lung(dealii::Triangulation<3> &                                     tria,
+void lung_unrefined(dealii::Triangulation<3> &                                     tria,
           int                                                            generations,
-          int                                                            refinements,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file)
+          const std::string &                                            bspline_file,
+          std::vector<DeformTransfinitelyViaSplines<3>> & deform)
 {
   Timer timer;
 
@@ -302,10 +302,9 @@ void lung(dealii::Triangulation<3> &                                     tria,
   outlet_id_last = counter;
 
   timer.restart();
-  tria.refine_global(refinements);
+  //tria.refine_global(refinements);
   timings["create_triangulation_5_serial_refinement"] = timer.wall_time();
 
-  std::vector<DeformTransfinitelyViaSplines<3>> deform;
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton,
                                                     {0, 3, 0, 3}));
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton,
@@ -316,7 +315,10 @@ void lung(dealii::Triangulation<3> &                                     tria,
   // clean up
   for(unsigned int i = 0; i < roots.size(); i++)
     delete roots[i];
+}
 
+void update_mapping(dealii::Triangulation<3> & tria, std::vector<DeformTransfinitelyViaSplines<3>> & deform)
+{
   //std::vector<Point<3>> & tria_points = const_cast<std::vector<Point<3>>&>(tria.get_vertices());
   //for (Point<3> &p : tria_points)
   //  p = deform.transform_to_deformed(p);
@@ -340,6 +342,22 @@ void lung(dealii::Triangulation<3> &                                     tria,
     print_tria_statistics(tria);
 }
 
+
+void lung(dealii::Triangulation<3> &                                     tria,
+          int                                                            generations,
+          int                                                            refinements,
+          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file)
+{
+    std::vector<DeformTransfinitelyViaSplines<3>> deform;
+    lung_unrefined(tria, generations, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform);
+    tria.refine_global(refinements);
+    update_mapping(tria, deform);
+}
+
 void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
           int                                                            generations,
           int                                                            refinements,
@@ -351,11 +369,13 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
-  lung(tria_seq, generations, 0, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file);
+  std::vector<DeformTransfinitelyViaSplines<3>> deform;
+  lung_unrefined(tria_seq, generations, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform);
   // copy coarse grid to distributed triangulation and ...
   tria.copy_triangulation(tria_seq);
   // ... refine
   tria.refine_global(refinements);
+  update_mapping(tria, deform);
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
 }

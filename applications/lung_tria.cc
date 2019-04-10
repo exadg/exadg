@@ -91,7 +91,7 @@ run(int generations,
 
   unsigned int outlet_id_first = 2, outlet_id_last = 2;
 
-  // parallel::distributed::Triangulation<3> tria_dist(MPI_COMM_WORLD);
+   //parallel::distributed::Triangulation<3> tria(MPI_COMM_WORLD);
   // dealii::GridGenerator::lung(tria_dist, generations, refinements2, tree_factory,
   // timings,outlet_id_first,outlet_id_last);
 
