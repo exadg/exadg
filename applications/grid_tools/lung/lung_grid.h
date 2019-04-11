@@ -332,7 +332,10 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   auto & temp = roots[0]->right_child->left_child->skeleton;
   auto temp_c = temp;
   temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
-  temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
+  temp_c[7] = temp[4]; 
+  temp_c[6] = temp[5]; 
+  temp_c[5] = temp[6]; 
+  temp_c[4] = temp[7];
   temp = temp_c;
   //printf("x, y, z\n");
   //for(auto v : temp)
@@ -413,7 +416,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   auto & temp = roots[0]->right_child->left_child->right_child->skeleton;
   auto temp_c = temp;
   
-    temp_c[2] = temp[0];
+     temp_c[2] = temp[0];
     temp_c[0] = temp[1];
     temp_c[3] = temp[2];
     temp_c[1] = temp[3];
@@ -421,6 +424,9 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[4] = temp[5];
     temp_c[7] = temp[6];
     temp_c[5] = temp[7];
+  printf("x, y, z\n");
+  for(auto v : temp)
+    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
 
 //  
 //    temp_c[1] = temp[0];
@@ -443,6 +449,26 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 48, roots[0]->left_child->right_child->left_child->skeleton,
                                                     {0, 3, 0, 3}, true));
                                                     
+  {
+  auto & temp = roots[0]->left_child->right_child->right_child->right_child->skeleton;
+  auto temp_c = temp;
+  
+     temp_c[2] = temp[0];
+    temp_c[0] = temp[1];
+    temp_c[3] = temp[2];
+    temp_c[1] = temp[3];
+    
+    temp_c[4] = temp[4];
+    temp_c[5] = temp[5];
+    temp_c[6] = temp[6];
+    temp_c[7] = temp[7];
+  printf("x, y, z\n");
+  for(auto v : temp)
+    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+
+  temp = temp_c;
+  }
+                                                    
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 56, roots[0]->left_child->right_child->right_child->right_child->skeleton,
                                                     {0, 3, 0, 3}, true));
                 
@@ -456,18 +482,19 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   //int i2 = 3;
   //int i3 = 2;
   
-  temp_c[0] = temp[0];
-  temp_c[1] = temp[1];
-  temp_c[2] = temp[2];
-  temp_c[3] = temp[3];
+    temp_c[1] = temp[0];
+    temp_c[3] = temp[1];
+    temp_c[0] = temp[2];
+    temp_c[2] = temp[3];
 //  temp_c[i2+4] = temp[4];
 //  temp_c[i3+4] = temp[5];
 //  temp_c[i1+4] = temp[6];
 //  temp_c[i0+4] = temp[7]; 4 6 7 5 4          0 2 3 1 0 
-  temp_c[5] = temp[4];
-  temp_c[7] = temp[5];
-  temp_c[4] = temp[6];
-  temp_c[6] = temp[7];
+    temp_c[7] = temp[4];
+    temp_c[6] = temp[5];
+    temp_c[5] = temp[6];
+    temp_c[4] = temp[7];
+
   
   temp = temp_c;
   }
@@ -486,6 +513,9 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 //    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
 //  }
 
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {0, 3, 0, 3}, true));
+  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {0, 3, 0, 3}, true));
+                                                    
   // clean up
   for(unsigned int i = 0; i < roots.size(); i++)
     delete roots[i];
@@ -515,6 +545,10 @@ void update_mapping(dealii::Triangulation<3> & tria, std::vector<DeformTransfini
   
   map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), false)] = 13;
   map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), true)] = 14;
+  
+  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),false)] = 15;
+  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),true)] = 16;
+  
   
   std::vector<bool> touched(tria.n_vertices(), false);
   for (auto cell : tria.active_cell_iterators())
