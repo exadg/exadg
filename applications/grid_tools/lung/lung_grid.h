@@ -424,9 +424,9 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[4] = temp[5];
     temp_c[7] = temp[6];
     temp_c[5] = temp[7];
-  printf("x, y, z\n");
-  for(auto v : temp)
-    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+  //printf("x, y, z\n");
+  //for(auto v : temp)
+  //  printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
 
 //  
 //    temp_c[1] = temp[0];
@@ -462,9 +462,9 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[5] = temp[5];
     temp_c[6] = temp[6];
     temp_c[7] = temp[7];
-  printf("x, y, z\n");
-  for(auto v : temp)
-    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+  //printf("x, y, z\n");
+  //for(auto v : temp)
+  //  printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
 
   temp = temp_c;
   }
@@ -506,7 +506,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 //  }
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 52, roots[0]->left_child->right_child->right_child->left_child->skeleton,
                                                     {0, 3, 0, 3}, true));
-                                                    printf("x, y, z\n");
+//  printf("x, y, z\n");
 //  for(auto i : roots[0]->left_child->right_child->right_child->left_child->skeleton)
 //  {
 //    auto v = deform.back().transform_to_deformed(i);
@@ -523,6 +523,9 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 
 void update_mapping(dealii::Triangulation<3> & tria, std::vector<DeformTransfinitelyViaSplines<3>> & deform)
 {
+  if(deform.size()==0)
+    return;
+    
   //std::vector<Point<3>> & tria_points = const_cast<std::vector<Point<3>>&>(tria.get_vertices());
   //for (Point<3> &p : tria_points)
   //  p = deform.transform_to_deformed(p);
@@ -574,7 +577,7 @@ void lung(dealii::Triangulation<3> &                                     tria,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file)
+          const std::string &                                            bspline_file = "")
 {
     std::vector<DeformTransfinitelyViaSplines<3>> deform;
     lung_unrefined(tria, generations, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform);
@@ -589,7 +592,7 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file)
+          const std::string &                                            bspline_file = "")
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
@@ -612,7 +615,7 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file)
+          const std::string &                                            bspline_file = "")
 {
   Timer timer;
   timer.restart();

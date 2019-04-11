@@ -37,11 +37,11 @@ unsigned int const FE_DEGREE_SCALAR = FE_DEGREE_VELOCITY;
 unsigned int const N_SCALARS = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const GENERATIONS = 7;
+unsigned int const GENERATIONS = 6;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
@@ -570,6 +570,7 @@ void create_grid_and_set_boundary_ids(
   std::vector<std::string> files;
   get_lung_files_from_environment(files);
   auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
+  std::string spline_file = get_lung_spline_file_from_environment();
 
   std::map<std::string, double> timings;
 
@@ -585,7 +586,8 @@ void create_grid_and_set_boundary_ids(
                                 tree_factory,
                                 timings,
                                 OUTLET_ID_FIRST,
-                                OUTLET_ID_LAST);
+                                OUTLET_ID_LAST,
+                                spline_file);
   }
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
@@ -595,7 +597,8 @@ void create_grid_and_set_boundary_ids(
                                 tree_factory,
                                 timings,
                                 OUTLET_ID_FIRST,
-                                OUTLET_ID_LAST);
+                                OUTLET_ID_LAST,
+                                spline_file);
   }
   else
   {

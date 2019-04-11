@@ -27,4 +27,16 @@ get_lung_files_from_environment(std::vector<std::string> & files)
               ExcMessage("The environment variable NAVIER_LUNG_FILES has not been set."));
 }
 
+std::string
+get_lung_spline_file_from_environment()
+{
+  if(const char * env_p = std::getenv("NAVIER_LUNG_SPLINE_FILE"))
+    return std::string(env_p);
+
+  AssertThrow(false,
+              ExcMessage("The environment variable NAVIER_LUNG_SPLINE_FILE has not been set."));
+  
+  return ""; 
+}
+
 #endif

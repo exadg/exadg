@@ -353,11 +353,9 @@ create_cylinder(double       radius1,
       }
       else
       {
-        std::cout << point_in[0] << "    " << point_in[1] << "   " << beta << "   ";
         const unsigned int idz = beta == 0.0 ? 1 : 0;
         const unsigned int idy = (point_in[1] == -1 || point_in[0] == -1) ? 1 : 0;
         const unsigned int idx = (point_in[0] == 1 || point_in[1] == -1) ? 1 : 0;
-        std::cout << idz*4+idy*2+idx << std::endl;
         skeleton[idz*4+idy*2+idx] = point_out;
       }
     }
