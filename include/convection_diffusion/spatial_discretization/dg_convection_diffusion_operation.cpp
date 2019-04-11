@@ -577,8 +577,9 @@ DGOperation<dim, degree, Number>::solve(VectorType &       sol,
 // use numerical velocity field
 template<int dim, int degree, typename Number>
 double
-DGOperation<dim, degree, Number>::calculate_time_step_cfl(double const cfl,
-                                                          double const exponent_degree) const
+DGOperation<dim, degree, Number>::calculate_time_step_cfl_numerical_velocity(
+  double const cfl,
+  double const exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, degree /* = degree_velocity */, Number>(
     data,
@@ -592,9 +593,10 @@ DGOperation<dim, degree, Number>::calculate_time_step_cfl(double const cfl,
 
 template<int dim, int degree, typename Number>
 double
-DGOperation<dim, degree, Number>::calculate_time_step_cfl(double const time,
-                                                          double const cfl,
-                                                          double const exponent_degree) const
+DGOperation<dim, degree, Number>::calculate_time_step_cfl_analytical_velocity(
+  double const time,
+  double const cfl,
+  double const exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, degree, Number>(data,
                                                             0 /*dof_index*/,

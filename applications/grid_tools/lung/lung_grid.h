@@ -80,6 +80,10 @@ lung_files_to_node(std::vector<std::string> files)
       {
         n_bifurcations = generations - 5;
       }
+      else
+      {
+        AssertThrow(false, ExcMessage("Filename specified for generation of lung mesh is wrong."));
+      }
 
       lung_to_node(n_bifurcations, points, cells, cells_additional_data, roots);
     }

@@ -21,6 +21,10 @@
 /*                                                                                    */
 /**************************************************************************************/
 
+// which lung
+#define BABY
+//#define ADULT
+
 // single or double precision?
 //typedef float VALUE_TYPE;
 typedef double VALUE_TYPE;
@@ -33,6 +37,9 @@ unsigned int const FE_DEGREE_VELOCITY = 3;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 unsigned int const FE_DEGREE_SCALAR = FE_DEGREE_VELOCITY;
 
+// degree used for mapping
+unsigned int const DEGREE_MAPPING = 1;
+
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
 
@@ -41,23 +48,106 @@ unsigned int const REFINE_STEPS_SPACE_MIN = 1;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const GENERATIONS = 6;
+unsigned int const N_GENERATIONS = 6;
+
+IncNS::TriangulationType const TRIANGULATION_TYPE_FLUID = IncNS::TriangulationType::Distributed;
+ConvDiff::TriangulationType const TRIANGULATION_TYPE_SCALAR = ConvDiff::TriangulationType::Distributed;
 
 // set the number of refine levels for temporal convergence tests
 unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
+// output folders
+std::string const OUTPUT_FOLDER = "output/lung/";
+std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
+std::string const OUTPUT_NAME = "5_gen";
+
 // set problem specific parameters
 double const VISCOSITY = 1.7e-5; // m^2/s
 double const D_OXYGEN = 0.219e-4; // 0.219 cm^2/s = 0.219e-4 m^2/s
+double const DENSITY = 1.2; // kg/m^3 (@ 20°C)
+
+#ifdef BABY // preterm infant
 double const PERIOD = 0.1; // 100 ms
-unsigned int const N_PERIODS = 20;
+unsigned int const N_PERIODS = 10;
 double const START_TIME = 0.0;
 double const END_TIME = PERIOD*N_PERIODS;
-double const PEEP = 8.0 * 98.0665; // 8 cmH20, 1 cmH20 = 98.0665 Pa
+double const PEEP_KINEMATIC = 8.0 * 98.0665 / DENSITY; // 8 cmH20, 1 cmH20 = 98.0665 Pa, transform to kinematic pressure
 double const TIDAL_VOLUME = 6.6e-6; // 6.6 ml = 6.6 * 10^{-6} m^3
-double const C_RS = 20.93e-9; // total respiratory compliance C_rs = 20.93 ml/kPa
-double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS; // TODO
+double const C_RS_KINEMATIC = DENSITY * 20.93e-9; // total respiratory compliance C_rs = 20.93 ml/kPa
+double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS_KINEMATIC;
+unsigned int const MAX_GENERATION = 24;
+// Menache et al. (2008): Extract diameter and length of airways from Table A1 (0.25-year-old female) and compute resistance of airways assuming laminar flow
+double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^3/s)]
+{
+    9.59E+03, // GENERATION 0
+    1.44E+04,
+    3.66E+04,
+    1.37E+05,
+    5.36E+05,
+    1.78E+06,
+    4.36E+06,
+    1.13E+07,
+    2.60E+07,
+    4.30E+07,
+    8.46E+07,
+    1.38E+08,
+    2.29E+08,
+    3.06E+08,
+    3.64E+08,
+    6.24E+08,
+    9.02E+08,
+    1.08E+09,
+    1.36E+09,
+    1.75E+09,
+    2.41E+09,
+    3.65E+09,
+    3.45E+09,
+    5.54E+09,
+    1.62E+09 // MAX_GENERATION
+};
+#endif
+#ifdef ADULT // adult lung
+double const PERIOD = 3; // 3 s
+unsigned int const N_PERIODS = 10;
+double const START_TIME = 0.0;
+double const END_TIME = PERIOD*N_PERIODS;
+double const PEEP_KINEMATIC = 8.0 * 98.0665 / DENSITY; // 8 cmH20, 1 cmH20 = 98.0665 Pa, transform to kinematic pressure
+double const TIDAL_VOLUME = 500.0e-6; // 500 ml = 500 * 10^{-6} m^3
+double const C_RS_KINEMATIC = DENSITY * 100.0e-6/98.0665; // total respiratory compliance C_rs = 100 ml/cm H20
+double const DELTA_P_INITIAL = TIDAL_VOLUME/C_RS_KINEMATIC;
+unsigned int const MAX_GENERATION = 25;
+// Menache et al. (2008): Extract diameter and length of airways from Table A11 (21-year-old male) and compute resistance of airways assuming laminar flow
+double const RESISTANCE_VECTOR_DYNAMIC[MAX_GENERATION+1] = // resistance [Pa/(m^3/s)]
+{
+    5.96E+02, // GENERATION 0
+    3.87E+02,
+    1.06E+03,
+    2.57E+03,
+    7.93E+03,
+    3.04E+04,
+    7.82E+04,
+    2.35E+05,
+    5.60E+05,
+    1.50E+06,
+    2.06E+06,
+    3.24E+06,
+    4.57E+06,
+    6.38E+06,
+    8.53E+06,
+    1.11E+07,
+    1.58E+07,
+    2.08E+07,
+    2.62E+07,
+    3.39E+07,
+    4.11E+07,
+    5.04E+07,
+    5.61E+07,
+    6.34E+07,
+    7.11E+07,
+    4.73E+07 // MAX_GENERATION
+};
+#endif
 
 double const CFL_OIF = 0.35;
 double const CFL = CFL_OIF;
@@ -74,15 +164,33 @@ types::boundary_id OUTLET_ID_LAST = 2;
 
 // output
 bool const WRITE_OUTPUT = true;
-std::string const OUTPUT_FOLDER = "output/lung/";
-std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string const OUTPUT_NAME = "test_with_resistance";
 double const OUTPUT_START_TIME = START_TIME;
 double const OUTPUT_INTERVAL_TIME = PERIOD/20;
 
 // restart
 bool const WRITE_RESTART = false;
-double const RESTART_INTERVAL_TIME = 10.0;
+double const RESTART_INTERVAL_TIME = PERIOD;
+
+double get_equivalent_resistance()
+{
+  double resistance = 0.0;
+
+  // calculate effective resistance for all higher generations not being resolved
+  // assuming that all airways of a specific generation have the same resistance and that the flow
+  // is laminar!
+  for(unsigned int i = 0; i <= MAX_GENERATION - N_GENERATIONS; ++i)
+  {
+    resistance += RESISTANCE_VECTOR_DYNAMIC[i + N_GENERATIONS]/std::pow(2.0, (double)i);
+  }
+
+  // beyond the current outflow boundary, we have two branches from generation N_GENERATIONS to MAX_GENERATION
+  resistance /= 2.0;
+
+  // the solver uses the kinematic pressure and therefore we have to transform the resistance
+  resistance /= DENSITY;
+
+  return resistance;
+}
 
 template<int dim>
 void
@@ -110,6 +218,7 @@ set_input_parameters()
   time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
+  time_step_size_max = 5.e-5;
   max_velocity = MAX_VELOCITY;
   cfl_oif = CFL_OIF;
   cfl = CFL;
@@ -125,10 +234,10 @@ set_input_parameters()
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  triangulation_type = TriangulationType::FullyDistributed;
+  triangulation_type = TRIANGULATION_TYPE_FLUID;
 
   // mapping
-  degree_mapping = 1; //FE_DEGREE_VELOCITY; //TODO
+  degree_mapping = DEGREE_MAPPING;
 
   // convective term
   if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -305,7 +414,10 @@ set_input_parameters(unsigned int scalar_index)
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  triangulation_type = TriangulationType::FullyDistributed;
+  triangulation_type = TRIANGULATION_TYPE_SCALAR;
+
+  // mapping
+  degree_mapping = DEGREE_MAPPING;
 
   // convective term
   numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
@@ -368,7 +480,7 @@ public:
       volume_max(std::numeric_limits<double>::min()),
       volume_min(std::numeric_limits<double>::max()),
       tidal_volume_last(TIDAL_VOLUME),
-      C_I(0.1), // choose C_I <= 0.1 (instabilities detected for C_I = 1 and larger)
+      C_I(0.4), // choose C_I = 0.1-1.0 (larger value might improve speed of convergence to desired value; instabilities detected for C_I = 1 and larger)
       C_D(C_I*0.2),
       counter(0),
       counter_last(0)
@@ -377,14 +489,14 @@ public:
   double
   get_pressure(double const &time) const
   {
-    // 0 <= (t-t_period_start) <= PERIOD/3
+    // 0 <= (t-t_period_start) <= PERIOD/3 (inhaling)
     if((int(time/(PERIOD/3)))%3 == 0)
     {
-      return PEEP + pressure_difference + pressure_difference_damping;
+      return PEEP_KINEMATIC + pressure_difference + pressure_difference_damping;
     }
-    else // rest of the period
+    else // rest of the period (exhaling)
     {
-      return PEEP;
+      return PEEP_KINEMATIC;
     }
   }
 
@@ -398,7 +510,7 @@ public:
     // recalculate pressure difference only once every period
     if(new_period(time))
     {
-      if(counter >= 2)
+      if(counter >= 1)
       {
         recalculate_pressure_difference();
       }
@@ -428,9 +540,12 @@ private:
   void
   recalculate_pressure_difference()
   {
-    pressure_difference = pressure_difference_last_period + C_I * (TIDAL_VOLUME - (volume_max-volume_min))/TIDAL_VOLUME * PEEP; // I-controller
+    pressure_difference = pressure_difference_last_period + C_I * (TIDAL_VOLUME - (volume_max-volume_min))/TIDAL_VOLUME * PEEP_KINEMATIC; // I-controller
 
-    pressure_difference_damping = - C_D * ((volume_max-volume_min) - tidal_volume_last)/TIDAL_VOLUME * PEEP; // D-controller
+    if(counter >= 2)
+      pressure_difference_damping = - C_D * ((volume_max-volume_min) - tidal_volume_last)/TIDAL_VOLUME * PEEP_KINEMATIC; // D-controller
+    else
+      pressure_difference_damping = 0.0;
 
     pressure_difference_last_period = pressure_difference;
     tidal_volume_last = volume_max-volume_min;
@@ -479,9 +594,9 @@ public:
   OutflowBoundary(types::boundary_id const id)
     :
       boundary_id(id),
-      resistance(1.0e7), // TODO use a reasonable value here depending on the number of generations
-      compliance(C_RS/std::pow(2.0, GENERATIONS)), // TODO use statistical distribution as in Roth et al. (2018)
-      volume(compliance * PEEP), // p = 1/C * V -> V = C * p (initialize volume so that p(t=0) = PEEP)
+      resistance(get_equivalent_resistance()), // in preliminary tests with 5 generations we used a constant value of 1.0e7
+      compliance(C_RS_KINEMATIC/std::pow(2.0, N_GENERATIONS-1)), // TODO one could use statistical distribution as in Roth et al. (2018)
+      volume(compliance * PEEP_KINEMATIC), // p = 1/C * V -> V = C * p (initialize volume so that p(t=0) = PEEP_KINEMATIC)
       flow_rate(0.0),
       time_old(START_TIME)
   {}
@@ -495,7 +610,7 @@ public:
   void
   integrate_volume(double const time)
   {
-    // currently use BDF1 time integration // TODO use higher order time integrator
+    // currently use BDF1 time integration // TODO one could use a higher order time integrator
     volume += flow_rate*(time-time_old);
     time_old = time;
   }
@@ -574,13 +689,13 @@ void create_grid_and_set_boundary_ids(
 
   std::map<std::string, double> timings;
 
-  AssertThrow(GENERATIONS >= 5, ExcMessage("rightbot and rightmid require at least 5 lung generations."));
+  AssertThrow(N_GENERATIONS >= 5, ExcMessage("rightbot and rightmid require at least 5 lung generations."));
 
   // create triangulation
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                GENERATIONS,
+                                N_GENERATIONS,
                                 n_refine_space,
                                 n_refine_space,
                                 tree_factory,
@@ -592,7 +707,7 @@ void create_grid_and_set_boundary_ids(
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                GENERATIONS,
+                                N_GENERATIONS,
                                 n_refine_space,
                                 tree_factory,
                                 timings,
@@ -604,6 +719,8 @@ void create_grid_and_set_boundary_ids(
   {
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
   }
+
+  AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1), ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
 }
 
 /**************************************************************************************/
@@ -684,7 +801,8 @@ public:
   PostProcessorLung(PostProcessorDataLung<dim> const & pp_data_in)
     :
     Base(pp_data_in.pp_data),
-    pp_data_lung(pp_data_in)
+    pp_data_lung(pp_data_in),
+    time_last(START_TIME)
   {
   }
 
@@ -757,6 +875,12 @@ public:
       std::ostringstream filename;
       filename << OUTPUT_FOLDER + "volume";
       write_output(volume, time, "Volume in [m^3]", time_step_number, filename);
+
+      // write time step size
+      std::ostringstream filename_dt;
+      filename_dt << OUTPUT_FOLDER + "time_step_size";
+      write_output(time-time_last, time, "Time step size in [s]", time_step_number, filename_dt);
+      time_last = time;
     }
 
     // update the ventilator using the new volume
@@ -801,6 +925,8 @@ private:
 
   // calculate flow rates for all outflow boundaries
   std::shared_ptr<FlowRateCalculator<dim,degree_u,Number> > flow_rate_calculator;
+
+  double time_last;
 };
 
 template<int dim, int degree_u, int degree_p, typename Number>

@@ -190,6 +190,7 @@ public:
       calculation_of_time_step_size(TimeStepCalculation::Undefined),
       adaptive_time_stepping(false),
       adaptive_time_stepping_limiting_factor(1.2),
+      time_step_size_max(std::numeric_limits<double>::max()),
       adaptive_time_stepping_cfl_type(CFLConditionType::VelocityNorm),
       max_velocity(-1.),
       cfl(-1.),
@@ -727,6 +728,8 @@ public:
                       "Adaptive time stepping limiting factor",
                       adaptive_time_stepping_limiting_factor);
 
+      print_parameter(pcout, "Maximum allowable time step size", time_step_size_max);
+
       print_parameter(pcout,
                       "Type of CFL condition",
                       enum_to_string(adaptive_time_stepping_cfl_type));
@@ -1243,6 +1246,11 @@ public:
   // change at all, while a factor towards infinity implies that arbitrary changes in
   // the time step size are allowed from one time step to the next.
   double adaptive_time_stepping_limiting_factor;
+
+  // specify a maximum time step size in case of adaptive time stepping since the adaptive
+  // time stepping algorithm would choose arbitrarily large time step sizes if the velocity field
+  // is close to zero. This variable is only used for adaptive time stepping.
+  double time_step_size_max;
 
   // Different variants are available for calculating the time step size based on a local CFL
   // criterion.
