@@ -332,17 +332,17 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   auto & temp = roots[0]->right_child->left_child->skeleton;
   auto temp_c = temp;
   temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
-  temp_c[7] = temp[4]; 
-  temp_c[6] = temp[5]; 
-  temp_c[5] = temp[6]; 
-  temp_c[4] = temp[7];
+    temp_c[7] = temp[4];
+    temp_c[6] = temp[5];
+    temp_c[5] = temp[6];
+    temp_c[4] = temp[7];
   temp = temp_c;
   //printf("x, y, z\n");
   //for(auto v : temp)
   //  printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
                                                     
   deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 12, roots[0]->right_child->left_child->skeleton,
-                                                    {0, 3, 0, 3}));
+                                                    {0, 3, 0, 3}, true));
   }
        
   
@@ -537,8 +537,8 @@ void update_mapping(dealii::Triangulation<3> & tria, std::vector<DeformTransfini
   
   map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), false)] = 7;
   map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), true)] = 8;
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), true)] = 9;
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), false)]  = 10;
+  //map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), true)] = 9;
+  //map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), false)]  = 10;
   
   map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)] = 11;
   map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), true)] = 12;
