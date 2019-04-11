@@ -296,7 +296,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   {
     // the mesh is generated in a way that inlet/outlets are one faces with normal vector
     // in positive or negative z-direction (faces 4/5)
-    if(cell->at_boundary(5)) // inlet
+    if(cell->at_boundary(5) && cell->material_id() == (unsigned int) LungID::create_root()) // inlet
       cell->face(5)->set_all_boundary_ids(1);
     if(cell->at_boundary(4)) // outlets (>1)
       if(mark(cell, counter))
@@ -568,7 +568,7 @@ void update_mapping(dealii::Triangulation<3> & tria, std::vector<DeformTransfini
           }
 
   // TODO only print if desired
-  bool print = false;
+  bool print = true;
   if(print)
     print_tria_statistics(tria);
 }
