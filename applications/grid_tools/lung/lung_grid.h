@@ -227,7 +227,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
           const std::string &                                            bspline_file,
-          std::vector<DeformTransfinitelyViaSplines<3>> & deform)
+          std::map<types::material_id, DeformTransfinitelyViaSplines<3>> & deform)
 {
   Timer timer;
 
@@ -305,265 +305,239 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 
   // set outlet_id_last which is needed by the application setting the boundary conditions
   outlet_id_last = counter;
-
+  
   timer.restart();
   //tria.refine_global(refinements);
   timings["create_triangulation_5_serial_refinement"] = timer.wall_time();
 
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton,
-                                                    {0, 3, 0, 3}));
-                                                    
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton,
-                                                    {0, 3, 0, 3}));
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton,
-                                                    {0, 3, 0, 3}));
-                                                    
+  if(roots[0]->skeleton.size() > 0)                                                    
   {
-  auto & temp = roots[0]->right_child->right_child->skeleton;
-  auto temp_c = temp;  
-  temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
-  temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
-  temp = temp_c;
-//  printf("x, y, z\n");
-//  for(auto v : temp)
-//    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
-//  }    
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 16, roots[0]->right_child->right_child->skeleton,
-                                                    {0, 3, 0, 3}));
-  }                                              
+    deform.insert({(unsigned int) LungID::create_root(), 
+      DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton, {0, 3, 0, 3})});
+  }
+  
+  
+  
+  
+  
                                                     
+  if(roots[0]->right_child->skeleton.size() > 0)                                                    
   {
-  auto & temp = roots[0]->right_child->left_child->skeleton;
-  auto temp_c = temp;
-  temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
-    temp_c[7] = temp[4];
-    temp_c[6] = temp[5];
-    temp_c[5] = temp[6];
-    temp_c[4] = temp[7];
-  temp = temp_c;
-  //printf("x, y, z\n");
-  //for(auto v : temp)
-  //  printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
-                                                    
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 12, roots[0]->right_child->left_child->skeleton,
-                                                    {0, 3, 0, 3}, true));
+    deform.insert({(unsigned int) LungID::generate(LungID::create_root(), false), 
+      (DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton, {0, 3, 0, 3}))});
+  }
+  
+  if(roots[0]->left_child->skeleton.size() > 0)                                                    
+  {
+    deform.insert({(unsigned int) LungID::generate(LungID::create_root(), true), 
+      (DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton, {0, 3, 0, 3}))});
+  }
+  
+  
+  
+  
+  
+
+  if(roots[0]->right_child->right_child->skeleton.size() > 0)                                                    
+  {
+    auto & temp = roots[0]->right_child->right_child->skeleton;
+    auto temp_c = temp;  
+    temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
+    temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), false),false),
+      (DeformTransfinitelyViaSplines<3>(splines, 16, roots[0]->right_child->right_child->skeleton, {0, 3, 0, 3}))});
+  }         
+  
+  if(roots[0]->right_child->left_child->skeleton.size() > 0)                                                    
+  {
+    auto & temp = roots[0]->right_child->left_child->skeleton;
+    auto temp_c = temp;
+    temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
+    temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), false),true),
+      (DeformTransfinitelyViaSplines<3>(splines, 12, roots[0]->right_child->left_child->skeleton, {0, 3, 0, 3}, true))});
   }
        
-  
-  // left-right: nothing to do
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 20, roots[0]->left_child->right_child->skeleton,
-                                                    {0, 3, 0, 3}));
-  
-  
-  
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 24, roots[0]->left_child->left_child->skeleton,
-                                                    {0, 3, 0, 3}));
-                                                    
+  if(roots[0]->left_child->right_child->skeleton.size() > 0)                                                    
   {
-  auto & temp = roots[0]->right_child->right_child->right_child->skeleton;
-  auto temp_c = temp;
-  temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
-  temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
-  temp = temp_c;
-  //printf("x, y, z\n");
-  //for(auto v : temp)
-  //  printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 40, roots[0]->right_child->right_child->right_child->skeleton,
-                                                    {0, 3, 0, 3}, true));
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), true),false),
+      (DeformTransfinitelyViaSplines<3>(splines, 20, roots[0]->left_child->right_child->skeleton, {0, 3, 0, 3}))});
+  }
+  
+  if(roots[0]->left_child->left_child->skeleton.size() > 0)                                                    
+  {
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), true),true),
+      (DeformTransfinitelyViaSplines<3>(splines, 24, roots[0]->left_child->left_child->skeleton, {0, 3, 0, 3}))});
+  }
+  
+  
+  
+  
+  
+
+  if(roots[0]->right_child->right_child->right_child->skeleton.size() > 0)                                                    
+  {
+    auto & temp = roots[0]->right_child->right_child->right_child->skeleton;
+    auto temp_c = temp;
+    temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
+    temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), false),
+      (DeformTransfinitelyViaSplines<3>(splines, 40, roots[0]->right_child->right_child->right_child->skeleton, {0, 3, 0, 3}, true))});
   }                           
                                                     
-                                                    
+  if(roots[0]->right_child->right_child->left_child->skeleton.size() > 0)                                                    
   {
-  auto & temp = roots[0]->right_child->right_child->left_child->skeleton;
-  auto temp_c = temp;
-  
-  temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
-  temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
-  temp = temp_c;
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 36, roots[0]->right_child->right_child->left_child->skeleton,
-                                                    {0, 3, 0, 3}, true));
+    auto & temp = roots[0]->right_child->right_child->left_child->skeleton;
+    auto temp_c = temp;
+    temp_c[3] = temp[0]; temp_c[2] = temp[1]; temp_c[1] = temp[2]; temp_c[0] = temp[3];
+    temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), true),
+      (DeformTransfinitelyViaSplines<3>(splines, 36, roots[0]->right_child->right_child->left_child->skeleton, {0, 3, 0, 3}, true))});
   }                          
                                                     
-
-                                                    
-                                                    
-                                                    
+  if(false && roots[0]->right_child->left_child->left_child->skeleton.size() > 0)                                                    
   {
-  auto & temp = roots[0]->right_child->left_child->left_child->skeleton;
-  auto temp_c = temp;
+    auto & temp = roots[0]->right_child->left_child->left_child->skeleton;
+    auto temp_c = temp;
   
-    temp_c[0] = temp[0];
-    temp_c[1] = temp[1];
-    temp_c[2] = temp[2];
-    temp_c[3] = temp[3];
-    temp_c[4] = temp[4];
-    temp_c[5] = temp[5];
-    temp_c[6] = temp[6];
-    temp_c[7] = temp[7];
-//  
-//    temp_c[1] = temp[0];
-//    temp_c[3] = temp[1];
-//    temp_c[0] = temp[2];
-//    temp_c[2] = temp[3];
-//    temp_c[5] = temp[4];
-//    temp_c[7] = temp[5];
-//    temp_c[4] = temp[6];
-//    temp_c[6] = temp[7];
-  temp = temp_c;
+    temp_c[0] = temp[0]; temp_c[1] = temp[1]; temp_c[2] = temp[2]; temp_c[3] = temp[3];
+    temp_c[4] = temp[4]; temp_c[5] = temp[5]; temp_c[6] = temp[6]; temp_c[7] = temp[7];
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), true), 
+      (DeformTransfinitelyViaSplines<3>(splines, 28, roots[0]->right_child->left_child->left_child->skeleton, {0, 3, 0, 3}/*, true*/))});
+  }
+  
+  if(false && roots[0]->right_child->left_child->right_child->skeleton.size() > 0)                                                    
+  {
+    auto & temp = roots[0]->right_child->left_child->right_child->skeleton;
+    auto temp_c = temp;
+  
+    temp_c[2] = temp[0]; temp_c[0] = temp[1]; temp_c[3] = temp[2]; temp_c[1] = temp[3];
+    temp_c[6] = temp[4]; temp_c[4] = temp[5]; temp_c[7] = temp[6]; temp_c[5] = temp[7];
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), false),
+      (DeformTransfinitelyViaSplines<3>(splines, 32, roots[0]->right_child->left_child->right_child->skeleton, {0, 3, 0, 3}/*, true*/))});
+  }
+  
+  
+  
+  
+  
+  
+  
+  
+                                                    
+  if(roots[0]->left_child->right_child->right_child->skeleton.size() > 0)                                                    
+  {
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), 
+      (DeformTransfinitelyViaSplines<3>(splines, 44, roots[0]->left_child->right_child->right_child->skeleton, {0, 3, 0, 3}, false))});
   }
                                                     
-                                                    
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 28, roots[0]->right_child->left_child->left_child->skeleton,
-                                                    {0, 3, 0, 3}/*, true*/));
-                                                    
+  if( roots[0]->left_child->right_child->left_child->skeleton.size() > 0)                                                    
   {
-  auto & temp = roots[0]->right_child->left_child->right_child->skeleton;
-  auto temp_c = temp;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), true), 
+      (DeformTransfinitelyViaSplines<3>(splines, 48, roots[0]->left_child->right_child->left_child->skeleton, {0, 3, 0, 3}, true))});
+  }
   
-     temp_c[2] = temp[0];
-    temp_c[0] = temp[1];
-    temp_c[3] = temp[2];
-    temp_c[1] = temp[3];
-    temp_c[6] = temp[4];
-    temp_c[4] = temp[5];
-    temp_c[7] = temp[6];
-    temp_c[5] = temp[7];
-  //printf("x, y, z\n");
-  //for(auto v : temp)
-  //  printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if( roots[0]->left_child->right_child->right_child->right_child->skeleton.size() > 0)                                                    
+  {
+    auto & temp = roots[0]->left_child->right_child->right_child->right_child->skeleton;
+    auto temp_c = temp;
+  
+    temp_c[2] = temp[0]; temp_c[0] = temp[1]; temp_c[3] = temp[2]; temp_c[1] = temp[3];
+    temp_c[4] = temp[4]; temp_c[5] = temp[5]; temp_c[6] = temp[6]; temp_c[7] = temp[7];
 
-//  
-//    temp_c[1] = temp[0];
-//    temp_c[3] = temp[1];
-//    temp_c[0] = temp[2];
-//    temp_c[2] = temp[3];
-//    temp_c[5] = temp[4];
-//    temp_c[7] = temp[5];
-//    temp_c[4] = temp[6];
-//    temp_c[6] = temp[7];
-  temp = temp_c;
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), false), 
+      (DeformTransfinitelyViaSplines<3>(splines, 56, roots[0]->left_child->right_child->right_child->right_child->skeleton, {0, 3, 0, 3}, true))});
   }
                                                     
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 32, roots[0]->right_child->left_child->right_child->skeleton,
-                                                    {0, 3, 0, 3}/*, true*/));
-                                                    
-                                                    
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 44, roots[0]->left_child->right_child->right_child->skeleton,
-                                                    {0, 3, 0, 3}, false));
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 48, roots[0]->left_child->right_child->left_child->skeleton,
-                                                    {0, 3, 0, 3}, true));
-                                                    
+  if( roots[0]->left_child->right_child->right_child->left_child->skeleton.size() > 0)                                                    
   {
-  auto & temp = roots[0]->left_child->right_child->right_child->right_child->skeleton;
-  auto temp_c = temp;
+    auto & temp = roots[0]->left_child->right_child->right_child->left_child->skeleton;
+    auto temp_c = temp;
   
-     temp_c[2] = temp[0];
-    temp_c[0] = temp[1];
-    temp_c[3] = temp[2];
-    temp_c[1] = temp[3];
-    
-    temp_c[4] = temp[4];
-    temp_c[5] = temp[5];
-    temp_c[6] = temp[6];
-    temp_c[7] = temp[7];
-  //printf("x, y, z\n");
-  //for(auto v : temp)
-  //  printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
+    temp_c[1] = temp[0]; temp_c[3] = temp[1]; temp_c[0] = temp[2]; temp_c[2] = temp[3];
+    temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
 
-  temp = temp_c;
+  
+    temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), true),
+      (DeformTransfinitelyViaSplines<3>(splines, 52, roots[0]->left_child->right_child->right_child->left_child->skeleton, {0, 3, 0, 3}, true))});
   }
-                                                    
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 56, roots[0]->left_child->right_child->right_child->right_child->skeleton,
-                                                    {0, 3, 0, 3}, true));
-                
+  
+  if( roots[0]->left_child->left_child->right_child->skeleton.size() > 0)                                                    
   {
-                                                        
-  auto & temp = roots[0]->left_child->right_child->right_child->left_child->skeleton;
-  auto temp_c = temp;
-  
-  //int i0 = 0;
-  //int i1 = 1;
-  //int i2 = 3;
-  //int i3 = 2;
-  
-    temp_c[1] = temp[0];
-    temp_c[3] = temp[1];
-    temp_c[0] = temp[2];
-    temp_c[2] = temp[3];
-//  temp_c[i2+4] = temp[4];
-//  temp_c[i3+4] = temp[5];
-//  temp_c[i1+4] = temp[6];
-//  temp_c[i0+4] = temp[7]; 4 6 7 5 4          0 2 3 1 0 
-    temp_c[7] = temp[4];
-    temp_c[6] = temp[5];
-    temp_c[5] = temp[6];
-    temp_c[4] = temp[7];
-
-  
-  temp = temp_c;
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),false), 
+      (DeformTransfinitelyViaSplines<3>(splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {0, 3, 0, 3}, true))});
   }
            
-//  printf("x, y, z\n");
-//  for(auto v : roots[0]->left_child->right_child->right_child->left_child->skeleton)
-//  {
-//    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
-//  }
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 52, roots[0]->left_child->right_child->right_child->left_child->skeleton,
-                                                    {0, 3, 0, 3}, true));
-//  printf("x, y, z\n");
-//  for(auto i : roots[0]->left_child->right_child->right_child->left_child->skeleton)
-//  {
-//    auto v = deform.back().transform_to_deformed(i);
-//    printf("%+10.6f, %+10.6f, %+10.6f\n", v[0], v[1], v[2]);
-//  }
-
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {0, 3, 0, 3}, true));
-  deform.push_back(DeformTransfinitelyViaSplines<3>(splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {0, 3, 0, 3}, true));
-                                                    
+  if( roots[0]->left_child->left_child->left_child->skeleton.size() > 0)                                                    
+  {
+    deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),true), 
+      (DeformTransfinitelyViaSplines<3>(splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {0, 3, 0, 3}, true))});
+  }
+                                           
   // clean up
   for(unsigned int i = 0; i < roots.size(); i++)
     delete roots[i];
 }
 
-void update_mapping(dealii::Triangulation<3> & tria, std::vector<DeformTransfinitelyViaSplines<3>> & deform)
+void update_mapping(dealii::Triangulation<3> & tria, std::map<types::material_id, DeformTransfinitelyViaSplines<3>> & deform)
 {
   if(deform.size()==0)
     return;
+  
+  std::cout << deform.size() << std::endl;
     
-  //std::vector<Point<3>> & tria_points = const_cast<std::vector<Point<3>>&>(tria.get_vertices());
-  //for (Point<3> &p : tria_points)
-  //  p = deform.transform_to_deformed(p);
-  std::map<types::material_id,unsigned int> map_to_splines;
-  map_to_splines[LungID::create_root()] = 0;
-  map_to_splines[LungID::generate(LungID::create_root(), false)] = 1;
-  map_to_splines[LungID::generate(LungID::create_root(), true)] = 2;
-  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), false),false)] = 3;
-  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), false),true)] = 4;
-  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), true),false)] = 5;
-  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), true),true)] = 6;
-  
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), false)] = 7;
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), true)] = 8;
-  //map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), true)] = 9;
-  //map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), false)]  = 10;
-  
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)] = 11;
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), true)] = 12;
-  
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), false)] = 13;
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), true)] = 14;
-  
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),false)] = 15;
-  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),true)] = 16;
+//  //std::vector<Point<3>> & tria_points = const_cast<std::vector<Point<3>>&>(tria.get_vertices());
+//  //for (Point<3> &p : tria_points)
+//  //  p = deform.transform_to_deformed(p);
+//  std::map<types::material_id,unsigned int> map_to_splines;
+//  map_to_splines[LungID::create_root()] = 0;
+//  map_to_splines[LungID::generate(LungID::create_root(), false)] = 1;
+//  map_to_splines[LungID::generate(LungID::create_root(), true)] = 2;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), false),false)] = 3;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), false),true)] = 4;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), true),false)] = 5;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::create_root(), true),true)] = 6;
+//  
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), false)] = 7;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), true)] = 8;
+//  //map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), true)] = 9;
+//  //map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), false)]  = 10;
+//  
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)] = 11;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), true)] = 12;
+//  
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), false)] = 13;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), true)] = 14;
+//  
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),false)] = 15;
+//  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),true)] = 16;
   
   
   std::vector<bool> touched(tria.n_vertices(), false);
   for (auto cell : tria.active_cell_iterators())
-    if (map_to_splines.find(cell->material_id()) != map_to_splines.end())
+    if (deform.find(cell->material_id()) != deform.end())
       for (unsigned int v=0; v<GeometryInfo<3>::vertices_per_cell; ++v)
         if (touched[cell->vertex_index(v)] == false)
           {
-            cell->vertex(v) = deform[map_to_splines[cell->material_id()]].transform_to_deformed(cell->vertex(v));
+            //std::cout << cell->material_id() << " " << LungID::to_string(cell->material_id()) << std::endl;
+            cell->vertex(v) = deform[cell->material_id()].transform_to_deformed(cell->vertex(v));
             touched[cell->vertex_index(v)] = true;
           }
 
@@ -583,7 +557,7 @@ void lung(dealii::Triangulation<3> &                                     tria,
           unsigned int &                                                 outlet_id_last,
           const std::string &                                            bspline_file = "")
 {
-    std::vector<DeformTransfinitelyViaSplines<3>> deform;
+    std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
     lung_unrefined(tria, generations, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform);
     tria.refine_global(refinements);
     update_mapping(tria, deform);
@@ -600,7 +574,7 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
-  std::vector<DeformTransfinitelyViaSplines<3>> deform;
+  std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
   lung_unrefined(tria_seq, generations, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform);
   // copy coarse grid to distributed triangulation and ...
   tria.copy_triangulation(tria_seq);

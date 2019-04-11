@@ -21,6 +21,32 @@ generate(int num, bool left)
     return (num + 1);
 }
 
+int 
+get_generation(int num)
+{
+  return (num << 27) >> 27;
+}
+
+template<typename T>
+std::string to_binary(T val)
+{
+  std::size_t sz = sizeof(val)*CHAR_BIT;
+  std::string ret(sz, ' ');
+  while( sz-- )
+  {
+    ret[sz] = '0'+(val&1);
+    val >>= 1;
+  }
+  return ret;
+}
+
+std::string
+to_string(int num)
+{
+    return to_binary(num);
+    
+}
+
 } // namespace LungID
 
 
@@ -365,7 +391,7 @@ public:
   virtual int
   get_intersections()
   {
-    return get_length() / get_radius();
+    return std::max(1.0,get_length() / 2 / get_radius());
   }
 
 public:

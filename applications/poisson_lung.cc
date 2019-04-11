@@ -42,7 +42,7 @@
 #define MANUAL
 #define VERSION 4
 
-#define LUNG_GENERATIONS 4
+#define LUNG_GENERATIONS 6
 
 using namespace dealii;
 using namespace Poisson;
@@ -122,9 +122,9 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(bool use_cg,
   print_header();
 
   // create triangulation
-#if VERSION == 0 || VERSION == 1 || VERSION == 4
+#if VERSION == 0 || VERSION == 1 
   triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
-#elif VERSION == 2 || VERSION == 3
+#elif VERSION == 2 || VERSION == 3|| VERSION == 4
   triangulation.reset(new parallel::distributed::Triangulation<dim>(
     MPI_COMM_WORLD,
     dealii::Triangulation<dim>::none,
@@ -251,19 +251,20 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
 
   std::map<std::string, double> timings;
 
+    unsigned int outlet_id_first = 2, outlet_id_last = 2;
 #if VERSION == 0 || VERSION == 1 || VERSION == 4
   // create triangulation
-  if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+  if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
-    unsigned int outlet_id_first = 2, outlet_id_last = 2;
+    std::string spline_file = get_lung_spline_file_from_environment();
     dealii::GridGenerator::lung(*tria,
                                 generations,
-                                n_refine_space,
                                 n_refine_space,
                                 create_tree,
                                 timings,
                                 outlet_id_first,
-                                outlet_id_last);
+                                outlet_id_last,
+                                spline_file);
   }
   else
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
@@ -283,7 +284,9 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
   // boundary_descriptor->neumann_bc.insert({0, zero_function_scalar});
   boundary_descriptor->dirichlet_bc.insert({0, zero_function_scalar});
   boundary_descriptor->dirichlet_bc.insert({1, zero_function_scalar});
-  boundary_descriptor->dirichlet_bc.insert({2, zero_function_scalar});
+  
+  for(unsigned int i = outlet_id_first; i <= outlet_id_last; i++)
+    boundary_descriptor->dirichlet_bc.insert({i, zero_function_scalar});
 
   print_grid_data();
   dct.put("_grid", timer.wall_time());

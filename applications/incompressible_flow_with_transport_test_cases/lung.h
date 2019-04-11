@@ -44,11 +44,11 @@ unsigned int const DEGREE_MAPPING = 1;
 unsigned int const N_SCALARS = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const N_GENERATIONS = 6;
+unsigned int const N_GENERATIONS = 8;
 
 IncNS::TriangulationType const TRIANGULATION_TYPE_FLUID = IncNS::TriangulationType::Distributed;
 ConvDiff::TriangulationType const TRIANGULATION_TYPE_SCALAR = ConvDiff::TriangulationType::Distributed;
@@ -720,7 +720,7 @@ void create_grid_and_set_boundary_ids(
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
   }
 
-  AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1), ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
+  //AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1), ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
 }
 
 /**************************************************************************************/

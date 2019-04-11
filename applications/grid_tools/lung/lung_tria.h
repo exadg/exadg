@@ -500,7 +500,13 @@ process_node(Node *                     node,
       cell_data_3d_global.push_back(c);
     }
   }
-
+  
+  if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)==id)
+      return;
+  
+  if(LungID::generate(LungID::generate(LungID::create_root(), false), true)==id)
+      return;
+  
   // process children
   if(node->has_children())
   {
