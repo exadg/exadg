@@ -57,7 +57,7 @@ lung_to_node(int                               generations,
 std::function<void(std::vector<Node *> & roots, unsigned int)>
 lung_files_to_node(std::vector<std::string> files)
 {
-  return [files](std::vector<Node *> & roots, unsigned int /*generations*/) {
+  return [files](std::vector<Node *> & roots, unsigned int generations) {
     for(auto file : files)
     {
       // process files
@@ -68,24 +68,24 @@ lung_files_to_node(std::vector<std::string> files)
       std::vector<CellAdditionalInfo> cells_additional_data;
       load_files({file}, points, cells, cells_additional_data);
 
-      int n_bifurcations_to_be_read_from_file = 11; /* TODO */
+      int n_bifurcations = generations; /* TODO */
 
-//      if(file.find("leftbot") != std::string::npos || file.find("lefttop") != std::string::npos ||
-//         file.find("righttop") != std::string::npos)
-//      {
-//        n_bifurcations = generations - 4;
-//      }
-//      else if(file.find("rightbot") != std::string::npos ||
-//              file.find("rightmid") != std::string::npos)
-//      {
-//        n_bifurcations = generations - 5;
-//      }
-//      else
-//      {
-//        AssertThrow(false, ExcMessage("Filename specified for generation of lung mesh is wrong."));
-//      }
+      if(file.find("leftbot") != std::string::npos || file.find("lefttop") != std::string::npos ||
+         file.find("righttop") != std::string::npos)
+      {
+        n_bifurcations = generations - 4;
+      }
+      else if(file.find("rightbot") != std::string::npos ||
+              file.find("rightmid") != std::string::npos)
+      {
+        n_bifurcations = generations - 5;
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Filename specified for generation of lung mesh is wrong."));
+      }
 
-      lung_to_node(n_bifurcations_to_be_read_from_file, points, cells, cells_additional_data, roots);
+      lung_to_node(n_bifurcations, points, cells, cells_additional_data, roots);
     }
 
 #ifdef DEBUG
@@ -245,7 +245,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 
   timer.restart();
   std::vector<Node *> roots;
-  create_tree(roots, 0 /* TODO: is ignored */);
+  create_tree(roots, branch_filter->get_generations());
 
   timings["create_triangulation_1_load_data"] = timer.wall_time();
 

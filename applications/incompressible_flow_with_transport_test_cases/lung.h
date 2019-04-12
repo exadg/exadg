@@ -44,11 +44,11 @@ unsigned int const DEGREE_MAPPING = 1;
 unsigned int const N_SCALARS = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const N_GENERATIONS = 4;
+unsigned int const N_GENERATIONS = 8;
 
 IncNS::TriangulationType const TRIANGULATION_TYPE_FLUID = IncNS::TriangulationType::Distributed;
 ConvDiff::TriangulationType const TRIANGULATION_TYPE_SCALAR = ConvDiff::TriangulationType::Distributed;

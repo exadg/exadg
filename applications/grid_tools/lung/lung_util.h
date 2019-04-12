@@ -52,6 +52,7 @@ class Checker
 public:
     virtual bool pre(int num) = 0;
     virtual bool post(int num) = 0;
+    virtual int get_generations() = 0;
 };
 
 class NoneChecker : public Checker
@@ -66,6 +67,11 @@ public:
     {
         (void) num;
         return true;
+    }
+    
+    virtual int get_generations()
+    {
+      return 12;
     }
 };
 
@@ -84,7 +90,12 @@ public:
     }
     virtual bool post(int num)
     {
-        return get_generation(num) == generation+1;
+        return get_generation(num) + 1 == generation;
+    }
+    
+    virtual int get_generations()
+    {
+      return this->generation;
     }
     
     const int generation;
@@ -436,7 +447,7 @@ public:
   virtual int
   get_intersections()
   {
-    return std::max(2.0,get_length() / get_radius());
+    return std::max(2.0,get_length() / 2.0 / get_radius());
   }
 
 public:
