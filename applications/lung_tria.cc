@@ -39,10 +39,56 @@
 
 using namespace dealii;
 
+#define TRIA_TYPE 1
+
 //#define TEST_LUNG_MANUAL
 
 #include "grid_tools/lung/lung_grid.h"
 
+template<typename TRIA>
+void lung_instance(TRIA &         tria,
+          int                                                            refinements1,
+          int                                                            refinements2,
+          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file,
+          std::shared_ptr<LungID::Checker> branch_filter)
+{
+  (void) refinements2,
+  dealii::GridGenerator::lung(tria,
+                              refinements1,
+                              create_tree,
+                              timings,
+                              outlet_id_first,
+                              outlet_id_last,
+                              bspline_file,
+                              branch_filter);
+}
+
+template<>
+void lung_instance<dealii::parallel::fullydistributed::Triangulation<3> >(dealii::parallel::fullydistributed::Triangulation<3>  &         tria,
+          int                                                            refinements1,
+          int                                                            refinements2,
+          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file,
+          std::shared_ptr<LungID::Checker> branch_filter)
+{
+  dealii::GridGenerator::lung(tria,
+                              refinements1,
+                              refinements2,
+                              create_tree,
+                              timings,
+                              outlet_id_first,
+                              outlet_id_last,
+                              bspline_file,
+                              branch_filter);
+}
+        
 
 void
 run(int generations,
@@ -90,8 +136,19 @@ run(int generations,
 #endif
 
   unsigned int outlet_id_first = 2, outlet_id_last = 2;
+  
+#if TRIA_TYPE == 0
+  Triangulation<3> tria;
+#endif
+  
+#if TRIA_TYPE == 1
+   parallel::distributed::Triangulation<3> tria(MPI_COMM_WORLD);
+#endif
+  
+#if TRIA_TYPE == 2
+   parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
+#endif
 
-   //parallel::distributed::Triangulation<3> tria(MPI_COMM_WORLD);
   // dealii::GridGenerator::lung(tria_dist, generations, refinements2, tree_factory,
   // timings,outlet_id_first,outlet_id_last);
 
@@ -100,10 +157,9 @@ run(int generations,
   //std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(generations));
   std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
   
-  Triangulation<3> tria;
-  dealii::GridGenerator::lung(tria,
+  lung_instance(tria,
                               refinements1,
-                              //refinements2,
+                              refinements2,
                               tree_factory,
                               timings,
                               outlet_id_first,
