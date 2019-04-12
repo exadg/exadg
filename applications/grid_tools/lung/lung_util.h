@@ -1,6 +1,150 @@
 #ifndef LUNG_LUNG_UTIL
 #define LUNG_LUNG_UTIL
 
+namespace LungID
+{
+int
+create_root()
+{
+  return 0;
+}
+
+int
+generate(int num, bool left)
+{
+  int generation_parent = (num << 27) >> 27;
+  int generation        = generation_parent + 1;
+
+  if(left)
+    return (num + 1) | (1 << (31 - generation));
+  else
+    return (num + 1);
+}
+
+int 
+get_generation(int num)
+{
+  return (num << 27) >> 27;
+}
+
+template<typename T>
+std::string to_binary(T val)
+{
+  std::size_t sz = sizeof(val)*CHAR_BIT;
+  std::string ret(sz, ' ');
+  while( sz-- )
+  {
+    ret[sz] = '0'+(val&1);
+    val >>= 1;
+  }
+  return ret;
+}
+
+std::string
+to_string(int num)
+{
+    return to_binary(num);
+    
+}
+
+class Checker
+{
+public:
+    virtual bool pre(int num) = 0;
+    virtual bool post(int num) = 0;
+    virtual int get_generations() = 0;
+};
+
+class NoneChecker : public Checker
+{
+public:
+    virtual bool pre(int num)
+    {
+        (void) num;
+        return true;
+    }
+    virtual bool post(int num)
+    {
+        (void) num;
+        return true;
+    }
+    
+    virtual int get_generations()
+    {
+      return 12;
+    }
+};
+
+class GenerationChecker : public Checker
+{
+public:
+    
+    GenerationChecker(int generation) : generation(generation)
+    {
+        
+    }
+    
+    virtual bool pre(int num)
+    {
+        return get_generation(num) < generation;
+    }
+    virtual bool post(int num)
+    {
+        return get_generation(num) + 1 < generation;
+    }
+    
+    virtual int get_generations()
+    {
+      return this->generation;
+    }
+    
+    const int generation;
+};
+
+class ManualChecker : public Checker
+{
+public:
+    
+    virtual bool pre(int num)
+    {
+        if (num == create_root())
+            return true;
+        
+        
+        if(num == generate(create_root(), true))
+            return true;
+        if(num == generate(create_root(), false))
+            return true;
+        
+        //if(num == generate(generate(create_root(), true), true))
+        //    return true;
+        //if(num == generate(generate(create_root(), true), false))
+        //    return true;
+        if(num == generate(generate(create_root(), false), true))
+            return true;
+        if(num == generate(generate(create_root(), false), false))
+            return true;
+        
+        return false;
+    }
+    virtual bool post(int num)
+    {
+        (void) num;
+        return true;
+    }
+
+    virtual int get_generations()
+    {
+      return 2;
+    }
+    
+};
+
+
+
+} // namespace LungID
+
+
 struct CellAdditionalInfo
 {
   CellAdditionalInfo() : radius(0), generation(0)
@@ -93,7 +237,7 @@ public:
     right_child->_is_left = false;
   }
 
-  Node(Node * left_child, Node * right_child, Point<3> from, bool _is_left)
+  Node(Node * left_child, Node * right_child, Point<3> from, bool _is_left, bool do_twist = true, bool do_rot = false)
     : id(0),
       generation(left_child->get_generation() - 1),
       radius((left_child->get_radius() + right_child->get_radius()) / 2 / 0.7),
@@ -110,6 +254,9 @@ public:
 
     this->to   = left_child->from;
     this->from = from;
+    
+    this->do_twist = do_twist;
+    this->do_rot   = do_rot;
   }
 
   static Node *
@@ -339,7 +486,7 @@ public:
   virtual int
   get_intersections()
   {
-    return get_length() / get_radius();
+    return std::max(2.0,get_length() / 2.0 / get_radius());
   }
 
 public:
@@ -353,6 +500,10 @@ public:
   Node *       left_child;
   Node *       right_child;
   bool         _is_dummy;
+  bool         do_twist = true;
+  bool         do_rot = false;
+  
+  std::vector<Point<3>> skeleton;
 };
 
 class DummyNode : public Node

@@ -132,9 +132,10 @@ void InputParameters<dim>::set_input_parameters()
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
+ solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-3,100);
   preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.type = MultigridType::hMG;
+  multigrid_data_pressure_poisson.type = MultigridType::phMG;
+  multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
   multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
   multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
 

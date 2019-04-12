@@ -14,6 +14,9 @@
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_tools.h>
 #include <deal.II/multigrid/multigrid.h>
+#include <deal.II/base/timer.h>
+
+#include "../../functionalities/dynamic_convergence_table.h"
 
 using namespace dealii;
 
@@ -21,7 +24,7 @@ using namespace dealii;
  * Activate timings if desired.
  */
 
-//#define ENABLE_TIMING true
+#define ENABLE_TIMING true
 
 #ifndef ENABLE_TIMING
 #  define ENABLE_TIMING false
@@ -52,11 +55,6 @@ public:
       transfer(transfer),
       smoother(&smoother, typeid(*this).name()),
       n_cycles(n_cycles)
-#if ENABLE_TIMING
-      ,
-      timer(minlevel, maxlevel),
-      wall_time(minlevel, maxlevel)
-#endif
   {
     AssertThrow(n_cycles == 1, ExcNotImplemented());
 
@@ -68,51 +66,32 @@ public:
       if(n_cycles > 1)
         defect2[level] = solution[level];
     }
-
+    
 #if ENABLE_TIMING
-    for(unsigned int level = minlevel; level <= maxlevel; ++level)
-      wall_time[level] = 0.0;
+    for (unsigned int level = minlevel; level <= maxlevel; ++level)
+      this->table.set("dofs-" + std::to_string(level), defect[level].size());
 #endif
   }
-
+    
   virtual ~MultigridPreconditioner()
   {
-#if ENABLE_TIMING
-    for(unsigned int level = minlevel; level <= maxlevel; ++level)
-      printf(" >>> %d %12.9f\n", level, wall_time[level]);
-#endif
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+      this->table.print();
   }
-
-
+    
   template<class OtherVectorType>
   void
   vmult(OtherVectorType & dst, OtherVectorType const & src) const
   {
-#if ENABLE_TIMING
-    timer[maxlevel].restart();
-#endif
-
     for(unsigned int i = minlevel; i <= maxlevel; i++)
     {
       defect[i] = 0.0;
     }
     defect[maxlevel].copy_locally_owned_data_from(src);
 
-#if ENABLE_TIMING
-    wall_time[maxlevel] += timer[maxlevel].wall_time();
-#endif
-
     v_cycle(maxlevel, false);
 
-#if ENABLE_TIMING
-    timer[maxlevel].restart();
-#endif
-
     dst.copy_locally_owned_data_from(solution[maxlevel]);
-
-#if ENABLE_TIMING
-    wall_time[maxlevel] += timer[maxlevel].wall_time();
-#endif
   }
 
   template<class OtherVectorType>
@@ -169,23 +148,38 @@ public:
   }
 
 private:
+  
+#if ENABLE_TIMING
+  void put_in_table(std::string label, Timer& timer) const
+  {
+    this->table.put(label, timer.wall_time());
+  }
+#else
+  void put_in_table(std::string /*label*/, Timer& /*timer*/) const
+  {
+  }
+#endif
+  
   /**
    * Implements the V-cycle
    */
   void
   v_cycle(unsigned int const level, bool const multigrid_is_a_solver) const
   {
-#if ENABLE_TIMING
-    timer[level].restart();
-#endif
+    Timer timer_local;
+    Timer timer_global;
+    timer_global.restart();
 
     // call coarse grid solver
     if(level == minlevel)
     {
       (*coarse)(level, solution[level], defect[level]);
+      put_in_table("level-" + std::to_string(level), timer_global);
     }
     else
     {
+      timer_local.restart();
+      
       // pre-smoothing
       if(multigrid_is_a_solver)
       {
@@ -203,24 +197,30 @@ private:
       }
       (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
       t[level].sadd(-1.0, 1.0, defect[level]);
+      put_in_table("pres-" + std::to_string(level), timer_local);
 
       // restriction
+      timer_local.restart();
       transfer.restrict_and_add(level, defect[level - 1], t[level]);
+      put_in_table("rest-" + std::to_string(level), timer_local);
 
       // coarse grid correction
       v_cycle(level - 1, false);
 
+      timer_local.restart();
+
       // prolongation
       transfer.prolongate(level, t[level], solution[level - 1]);
+      put_in_table("prol-" + std::to_string(level), timer_local);
+      timer_local.restart();
       solution[level] += t[level];
 
       // post-smoothing
       (*smoother)[level]->step(solution[level], defect[level]);
+      put_in_table("poss-" + std::to_string(level), timer_local);
+      put_in_table("level-" + std::to_string(level), timer_global);
     }
 
-#if ENABLE_TIMING
-    wall_time[level] += timer[level].wall_time();
-#endif
   }
 
   /**
@@ -275,12 +275,9 @@ private:
   SmartPointer<const MGLevelObject<std::shared_ptr<SmootherType>>> smoother;
 
   const unsigned int n_cycles;
+  
+  DynamicConvergenceTable table;
 
-#if ENABLE_TIMING
-  mutable MGLevelObject<Timer> timer;
-  // measures time on the level (including the coarser levels)
-  mutable MGLevelObject<double> wall_time;
-#endif
 };
 
 

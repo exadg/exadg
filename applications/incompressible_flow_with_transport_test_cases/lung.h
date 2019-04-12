@@ -22,8 +22,8 @@
 /**************************************************************************************/
 
 // which lung
-//#define BABY
-#define ADULT
+#define BABY
+//#define ADULT
 
 // single or double precision?
 //typedef float VALUE_TYPE;
@@ -48,7 +48,7 @@ unsigned int const REFINE_STEPS_SPACE_MIN = 0;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const N_GENERATIONS = 5;
+unsigned int const N_GENERATIONS = 8;
 
 IncNS::TriangulationType const TRIANGULATION_TYPE_FLUID = IncNS::TriangulationType::Distributed;
 ConvDiff::TriangulationType const TRIANGULATION_TYPE_SCALAR = ConvDiff::TriangulationType::Distributed;
@@ -58,7 +58,7 @@ unsigned int const REFINE_STEPS_TIME_MIN = 0;
 unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // output folders
-std::string const OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/test/";
+std::string const OUTPUT_FOLDER = "output/lung/";
 std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string const OUTPUT_NAME = "5_gen";
 
@@ -163,7 +163,7 @@ types::boundary_id const OUTLET_ID_FIRST = 2;
 types::boundary_id OUTLET_ID_LAST = 2;
 
 // output
-bool const WRITE_OUTPUT = false;
+bool const WRITE_OUTPUT = true;
 double const OUTPUT_START_TIME = START_TIME;
 double const OUTPUT_INTERVAL_TIME = PERIOD/20;
 
@@ -685,39 +685,43 @@ void create_grid_and_set_boundary_ids(
   std::vector<std::string> files;
   get_lung_files_from_environment(files);
   auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
+  std::string spline_file = get_lung_spline_file_from_environment();
 
   std::map<std::string, double> timings;
-
-  AssertThrow(N_GENERATIONS >= 5, ExcMessage("rightbot and rightmid require at least 5 lung generations."));
+  
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(N_GENERATIONS));
+  //std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
 
   // create triangulation
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                N_GENERATIONS,
                                 n_refine_space,
                                 n_refine_space,
                                 tree_factory,
                                 timings,
                                 OUTLET_ID_FIRST,
-                                OUTLET_ID_LAST);
+                                OUTLET_ID_LAST,
+                                spline_file,
+                                generation_limiter);
   }
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                N_GENERATIONS,
                                 n_refine_space,
                                 tree_factory,
                                 timings,
                                 OUTLET_ID_FIRST,
-                                OUTLET_ID_LAST);
+                                OUTLET_ID_LAST,
+                                spline_file,
+                                generation_limiter);
   }
   else
   {
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
   }
 
-  AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1), ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
+  //AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1), ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
 }
 
 /**************************************************************************************/
