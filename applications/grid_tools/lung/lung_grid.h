@@ -152,8 +152,8 @@ lung_files_to_node(std::vector<std::string> files)
           {-0.012978481772800358, 0.03523408779189564, 0.007048238472570871}, true),
         {-0.00876064681897349, 0.03269315981334528, 0.010104936601351125}, false, false),
       new Node(
-        new Node(roots_temp[2], roots_temp[3], Point<3>({0.004894151748164817, 0.03723150327901492, 0.0008904181300876433}), false, false),
-        new Node(roots_temp[1], roots_temp[0], Point<3>({0.004894151748164817, 0.03723150327901492, 0.0008904181300876433}), false),
+        new Node(roots_temp[2], roots_temp[3], Point<3>({0.004594151748164817, 0.03753150327901492, 0.0011504181300876433}), false, false),
+        new Node(roots_temp[1], roots_temp[0], Point<3>({0.004594151748164817, 0.03753150327901492, 0.0011504181300876433}), false),
         {-0.00876064681897349, 0.03269315981334528, 0.010104936601351125}, false,false),
       {-0.004691444584156128, 0.012111498522501644, 0.040161793504990745}, true));
     // clang-format on
@@ -325,7 +325,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   if(roots[0]->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::create_root(), 
-      DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton, {0, 3, 0, 3})});
+      DeformTransfinitelyViaSplines<3>(splines, 0, roots[0]->skeleton, {0, 0})});
   }
   
   
@@ -336,13 +336,13 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   if(roots[0]->right_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::create_root(), false), 
-      (DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton, {0, 3, 0, 3}))});
+      (DeformTransfinitelyViaSplines<3>(splines, 4, roots[0]->right_child->skeleton, {0, 0}))});
   }
   
   if(roots[0]->left_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::create_root(), true), 
-      (DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton, {0, 3, 0, 3}))});
+      (DeformTransfinitelyViaSplines<3>(splines, 8, roots[0]->left_child->skeleton, {0, 0}))});
   }
   
   
@@ -358,7 +358,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), false),false),
-      (DeformTransfinitelyViaSplines<3>(splines, 16, roots[0]->right_child->right_child->skeleton, {0, 3, 0, 3}))});
+      (DeformTransfinitelyViaSplines<3>(splines, 16, roots[0]->right_child->right_child->skeleton, {0, 1}))});
   }         
   
   if(roots[0]->right_child->left_child->skeleton.size() > 0)                                                    
@@ -369,19 +369,19 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), false),true),
-      (DeformTransfinitelyViaSplines<3>(splines, 12, roots[0]->right_child->left_child->skeleton, {0, 3, 0, 3}))});
+      (DeformTransfinitelyViaSplines<3>(splines, 12, roots[0]->right_child->left_child->skeleton, {0, 0}))});
   }
        
   if(roots[0]->left_child->right_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), true),false),
-      (DeformTransfinitelyViaSplines<3>(splines, 20, roots[0]->left_child->right_child->skeleton, {0, 3, 0, 3}))});
+      (DeformTransfinitelyViaSplines<3>(splines, 20, roots[0]->left_child->right_child->skeleton, {0, 1}))});
   }
   
   if(roots[0]->left_child->left_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::create_root(), true),true),
-      (DeformTransfinitelyViaSplines<3>(splines, 24, roots[0]->left_child->left_child->skeleton, {0, 3, 0, 3}))});
+      (DeformTransfinitelyViaSplines<3>(splines, 24, roots[0]->left_child->left_child->skeleton, {0, 0}))});
   }
   
   
@@ -397,7 +397,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), false),
-      (DeformTransfinitelyViaSplines<3>(splines, 40, roots[0]->right_child->right_child->right_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 40, roots[0]->right_child->right_child->right_child->skeleton, {0, 1}, true))});
   }                           
                                                     
   if(roots[0]->right_child->right_child->left_child->skeleton.size() > 0)                                                    
@@ -408,7 +408,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), false), true),
-      (DeformTransfinitelyViaSplines<3>(splines, 36, roots[0]->right_child->right_child->left_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 36, roots[0]->right_child->right_child->left_child->skeleton, {0, 1}, true))});
   }                          
                                                     
   if(roots[0]->right_child->left_child->left_child->skeleton.size() > 0)                                                    
@@ -429,7 +429,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), true), 
-      (DeformTransfinitelyViaSplines<3>(splines, 28, roots[0]->right_child->left_child->left_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 28, roots[0]->right_child->left_child->left_child->skeleton, {0, 1}, true))});
   }
   
   if(roots[0]->right_child->left_child->right_child->skeleton.size() > 0)                                                    
@@ -448,7 +448,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     temp_c[4] = temp[7];
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true), false),
-      (DeformTransfinitelyViaSplines<3>(splines, 32, roots[0]->right_child->left_child->right_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 32, roots[0]->right_child->left_child->right_child->skeleton, {0, 1}, true))});
   }
   
   
@@ -462,13 +462,13 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   if(roots[0]->left_child->right_child->right_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), 
-      (DeformTransfinitelyViaSplines<3>(splines, 44, roots[0]->left_child->right_child->right_child->skeleton, {0, 3, 0, 3}, false))});
+      (DeformTransfinitelyViaSplines<3>(splines, 44, roots[0]->left_child->right_child->right_child->skeleton, {0, 1}, false))});
   }
                                                     
   if( roots[0]->left_child->right_child->left_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), true), 
-      (DeformTransfinitelyViaSplines<3>(splines, 48, roots[0]->left_child->right_child->left_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 48, roots[0]->left_child->right_child->left_child->skeleton, {0, 1}, true))});
   }
   
   
@@ -495,7 +495,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), false), 
-      (DeformTransfinitelyViaSplines<3>(splines, 56, roots[0]->left_child->right_child->right_child->right_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 56, roots[0]->left_child->right_child->right_child->right_child->skeleton, {0, 0}, true))});
   }
                                                     
   if( roots[0]->left_child->right_child->right_child->left_child->skeleton.size() > 0)                                                    
@@ -516,19 +516,19 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), true),
-      (DeformTransfinitelyViaSplines<3>(splines, 52, roots[0]->left_child->right_child->right_child->left_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 52, roots[0]->left_child->right_child->right_child->left_child->skeleton, {0, 0}, true))});
   }
   
   if( roots[0]->left_child->left_child->right_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),false), 
-      (DeformTransfinitelyViaSplines<3>(splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 68, roots[0]->left_child->left_child->right_child->skeleton, {0, 1}, true))});
   }
            
   if( roots[0]->left_child->left_child->left_child->skeleton.size() > 0)                                                    
   {
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),true), 
-      (DeformTransfinitelyViaSplines<3>(splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {0, 3, 0, 3}, true))});
+      (DeformTransfinitelyViaSplines<3>(splines, 72, roots[0]->left_child->left_child->left_child->skeleton, {0, 1}, true))});
   }
                                            
   // clean up
@@ -568,8 +568,11 @@ void update_mapping(dealii::Triangulation<3> & tria, std::map<types::material_id
 //  
 //  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),false)] = 15;
 //  map_to_splines[LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true),true),true)] = 16;
-  
-  
+
+  GridOut grid_out;
+  std::ofstream file("mesh-b.vtu");
+  grid_out.write_vtu(tria, file);
+
   std::vector<bool> touched(tria.n_vertices(), false);
   for (auto cell : tria.active_cell_iterators())
     if (deform.find(cell->material_id()) != deform.end())
@@ -577,9 +580,18 @@ void update_mapping(dealii::Triangulation<3> & tria, std::map<types::material_id
         if (touched[cell->vertex_index(v)] == false)
           {
             //std::cout << cell->material_id() << " " << LungID::to_string(cell->material_id()) << std::endl;
-            cell->vertex(v) = deform[cell->material_id()].transform_to_deformed(cell->vertex(v));
+            try
+            {
+              cell->vertex(v) = deform[cell->material_id()].transform_to_deformed(cell->vertex(v));
+            }
+            catch (typename Mapping<3,3>::ExcTransformationFailed &exc)
+            {
+              std::cout << "Failed for material id " << LungID::to_string(cell->material_id()) << std::endl;
+              //throw exc;
+            }
             touched[cell->vertex_index(v)] = true;
           }
+
 
   // TODO only print if desired
   bool print = true;
