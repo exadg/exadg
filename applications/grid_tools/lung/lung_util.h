@@ -86,11 +86,11 @@ public:
     
     virtual bool pre(int num)
     {
-        return get_generation(num) == generation;
+        return get_generation(num) < generation;
     }
     virtual bool post(int num)
     {
-        return get_generation(num) + 1 == generation;
+        return get_generation(num) + 1 < generation;
     }
     
     virtual int get_generations()

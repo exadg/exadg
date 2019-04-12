@@ -374,7 +374,7 @@ process_node(Node *                     node,
              double                     degree_seperation = 0.0)
 {
 
-  if(branch_filter->pre(id)) return;
+  if(!branch_filter->pre(id)) return;
     
   // normal and tangential vector in the reference system
   dealii::Tensor<1, 3> src_n({0, 1, 0});
@@ -505,7 +505,7 @@ process_node(Node *                     node,
     }
   }
   
-  if(branch_filter->post(id)) return;
+  if(!branch_filter->post(id)) return;
   
   //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)==id)
   //    return;
