@@ -96,16 +96,19 @@ run(int generations,
   // timings,outlet_id_first,outlet_id_last);
 
 //  parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
+  
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(generations));
+  
   Triangulation<3> tria;
   dealii::GridGenerator::lung(tria,
-                              generations,
                               refinements1,
                               //refinements2,
                               tree_factory,
                               timings,
                               outlet_id_first,
                               outlet_id_last,
-                              bspline_file);
+                              bspline_file,
+                              generation_limiter);
 
 //  Triangulation<3> tria;//(MPI_COMM_WORLD);
 //  dealii::GridGenerator::lung(tria, generations, refinements1/*, refinements2*/, tree_factory, timings);

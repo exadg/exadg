@@ -366,6 +366,7 @@ void
 process_node(Node *                     node,
              std::vector<CellData<3>> & cell_data_3d_global,
              std::vector<Point<3>> &    vertices_3d_global,
+             std::shared_ptr<LungID::Checker> branch_filter,
              const int                  id                = LungID::create_root(),
              const int                  parent_os         = 0,
              Tensor<2, 3>               transform_parent  = Tensor<2, 3>(),
@@ -373,16 +374,7 @@ process_node(Node *                     node,
              double                     degree_seperation = 0.0)
 {
 
-//#ifdef __WORKING__
-   //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),false)==id) return;
-   //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),true)==id) return;
-    
-    
-   //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true),true)==id) return;
-   //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true),false)==id) return;
-//#else
-//#endif    
-  
+  if(branch_filter->pre(id)) return;
     
   // normal and tangential vector in the reference system
   dealii::Tensor<1, 3> src_n({0, 1, 0});
@@ -513,6 +505,8 @@ process_node(Node *                     node,
     }
   }
   
+  if(branch_filter->post(id)) return;
+  
   //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)==id)
   //    return;
   
@@ -537,6 +531,7 @@ process_node(Node *                     node,
       process_node(node->get_left_child(),
                    cell_data_3d_global,
                    vertices_3d_global,
+                   branch_filter,
                    LungID::generate(id, true),
                    os,
                    transform,
@@ -554,6 +549,7 @@ process_node(Node *                     node,
       process_node(node->get_right_child(),
                    cell_data_3d_global,
                    vertices_3d_global,
+                   branch_filter,
                    LungID::generate(id, false),
                    os,
                    transform,

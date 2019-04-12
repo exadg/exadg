@@ -47,6 +47,51 @@ to_string(int num)
     
 }
 
+class Checker
+{
+public:
+    virtual bool pre(int num) = 0;
+    virtual bool post(int num) = 0;
+};
+
+class NoneChecker : public Checker
+{
+public:
+    virtual bool pre(int num)
+    {
+        (void) num;
+        return true;
+    }
+    virtual bool post(int num)
+    {
+        (void) num;
+        return true;
+    }
+};
+
+class GenerationChecker : public Checker
+{
+public:
+    
+    GenerationChecker(int generation) : generation(generation)
+    {
+        
+    }
+    
+    virtual bool pre(int num)
+    {
+        return get_generation(num) == generation;
+    }
+    virtual bool post(int num)
+    {
+        return get_generation(num) == generation+1;
+    }
+    
+    const int generation;
+};
+
+
+
 } // namespace LungID
 
 
@@ -391,7 +436,7 @@ public:
   virtual int
   get_intersections()
   {
-    return std::max(2.0,get_length() / 2 / get_radius());
+    return std::max(2.0,get_length() / get_radius());
   }
 
 public:

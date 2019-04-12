@@ -57,7 +57,7 @@ lung_to_node(int                               generations,
 std::function<void(std::vector<Node *> & roots, unsigned int)>
 lung_files_to_node(std::vector<std::string> files)
 {
-  return [files](std::vector<Node *> & roots, unsigned int generations) {
+  return [files](std::vector<Node *> & roots, unsigned int /*generations*/) {
     for(auto file : files)
     {
       // process files
@@ -68,24 +68,24 @@ lung_files_to_node(std::vector<std::string> files)
       std::vector<CellAdditionalInfo> cells_additional_data;
       load_files({file}, points, cells, cells_additional_data);
 
-      int n_bifurcations = generations;
+      int n_bifurcations_to_be_read_from_file = 11; /* TODO */
 
-      if(file.find("leftbot") != std::string::npos || file.find("lefttop") != std::string::npos ||
-         file.find("righttop") != std::string::npos)
-      {
-        n_bifurcations = generations - 4;
-      }
-      else if(file.find("rightbot") != std::string::npos ||
-              file.find("rightmid") != std::string::npos)
-      {
-        n_bifurcations = generations - 5;
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Filename specified for generation of lung mesh is wrong."));
-      }
+//      if(file.find("leftbot") != std::string::npos || file.find("lefttop") != std::string::npos ||
+//         file.find("righttop") != std::string::npos)
+//      {
+//        n_bifurcations = generations - 4;
+//      }
+//      else if(file.find("rightbot") != std::string::npos ||
+//              file.find("rightmid") != std::string::npos)
+//      {
+//        n_bifurcations = generations - 5;
+//      }
+//      else
+//      {
+//        AssertThrow(false, ExcMessage("Filename specified for generation of lung mesh is wrong."));
+//      }
 
-      lung_to_node(n_bifurcations, points, cells, cells_additional_data, roots);
+      lung_to_node(n_bifurcations_to_be_read_from_file, points, cells, cells_additional_data, roots);
     }
 
 #ifdef DEBUG
@@ -233,19 +233,19 @@ mark(T cell, const int number)
 }
 
 void lung_unrefined(dealii::Triangulation<3> &                                     tria,
-          int                                                            generations,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
           const std::string &                                            bspline_file,
-          std::map<types::material_id, DeformTransfinitelyViaSplines<3>> & deform)
+          std::map<types::material_id, DeformTransfinitelyViaSplines<3>> & deform,
+          std::shared_ptr<LungID::Checker> branch_filter)
 {
   Timer timer;
 
   timer.restart();
   std::vector<Node *> roots;
-  create_tree(roots, generations);
+  create_tree(roots, 0 /* TODO: is ignored */);
 
   timings["create_triangulation_1_load_data"] = timer.wall_time();
 
@@ -260,7 +260,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   SubCellData              subcell_data;
   for(unsigned int i = 0; i < roots.size(); i++)
   {
-    process_node(roots[i], cell_data_3d, vertices_3d, vertices_3d.size());
+    process_node(roots[i], cell_data_3d, vertices_3d, branch_filter, vertices_3d.size());
     // break;
   }
 
@@ -589,33 +589,33 @@ void update_mapping(dealii::Triangulation<3> & tria, std::map<types::material_id
 
 
 void lung(dealii::Triangulation<3> &                                     tria,
-          int                                                            generations,
           int                                                            refinements,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "")
+          const std::string &                                            bspline_file = "",
+          std::shared_ptr<LungID::Checker> branch_filter = std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
 {
     std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
-    lung_unrefined(tria, generations, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform);
+    lung_unrefined(tria, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform, branch_filter);
     tria.refine_global(refinements);
     update_mapping(tria, deform);
 }
 
 void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
-          int                                                            generations,
           int                                                            refinements,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "")
+          const std::string &                                            bspline_file = "",
+          std::shared_ptr<LungID::Checker> branch_filter = std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
 {
   // create sequential coarse grid (no refinements)
   dealii::Triangulation<3> tria_seq;
   std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
-  lung_unrefined(tria_seq, generations, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform);
+  lung_unrefined(tria_seq, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform, branch_filter);
   // copy coarse grid to distributed triangulation and ...
   tria.copy_triangulation(tria_seq);
   // ... refine
@@ -626,14 +626,14 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
 }
 
 void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
-          int                                                            generations,
           int                                                            refinements1,
           int                                                            refinements2,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
           unsigned int &                                                 outlet_id_last,
-          const std::string &                                            bspline_file = "")
+          const std::string &                                            bspline_file = "",
+          std::shared_ptr<LungID::Checker> branch_filter = std::shared_ptr<LungID::Checker>(new LungID::NoneChecker()))
 {
   Timer timer;
   timer.restart();
@@ -641,7 +641,7 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
   // create partitioned triangulation ...
   tria.reinit(refinements2, [&](auto & tria) mutable {
     // ... by creating a refined sequential triangulation and partition it
-    lung(tria, generations, refinements1, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file);
+    lung(tria, refinements1, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, branch_filter);
   });
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);

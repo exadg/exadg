@@ -44,11 +44,11 @@ unsigned int const DEGREE_MAPPING = 1;
 unsigned int const N_SCALARS = 1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
+unsigned int const REFINE_STEPS_SPACE_MIN = 1;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // number of lung generations
-unsigned int const N_GENERATIONS = 8;
+unsigned int const N_GENERATIONS = 4;
 
 IncNS::TriangulationType const TRIANGULATION_TYPE_FLUID = IncNS::TriangulationType::Distributed;
 ConvDiff::TriangulationType const TRIANGULATION_TYPE_SCALAR = ConvDiff::TriangulationType::Distributed;
@@ -688,32 +688,32 @@ void create_grid_and_set_boundary_ids(
   std::string spline_file = get_lung_spline_file_from_environment();
 
   std::map<std::string, double> timings;
-
-  AssertThrow(N_GENERATIONS >= 5, ExcMessage("rightbot and rightmid require at least 5 lung generations."));
+  
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(N_GENERATIONS));
 
   // create triangulation
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                N_GENERATIONS,
                                 n_refine_space,
                                 n_refine_space,
                                 tree_factory,
                                 timings,
                                 OUTLET_ID_FIRST,
                                 OUTLET_ID_LAST,
-                                spline_file);
+                                spline_file,
+                                generation_limiter);
   }
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
     dealii::GridGenerator::lung(*tria,
-                                N_GENERATIONS,
                                 n_refine_space,
                                 tree_factory,
                                 timings,
                                 OUTLET_ID_FIRST,
                                 OUTLET_ID_LAST,
-                                spline_file);
+                                spline_file,
+                                generation_limiter);
   }
   else
   {
