@@ -170,10 +170,10 @@ types::boundary_id const OUTLET_ID_FIRST = 2;
 types::boundary_id OUTLET_ID_LAST = 2;
 
 // output
-bool const WRITE_OUTPUT = true;
+bool const WRITE_OUTPUT = false;
 bool const HIGH_ORDER_OUTPUT = true;
 double const OUTPUT_START_TIME = START_TIME;
-double const OUTPUT_INTERVAL_TIME = PERIOD/20;
+double const OUTPUT_INTERVAL_TIME = PERIOD/300;
 
 std::string const OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/child/";
 std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
@@ -372,8 +372,7 @@ set_input_parameters()
 
   // output of solver information
   solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time_steps = 1; //TODO
-  solver_info_data.interval_time = PERIOD/200;
+  solver_info_data.interval_time = PERIOD/30;
 }
 
 void
@@ -461,7 +460,7 @@ set_input_parameters(unsigned int scalar_index)
 
   // output of solver information
   solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
+  solver_info_data.interval_time = PERIOD/30;
 
   // restart
   restart_data.write_restart = WRITE_RESTART;
