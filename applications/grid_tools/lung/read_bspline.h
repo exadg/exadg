@@ -57,11 +57,11 @@ public:
     const unsigned int k = std::min(n_intervals_x-1,
                                     static_cast<unsigned int>(x * n_intervals_x));
 
-    if (knot_vector_x[p+k] > x || knot_vector_x[p+1+k] < x)
+    if (knot_vector_x[p+k]*(1-1e-13) > x || knot_vector_x[p+1+k]*(1+1e-13) < x)
       std::cout << "Could not identify x knot position "
                 << x << " with k = " << k << " " << knot_vector_x[p+k] << " "
                 << knot_vector_x[p+1+k] << std::endl;
-    if (knot_vector_y[p+ky] > y || knot_vector_y[p+1+ky] < y)
+    if (knot_vector_y[p+ky]*(1-1e-13) > y || knot_vector_y[p+1+ky]*(1+1e-13) < y)
       std::cout << "Could not identify y knot position "
                 << y << " with k = " << ky << " " << knot_vector_y[p+ky] << " "
                 << knot_vector_y[p+1+ky] << std::endl;
