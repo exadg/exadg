@@ -391,7 +391,7 @@ public:
   virtual int
   get_intersections()
   {
-    return std::max(1.0,get_length() / 2 / get_radius());
+    return std::max(2.0,get_length() / 2 / get_radius());
   }
 
 public:

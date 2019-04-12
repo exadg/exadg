@@ -125,11 +125,23 @@ lung_files_to_node(std::vector<std::string> files)
 #ifdef USE_CHILD_GEOMETRY
 
     // clang-format off
+    {
     auto temp                            = roots_temp[4]->right_child;
     roots_temp[4]->right_child           = roots_temp[4]->left_child;
     roots_temp[4]->left_child            = temp;
     roots_temp[4]->left_child->_is_left  = true;
     roots_temp[4]->right_child->_is_left = false;
+    }
+    
+    {
+    auto temp                            = roots_temp[5]->right_child;
+    roots_temp[5]->right_child           = roots_temp[5]->left_child;
+    roots_temp[5]->left_child            = temp;
+    roots_temp[5]->left_child->_is_left  = true;
+    roots_temp[5]->right_child->_is_left = false;
+    }
+    
+    //roots[0]->left_child->right_child->right_child->left_child
 
     roots.push_back(new Node(
       new Node(
@@ -458,7 +470,12 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     auto temp_c = temp;
   
     temp_c[2] = temp[0]; temp_c[0] = temp[1]; temp_c[3] = temp[2]; temp_c[1] = temp[3];
-    temp_c[4] = temp[4]; temp_c[5] = temp[5]; temp_c[6] = temp[6]; temp_c[7] = temp[7];
+    
+    temp_c[6] = temp[4];
+    temp_c[4] = temp[5];
+    temp_c[7] = temp[6];
+    temp_c[5] = temp[7];
+
 
     temp = temp_c;
     deform.insert({(unsigned int) LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false), false), 
@@ -470,8 +487,15 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     auto & temp = roots[0]->left_child->right_child->right_child->left_child->skeleton;
     auto temp_c = temp;
   
-    temp_c[1] = temp[0]; temp_c[3] = temp[1]; temp_c[0] = temp[2]; temp_c[2] = temp[3];
-    temp_c[7] = temp[4]; temp_c[6] = temp[5]; temp_c[5] = temp[6]; temp_c[4] = temp[7];
+    temp_c[1] = temp[0];
+    temp_c[3] = temp[1];
+    temp_c[0] = temp[2];
+    temp_c[2] = temp[3];
+
+    temp_c[5] = temp[4];
+    temp_c[7] = temp[5];
+    temp_c[4] = temp[6];
+    temp_c[6] = temp[7];
 
   
     temp = temp_c;

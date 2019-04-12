@@ -372,6 +372,18 @@ process_node(Node *                     node,
              double                     degree_parent     = 0.0,
              double                     degree_seperation = 0.0)
 {
+
+//#ifdef __WORKING__
+   //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),false)==id) return;
+   //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),true)==id) return;
+    
+    
+   //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true),true)==id) return;
+   //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), false), true),false)==id) return;
+//#else
+//#endif    
+  
+    
   // normal and tangential vector in the reference system
   dealii::Tensor<1, 3> src_n({0, 1, 0});
   dealii::Tensor<1, 3> src_t({0, 0, 1});
@@ -501,11 +513,20 @@ process_node(Node *                     node,
     }
   }
   
-  if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)==id)
-      return;
+  //if(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false)==id)
+  //    return;
   
-  if(LungID::generate(LungID::generate(LungID::create_root(), false), true)==id)
-      return;
+  //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),true)==id)
+  //    return;
+  
+  //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),false)==id)
+  //    return;
+  
+  //if(LungID::generate(LungID::generate(LungID::create_root(), false), true)==id)
+  //    return;
+  
+  
+   //if(LungID::generate(LungID::generate(LungID::generate(LungID::generate(LungID::create_root(), true), false), false),true)==id) return;
   
   // process children
   if(node->has_children())
