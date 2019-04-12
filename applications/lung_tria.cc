@@ -33,18 +33,69 @@
 #include <iostream>
 
 #include "grid_tools/lung/lung_environment.h"
+#include "grid_tools/lung/deform_via_splines.h"
 
 #include <limits>
 
 using namespace dealii;
 
+#define TRIA_TYPE 1
+
 //#define TEST_LUNG_MANUAL
 
 #include "grid_tools/lung/lung_grid.h"
 
+template<typename TRIA>
+void lung_instance(TRIA &         tria,
+          int                                                            refinements1,
+          int                                                            refinements2,
+          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file,
+          std::shared_ptr<LungID::Checker> branch_filter)
+{
+  (void) refinements2,
+  dealii::GridGenerator::lung(tria,
+                              refinements1,
+                              create_tree,
+                              timings,
+                              outlet_id_first,
+                              outlet_id_last,
+                              bspline_file,
+                              branch_filter);
+}
+
+template<>
+void lung_instance<dealii::parallel::fullydistributed::Triangulation<3> >(dealii::parallel::fullydistributed::Triangulation<3>  &         tria,
+          int                                                            refinements1,
+          int                                                            refinements2,
+          std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
+          std::map<std::string, double> &                                timings,
+          unsigned int const &                                           outlet_id_first,
+          unsigned int &                                                 outlet_id_last,
+          const std::string &                                            bspline_file,
+          std::shared_ptr<LungID::Checker> branch_filter)
+{
+  dealii::GridGenerator::lung(tria,
+                              refinements1,
+                              refinements2,
+                              create_tree,
+                              timings,
+                              outlet_id_first,
+                              outlet_id_last,
+                              bspline_file,
+                              branch_filter);
+}
+        
 
 void
-run(int generations, int refinements1, int refinements2, std::vector<std::string> & files)
+run(int generations,
+    int refinements1,
+    int refinements2,
+    std::vector<std::string> & files,
+    std::string bspline_file)
 {
   Timer                         timer;
   std::map<std::string, double> timings;
@@ -85,21 +136,63 @@ run(int generations, int refinements1, int refinements2, std::vector<std::string
 #endif
 
   unsigned int outlet_id_first = 2, outlet_id_last = 2;
+  
+#if TRIA_TYPE == 0
+  Triangulation<3> tria;
+#endif
+  
+#if TRIA_TYPE == 1
+   parallel::distributed::Triangulation<3> tria(MPI_COMM_WORLD);
+#endif
+  
+#if TRIA_TYPE == 2
+   parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
+#endif
 
-  // parallel::distributed::Triangulation<3> tria_dist(MPI_COMM_WORLD);
   // dealii::GridGenerator::lung(tria_dist, generations, refinements2, tree_factory,
   // timings,outlet_id_first,outlet_id_last);
 
-  parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
-  dealii::GridGenerator::lung(tria,
-                              generations,
+//  parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
+  
+  //std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(generations));
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
+  
+  lung_instance(tria,
                               refinements1,
                               refinements2,
                               tree_factory,
                               timings,
                               outlet_id_first,
-                              outlet_id_last);
+                              outlet_id_last,
+                              bspline_file,
+                              generation_limiter);
 
+//  Triangulation<3> tria;//(MPI_COMM_WORLD);
+//  dealii::GridGenerator::lung(tria, generations, refinements1/*, refinements2*/, tree_factory, timings);
+
+//  const unsigned int n_cells_coarse = tria.n_cells(0);
+//  AssertThrow(n_cells_coarse % 12 == 0,
+//              ExcNotImplemented("Coarse cells must be divisible by 12, got "
+//                                + std::to_string(n_cells_coarse)));
+//  const unsigned int n_layers = n_cells_coarse / 12;
+//  std::vector<Point<3>> vertices;
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 10)->vertex(1));
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 4)->vertex(1));
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 8)->vertex(1));
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 6)->vertex(1));
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 12*(n_layers-1)+10)->vertex(5));
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 12*(n_layers-1)+4)->vertex(5));
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 12*(n_layers-1)+8)->vertex(5));
+//  vertices.push_back(Triangulation<3>::cell_iterator(&tria, 0, 12*(n_layers-1)+6)->vertex(5));
+
+//  DeformTransfinitelyViaSplines<3> transform(bspline_file, vertices);
+
+//  for (unsigned int i=0; i<11; ++i)
+//    std::cout << transform.transform_with_output(0.1*i*vertices[0]+(1-0.1*i)*vertices[3]) << std::endl;
+
+//  std::vector<Point<3>> & tria_points = const_cast<std::vector<Point<3>>&>(tria.get_vertices());
+//  for (Point<3> &p : tria_points)
+//    p = transform.transform_to_deformed(p);
 
   {
     timer.restart();
@@ -123,7 +216,7 @@ run(int generations, int refinements1, int refinements2, std::vector<std::string
 
     data_out.build_patches(1);
 
-    data_out.write_vtu_in_parallel("mesh-b.vtu", MPI_COMM_WORLD);
+    data_out.write_vtu_in_parallel("mesh-c.vtu", MPI_COMM_WORLD);
     timings["vtk"] = timer.wall_time();
   }
 
@@ -153,13 +246,17 @@ main(int argc, char ** argv)
   int refinements1 = atoi(argv[2]);
   int refinements2 = atoi(argv[3]);
 
-  for(int i = 4; i < argc; ++i)
+  std::string bspline_file;
+  if (argc == 5)
+    bspline_file = argv[4];
+
+  for(int i = 5; i < argc; ++i)
     files.push_back(argv[i]);
 
   if(files.size() == 0)
     get_lung_files_from_environment(files);
 
-  run(generations, refinements1, refinements2, files);
+  run(generations, refinements1, refinements2, files, bspline_file);
 
   return 0;
 }
