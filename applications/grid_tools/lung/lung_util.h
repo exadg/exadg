@@ -132,6 +132,11 @@ public:
         (void) num;
         return true;
     }
+
+    virtual int get_generations()
+    {
+      return 2;
+    }
     
 };
 
