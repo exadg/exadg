@@ -638,11 +638,14 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
   Timer timer;
   timer.restart();
 
+  std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
   // create partitioned triangulation ...
   tria.reinit(refinements2, [&](auto & tria) mutable {
     // ... by creating a refined sequential triangulation and partition it
-    lung(tria, refinements1, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, branch_filter);
+    lung_unrefined(tria, create_tree, timings, outlet_id_first, outlet_id_last, bspline_file, deform, branch_filter);
+    tria.refine_global(refinements1);
   });
+  update_mapping(tria, deform);
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
 
