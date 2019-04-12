@@ -341,16 +341,19 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
     // mean velocity
     QUANTITY_VELOCITY.type = QuantityType::Velocity;
+    QUANTITY_VELOCITY.average_homogeneous_direction = true;
     QUANTITY_VELOCITY.averaging_direction = 2;
 
-    // reynolds stresses
+    // Reynolds stresses
     QUANTITY_REYNOLDS.type = QuantityType::ReynoldsStresses;
+    QUANTITY_REYNOLDS.average_homogeneous_direction = true;
     QUANTITY_REYNOLDS.averaging_direction = 2;
     
     // skin friction
     Tensor<1,dim,double> normal; normal[1] = 1.0;
     Tensor<1,dim,double> tangent; tangent[0] = 1.0;
     QUANTITY_SKIN_FRICTION.type = QuantityType::SkinFriction;
+    QUANTITY_SKIN_FRICTION.average_homogeneous_direction = true;
     QUANTITY_SKIN_FRICTION.averaging_direction = 2;
     QUANTITY_SKIN_FRICTION.normal_vector = normal;
     QUANTITY_SKIN_FRICTION.tangent_vector = tangent;
@@ -358,10 +361,12 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
 
     // mean pressure
     QUANTITY_PRESSURE.type = QuantityType::Pressure;
+    QUANTITY_PRESSURE.average_homogeneous_direction = true;
     QUANTITY_PRESSURE.averaging_direction = 2;
 
     // mean pressure coefficient
     QUANTITY_PRESSURE_COEFF.type = QuantityType::PressureCoefficient;
+    QUANTITY_PRESSURE_COEFF.average_homogeneous_direction = true;
     QUANTITY_PRESSURE_COEFF.averaging_direction = 2;
     QUANTITY_PRESSURE_COEFF.reference_point = Point<DIMENSION>(X1_COORDINATE_INFLOW,0,0);
 
@@ -1016,6 +1021,7 @@ public:
       inflow_data_calculator->calculate(velocity);
     }
 
+    // line plot statistics
     line_plot_calculator_statistics->evaluate(velocity,pressure,time,time_step_number);
   }
 
