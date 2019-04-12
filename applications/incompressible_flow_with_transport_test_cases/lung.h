@@ -689,7 +689,8 @@ void create_grid_and_set_boundary_ids(
 
   std::map<std::string, double> timings;
   
-  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(N_GENERATIONS));
+  //std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(N_GENERATIONS));
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
 
   // create triangulation
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))

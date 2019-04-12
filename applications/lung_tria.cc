@@ -97,7 +97,8 @@ run(int generations,
 
 //  parallel::fullydistributed::Triangulation<3> tria(MPI_COMM_WORLD);
   
-  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(generations));
+  //std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(generations));
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
   
   Triangulation<3> tria;
   dealii::GridGenerator::lung(tria,

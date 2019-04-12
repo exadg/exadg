@@ -101,6 +101,40 @@ public:
     const int generation;
 };
 
+class ManualChecker : public Checker
+{
+public:
+    
+    virtual bool pre(int num)
+    {
+        if (num == create_root())
+            return true;
+        
+        
+        if(num == generate(create_root(), true))
+            return true;
+        if(num == generate(create_root(), false))
+            return true;
+        
+        //if(num == generate(generate(create_root(), true), true))
+        //    return true;
+        //if(num == generate(generate(create_root(), true), false))
+        //    return true;
+        if(num == generate(generate(create_root(), false), true))
+            return true;
+        if(num == generate(generate(create_root(), false), false))
+            return true;
+        
+        return false;
+    }
+    virtual bool post(int num)
+    {
+        (void) num;
+        return true;
+    }
+    
+};
+
 
 
 } // namespace LungID
