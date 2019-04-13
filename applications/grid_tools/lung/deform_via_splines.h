@@ -174,13 +174,13 @@ public:
     auto transformed =  Point<dim>(lambda[0] * (vbar12 + vbar13 - mid_point) +
                       lambda[1] * (vbar23 + vbar21 - bounds[quadrant]) +
                       lambda[2] * (vbar31 + vbar32 - bounds[(quadrant+1)%4]));
-    
+
     if(!this->do_blend)
       return transformed;
     else
       return Point<dim>(untransformed*reference[2]*reference[2]+
           transformed*(1.0-reference[2]*reference[2]));
-    
+
     // compute angle and radius of the new point to correct for the fact that
     // we are going to map back to a circle with a single element
     //const double angle = std::atan2(reference[1]-0.5, reference[0]-0.5);
@@ -221,17 +221,34 @@ private:
     Point<dim> result(1./3., 1./3., 0.5);
 
     double error_norm_sqr = 1;
+    std::pair<Point<dim>,Tensor<2,dim>> data =
+      transform_to_prism(section, result);
     while (error_norm_sqr > 1e-24)
       {
-        std::pair<Point<dim>,Tensor<2,dim>> data =
-            transform_to_prism(section, result);
         const Tensor<1,dim> residual = original - data.first;
         error_norm_sqr = residual.norm_square();
         const double det = determinant(data.second);
         if (det < 1e-10)
           return Point<dim>(-1,-1,-1);
         else
-          result += invert(data.second) * residual;
+          {
+            Tensor<1,dim> update = invert(data.second) * residual;
+            double alpha = 1;
+            while (alpha > 1e-7)
+              {
+                Point<dim> tentative = result + alpha * update;
+                data = transform_to_prism(section, tentative);
+                if ((original - data.first).norm_square() <= error_norm_sqr &&
+                    determinant(data.second) > 1e-10)
+                  {
+                    result = tentative;
+                    break;
+                  }
+                alpha *= 0.5;
+              }
+            if (alpha <= 1e-7)
+              return Point<dim>(-1,-1,-1);
+          }
       }
     return result;
   }
