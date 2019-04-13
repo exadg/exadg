@@ -540,8 +540,10 @@ void update_mapping(dealii::Triangulation<3> & tria, std::map<types::material_id
 {
   if(deform.size()==0)
     return;
-  
-  std::cout << deform.size() << std::endl;
+ 
+#ifdef DEBUG
+    std::cout << deform.size() << std::endl;
+#endif
     
 //  //std::vector<Point<3>> & tria_points = const_cast<std::vector<Point<3>>&>(tria.get_vertices());
 //  //for (Point<3> &p : tria_points)
@@ -594,7 +596,7 @@ void update_mapping(dealii::Triangulation<3> & tria, std::map<types::material_id
 
 
   // TODO only print if desired
-  bool print = true;
+  bool print = false;
   if(print)
     print_tria_statistics(tria);
 }
