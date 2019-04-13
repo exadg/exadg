@@ -256,15 +256,16 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
   // create triangulation
   if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
+    std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(generations));
     std::string spline_file = get_lung_spline_file_from_environment();
     dealii::GridGenerator::lung(*tria,
-                                generations,
                                 n_refine_space,
                                 create_tree,
                                 timings,
                                 outlet_id_first,
                                 outlet_id_last,
-                                spline_file);
+                                spline_file,
+                                generation_limiter);
   }
   else
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
