@@ -440,11 +440,11 @@ TimeIntBDF<Number>::solve_timestep()
     this->param.update_preconditioner &&
     (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
 
-  unsigned int N_iter = pde_operator->solve(solution_np,
-                                            rhs_vector,
-                                            update_preconditioner,
-                                            bdf.get_gamma0() / this->get_time_step_size(),
-                                            this->get_next_time());
+  unsigned int const N_iter = pde_operator->solve(solution_np,
+                                                  rhs_vector,
+                                                  update_preconditioner,
+                                                  bdf.get_gamma0() / this->get_time_step_size(),
+                                                  this->get_next_time());
 
   iterations += N_iter;
   wall_time += timer.wall_time();
