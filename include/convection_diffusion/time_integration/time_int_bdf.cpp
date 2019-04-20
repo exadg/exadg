@@ -440,19 +440,20 @@ TimeIntBDF<Number>::solve_timestep()
     this->param.update_preconditioner &&
     (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
 
-  iterations += pde_operator->solve(solution_np,
-                                    rhs_vector,
-                                    update_preconditioner,
-                                    bdf.get_gamma0() / this->get_time_step_size(),
-                                    this->get_next_time());
+  unsigned int const N_iter = pde_operator->solve(solution_np,
+                                                  rhs_vector,
+                                                  update_preconditioner,
+                                                  bdf.get_gamma0() / this->get_time_step_size(),
+                                                  this->get_next_time());
 
+  iterations += N_iter;
   wall_time += timer.wall_time();
 
   // write output
   if(print_solver_info())
   {
     pcout << "Solve scalar convection-diffusion problem:" << std::endl
-          << "  Iterations: " << std::setw(6) << std::right << iterations
+          << "  Iterations: " << std::setw(6) << std::right << N_iter
           << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 }
