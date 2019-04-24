@@ -282,16 +282,20 @@ create_grid_and_set_boundary_conditions(
   get_lung_files_from_environment(files);
   auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
 
+  std::string spline_file = get_lung_spline_file_from_environment();
+
   std::map<std::string, double> timings;
   const int                     refinements = 4;
+  
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(refinements));
 
   // create triangulation
   unsigned int outlet_id_first = 2, outlet_id_last = 2;
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
     dealii::GridGenerator::lung(
-      *tria, refinements, n_refine_space, n_refine_space, tree_factory, timings, outlet_id_first, outlet_id_last);
+      *tria, n_refine_space, n_refine_space, tree_factory, timings, outlet_id_first, outlet_id_last, spline_file, generation_limiter);
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
-    dealii::GridGenerator::lung(*tria, refinements, n_refine_space, tree_factory, timings, outlet_id_first, outlet_id_last);
+    dealii::GridGenerator::lung(*tria, n_refine_space, tree_factory, timings, outlet_id_first, outlet_id_last, spline_file, generation_limiter);
   else
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
 
