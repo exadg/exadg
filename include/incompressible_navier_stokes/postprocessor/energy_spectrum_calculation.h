@@ -33,8 +33,9 @@ public:
   {
   }
 
+  template<typename T>
   void
-  init(int, int, int, int, int)
+  init(int, int, int, int, T&)
   {
   }
 
