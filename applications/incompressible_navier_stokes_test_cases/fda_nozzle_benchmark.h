@@ -25,14 +25,14 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 3;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_VELOCITY = 4;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for DOMAIN 1
-unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 1; //4;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 2;
 
 // set the number of refine levels for DOMAIN 2
-unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0; //3;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 1;
 
 // needed for single domain solver only
 unsigned int const REFINE_STEPS_SPACE_MIN = REFINE_STEPS_SPACE_DOMAIN2;
@@ -51,13 +51,13 @@ bool const USE_PRECURSOR_SIMULATION = true;
 // This option is only relevant if USE_PRECURSOR_SIMULATION == false
 bool const USE_RANDOM_PERTURBATION = false;
 // amplitude of perturbations relative to maximum velocity on centerline
-double const FACTOR_RANDOM_PERTURBATIONS = 0.05;
+double const FACTOR_RANDOM_PERTURBATIONS = 0.02;
 
 // set the throat Reynolds number Re_throat = U_{mean,throat} * (2 R_throat) / nu
-double const RE = 500; //500; //2000; //3500; //5000; //6500; //8000;
+double const RE = 3500; //500; //2000; //3500; //5000; //6500; //8000;
 
 // output folders
-std::string OUTPUT_FOLDER = "output/fda/Re500/";
+std::string OUTPUT_FOLDER = "output/fda/Re3500/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "nozzle";
@@ -129,7 +129,7 @@ double const START_TIME_NOZZLE = 0.0*T_0;
 double const END_TIME = 250.0*T_0; //150.0*T_0;
 
 // output
-bool const WRITE_OUTPUT = true;
+bool const WRITE_OUTPUT = false;
 double const OUTPUT_START_TIME_PRECURSOR = START_TIME_PRECURSOR;
 double const OUTPUT_START_TIME_NOZZLE = START_TIME_NOZZLE;
 double const OUTPUT_INTERVAL_TIME = 5.0*T_0;  //10.0*T_0;
@@ -149,11 +149,11 @@ unsigned int N_POINTS_LINE_CIRCUMFERENTIAL = 32;
 QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
 QuantityStatistics<DIMENSION> QUANTITY_VELOCITY_CIRCUMFERENTIAL;
 
-// data structures that we need to apply the velocity inflow profile:
+// data structures that we need in order to apply the velocity inflow profile:
 
 // - we currently use global variables for this purpose
 // - choose a large number of points to ensure a smooth inflow profile
-unsigned int N_POINTS_R = 10 * (FE_DEGREE_VELOCITY+1) * std::pow(2.0, REFINE_STEPS_SPACE_DOMAIN1); //100;
+unsigned int N_POINTS_R = 10 * (FE_DEGREE_VELOCITY+1) * std::pow(2.0, REFINE_STEPS_SPACE_DOMAIN1);
 unsigned int N_POINTS_PHI = N_POINTS_R;
 std::vector<double> R_VALUES(N_POINTS_R);
 std::vector<double> PHI_VALUES(N_POINTS_PHI);
@@ -238,6 +238,24 @@ void initialize_velocity_values()
   }
 }
 
+void add_random_perturbations()
+{
+  AssertThrow(N_POINTS_R >= 2, ExcMessage("Variable N_POINTS_R is invalid"));
+  AssertThrow(N_POINTS_PHI >= 2, ExcMessage("Variable N_POINTS_PHI is invalid"));
+
+  for(unsigned int iy=0; iy<N_POINTS_R; ++iy)
+  {
+    for(unsigned int iz=0; iz<N_POINTS_PHI; ++iz)
+    {
+      // Add random perturbation
+      double perturbation = FACTOR_RANDOM_PERTURBATIONS * ((double)rand()/RAND_MAX-0.5)/0.5;
+
+      VELOCITY_VALUES[iy*N_POINTS_PHI + iz] *= (1.0 + perturbation);
+    }
+  }
+}
+
+
 /*
  *  This function returns the radius of the cross-section at a
  *  specified location z in streamwise direction.
@@ -294,10 +312,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
 
-  // The pressure-correction scheme with an implicit treatment of the convective term
-  // (using CFL number > 1) was found to be more efficient for this test case
-  // than, e.g., the dual splitting scheme with explicit formulation of the convective term.
-  
 //  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
 //  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
 //  calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -307,10 +321,6 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping_limiting_factor = 3.0;
   max_velocity = MAX_VELOCITY_CFL;
-  // ConstTimeStepCFL: CFL_critical = 0.3 - 0.5 for k=3
-  // AdaptiveTimeStepCFL: CFL_critical = 0.125 - 0.15 for k=3
-  // Best practice: use CFL = 4.0 for implicit treatment (e.g., pressure-correction scheme)
-  // and CFL = 0.13 with adaptive time stepping for an explicit treatment (e.g., dual splitting)
   cfl = 4.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   time_step_size = 1.0e-1;
@@ -327,15 +337,24 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term
+  upwind_factor = 1.0;
 
   // viscous term
   IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+  IP_factor_viscous = 1.0;
 
   // special case: pure DBC's
   if(domain_id == 1)
     pure_dirichlet_bc = true;
   else if(domain_id == 2)
     pure_dirichlet_bc = false;
+
+  // div-div and continuity penalty terms
+  use_divergence_penalty = true;
+  divergence_penalty_factor = 1.0e0;
+  use_continuity_penalty = true;
+  continuity_penalty_factor = divergence_penalty_factor;
+  add_penalty_terms_to_monolithic_system = false;
 
   // TURBULENCE
   use_turbulence_model = false;
@@ -388,7 +407,7 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum = NewtonSolverData(100,1.e-20,1.e-3);
+  newton_solver_data_momentum = NewtonSolverData(100,1.e-12,1.e-3);
 
   // linear solver
   if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
@@ -1351,8 +1370,12 @@ public:
     {
       // inflow data
       inflow_data_calculator->calculate(velocity);
+
+      // random perturbations
+      if(USE_RANDOM_PERTURBATION==true)
+        add_random_perturbations();
     }
-    else
+    else // laminar inflow profile
     {
       // in case of random perturbations, the velocity field at the inflow boundary
       // has to be recomputed after each time step
