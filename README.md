@@ -235,7 +235,15 @@ Copy the script *config_navierstokes.sh* from the folder *navierstokes/scripts/*
 cp /working_directory/workspace/navierstokes/scripts/config_navierstokes.sh .
 ```
 
-Remove the **fftw** related lines in *config_navierstokes.sh* if not needed  and run the config-script 
+Deactivate the **fftw** related lines in *config_navierstokes.sh* if not needed, i.e., set
+
+```bash
+...
+-D USE_DEAL_SPECTRUM=OFF \
+...
+```
+
+and run the config-script 
 ```bash
 bash ./config_navierstokes.sh
 ```
