@@ -79,12 +79,13 @@ public:
     static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::overintegration_vis);
 
-  // TODO: which quadrature rule should we use for p, u, T calculation (L2 projections used to
-  // calculate derived quantities)
-  static const unsigned int quad_index_l2_projections =
-    quad_index_standard; // quad_index_overintegration_conv;
-  static const unsigned int n_q_points_l2_projections =
-    (quad_index_l2_projections == quad_index_standard) ? degree + 1 : n_q_points_conv;
+  // specify quadrature rule for calculation of derived quantities (p, u, T)
+  static const unsigned int quad_index_l2_projections = quad_index_standard;
+  static const unsigned int n_q_points_l2_projections = degree + 1;
+
+  // alternative: use more accurate overintegration strategy
+  //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
+  //  static const unsigned int n_q_points_l2_projections = n_q_points_conv;
 
   DGOperator(parallel::Triangulation<dim> const & triangulation,
              InputParameters<dim> const &         param_in,
@@ -588,12 +589,10 @@ private:
   // mapping
   MappingQGeneric<dim> mapping;
 
-  // DoFHandler for all (dim+2) components: (rho, rho u, rho E)
-  DoFHandler<dim> dof_handler;
-  // DoFHandler for vectorial quantities such as the velocity
-  DoFHandler<dim> dof_handler_vector;
-  // DoFHandler for scalar quantities such as pressure, temperature
-  DoFHandler<dim> dof_handler_scalar;
+  // DoFHandler
+  DoFHandler<dim> dof_handler;        // all (dim+2) components: (rho, rho u, rho E)
+  DoFHandler<dim> dof_handler_vector; // e.g. velocity
+  DoFHandler<dim> dof_handler_scalar; // scalar quantity, e.g, pressure
 
   MatrixFree<dim, Number> data;
 

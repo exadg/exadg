@@ -23,13 +23,6 @@
 
 namespace CompNS
 {
-enum class BoundaryType
-{
-  undefined,
-  dirichlet,
-  neumann
-};
-
 template<int dim, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
     VectorizedArray<value_type>
@@ -148,7 +141,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   VectorizedArray<value_type> value_p = make_vectorized_array<value_type>(0.);
 
-  if(boundary_type == BoundaryType::dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet)
   {
     typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
       boundary_descriptor->dirichlet_bc.find(boundary_id);
@@ -156,7 +149,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
     value_p = -value_m + make_vectorized_array<value_type>(2.0) * g;
   }
-  else if(boundary_type == BoundaryType::neumann)
+  else if(boundary_type == BoundaryType::Neumann)
   {
     value_p = value_m;
   }
@@ -185,7 +178,7 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   Tensor<1, dim, VectorizedArray<value_type>> value_p;
 
-  if(boundary_type == BoundaryType::dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet)
   {
     typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
       boundary_descriptor->dirichlet_bc.find(boundary_id);
@@ -194,7 +187,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
     value_p = -value_m + make_vectorized_array<value_type>(2.0) * g;
   }
-  else if(boundary_type == BoundaryType::neumann)
+  else if(boundary_type == BoundaryType::Neumann)
   {
     value_p = value_m;
   }
@@ -222,12 +215,12 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   Tensor<1, dim, VectorizedArray<value_type>> tau_P_normal;
 
-  if(boundary_type == BoundaryType::dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet)
   {
     // do nothing
     tau_P_normal = tau_M_normal;
   }
-  else if(boundary_type == BoundaryType::neumann)
+  else if(boundary_type == BoundaryType::Neumann)
   {
     typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
       boundary_descriptor->neumann_bc.find(boundary_id);
@@ -260,12 +253,12 @@ inline DEAL_II_ALWAYS_INLINE //
 {
   VectorizedArray<value_type> grad_T_P_normal = make_vectorized_array<value_type>(0.0);
 
-  if(boundary_type == BoundaryType::dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet)
   {
     // do nothing
     grad_T_P_normal = grad_T_M_normal;
   }
-  else if(boundary_type == BoundaryType::neumann)
+  else if(boundary_type == BoundaryType::Neumann)
   {
     typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
       boundary_descriptor->neumann_bc.find(boundary_id);
@@ -787,70 +780,13 @@ private:
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
 
-      // density
-      BoundaryType boundary_type_density = BoundaryType::undefined;
-      if(operator_data.bc_rho->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_rho->dirichlet_bc.end())
-      {
-        boundary_type_density = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_rho->neumann_bc.find(boundary_id) !=
-              operator_data.bc_rho->neumann_bc.end())
-      {
-        boundary_type_density = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_density != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-
-      // velocity
-      BoundaryType boundary_type_velocity = BoundaryType::undefined;
-      if(operator_data.bc_u->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_u->dirichlet_bc.end())
-      {
-        boundary_type_velocity = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_u->neumann_bc.find(boundary_id) !=
-              operator_data.bc_u->neumann_bc.end())
-      {
-        boundary_type_velocity = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_velocity != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-
-      // pressure
-      BoundaryType boundary_type_pressure = BoundaryType::undefined;
-      if(operator_data.bc_p->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_p->dirichlet_bc.end())
-      {
-        boundary_type_pressure = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_p->neumann_bc.find(boundary_id) !=
-              operator_data.bc_p->neumann_bc.end())
-      {
-        boundary_type_pressure = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_pressure != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-
-      // energy
-      BoundaryType boundary_type_energy = BoundaryType::undefined;
-      if(operator_data.bc_E->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_E->dirichlet_bc.end())
-      {
-        boundary_type_energy = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_E->neumann_bc.find(boundary_id) !=
-              operator_data.bc_E->neumann_bc.end())
-      {
-        boundary_type_energy = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_energy != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
+      BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = operator_data.bc_u->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_pressure = operator_data.bc_p->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = operator_data.bc_E->get_boundary_type(boundary_id);
 
       EnergyBoundaryVariable boundary_variable =
-        operator_data.bc_E->boundary_variable.find(boundary_id)->second;
-      AssertThrow(boundary_variable != EnergyBoundaryVariable::Undefined,
-                  ExcMessage("Energy boundary variable is undefined!"));
+        operator_data.bc_E->get_boundary_variable(boundary_id);
 
       fe_eval_density.reinit(face);
       fe_eval_density.gather_evaluate(src, true, false);
@@ -1312,52 +1248,12 @@ private:
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
 
-      BoundaryType boundary_type_density = BoundaryType::undefined;
-      if(operator_data.bc_rho->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_rho->dirichlet_bc.end())
-      {
-        boundary_type_density = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_rho->neumann_bc.find(boundary_id) !=
-              operator_data.bc_rho->neumann_bc.end())
-      {
-        boundary_type_density = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_density != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-
-      BoundaryType boundary_type_velocity = BoundaryType::undefined;
-      if(operator_data.bc_u->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_u->dirichlet_bc.end())
-      {
-        boundary_type_velocity = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_u->neumann_bc.find(boundary_id) !=
-              operator_data.bc_u->neumann_bc.end())
-      {
-        boundary_type_velocity = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_velocity != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-
-      BoundaryType boundary_type_energy = BoundaryType::undefined;
-      if(operator_data.bc_E->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_E->dirichlet_bc.end())
-      {
-        boundary_type_energy = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_E->neumann_bc.find(boundary_id) !=
-              operator_data.bc_E->neumann_bc.end())
-      {
-        boundary_type_energy = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_energy != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
+      BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = operator_data.bc_u->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = operator_data.bc_E->get_boundary_type(boundary_id);
 
       EnergyBoundaryVariable boundary_variable =
-        operator_data.bc_E->boundary_variable.find(boundary_id)->second;
-      AssertThrow(boundary_variable != EnergyBoundaryVariable::Undefined,
-                  ExcMessage("Energy boundary variable is undefined!"));
+        operator_data.bc_E->get_boundary_variable(boundary_id);
 
       fe_eval_density.reinit(face);
       fe_eval_density.gather_evaluate(src, true, true);
@@ -1912,69 +1808,13 @@ private:
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
 
-      BoundaryType boundary_type_density = BoundaryType::undefined;
-      if(operator_data.bc_rho->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_rho->dirichlet_bc.end())
-      {
-        boundary_type_density = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_rho->neumann_bc.find(boundary_id) !=
-              operator_data.bc_rho->neumann_bc.end())
-      {
-        boundary_type_density = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_density != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-
-      BoundaryType boundary_type_velocity = BoundaryType::undefined;
-      if(operator_data.bc_u->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_u->dirichlet_bc.end())
-      {
-        boundary_type_velocity = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_u->neumann_bc.find(boundary_id) !=
-              operator_data.bc_u->neumann_bc.end())
-      {
-        boundary_type_velocity = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_velocity != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-
-      // CONVECTIVE TERM
-      // pressure
-      BoundaryType boundary_type_pressure = BoundaryType::undefined;
-      if(operator_data.bc_p->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_p->dirichlet_bc.end())
-      {
-        boundary_type_pressure = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_p->neumann_bc.find(boundary_id) !=
-              operator_data.bc_p->neumann_bc.end())
-      {
-        boundary_type_pressure = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_pressure != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
-      // CONVECTIVE TERM
-
-      BoundaryType boundary_type_energy = BoundaryType::undefined;
-      if(operator_data.bc_E->dirichlet_bc.find(boundary_id) !=
-         operator_data.bc_E->dirichlet_bc.end())
-      {
-        boundary_type_energy = BoundaryType::dirichlet;
-      }
-      else if(operator_data.bc_E->neumann_bc.find(boundary_id) !=
-              operator_data.bc_E->neumann_bc.end())
-      {
-        boundary_type_energy = BoundaryType::neumann;
-      }
-      AssertThrow(boundary_type_energy != BoundaryType::undefined,
-                  ExcMessage("Boundary type of face is invalid or not implemented."));
+      BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = operator_data.bc_u->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_pressure = operator_data.bc_p->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = operator_data.bc_E->get_boundary_type(boundary_id);
 
       EnergyBoundaryVariable boundary_variable =
-        operator_data.bc_E->boundary_variable.find(boundary_id)->second;
-      AssertThrow(boundary_variable != EnergyBoundaryVariable::Undefined,
-                  ExcMessage("Energy boundary variable is undefined!"));
+        operator_data.bc_E->get_boundary_variable(boundary_id);
 
       fe_eval_density.reinit(face);
       fe_eval_density.gather_evaluate(src, true, true);
