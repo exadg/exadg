@@ -20,7 +20,6 @@
 
 #include <iostream>
 
-
 namespace CompNS
 {
 template<int dim, typename value_type>
@@ -587,6 +586,10 @@ public:
   {
     this->data          = &mf_data;
     this->operator_data = operator_data_in;
+
+    gamma = operator_data.heat_capacity_ratio;
+    R     = operator_data.specific_gas_constant;
+    c_v   = R / (gamma - 1.0);
   }
 
   void
@@ -604,6 +607,193 @@ public:
     data->loop(&This::cell_loop, &This::face_loop, &This::boundary_face_loop, this, dst, src);
   }
 
+  void
+  set_evaluation_time(double const & evaluation_time) const
+  {
+    eval_time = evaluation_time;
+  }
+
+#ifdef USE_MODULAR_IMPLEMENTATION
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<vector, tensor, vector>
+    get_volume_flux(FEEval_scalar &    fe_eval_density,
+                    FEEval_vectorial & fe_eval_momentum,
+                    FEEval_scalar &    fe_eval_energy,
+                    unsigned int const q) const
+  {
+    scalar rho_inv = 1.0 / fe_eval_density.get_value(q);
+    vector rho_u   = fe_eval_momentum.get_value(q);
+    scalar rho_E   = fe_eval_energy.get_value(q);
+    vector u       = rho_inv * rho_u;
+    scalar p       = calculate_pressure(rho_u, u, rho_E, gamma);
+
+    tensor momentum_flux = outer_product(rho_u, u);
+    for(unsigned int d = 0; d < dim; ++d)
+      momentum_flux[d][d] += p;
+
+    vector energy_flux = (rho_E + p) * u;
+
+    return std::make_tuple(rho_u, momentum_flux, energy_flux);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<scalar, vector, scalar>
+    get_flux(FEFaceEval_scalar &    fe_eval_density,
+             FEFaceEval_scalar &    fe_eval_density_neighbor,
+             FEFaceEval_vectorial & fe_eval_momentum,
+             FEFaceEval_vectorial & fe_eval_momentum_neighbor,
+             FEFaceEval_scalar &    fe_eval_energy,
+             FEFaceEval_scalar &    fe_eval_energy_neighbor,
+             unsigned int const     q) const
+  {
+    vector normal = fe_eval_momentum.get_normal_vector(q);
+
+    // get values
+    scalar rho_M   = fe_eval_density.get_value(q);
+    scalar rho_P   = fe_eval_density_neighbor.get_value(q);
+    vector rho_u_M = fe_eval_momentum.get_value(q);
+    vector rho_u_P = fe_eval_momentum_neighbor.get_value(q);
+    vector u_M     = rho_u_M / rho_M;
+    vector u_P     = rho_u_P / rho_P;
+    scalar rho_E_M = fe_eval_energy.get_value(q);
+    scalar rho_E_P = fe_eval_energy_neighbor.get_value(q);
+
+    // calculate pressure
+    scalar p_M = calculate_pressure(rho_u_M, u_M, rho_E_M, gamma);
+    scalar p_P = calculate_pressure(rho_u_P, u_P, rho_E_P, gamma);
+
+    // calculate lambda
+    scalar lambda = calculate_lambda(rho_M, rho_P, u_M, u_P, p_M, p_P, gamma);
+
+    // flux density
+    scalar flux_density = calculate_flux(rho_u_M, rho_u_P, rho_M, rho_P, lambda, normal);
+
+    // flux momentum
+    tensor momentum_flux_M = outer_product(rho_u_M, u_M);
+    for(unsigned int d = 0; d < dim; ++d)
+      momentum_flux_M[d][d] += p_M;
+
+    tensor momentum_flux_P = outer_product(rho_u_P, u_P);
+    for(unsigned int d = 0; d < dim; ++d)
+      momentum_flux_P[d][d] += p_P;
+
+    vector flux_momentum =
+      calculate_flux(momentum_flux_M, momentum_flux_P, rho_u_M, rho_u_P, lambda, normal);
+
+    // flux energy
+    vector energy_flux_M = (rho_E_M + p_M) * u_M;
+    vector energy_flux_P = (rho_E_P + p_P) * u_P;
+
+    scalar flux_energy =
+      calculate_flux(energy_flux_M, energy_flux_P, rho_E_M, rho_E_P, lambda, normal);
+
+    return std::make_tuple(flux_density, flux_momentum, flux_energy);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<scalar, vector, scalar>
+    get_flux_boundary(FEFaceEval_scalar &            fe_eval_density,
+                      FEFaceEval_vectorial &         fe_eval_momentum,
+                      FEFaceEval_scalar &            fe_eval_energy,
+                      BoundaryType const &           boundary_type_density,
+                      BoundaryType const &           boundary_type_velocity,
+                      BoundaryType const &           boundary_type_pressure,
+                      BoundaryType const &           boundary_type_energy,
+                      EnergyBoundaryVariable const & boundary_variable,
+                      types::boundary_id const &     boundary_id,
+                      unsigned int const             q) const
+  {
+    vector normal = fe_eval_momentum.get_normal_vector(q);
+
+    // element e⁻
+    scalar rho_M   = fe_eval_density.get_value(q);
+    vector rho_u_M = fe_eval_momentum.get_value(q);
+    vector u_M     = rho_u_M / rho_M;
+    scalar rho_E_M = fe_eval_energy.get_value(q);
+    scalar E_M     = rho_E_M / rho_M;
+    scalar p_M     = calculate_pressure(rho_M, u_M, E_M, gamma);
+
+    // element e⁺
+
+    // calculate rho_P
+    scalar rho_P = calculate_exterior_value<dim, value_type>(rho_M,
+                                                             boundary_type_density,
+                                                             operator_data.bc_rho,
+                                                             boundary_id,
+                                                             fe_eval_density.quadrature_point(q),
+                                                             this->eval_time);
+
+    // calculate u_P
+    vector u_P = calculate_exterior_value<dim, value_type>(u_M,
+                                                           boundary_type_velocity,
+                                                           operator_data.bc_u,
+                                                           boundary_id,
+                                                           fe_eval_momentum.quadrature_point(q),
+                                                           this->eval_time);
+
+    vector rho_u_P = rho_P * u_P;
+
+    // calculate p_P
+    scalar p_P = calculate_exterior_value<dim, value_type>(p_M,
+                                                           boundary_type_pressure,
+                                                           operator_data.bc_p,
+                                                           boundary_id,
+                                                           fe_eval_density.quadrature_point(q),
+                                                           this->eval_time);
+
+    // calculate E_P
+    scalar E_P = make_vectorized_array<value_type>(0.0);
+    if(boundary_variable == EnergyBoundaryVariable::Energy)
+    {
+      E_P = calculate_exterior_value<dim, value_type>(E_M,
+                                                      boundary_type_energy,
+                                                      operator_data.bc_E,
+                                                      boundary_id,
+                                                      fe_eval_energy.quadrature_point(q),
+                                                      this->eval_time);
+    }
+    else if(boundary_variable == EnergyBoundaryVariable::Temperature)
+    {
+      scalar T_M = calculate_temperature(p_M, rho_M, R);
+      scalar T_P = calculate_exterior_value<dim, value_type>(T_M,
+                                                             boundary_type_energy,
+                                                             operator_data.bc_E,
+                                                             boundary_id,
+                                                             fe_eval_energy.quadrature_point(q),
+                                                             this->eval_time);
+
+      E_P = calculate_energy(T_P, u_P, c_v);
+    }
+    scalar rho_E_P = rho_P * E_P;
+
+    // calculate lambda
+    scalar lambda = calculate_lambda(rho_M, rho_P, u_M, u_P, p_M, p_P, gamma);
+
+    // flux density
+    scalar flux_density = calculate_flux(rho_u_M, rho_u_P, rho_M, rho_P, lambda, normal);
+
+    // flux momentum
+    tensor momentum_flux_M = outer_product(rho_u_M, u_M);
+    for(unsigned int d = 0; d < dim; ++d)
+      momentum_flux_M[d][d] += p_M;
+
+    tensor momentum_flux_P = outer_product(rho_u_P, u_P);
+    for(unsigned int d = 0; d < dim; ++d)
+      momentum_flux_P[d][d] += p_P;
+
+    vector flux_momentum =
+      calculate_flux(momentum_flux_M, momentum_flux_P, rho_u_M, rho_u_P, lambda, normal);
+
+    // flux energy
+    vector energy_flux_M = (rho_E_M + p_M) * u_M;
+    vector energy_flux_P = (rho_E_P + p_P) * u_P;
+    scalar flux_energy =
+      calculate_flux(energy_flux_M, energy_flux_P, rho_E_M, rho_E_P, lambda, normal);
+
+    return std::make_tuple(flux_density, flux_momentum, flux_energy);
+  }
+#endif
+
 private:
   void
   cell_loop(MatrixFree<dim, value_type> const &           data,
@@ -614,8 +804,6 @@ private:
     FEEval_scalar    fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
     FEEval_vectorial fe_eval_momentum(data, operator_data.dof_index, operator_data.quad_index, 1);
     FEEval_scalar fe_eval_energy(data, operator_data.dof_index, operator_data.quad_index, 1 + dim);
-
-    value_type const gamma = operator_data.heat_capacity_ratio;
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -628,6 +816,17 @@ private:
       fe_eval_energy.reinit(cell);
       fe_eval_energy.gather_evaluate(src, true, false);
 
+#ifdef USE_MODULAR_IMPLEMENTATION
+      for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
+      {
+        std::tuple<vector, tensor, vector> flux =
+          get_volume_flux(fe_eval_density, fe_eval_momentum, fe_eval_energy, q);
+
+        fe_eval_density.submit_gradient(-std::get<0>(flux), q);
+        fe_eval_momentum.submit_gradient(-std::get<1>(flux), q);
+        fe_eval_energy.submit_gradient(-std::get<2>(flux), q);
+      }
+#else
       for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
       {
         scalar rho_inv         = 1.0 / fe_eval_density.get_value(q);
@@ -643,6 +842,7 @@ private:
         fe_eval_momentum.submit_gradient(-convective_flux, q);
         fe_eval_energy.submit_gradient(-(rho_E + p) * u, q);
       }
+#endif
 
       fe_eval_density.integrate_scatter(false, true, dst);
       fe_eval_momentum.integrate_scatter(false, true, dst);
@@ -671,8 +871,6 @@ private:
     FEFaceEval_scalar fe_eval_energy_neighbor(
       data, false, operator_data.dof_index, operator_data.quad_index, 1 + dim);
 
-    value_type const gamma = operator_data.heat_capacity_ratio;
-
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       // density
@@ -696,6 +894,27 @@ private:
       fe_eval_energy_neighbor.reinit(face);
       fe_eval_energy_neighbor.gather_evaluate(src, true, false);
 
+#ifdef USE_MODULAR_IMPLEMENTATION
+      for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
+      {
+        std::tuple<scalar, vector, scalar> flux = get_flux(fe_eval_density,
+                                                           fe_eval_density_neighbor,
+                                                           fe_eval_momentum,
+                                                           fe_eval_momentum_neighbor,
+                                                           fe_eval_energy,
+                                                           fe_eval_energy_neighbor,
+                                                           q);
+
+        fe_eval_density.submit_value(std::get<0>(flux), q);
+        fe_eval_density_neighbor.submit_value(-std::get<0>(flux), q);
+
+        fe_eval_momentum.submit_value(std::get<1>(flux), q);
+        fe_eval_momentum_neighbor.submit_value(-std::get<1>(flux), q);
+
+        fe_eval_energy.submit_value(std::get<2>(flux), q);
+        fe_eval_energy_neighbor.submit_value(-std::get<2>(flux), q);
+      }
+#else
       for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
       {
         vector normal = fe_eval_momentum.get_normal_vector(q);
@@ -748,6 +967,7 @@ private:
         fe_eval_energy.submit_value(flux_energy, q);
         fe_eval_energy_neighbor.submit_value(-flux_energy, q);
       }
+#endif
 
       fe_eval_density.integrate_scatter(true, false, dst);
       fe_eval_density_neighbor.integrate_scatter(true, false, dst);
@@ -773,11 +993,17 @@ private:
     FEFaceEval_scalar fe_eval_energy(
       data, true, operator_data.dof_index, operator_data.quad_index, 1 + dim);
 
-    value_type const gamma = operator_data.heat_capacity_ratio;
-    value_type const R     = operator_data.specific_gas_constant;
-
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
+      fe_eval_density.reinit(face);
+      fe_eval_density.gather_evaluate(src, true, false);
+
+      fe_eval_momentum.reinit(face);
+      fe_eval_momentum.gather_evaluate(src, true, false);
+
+      fe_eval_energy.reinit(face);
+      fe_eval_energy.gather_evaluate(src, true, false);
+
       types::boundary_id boundary_id = data.get_boundary_id(face);
 
       BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
@@ -788,15 +1014,25 @@ private:
       EnergyBoundaryVariable boundary_variable =
         operator_data.bc_E->get_boundary_variable(boundary_id);
 
-      fe_eval_density.reinit(face);
-      fe_eval_density.gather_evaluate(src, true, false);
+#ifdef USE_MODULAR_IMPLEMENTATION
+      for(unsigned int q = 0; q < fe_eval_density.n_q_points; ++q)
+      {
+        std::tuple<scalar, vector, scalar> flux = get_flux_boundary(fe_eval_density,
+                                                                    fe_eval_momentum,
+                                                                    fe_eval_energy,
+                                                                    boundary_type_density,
+                                                                    boundary_type_velocity,
+                                                                    boundary_type_pressure,
+                                                                    boundary_type_energy,
+                                                                    boundary_variable,
+                                                                    boundary_id,
+                                                                    q);
 
-      fe_eval_momentum.reinit(face);
-      fe_eval_momentum.gather_evaluate(src, true, false);
-
-      fe_eval_energy.reinit(face);
-      fe_eval_energy.gather_evaluate(src, true, false);
-
+        fe_eval_density.submit_value(std::get<0>(flux), q);
+        fe_eval_momentum.submit_value(std::get<1>(flux), q);
+        fe_eval_energy.submit_value(std::get<2>(flux), q);
+      }
+#else
       for(unsigned int q = 0; q < fe_eval_density.n_q_points; ++q)
       {
         vector normal = fe_eval_momentum.get_normal_vector(q);
@@ -859,8 +1095,6 @@ private:
                                                                  fe_eval_energy.quadrature_point(q),
                                                                  eval_time);
 
-          value_type const c_v = R / (gamma - 1.0);
-
           E_P = calculate_energy(T_P, u_P, c_v);
         }
         scalar rho_E_P = rho_P * E_P;
@@ -893,6 +1127,7 @@ private:
         fe_eval_momentum.submit_value(flux_momentum, q);
         fe_eval_energy.submit_value(flux_energy, q);
       }
+#endif
 
       fe_eval_density.integrate_scatter(true, false, dst);
       fe_eval_momentum.integrate_scatter(true, false, dst);
@@ -903,6 +1138,15 @@ private:
   MatrixFree<dim, value_type> const * data;
 
   ConvectiveOperatorData<dim> operator_data;
+
+  // heat capacity ratio
+  value_type gamma;
+
+  // specific gas constant
+  value_type R;
+
+  // specific heat at constant volume
+  value_type c_v;
 
   mutable value_type eval_time;
 };
@@ -969,6 +1213,13 @@ public:
     this->data          = &mf_data;
     this->operator_data = operator_data_in;
 
+    gamma  = operator_data.heat_capacity_ratio;
+    R      = operator_data.specific_gas_constant;
+    c_v    = R / (gamma - 1.0);
+    mu     = operator_data.dynamic_viscosity;
+    nu     = mu / operator_data.reference_density;
+    lambda = operator_data.thermal_conductivity;
+
     IP::calculate_penalty_parameter<dim, fe_degree, value_type>(array_penalty_parameter,
                                                                 *data,
                                                                 mapping,
@@ -990,6 +1241,417 @@ public:
     data->loop(&This::cell_loop, &This::face_loop, &This::boundary_face_loop, this, dst, src);
   }
 
+  void
+  set_evaluation_time(double const & evaluation_time) const
+  {
+    eval_time = evaluation_time;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    get_penalty_parameter(FEFaceEval_scalar & fe_eval_m, FEFaceEval_scalar & fe_eval_p) const
+  {
+    scalar tau = std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
+                          fe_eval_p.read_cell_data(array_penalty_parameter)) *
+                 IP::get_penalty_factor<value_type>(fe_degree, operator_data.IP_factor) * nu;
+
+    return tau;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    get_penalty_parameter(FEFaceEval_scalar & fe_eval) const
+  {
+    scalar tau = fe_eval.read_cell_data(array_penalty_parameter) *
+                 IP::get_penalty_factor<value_type>(fe_degree, operator_data.IP_factor) * nu;
+
+    return tau;
+  }
+
+#ifdef USE_MODULAR_IMPLEMENTATION
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<vector, tensor, vector>
+    get_volume_flux(FEEval_scalar &    fe_eval_density,
+                    FEEval_vectorial & fe_eval_momentum,
+                    FEEval_scalar &    fe_eval_energy,
+                    unsigned int const q) const
+  {
+    scalar rho_inv  = 1.0 / fe_eval_density.get_value(q);
+    vector grad_rho = fe_eval_density.get_gradient(q);
+
+    vector rho_u      = fe_eval_momentum.get_value(q);
+    vector u          = rho_inv * rho_u;
+    tensor grad_rho_u = fe_eval_momentum.get_gradient(q);
+
+    scalar rho_E      = fe_eval_energy.get_value(q);
+    vector grad_rho_E = fe_eval_energy.get_gradient(q);
+
+    // calculate flux momentum
+    tensor grad_u = calculate_grad_u(rho_inv, rho_u, grad_rho, grad_rho_u);
+    tensor tau    = calculate_stress_tensor(grad_u, mu);
+
+    // calculate flux energy
+    vector grad_E      = calculate_grad_E(rho_inv, rho_E, grad_rho, grad_rho_E);
+    vector grad_T      = calculate_grad_T(grad_E, u, grad_u, gamma, R);
+    vector energy_flux = tau * u + lambda * grad_T;
+
+    return std::make_tuple(vector() /* dummy */, tau, energy_flux);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<scalar, vector, scalar>
+    get_gradient_flux(FEFaceEval_scalar &    fe_eval_density,
+                      FEFaceEval_scalar &    fe_eval_density_neighbor,
+                      FEFaceEval_vectorial & fe_eval_momentum,
+                      FEFaceEval_vectorial & fe_eval_momentum_neighbor,
+                      FEFaceEval_scalar &    fe_eval_energy,
+                      FEFaceEval_scalar &    fe_eval_energy_neighbor,
+                      scalar const &         tau_IP,
+                      unsigned int const     q) const
+  {
+    vector normal = fe_eval_momentum.get_normal_vector(q);
+
+    // density
+    scalar rho_M      = fe_eval_density.get_value(q);
+    vector grad_rho_M = fe_eval_density.get_gradient(q);
+
+    scalar rho_P      = fe_eval_density_neighbor.get_value(q);
+    vector grad_rho_P = fe_eval_density_neighbor.get_gradient(q);
+
+    // velocity
+    vector rho_u_M      = fe_eval_momentum.get_value(q);
+    tensor grad_rho_u_M = fe_eval_momentum.get_gradient(q);
+
+    vector rho_u_P      = fe_eval_momentum_neighbor.get_value(q);
+    tensor grad_rho_u_P = fe_eval_momentum_neighbor.get_gradient(q);
+
+    // energy
+    scalar rho_E_M      = fe_eval_energy.get_value(q);
+    vector grad_rho_E_M = fe_eval_energy.get_gradient(q);
+
+    scalar rho_E_P      = fe_eval_energy_neighbor.get_value(q);
+    vector grad_rho_E_P = fe_eval_energy_neighbor.get_gradient(q);
+
+    // flux density
+    scalar jump_density          = rho_M - rho_P;
+    scalar gradient_flux_density = -tau_IP * jump_density;
+
+    // flux momentum
+    scalar rho_inv_M = 1.0 / rho_M;
+    tensor grad_u_M  = calculate_grad_u(rho_inv_M, rho_u_M, grad_rho_M, grad_rho_u_M);
+    tensor tau_M     = calculate_stress_tensor(grad_u_M, mu);
+
+    scalar rho_inv_P = 1.0 / rho_P;
+    tensor grad_u_P  = calculate_grad_u(rho_inv_P, rho_u_P, grad_rho_P, grad_rho_u_P);
+    tensor tau_P     = calculate_stress_tensor(grad_u_P, mu);
+
+    vector jump_momentum          = rho_u_M - rho_u_P;
+    vector gradient_flux_momentum = 0.5 * (tau_M + tau_P) * normal - tau_IP * jump_momentum;
+
+    // flux energy
+    vector u_M      = rho_inv_M * rho_u_M;
+    vector grad_E_M = calculate_grad_E(rho_inv_M, rho_E_M, grad_rho_M, grad_rho_E_M);
+    vector grad_T_M = calculate_grad_T(grad_E_M, u_M, grad_u_M, gamma, R);
+
+    vector u_P      = rho_inv_P * rho_u_P;
+    vector grad_E_P = calculate_grad_E(rho_inv_P, rho_E_P, grad_rho_P, grad_rho_E_P);
+    vector grad_T_P = calculate_grad_T(grad_E_P, u_P, grad_u_P, gamma, R);
+
+    vector flux_energy_average = 0.5 * (tau_M * u_M + tau_P * u_P + lambda * (grad_T_M + grad_T_P));
+
+    scalar jump_energy          = rho_E_M - rho_E_P;
+    scalar gradient_flux_energy = flux_energy_average * normal - tau_IP * jump_energy;
+
+    return std::make_tuple(gradient_flux_density, gradient_flux_momentum, gradient_flux_energy);
+  }
+
+
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<scalar, vector, scalar>
+    get_gradient_flux_boundary(FEFaceEval_scalar &            fe_eval_density,
+                               FEFaceEval_vectorial &         fe_eval_momentum,
+                               FEFaceEval_scalar &            fe_eval_energy,
+                               scalar const &                 tau_IP,
+                               BoundaryType const &           boundary_type_density,
+                               BoundaryType const &           boundary_type_velocity,
+                               BoundaryType const &           boundary_type_energy,
+                               EnergyBoundaryVariable const & boundary_variable,
+                               types::boundary_id const &     boundary_id,
+                               unsigned int const             q) const
+  {
+    vector normal = fe_eval_momentum.get_normal_vector(q);
+
+    // density
+    scalar rho_M      = fe_eval_density.get_value(q);
+    vector grad_rho_M = fe_eval_density.get_gradient(q);
+
+    scalar rho_P = calculate_exterior_value<dim, value_type>(rho_M,
+                                                             boundary_type_density,
+                                                             operator_data.bc_rho,
+                                                             boundary_id,
+                                                             fe_eval_density.quadrature_point(q),
+                                                             this->eval_time);
+
+    scalar jump_density          = rho_M - rho_P;
+    scalar gradient_flux_density = -tau_IP * jump_density;
+
+    // velocity
+    vector rho_u_M      = fe_eval_momentum.get_value(q);
+    tensor grad_rho_u_M = fe_eval_momentum.get_gradient(q);
+
+    scalar rho_inv_M = 1.0 / rho_M;
+    vector u_M       = rho_inv_M * rho_u_M;
+
+    vector u_P = calculate_exterior_value<dim, value_type>(u_M,
+                                                           boundary_type_velocity,
+                                                           operator_data.bc_u,
+                                                           boundary_id,
+                                                           fe_eval_momentum.quadrature_point(q),
+                                                           this->eval_time);
+
+    vector rho_u_P = rho_P * u_P;
+
+    tensor grad_u_M = calculate_grad_u(rho_inv_M, rho_u_M, grad_rho_M, grad_rho_u_M);
+    tensor tau_M    = calculate_stress_tensor(grad_u_M, mu);
+
+    vector tau_P_normal = calculate_exterior_normal_grad(tau_M * normal,
+                                                         boundary_type_velocity,
+                                                         operator_data.bc_u,
+                                                         boundary_id,
+                                                         fe_eval_momentum.quadrature_point(q),
+                                                         this->eval_time);
+
+    vector jump_momentum          = rho_u_M - rho_u_P;
+    vector gradient_flux_momentum = 0.5 * (tau_M * normal + tau_P_normal) - tau_IP * jump_momentum;
+
+    // energy
+    scalar rho_E_M      = fe_eval_energy.get_value(q);
+    vector grad_rho_E_M = fe_eval_energy.get_gradient(q);
+
+    scalar E_M = rho_inv_M * rho_E_M;
+    scalar E_P = make_vectorized_array<value_type>(0.0);
+    if(boundary_variable == EnergyBoundaryVariable::Energy)
+    {
+      E_P = calculate_exterior_value<dim, value_type>(E_M,
+                                                      boundary_type_energy,
+                                                      operator_data.bc_E,
+                                                      boundary_id,
+                                                      fe_eval_energy.quadrature_point(q),
+                                                      this->eval_time);
+    }
+    else if(boundary_variable == EnergyBoundaryVariable::Temperature)
+    {
+      scalar p_M = calculate_pressure(rho_M, u_M, E_M, gamma);
+      scalar T_M = calculate_temperature(p_M, rho_M, R);
+      scalar T_P = calculate_exterior_value<dim, value_type>(T_M,
+                                                             boundary_type_energy,
+                                                             operator_data.bc_E,
+                                                             boundary_id,
+                                                             fe_eval_energy.quadrature_point(q),
+                                                             this->eval_time);
+
+      E_P = calculate_energy(T_P, u_P, c_v);
+    }
+
+    scalar rho_E_P = rho_P * E_P;
+
+    vector grad_E_M = calculate_grad_E(rho_inv_M, rho_E_M, grad_rho_M, grad_rho_E_M);
+    vector grad_T_M = calculate_grad_T(grad_E_M, u_M, grad_u_M, gamma, R);
+
+    scalar grad_T_M_normal = grad_T_M * normal;
+    scalar grad_T_P_normal =
+      calculate_exterior_normal_grad<dim, value_type>(grad_T_M_normal,
+                                                      boundary_type_energy,
+                                                      operator_data.bc_E,
+                                                      boundary_id,
+                                                      fe_eval_energy.quadrature_point(q),
+                                                      this->eval_time);
+
+    scalar jump_energy          = rho_E_M - rho_E_P;
+    scalar gradient_flux_energy = 0.5 * (u_M * tau_M * normal + u_P * tau_P_normal +
+                                         lambda * (grad_T_M * normal + grad_T_P_normal)) -
+                                  tau_IP * jump_energy;
+
+    return std::make_tuple(gradient_flux_density, gradient_flux_momentum, gradient_flux_energy);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<vector /*dummy_M*/,
+               tensor /*value_flux_momentum_M*/,
+               vector /*value_flux_energy_M*/,
+               vector /*dummy_P*/,
+               tensor /*value_flux_momentum_P*/,
+               vector /*value_flux_energy_P*/>
+    get_value_flux(FEFaceEval_scalar &    fe_eval_density,
+                   FEFaceEval_scalar &    fe_eval_density_neighbor,
+                   FEFaceEval_vectorial & fe_eval_momentum,
+                   FEFaceEval_vectorial & fe_eval_momentum_neighbor,
+                   FEFaceEval_scalar &    fe_eval_energy,
+                   FEFaceEval_scalar &    fe_eval_energy_neighbor,
+                   unsigned int const     q) const
+  {
+    vector normal = fe_eval_momentum.get_normal_vector(q);
+
+    // density
+    scalar rho_M = fe_eval_density.get_value(q);
+    scalar rho_P = fe_eval_density_neighbor.get_value(q);
+
+    // velocity
+    vector rho_u_M = fe_eval_momentum.get_value(q);
+    vector rho_u_P = fe_eval_momentum_neighbor.get_value(q);
+
+    // energy
+    scalar rho_E_M = fe_eval_energy.get_value(q);
+    scalar rho_E_P = fe_eval_energy_neighbor.get_value(q);
+
+    vector jump_rho   = (rho_M - rho_P) * normal;
+    tensor jump_rho_u = outer_product(rho_u_M - rho_u_P, normal);
+    vector jump_rho_E = (rho_E_M - rho_E_P) * normal;
+
+    scalar rho_inv_M = 1.0 / rho_M;
+    scalar rho_inv_P = 1.0 / rho_P;
+
+    vector u_M = rho_inv_M * rho_u_M;
+    vector u_P = rho_inv_P * rho_u_P;
+
+    // value flux momentum
+    tensor grad_u_using_jumps_M = calculate_grad_u(rho_inv_M,
+                                                   rho_u_M,
+                                                   jump_rho /*instead of grad_rho*/,
+                                                   jump_rho_u /*instead of grad_rho_u*/);
+
+    tensor tau_using_jumps_M     = calculate_stress_tensor(grad_u_using_jumps_M, mu);
+    tensor value_flux_momentum_M = -0.5 * tau_using_jumps_M;
+
+    tensor grad_u_using_jumps_P = calculate_grad_u(rho_inv_P,
+                                                   rho_u_P,
+                                                   jump_rho /*instead of grad_rho*/,
+                                                   jump_rho_u /*instead of grad_rho_u*/);
+
+    tensor tau_using_jumps_P     = calculate_stress_tensor(grad_u_using_jumps_P, mu);
+    tensor value_flux_momentum_P = -0.5 * tau_using_jumps_P;
+
+    // value flux energy
+    vector grad_E_using_jumps_M = calculate_grad_E(rho_inv_M,
+                                                   rho_E_M,
+                                                   jump_rho /*instead of grad_rho*/,
+                                                   jump_rho_E /*instead of grad_rho_E*/);
+
+    vector grad_T_using_jumps_M =
+      calculate_grad_T(grad_E_using_jumps_M, u_M, grad_u_using_jumps_M, gamma, R);
+    vector value_flux_energy_M = -0.5 * (tau_using_jumps_M * u_M + lambda * grad_T_using_jumps_M);
+
+    vector grad_E_using_jumps_P = calculate_grad_E(rho_inv_P,
+                                                   rho_E_P,
+                                                   jump_rho /*instead of grad_rho*/,
+                                                   jump_rho_E /*instead of grad_rho_E*/);
+
+    vector grad_T_using_jumps_P =
+      calculate_grad_T(grad_E_using_jumps_P, u_P, grad_u_using_jumps_P, gamma, R);
+    vector value_flux_energy_P = -0.5 * (tau_using_jumps_P * u_P + lambda * grad_T_using_jumps_P);
+
+    return std::make_tuple(vector() /*dummy*/,
+                           value_flux_momentum_M,
+                           value_flux_energy_M,
+                           vector() /*dummy*/,
+                           value_flux_momentum_P,
+                           value_flux_energy_P);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<vector /*dummy_M*/, tensor /*value_flux_momentum_M*/, vector /*value_flux_energy_M*/>
+    get_value_flux_boundary(FEFaceEval_scalar &            fe_eval_density,
+                            FEFaceEval_vectorial &         fe_eval_momentum,
+                            FEFaceEval_scalar &            fe_eval_energy,
+                            BoundaryType const &           boundary_type_density,
+                            BoundaryType const &           boundary_type_velocity,
+                            BoundaryType const &           boundary_type_energy,
+                            EnergyBoundaryVariable const & boundary_variable,
+                            types::boundary_id const &     boundary_id,
+                            unsigned int const             q) const
+  {
+    vector normal = fe_eval_momentum.get_normal_vector(q);
+
+    // density
+    scalar rho_M = fe_eval_density.get_value(q);
+    scalar rho_P = calculate_exterior_value<dim, value_type>(rho_M,
+                                                             boundary_type_density,
+                                                             operator_data.bc_rho,
+                                                             boundary_id,
+                                                             fe_eval_density.quadrature_point(q),
+                                                             this->eval_time);
+
+    scalar rho_inv_M = 1.0 / rho_M;
+
+    // velocity
+    vector rho_u_M = fe_eval_momentum.get_value(q);
+    vector u_M     = rho_inv_M * rho_u_M;
+
+    vector u_P = calculate_exterior_value<dim, value_type>(u_M,
+                                                           boundary_type_velocity,
+                                                           operator_data.bc_u,
+                                                           boundary_id,
+                                                           fe_eval_momentum.quadrature_point(q),
+                                                           this->eval_time);
+
+    vector rho_u_P = rho_P * u_P;
+
+    // energy
+    scalar rho_E_M = fe_eval_energy.get_value(q);
+    scalar E_M     = rho_inv_M * rho_E_M;
+
+    scalar E_P = make_vectorized_array<value_type>(0.0);
+    if(boundary_variable == EnergyBoundaryVariable::Energy)
+    {
+      E_P = calculate_exterior_value<dim, value_type>(E_M,
+                                                      boundary_type_energy,
+                                                      operator_data.bc_E,
+                                                      boundary_id,
+                                                      fe_eval_energy.quadrature_point(q),
+                                                      this->eval_time);
+    }
+    else if(boundary_variable == EnergyBoundaryVariable::Temperature)
+    {
+      scalar p_M = calculate_pressure(rho_M, u_M, E_M, gamma);
+      scalar T_M = calculate_temperature(p_M, rho_M, R);
+      scalar T_P = calculate_exterior_value<dim, value_type>(T_M,
+                                                             boundary_type_energy,
+                                                             operator_data.bc_E,
+                                                             boundary_id,
+                                                             fe_eval_energy.quadrature_point(q),
+                                                             this->eval_time);
+
+      E_P = calculate_energy(T_P, u_P, c_v);
+    }
+    scalar rho_E_P = rho_P * E_P;
+
+    vector jump_rho   = (rho_M - rho_P) * normal;
+    tensor jump_rho_u = outer_product(rho_u_M - rho_u_P, normal);
+    vector jump_rho_E = (rho_E_M - rho_E_P) * normal;
+
+    // value flux momentum
+    tensor grad_u_using_jumps_M = calculate_grad_u(rho_inv_M,
+                                                   rho_u_M,
+                                                   jump_rho /*instead of grad_rho*/,
+                                                   jump_rho_u /*instead of grad_rho_u*/);
+
+    tensor tau_using_jumps_M     = calculate_stress_tensor(grad_u_using_jumps_M, mu);
+    tensor value_flux_momentum_M = -0.5 * tau_using_jumps_M;
+
+    // value flux energy
+    vector grad_E_using_jumps_M = calculate_grad_E(rho_inv_M,
+                                                   rho_E_M,
+                                                   jump_rho /*instead of grad_rho*/,
+                                                   jump_rho_E /*instead of grad_rho_E*/);
+
+    vector grad_T_using_jumps_M =
+      calculate_grad_T(grad_E_using_jumps_M, u_M, grad_u_using_jumps_M, gamma, R);
+    vector value_flux_energy_M = -0.5 * (tau_using_jumps_M * u_M + lambda * grad_T_using_jumps_M);
+
+    return std::make_tuple(vector() /*dummy*/, value_flux_momentum_M, value_flux_energy_M);
+  }
+#endif
+
 private:
   void
   cell_loop(MatrixFree<dim, value_type> const &           data,
@@ -1000,11 +1662,6 @@ private:
     FEEval_scalar    fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
     FEEval_vectorial fe_eval_momentum(data, operator_data.dof_index, operator_data.quad_index, 1);
     FEEval_scalar fe_eval_energy(data, operator_data.dof_index, operator_data.quad_index, 1 + dim);
-
-    value_type const gamma  = operator_data.heat_capacity_ratio;
-    value_type const R      = operator_data.specific_gas_constant;
-    value_type const mu     = operator_data.dynamic_viscosity;
-    value_type const lambda = operator_data.thermal_conductivity;
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -1017,6 +1674,16 @@ private:
       fe_eval_energy.reinit(cell);
       fe_eval_energy.gather_evaluate(src, true, true);
 
+#ifdef USE_MODULAR_IMPLEMENTATION
+      for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
+      {
+        std::tuple<vector, tensor, vector> flux =
+          get_volume_flux(fe_eval_density, fe_eval_momentum, fe_eval_energy, q);
+
+        fe_eval_momentum.submit_gradient(std::get<1>(flux), q);
+        fe_eval_energy.submit_gradient(std::get<2>(flux), q);
+      }
+#else
       for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
       {
         scalar rho_inv  = 1.0 / fe_eval_density.get_value(q);
@@ -1041,6 +1708,7 @@ private:
         fe_eval_momentum.submit_gradient(tau, q);
         fe_eval_energy.submit_gradient(flux_energy, q);
       }
+#endif
 
       fe_eval_momentum.integrate_scatter(false, true, dst);
       fe_eval_energy.integrate_scatter(false, true, dst);
@@ -1068,12 +1736,6 @@ private:
     FEFaceEval_scalar fe_eval_energy_neighbor(
       data, false, operator_data.dof_index, operator_data.quad_index, 1 + dim);
 
-    value_type const gamma  = operator_data.heat_capacity_ratio;
-    value_type const R      = operator_data.specific_gas_constant;
-    value_type const mu     = operator_data.dynamic_viscosity;
-    value_type const nu     = mu / operator_data.reference_density;
-    value_type const lambda = operator_data.thermal_conductivity;
-
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       // density
@@ -1097,11 +1759,51 @@ private:
       fe_eval_energy_neighbor.reinit(face);
       fe_eval_energy_neighbor.gather_evaluate(src, true, true);
 
-      VectorizedArray<value_type> tau_IP =
-        std::max(fe_eval_momentum.read_cell_data(array_penalty_parameter),
-                 fe_eval_momentum_neighbor.read_cell_data(array_penalty_parameter)) *
-        IP::get_penalty_factor<value_type>(fe_degree, operator_data.IP_factor) * nu;
+      scalar tau_IP = get_penalty_parameter(fe_eval_density, fe_eval_density_neighbor);
 
+#ifdef USE_MODULAR_IMPLEMENTATION
+      for(unsigned int q = 0; q < fe_eval_density.n_q_points; ++q)
+      {
+        std::tuple<scalar, vector, scalar> gradient_flux =
+          get_gradient_flux(fe_eval_density,
+                            fe_eval_density_neighbor,
+                            fe_eval_momentum,
+                            fe_eval_momentum_neighbor,
+                            fe_eval_energy,
+                            fe_eval_energy_neighbor,
+                            tau_IP,
+                            q);
+
+        std::tuple<vector, tensor, vector, vector, tensor, vector> value_flux =
+          get_value_flux(fe_eval_density,
+                         fe_eval_density_neighbor,
+                         fe_eval_momentum,
+                         fe_eval_momentum_neighbor,
+                         fe_eval_energy,
+                         fe_eval_energy_neighbor,
+                         q);
+
+        fe_eval_density.submit_value(-std::get<0>(gradient_flux), q);
+        // + sign since n⁺ = -n⁻
+        fe_eval_density_neighbor.submit_value(std::get<0>(gradient_flux), q);
+
+        fe_eval_momentum.submit_gradient(std::get<1>(value_flux), q);
+        // note that value_flux_momentum is not conservative
+        fe_eval_momentum_neighbor.submit_gradient(std::get<4>(value_flux), q);
+
+        fe_eval_momentum.submit_value(-std::get<1>(gradient_flux), q);
+        // + sign since n⁺ = -n⁻
+        fe_eval_momentum_neighbor.submit_value(std::get<1>(gradient_flux), q);
+
+        fe_eval_energy.submit_gradient(std::get<2>(value_flux), q);
+        // note that value_flux_energy is not conservative
+        fe_eval_energy_neighbor.submit_gradient(std::get<5>(value_flux), q);
+
+        fe_eval_energy.submit_value(-std::get<2>(gradient_flux), q);
+        // + sign since n⁺ = -n⁻
+        fe_eval_energy_neighbor.submit_value(std::get<2>(gradient_flux), q);
+      }
+#else
       for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
       {
         vector normal = fe_eval_momentum.get_normal_vector(q);
@@ -1213,6 +1915,7 @@ private:
         fe_eval_energy.submit_value(-gradient_flux_energy, q);
         fe_eval_energy_neighbor.submit_value(gradient_flux_energy, q); // + sign since n⁺ = -n⁻
       }
+#endif
 
       fe_eval_density.integrate_scatter(true, false, dst);
       fe_eval_density_neighbor.integrate_scatter(true, false, dst);
@@ -1238,23 +1941,8 @@ private:
     FEFaceEval_scalar fe_eval_energy(
       data, true, operator_data.dof_index, operator_data.quad_index, 1 + dim);
 
-    value_type const gamma  = operator_data.heat_capacity_ratio;
-    value_type const R      = operator_data.specific_gas_constant;
-    value_type const mu     = operator_data.dynamic_viscosity;
-    value_type const nu     = mu / operator_data.reference_density;
-    value_type const lambda = operator_data.thermal_conductivity;
-
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      types::boundary_id boundary_id = data.get_boundary_id(face);
-
-      BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_velocity = operator_data.bc_u->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_energy   = operator_data.bc_E->get_boundary_type(boundary_id);
-
-      EnergyBoundaryVariable boundary_variable =
-        operator_data.bc_E->get_boundary_variable(boundary_id);
-
       fe_eval_density.reinit(face);
       fe_eval_density.gather_evaluate(src, true, true);
 
@@ -1264,10 +1952,52 @@ private:
       fe_eval_energy.reinit(face);
       fe_eval_energy.gather_evaluate(src, true, true);
 
-      VectorizedArray<value_type> tau_IP =
-        fe_eval_momentum.read_cell_data(array_penalty_parameter) *
-        IP::get_penalty_factor<value_type>(fe_degree, operator_data.IP_factor) * nu;
+      scalar tau_IP = get_penalty_parameter(fe_eval_density);
 
+      types::boundary_id boundary_id = data.get_boundary_id(face);
+
+      BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = operator_data.bc_u->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = operator_data.bc_E->get_boundary_type(boundary_id);
+
+      EnergyBoundaryVariable boundary_variable =
+        operator_data.bc_E->get_boundary_variable(boundary_id);
+
+#ifdef USE_MODULAR_IMPLEMENTATION
+      for(unsigned int q = 0; q < fe_eval_density.n_q_points; ++q)
+      {
+        std::tuple<scalar, vector, scalar> gradient_flux =
+          get_gradient_flux_boundary(fe_eval_density,
+                                     fe_eval_momentum,
+                                     fe_eval_energy,
+                                     tau_IP,
+                                     boundary_type_density,
+                                     boundary_type_velocity,
+                                     boundary_type_energy,
+                                     boundary_variable,
+                                     boundary_id,
+                                     q);
+
+        std::tuple<vector, tensor, vector> value_flux =
+          get_value_flux_boundary(fe_eval_density,
+                                  fe_eval_momentum,
+                                  fe_eval_energy,
+                                  boundary_type_density,
+                                  boundary_type_velocity,
+                                  boundary_type_energy,
+                                  boundary_variable,
+                                  boundary_id,
+                                  q);
+
+        fe_eval_density.submit_value(-std::get<0>(gradient_flux), q);
+
+        fe_eval_momentum.submit_gradient(std::get<1>(value_flux), q);
+        fe_eval_momentum.submit_value(-std::get<1>(gradient_flux), q);
+
+        fe_eval_energy.submit_gradient(std::get<2>(value_flux), q);
+        fe_eval_energy.submit_value(-std::get<2>(gradient_flux), q);
+      }
+#else
       for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
       {
         vector normal = fe_eval_momentum.get_normal_vector(q);
@@ -1397,6 +2127,7 @@ private:
         fe_eval_energy.submit_gradient(value_flux_energy_M, q);
         fe_eval_energy.submit_value(-gradient_flux_energy, q);
       }
+#endif
 
       fe_eval_density.integrate_scatter(true, false, dst);
       fe_eval_momentum.integrate_scatter(true, true, dst);
@@ -1408,21 +2139,379 @@ private:
 
   ViscousOperatorData<dim> operator_data;
 
+  // heat capacity ratio
+  value_type gamma;
+
+  // specific gas constant
+  value_type R;
+
+  // specific heat at constant volume
+  value_type c_v;
+
+  // dynamic viscosity
+  value_type mu;
+
+  // kinematic viscosity
+  value_type nu;
+
+  // thermal conductivity
+  value_type lambda;
+
   AlignedVector<VectorizedArray<value_type>> array_penalty_parameter;
 
   mutable value_type eval_time;
 };
 
-/*
- *  Combined operator: Evaluate viscous and convective term in one step to improve efficiency.
- *  The viscous operator already includes most of the terms. Additional terms needed by the
- *  convective term are highlighted by
- *
- *   // CONVECTIVE TERM
- *   implementations for convective term
- *   // CONVECTIVE TERM
- *
- */
+#ifdef USE_MODULAR_IMPLEMENTATION
+template<int dim>
+struct CombinedOperatorData
+{
+  CombinedOperatorData() : dof_index(0), quad_index(0)
+  {
+  }
+
+  unsigned int dof_index;
+  unsigned int quad_index;
+
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_rho;
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_u;
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_p;
+  std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> bc_E;
+};
+
+template<int dim, int degree, int n_q_points_1d, typename Number>
+class CombinedOperator
+{
+public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef ConvectiveOperator<dim, degree, n_q_points_1d, Number> ConvectiveOp;
+  typedef ViscousOperator<dim, degree, n_q_points_1d, Number>    ViscousOp;
+  typedef CombinedOperator<dim, degree, n_q_points_1d, Number>   This;
+
+  typedef FEEvaluation<dim, degree, n_q_points_1d, 1, Number>       FEEval_scalar;
+  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, 1, Number>   FEFaceEval_scalar;
+  typedef FEEvaluation<dim, degree, n_q_points_1d, dim, Number>     FEEval_vectorial;
+  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, dim, Number> FEFaceEval_vectorial;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef Point<dim, VectorizedArray<Number>>     point;
+
+  CombinedOperator() : matrix_free(nullptr), convective_operator(nullptr), viscous_operator(nullptr)
+  {
+  }
+
+  void
+  initialize(MatrixFree<dim, Number> const &   matrix_free_in,
+             CombinedOperatorData<dim> const & operator_data_in,
+             ConvectiveOp const &              convective_operator_in,
+             ViscousOp const &                 viscous_operator_in)
+  {
+    this->matrix_free   = &matrix_free_in;
+    this->operator_data = operator_data_in;
+
+    this->convective_operator = &convective_operator_in;
+    this->viscous_operator    = &viscous_operator_in;
+
+    // TODO remove this later
+    std::cout << std::endl << "USE_MODULAR_IMPLEMENTATION and COMBINED_OPERATOR" << std::endl;
+  }
+
+  void
+  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  {
+    dst = 0;
+    evaluate_add(dst, src, evaluation_time);
+  }
+
+  void
+  evaluate_add(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  {
+    convective_operator->set_evaluation_time(evaluation_time);
+    viscous_operator->set_evaluation_time(evaluation_time);
+
+    matrix_free->loop(
+      &This::cell_loop, &This::face_loop, &This::boundary_face_loop, this, dst, src);
+
+    // perform cell integrals only for performance measurements
+    //    matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  }
+
+private:
+  void
+  cell_loop(MatrixFree<dim, Number> const &               matrix_free,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & cell_range) const
+  {
+    FEEval_scalar    fe_eval_density(matrix_free,
+                                  operator_data.dof_index,
+                                  operator_data.quad_index,
+                                  0);
+    FEEval_vectorial fe_eval_momentum(matrix_free,
+                                      operator_data.dof_index,
+                                      operator_data.quad_index,
+                                      1);
+    FEEval_scalar    fe_eval_energy(matrix_free,
+                                 operator_data.dof_index,
+                                 operator_data.quad_index,
+                                 1 + dim);
+
+    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+    {
+      fe_eval_density.reinit(cell);
+      fe_eval_density.gather_evaluate(src, true, true);
+
+      fe_eval_momentum.reinit(cell);
+      fe_eval_momentum.gather_evaluate(src, true, true);
+
+      fe_eval_energy.reinit(cell);
+      fe_eval_energy.gather_evaluate(src, true, true);
+
+      for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
+      {
+        std::tuple<vector, tensor, vector> convective_flux = convective_operator->get_volume_flux(
+          fe_eval_density, fe_eval_momentum, fe_eval_energy, q);
+
+        std::tuple<vector, tensor, vector> viscous_flux =
+          viscous_operator->get_volume_flux(fe_eval_density, fe_eval_momentum, fe_eval_energy, q);
+
+        fe_eval_density.submit_gradient(-std::get<0>(convective_flux), q);
+        fe_eval_momentum.submit_gradient(-std::get<1>(convective_flux) + std::get<1>(viscous_flux),
+                                         q);
+        fe_eval_energy.submit_gradient(-std::get<2>(convective_flux) + std::get<2>(viscous_flux),
+                                       q);
+      }
+
+      fe_eval_density.integrate_scatter(false, true, dst);
+      fe_eval_momentum.integrate_scatter(false, true, dst);
+      fe_eval_energy.integrate_scatter(false, true, dst);
+    }
+  }
+
+  void
+  face_loop(MatrixFree<dim, Number> const &               matrix_free,
+            VectorType &                                  dst,
+            VectorType const &                            src,
+            std::pair<unsigned int, unsigned int> const & face_range) const
+  {
+    FEFaceEval_scalar fe_eval_density(
+      matrix_free, true, operator_data.dof_index, operator_data.quad_index, 0);
+    FEFaceEval_scalar fe_eval_density_neighbor(
+      matrix_free, false, operator_data.dof_index, operator_data.quad_index, 0);
+    FEFaceEval_vectorial fe_eval_momentum(
+      matrix_free, true, operator_data.dof_index, operator_data.quad_index, 1);
+    FEFaceEval_vectorial fe_eval_momentum_neighbor(
+      matrix_free, false, operator_data.dof_index, operator_data.quad_index, 1);
+    FEFaceEval_scalar fe_eval_energy(
+      matrix_free, true, operator_data.dof_index, operator_data.quad_index, 1 + dim);
+    FEFaceEval_scalar fe_eval_energy_neighbor(
+      matrix_free, false, operator_data.dof_index, operator_data.quad_index, 1 + dim);
+
+    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    {
+      // density
+      fe_eval_density.reinit(face);
+      fe_eval_density.gather_evaluate(src, true, true);
+
+      fe_eval_density_neighbor.reinit(face);
+      fe_eval_density_neighbor.gather_evaluate(src, true, true);
+
+      // momentum
+      fe_eval_momentum.reinit(face);
+      fe_eval_momentum.gather_evaluate(src, true, true);
+
+      fe_eval_momentum_neighbor.reinit(face);
+      fe_eval_momentum_neighbor.gather_evaluate(src, true, true);
+
+      // energy
+      fe_eval_energy.reinit(face);
+      fe_eval_energy.gather_evaluate(src, true, true);
+
+      fe_eval_energy_neighbor.reinit(face);
+      fe_eval_energy_neighbor.gather_evaluate(src, true, true);
+
+      scalar tau_IP =
+        viscous_operator->get_penalty_parameter(fe_eval_density, fe_eval_density_neighbor);
+
+      for(unsigned int q = 0; q < fe_eval_density.n_q_points; ++q)
+      {
+        std::tuple<scalar, vector, scalar> convective_flux =
+          convective_operator->get_flux(fe_eval_density,
+                                        fe_eval_density_neighbor,
+                                        fe_eval_momentum,
+                                        fe_eval_momentum_neighbor,
+                                        fe_eval_energy,
+                                        fe_eval_energy_neighbor,
+                                        q);
+
+        std::tuple<scalar, vector, scalar> viscous_gradient_flux =
+          viscous_operator->get_gradient_flux(fe_eval_density,
+                                              fe_eval_density_neighbor,
+                                              fe_eval_momentum,
+                                              fe_eval_momentum_neighbor,
+                                              fe_eval_energy,
+                                              fe_eval_energy_neighbor,
+                                              tau_IP,
+                                              q);
+
+        std::tuple<vector, tensor, vector, vector, tensor, vector> viscous_value_flux =
+          viscous_operator->get_value_flux(fe_eval_density,
+                                           fe_eval_density_neighbor,
+                                           fe_eval_momentum,
+                                           fe_eval_momentum_neighbor,
+                                           fe_eval_energy,
+                                           fe_eval_energy_neighbor,
+                                           q);
+
+        fe_eval_density.submit_value(std::get<0>(convective_flux) -
+                                       std::get<0>(viscous_gradient_flux),
+                                     q);
+        // + sign since n⁺ = -n⁻
+        fe_eval_density_neighbor.submit_value(-std::get<0>(convective_flux) +
+                                                std::get<0>(viscous_gradient_flux),
+                                              q);
+
+        fe_eval_momentum.submit_value(std::get<1>(convective_flux) -
+                                        std::get<1>(viscous_gradient_flux),
+                                      q);
+        // + sign since n⁺ = -n⁻
+        fe_eval_momentum_neighbor.submit_value(-std::get<1>(convective_flux) +
+                                                 std::get<1>(viscous_gradient_flux),
+                                               q);
+
+        fe_eval_momentum.submit_gradient(std::get<1>(viscous_value_flux), q);
+        // note that value_flux_momentum is not conservative
+        fe_eval_momentum_neighbor.submit_gradient(std::get<4>(viscous_value_flux), q);
+
+        fe_eval_energy.submit_value(std::get<2>(convective_flux) -
+                                      std::get<2>(viscous_gradient_flux),
+                                    q);
+        // + sign since n⁺ = -n⁻
+        fe_eval_energy_neighbor.submit_value(-std::get<2>(convective_flux) +
+                                               std::get<2>(viscous_gradient_flux),
+                                             q);
+
+        fe_eval_energy.submit_gradient(std::get<2>(viscous_value_flux), q);
+        // note that value_flux_energy is not conservative
+        fe_eval_energy_neighbor.submit_gradient(std::get<5>(viscous_value_flux), q);
+      }
+
+      fe_eval_density.integrate_scatter(true, false, dst);
+      fe_eval_density_neighbor.integrate_scatter(true, false, dst);
+
+      fe_eval_momentum.integrate_scatter(true, true, dst);
+      fe_eval_momentum_neighbor.integrate_scatter(true, true, dst);
+
+      fe_eval_energy.integrate_scatter(true, true, dst);
+      fe_eval_energy_neighbor.integrate_scatter(true, true, dst);
+    }
+  }
+
+  void
+  boundary_face_loop(MatrixFree<dim, Number> const &               matrix_free,
+                     VectorType &                                  dst,
+                     VectorType const &                            src,
+                     std::pair<unsigned int, unsigned int> const & face_range) const
+  {
+    FEFaceEval_scalar fe_eval_density(
+      matrix_free, true, operator_data.dof_index, operator_data.quad_index, 0);
+    FEFaceEval_vectorial fe_eval_momentum(
+      matrix_free, true, operator_data.dof_index, operator_data.quad_index, 1);
+    FEFaceEval_scalar fe_eval_energy(
+      matrix_free, true, operator_data.dof_index, operator_data.quad_index, 1 + dim);
+
+    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    {
+      fe_eval_density.reinit(face);
+      fe_eval_density.gather_evaluate(src, true, true);
+
+      fe_eval_momentum.reinit(face);
+      fe_eval_momentum.gather_evaluate(src, true, true);
+
+      fe_eval_energy.reinit(face);
+      fe_eval_energy.gather_evaluate(src, true, true);
+
+      scalar tau_IP = viscous_operator->get_penalty_parameter(fe_eval_density);
+
+      types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
+
+      BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_velocity = operator_data.bc_u->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_pressure = operator_data.bc_p->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy   = operator_data.bc_E->get_boundary_type(boundary_id);
+
+      EnergyBoundaryVariable boundary_variable =
+        operator_data.bc_E->get_boundary_variable(boundary_id);
+
+      for(unsigned int q = 0; q < fe_eval_density.n_q_points; ++q)
+      {
+        std::tuple<scalar, vector, scalar> convective_flux =
+          convective_operator->get_flux_boundary(fe_eval_density,
+                                                 fe_eval_momentum,
+                                                 fe_eval_energy,
+                                                 boundary_type_density,
+                                                 boundary_type_velocity,
+                                                 boundary_type_pressure,
+                                                 boundary_type_energy,
+                                                 boundary_variable,
+                                                 boundary_id,
+                                                 q);
+
+        std::tuple<scalar, vector, scalar> viscous_gradient_flux =
+          viscous_operator->get_gradient_flux_boundary(fe_eval_density,
+                                                       fe_eval_momentum,
+                                                       fe_eval_energy,
+                                                       tau_IP,
+                                                       boundary_type_density,
+                                                       boundary_type_velocity,
+                                                       boundary_type_energy,
+                                                       boundary_variable,
+                                                       boundary_id,
+                                                       q);
+
+        std::tuple<vector, tensor, vector> viscous_value_flux =
+          viscous_operator->get_value_flux_boundary(fe_eval_density,
+                                                    fe_eval_momentum,
+                                                    fe_eval_energy,
+                                                    boundary_type_density,
+                                                    boundary_type_velocity,
+                                                    boundary_type_energy,
+                                                    boundary_variable,
+                                                    boundary_id,
+                                                    q);
+
+        fe_eval_density.submit_value(std::get<0>(convective_flux) -
+                                       std::get<0>(viscous_gradient_flux),
+                                     q);
+
+        fe_eval_momentum.submit_value(std::get<1>(convective_flux) -
+                                        std::get<1>(viscous_gradient_flux),
+                                      q);
+        fe_eval_momentum.submit_gradient(std::get<1>(viscous_value_flux), q);
+
+        fe_eval_energy.submit_value(std::get<2>(convective_flux) -
+                                      std::get<2>(viscous_gradient_flux),
+                                    q);
+        fe_eval_energy.submit_gradient(std::get<2>(viscous_value_flux), q);
+      }
+
+      fe_eval_density.integrate_scatter(true, false, dst);
+      fe_eval_momentum.integrate_scatter(true, true, dst);
+      fe_eval_energy.integrate_scatter(true, true, dst);
+    }
+  }
+
+  MatrixFree<dim, Number> const * matrix_free;
+
+  CombinedOperatorData<dim> operator_data;
+
+  ConvectiveOperator<dim, degree, n_q_points_1d, Number> const * convective_operator;
+  ViscousOperator<dim, degree, n_q_points_1d, Number> const *    viscous_operator;
+};
+#else
 template<int dim>
 struct CombinedOperatorData
 {
@@ -1443,9 +2532,9 @@ struct CombinedOperatorData
 
   double IP_factor;
 
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_rho;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_u;
-  std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_p;
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim>> bc_rho;
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim>> bc_u;
+  std::shared_ptr<CompNS::BoundaryDescriptor<dim>> bc_p;
   std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> bc_E;
 
   double dynamic_viscosity;
@@ -1455,6 +2544,16 @@ struct CombinedOperatorData
   double specific_gas_constant;
 };
 
+/*
+ *  Combined operator: Evaluate viscous and convective term in one step to improve efficiency.
+ *  The viscous operator already includes most of the terms. Additional terms needed by the
+ *  convective term are highlighted by
+ *
+ *   // CONVECTIVE TERM
+ *   implementations for convective term
+ *   // CONVECTIVE TERM
+ *
+ */
 template<int dim, int fe_degree, int n_q_points_1d, typename value_type>
 class CombinedOperator
 {
@@ -1463,26 +2562,26 @@ public:
 
   typedef CombinedOperator<dim, fe_degree, n_q_points_1d, value_type> This;
 
-  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>       FEEval_scalar;
-  typedef FEFaceEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type>   FEFaceEval_scalar;
-  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, dim, value_type>     FEEval_vectorial;
+  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type> FEEval_scalar;
+  typedef FEFaceEvaluation<dim, fe_degree, n_q_points_1d, 1, value_type> FEFaceEval_scalar;
+  typedef FEEvaluation<dim, fe_degree, n_q_points_1d, dim, value_type> FEEval_vectorial;
   typedef FEFaceEvaluation<dim, fe_degree, n_q_points_1d, dim, value_type> FEFaceEval_vectorial;
 
-  typedef VectorizedArray<value_type>                 scalar;
+  typedef VectorizedArray<value_type> scalar;
   typedef Tensor<1, dim, VectorizedArray<value_type>> vector;
   typedef Tensor<2, dim, VectorizedArray<value_type>> tensor;
-  typedef Point<dim, VectorizedArray<value_type>>     point;
+  typedef Point<dim, VectorizedArray<value_type>> point;
 
   CombinedOperator() : data(nullptr)
   {
   }
 
   void
-  initialize(Mapping<dim> const &                mapping,
+  initialize(Mapping<dim> const & mapping,
              MatrixFree<dim, value_type> const & mf_data,
-             CombinedOperatorData<dim> const &   operator_data_in)
+             CombinedOperatorData<dim> const & operator_data_in)
   {
-    this->data          = &mf_data;
+    this->data = &mf_data;
     this->operator_data = operator_data_in;
 
     IP::calculate_penalty_parameter<dim, fe_degree, value_type>(array_penalty_parameter,
@@ -1511,18 +2610,18 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, value_type> const &           data,
-            VectorType &                                  dst,
-            VectorType const &                            src,
+  cell_loop(MatrixFree<dim, value_type> const & data,
+            VectorType & dst,
+            VectorType const & src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEval_scalar    fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
+    FEEval_scalar fe_eval_density(data, operator_data.dof_index, operator_data.quad_index, 0);
     FEEval_vectorial fe_eval_momentum(data, operator_data.dof_index, operator_data.quad_index, 1);
     FEEval_scalar fe_eval_energy(data, operator_data.dof_index, operator_data.quad_index, 1 + dim);
 
-    value_type const gamma  = operator_data.heat_capacity_ratio;
-    value_type const R      = operator_data.specific_gas_constant;
-    value_type const mu     = operator_data.dynamic_viscosity;
+    value_type const gamma = operator_data.heat_capacity_ratio;
+    value_type const R = operator_data.specific_gas_constant;
+    value_type const mu = operator_data.dynamic_viscosity;
     value_type const lambda = operator_data.thermal_conductivity;
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -1538,14 +2637,14 @@ private:
 
       for(unsigned int q = 0; q < fe_eval_momentum.n_q_points; ++q)
       {
-        scalar rho_inv  = 1.0 / fe_eval_density.get_value(q);
+        scalar rho_inv = 1.0 / fe_eval_density.get_value(q);
         vector grad_rho = fe_eval_density.get_gradient(q);
 
-        vector rho_u      = fe_eval_momentum.get_value(q);
-        vector u          = rho_inv * rho_u;
+        vector rho_u = fe_eval_momentum.get_value(q);
+        vector u = rho_inv * rho_u;
         tensor grad_rho_u = fe_eval_momentum.get_gradient(q);
 
-        scalar rho_E      = fe_eval_energy.get_value(q);
+        scalar rho_E = fe_eval_energy.get_value(q);
         vector grad_rho_E = fe_eval_energy.get_gradient(q);
 
         // CONVECTIVE TERM
@@ -1558,11 +2657,11 @@ private:
 
         // calculate flux momentum
         tensor grad_u = calculate_grad_u(rho_inv, rho_u, grad_rho, grad_rho_u);
-        tensor tau    = calculate_stress_tensor(grad_u, mu);
+        tensor tau = calculate_stress_tensor(grad_u, mu);
 
         // calculate flux energy
-        vector grad_E      = calculate_grad_E(rho_inv, rho_E, grad_rho, grad_rho_E);
-        vector grad_T      = calculate_grad_T(grad_E, u, grad_u, gamma, R);
+        vector grad_E = calculate_grad_E(rho_inv, rho_E, grad_rho, grad_rho_E);
+        vector grad_T = calculate_grad_T(grad_E, u, grad_u, gamma, R);
         vector flux_energy = tau * u + lambda * grad_T;
 
         fe_eval_density.submit_gradient(-rho_u /*CONV*/, q);
@@ -1577,9 +2676,9 @@ private:
   }
 
   void
-  face_loop(MatrixFree<dim, value_type> const &           data,
-            VectorType &                                  dst,
-            VectorType const &                            src,
+  face_loop(MatrixFree<dim, value_type> const & data,
+            VectorType & dst,
+            VectorType const & src,
             std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
@@ -1595,10 +2694,10 @@ private:
     FEFaceEval_scalar fe_eval_energy_neighbor(
       data, false, operator_data.dof_index, operator_data.quad_index, 1 + dim);
 
-    value_type const gamma  = operator_data.heat_capacity_ratio;
-    value_type const R      = operator_data.specific_gas_constant;
-    value_type const mu     = operator_data.dynamic_viscosity;
-    value_type const nu     = mu / operator_data.reference_density;
+    value_type const gamma = operator_data.heat_capacity_ratio;
+    value_type const R = operator_data.specific_gas_constant;
+    value_type const mu = operator_data.dynamic_viscosity;
+    value_type const nu = mu / operator_data.reference_density;
     value_type const lambda = operator_data.thermal_conductivity;
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -1634,39 +2733,39 @@ private:
         vector normal = fe_eval_momentum.get_normal_vector(q);
 
         // density
-        scalar rho_M      = fe_eval_density.get_value(q);
-        scalar rho_inv_M  = 1.0 / rho_M;
+        scalar rho_M = fe_eval_density.get_value(q);
+        scalar rho_inv_M = 1.0 / rho_M;
         vector grad_rho_M = fe_eval_density.get_gradient(q);
 
-        scalar rho_P      = fe_eval_density_neighbor.get_value(q);
-        scalar rho_inv_P  = 1.0 / rho_P;
+        scalar rho_P = fe_eval_density_neighbor.get_value(q);
+        scalar rho_inv_P = 1.0 / rho_P;
         vector grad_rho_P = fe_eval_density_neighbor.get_gradient(q);
 
-        scalar jump_density          = rho_M - rho_P;
+        scalar jump_density = rho_M - rho_P;
         scalar gradient_flux_density = -tau_IP * jump_density;
 
         // velocity
-        vector rho_u_M      = fe_eval_momentum.get_value(q);
-        vector u_M          = rho_inv_M * rho_u_M;
+        vector rho_u_M = fe_eval_momentum.get_value(q);
+        vector u_M = rho_inv_M * rho_u_M;
         tensor grad_rho_u_M = fe_eval_momentum.get_gradient(q);
 
-        vector rho_u_P      = fe_eval_momentum_neighbor.get_value(q);
-        vector u_P          = rho_inv_P * rho_u_P;
+        vector rho_u_P = fe_eval_momentum_neighbor.get_value(q);
+        vector u_P = rho_inv_P * rho_u_P;
         tensor grad_rho_u_P = fe_eval_momentum_neighbor.get_gradient(q);
 
         tensor grad_u_M = calculate_grad_u(rho_inv_M, rho_u_M, grad_rho_M, grad_rho_u_M);
-        tensor tau_M    = calculate_stress_tensor(grad_u_M, mu);
+        tensor tau_M = calculate_stress_tensor(grad_u_M, mu);
 
         tensor grad_u_P = calculate_grad_u(rho_inv_P, rho_u_P, grad_rho_P, grad_rho_u_P);
-        tensor tau_P    = calculate_stress_tensor(grad_u_P, mu);
+        tensor tau_P = calculate_stress_tensor(grad_u_P, mu);
 
-        vector jump_momentum          = rho_u_M - rho_u_P;
+        vector jump_momentum = rho_u_M - rho_u_P;
         vector gradient_flux_momentum = 0.5 * (tau_M + tau_P) * normal - tau_IP * jump_momentum;
 
         // energy
-        scalar rho_E_M      = fe_eval_energy.get_value(q);
+        scalar rho_E_M = fe_eval_energy.get_value(q);
         vector grad_rho_E_M = fe_eval_energy.get_gradient(q);
-        scalar rho_E_P      = fe_eval_energy_neighbor.get_value(q);
+        scalar rho_E_P = fe_eval_energy_neighbor.get_value(q);
         vector grad_rho_E_P = fe_eval_energy_neighbor.get_gradient(q);
 
         vector grad_E_M = calculate_grad_E(rho_inv_M, rho_E_M, grad_rho_M, grad_rho_E_M);
@@ -1678,11 +2777,11 @@ private:
         vector flux_energy_average =
           0.5 * (tau_M * u_M + tau_P * u_P + lambda * (grad_T_M + grad_T_P));
 
-        scalar jump_energy          = rho_E_M - rho_E_P;
+        scalar jump_energy = rho_E_M - rho_E_P;
         scalar gradient_flux_energy = flux_energy_average * normal - tau_IP * jump_energy;
 
         // value flux momentum
-        vector jump_rho   = jump_density * normal;
+        vector jump_rho = jump_density * normal;
         vector jump_rho_E = jump_energy * normal;
         tensor jump_rho_u = outer_product(jump_momentum, normal);
 
@@ -1691,7 +2790,7 @@ private:
                                                        jump_rho /*instead of grad_rho*/,
                                                        jump_rho_u /*instead of grad_rho_u*/);
 
-        tensor tau_using_jumps_M     = calculate_stress_tensor(grad_u_using_jumps_M, mu);
+        tensor tau_using_jumps_M = calculate_stress_tensor(grad_u_using_jumps_M, mu);
         tensor value_flux_momentum_M = -0.5 * tau_using_jumps_M;
 
         tensor grad_u_using_jumps_P = calculate_grad_u(rho_inv_P,
@@ -1699,7 +2798,7 @@ private:
                                                        jump_rho /*instead of grad_rho*/,
                                                        jump_rho_u /*instead of grad_rho_u*/);
 
-        tensor tau_using_jumps_P     = calculate_stress_tensor(grad_u_using_jumps_P, mu);
+        tensor tau_using_jumps_P = calculate_stress_tensor(grad_u_using_jumps_P, mu);
         tensor value_flux_momentum_P = -0.5 * tau_using_jumps_P;
 
         // value flux energy
@@ -1786,9 +2885,9 @@ private:
   }
 
   void
-  boundary_face_loop(MatrixFree<dim, value_type> const &           data,
-                     VectorType &                                  dst,
-                     VectorType const &                            src,
+  boundary_face_loop(MatrixFree<dim, value_type> const & data,
+                     VectorType & dst,
+                     VectorType const & src,
                      std::pair<unsigned int, unsigned int> const & face_range) const
   {
     FEFaceEval_scalar fe_eval_density(
@@ -1798,20 +2897,20 @@ private:
     FEFaceEval_scalar fe_eval_energy(
       data, true, operator_data.dof_index, operator_data.quad_index, 1 + dim);
 
-    value_type const gamma  = operator_data.heat_capacity_ratio;
-    value_type const R      = operator_data.specific_gas_constant;
-    value_type const mu     = operator_data.dynamic_viscosity;
-    value_type const nu     = mu / operator_data.reference_density;
+    value_type const gamma = operator_data.heat_capacity_ratio;
+    value_type const R = operator_data.specific_gas_constant;
+    value_type const mu = operator_data.dynamic_viscosity;
+    value_type const nu = mu / operator_data.reference_density;
     value_type const lambda = operator_data.thermal_conductivity;
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       types::boundary_id boundary_id = data.get_boundary_id(face);
 
-      BoundaryType boundary_type_density  = operator_data.bc_rho->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_density = operator_data.bc_rho->get_boundary_type(boundary_id);
       BoundaryType boundary_type_velocity = operator_data.bc_u->get_boundary_type(boundary_id);
       BoundaryType boundary_type_pressure = operator_data.bc_p->get_boundary_type(boundary_id);
-      BoundaryType boundary_type_energy   = operator_data.bc_E->get_boundary_type(boundary_id);
+      BoundaryType boundary_type_energy = operator_data.bc_E->get_boundary_type(boundary_id);
 
       EnergyBoundaryVariable boundary_variable =
         operator_data.bc_E->get_boundary_variable(boundary_id);
@@ -1834,8 +2933,8 @@ private:
         vector normal = fe_eval_momentum.get_normal_vector(q);
 
         // density
-        scalar rho_M      = fe_eval_density.get_value(q);
-        scalar rho_inv_M  = 1.0 / rho_M;
+        scalar rho_M = fe_eval_density.get_value(q);
+        scalar rho_inv_M = 1.0 / rho_M;
         vector grad_rho_M = fe_eval_density.get_gradient(q);
 
         scalar rho_P =
@@ -1846,12 +2945,12 @@ private:
                                                     fe_eval_density.quadrature_point(q),
                                                     eval_time);
 
-        scalar jump_density          = rho_M - rho_P;
+        scalar jump_density = rho_M - rho_P;
         scalar gradient_flux_density = -tau_IP * jump_density;
 
         // velocity
-        vector rho_u_M      = fe_eval_momentum.get_value(q);
-        vector u_M          = rho_inv_M * rho_u_M;
+        vector rho_u_M = fe_eval_momentum.get_value(q);
+        vector u_M = rho_inv_M * rho_u_M;
         tensor grad_rho_u_M = fe_eval_momentum.get_gradient(q);
 
         vector u_P = calculate_exterior_value<dim, value_type>(u_M,
@@ -1864,7 +2963,7 @@ private:
         vector rho_u_P = rho_P * u_P;
 
         tensor grad_u_M = calculate_grad_u(rho_inv_M, rho_u_M, grad_rho_M, grad_rho_u_M);
-        tensor tau_M    = calculate_stress_tensor(grad_u_M, mu);
+        tensor tau_M = calculate_stress_tensor(grad_u_M, mu);
 
         vector tau_P_normal = calculate_exterior_normal_grad(tau_M * normal,
                                                              boundary_type_velocity,
@@ -1878,8 +2977,8 @@ private:
           0.5 * (tau_M * normal + tau_P_normal) - tau_IP * jump_momentum;
 
         // energy
-        scalar rho_E_M      = fe_eval_energy.get_value(q);
-        scalar E_M          = rho_inv_M * rho_E_M;
+        scalar rho_E_M = fe_eval_energy.get_value(q);
+        scalar E_M = rho_inv_M * rho_E_M;
         vector grad_rho_E_M = fe_eval_energy.get_gradient(q);
 
         scalar E_P = make_vectorized_array<value_type>(0.0);
@@ -1921,13 +3020,13 @@ private:
                                                           fe_eval_energy.quadrature_point(q),
                                                           eval_time);
 
-        scalar jump_energy          = rho_E_M - rho_E_P;
+        scalar jump_energy = rho_E_M - rho_E_P;
         scalar gradient_flux_energy = 0.5 * (u_M * tau_M * normal + u_P * tau_P_normal +
                                              lambda * (grad_T_M * normal + grad_T_P_normal)) -
                                       tau_IP * jump_energy;
 
         // value flux momentum
-        vector jump_rho   = jump_density * normal;
+        vector jump_rho = jump_density * normal;
         vector jump_rho_E = jump_energy * normal;
         tensor jump_rho_u = outer_product(jump_momentum, normal);
 
@@ -1936,7 +3035,7 @@ private:
                                                        jump_rho /*instead of grad_rho*/,
                                                        jump_rho_u /*instead of grad_rho_u*/);
 
-        tensor tau_using_jumps_M     = calculate_stress_tensor(grad_u_using_jumps_M, mu);
+        tensor tau_using_jumps_M = calculate_stress_tensor(grad_u_using_jumps_M, mu);
         tensor value_flux_momentum_M = -0.5 * tau_using_jumps_M;
 
         // value flux energy
@@ -2007,6 +3106,7 @@ private:
 
   mutable value_type eval_time;
 };
+#endif
 
 } // namespace CompNS
 
