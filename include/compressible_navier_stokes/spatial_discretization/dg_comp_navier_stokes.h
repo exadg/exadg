@@ -8,8 +8,6 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COMP_NAVIER_STOKES_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COMP_NAVIER_STOKES_H_
 
-#define USE_MODULAR_IMPLEMENTATION
-
 // deal.II
 #include <deal.II/base/timer.h>
 #include <deal.II/fe/fe_dgq.h>
@@ -85,7 +83,7 @@ public:
   static const unsigned int quad_index_l2_projections = quad_index_standard;
   static const unsigned int n_q_points_l2_projections = degree + 1;
 
-  // alternative: use more accurate overintegration strategy
+  // alternative: use more accurate over-integration strategy
   //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
   //  static const unsigned int n_q_points_l2_projections = n_q_points_conv;
 
@@ -538,7 +536,6 @@ private:
                   ExcMessage("Use the same number of quadrature points for convective term "
                              "and viscous term in case of combined operator."));
 
-#ifdef USE_MODULAR_IMPLEMENTATION
       combined_operator_data.dof_index  = dof_index_all;
       combined_operator_data.quad_index = quad_index_overintegration_vis;
       combined_operator_data.bc_rho     = boundary_descriptor_density;
@@ -550,22 +547,6 @@ private:
                                    combined_operator_data,
                                    convective_operator,
                                    viscous_operator);
-#else
-      combined_operator_data.dof_index             = dof_index_all;
-      combined_operator_data.quad_index            = quad_index_overintegration_vis;
-      combined_operator_data.IP_factor             = param.IP_factor;
-      combined_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
-      combined_operator_data.reference_density     = param.reference_density;
-      combined_operator_data.thermal_conductivity  = param.thermal_conductivity;
-      combined_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
-      combined_operator_data.specific_gas_constant = param.specific_gas_constant;
-      combined_operator_data.bc_rho                = boundary_descriptor_density;
-      combined_operator_data.bc_u                  = boundary_descriptor_velocity;
-      combined_operator_data.bc_p                  = boundary_descriptor_pressure;
-      combined_operator_data.bc_E                  = boundary_descriptor_energy;
-
-      combined_operator.initialize(mapping, data, combined_operator_data);
-#endif
     }
 
     // calculators
