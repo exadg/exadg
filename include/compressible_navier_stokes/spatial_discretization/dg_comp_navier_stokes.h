@@ -79,12 +79,13 @@ public:
     static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::overintegration_vis);
 
-  // TODO: which quadrature rule should we use for p, u, T calculation (L2 projections used to
-  // calculate derived quantities)
-  static const unsigned int quad_index_l2_projections =
-    quad_index_standard; // quad_index_overintegration_conv;
-  static const unsigned int n_q_points_l2_projections =
-    (quad_index_l2_projections == quad_index_standard) ? degree + 1 : n_q_points_conv;
+  // specify quadrature rule for calculation of derived quantities (p, u, T)
+  static const unsigned int quad_index_l2_projections = quad_index_standard;
+  static const unsigned int n_q_points_l2_projections = degree + 1;
+
+  // alternative: use more accurate over-integration strategy
+  //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
+  //  static const unsigned int n_q_points_l2_projections = n_q_points_conv;
 
   DGOperator(parallel::Triangulation<dim> const & triangulation,
              InputParameters<dim> const &         param_in,
@@ -158,9 +159,9 @@ public:
 
   // set initial conditions
   void
-  prescribe_initial_conditions(VectorType & src, double const evaluation_time) const
+  prescribe_initial_conditions(VectorType & src, double const time) const
   {
-    this->field_functions->initial_solution->set_time(evaluation_time);
+    this->field_functions->initial_solution->set_time(time);
 
     VectorTools::interpolate(mapping, dof_handler, *(this->field_functions->initial_solution), src);
   }
@@ -168,47 +169,25 @@ public:
   /*
    *  This function is used in case of explicit time integration:
    *  This function evaluates the right-hand side operator, the
-   *  convective and diffusive term (subsequently multiplied by -1.0 in order
+   *  convective and viscous terms (subsequently multiplied by -1.0 in order
    *  to shift these terms to the right-hand side of the equations)
    *  and finally applies the inverse mass matrix operator.
    */
   void
-  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const
   {
     Timer timer;
     timer.restart();
 
-    // set dst to zero
-    dst = 0.0;
+    evaluate_convective_and_viscous(dst, src, time);
 
-    if(param.use_combined_operator == true)
-    {
-      // viscous and convective terms
-      combined_operator.evaluate_add(dst, src, evaluation_time);
-    }
-    else // apply operators separately
-    {
-      // viscous operator
-      if(param.equation_type == EquationType::NavierStokes)
-      {
-        viscous_operator.evaluate_add(dst, src, evaluation_time);
-      }
-
-      // convective operator
-      if(param.equation_type == EquationType::Euler ||
-         param.equation_type == EquationType::NavierStokes)
-      {
-        convective_operator.evaluate_add(dst, src, evaluation_time);
-      }
-    }
-
-    // shift diffusive and convective term to the rhs of the equation
+    // shift viscous and convective terms to the right-hand side of the equation
     dst *= -1.0;
 
     // body force term
     if(param.right_hand_side == true)
     {
-      body_force_operator.evaluate_add(dst, src, evaluation_time);
+      body_force_operator.evaluate_add(dst, src, time);
     }
 
     // apply inverse mass matrix
@@ -218,58 +197,48 @@ public:
   }
 
   void
-  evaluate_convective(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  evaluate_convective(VectorType & dst, VectorType const & src, Number const time) const
   {
-    // set dst to zero
-    dst = 0.0;
-
-    // convective operator
     if(param.equation_type == EquationType::Euler ||
        param.equation_type == EquationType::NavierStokes)
     {
-      convective_operator.evaluate_add(dst, src, evaluation_time);
+      convective_operator.evaluate(dst, src, time);
     }
   }
 
   void
-  evaluate_viscous(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  evaluate_viscous(VectorType & dst, VectorType const & src, Number const time) const
   {
-    // set dst to zero
-    dst = 0.0;
-
-    // viscous operator
     if(param.equation_type == EquationType::NavierStokes)
     {
-      viscous_operator.evaluate_add(dst, src, evaluation_time);
+      viscous_operator.evaluate(dst, src, time);
     }
   }
 
   void
-  evaluate_convective_and_viscous(VectorType &       dst,
-                                  VectorType const & src,
-                                  Number const       evaluation_time) const
+  evaluate_convective_and_viscous(VectorType & dst, VectorType const & src, Number const time) const
   {
-    // set dst to zero
-    dst = 0.0;
-
     if(param.use_combined_operator == true)
     {
       // viscous and convective terms
-      combined_operator.evaluate_add(dst, src, evaluation_time);
+      combined_operator.evaluate(dst, src, time);
     }
     else // apply operators separately
     {
+      // set dst to zero
+      dst = 0.0;
+
       // viscous operator
       if(param.equation_type == EquationType::NavierStokes)
       {
-        viscous_operator.evaluate_add(dst, src, evaluation_time);
+        viscous_operator.evaluate_add(dst, src, time);
       }
 
       // convective operator
       if(param.equation_type == EquationType::Euler ||
          param.equation_type == EquationType::NavierStokes)
       {
-        convective_operator.evaluate_add(dst, src, evaluation_time);
+        convective_operator.evaluate_add(dst, src, time);
       }
     }
   }
@@ -535,19 +504,17 @@ private:
                   ExcMessage("Use the same number of quadrature points for convective term "
                              "and viscous term in case of combined operator."));
 
-      combined_operator_data.dof_index             = dof_index_all;
-      combined_operator_data.quad_index            = quad_index_overintegration_vis;
-      combined_operator_data.IP_factor             = param.IP_factor;
-      combined_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
-      combined_operator_data.reference_density     = param.reference_density;
-      combined_operator_data.thermal_conductivity  = param.thermal_conductivity;
-      combined_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
-      combined_operator_data.specific_gas_constant = param.specific_gas_constant;
-      combined_operator_data.bc_rho                = boundary_descriptor_density;
-      combined_operator_data.bc_u                  = boundary_descriptor_velocity;
-      combined_operator_data.bc_p                  = boundary_descriptor_pressure;
-      combined_operator_data.bc_E                  = boundary_descriptor_energy;
-      combined_operator.initialize(mapping, data, combined_operator_data);
+      combined_operator_data.dof_index  = dof_index_all;
+      combined_operator_data.quad_index = quad_index_overintegration_vis;
+      combined_operator_data.bc_rho     = boundary_descriptor_density;
+      combined_operator_data.bc_u       = boundary_descriptor_velocity;
+      combined_operator_data.bc_p       = boundary_descriptor_pressure;
+      combined_operator_data.bc_E       = boundary_descriptor_energy;
+
+      combined_operator.initialize(data,
+                                   combined_operator_data,
+                                   convective_operator,
+                                   viscous_operator);
     }
 
     // calculators
@@ -588,12 +555,10 @@ private:
   // mapping
   MappingQGeneric<dim> mapping;
 
-  // DoFHandler for all (dim+2) components: (rho, rho u, rho E)
-  DoFHandler<dim> dof_handler;
-  // DoFHandler for vectorial quantities such as the velocity
-  DoFHandler<dim> dof_handler_vector;
-  // DoFHandler for scalar quantities such as pressure, temperature
-  DoFHandler<dim> dof_handler_scalar;
+  // DoFHandler
+  DoFHandler<dim> dof_handler;        // all (dim+2) components: (rho, rho u, rho E)
+  DoFHandler<dim> dof_handler_vector; // e.g. velocity
+  DoFHandler<dim> dof_handler_scalar; // scalar quantity, e.g, pressure
 
   MatrixFree<dim, Number> data;
 
