@@ -159,9 +159,9 @@ public:
 
   // set initial conditions
   void
-  prescribe_initial_conditions(VectorType & src, double const evaluation_time) const
+  prescribe_initial_conditions(VectorType & src, double const time) const
   {
-    this->field_functions->initial_solution->set_time(evaluation_time);
+    this->field_functions->initial_solution->set_time(time);
 
     VectorTools::interpolate(mapping, dof_handler, *(this->field_functions->initial_solution), src);
   }
@@ -169,47 +169,25 @@ public:
   /*
    *  This function is used in case of explicit time integration:
    *  This function evaluates the right-hand side operator, the
-   *  convective and diffusive term (subsequently multiplied by -1.0 in order
+   *  convective and viscous terms (subsequently multiplied by -1.0 in order
    *  to shift these terms to the right-hand side of the equations)
    *  and finally applies the inverse mass matrix operator.
    */
   void
-  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, Number const time) const
   {
     Timer timer;
     timer.restart();
 
-    // set dst to zero
-    dst = 0.0;
+    evaluate_convective_and_viscous(dst, src, time);
 
-    if(param.use_combined_operator == true)
-    {
-      // viscous and convective terms
-      combined_operator.evaluate_add(dst, src, evaluation_time);
-    }
-    else // apply operators separately
-    {
-      // viscous operator
-      if(param.equation_type == EquationType::NavierStokes)
-      {
-        viscous_operator.evaluate_add(dst, src, evaluation_time);
-      }
-
-      // convective operator
-      if(param.equation_type == EquationType::Euler ||
-         param.equation_type == EquationType::NavierStokes)
-      {
-        convective_operator.evaluate_add(dst, src, evaluation_time);
-      }
-    }
-
-    // shift diffusive and convective term to the rhs of the equation
+    // shift viscous and convective terms to the right-hand side of the equation
     dst *= -1.0;
 
     // body force term
     if(param.right_hand_side == true)
     {
-      body_force_operator.evaluate_add(dst, src, evaluation_time);
+      body_force_operator.evaluate_add(dst, src, time);
     }
 
     // apply inverse mass matrix
@@ -219,58 +197,48 @@ public:
   }
 
   void
-  evaluate_convective(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  evaluate_convective(VectorType & dst, VectorType const & src, Number const time) const
   {
-    // set dst to zero
-    dst = 0.0;
-
-    // convective operator
     if(param.equation_type == EquationType::Euler ||
        param.equation_type == EquationType::NavierStokes)
     {
-      convective_operator.evaluate_add(dst, src, evaluation_time);
+      convective_operator.evaluate(dst, src, time);
     }
   }
 
   void
-  evaluate_viscous(VectorType & dst, VectorType const & src, Number const evaluation_time) const
+  evaluate_viscous(VectorType & dst, VectorType const & src, Number const time) const
   {
-    // set dst to zero
-    dst = 0.0;
-
-    // viscous operator
     if(param.equation_type == EquationType::NavierStokes)
     {
-      viscous_operator.evaluate_add(dst, src, evaluation_time);
+      viscous_operator.evaluate(dst, src, time);
     }
   }
 
   void
-  evaluate_convective_and_viscous(VectorType &       dst,
-                                  VectorType const & src,
-                                  Number const       evaluation_time) const
+  evaluate_convective_and_viscous(VectorType & dst, VectorType const & src, Number const time) const
   {
-    // set dst to zero
-    dst = 0.0;
-
     if(param.use_combined_operator == true)
     {
       // viscous and convective terms
-      combined_operator.evaluate_add(dst, src, evaluation_time);
+      combined_operator.evaluate(dst, src, time);
     }
     else // apply operators separately
     {
+      // set dst to zero
+      dst = 0.0;
+
       // viscous operator
       if(param.equation_type == EquationType::NavierStokes)
       {
-        viscous_operator.evaluate_add(dst, src, evaluation_time);
+        viscous_operator.evaluate_add(dst, src, time);
       }
 
       // convective operator
       if(param.equation_type == EquationType::Euler ||
          param.equation_type == EquationType::NavierStokes)
       {
-        convective_operator.evaluate_add(dst, src, evaluation_time);
+        convective_operator.evaluate_add(dst, src, time);
       }
     }
   }
