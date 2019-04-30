@@ -35,7 +35,7 @@ ExtrapolationConstants::get_beta(unsigned int const i) const
 }
 
 unsigned int
-ExtrapolationConstants::get_order()
+ExtrapolationConstants::get_order() const
 {
   return order;
 }

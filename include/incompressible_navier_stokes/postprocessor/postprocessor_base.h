@@ -82,7 +82,6 @@ public:
    */
   virtual void
   do_postprocessing(VectorType const & velocity,
-                    VectorType const & intermediate_velocity,
                     VectorType const & pressure,
                     double const       time             = 0.0,
                     int const          time_step_number = -1) = 0;

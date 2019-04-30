@@ -70,7 +70,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::initialize_mo
   momentum_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem
-  if(this->param.equation_type == EquationType::NavierStokes &&
+  if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
   {
     momentum_operator_data.convective_problem = true;
@@ -209,8 +209,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::initialize_mo
 
 
   // Navier-Stokes equations with an implicit treatment of the convective term
-  if(this->param.equation_type == EquationType::NavierStokes &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+  if(this->param.nonlinear_problem_has_to_be_solved())
   {
     // initialize temp vector
     this->initialize_vector_velocity(temp_vector);
@@ -365,10 +364,11 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::
     dst_u *= -1.0;
   }
 
-  if(this->param.equation_type == EquationType::NavierStokes)
+  if(this->param.convective_problem())
     this->convective_operator.evaluate_add(dst_u, src_u, evaluation_time);
 
-  this->viscous_operator.evaluate_add(dst_u, src_u, evaluation_time);
+  if(this->param.viscous_problem())
+    this->viscous_operator.evaluate_add(dst_u, src_u, evaluation_time);
 
   // gradient operator scaled by scaling_factor_continuity
   this->gradient_operator.evaluate_add(dst_u, src_p, evaluation_time);
@@ -440,11 +440,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::do_postproces
   bool const standard = true;
   if(standard)
   {
-    this->postprocessor->do_postprocessing(velocity,
-                                           velocity, // intermediate_velocity
-                                           pressure,
-                                           time,
-                                           time_step_number);
+    this->postprocessor->do_postprocessing(velocity, pressure, time, time_step_number);
   }
   else // consider velocity and pressure errors instead
   {
@@ -460,7 +456,6 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::do_postproces
     pressure_error.add(-1.0, pressure);
 
     this->postprocessor->do_postprocessing(velocity_error, // error!
-                                           velocity,       // intermediate_velocity
                                            pressure_error, // error!
                                            time,
                                            time_step_number);
@@ -473,9 +468,7 @@ DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>::do_postproces
   VectorType const & velocity,
   VectorType const & pressure) const
 {
-  this->postprocessor->do_postprocessing(velocity,
-                                         velocity, // intermediate_velocity
-                                         pressure);
+  this->postprocessor->do_postprocessing(velocity, pressure);
 }
 
 } // namespace IncNS

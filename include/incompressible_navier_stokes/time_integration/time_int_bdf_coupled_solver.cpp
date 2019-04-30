@@ -42,7 +42,7 @@ TimeIntBDFCoupled<dim, Number>::allocate_vectors()
   pde_operator->initialize_block_vector_velocity_pressure(solution_np);
 
   // convective term
-  if(this->param.equation_type == EquationType::NavierStokes &&
+  if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
@@ -53,9 +53,7 @@ TimeIntBDFCoupled<dim, Number>::allocate_vectors()
   this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
 
   // rhs_vector
-  if(this->param.equation_type == EquationType::Stokes ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  if(this->param.linear_problem_has_to_be_solved())
   {
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
   }
@@ -97,7 +95,7 @@ TimeIntBDFCoupled<dim, Number>::setup_derived()
     calculate_characteristic_element_length(characteristic_element_length, degree_u);
 
   // convective term treated explicitly (additive decomposition)
-  if(this->param.equation_type == EquationType::NavierStokes &&
+  if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
      this->param.start_with_low_order == false)
   {
@@ -196,7 +194,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
   // calculate auxiliary variable p^{*} = 1/scaling_factor * p
   solution_np.block(1) *= 1.0 / scaling_factor_continuity;
 
-  // Update divegence and continuity penalty operator in case
+  // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations
   // instead of applying these terms in a postprocessing step.
   if(this->param.add_penalty_terms_to_monolithic_system == true)
@@ -204,7 +202,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {
       // extrapolate velocity to time t_n+1 and use this velocity field to
-      // caculate the penalty parameter for the divergence and continuity penalty term
+      // calculate the penalty parameter for the divergence and continuity penalty term
       VectorType velocity_extrapolated(solution[0].block(0));
       velocity_extrapolated = 0;
       for(unsigned int i = 0; i < solution.size(); ++i)
@@ -221,10 +219,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     }
   }
 
-  // if the problem to be solved is linear
-  if(this->param.equation_type == EquationType::Stokes ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  if(this->param.linear_problem_has_to_be_solved())
   {
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
     // step
@@ -233,7 +228,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     // Add the convective term to the right-hand side of the equations
     // if the convective term is treated explicitly (additive decomposition):
     // evaluate convective term and add extrapolation of convective term to the rhs (-> minus sign!)
-    if(this->param.equation_type == EquationType::NavierStokes &&
+    if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
       this->operator_base->evaluate_convective_term(vec_convective_term[0],
@@ -246,7 +241,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
 
     // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
     // and operator-integration-factor (OIF) splitting
-    if(this->param.equation_type == EquationType::NavierStokes &&
+    if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
     {
       this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
@@ -284,7 +279,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     if(this->print_solver_info())
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-      pcout << "Solve linear Stokes problem:" << std::endl
+      pcout << "Solve linear problem:" << std::endl
             << "  Iterations: " << std::setw(6) << std::right << linear_iterations
             << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
@@ -324,7 +319,7 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
     {
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
-      pcout << "Solve nonlinear Navier-Stokes problem:" << std::endl
+      pcout << "Solve nonlinear problem:" << std::endl
             << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
             << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
             << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
@@ -391,7 +386,7 @@ TimeIntBDFCoupled<dim, Number>::projection_step()
   this->operator_base->apply_mass_matrix(rhs, solution_np.block(0));
 
   // extrapolate velocity to time t_n+1 and use this velocity field to
-  // caculate the penalty parameter for the divergence and continuity penalty term
+  // calculate the penalty parameter for the divergence and continuity penalty term
   VectorType velocity_extrapolated(solution[0].block(0));
   velocity_extrapolated = 0;
   for(unsigned int i = 0; i < solution.size(); ++i)
@@ -505,7 +500,7 @@ TimeIntBDFCoupled<dim, Number>::prepare_vectors_for_next_timestep()
   push_back(solution);
   solution[0].swap(solution_np);
 
-  if(this->param.equation_type == EquationType::NavierStokes &&
+  if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     push_back(vec_convective_term);
@@ -526,6 +521,9 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
   if(this->param.convergence_criterion_steady_problem ==
      ConvergenceCriterionSteadyProblem::SolutionIncrement)
   {
+    VectorType velocity_tmp;
+    VectorType pressure_tmp;
+
     while(!converged && this->time < (this->end_time - this->eps) &&
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
@@ -636,9 +634,7 @@ TimeIntBDFCoupled<dim, Number>::get_iterations(std::vector<std::string> & name,
 {
   unsigned int N_time_steps = this->get_time_step_number() - 1;
 
-  if(this->param.equation_type == EquationType::Stokes ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  if(this->param.linear_problem_has_to_be_solved())
   {
     name.resize(2);
     std::vector<std::string> names = {"Coupled system", "Projection"};

@@ -87,7 +87,7 @@ private:
   momentum_step();
 
   void
-  rhs_momentum();
+  rhs_momentum(VectorType & rhs);
 
   void
   pressure_step();
@@ -96,7 +96,7 @@ private:
   projection_step();
 
   void
-  rhs_projection();
+  rhs_projection(VectorType & rhs) const;
 
   void
   pressure_update();
@@ -105,7 +105,7 @@ private:
   calculate_chi(double & chi) const;
 
   void
-  rhs_pressure();
+  rhs_pressure(VectorType & rhs) const;
 
   void
   prepare_vectors_for_next_timestep();
@@ -143,17 +143,6 @@ private:
 
   std::vector<VectorType> vec_convective_term;
 
-  // rhs vector momentum step
-  VectorType rhs_vec_momentum;
-
-  // rhs vector pressur step
-  VectorType rhs_vec_pressure;
-  VectorType rhs_vec_pressure_temp;
-
-  // rhs vector projection step
-  VectorType rhs_vec_projection;
-  VectorType rhs_vec_projection_temp;
-
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;
 
@@ -166,10 +155,6 @@ private:
   std::vector<unsigned int> iterations;
 
   unsigned int N_iter_nonlinear_momentum;
-
-  // temporary vectors needed for pseudo-time-stepping algorithm
-  VectorType velocity_tmp;
-  VectorType pressure_tmp;
 };
 
 } // namespace IncNS

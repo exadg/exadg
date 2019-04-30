@@ -131,7 +131,6 @@ public:
 
   void
   evaluate(VectorType const & velocity,
-           VectorType const & intermediate_velocity,
            VectorType const & pressure,
            double const &     time,
            int const &        time_step_number)
@@ -162,7 +161,7 @@ public:
                 << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4)
                 << time << std::endl;
 
-          calculate_additional_fields(velocity, intermediate_velocity, time, time_step_number);
+          calculate_additional_fields(velocity, time, time_step_number);
 
           write_output<dim>(output_data,
                             *dof_handler_velocity,
@@ -182,7 +181,7 @@ public:
               << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"
               << std::endl;
 
-        calculate_additional_fields(velocity, intermediate_velocity, time, time_step_number);
+        calculate_additional_fields(velocity, time, time_step_number);
 
         write_output<dim>(output_data,
                           *dof_handler_velocity,
@@ -335,7 +334,6 @@ private:
 
   void
   calculate_additional_fields(VectorType const & velocity,
-                              VectorType const & intermediate_velocity,
                               double const &     time,
                               int const &        time_step_number)
   {
@@ -349,7 +347,7 @@ private:
       }
       if(output_data.write_divergence == true)
       {
-        navier_stokes_operator->compute_divergence(divergence, intermediate_velocity);
+        navier_stokes_operator->compute_divergence(divergence, velocity);
       }
       if(output_data.write_velocity_magnitude == true)
       {

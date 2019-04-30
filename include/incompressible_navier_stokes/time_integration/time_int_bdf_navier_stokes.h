@@ -62,9 +62,8 @@ protected:
   print_solver_info() const;
 
   /*
-   * This function implements the OIF sub-stepping algorithm. Has to be implemented here in order
-   * to complement by functionalities related to incompressible flows only (nonlinear convective
-   * term).
+   * This function implements the OIF sub-stepping algorithm. Has to be implemented here
+   * since functionality is related to incompressible flows only (nonlinear convective term).
    */
   void
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);

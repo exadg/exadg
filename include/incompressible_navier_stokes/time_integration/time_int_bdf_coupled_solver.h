@@ -125,10 +125,6 @@ private:
   // scaling factor continuity equation
   double scaling_factor_continuity;
   double characteristic_element_length;
-
-  // temporary vectors needed for pseudo-timestepping algorithm
-  VectorType velocity_tmp;
-  VectorType pressure_tmp;
 };
 
 } // namespace IncNS

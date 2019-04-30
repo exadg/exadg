@@ -91,7 +91,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_momentum_oper
   momentum_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
 
   // convective problem
-  if(nonlinear_problem_has_to_be_solved())
+  if(this->param.nonlinear_problem_has_to_be_solved())
     momentum_operator_data.convective_problem = true;
   else
     momentum_operator_data.convective_problem = false;
@@ -181,7 +181,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_couple
   }
 
   // setup Newton solver
-  if(nonlinear_problem_has_to_be_solved())
+  if(this->param.nonlinear_problem_has_to_be_solved())
   {
     newton_solver.reset(
       new NewtonSolver<BlockVectorType, THIS, THIS, IterativeSolverBase<BlockVectorType>>(
@@ -231,10 +231,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 bool
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::nonlinear_problem_has_to_be_solved() const
 {
-  return this->param.equation_type == EquationType::NavierStokes &&
-         (this->param.solver_type == SolverType::Steady ||
-          (this->param.solver_type == SolverType::Unsteady &&
-           this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit));
+  return this->param.nonlinear_problem_has_to_be_solved();
 }
 
 template<int dim, int degree_u, int degree_p, typename Number>
@@ -272,7 +269,7 @@ template<int dim, int degree_u, int degree_p, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
 DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::get_velocity_linearization() const
 {
-  AssertThrow(nonlinear_problem_has_to_be_solved() == true,
+  AssertThrow(this->param.nonlinear_problem_has_to_be_solved() == true,
               ExcMessage(
                 "Attempt to access velocity_linearization which has not been initialized."));
 
@@ -447,8 +444,12 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_resid
     this->mass_matrix_operator.apply_add(dst.block(0), temp_vector);
   }
 
+  AssertThrow(this->param.convective_problem() == true, ExcMessage("Invalid parameters."));
+
   this->convective_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
-  this->viscous_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
+
+  if(this->param.viscous_problem())
+    this->viscous_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
 
   // Divergence and continuity penalty operators
   if(this->param.add_penalty_terms_to_monolithic_system == true)
@@ -494,10 +495,11 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_resid
     dst.block(0) *= -1.0;
   }
 
-  if(this->param.equation_type == EquationType::NavierStokes)
+  if(this->param.convective_problem())
     this->convective_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
 
-  this->viscous_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
+  if(this->param.viscous_problem())
+    this->viscous_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
 
   // Divergence and continuity penalty operators
   if(this->param.add_penalty_terms_to_monolithic_system == true)
@@ -533,11 +535,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing(
   bool const standard = true;
   if(standard)
   {
-    this->postprocessor->do_postprocessing(velocity,
-                                           velocity, // intermediate_velocity
-                                           pressure,
-                                           time,
-                                           time_step_number);
+    this->postprocessor->do_postprocessing(velocity, pressure, time, time_step_number);
   }
   else // consider velocity and pressure errors instead
   {
@@ -553,7 +551,6 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing(
     pressure_error.add(-1.0, pressure);
 
     this->postprocessor->do_postprocessing(velocity_error, // error!
-                                           velocity,       // intermediate_velocity
                                            pressure_error, // error!
                                            time,
                                            time_step_number);
@@ -566,9 +563,7 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing_steady
   VectorType const & velocity,
   VectorType const & pressure) const
 {
-  this->postprocessor->do_postprocessing(velocity,
-                                         velocity, // intermediate_velocity
-                                         pressure);
+  this->postprocessor->do_postprocessing(velocity, pressure);
 }
 
 } // namespace IncNS

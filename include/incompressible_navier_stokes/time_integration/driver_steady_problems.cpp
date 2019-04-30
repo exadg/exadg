@@ -92,8 +92,8 @@ DriverSteadyProblems<dim, Number>::solve()
   unsigned int N_iter_nonlinear = 0;
   unsigned int N_iter_linear    = 0;
 
-  // Steady Stokes equations
-  if(this->param.equation_type == EquationType::Stokes)
+  // linear problem
+  if(this->param.linear_problem_has_to_be_solved())
   {
     // calculate rhs vector
     pde_operator->rhs_stokes_problem(rhs_vector);
@@ -104,7 +104,7 @@ DriverSteadyProblems<dim, Number>::solve()
                                                 rhs_vector,
                                                 this->param.update_preconditioner_coupled);
   }
-  else // Steady Navier-Stokes equations
+  else // nonlinear problem
   {
     // Newton solver
     pde_operator->solve_nonlinear_steady_problem(solution,
@@ -128,20 +128,22 @@ DriverSteadyProblems<dim, Number>::solve()
   if(this->param.equation_type == EquationType::Stokes)
   {
     pcout << std::endl
-          << "Solve linear Stokes problem:" << std::endl
+          << "Solve linear problem:" << std::endl
           << "  Iterations:   " << std::setw(12) << std::right << N_iter_linear << std::endl
           << "  Wall time [s]:" << std::setw(12) << std::scientific << std::setprecision(4)
           << computing_times[0] << std::endl;
   }
-  else // Steady Navier-Stokes equations
+  else // nonlinear problem
   {
+    double N_iter_linear_avg =
+      (N_iter_nonlinear > 0) ? double(N_iter_linear) / double(N_iter_nonlinear) : N_iter_linear;
+
     pcout << std::endl
-          << "Solve nonlinear Navier-Stokes problem:" << std::endl
+          << "Solve nonlinear problem:" << std::endl
           << "  Newton iterations:      " << std::setw(12) << std::right << N_iter_nonlinear
           << std::endl
           << "  Linear iterations (avg):" << std::setw(12) << std::scientific
-          << std::setprecision(4) << std::right << double(N_iter_linear) / double(N_iter_nonlinear)
-          << std::endl
+          << std::setprecision(4) << std::right << N_iter_linear_avg << std::endl
           << "  Linear iterations (tot):" << std::setw(12) << std::scientific
           << std::setprecision(4) << std::right << N_iter_linear << std::endl
           << "  Wall time [s]:          " << std::setw(12) << std::scientific
