@@ -92,25 +92,22 @@ private:
   initialize_vec_convective_term();
 
   void
-  initialize_intermediate_velocity();
-
-  void
   pressure_step();
 
   void
-  rhs_pressure();
+  rhs_pressure(VectorType & rhs) const;
 
   void
   projection_step();
 
   void
-  rhs_projection();
+  rhs_projection(VectorType & rhs) const;
 
   void
   viscous_step();
 
   void
-  rhs_viscous();
+  rhs_viscous(VectorType & rhs) const;
 
   void
   solve_steady_problem();
@@ -137,9 +134,11 @@ private:
 
   std::vector<VectorType> velocity;
 
+  VectorType velocity_np;
+
   std::vector<VectorType> pressure;
 
-  VectorType velocity_np;
+  VectorType pressure_np;
 
   std::vector<VectorType> vorticity;
 
@@ -148,27 +147,8 @@ private:
   std::vector<double>       computing_times;
   std::vector<unsigned int> iterations;
 
-  VectorType rhs_vec_viscous;
-
-  // postprocessing: intermediate velocity
-  VectorType intermediate_velocity;
-
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;
-
-  VectorType pressure_np;
-
-  VectorType vorticity_extrapolated;
-
-  VectorType rhs_vec_pressure;
-  VectorType rhs_vec_pressure_temp;
-
-  VectorType rhs_vec_projection;
-  VectorType rhs_vec_projection_temp;
-
-  // temporary vectors needed for pseudo-time-stepping algorithm
-  VectorType velocity_tmp;
-  VectorType pressure_tmp;
 };
 
 } // namespace IncNS

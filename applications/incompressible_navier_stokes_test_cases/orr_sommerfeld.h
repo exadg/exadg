@@ -437,14 +437,12 @@ public:
   }
 
   void do_postprocessing(VectorType const &velocity,
-                         VectorType const &intermediate_velocity,
                          VectorType const &pressure,
                          double const      time,
                          int const         time_step_number)
   {
     Base::do_postprocessing(
         velocity,
-        intermediate_velocity,
         pressure,
         time,
         time_step_number);

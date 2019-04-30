@@ -402,6 +402,11 @@ public:
     AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
     AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
+    if(equation_type == EquationType::Euler)
+      AssertThrow(std::abs(viscosity) < 1.e-15,
+                  ExcMessage(
+                    "Make sure that the viscosity is zero when solving the Euler equations."));
+
     AssertThrow(formulation_viscous_term != FormulationViscousTerm::Undefined,
                 ExcMessage("parameter must be defined"));
     AssertThrow(formulation_convective_term != FormulationConvectiveTerm::Undefined,
@@ -447,9 +452,13 @@ public:
 
     if(solver_type == SolverType::Steady)
     {
-      AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
-                  ExcMessage(
-                    "Convective term has to be formulated implicitly when using a steady solver."));
+      if(convective_problem())
+      {
+        AssertThrow(
+          treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit,
+          ExcMessage(
+            "Convective term has to be formulated implicitly when using a steady solver."));
+      }
     }
 
     if(problem_type == ProblemType::Steady && solver_type == SolverType::Unsteady)
@@ -616,6 +625,35 @@ public:
     // OUTPUT AND POSTPROCESSING
   }
 
+  bool
+  convective_problem() const
+  {
+    return (equation_type == EquationType::NavierStokes || equation_type == EquationType::Euler);
+  }
+
+  bool
+  viscous_problem() const
+  {
+    return (equation_type == EquationType::Stokes || equation_type == EquationType::NavierStokes ||
+            use_turbulence_model == true);
+  }
+
+  bool
+  nonlinear_problem_has_to_be_solved() const
+  {
+    return convective_problem() &&
+           (solver_type == SolverType::Steady ||
+            (solver_type == SolverType::Unsteady &&
+             treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit));
+  }
+
+  bool
+  linear_problem_has_to_be_solved() const
+  {
+    return equation_type == EquationType::Stokes ||
+           treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+           treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF;
+  }
 
   void
   print(ConditionalOStream & pcout)

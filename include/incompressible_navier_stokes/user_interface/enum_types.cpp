@@ -56,6 +56,9 @@ enum_to_string(EquationType const enum_type)
     case EquationType::Stokes:
       string_type = "Stokes";
       break;
+    case EquationType::Euler:
+      string_type = "Euler";
+      break;
     case EquationType::NavierStokes:
       string_type = "NavierStokes";
       break;

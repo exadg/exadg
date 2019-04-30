@@ -43,6 +43,7 @@ enum class EquationType
 {
   Undefined,
   Stokes,
+  Euler,
   NavierStokes
 };
 

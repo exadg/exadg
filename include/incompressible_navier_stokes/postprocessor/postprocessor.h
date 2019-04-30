@@ -115,7 +115,6 @@ public:
 
   virtual void
   do_postprocessing(VectorType const & velocity,
-                    VectorType const & intermediate_velocity,
                     VectorType const & pressure,
                     double const       time             = 0.0,
                     int const          time_step_number = -1)
@@ -123,7 +122,7 @@ public:
     /*
      *  write output
      */
-    output_generator.evaluate(velocity, intermediate_velocity, pressure, time, time_step_number);
+    output_generator.evaluate(velocity, pressure, time, time_step_number);
 
     /*
      *  calculate error
@@ -143,7 +142,7 @@ public:
     /*
      *  Analysis of divergence and mass error
      */
-    div_and_mass_error_calculator.evaluate(intermediate_velocity, time, time_step_number);
+    div_and_mass_error_calculator.evaluate(velocity, time, time_step_number);
 
     /*
      *  calculation of kinetic energy

@@ -24,7 +24,7 @@ public:
   get_beta(unsigned int const i) const;
 
   unsigned int
-  get_order();
+  get_order() const;
   /*
    *  This function updates the time integrator constants of the BDF scheme
    *  in case of constant time step sizes.

@@ -34,8 +34,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::setup_solvers(
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
   // initialize vectors that are needed by the nonlinear solver
-  if(this->param.equation_type == EquationType::NavierStokes &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+  if(this->param.nonlinear_problem_has_to_be_solved())
   {
     setup_convective_solver();
   }
@@ -700,7 +699,6 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::do_postprocessing(
   VectorType const & velocity,
-  VectorType const & intermediate_velocity,
   VectorType const & pressure,
   double const       time,
   unsigned int const time_step_number) const
@@ -708,8 +706,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::do_postprocessing(
   bool const standard = true;
   if(standard)
   {
-    this->postprocessor->do_postprocessing(
-      velocity, intermediate_velocity, pressure, time, time_step_number);
+    this->postprocessor->do_postprocessing(velocity, pressure, time, time_step_number);
   }
   else // consider pressure error and velocity error
   {
@@ -724,8 +721,7 @@ DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::do_postprocessing(
     velocity_error.add(-1.0, velocity);
     pressure_error.add(-1.0, pressure);
 
-    this->postprocessor->do_postprocessing(
-      velocity_error, intermediate_velocity, pressure_error, time, time_step_number);
+    this->postprocessor->do_postprocessing(velocity_error, pressure_error, time, time_step_number);
   }
 }
 
@@ -733,10 +729,9 @@ template<int dim, int degree_u, int degree_p, typename Number>
 void
 DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>::do_postprocessing_steady_problem(
   VectorType const & velocity,
-  VectorType const & intermediate_velocity,
   VectorType const & pressure) const
 {
-  this->postprocessor->do_postprocessing(velocity, intermediate_velocity, pressure);
+  this->postprocessor->do_postprocessing(velocity, pressure);
 }
 
 } // namespace IncNS
