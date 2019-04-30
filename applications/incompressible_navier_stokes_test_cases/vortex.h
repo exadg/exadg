@@ -128,7 +128,7 @@ void InputParameters<dim>::set_input_parameters()
   // viscous step
   solver_viscous = SolverViscous::CG;
   solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
-  preconditioner_viscous = PreconditionerViscous::Multigrid; //InverseMassMatrix; //Multigrid;
+  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //Multigrid;
   update_preconditioner_viscous = true;
 
 
@@ -178,7 +178,7 @@ void InputParameters<dim>::set_input_parameters()
   update_preconditioner_coupled = true;
 
   // preconditioner momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::Multigrid; //InverseMassMatrix;
+  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
   multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
   multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
   multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;

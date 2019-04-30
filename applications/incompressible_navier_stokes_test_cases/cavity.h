@@ -66,8 +66,8 @@ void InputParameters<dim>::set_input_parameters()
 
   // TEMPORAL DISCRETIZATION
   solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   adaptive_time_stepping = false;
   calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -105,11 +105,11 @@ void InputParameters<dim>::set_input_parameters()
   pure_dirichlet_bc = true;
 
   // div-div and continuity penalty
-  use_divergence_penalty = false;
+  use_divergence_penalty = true;
   divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = false;
+  use_continuity_penalty = true;
   continuity_penalty_factor = divergence_penalty_factor;
-  add_penalty_terms_to_monolithic_system = false;
+  add_penalty_terms_to_monolithic_system = true;
 
   // PROJECTION METHODS
 
@@ -167,14 +167,17 @@ void InputParameters<dim>::set_input_parameters()
 
   // linear solver
   solver_coupled = SolverCoupled::FGMRES; //FGMRES;
-  solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 1000);
+  if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 1000);
+  else
+    solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 1000);
 
   // preconditioning linear solver
   preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
   update_preconditioner_coupled = true;
 
   // preconditioner velocity/momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix; //Multigrid;
   multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionConvectionDiffusion;
   multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::GMRES;
   multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
@@ -208,6 +211,7 @@ void InputParameters<dim>::set_input_parameters()
 
   // output of solver information
   solver_info_data.print_to_screen = true;
+  solver_info_data.interval_time_steps = 1;
   solver_info_data.interval_time = (end_time-start_time)/10;
 
   // line plot data
