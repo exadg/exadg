@@ -37,8 +37,8 @@
 //#include "compressible_navier_stokes_test_cases/steady_shear_flow.h"
 //#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
 //#include "compressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
-#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
+#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;
 

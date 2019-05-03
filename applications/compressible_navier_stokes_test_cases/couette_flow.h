@@ -92,6 +92,11 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  degree = FE_DEGREE;
+  degree_mapping = FE_DEGREE;
+  n_q_points_conv = QPOINTS_CONV;
+  n_q_points_vis = QPOINTS_VIS;
+
   // viscous term
   IP_factor = 1.0e0;
 
@@ -391,8 +396,8 @@ void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > a
   analytical_solution->solution.reset(new Solution<dim>());
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> >
+template<int dim, typename Number>
+std::shared_ptr<CompNS::PostProcessor<dim, Number> >
 construct_postprocessor(CompNS::InputParameters<dim> const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
@@ -406,8 +411,8 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
-  std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> > pp;
-  pp.reset(new CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data));
+  std::shared_ptr<CompNS::PostProcessor<dim, Number> > pp;
+  pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data));
 
   return pp;
 }

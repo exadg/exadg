@@ -27,7 +27,8 @@ unsigned int const DIMENSION = 2;
 unsigned int const FE_DEGREE = 2;
 
 //number of quadrature points in 1D
-const unsigned int QPOINTS_CONV = FE_DEGREE + 1;
+//const unsigned int QPOINTS_CONV = FE_DEGREE + 1;
+const unsigned int QPOINTS_CONV = FE_DEGREE + (FE_DEGREE+2)/2; // 3/2-overintegration
 const unsigned int QPOINTS_VIS = QPOINTS_CONV;
 
 // set the number of refine levels for spatial convergence tests
@@ -60,8 +61,8 @@ const double E_0 = GAS_CONSTANT/(GAMMA-1.0)*T_0;
 // end time
 const double END_TIME = 8.0;
 
-std::string OUTPUT_FOLDER = "output_comp_ns/";
-std::string FILENAME = "flow_past_cylinder";
+std::string OUTPUT_FOLDER = "output_comp_ns/flow_past_cylinder/";
+std::string FILENAME = "new";
 
 template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
@@ -82,15 +83,16 @@ void CompNS::InputParameters<dim>::set_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK;
-  order_time_integrator = 2;
+  temporal_discretization = TemporalDiscretization::ExplRK3Stage7Reg2;
+  order_time_integrator = 3;
+  stages = 7;
   calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
   time_step_size = 1.0e-3;
   max_velocity = U_0;
-  cfl_number = 0.5;
-  diffusion_number = 0.01;
-  exponent_fe_degree_cfl = 2.0;
-  exponent_fe_degree_viscous = 4.0;
+  cfl_number = 0.6;
+  diffusion_number = 0.02;
+  exponent_fe_degree_cfl = 1.5; //2.0;
+  exponent_fe_degree_viscous = 3.0; //4.0;
 
 
   // SPATIAL DISCRETIZATION
@@ -98,8 +100,10 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
-  // mapping
+  degree = FE_DEGREE;
   degree_mapping = FE_DEGREE;
+  n_q_points_conv = QPOINTS_CONV;
+  n_q_points_vis = QPOINTS_VIS;
 
   // viscous term
   IP_factor = 1.0;
@@ -112,7 +116,8 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
   print_input_parameters = true;
   calculate_velocity = true;
-  output_data.write_output = true; //false;
+  calculate_pressure = true;
+  output_data.write_output = false;
   output_data.write_pressure = true;
   output_data.write_velocity = true;
   output_data.write_temperature = true;
@@ -134,7 +139,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   solver_info_data.interval_time = (end_time-start_time)/20;
 
   // lift and drag
-  lift_and_drag_data.calculate_lift_and_drag = false;
+  lift_and_drag_data.calculate_lift_and_drag = true;
   lift_and_drag_data.viscosity = dynamic_viscosity;
   const double U = Um * (DIMENSION == 2 ? 2./3. : 4./9.);
   if(DIMENSION == 2)
@@ -145,11 +150,11 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // surfaces for calculation of lift and drag coefficients have boundary_ID = 2
   lift_and_drag_data.boundary_IDs.insert(2);
 
-  lift_and_drag_data.filename_prefix_lift = OUTPUT_FOLDER + output_data.output_name;
-  lift_and_drag_data.filename_prefix_drag = OUTPUT_FOLDER + output_data.output_name;
+  lift_and_drag_data.filename_lift = OUTPUT_FOLDER + output_data.output_name + "_lift";
+  lift_and_drag_data.filename_drag = OUTPUT_FOLDER + output_data.output_name + "_drag";
 
   // pressure difference
-  pressure_difference_data.calculate_pressure_difference = false;
+  pressure_difference_data.calculate_pressure_difference = true;
   if(DIMENSION == 2)
   {
     Point<dim> point_1_2D((X_C-D/2.0),Y_C), point_2_2D((X_C+D/2.0),Y_C);
@@ -163,7 +168,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
     pressure_difference_data.point_2 = point_2_3D;
   }
 
-  pressure_difference_data.filename_prefix_pressure_difference = OUTPUT_FOLDER + output_data.output_name;
+  pressure_difference_data.filename = OUTPUT_FOLDER + output_data.output_name + "_pressure_difference";
 }
 
 /**************************************************************************************/
@@ -492,8 +497,8 @@ void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > a
   analytical_solution->solution.reset(new InitialSolution<dim>());
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> >
+template<int dim, typename Number>
+std::shared_ptr<CompNS::PostProcessor<dim, Number> >
 construct_postprocessor(CompNS::InputParameters<dim> const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
@@ -507,8 +512,8 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
-  std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> > pp;
-  pp.reset(new CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data));
+  std::shared_ptr<CompNS::PostProcessor<dim, Number> > pp;
+  pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data));
 
   return pp;
 }

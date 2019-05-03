@@ -79,7 +79,7 @@ const double CHARACTERISTIC_TIME = L/V_0;
 
 // output folders and filenames
 std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/";
-std::string FILENAME = "test_restart"; // "Re1600_l2_k15_overint";
+std::string FILENAME = "test";
 
 template<int dim>
 void CompNS::InputParameters<dim>::set_input_parameters()
@@ -139,6 +139,11 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  degree = FE_DEGREE;
+  degree_mapping = 1;
+  n_q_points_conv = QPOINTS_CONV;
+  n_q_points_vis = QPOINTS_VIS;
+
   // viscous term
   IP_factor = 1.0;
 
@@ -173,6 +178,7 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   kinetic_energy_spectrum_data.calculate_every_time_steps = -1;
   kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
   kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum_" + FILENAME;
+  kinetic_energy_spectrum_data.degree = FE_DEGREE;
   kinetic_energy_spectrum_data.evaluation_points_per_cell = (FE_DEGREE+1)*1;
   kinetic_energy_spectrum_data.output_tolerance = 1.e-12;
 
@@ -363,8 +369,8 @@ void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > a
   analytical_solution->solution.reset(new Solution<dim>());
 }
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> >
+template<int dim, typename Number>
+std::shared_ptr<CompNS::PostProcessor<dim, Number> >
 construct_postprocessor(CompNS::InputParameters<dim> const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
@@ -378,8 +384,8 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
-  std::shared_ptr<CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> > pp;
-  pp.reset(new CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data));
+  std::shared_ptr<CompNS::PostProcessor<dim, Number> > pp;
+  pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data));
 
   return pp;
 }
