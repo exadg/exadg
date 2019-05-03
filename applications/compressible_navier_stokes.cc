@@ -138,8 +138,6 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
   print_header();
   print_MPI_info(pcout);
 
-  // TODO
-  //  param.set_input_parameters();
   param = param_in;
   param.check_input_parameters();
 
