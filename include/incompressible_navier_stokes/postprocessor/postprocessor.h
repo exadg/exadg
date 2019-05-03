@@ -104,7 +104,6 @@ public:
 
     kinetic_energy_spectrum_calculator.setup(matrix_free_data_in,
                                              dof_handler_velocity_in.get_triangulation(),
-                                             dof_quad_index_data_in,
                                              pp_data.kinetic_energy_spectrum_data);
 
     line_plot_calculator.setup(dof_handler_velocity_in,
@@ -171,11 +170,10 @@ private:
   ErrorCalculator<dim, Number> error_calculator;
 
   // calculate lift and drag forces for flow around bodies
-  LiftAndDragCalculator<dim, fe_degree_u, fe_degree_p, Number> lift_and_drag_calculator;
+  LiftAndDragCalculator<dim, Number> lift_and_drag_calculator;
 
   // calculate pressure difference between two points, e.g., the leading and trailing edge of a body
-  PressureDifferenceCalculator<dim, fe_degree_u, fe_degree_p, Number>
-    pressure_difference_calculator;
+  PressureDifferenceCalculator<dim, Number> pressure_difference_calculator;
 
   // calculate divergence and continuity errors as a measure of mass conservation (particularly
   // relevant for turbulent flows)
@@ -186,7 +184,7 @@ private:
   KineticEnergyCalculatorDetailed<dim, fe_degree_u, fe_degree_p, Number> kinetic_energy_calculator;
 
   // evaluate kinetic energy in spectral space (i.e., as a function of the wavenumber)
-  KineticEnergySpectrumCalculator<dim, fe_degree_u, Number> kinetic_energy_spectrum_calculator;
+  KineticEnergySpectrumCalculator<dim, Number> kinetic_energy_spectrum_calculator;
 
   // evaluate quantities along lines through the domain
   LinePlotCalculator<dim, fe_degree_u, fe_degree_p, Number> line_plot_calculator;

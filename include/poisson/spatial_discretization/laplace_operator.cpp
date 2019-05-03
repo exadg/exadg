@@ -20,10 +20,8 @@ LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   m
   Base::reinit(mf_data, constraint_matrix, operator_data);
   // calculate penalty parameters
   MappingQGeneric<dim> mapping(operator_data.degree_mapping);
-  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                       *this->data,
-                                                       mapping,
-                                                       this->operator_data.dof_index);
+  IP::calculate_penalty_parameter<dim, Number>(
+    array_penalty_parameter, *this->data, mapping, degree, this->operator_data.dof_index);
 }
 
 template<int dim, int degree, typename Number>

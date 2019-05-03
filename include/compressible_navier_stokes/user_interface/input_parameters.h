@@ -106,8 +106,15 @@ public:
       // triangulation
       triangulation_type(TriangulationType::Undefined),
 
+      // polynomial degree
+      degree(3),
+
       // mapping
       degree_mapping(1),
+
+      // quadrature_points
+      n_q_points_conv(degree + 1),
+      n_q_points_vis(degree + 1),
 
       // viscous term
       IP_factor(1.0),
@@ -193,7 +200,20 @@ public:
     AssertThrow(triangulation_type != TriangulationType::Undefined,
                 ExcMessage("parameter must be defined"));
 
+    AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
+
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
+
+    AssertThrow(n_q_points_conv > 0, ExcMessage("Invalid parameter."));
+    AssertThrow(n_q_points_vis > 0, ExcMessage("Invalid parameter."));
+
+    if(use_combined_operator)
+    {
+      AssertThrow(
+        n_q_points_conv == n_q_points_vis,
+        ExcMessage(
+          "For the combined operator, both convective and viscous terms have to be integrated with the same number of quadrature points."));
+    }
 
     // SOLVER
 
@@ -307,7 +327,12 @@ public:
 
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
 
+    print_parameter(pcout, "Polynomial degree", degree);
+
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
+
+    print_parameter(pcout, "Number of q-points (convective)", n_q_points_conv);
+    print_parameter(pcout, "Number of q-points (viscous)", n_q_points_vis);
 
     print_parameter(pcout, "IP factor viscous term", IP_factor);
   }
@@ -454,9 +479,18 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
+  // Polynomial degree of shape functions used to approximate the solution
+  unsigned int degree;
+
   // Polynomial degree of shape functions used for geometry approximation (mapping from
   // parameter space to physical space)
   unsigned int degree_mapping;
+
+  // Number of 1D quadrature points used for integration of convective term
+  unsigned int n_q_points_conv;
+
+  // Number of 1D quadrature points used for integration of viscous term
+  unsigned int n_q_points_vis;
 
   // diffusive term: Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0

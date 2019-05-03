@@ -9,7 +9,7 @@
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_COMP_NAVIER_STOKES_OPERATORS_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "../include/functionalities/evaluate_functions.h"
 #include "operators/interior_penalty_parameter.h"
@@ -351,16 +351,16 @@ struct BodyForceOperatorData
   std::shared_ptr<Function<dim>> rhs_E;
 };
 
-template<int dim, int degree, int n_q_points_1d, typename Number>
+template<int dim, typename Number>
 class BodyForceOperator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef FEEvaluation<dim, degree, n_q_points_1d, 1, Number>   FEEval_scalar;
-  typedef FEEvaluation<dim, degree, n_q_points_1d, dim, Number> FEEval_vectorial;
+  typedef BodyForceOperator<dim, Number> This;
 
-  typedef BodyForceOperator<dim, degree, n_q_points_1d, Number> This;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
@@ -396,9 +396,9 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<scalar, vector, scalar>
-    get_volume_flux(FEEval_scalar &    density,
-                    FEEval_vectorial & momentum,
-                    unsigned int const q) const
+    get_volume_flux(CellIntegratorScalar & density,
+                    CellIntegratorVector & momentum,
+                    unsigned int const     q) const
   {
     point  q_points = density.quadrature_point(q);
     scalar rho      = density.get_value(q);
@@ -418,9 +418,9 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEval_scalar    density(matrix_free, data.dof_index, data.quad_index, 0);
-    FEEval_vectorial momentum(matrix_free, data.dof_index, data.quad_index, 1);
-    FEEval_scalar    energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
+    CellIntegratorScalar density(matrix_free, data.dof_index, data.quad_index, 0);
+    CellIntegratorVector momentum(matrix_free, data.dof_index, data.quad_index, 1);
+    CellIntegratorScalar energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -464,16 +464,16 @@ struct MassMatrixOperatorData
   unsigned int quad_index;
 };
 
-template<int dim, int degree, int n_q_points_1d, typename Number>
+template<int dim, typename Number>
 class MassMatrixOperator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef MassMatrixOperator<dim, degree, n_q_points_1d, Number> This;
+  typedef MassMatrixOperator<dim, Number> This;
 
-  typedef FEEvaluation<dim, degree, n_q_points_1d, 1, Number>   FEEval_scalar;
-  typedef FEEvaluation<dim, degree, n_q_points_1d, dim, Number> FEEval_velocity;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
 
   MassMatrixOperator() : matrix_free(nullptr)
   {
@@ -507,11 +507,9 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEval_scalar density(matrix_free, data.dof_index, data.quad_index, 0);
-
-    FEEval_velocity momentum(matrix_free, data.dof_index, data.quad_index, 1);
-
-    FEEval_scalar energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
+    CellIntegratorScalar density(matrix_free, data.dof_index, data.quad_index, 0);
+    CellIntegratorVector momentum(matrix_free, data.dof_index, data.quad_index, 1);
+    CellIntegratorScalar energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -561,18 +559,18 @@ struct ConvectiveOperatorData
   double specific_gas_constant;
 };
 
-template<int dim, int degree, int n_q_points_1d, typename Number>
+template<int dim, typename Number>
 class ConvectiveOperator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef ConvectiveOperator<dim, degree, n_q_points_1d, Number> This;
+  typedef ConvectiveOperator<dim, Number> This;
 
-  typedef FEEvaluation<dim, degree, n_q_points_1d, 1, Number>       FEEval_scalar;
-  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, 1, Number>   FEFaceEval_scalar;
-  typedef FEEvaluation<dim, degree, n_q_points_1d, dim, Number>     FEEval_vectorial;
-  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, dim, Number> FEFaceEval_vectorial;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorScalar;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVector;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
@@ -619,10 +617,10 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector, tensor, vector>
-    get_volume_flux(FEEval_scalar &    density,
-                    FEEval_vectorial & momentum,
-                    FEEval_scalar &    energy,
-                    unsigned int const q) const
+    get_volume_flux(CellIntegratorScalar & density,
+                    CellIntegratorVector & momentum,
+                    CellIntegratorScalar & energy,
+                    unsigned int const     q) const
   {
     scalar rho_inv = 1.0 / density.get_value(q);
     vector rho_u   = momentum.get_value(q);
@@ -641,12 +639,12 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<scalar, vector, scalar>
-    get_flux(FEFaceEval_scalar &    density_m,
-             FEFaceEval_scalar &    density_p,
-             FEFaceEval_vectorial & momentum_m,
-             FEFaceEval_vectorial & momentum_p,
-             FEFaceEval_scalar &    energy_m,
-             FEFaceEval_scalar &    energy_p,
+    get_flux(FaceIntegratorScalar & density_m,
+             FaceIntegratorScalar & density_p,
+             FaceIntegratorVector & momentum_m,
+             FaceIntegratorVector & momentum_p,
+             FaceIntegratorScalar & energy_m,
+             FaceIntegratorScalar & energy_p,
              unsigned int const     q) const
   {
     vector normal = momentum_m.get_normal_vector(q);
@@ -695,9 +693,9 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<scalar, vector, scalar>
-    get_flux_boundary(FEFaceEval_scalar &            density,
-                      FEFaceEval_vectorial &         momentum,
-                      FEFaceEval_scalar &            energy,
+    get_flux_boundary(FaceIntegratorScalar &         density,
+                      FaceIntegratorVector &         momentum,
+                      FaceIntegratorScalar &         energy,
                       BoundaryType const &           boundary_type_density,
                       BoundaryType const &           boundary_type_velocity,
                       BoundaryType const &           boundary_type_pressure,
@@ -803,9 +801,9 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEval_scalar    density(matrix_free, data.dof_index, data.quad_index, 0);
-    FEEval_vectorial momentum(matrix_free, data.dof_index, data.quad_index, 1);
-    FEEval_scalar    energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
+    CellIntegratorScalar density(matrix_free, data.dof_index, data.quad_index, 0);
+    CellIntegratorVector momentum(matrix_free, data.dof_index, data.quad_index, 1);
+    CellIntegratorScalar energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -839,14 +837,14 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEval_scalar density_m(matrix_free, true, data.dof_index, data.quad_index, 0);
-    FEFaceEval_scalar density_p(matrix_free, false, data.dof_index, data.quad_index, 0);
+    FaceIntegratorScalar density_m(matrix_free, true, data.dof_index, data.quad_index, 0);
+    FaceIntegratorScalar density_p(matrix_free, false, data.dof_index, data.quad_index, 0);
 
-    FEFaceEval_vectorial momentum_m(matrix_free, true, data.dof_index, data.quad_index, 1);
-    FEFaceEval_vectorial momentum_p(matrix_free, false, data.dof_index, data.quad_index, 1);
+    FaceIntegratorVector momentum_m(matrix_free, true, data.dof_index, data.quad_index, 1);
+    FaceIntegratorVector momentum_p(matrix_free, false, data.dof_index, data.quad_index, 1);
 
-    FEFaceEval_scalar energy_m(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
-    FEFaceEval_scalar energy_p(matrix_free, false, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar energy_m(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar energy_p(matrix_free, false, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -906,9 +904,9 @@ private:
                      VectorType const &                            src,
                      std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEval_scalar    density(matrix_free, true, data.dof_index, data.quad_index, 0);
-    FEFaceEval_vectorial momentum(matrix_free, true, data.dof_index, data.quad_index, 1);
-    FEFaceEval_scalar    energy(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar density(matrix_free, true, data.dof_index, data.quad_index, 0);
+    FaceIntegratorVector momentum(matrix_free, true, data.dof_index, data.quad_index, 1);
+    FaceIntegratorScalar energy(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -977,6 +975,7 @@ struct ViscousOperatorData
   ViscousOperatorData()
     : dof_index(0),
       quad_index(0),
+      degree(1),
       IP_factor(1.0),
       dynamic_viscosity(1.0),
       reference_density(1.0),
@@ -989,7 +988,8 @@ struct ViscousOperatorData
   unsigned int dof_index;
   unsigned int quad_index;
 
-  double IP_factor;
+  unsigned int degree;
+  double       IP_factor;
 
   std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_rho;
   std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_u;
@@ -1002,18 +1002,18 @@ struct ViscousOperatorData
   double specific_gas_constant;
 };
 
-template<int dim, int degree, int n_q_points_1d, typename Number>
+template<int dim, typename Number>
 class ViscousOperator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef ViscousOperator<dim, degree, n_q_points_1d, Number> This;
+  typedef ViscousOperator<dim, Number> This;
 
-  typedef FEEvaluation<dim, degree, n_q_points_1d, 1, Number>       FEEval_scalar;
-  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, 1, Number>   FEFaceEval_scalar;
-  typedef FEEvaluation<dim, degree, n_q_points_1d, dim, Number>     FEEval_vectorial;
-  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, dim, Number> FEFaceEval_vectorial;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorScalar;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVector;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
@@ -1039,10 +1039,8 @@ public:
     nu     = mu / data.reference_density;
     lambda = data.thermal_conductivity;
 
-    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                         *matrix_free,
-                                                         mapping,
-                                                         data.dof_index);
+    IP::calculate_penalty_parameter<dim, Number>(
+      array_penalty_parameter, *matrix_free, mapping, data.degree, data.dof_index);
   }
 
   void
@@ -1069,31 +1067,31 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_penalty_parameter(FEFaceEval_scalar & fe_eval_m, FEFaceEval_scalar & fe_eval_p) const
+    get_penalty_parameter(FaceIntegratorScalar & fe_eval_m, FaceIntegratorScalar & fe_eval_p) const
   {
     scalar tau = std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
                           fe_eval_p.read_cell_data(array_penalty_parameter)) *
-                 IP::get_penalty_factor<Number>(degree, data.IP_factor) * nu;
+                 IP::get_penalty_factor<Number>(data.degree, data.IP_factor) * nu;
 
     return tau;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_penalty_parameter(FEFaceEval_scalar & fe_eval) const
+    get_penalty_parameter(FaceIntegratorScalar & fe_eval) const
   {
     scalar tau = fe_eval.read_cell_data(array_penalty_parameter) *
-                 IP::get_penalty_factor<Number>(degree, data.IP_factor) * nu;
+                 IP::get_penalty_factor<Number>(data.degree, data.IP_factor) * nu;
 
     return tau;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector, tensor, vector>
-    get_volume_flux(FEEval_scalar &    density,
-                    FEEval_vectorial & momentum,
-                    FEEval_scalar &    energy,
-                    unsigned int const q) const
+    get_volume_flux(CellIntegratorScalar & density,
+                    CellIntegratorVector & momentum,
+                    CellIntegratorScalar & energy,
+                    unsigned int const     q) const
   {
     scalar rho_inv  = 1.0 / density.get_value(q);
     vector grad_rho = density.get_gradient(q);
@@ -1119,12 +1117,12 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<scalar, vector, scalar>
-    get_gradient_flux(FEFaceEval_scalar &    density_m,
-                      FEFaceEval_scalar &    density_p,
-                      FEFaceEval_vectorial & momentum_m,
-                      FEFaceEval_vectorial & momentum_p,
-                      FEFaceEval_scalar &    energy_m,
-                      FEFaceEval_scalar &    energy_p,
+    get_gradient_flux(FaceIntegratorScalar & density_m,
+                      FaceIntegratorScalar & density_p,
+                      FaceIntegratorVector & momentum_m,
+                      FaceIntegratorVector & momentum_p,
+                      FaceIntegratorScalar & energy_m,
+                      FaceIntegratorScalar & energy_p,
                       scalar const &         tau_IP,
                       unsigned int const     q) const
   {
@@ -1187,9 +1185,9 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<scalar, vector, scalar>
-    get_gradient_flux_boundary(FEFaceEval_scalar &            density,
-                               FEFaceEval_vectorial &         momentum,
-                               FEFaceEval_scalar &            energy,
+    get_gradient_flux_boundary(FaceIntegratorScalar &         density,
+                               FaceIntegratorVector &         momentum,
+                               FaceIntegratorScalar &         energy,
                                scalar const &                 tau_IP,
                                BoundaryType const &           boundary_type_density,
                                BoundaryType const &           boundary_type_velocity,
@@ -1300,12 +1298,12 @@ public:
                vector /*dummy_P*/,
                tensor /*value_flux_momentum_P*/,
                vector /*value_flux_energy_P*/>
-    get_value_flux(FEFaceEval_scalar &    density_m,
-                   FEFaceEval_scalar &    density_p,
-                   FEFaceEval_vectorial & momentum_m,
-                   FEFaceEval_vectorial & momentum_p,
-                   FEFaceEval_scalar &    energy_m,
-                   FEFaceEval_scalar &    energy_p,
+    get_value_flux(FaceIntegratorScalar & density_m,
+                   FaceIntegratorScalar & density_p,
+                   FaceIntegratorVector & momentum_m,
+                   FaceIntegratorVector & momentum_p,
+                   FaceIntegratorScalar & energy_m,
+                   FaceIntegratorScalar & energy_p,
                    unsigned int const     q) const
   {
     vector normal = momentum_m.get_normal_vector(q);
@@ -1378,9 +1376,9 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector /*dummy_M*/, tensor /*value_flux_momentum_M*/, vector /*value_flux_energy_M*/>
-    get_value_flux_boundary(FEFaceEval_scalar &            density,
-                            FEFaceEval_vectorial &         momentum,
-                            FEFaceEval_scalar &            energy,
+    get_value_flux_boundary(FaceIntegratorScalar &         density,
+                            FaceIntegratorVector &         momentum,
+                            FaceIntegratorScalar &         energy,
                             BoundaryType const &           boundary_type_density,
                             BoundaryType const &           boundary_type_velocity,
                             BoundaryType const &           boundary_type_energy,
@@ -1476,9 +1474,9 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEval_scalar    density(matrix_free, data.dof_index, data.quad_index, 0);
-    FEEval_vectorial momentum(matrix_free, data.dof_index, data.quad_index, 1);
-    FEEval_scalar    energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
+    CellIntegratorScalar density(matrix_free, data.dof_index, data.quad_index, 0);
+    CellIntegratorVector momentum(matrix_free, data.dof_index, data.quad_index, 1);
+    CellIntegratorScalar energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -1510,14 +1508,14 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEval_scalar density_m(matrix_free, true, data.dof_index, data.quad_index, 0);
-    FEFaceEval_scalar density_p(matrix_free, false, data.dof_index, data.quad_index, 0);
+    FaceIntegratorScalar density_m(matrix_free, true, data.dof_index, data.quad_index, 0);
+    FaceIntegratorScalar density_p(matrix_free, false, data.dof_index, data.quad_index, 0);
 
-    FEFaceEval_vectorial momentum_m(matrix_free, true, data.dof_index, data.quad_index, 1);
-    FEFaceEval_vectorial momentum_p(matrix_free, false, data.dof_index, data.quad_index, 1);
+    FaceIntegratorVector momentum_m(matrix_free, true, data.dof_index, data.quad_index, 1);
+    FaceIntegratorVector momentum_p(matrix_free, false, data.dof_index, data.quad_index, 1);
 
-    FEFaceEval_scalar energy_m(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
-    FEFaceEval_scalar energy_p(matrix_free, false, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar energy_m(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar energy_p(matrix_free, false, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -1590,9 +1588,9 @@ private:
                      VectorType const &                            src,
                      std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEval_scalar    density(matrix_free, true, data.dof_index, data.quad_index, 0);
-    FEFaceEval_vectorial momentum(matrix_free, true, data.dof_index, data.quad_index, 1);
-    FEFaceEval_scalar    energy(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar density(matrix_free, true, data.dof_index, data.quad_index, 0);
+    FaceIntegratorVector momentum(matrix_free, true, data.dof_index, data.quad_index, 1);
+    FaceIntegratorScalar energy(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -1698,20 +1696,20 @@ struct CombinedOperatorData
   std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim>> bc_E;
 };
 
-template<int dim, int degree, int n_q_points_1d, typename Number>
+template<int dim, typename Number>
 class CombinedOperator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef ConvectiveOperator<dim, degree, n_q_points_1d, Number> ConvectiveOp;
-  typedef ViscousOperator<dim, degree, n_q_points_1d, Number>    ViscousOp;
-  typedef CombinedOperator<dim, degree, n_q_points_1d, Number>   This;
+  typedef ConvectiveOperator<dim, Number> ConvectiveOp;
+  typedef ViscousOperator<dim, Number>    ViscousOp;
+  typedef CombinedOperator<dim, Number>   This;
 
-  typedef FEEvaluation<dim, degree, n_q_points_1d, 1, Number>       FEEval_scalar;
-  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, 1, Number>   FEFaceEval_scalar;
-  typedef FEEvaluation<dim, degree, n_q_points_1d, dim, Number>     FEEval_vectorial;
-  typedef FEFaceEvaluation<dim, degree, n_q_points_1d, dim, Number> FEFaceEval_vectorial;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorScalar;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorScalar;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVector;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVector;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
@@ -1762,9 +1760,9 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEval_scalar    density(matrix_free, data.dof_index, data.quad_index, 0);
-    FEEval_vectorial momentum(matrix_free, data.dof_index, data.quad_index, 1);
-    FEEval_scalar    energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
+    CellIntegratorScalar density(matrix_free, data.dof_index, data.quad_index, 0);
+    CellIntegratorVector momentum(matrix_free, data.dof_index, data.quad_index, 1);
+    CellIntegratorScalar energy(matrix_free, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -1802,12 +1800,12 @@ private:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEval_scalar    density_m(matrix_free, true, data.dof_index, data.quad_index, 0);
-    FEFaceEval_scalar    density_p(matrix_free, false, data.dof_index, data.quad_index, 0);
-    FEFaceEval_vectorial momentum_m(matrix_free, true, data.dof_index, data.quad_index, 1);
-    FEFaceEval_vectorial momentum_p(matrix_free, false, data.dof_index, data.quad_index, 1);
-    FEFaceEval_scalar    energy_m(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
-    FEFaceEval_scalar    energy_p(matrix_free, false, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar density_m(matrix_free, true, data.dof_index, data.quad_index, 0);
+    FaceIntegratorScalar density_p(matrix_free, false, data.dof_index, data.quad_index, 0);
+    FaceIntegratorVector momentum_m(matrix_free, true, data.dof_index, data.quad_index, 1);
+    FaceIntegratorVector momentum_p(matrix_free, false, data.dof_index, data.quad_index, 1);
+    FaceIntegratorScalar energy_m(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar energy_p(matrix_free, false, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -1884,9 +1882,9 @@ private:
                      VectorType const &                            src,
                      std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEval_scalar    density(matrix_free, true, data.dof_index, data.quad_index, 0);
-    FEFaceEval_vectorial momentum(matrix_free, true, data.dof_index, data.quad_index, 1);
-    FEFaceEval_scalar    energy(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
+    FaceIntegratorScalar density(matrix_free, true, data.dof_index, data.quad_index, 0);
+    FaceIntegratorVector momentum(matrix_free, true, data.dof_index, data.quad_index, 1);
+    FaceIntegratorScalar energy(matrix_free, true, data.dof_index, data.quad_index, 1 + dim);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -1966,8 +1964,8 @@ private:
 
   CombinedOperatorData<dim> data;
 
-  ConvectiveOperator<dim, degree, n_q_points_1d, Number> const * convective_operator;
-  ViscousOperator<dim, degree, n_q_points_1d, Number> const *    viscous_operator;
+  ConvectiveOperator<dim, Number> const * convective_operator;
+  ViscousOperator<dim, Number> const *    viscous_operator;
 };
 
 } // namespace CompNS

@@ -33,7 +33,7 @@
 namespace CompNS
 {
 // forward declarations
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 class DGOperator;
 
 template<int dim>
@@ -54,13 +54,13 @@ struct PostProcessorData
   KineticEnergySpectrumData   kinetic_energy_spectrum_data;
 };
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 class PostProcessor
 {
 public:
   typedef LinearAlgebra::distributed::Vector<double> VectorType;
 
-  typedef DGOperator<dim, degree, n_q_points_conv, n_q_points_vis, Number> NavierStokesOperator;
+  typedef DGOperator<dim, Number> NavierStokesOperator;
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data) : pp_data(postprocessor_data)
   {
@@ -107,7 +107,6 @@ public:
 
     kinetic_energy_spectrum_calculator.setup(matrix_free_data_in,
                                              dof_handler_in.get_triangulation(),
-                                             dof_quad_index_data_in,
                                              pp_data.kinetic_energy_spectrum_data);
   }
 
@@ -273,12 +272,12 @@ private:
 
   SmartPointer<NavierStokesOperator const> navier_stokes_operator;
 
-  OutputGenerator<dim>                                      output_generator;
-  ErrorCalculator<dim, double>                              error_calculator;
-  LiftAndDragCalculator<dim, degree, degree, double>        lift_and_drag_calculator;
-  PressureDifferenceCalculator<dim, degree, degree, double> pressure_difference_calculator;
-  KineticEnergyCalculator<dim, degree, double>              kinetic_energy_calculator;
-  KineticEnergySpectrumCalculator<dim, degree, double>      kinetic_energy_spectrum_calculator;
+  OutputGenerator<dim>                         output_generator;
+  ErrorCalculator<dim, Number>                 error_calculator;
+  LiftAndDragCalculator<dim, Number>           lift_and_drag_calculator;
+  PressureDifferenceCalculator<dim, Number>    pressure_difference_calculator;
+  KineticEnergyCalculator<dim, Number>         kinetic_energy_calculator;
+  KineticEnergySpectrumCalculator<dim, Number> kinetic_energy_spectrum_calculator;
 };
 
 } // namespace CompNS

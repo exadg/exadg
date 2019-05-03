@@ -13,11 +13,9 @@
 
 // postprocessor
 #include "../include/compressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../include/compressible_navier_stokes/spatial_discretization/dg_operator.h"
 
 // spatial discretization
-#include "../include/compressible_navier_stokes/spatial_discretization/dg_comp_navier_stokes.h"
-
-// temporal discretization
 #include "../include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.h"
 
 // Parameters, BCs, etc.
@@ -43,8 +41,8 @@
 /**************************************************************************************/
 
 // set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_MIN = 2;
-unsigned int const FE_DEGREE_MAX = 2;
+unsigned int const FE_DEGREE_MIN = 1;
+unsigned int const FE_DEGREE_MAX = 5;
 
 // refinement level: l = REFINE_LEVELS[degree-1]
 std::vector<int> REFINE_LEVELS = {
@@ -67,7 +65,7 @@ std::vector<int> REFINE_LEVELS = {
 
 // NOTE: the quadrature rule specified in the parameter file is irrelevant for these
 //       performance measurements. The quadrature rule has to be selected manually
-//       at the bottom of this file!
+//       in the main function.
 
 // Select the operator to be applied
 enum class OperatorType
@@ -81,13 +79,12 @@ enum class OperatorType
   EvaluateOperatorExplicit
 };
 
-OperatorType OPERATOR_TYPE =
-  OperatorType::ViscousAndConvectiveTerms; // EvaluateOperatorExplicit; //ViscousAndConvectiveTerms;
+OperatorType OPERATOR_TYPE = OperatorType::ConvectiveTerm; // InverseMassMatrixDstDst;
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
-unsigned int const N_REPETITIONS_INNER = 100; // take the average of inner repetitions
-unsigned int const N_REPETITIONS_OUTER = 1;   // take the minimum of outer repetitions
+unsigned int const N_REPETITIONS_INNER = 100; // take the average wall time of inner repetitions
+unsigned int const N_REPETITIONS_OUTER = 1;   // take the minimum wall time of outer repetitions
 
 // global variable used to store the wall times for different polynomial degrees
 std::vector<std::pair<unsigned int, double>> wall_times;
@@ -97,22 +94,22 @@ using namespace CompNS;
 
 namespace CompNS
 {
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number = double>
+template<int dim, typename Number = double>
 class Problem
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGOperator<dim, degree, n_q_points_conv, n_q_points_vis, Number> DG_OPERATOR;
+  typedef DGOperator<dim, Number> DG_OPERATOR;
 
   typedef TimeIntExplRK<dim, Number> TIME_INT;
 
-  typedef PostProcessor<dim, degree, n_q_points_conv, n_q_points_vis, Number> POSTPROCESSOR;
+  typedef PostProcessor<dim, Number> POSTPROCESSOR;
 
   Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
 
   void
-  setup();
+  setup(InputParameters<dim> const & param_in);
 
   void
   apply_operator();
@@ -148,10 +145,9 @@ private:
   unsigned int const n_repetitions_inner, n_repetitions_outer;
 };
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
-  unsigned int const n_refine_space_in,
-  unsigned int const n_refine_time_in)
+template<int dim, typename Number>
+Problem<dim, Number>::Problem(unsigned int const n_refine_space_in,
+                              unsigned int const n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(n_refine_space_in),
     n_refine_time(n_refine_time_in),
@@ -160,9 +156,9 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
 {
 }
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
+Problem<dim, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -175,14 +171,14 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
   // clang-format on
 }
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup()
+Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
 {
   print_header();
   print_MPI_info(pcout);
 
-  param.set_input_parameters();
+  param = param_in;
   param.check_input_parameters();
 
   if(param.print_input_parameters == true)
@@ -231,8 +227,7 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup()
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor =
-    construct_postprocessor<dim, degree, n_q_points_conv, n_q_points_vis, Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DG_OPERATOR(*triangulation, param, postprocessor));
@@ -245,9 +240,9 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup()
                                      analytical_solution);
 }
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::apply_operator()
+Problem<dim, Number>::apply_operator()
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 
@@ -331,7 +326,7 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::apply_operator()
         << std::scientific << std::setprecision(4) << "DoFs/(sec*core): " << 1. / wall_time_per_dofs / (double)N_mpi_processes << std::endl;
   // clang-format on
 
-  wall_times.push_back(std::pair<unsigned int, double>(degree, wall_time_per_dofs));
+  wall_times.push_back(std::pair<unsigned int, double>(param.degree, wall_time_per_dofs));
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 }
@@ -388,66 +383,6 @@ print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times
 /*                                                                                    */
 /**************************************************************************************/
 
-/*
- *  Precompile NavierStokesProblem for all polynomial degrees in the range
- *  FE_DEGREE_MIN < degree_i < FE_DEGREE_MAX so that we do not have to recompile
- *  in order to run the program for different polynomial degrees
- */
-template<int dim, int degree, int max_degree>
-class NavierStokesPrecompiled
-{
-public:
-  static void
-  run()
-  {
-    NavierStokesPrecompiled<dim, degree, degree>::run();
-    NavierStokesPrecompiled<dim, degree + 1, max_degree>::run();
-  }
-};
-
-/*
- * specialization of templates: degree == max_degree
- */
-template<int dim, int degree>
-class NavierStokesPrecompiled<dim, degree, degree>
-{
-public:
-  /*
-   *  Select the quadrature formula manually for convective term
-   */
-
-  // standard quadrature
-  //  static const unsigned int n_q_points_conv = degree+1;
-
-  // 3/2 dealiasing rule
-  //  static const unsigned int n_q_points_conv = degree+(degree+2)/2;
-
-  // 2k dealiasing rule
-  static const unsigned int n_q_points_conv = 2 * degree + 1;
-
-  /*
-   *  Select the quadrature formula manually for viscous term
-   */
-
-  // standard quadrature
-  //  static const unsigned int n_q_points_vis = degree+1;
-
-  // same as convective term
-  static const unsigned int n_q_points_vis = n_q_points_conv;
-
-
-  // setup problem and apply operator
-  static void
-  run()
-  {
-    typedef Problem<dim, degree, n_q_points_conv, n_q_points_vis> PROBLEM;
-
-    PROBLEM problem(REFINE_LEVELS[degree - 1]);
-    problem.setup();
-    problem.apply_operator();
-  }
-};
-
 int
 main(int argc, char ** argv)
 {
@@ -468,9 +403,28 @@ main(int argc, char ** argv)
 
     deallog.depth_console(0);
 
-    // measure throughput for increasing polynomial degree
-    typedef NavierStokesPrecompiled<DIMENSION, FE_DEGREE_MIN, FE_DEGREE_MAX> NAVIER_STOKES;
-    NAVIER_STOKES::run();
+    for(unsigned int degree = FE_DEGREE_MIN; degree <= FE_DEGREE_MAX; ++degree)
+    {
+      CompNS::InputParameters<DIMENSION> param;
+      param.set_input_parameters();
+
+      // manipulate polynomial degree and select quadrature rule
+      param.degree = degree;
+
+      // mapping
+      param.degree_mapping = 1;
+      // param.degree_mapping = degree;
+
+      // quadrature
+      param.n_q_points_conv = degree + 1;
+      // param.n_q_points_conv = degree+(degree+2)/2;
+      // param.n_q_points_conv = 2 * degree + 1;
+      param.n_q_points_vis = param.n_q_points_conv;
+
+      Problem<DIMENSION> problem(REFINE_LEVELS[degree - 1]);
+      problem.setup(param);
+      problem.apply_operator();
+    }
 
     print_wall_times(wall_times);
     wall_times.clear();

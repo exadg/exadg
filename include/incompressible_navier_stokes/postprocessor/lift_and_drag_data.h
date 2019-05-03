@@ -20,8 +20,8 @@ struct LiftAndDragData
     : calculate_lift_and_drag(false),
       viscosity(1.0),
       reference_value(1.0),
-      filename_prefix_lift("indexa"),
-      filename_prefix_drag("indexa")
+      filename_lift("lift"),
+      filename_drag("drag")
   {
   }
 
@@ -49,8 +49,8 @@ struct LiftAndDragData
   /*
    *  filenames
    */
-  std::string filename_prefix_lift;
-  std::string filename_prefix_drag;
+  std::string filename_lift;
+  std::string filename_drag;
 };
 
 

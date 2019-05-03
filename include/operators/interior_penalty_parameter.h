@@ -23,23 +23,24 @@ using namespace dealii;
  *  This function calculates the penalty parameter of the interior
  *  penalty method for each cell.
  */
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 void
 calculate_penalty_parameter(AlignedVector<VectorizedArray<Number>> & array_penalty_parameter,
                             MatrixFree<dim, Number> const &          data,
                             Mapping<dim> const &                     mapping,
+                            unsigned int const                       degree,
                             unsigned int const                       dof_index = 0)
 {
   unsigned int n_cells = data.n_cell_batches() + data.n_ghost_cell_batches();
   array_penalty_parameter.resize(n_cells);
 
-  QGauss<dim>   quadrature(fe_degree + 1);
+  QGauss<dim>   quadrature(degree + 1);
   FEValues<dim> fe_values(mapping,
                           data.get_dof_handler(dof_index).get_fe(),
                           quadrature,
                           update_JxW_values);
 
-  QGauss<dim - 1>   face_quadrature(fe_degree + 1);
+  QGauss<dim - 1>   face_quadrature(degree + 1);
   FEFaceValues<dim> fe_face_values(mapping,
                                    data.get_dof_handler(dof_index).get_fe(),
                                    face_quadrature,
@@ -84,9 +85,9 @@ calculate_penalty_parameter(AlignedVector<VectorizedArray<Number>> & array_penal
 
 template<typename Number>
 Number
-get_penalty_factor(unsigned int const fe_degree, Number const factor = 1.0)
+get_penalty_factor(unsigned int const degree, Number const factor = 1.0)
 {
-  return factor * (fe_degree + 1.0) * (fe_degree + 1.0);
+  return factor * (degree + 1.0) * (degree + 1.0);
 }
 
 } // namespace IP

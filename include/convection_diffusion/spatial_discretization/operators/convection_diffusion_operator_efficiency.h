@@ -74,10 +74,8 @@ public:
     this->data          = &mf_data;
     this->operator_data = operator_data_in;
 
-    IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                         *this->data,
-                                                         mapping,
-                                                         operator_data.diff_data.dof_index);
+    IP::calculate_penalty_parameter<dim, Number>(
+      array_penalty_parameter, *this->data, mapping, degree, operator_data.diff_data.dof_index);
 
     diffusivity = operator_data.diff_data.diffusivity;
   }
