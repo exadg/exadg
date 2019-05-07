@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COMP_NAVIER_STOKES_H_
-#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_COMP_NAVIER_STOKES_H_
+#ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_OPERATOR_H_
+#define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_OPERATOR_H_
 
 // deal.II
 #include <deal.II/base/timer.h>
@@ -33,9 +33,12 @@
 // time integration
 #include "time_integration/time_step_calculation.h"
 
+// postprocessor
+#include "../postprocessor/postprocessor.h"
+
 namespace CompNS
 {
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 public:
@@ -57,7 +60,7 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef PostProcessor<dim, degree, n_q_points_conv, n_q_points_vis, Number> Postprocessor;
+  typedef PostProcessor<dim, Number> Postprocessor;
 
   static const unsigned int dof_index_all =
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
@@ -81,24 +84,22 @@ public:
 
   // specify quadrature rule for calculation of derived quantities (p, u, T)
   static const unsigned int quad_index_l2_projections = quad_index_standard;
-  static const unsigned int n_q_points_l2_projections = degree + 1;
 
   // alternative: use more accurate over-integration strategy
   //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
-  //  static const unsigned int n_q_points_l2_projections = n_q_points_conv;
 
   DGOperator(parallel::Triangulation<dim> const & triangulation,
              InputParameters<dim> const &         param_in,
              std::shared_ptr<Postprocessor>       postprocessor_in)
     : dealii::Subscriptor(),
-      fe(new FESystem<dim>(FE_DGQ<dim>(degree), dim + 2)),
-      fe_vector(new FESystem<dim>(FE_DGQ<dim>(degree), dim)),
-      fe_scalar(degree),
+      param(param_in),
+      fe(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim + 2)),
+      fe_vector(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim)),
+      fe_scalar(param_in.degree),
       mapping(param_in.degree_mapping),
       dof_handler(triangulation),
       dof_handler_vector(triangulation),
       dof_handler_scalar(triangulation),
-      param(param_in),
       postprocessor(postprocessor_in),
       wall_time_operator_evaluation(0.0)
   {
@@ -191,7 +192,7 @@ public:
     }
 
     // apply inverse mass matrix
-    inverse_mass_matrix_operator->apply(dst, dst);
+    inverse_mass_all->apply(dst, dst);
 
     wall_time_operator_evaluation += timer.wall_time();
   }
@@ -247,7 +248,7 @@ public:
   apply_inverse_mass(VectorType & dst, VectorType const & src) const
   {
     // apply inverse mass matrix
-    inverse_mass_matrix_operator->apply(dst, src);
+    inverse_mass_all->apply(dst, src);
   }
 
   // getters
@@ -310,7 +311,7 @@ public:
   compute_pressure(VectorType & dst, VectorType const & src) const
   {
     p_u_T_calculator.compute_pressure(dst, src);
-    inverse_mass_matrix_operator_scalar->apply(dst, dst);
+    inverse_mass_scalar->apply(dst, dst);
   }
 
   // velocity
@@ -318,7 +319,7 @@ public:
   compute_velocity(VectorType & dst, VectorType const & src) const
   {
     p_u_T_calculator.compute_velocity(dst, src);
-    inverse_mass_matrix_operator_vector->apply(dst, dst);
+    inverse_mass_vector->apply(dst, dst);
   }
 
   // temperature
@@ -326,7 +327,7 @@ public:
   compute_temperature(VectorType & dst, VectorType const & src) const
   {
     p_u_T_calculator.compute_temperature(dst, src);
-    inverse_mass_matrix_operator_scalar->apply(dst, dst);
+    inverse_mass_scalar->apply(dst, dst);
   }
 
   // vorticity
@@ -334,7 +335,7 @@ public:
   compute_vorticity(VectorType & dst, VectorType const & src) const
   {
     vorticity_calculator.compute_vorticity(dst, src);
-    inverse_mass_matrix_operator_vector->apply(dst, dst);
+    inverse_mass_vector->apply(dst, dst);
   }
 
   // divergence
@@ -342,7 +343,7 @@ public:
   compute_divergence(VectorType & dst, VectorType const & src) const
   {
     divergence_calculator.compute_divergence(dst, src);
-    inverse_mass_matrix_operator_scalar->apply(dst, dst);
+    inverse_mass_scalar->apply(dst, dst);
   }
 
   double
@@ -368,7 +369,7 @@ public:
   unsigned int
   get_polynomial_degree() const
   {
-    return degree;
+    return param.degree;
   }
 
 private:
@@ -380,7 +381,7 @@ private:
     dof_handler_vector.distribute_dofs(*fe_vector);
     dof_handler_scalar.distribute_dofs(fe_scalar);
 
-    constexpr int ndofs_per_cell = Utilities::pow(degree + 1, dim) * (dim + 2);
+    unsigned int ndofs_per_cell = Utilities::pow(param.degree + 1, dim) * (dim + 2);
 
     ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -388,12 +389,12 @@ private:
           << "Discontinuous Galerkin finite element discretization:" << std::endl
           << std::endl;
 
-    print_parameter(pcout, "degree of 1D polynomials", degree);
+    print_parameter(pcout, "degree of 1D polynomials", param.degree);
     print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
     print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-    print_parameter(pcout, "number of 1D q-points (std)", degree + 1);
-    print_parameter(pcout, "number of 1D q-points (over-conv)", n_q_points_conv);
-    print_parameter(pcout, "number of 1D q-points (over-vis)", n_q_points_vis);
+    print_parameter(pcout, "number of 1D q-points (std)", param.degree + 1);
+    print_parameter(pcout, "number of 1D q-points (over-conv)", param.n_q_points_conv);
+    print_parameter(pcout, "number of 1D q-points (over-vis)", param.n_q_points_vis);
   }
 
   void
@@ -404,11 +405,11 @@ private:
     quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::n_variants));
     quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::standard)]             = QGauss<1>(degree + 1);
+      QuadratureSelector::standard)]             = QGauss<1>(param.degree + 1);
     quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_conv)] = QGauss<1>(n_q_points_conv);
+      QuadratureSelector::overintegration_conv)] = QGauss<1>(param.n_q_points_conv);
     quadratures[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_vis)]  = QGauss<1>(n_q_points_vis);
+      QuadratureSelector::overintegration_vis)]  = QGauss<1>(param.n_q_points_vis);
 
     // dof handler
     std::vector<const DoFHandler<dim> *> dof_handler_vec;
@@ -447,22 +448,101 @@ private:
   setup_operators()
   {
     // mass matrix operator
+    MassMatrixOperatorData mass_matrix_operator_data;
     mass_matrix_operator_data.dof_index  = dof_index_all;
     mass_matrix_operator_data.quad_index = quad_index_standard;
     mass_matrix_operator.initialize(data, mass_matrix_operator_data);
 
     // inverse mass matrix operator
-    inverse_mass_matrix_operator.reset(
-      new InverseMassMatrixOperator<dim, degree, Number, dim + 2>());
-    inverse_mass_matrix_operator->initialize(data, dof_index_all, quad_index_standard);
+    switch(param.degree)
+    {
+      case 0:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 0, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 0, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 0, Number, 1>());
+        break;
+      case 1:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 1, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 1, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 1, Number, 1>());
+        break;
+      case 2:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 2, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 2, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 2, Number, 1>());
+        break;
+      case 3:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 3, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 3, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 3, Number, 1>());
+        break;
+      case 4:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 4, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 4, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 4, Number, 1>());
+        break;
+      case 5:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 5, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 5, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 5, Number, 1>());
+        break;
+      case 6:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 6, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 6, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 6, Number, 1>());
+        break;
+      case 7:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 7, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 7, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 7, Number, 1>());
+        break;
+      case 8:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 8, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 8, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 8, Number, 1>());
+        break;
+      case 9:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 9, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 9, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 9, Number, 1>());
+        break;
+      case 10:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 10, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 10, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 10, Number, 1>());
+        break;
+      case 11:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 11, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 11, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 11, Number, 1>());
+        break;
+      case 12:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 12, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 12, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 12, Number, 1>());
+        break;
+      case 13:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 13, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 13, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 13, Number, 1>());
+        break;
+      case 14:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 14, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 14, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 14, Number, 1>());
+        break;
+      case 15:
+        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 15, Number, dim + 2>());
+        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 15, Number, dim>());
+        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 15, Number, 1>());
+        break;
+      default:
+        AssertThrow(false, ExcMessage("not implemented for this degree!"));
+    }
 
-    inverse_mass_matrix_operator_vector.reset(
-      new InverseMassMatrixOperator<dim, degree, Number, dim>());
-    inverse_mass_matrix_operator_vector->initialize(data, dof_index_vector, quad_index_standard);
-
-    inverse_mass_matrix_operator_scalar.reset(
-      new InverseMassMatrixOperator<dim, degree, Number, 1>());
-    inverse_mass_matrix_operator_scalar->initialize(data, dof_index_scalar, quad_index_standard);
+    inverse_mass_all->initialize(data, dof_index_all, quad_index_standard);
+    inverse_mass_vector->initialize(data, dof_index_vector, quad_index_standard);
+    inverse_mass_scalar->initialize(data, dof_index_scalar, quad_index_standard);
 
     // body force operator
     BodyForceOperatorData<dim> body_force_operator_data;
@@ -474,6 +554,7 @@ private:
     body_force_operator.initialize(data, body_force_operator_data);
 
     // convective operator
+    ConvectiveOperatorData<dim> convective_operator_data;
     convective_operator_data.dof_index             = dof_index_all;
     convective_operator_data.quad_index            = quad_index_overintegration_conv;
     convective_operator_data.bc_rho                = boundary_descriptor_density;
@@ -485,8 +566,10 @@ private:
     convective_operator.initialize(data, convective_operator_data);
 
     // viscous operator
+    ViscousOperatorData<dim> viscous_operator_data;
     viscous_operator_data.dof_index             = dof_index_all;
     viscous_operator_data.quad_index            = quad_index_overintegration_vis;
+    viscous_operator_data.degree                = param.degree;
     viscous_operator_data.IP_factor             = param.IP_factor;
     viscous_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
     viscous_operator_data.reference_density     = param.reference_density;
@@ -500,10 +583,11 @@ private:
 
     if(param.use_combined_operator == true)
     {
-      AssertThrow(n_q_points_conv == n_q_points_vis,
+      AssertThrow(param.n_q_points_conv == param.n_q_points_vis,
                   ExcMessage("Use the same number of quadrature points for convective term "
                              "and viscous term in case of combined operator."));
 
+      CombinedOperatorData<dim> combined_operator_data;
       combined_operator_data.dof_index  = dof_index_all;
       combined_operator_data.quad_index = quad_index_overintegration_vis;
       combined_operator_data.bc_rho     = boundary_descriptor_density;
@@ -547,7 +631,10 @@ private:
                          analytical_solution_in);
   }
 
-  // fe
+  // Input parameters
+  InputParameters<dim> const & param;
+
+  // finite element
   std::shared_ptr<FESystem<dim>> fe;        // all (dim+2) components: (rho, rho u, rho E)
   std::shared_ptr<FESystem<dim>> fe_vector; // e.g. velocity
   FE_DGQ<dim>                    fe_scalar; // scalar quantity, e.g, pressure
@@ -562,8 +649,6 @@ private:
 
   MatrixFree<dim, Number> data;
 
-  InputParameters<dim> const & param;
-
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
@@ -572,35 +657,20 @@ private:
 
   // DG operators
 
-  // use standard quadrature for mass matrix operator
-  MassMatrixOperatorData                              mass_matrix_operator_data;
-  MassMatrixOperator<dim, degree, degree + 1, Number> mass_matrix_operator;
+  MassMatrixOperator<dim, Number> mass_matrix_operator;
+  BodyForceOperator<dim, Number>  body_force_operator;
+  ConvectiveOperator<dim, Number> convective_operator;
+  ViscousOperator<dim, Number>    viscous_operator;
+  CombinedOperator<dim, Number>   combined_operator;
 
-  std::shared_ptr<InverseMassMatrixOperator<dim, degree, Number, dim + 2>>
-    inverse_mass_matrix_operator;
-  std::shared_ptr<InverseMassMatrixOperator<dim, degree, Number, dim>>
-    inverse_mass_matrix_operator_vector;
-  std::shared_ptr<InverseMassMatrixOperator<dim, degree, Number, 1>>
-    inverse_mass_matrix_operator_scalar;
-
-  // use standard quadrature for body force operator
-  BodyForceOperatorData<dim>                         body_force_operator_data;
-  BodyForceOperator<dim, degree, degree + 1, Number> body_force_operator;
-
-  ConvectiveOperatorData<dim>                              convective_operator_data;
-  ConvectiveOperator<dim, degree, n_q_points_conv, Number> convective_operator;
-
-  ViscousOperatorData<dim>                             viscous_operator_data;
-  ViscousOperator<dim, degree, n_q_points_vis, Number> viscous_operator;
-
-  // convective and viscous terms combined to one operator
-  CombinedOperatorData<dim>                             combined_operator_data;
-  CombinedOperator<dim, degree, n_q_points_vis, Number> combined_operator;
+  std::shared_ptr<InverseMassInterface<dim, Number>> inverse_mass_all;
+  std::shared_ptr<InverseMassInterface<dim, Number>> inverse_mass_vector;
+  std::shared_ptr<InverseMassInterface<dim, Number>> inverse_mass_scalar;
 
   // L2 projections to calculate derived quantities
-  p_u_T_Calculator<dim, degree, n_q_points_l2_projections, Number> p_u_T_calculator;
-  VorticityCalculator<dim, degree, Number>                         vorticity_calculator;
-  DivergenceCalculator<dim, degree, Number>                        divergence_calculator;
+  p_u_T_Calculator<dim, Number>     p_u_T_calculator;
+  VorticityCalculator<dim, Number>  vorticity_calculator;
+  DivergenceCalculator<dim, Number> divergence_calculator;
 
   // postprocessor
   std::shared_ptr<Postprocessor> postprocessor;

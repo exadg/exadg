@@ -35,7 +35,7 @@ public:
 
   template<typename T>
   void
-  init(int, int, int, int, T&)
+  init(int, int, int, int, T &)
   {
   }
 
@@ -54,7 +54,7 @@ public:
 } // namespace dealspectrum
 #endif
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 class KineticEnergySpectrumCalculator
 {
 public:
@@ -66,9 +66,8 @@ public:
   }
 
   void
-  setup(MatrixFree<dim, Number> const & matrix_free_data_in,
-        const Triangulation<dim, dim> & tria,
-        DofQuadIndexData const & /*dof_quad_index_data_in*/,
+  setup(MatrixFree<dim, Number> const &   matrix_free_data_in,
+        Triangulation<dim, dim> const &   tria,
         KineticEnergySpectrumData const & data_in)
   {
     data = data_in;
@@ -80,10 +79,9 @@ public:
       MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
       cells = round(pow(cells, 1.0 / dim));
 
-      unsigned int evaluation_points =
-        std::max(fe_degree + 1, (int)data.evaluation_points_per_cell);
+      unsigned int evaluation_points = std::max(data.degree + 1, data.evaluation_points_per_cell);
 
-      deal_spectrum_wrapper.init(dim, cells, fe_degree + 1, evaluation_points, tria);
+      deal_spectrum_wrapper.init(dim, cells, data.degree + 1, evaluation_points, tria);
     }
   }
 

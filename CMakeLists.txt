@@ -42,6 +42,14 @@ SET( TARGET_SRC
      include/time_integration/time_int_bdf_base.cpp
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/time_integration/enum_types.cpp
+     include/matrix_free/resolve_templates_float_2d.cpp
+     include/matrix_free/resolve_templates_float_3d.cpp
+     include/matrix_free/resolve_templates_double_2d.cpp
+     include/matrix_free/resolve_templates_double_3d.cpp
+     include/operators/inverse_mass_matrix_float_2d.cpp
+     include/operators/inverse_mass_matrix_float_3d.cpp
+     include/operators/inverse_mass_matrix_double_2d.cpp
+     include/operators/inverse_mass_matrix_double_3d.cpp
      include/poisson/user_interface/enum_types.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp     
      include/convection_diffusion/user_interface/enum_types.cpp
@@ -89,6 +97,7 @@ SET( TARGET_SRC
      include/compressible_navier_stokes/user_interface/enum_types.cpp
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/compressible_navier_stokes/interface_space_time/operator.cpp
+     include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp     
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp

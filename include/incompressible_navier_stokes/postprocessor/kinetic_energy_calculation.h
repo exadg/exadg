@@ -8,11 +8,13 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_KINETIC_ENERGY_CALCULATION_H_
 
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+
 #include "../../incompressible_navier_stokes/postprocessor/kinetic_energy_data.h"
 #include "../../incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 #include "../../incompressible_navier_stokes/spatial_discretization/curl_compute.h"
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 class KineticEnergyCalculator
 {
   static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
@@ -122,7 +124,7 @@ protected:
             Number &                        dissipation)
   {
     std::vector<Number> dst(4, 0.0);
-    matrix_free_data.cell_loop(&KineticEnergyCalculator<dim, fe_degree, Number>::cell_loop,
+    matrix_free_data.cell_loop(&KineticEnergyCalculator<dim, Number>::cell_loop,
                                this,
                                dst,
                                velocity);
@@ -147,8 +149,9 @@ protected:
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range)
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
-      data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
+    CellIntegrator<dim, dim, Number> fe_eval(data,
+                                             dof_quad_index_data.dof_index_velocity,
+                                             dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval.n_q_points);
 
@@ -219,11 +222,11 @@ template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
 class DGNavierStokesBase;
 
 template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class KineticEnergyCalculatorDetailed : public KineticEnergyCalculator<dim, fe_degree_u, Number>
+class KineticEnergyCalculatorDetailed : public KineticEnergyCalculator<dim, Number>
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef KineticEnergyCalculator<dim, fe_degree_u, Number> Base;
+  typedef KineticEnergyCalculator<dim, Number> Base;
 
   typedef DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, Number> NavierStokesOperator;
 

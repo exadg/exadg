@@ -20,6 +20,7 @@ struct KineticEnergySpectrumData
       calculate_every_time_interval(-1.0),
       filename_prefix("energy_spectrum"),
       output_tolerance(std::numeric_limits<double>::min()),
+      degree(0),
       evaluation_points_per_cell(0)
   {
   }
@@ -46,6 +47,7 @@ struct KineticEnergySpectrumData
   double       calculate_every_time_interval;
   std::string  filename_prefix;
   double       output_tolerance;
+  unsigned int degree;
   unsigned int evaluation_points_per_cell;
 };
 

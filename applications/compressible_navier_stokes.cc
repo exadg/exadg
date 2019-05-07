@@ -13,14 +13,12 @@
 
 // postprocessor
 #include "../include/compressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../include/compressible_navier_stokes/spatial_discretization/dg_operator.h"
 
 // spatial discretization
-#include "../include/compressible_navier_stokes/spatial_discretization/dg_comp_navier_stokes.h"
-
-// temporal discretization
 #include "../include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.h"
 
-// Paramters, BCs, etc.
+// Parameters, BCs, etc.
 #include "../include/compressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/compressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/compressible_navier_stokes/user_interface/field_functions.h"
@@ -37,9 +35,9 @@
 //#include "compressible_navier_stokes_test_cases/channel_flow.h"
 //#include "compressible_navier_stokes_test_cases/couette_flow.h"
 //#include "compressible_navier_stokes_test_cases/steady_shear_flow.h"
-#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
+//#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
 //#include "compressible_navier_stokes_test_cases/flow_past_cylinder.h"
-//#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;
@@ -48,20 +46,20 @@ using namespace CompNS;
 
 namespace CompNS
 {
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number = double>
+template<int dim, typename Number = double>
 class Problem
 {
 public:
-  typedef DGOperator<dim, degree, n_q_points_conv, n_q_points_vis, Number> DG_OPERATOR;
+  typedef DGOperator<dim, Number> DG_OPERATOR;
 
   typedef TimeIntExplRK<dim, Number> TIME_INT;
 
-  typedef PostProcessor<dim, degree, n_q_points_conv, n_q_points_vis, Number> POSTPROCESSOR;
+  typedef PostProcessor<dim, Number> POSTPROCESSOR;
 
   Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
 
   void
-  setup(bool const do_restart);
+  setup(InputParameters<dim> const & param, bool const do_restart);
 
   void
   solve();
@@ -105,10 +103,9 @@ private:
   double         setup_time;
 };
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
-  unsigned int const n_refine_space_in,
-  unsigned int const n_refine_time_in)
+template<int dim, typename Number>
+Problem<dim, Number>::Problem(unsigned int const n_refine_space_in,
+                              unsigned int const n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(n_refine_space_in),
     n_refine_time(n_refine_time_in),
@@ -117,9 +114,9 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::Problem(
 {
 }
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
+Problem<dim, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -132,16 +129,16 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::print_header()
   // clang-format on
 }
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup(bool const do_restart)
+Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do_restart)
 {
   timer.restart();
 
   print_header();
   print_MPI_info(pcout);
 
-  param.set_input_parameters();
+  param = param_in;
   param.check_input_parameters();
 
   if(param.print_input_parameters == true)
@@ -190,8 +187,7 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup(bool const 
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor =
-    construct_postprocessor<dim, degree, n_q_points_conv, n_q_points_vis, Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DG_OPERATOR(*triangulation, param, postprocessor));
@@ -211,18 +207,18 @@ Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::setup(bool const 
   setup_time = timer.wall_time();
 }
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::solve()
+Problem<dim, Number>::solve()
 {
   time_integrator->timeloop();
 
   overall_time += this->timer.wall_time();
 }
 
-template<int dim, int degree, int n_q_points_conv, int n_q_points_vis, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree, n_q_points_conv, n_q_points_vis, Number>::analyze_computing_times() const
+Problem<dim, Number>::analyze_computing_times() const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -356,10 +352,12 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        Problem<DIMENSION, FE_DEGREE, QPOINTS_CONV, QPOINTS_VIS> navier_stokes_problem(
-          refine_steps_space, refine_steps_time);
+        Problem<DIMENSION> navier_stokes_problem(refine_steps_space, refine_steps_time);
 
-        navier_stokes_problem.setup(do_restart);
+        CompNS::InputParameters<DIMENSION> param;
+        param.set_input_parameters();
+
+        navier_stokes_problem.setup(param, do_restart);
 
         navier_stokes_problem.solve();
 

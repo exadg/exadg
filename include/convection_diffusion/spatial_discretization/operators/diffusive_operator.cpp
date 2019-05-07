@@ -22,10 +22,8 @@ DiffusiveOperator<dim, degree, Number>::reinit(
   Base::reinit(mf_data, constraint_matrix, operator_data);
 
   MappingQGeneric<dim> mapping(operator_data.degree_mapping);
-  IP::calculate_penalty_parameter<dim, degree, Number>(array_penalty_parameter,
-                                                       *this->data,
-                                                       mapping,
-                                                       this->operator_data.dof_index);
+  IP::calculate_penalty_parameter<dim, Number>(
+    array_penalty_parameter, *this->data, mapping, degree, this->operator_data.dof_index);
 
   diffusivity = this->operator_data.diffusivity;
 }

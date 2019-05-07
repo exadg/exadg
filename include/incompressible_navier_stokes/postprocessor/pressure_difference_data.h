@@ -13,8 +13,7 @@
 template<int dim>
 struct PressureDifferenceData
 {
-  PressureDifferenceData()
-    : calculate_pressure_difference(false), filename_prefix_pressure_difference("indexa")
+  PressureDifferenceData() : calculate_pressure_difference(false), filename("pressure_difference")
   {
   }
 
@@ -33,7 +32,7 @@ struct PressureDifferenceData
   /*
    *  filenames
    */
-  std::string filename_prefix_pressure_difference;
+  std::string filename;
 };
 
 

@@ -127,8 +127,10 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
-  // mapping
+  degree = FE_DEGREE;
   degree_mapping = FE_DEGREE;
+  n_q_points_conv = QPOINTS_CONV;
+  n_q_points_vis = QPOINTS_VIS;
 
   // viscous term
   IP_factor = 1.0;
@@ -464,11 +466,11 @@ struct PostProcessorDataTurbulentChannel
   TurbulentChannelData turb_ch_data;
 };
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-class PostProcessorTurbulentChannel : public CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type>
+template<int dim, typename Number>
+class PostProcessorTurbulentChannel : public CompNS::PostProcessor<dim, Number>
 {
 public:
-  typedef CompNS::PostProcessor<dim,fe_degree, n_q_points_conv, n_q_points_vis, value_type> Base;
+  typedef CompNS::PostProcessor<dim, Number> Base;
 
   typedef LinearAlgebra::distributed::Vector<double> VectorType;
 
@@ -521,8 +523,8 @@ public:
   std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
 };
 
-template<int dim, int fe_degree, int n_q_points_conv, int n_q_points_vis, typename value_type>
-std::shared_ptr<CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type> >
+template<int dim, typename Number>
+std::shared_ptr<CompNS::PostProcessor<dim, Number> >
 construct_postprocessor(CompNS::InputParameters<dim> const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
@@ -540,8 +542,8 @@ construct_postprocessor(CompNS::InputParameters<dim> const &param)
   pp_data_turb_ch.pp_data = pp_data;
   pp_data_turb_ch.turb_ch_data = param.turb_ch_data;
 
-  std::shared_ptr<CompNS::PostProcessor<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type> > pp;
-  pp.reset(new PostProcessorTurbulentChannel<dim, fe_degree, n_q_points_conv, n_q_points_vis, value_type>(pp_data_turb_ch));
+  std::shared_ptr<CompNS::PostProcessor<dim, Number> > pp;
+  pp.reset(new PostProcessorTurbulentChannel<dim, Number>(pp_data_turb_ch));
 
   return pp;
 }
