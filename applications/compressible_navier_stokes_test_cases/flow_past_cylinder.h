@@ -114,7 +114,6 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // SOLVER
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
   calculate_velocity = true;
   calculate_pressure = true;
   output_data.write_output = false;

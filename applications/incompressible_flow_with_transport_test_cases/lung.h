@@ -247,6 +247,10 @@ set_input_parameters()
   // triangulation
   triangulation_type = TRIANGULATION_TYPE_FLUID;
 
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
+
   // mapping
   degree_mapping = DEGREE_MAPPING;
 
@@ -417,7 +421,8 @@ set_input_parameters(unsigned int scalar_index)
   // triangulation
   triangulation_type = TRIANGULATION_TYPE_SCALAR;
 
-  // mapping
+  // polynomial degree
+  degree = FE_DEGREE_SCALAR;
   degree_mapping = DEGREE_MAPPING;
 
   // convective term
@@ -449,7 +454,8 @@ set_input_parameters(unsigned int scalar_index)
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
+
+  // output data
   output_data.write_output = WRITE_OUTPUT;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
@@ -799,11 +805,11 @@ struct PostProcessorDataLung
   FlowRateCalculatorData<dim> flow_rate_data;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-class PostProcessorLung : public PostProcessor<dim, degree_u, degree_p, Number>
+template<int dim, typename Number>
+class PostProcessorLung : public PostProcessor<dim, Number>
 {
 public:
-  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
+  typedef PostProcessor<dim, Number> Base;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -850,7 +856,7 @@ public:
       pp_data_lung.flow_rate_data.boundary_IDs.insert((*iterator)->get_boundary_id());
     }
 
-    flow_rate_calculator.reset(new FlowRateCalculator<dim,degree_u,Number>(
+    flow_rate_calculator.reset(new FlowRateCalculator<dim,Number>(
         matrix_free_data_in, dof_handler_velocity_in, dof_quad_index_data_in, pp_data_lung.flow_rate_data));
   }
 
@@ -937,13 +943,13 @@ private:
   PostProcessorDataLung<dim> pp_data_lung;
 
   // calculate flow rates for all outflow boundaries
-  std::shared_ptr<FlowRateCalculator<dim,degree_u,Number> > flow_rate_calculator;
+  std::shared_ptr<FlowRateCalculator<dim,Number> > flow_rate_calculator;
 
   double time_last;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -960,8 +966,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_lung.pp_data = pp_data;
   pp_data_lung.flow_rate_data = param.flow_rate_data;
 
-  std::shared_ptr<PostProcessorLung<dim,degree_u,degree_p,Number> > pp;
-  pp.reset(new PostProcessorLung<dim,degree_u,degree_p,Number>(pp_data_lung));
+  std::shared_ptr<PostProcessorLung<dim,Number> > pp;
+  pp.reset(new PostProcessorLung<dim,Number>(pp_data_lung));
 
   return pp;
 }

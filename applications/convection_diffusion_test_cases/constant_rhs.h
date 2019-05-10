@@ -17,6 +17,10 @@
 /*                                                                                    */
 /**************************************************************************************/
 
+// single or double precision?
+//typedef float VALUE_TYPE;
+typedef double VALUE_TYPE;
+
 // set the number of space dimensions: DIMENSION = 2, 3
 const unsigned int DIMENSION = 2;
 
@@ -58,6 +62,10 @@ void ConvDiff::InputParameters::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  // polynomial degree
+  degree = FE_DEGREE;
+  degree_mapping = 1;
+
   // convective term
   numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
@@ -75,7 +83,6 @@ void ConvDiff::InputParameters::set_input_parameters()
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
   output_data.write_output = true;
   output_data.output_folder = "output_conv_diff/constant_rhs/";
   output_data.output_name = "constant_rhs";

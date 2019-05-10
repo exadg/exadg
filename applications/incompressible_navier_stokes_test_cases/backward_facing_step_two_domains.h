@@ -188,6 +188,10 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -945,11 +949,11 @@ struct PostProcessorDataBFS
   LinePlotData<dim> line_plot_data;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-class PostProcessorBFS : public PostProcessor<dim, degree_u, degree_p, Number>
+template<int dim, typename Number>
+class PostProcessorBFS : public PostProcessor<dim, Number>
 {
 public:
-  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
+  typedef PostProcessor<dim, Number> Base;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -1031,8 +1035,8 @@ public:
   std::shared_ptr<LinePlotCalculatorStatisticsHomogeneousDirection<dim> > line_plot_calculator_statistics;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -1048,8 +1052,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_bfs.inflow_data = param.inflow_data;
   pp_data_bfs.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessorBase<dim,degree_u,degree_p,Number> > pp;
-  pp.reset(new PostProcessorBFS<dim,degree_u,degree_p,Number>(pp_data_bfs));
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
+  pp.reset(new PostProcessorBFS<dim,Number>(pp_data_bfs));
 
   return pp;
 }

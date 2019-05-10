@@ -107,7 +107,11 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
-  // mappping
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
+
+  // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
   // convective term
@@ -198,7 +202,6 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   // OUTPUT AND POSTPROCESSING
 
   // write output for visualization of results
-  print_input_parameters = true;
   output_data.write_output = WRITE_OUTPUT;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME + "_fluid";
@@ -262,6 +265,10 @@ void ConvDiff::InputParameters::set_input_parameters(unsigned int scalar_index)
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  // polynomial degree
+  degree = FE_DEGREE_SCALAR;
+  degree_mapping = 1;
+
   // convective term
   numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
@@ -291,7 +298,6 @@ void ConvDiff::InputParameters::set_input_parameters(unsigned int scalar_index)
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
   output_data.write_output = WRITE_OUTPUT;
   output_data.output_folder = OUTPUT_FOLDER_VTU;
   output_data.output_name = OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
@@ -411,8 +417,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, int degree_u, int degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -425,8 +431,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
-  pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
 
   return pp;
 }

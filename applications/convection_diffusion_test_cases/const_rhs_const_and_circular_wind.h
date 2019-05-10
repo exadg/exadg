@@ -22,6 +22,10 @@
 // pure dirichlet boundary conditions (homogeneous)
 // use constant or circular advection velocity
 
+// single or double precision?
+//typedef float VALUE_TYPE;
+typedef double VALUE_TYPE;
+
 // set the number of space dimensions: DIMENSION = 2, 3
 const unsigned int DIMENSION = 2;
 
@@ -70,6 +74,10 @@ void ConvDiff::InputParameters::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  // polynomial degree
+  degree = FE_DEGREE;
+  degree_mapping = 1;
+
   // convective term
   numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
@@ -107,17 +115,14 @@ void ConvDiff::InputParameters::set_input_parameters()
   runtime_optimization = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = false;
+
+  // writing output
   output_data.write_output = false; //true;
   output_data.output_folder = "output_conv_diff/";
   output_data.output_name = "const_wind_const_rhs";
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time);
   output_data.degree = FE_DEGREE;
-
-  error_data.analytical_solution_available = false;
-  error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
 
   // output of solver information
   solver_info_data.print_to_screen = true;

@@ -333,6 +333,10 @@ void InputParameters<dim>::set_input_parameters(unsigned int const domain_id)
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -1303,11 +1307,11 @@ struct PostProcessorDataFDA
   LinePlotData<dim> line_plot_data;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-class PostProcessorFDA : public PostProcessor<dim, degree_u, degree_p, Number>
+template<int dim, typename Number>
+class PostProcessorFDA : public PostProcessor<dim, Number>
 {
 public:
-  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
+  typedef PostProcessor<dim, Number> Base;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -1344,7 +1348,7 @@ public:
     inflow_data_calculator->setup(dof_handler_velocity_in,mapping_in);
 
     // calculation of mean velocity
-    mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,degree_u,Number>(
+    mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,Number>(
         matrix_free_data_in, dof_quad_index_data_in, pp_data_fda.mean_velocity_data));
 
     // evaluation of results along lines
@@ -1407,7 +1411,7 @@ private:
 
   // calculate flow rate in precursor domain so that the flow rate can be
   // dynamically adjusted by a flow rate controller.
-  std::shared_ptr<MeanVelocityCalculator<dim,degree_u,Number> > mean_velocity_calculator;
+  std::shared_ptr<MeanVelocityCalculator<dim, Number> > mean_velocity_calculator;
 
   // the flow rate controller needs the time step size, so we have to store the previous time instant
   double time_old;
@@ -1416,8 +1420,8 @@ private:
   std::shared_ptr<LinePlotCalculatorStatistics<dim> > line_plot_calculator_statistics;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   // basic modules
@@ -1435,8 +1439,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_fda.mean_velocity_data = param.mean_velocity_data;
   pp_data_fda.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessorFDA<dim,degree_u,degree_p,Number> > pp;
-  pp.reset(new PostProcessorFDA<dim,degree_u,degree_p,Number>(pp_data_fda));
+  std::shared_ptr<PostProcessorFDA<dim,Number> > pp;
+  pp.reset(new PostProcessorFDA<dim,Number>(pp_data_fda));
 
   return pp;
 }

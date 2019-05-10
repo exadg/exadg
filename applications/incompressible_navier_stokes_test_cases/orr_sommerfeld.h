@@ -107,6 +107,10 @@ void InputParameters<dim>::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
+
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
 
@@ -397,11 +401,11 @@ struct PostProcessorDataOrrSommerfeld
   PerturbationEnergyData energy_data;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-class PostProcessorOrrSommerfeld : public PostProcessor<dim, degree_u, degree_p, Number>
+template<int dim, typename Number>
+class PostProcessorOrrSommerfeld : public PostProcessor<dim, Number>
 {
 public:
-  typedef PostProcessor<dim, degree_u, degree_p, Number> Base;
+  typedef PostProcessor<dim, Number> Base;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -451,11 +455,11 @@ public:
   }
 
   PerturbationEnergyData energy_data;
-  PerturbationEnergyCalculator<dim,degree_u,Number> energy_calculator;
+  PerturbationEnergyCalculator<dim,Number> energy_calculator;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -469,8 +473,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data_os.pp_data = pp_data;
   pp_data_os.energy_data = param.perturbation_energy_data;
 
-  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
-  pp.reset(new PostProcessorOrrSommerfeld<dim,degree_u,degree_p,Number>(pp_data_os));
+  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  pp.reset(new PostProcessorOrrSommerfeld<dim,Number>(pp_data_os));
 
   return pp;
 }

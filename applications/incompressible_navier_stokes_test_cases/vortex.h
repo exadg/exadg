@@ -26,11 +26,11 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 5;
+unsigned int const FE_DEGREE_VELOCITY = 4;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 1;
+unsigned int const REFINE_STEPS_SPACE_MIN = 3;
 unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
 
 // set the number of refine levels for temporal convergence tests
@@ -70,7 +70,7 @@ void InputParameters<dim>::set_input_parameters()
   calculation_of_time_step_size = TimeStepCalculation::CFL;
   adaptive_time_stepping = false;
   max_velocity = 1.4 * U_X_MAX;
-  cfl = 0.1;
+  cfl = 0.4;
   cfl_oif = cfl/1.0;
   cfl_exponent_fe_degree_velocity = 1.5;
   c_eff = 8.0;
@@ -83,6 +83,10 @@ void InputParameters<dim>::set_input_parameters()
 
   // triangulation
   triangulation_type = TriangulationType::Distributed;
+
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
 
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
@@ -129,7 +133,7 @@ void InputParameters<dim>::set_input_parameters()
   solver_viscous = SolverViscous::CG;
   solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
   preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //Multigrid;
-  update_preconditioner_viscous = true;
+  update_preconditioner_viscous = false;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -175,17 +179,17 @@ void InputParameters<dim>::set_input_parameters()
 
   // preconditioner linear solver
   preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
-  update_preconditioner_coupled = true;
+  update_preconditioner_coupled = false; //true;
 
   // preconditioner momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
+  preconditioner_velocity_block = MomentumPreconditioner::Multigrid; // InverseMassMatrix;
   multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
-  multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi; //Jacobi; //Chebyshev; //GMRES;
+  multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
   multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
   multigrid_data_velocity_block.smoother_data.iterations = 5;
   multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
   // coarse grid solver
-  multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+  multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
 
   // preconditioner Schur-complement block
   preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
@@ -193,9 +197,6 @@ void InputParameters<dim>::set_input_parameters()
 
 
   // OUTPUT AND POSTPROCESSING
-
-  // print input parameters
-  print_input_parameters = true; //false;
 
   // write output for visualization of results
   output_data.write_output = true;
@@ -570,8 +571,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, int degree_u, int degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -582,8 +583,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.pressure_difference_data = param.pressure_difference_data;
   pp_data.mass_data = param.mass_data;
 
-  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
-  pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
 
   return pp;
 }

@@ -107,7 +107,6 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   use_combined_operator = false;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
   calculate_velocity = false;
   output_data.write_output = false;
   output_data.write_pressure = true;
