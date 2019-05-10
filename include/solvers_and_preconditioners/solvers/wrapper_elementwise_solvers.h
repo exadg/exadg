@@ -9,7 +9,7 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_SOLVERS_WRAPPER_ELEMENTWISE_SOLVERS_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/operators.h>
 
 #include "../preconditioner/elementwise_preconditioners.h"
@@ -36,17 +36,15 @@ struct IterativeSolverData
 
 template<int dim,
          int number_of_equations,
-         int fe_degree,
-         typename value_type,
+         typename Number,
          typename Operator,
          typename Preconditioner>
-class IterativeSolver : public IterativeSolverBase<LinearAlgebra::distributed::Vector<value_type>>
+class IterativeSolver : public IterativeSolverBase<LinearAlgebra::distributed::Vector<Number>>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef IterativeSolver<dim, number_of_equations, fe_degree, value_type, Operator, Preconditioner>
-    THIS;
+  typedef IterativeSolver<dim, number_of_equations, Number, Operator, Preconditioner> THIS;
 
   IterativeSolver(Operator &                operator_in,
                   Preconditioner &          preconditioner_in,
@@ -71,35 +69,28 @@ public:
 
 private:
   void
-  solve_elementwise(MatrixFree<dim, value_type> const &           data,
+  solve_elementwise(MatrixFree<dim, Number> const &               matrix_free,
                     VectorType &                                  dst,
                     VectorType const &                            src,
                     std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, number_of_equations, value_type> fe_eval(
-      data, op.get_dof_index(), op.get_quad_index());
+    CellIntegrator<dim, number_of_equations, Number> integrator(matrix_free,
+                                                                op.get_dof_index(),
+                                                                op.get_quad_index());
 
-    const unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+    const unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
-    AlignedVector<VectorizedArray<value_type>> solution(dofs_per_cell);
+    AlignedVector<VectorizedArray<Number>> solution(dofs_per_cell);
 
     // setup elementwise solver
-
-    // CG
-    std::shared_ptr<Elementwise::SolverCG<VectorizedArray<value_type>>> solver_cg;
-
-    // GMRES
-    std::shared_ptr<Elementwise::SolverGMRES<VectorizedArray<value_type>>> solver_gmres;
-
     if(iterative_solver_data.solver_type == SolverType::CG)
     {
-      solver_cg.reset(
-        new Elementwise::SolverCG<VectorizedArray<value_type>>(dofs_per_cell,
-                                                               iterative_solver_data.solver_data));
+      solver.reset(new Elementwise::SolverCG<VectorizedArray<Number>, Operator, Preconditioner>(
+        dofs_per_cell, iterative_solver_data.solver_data));
     }
     else if(iterative_solver_data.solver_type == SolverType::GMRES)
     {
-      solver_gmres.reset(new Elementwise::SolverGMRES<VectorizedArray<value_type>>(
+      solver.reset(new Elementwise::SolverGMRES<VectorizedArray<Number>, Operator, Preconditioner>(
         dofs_per_cell, iterative_solver_data.solver_data));
     }
     else
@@ -110,33 +101,26 @@ private:
     // loop over all cells and solve local problem iteratively on each cell
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(src, 0);
+      integrator.reinit(cell);
+      integrator.read_dof_values(src, 0);
 
       // initialize operator and preconditioner for current cell
       op.setup(cell, dofs_per_cell);
       preconditioner.setup(cell);
 
       // call iterative solver and solve on current cell
-      if(iterative_solver_data.solver_type == SolverType::CG)
-      {
-        solver_cg->solve(&op, solution.begin(), fe_eval.begin_dof_values(), &preconditioner);
-      }
-      else if(iterative_solver_data.solver_type == Elementwise::SolverType::GMRES)
-      {
-        solver_gmres->solve(&op, solution.begin(), fe_eval.begin_dof_values(), &preconditioner);
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Not implemented."));
-      }
+      solver->solve(&op, solution.begin(), integrator.begin_dof_values(), &preconditioner);
 
       // write solution on current element to global dof vector
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        fe_eval.begin_dof_values()[j] = solution[j];
-      fe_eval.set_dof_values(dst, 0);
+        integrator.begin_dof_values()[j] = solution[j];
+      integrator.set_dof_values(dst, 0);
     }
   }
+
+  mutable std::shared_ptr<
+    Elementwise::SolverBase<VectorizedArray<Number>, Operator, Preconditioner>>
+    solver;
 
   Operator & op;
 

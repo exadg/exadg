@@ -10,20 +10,17 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 
-// postprocessor
-#include "convection_diffusion/postprocessor/postprocessor.h"
-
 // spatial discretization
-#include "convection_diffusion/spatial_discretization/dg_convection_diffusion_operation.h"
+#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
+#include "../include/convection_diffusion/spatial_discretization/interface.h"
 
-// interface space and time discretizations
-#include "convection_diffusion/interface_space_time/operator.h"
-
-// time integration
+// temporal discretization
+#include "convection_diffusion/time_integration/driver_steady_problems.h"
 #include "convection_diffusion/time_integration/time_int_bdf.h"
 #include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
 
-#include "convection_diffusion/time_integration/driver_steady_problems.h"
+// postprocessor
+#include "convection_diffusion/postprocessor/postprocessor.h"
 
 // user interface, etc.
 #include "convection_diffusion/user_interface/analytical_solution.h"
@@ -55,14 +52,14 @@
 using namespace dealii;
 using namespace ConvDiff;
 
-template<int dim, int degree, typename Number = double>
-class ConvDiffProblem
+template<int dim, typename Number = double>
+class Problem
 {
 public:
-  ConvDiffProblem(const unsigned int n_refine_space, const unsigned int n_refine_time);
+  Problem(unsigned int const n_refine_space, unsigned int const n_refine_time);
 
   void
-  setup(bool const do_restart);
+  setup(InputParameters const & param_in, bool const do_restart);
 
   void
   solve();
@@ -81,8 +78,8 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  const unsigned int n_refine_space;
-  const unsigned int n_refine_time;
+  unsigned int const n_refine_space;
+  unsigned int const n_refine_time;
 
   InputParameters param;
 
@@ -91,10 +88,9 @@ private:
 
   std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
 
-  typedef DGOperation<dim, degree, Number> OPERATOR;
-  std::shared_ptr<OPERATOR>                conv_diff_operator;
+  std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
-  std::shared_ptr<PostProcessor<dim, degree>> postprocessor;
+  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
 
   std::shared_ptr<TimeIntBase> time_integrator;
 
@@ -108,9 +104,9 @@ private:
   double         setup_time;
 };
 
-template<int dim, int degree, typename Number>
-ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refine_space_in,
-                                                      const unsigned int n_refine_time_in)
+template<int dim, typename Number>
+Problem<dim, Number>::Problem(unsigned int const n_refine_space_in,
+                              unsigned int const n_refine_time_in)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(n_refine_space_in),
     n_refine_time(n_refine_time_in),
@@ -119,9 +115,9 @@ ConvDiffProblem<dim, degree, Number>::ConvDiffProblem(const unsigned int n_refin
 {
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-ConvDiffProblem<dim, degree, Number>::print_header()
+Problem<dim, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -134,20 +130,18 @@ ConvDiffProblem<dim, degree, Number>::print_header()
   // clang-format on
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-ConvDiffProblem<dim, degree, Number>::setup(bool const do_restart)
+Problem<dim, Number>::setup(InputParameters const & param_in, bool const do_restart)
 {
   timer.restart();
 
   print_header();
   print_MPI_info(pcout);
 
-  param.set_input_parameters();
+  param = param_in;
   param.check_input_parameters();
-
-  if(param.print_input_parameters)
-    param.print(pcout);
+  param.print(pcout, "List of input parameters:");
 
   // triangulation
   if(param.triangulation_type == TriangulationType::Distributed)
@@ -184,10 +178,10 @@ ConvDiffProblem<dim, degree, Number>::setup(bool const do_restart)
   set_analytical_solution(analytical_solution);
 
   // initialize postprocessor
-  postprocessor.reset(new PostProcessor<dim, degree>());
+  postprocessor.reset(new PostProcessor<dim, Number>());
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(new OPERATOR(*triangulation, param, postprocessor));
+  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
 
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -251,9 +245,9 @@ ConvDiffProblem<dim, degree, Number>::setup(bool const do_restart)
   setup_time = timer.wall_time();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-ConvDiffProblem<dim, degree, Number>::solve()
+Problem<dim, Number>::solve()
 {
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -271,9 +265,9 @@ ConvDiffProblem<dim, degree, Number>::solve()
   overall_time += this->timer.wall_time();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-ConvDiffProblem<dim, degree, Number>::analyze_computing_times() const
+Problem<dim, Number>::analyze_computing_times() const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -382,7 +376,7 @@ ConvDiffProblem<dim, degree, Number>::analyze_computing_times() const
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 
   // Throughput in DoFs/s per time step per core
-  unsigned int const DoFs = conv_diff_operator->get_number_of_dofs();
+  types::global_dof_index const DoFs = conv_diff_operator->get_number_of_dofs();
 
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -457,9 +451,12 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        ConvDiffProblem<DIMENSION, FE_DEGREE> problem(refine_steps_space, refine_steps_time);
+        Problem<DIMENSION, VALUE_TYPE> problem(refine_steps_space, refine_steps_time);
 
-        problem.setup(do_restart);
+        ConvDiff::InputParameters param;
+        param.set_input_parameters();
+
+        problem.setup(param, do_restart);
 
         problem.solve();
 

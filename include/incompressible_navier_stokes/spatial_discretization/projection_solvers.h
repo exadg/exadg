@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_SOLVERS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_SOLVERS_H_
 
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 namespace IncNS
 {
@@ -16,14 +16,14 @@ namespace IncNS
  *  Projection solver for projection with divergence penalty term only using a direct solution
  * approach (note that the system of equations is block-diagonal in this case).
  */
-template<int dim, int degree, typename Number, typename Operator>
+template<int dim, typename Number, typename Operator>
 class DirectProjectionSolverDivergencePenalty
   : public IterativeSolverBase<LinearAlgebra::distributed::Vector<Number>>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DirectProjectionSolverDivergencePenalty<dim, degree, Number, Operator> THIS;
+  typedef DirectProjectionSolverDivergencePenalty<dim, Number, Operator> THIS;
 
   DirectProjectionSolverDivergencePenalty(Operator const & operator_in) : op(operator_in)
   {
@@ -51,9 +51,9 @@ public:
               VectorType const &                            src,
               std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEvaluation<dim, degree, degree + 1, dim, Number> fe_eval_velocity(data,
-                                                                        op.get_dof_index(),
-                                                                        op.get_quad_index());
+    CellIntegrator<dim, dim, Number> fe_eval_velocity(data,
+                                                      op.get_dof_index(),
+                                                      op.get_quad_index());
 
     std::vector<LAPACKFullMatrix<Number>> matrices(VectorizedArray<Number>::n_array_elements);
 

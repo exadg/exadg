@@ -212,6 +212,10 @@ public:
       // triangulation
       triangulation_type(TriangulationType::Undefined),
 
+      // polynomial degrees
+      degree_u(3),
+      degree_p(2),
+
       // mapping
       degree_mapping(1),
 
@@ -343,9 +347,6 @@ public:
 
       // OUTPUT AND POSTPROCESSING
 
-      // print input parameters
-      print_input_parameters(true),
-
       // write output for visualization of results
       output_data(OutputDataNavierStokes()),
 
@@ -476,6 +477,8 @@ public:
     // SPATIAL DISCRETIZATION
     AssertThrow(triangulation_type != TriangulationType::Undefined,
                 ExcMessage("parameter must be defined"));
+
+    AssertThrow(degree_p <= degree_u, ExcMessage("Invalid parameter."));
 
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
 
@@ -656,9 +659,9 @@ public:
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream & pcout, std::string const & name)
   {
-    pcout << std::endl << "List of input parameters:" << std::endl;
+    pcout << std::endl << name << std::endl;
 
     // MATHEMATICAL MODEL
     print_parameters_mathematical_model(pcout);
@@ -799,6 +802,9 @@ public:
     pcout << std::endl << "Spatial discretization:" << std::endl;
 
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
+
+    print_parameter(pcout, "Polynomial degree velocity", degree_u);
+    print_parameter(pcout, "Polynomial degree pressure", degree_p);
 
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
@@ -1355,6 +1361,12 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
+  // Polynomial degree of velocity shape functions
+  unsigned int degree_u;
+
+  // Polynomial degree of pressure shape functions
+  unsigned int degree_p;
+
   // Polynomial degree of shape functions used for geometry approximation (mapping from
   // parameter space to physical space)
   unsigned int degree_mapping;
@@ -1418,7 +1430,7 @@ public:
   // penalty factor of continuity penalty term
   double continuity_penalty_factor;
 
-  // type of penalty parameter (see enum declarationn for more information
+  // type of penalty parameter (see enum declaration for more information)
   TypePenaltyParameter type_penalty_parameter;
 
   // Add divergence and continuity penalty terms to monolithic system of equations.
@@ -1688,9 +1700,6 @@ public:
   /*                               OUTPUT AND POSTPROCESSING                            */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // print input parameters at the beginning of the simulation
-  bool print_input_parameters;
 
   // writing output for visualization
   OutputDataNavierStokes output_data;

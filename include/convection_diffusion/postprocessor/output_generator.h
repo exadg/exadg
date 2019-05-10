@@ -60,11 +60,11 @@ write_output(OutputData const &      output_data,
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 class OutputGenerator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OutputGenerator() : output_counter(0), reset_counter(true)
   {

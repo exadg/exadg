@@ -9,7 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_DIVERGENCE_OPERATOR_H_
 
 
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "../../../functionalities/evaluate_functions.h"
 #include "../../../operators/operator_type.h"
@@ -43,11 +43,11 @@ struct DivergenceOperatorData
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 class DivergenceOperator
 {
 public:
-  typedef DivergenceOperator<dim, degree_u, degree_p, Number> This;
+  typedef DivergenceOperator<dim, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -56,46 +56,47 @@ public:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef FEEvaluation<dim, degree_u, degree_u + 1, dim, Number> FEEvalVelocity;
-  typedef FEEvaluation<dim, degree_p, degree_u + 1, 1, Number>   FEEvalPressure;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+  typedef CellIntegrator<dim, 1, Number>   CellIntegratorP;
 
-  typedef FEFaceEvaluation<dim, degree_u, degree_u + 1, dim, Number> FEFaceEvalVelocity;
-  typedef FEFaceEvaluation<dim, degree_p, degree_u + 1, 1, Number>   FEFaceEvalPressure;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
-  DivergenceOperator() : data(nullptr), eval_time(0.0)
+
+  DivergenceOperator() : matrix_free(nullptr), eval_time(0.0)
   {
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &     mf_data,
+  initialize(MatrixFree<dim, Number> const &     matrix_free_in,
              DivergenceOperatorData<dim> const & operator_data_in)
   {
-    this->data          = &mf_data;
+    this->matrix_free   = &matrix_free_in;
     this->operator_data = operator_data_in;
   }
 
   void
   apply(VectorType & dst, VectorType const & src) const
   {
-    data->loop(&This::cell_loop,
-               &This::face_loop,
-               &This::boundary_face_loop_hom_operator,
-               this,
-               dst,
-               src,
-               true /*zero_dst_vector = true*/);
+    matrix_free->loop(&This::cell_loop,
+                      &This::face_loop,
+                      &This::boundary_face_loop_hom_operator,
+                      this,
+                      dst,
+                      src,
+                      true /*zero_dst_vector = true*/);
   }
 
   void
   apply_add(VectorType & dst, VectorType const & src) const
   {
-    data->loop(&This::cell_loop,
-               &This::face_loop,
-               &This::boundary_face_loop_hom_operator,
-               this,
-               dst,
-               src,
-               false /*zero_dst_vector = false*/);
+    matrix_free->loop(&This::cell_loop,
+                      &This::face_loop,
+                      &This::boundary_face_loop_hom_operator,
+                      this,
+                      dst,
+                      src,
+                      false /*zero_dst_vector = false*/);
   }
 
   void
@@ -113,13 +114,13 @@ public:
     VectorType tmp;
     tmp.reinit(dst, false /* init with 0 */);
 
-    data->loop(&This::cell_loop_inhom_operator,
-               &This::face_loop_inhom_operator,
-               &This::boundary_face_loop_inhom_operator,
-               this,
-               tmp,
-               tmp,
-               false /*zero_dst_vector = false*/);
+    matrix_free->loop(&This::cell_loop_inhom_operator,
+                      &This::face_loop_inhom_operator,
+                      &This::boundary_face_loop_inhom_operator,
+                      this,
+                      tmp,
+                      tmp,
+                      false /*zero_dst_vector = false*/);
 
     // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
     dst.add(-1.0, tmp);
@@ -130,13 +131,13 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    data->loop(&This::cell_loop,
-               &This::face_loop,
-               &This::boundary_face_loop_full_operator,
-               this,
-               dst,
-               src,
-               true /*zero_dst_vector = true*/);
+    matrix_free->loop(&This::cell_loop,
+                      &This::face_loop,
+                      &This::boundary_face_loop_full_operator,
+                      this,
+                      dst,
+                      src,
+                      true /*zero_dst_vector = true*/);
   }
 
   void
@@ -144,91 +145,89 @@ public:
   {
     this->eval_time = evaluation_time;
 
-    data->loop(&This::cell_loop,
-               &This::face_loop,
-               &This::boundary_face_loop_full_operator,
-               this,
-               dst,
-               src,
-               false /*zero_dst_vector = false*/);
+    matrix_free->loop(&This::cell_loop,
+                      &This::face_loop,
+                      &This::boundary_face_loop_full_operator,
+                      this,
+                      dst,
+                      src,
+                      false /*zero_dst_vector = false*/);
   }
 
 private:
-  template<typename FEEvaluationPressure, typename FEEvaluationVelocity>
+  template<typename CellIntegratorP, typename CellIntegratorU>
   void
-  do_cell_integral_weak(FEEvaluationPressure & fe_eval_pressure,
-                        FEEvaluationVelocity & fe_eval_velocity) const
+  do_cell_integral_weak(CellIntegratorP & pressure, CellIntegratorU & velocity) const
   {
-    for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
+    for(unsigned int q = 0; q < velocity.n_q_points; ++q)
     {
       // minus sign due to integration by parts
-      fe_eval_pressure.submit_gradient(-fe_eval_velocity.get_value(q), q);
+      pressure.submit_gradient(-velocity.get_value(q), q);
     }
   }
 
-  template<typename FEEvaluationPressure, typename FEEvaluationVelocity>
+  template<typename CellIntegratorP, typename CellIntegratorU>
   void
-  do_cell_integral_strong(FEEvaluationPressure & fe_eval_pressure,
-                          FEEvaluationVelocity & fe_eval_velocity) const
+  do_cell_integral_strong(CellIntegratorP & pressure, CellIntegratorU & velocity) const
   {
-    for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
+    for(unsigned int q = 0; q < velocity.n_q_points; ++q)
     {
-      fe_eval_pressure.submit_value(fe_eval_velocity.get_divergence(q), q);
+      pressure.submit_value(velocity.get_divergence(q), q);
     }
   }
 
-  template<typename FEEvaluationPressure, typename FEEvaluationVelocity>
+  template<typename FaceIntegratorP, typename FaceIntegratorU>
   void
-  do_face_integral(FEEvaluationVelocity & fe_eval_velocity_m,
-                   FEEvaluationVelocity & fe_eval_velocity_p,
-                   FEEvaluationPressure & fe_eval_pressure_m,
-                   FEEvaluationPressure & fe_eval_pressure_p) const
+  do_face_integral(FaceIntegratorU & velocity_m,
+                   FaceIntegratorU & velocity_p,
+                   FaceIntegratorP & pressure_m,
+                   FaceIntegratorP & pressure_p) const
   {
-    for(unsigned int q = 0; q < fe_eval_velocity_m.n_q_points; ++q)
+    for(unsigned int q = 0; q < velocity_m.n_q_points; ++q)
     {
-      vector value_m = fe_eval_velocity_m.get_value(q);
-      vector value_p = fe_eval_velocity_p.get_value(q);
+      vector value_m = velocity_m.get_value(q);
+      vector value_p = velocity_p.get_value(q);
 
       vector flux = calculate_flux(value_m, value_p);
 
-      scalar flux_times_normal = flux * fe_eval_velocity_m.get_normal_vector(q);
+      scalar flux_times_normal = flux * velocity_m.get_normal_vector(q);
 
-      fe_eval_pressure_m.submit_value(flux_times_normal, q);
+      pressure_m.submit_value(flux_times_normal, q);
       // minus sign since n⁺ = - n⁻
-      fe_eval_pressure_p.submit_value(-flux_times_normal, q);
+      pressure_p.submit_value(-flux_times_normal, q);
     }
   }
 
-  template<typename FEEvaluationPressure, typename FEEvaluationVelocity>
+  template<typename FaceIntegratorP, typename FaceIntegratorU>
   void
-  do_boundary_integral(FEEvaluationVelocity &     fe_eval_velocity,
-                       FEEvaluationPressure &     fe_eval_pressure,
+  do_boundary_integral(FaceIntegratorU &          velocity,
+                       FaceIntegratorP &          pressure,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const
   {
     BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
 
-    for(unsigned int q = 0; q < fe_eval_pressure.n_q_points; ++q)
+    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
       vector flux;
 
       if(operator_data.use_boundary_data == true)
       {
-        vector value_m = calculate_interior_value(q, fe_eval_velocity, operator_type);
-        vector value_p = calculate_exterior_value(
-          value_m, q, fe_eval_velocity, operator_type, boundary_type, boundary_id);
+        vector value_m = calculate_interior_value(q, velocity, operator_type);
+        vector value_p =
+          calculate_exterior_value(value_m, q, velocity, operator_type, boundary_type, boundary_id);
 
         flux = calculate_flux(value_m, value_p);
       }
       else // use_boundary_data == false
       {
-        vector value_m = fe_eval_velocity.get_value(q);
+        vector value_m = velocity.get_value(q);
 
         flux = calculate_flux(value_m, value_m /* value_p = value_m */);
       }
 
-      scalar flux_times_normal = flux * fe_eval_velocity.get_normal_vector(q);
-      fe_eval_pressure.submit_value(flux_times_normal, q);
+      scalar flux_times_normal = flux * velocity.get_normal_vector(q);
+      pressure.submit_value(flux_times_normal, q);
     }
   }
 
@@ -259,19 +258,19 @@ private:
    *
    */
   // clang-format on
-  template<typename FEEvaluationVelocity>
+  template<typename Integrator>
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_interior_value(unsigned int const           q,
-                             FEEvaluationVelocity const & fe_eval_velocity,
-                             OperatorType const &         operator_type) const
+    calculate_interior_value(unsigned int const   q,
+                             Integrator const &   integrator,
+                             OperatorType const & operator_type) const
   {
     // element e⁻
     vector value_m;
 
     if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
     {
-      value_m = fe_eval_velocity.get_value(q);
+      value_m = integrator.get_value(q);
     }
     else if(operator_type == OperatorType::inhomogeneous)
     {
@@ -285,15 +284,15 @@ private:
     return value_m;
   }
 
-  template<typename FEEvaluationVelocity>
+  template<typename Integrator>
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_exterior_value(vector const &               value_m,
-                             unsigned int const           q,
-                             FEEvaluationVelocity const & fe_eval_velocity,
-                             OperatorType const &         operator_type,
-                             BoundaryTypeU const &        boundary_type,
-                             types::boundary_id const     boundary_id = types::boundary_id()) const
+    calculate_exterior_value(vector const &           value_m,
+                             unsigned int const       q,
+                             Integrator const &       integrator,
+                             OperatorType const &     operator_type,
+                             BoundaryTypeU const &    boundary_type,
+                             types::boundary_id const boundary_id = types::boundary_id()) const
   {
     // element e⁺
     vector value_p;
@@ -304,7 +303,7 @@ private:
       {
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           operator_data.bc->dirichlet_bc.find(boundary_id);
-        Point<dim, scalar> q_points = fe_eval_velocity.quadrature_point(q);
+        Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         vector g = evaluate_vectorial_function(it->second, q_points, eval_time);
 
@@ -325,7 +324,7 @@ private:
     }
     else if(boundary_type == BoundaryTypeU::Symmetry)
     {
-      vector normal_m = fe_eval_velocity.get_normal_vector(q);
+      vector normal_m = integrator.get_normal_vector(q);
 
       value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
     }
@@ -338,157 +337,154 @@ private:
   }
 
   void
-  cell_loop(MatrixFree<dim, Number> const & data,
+  cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &              src,
             Range const &                   cell_range) const
   {
-    FEEvalVelocity fe_eval_velocity(data,
-                                    operator_data.dof_index_velocity,
-                                    operator_data.quad_index);
-    FEEvalPressure fe_eval_pressure(data,
-                                    operator_data.dof_index_pressure,
-                                    operator_data.quad_index);
+    CellIntegratorU velocity(matrix_free,
+                             operator_data.dof_index_velocity,
+                             operator_data.quad_index);
+    CellIntegratorP pressure(matrix_free,
+                             operator_data.dof_index_pressure,
+                             operator_data.quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval_pressure.reinit(cell);
+      pressure.reinit(cell);
 
-      fe_eval_velocity.reinit(cell);
+      velocity.reinit(cell);
 
       if(operator_data.integration_by_parts == true)
       {
-        fe_eval_velocity.gather_evaluate(src, true, false, false);
+        velocity.gather_evaluate(src, true, false, false);
 
-        do_cell_integral_weak(fe_eval_pressure, fe_eval_velocity);
+        do_cell_integral_weak(pressure, velocity);
 
-        fe_eval_pressure.integrate_scatter(false, true, dst);
+        pressure.integrate_scatter(false, true, dst);
       }
       else // integration_by_parts == false
       {
-        fe_eval_velocity.gather_evaluate(src, false, true, false);
+        velocity.gather_evaluate(src, false, true, false);
 
-        do_cell_integral_strong(fe_eval_pressure, fe_eval_velocity);
+        do_cell_integral_strong(pressure, velocity);
 
-        fe_eval_pressure.integrate_scatter(true, false, dst);
+        pressure.integrate_scatter(true, false, dst);
       }
     }
   }
 
   void
-  face_loop(MatrixFree<dim, Number> const & data,
+  face_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &              src,
             Range const &                   face_range) const
   {
     if(operator_data.integration_by_parts == true)
     {
-      FEFaceEvalVelocity fe_eval_velocity(data,
-                                          true,
-                                          operator_data.dof_index_velocity,
-                                          operator_data.quad_index);
-      FEFaceEvalVelocity fe_eval_velocity_neighbor(data,
-                                                   false,
-                                                   operator_data.dof_index_velocity,
-                                                   operator_data.quad_index);
+      FaceIntegratorU velocity_m(matrix_free,
+                                 true,
+                                 operator_data.dof_index_velocity,
+                                 operator_data.quad_index);
+      FaceIntegratorU velocity_p(matrix_free,
+                                 false,
+                                 operator_data.dof_index_velocity,
+                                 operator_data.quad_index);
 
-      FEFaceEvalPressure fe_eval_pressure(data,
-                                          true,
-                                          operator_data.dof_index_pressure,
-                                          operator_data.quad_index);
-      FEFaceEvalPressure fe_eval_pressure_neighbor(data,
-                                                   false,
-                                                   operator_data.dof_index_pressure,
-                                                   operator_data.quad_index);
+      FaceIntegratorP pressure_m(matrix_free,
+                                 true,
+                                 operator_data.dof_index_pressure,
+                                 operator_data.quad_index);
+      FaceIntegratorP pressure_p(matrix_free,
+                                 false,
+                                 operator_data.dof_index_pressure,
+                                 operator_data.quad_index);
 
       for(unsigned int face = face_range.first; face < face_range.second; face++)
       {
-        fe_eval_pressure.reinit(face);
-        fe_eval_pressure_neighbor.reinit(face);
+        pressure_m.reinit(face);
+        pressure_p.reinit(face);
 
-        fe_eval_velocity.reinit(face);
-        fe_eval_velocity_neighbor.reinit(face);
+        velocity_m.reinit(face);
+        velocity_p.reinit(face);
 
-        fe_eval_velocity.gather_evaluate(src, true, false);
-        fe_eval_velocity_neighbor.gather_evaluate(src, true, false);
+        velocity_m.gather_evaluate(src, true, false);
+        velocity_p.gather_evaluate(src, true, false);
 
-        do_face_integral(fe_eval_velocity,
-                         fe_eval_velocity_neighbor,
-                         fe_eval_pressure,
-                         fe_eval_pressure_neighbor);
+        do_face_integral(velocity_m, velocity_p, pressure_m, pressure_p);
 
-        fe_eval_pressure.integrate_scatter(true, false, dst);
-        fe_eval_pressure_neighbor.integrate_scatter(true, false, dst);
+        pressure_m.integrate_scatter(true, false, dst);
+        pressure_p.integrate_scatter(true, false, dst);
       }
     }
   }
 
   void
-  boundary_face_loop_hom_operator(MatrixFree<dim, Number> const & data,
+  boundary_face_loop_hom_operator(MatrixFree<dim, Number> const & matrix_free,
                                   VectorType &                    dst,
                                   VectorType const &              src,
                                   Range const &                   face_range) const
   {
     if(operator_data.integration_by_parts == true)
     {
-      FEFaceEvalVelocity fe_eval_velocity(data,
-                                          true,
-                                          operator_data.dof_index_velocity,
-                                          operator_data.quad_index);
+      FaceIntegratorU velocity(matrix_free,
+                               true,
+                               operator_data.dof_index_velocity,
+                               operator_data.quad_index);
 
-      FEFaceEvalPressure fe_eval_pressure(data,
-                                          true,
-                                          operator_data.dof_index_pressure,
-                                          operator_data.quad_index);
+      FaceIntegratorP pressure(matrix_free,
+                               true,
+                               operator_data.dof_index_pressure,
+                               operator_data.quad_index);
 
       for(unsigned int face = face_range.first; face < face_range.second; face++)
       {
-        fe_eval_pressure.reinit(face);
-        fe_eval_velocity.reinit(face);
+        pressure.reinit(face);
+        velocity.reinit(face);
 
-        fe_eval_velocity.gather_evaluate(src, true, false);
+        velocity.gather_evaluate(src, true, false);
 
-        do_boundary_integral(fe_eval_velocity,
-                             fe_eval_pressure,
+        do_boundary_integral(velocity,
+                             pressure,
                              OperatorType::homogeneous,
-                             data.get_boundary_id(face));
+                             matrix_free.get_boundary_id(face));
 
-        fe_eval_pressure.integrate_scatter(true, false, dst);
+        pressure.integrate_scatter(true, false, dst);
       }
     }
   }
 
   void
-  boundary_face_loop_full_operator(MatrixFree<dim, Number> const & data,
+  boundary_face_loop_full_operator(MatrixFree<dim, Number> const & matrix_free,
                                    VectorType &                    dst,
                                    VectorType const &              src,
                                    Range const &                   face_range) const
   {
     if(operator_data.integration_by_parts == true)
     {
-      FEFaceEvalVelocity fe_eval_velocity(data,
-                                          true,
-                                          operator_data.dof_index_velocity,
-                                          operator_data.quad_index);
+      FaceIntegratorU velocity(matrix_free,
+                               true,
+                               operator_data.dof_index_velocity,
+                               operator_data.quad_index);
 
-      FEFaceEvalPressure fe_eval_pressure(data,
-                                          true,
-                                          operator_data.dof_index_pressure,
-                                          operator_data.quad_index);
+      FaceIntegratorP pressure(matrix_free,
+                               true,
+                               operator_data.dof_index_pressure,
+                               operator_data.quad_index);
 
       for(unsigned int face = face_range.first; face < face_range.second; face++)
       {
-        fe_eval_pressure.reinit(face);
-        fe_eval_velocity.reinit(face);
+        pressure.reinit(face);
+        velocity.reinit(face);
 
-        fe_eval_velocity.gather_evaluate(src, true, false);
+        velocity.gather_evaluate(src, true, false);
 
-        do_boundary_integral(fe_eval_velocity,
-                             fe_eval_pressure,
+        do_boundary_integral(velocity,
+                             pressure,
                              OperatorType::full,
-                             data.get_boundary_id(face));
+                             matrix_free.get_boundary_id(face));
 
-        fe_eval_pressure.integrate_scatter(true, false, dst);
+        pressure.integrate_scatter(true, false, dst);
       }
     }
   }
@@ -510,39 +506,39 @@ private:
   }
 
   void
-  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const & data,
+  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
                                     VectorType &                    dst,
                                     VectorType const &,
                                     std::pair<unsigned int, unsigned int> const & face_range) const
   {
     if(operator_data.integration_by_parts == true)
     {
-      FEFaceEvalVelocity fe_eval_velocity(data,
-                                          true,
-                                          operator_data.dof_index_velocity,
-                                          operator_data.quad_index);
+      FaceIntegratorU velocity(matrix_free,
+                               true,
+                               operator_data.dof_index_velocity,
+                               operator_data.quad_index);
 
-      FEFaceEvalPressure fe_eval_pressure(data,
-                                          true,
-                                          operator_data.dof_index_pressure,
-                                          operator_data.quad_index);
+      FaceIntegratorP pressure(matrix_free,
+                               true,
+                               operator_data.dof_index_pressure,
+                               operator_data.quad_index);
 
       for(unsigned int face = face_range.first; face < face_range.second; face++)
       {
-        fe_eval_pressure.reinit(face);
-        fe_eval_velocity.reinit(face);
+        pressure.reinit(face);
+        velocity.reinit(face);
 
-        do_boundary_integral(fe_eval_velocity,
-                             fe_eval_pressure,
+        do_boundary_integral(velocity,
+                             pressure,
                              OperatorType::inhomogeneous,
-                             data.get_boundary_id(face));
+                             matrix_free.get_boundary_id(face));
 
-        fe_eval_pressure.integrate_scatter(true, false, dst);
+        pressure.integrate_scatter(true, false, dst);
       }
     }
   }
 
-  MatrixFree<dim, Number> const * data;
+  MatrixFree<dim, Number> const * matrix_free;
 
   DivergenceOperatorData<dim> operator_data;
 

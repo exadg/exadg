@@ -10,6 +10,11 @@
 namespace IncNS
 {
 // currently implemented in header-file
-}
 
-#include "mass_matrix_operator.hpp"
+template class MassMatrixOperator<2, float>;
+template class MassMatrixOperator<2, double>;
+
+template class MassMatrixOperator<3, float>;
+template class MassMatrixOperator<3, double>;
+
+} // namespace IncNS

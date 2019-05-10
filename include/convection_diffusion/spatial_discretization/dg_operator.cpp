@@ -5,36 +5,34 @@
  *      Author: fehn
  */
 
-#include "dg_convection_diffusion_operation.h"
-
+#include "dg_operator.h"
 #include "time_integration/interpolate.h"
 #include "time_integration/time_step_calculation.h"
 
 namespace ConvDiff
 {
-template<int dim, int degree, typename Number>
-DGOperation<dim, degree, Number>::DGOperation(
-  parallel::Triangulation<dim> const &        triangulation,
-  InputParameters const &                     param_in,
-  std::shared_ptr<PostProcessor<dim, degree>> postprocessor_in)
+template<int dim, typename Number>
+DGOperator<dim, Number>::DGOperator(parallel::Triangulation<dim> const &        triangulation,
+                                    InputParameters const &                     param_in,
+                                    std::shared_ptr<PostProcessor<dim, Number>> postprocessor_in)
   : dealii::Subscriptor(),
-    fe(degree),
-    mapping(param_in.degree_mapping),
-    dof_handler(triangulation),
     param(param_in),
+    fe(param.degree),
+    mapping(param.degree_mapping),
+    dof_handler(triangulation),
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     postprocessor(postprocessor_in)
 {
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
-    fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(degree), dim));
+    fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
     dof_handler_velocity.reset(new DoFHandler<dim>(triangulation));
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::setup(
+DGOperator<dim, Number>::setup(
   PeriodicFaces const                            periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
@@ -57,9 +55,9 @@ DGOperation<dim, degree, Number>::setup(
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::create_dofs()
+DGOperator<dim, Number>::create_dofs()
 {
   // enumerate degrees of freedom
   dof_handler.distribute_dofs(fe);
@@ -71,20 +69,20 @@ DGOperation<dim, degree, Number>::create_dofs()
     dof_handler_velocity->distribute_mg_dofs();
   }
 
-  constexpr int ndofs_per_cell = Utilities::pow(degree + 1, dim);
+  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::initialize_matrix_free()
+DGOperator<dim, Number>::initialize_matrix_free()
 {
   // initialize matrix_free_data
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
@@ -115,9 +113,9 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
     constraint_dummy.close();
 
     // quadrature formula used to perform integrals
-    QGauss<1> quadrature(degree + 1);
+    QGauss<1> quadrature(param.degree + 1);
 
-    data.reinit(mapping, dof_handler, constraint_dummy, quadrature, additional_data);
+    matrix_free.reinit(mapping, dof_handler, constraint_dummy, quadrature, additional_data);
   }
   // we need two dof-handlers in case the velocity field comes from the fluid solver.
   else if(param.type_velocity_field == TypeVelocityField::Numerical)
@@ -136,9 +134,9 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
 
     std::vector<Quadrature<1>> quadrature_vec;
     quadrature_vec.resize(1);
-    quadrature_vec[0] = QGauss<1>(degree + 1);
+    quadrature_vec[0] = QGauss<1>(param.degree + 1);
 
-    data.reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
+    matrix_free.reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
   }
   else
   {
@@ -146,9 +144,9 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::setup_operators()
+DGOperator<dim, Number>::setup_operators()
 {
   // mass matrix operator
   MassMatrixOperatorData<dim> mass_matrix_operator_data;
@@ -157,11 +155,11 @@ DGOperation<dim, degree, Number>::setup_operators()
   mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  mass_matrix_operator.reinit(data, constraint_matrix, mass_matrix_operator_data);
+  mass_matrix_operator.reinit(matrix_free, constraint_matrix, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   // dof_index = 0, quad_index = 0
-  inverse_mass_matrix_operator.initialize(data, 0, 0);
+  inverse_mass_matrix_operator.initialize(matrix_free, param.degree, 0, 0);
 
   // convective operator
   ConvectiveOperatorData<dim> convective_operator_data;
@@ -176,11 +174,11 @@ DGOperation<dim, degree, Number>::setup_operators()
   convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
 
-  convective_operator.reinit(data, constraint_matrix, convective_operator_data);
+  convective_operator.reinit(matrix_free, constraint_matrix, convective_operator_data);
 
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
-    data.initialize_dof_vector(velocity, convective_operator_data.dof_index_velocity);
+    matrix_free.initialize_dof_vector(velocity, convective_operator_data.dof_index_velocity);
   }
 
   // diffusive operator
@@ -189,19 +187,20 @@ DGOperation<dim, degree, Number>::setup_operators()
   diffusive_operator_data.quad_index           = 0;
   diffusive_operator_data.IP_factor            = param.IP_factor;
   diffusive_operator_data.diffusivity          = param.diffusivity;
+  diffusive_operator_data.degree               = param.degree;
   diffusive_operator_data.degree_mapping       = param.degree_mapping;
   diffusive_operator_data.bc                   = boundary_descriptor;
   diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  diffusive_operator.reinit(data, constraint_matrix, diffusive_operator_data);
+  diffusive_operator.reinit(matrix_free, constraint_matrix, diffusive_operator_data);
 
   // rhs operator
   RHSOperatorData<dim> rhs_operator_data;
   rhs_operator_data.dof_index  = 0;
   rhs_operator_data.quad_index = 0;
   rhs_operator_data.rhs        = field_functions->right_hand_side;
-  rhs_operator.reinit(data, rhs_operator_data);
+  rhs_operator.reinit(matrix_free, rhs_operator_data);
 
   // convection-diffusion operator (efficient implementation, only for explicit time integration,
   // includes also rhs operator)
@@ -209,12 +208,14 @@ DGOperation<dim, degree, Number>::setup_operators()
   conv_diff_operator_data_eff.conv_data = convective_operator_data;
   conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
   conv_diff_operator_data_eff.rhs_data  = rhs_operator_data;
-  convection_diffusion_operator_efficiency.initialize(mapping, data, conv_diff_operator_data_eff);
+  convection_diffusion_operator_efficiency.initialize(mapping,
+                                                      matrix_free,
+                                                      conv_diff_operator_data_eff);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::setup_solver(double const scaling_factor_time_derivative_term_in)
+DGOperator<dim, Number>::setup_solver(double const scaling_factor_time_derivative_term_in)
 {
   pcout << std::endl << "Setup solver ..." << std::endl;
 
@@ -227,9 +228,9 @@ DGOperation<dim, degree, Number>::setup_solver(double const scaling_factor_time_
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::initialize_convection_diffusion_operator(
+DGOperator<dim, Number>::initialize_convection_diffusion_operator(
   double const scaling_factor_time_derivative_term_in)
 {
   // convection-diffusion operator
@@ -282,7 +283,7 @@ DGOperation<dim, degree, Number>::initialize_convection_diffusion_operator(
   conv_diff_operator_data.type_velocity_field = param.type_velocity_field;
   conv_diff_operator_data.mg_operator_type    = param.mg_operator_type;
 
-  conv_diff_operator.reinit(data,
+  conv_diff_operator.reinit(matrix_free,
                             constraint_matrix,
                             conv_diff_operator_data,
                             mass_matrix_operator,
@@ -290,24 +291,24 @@ DGOperation<dim, degree, Number>::initialize_convection_diffusion_operator(
                             diffusive_operator);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::initialize_preconditioner()
+DGOperator<dim, Number>::initialize_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    preconditioner.reset(new InverseMassMatrixPreconditioner<dim, degree, Number, 1>(data, 0, 0));
+    preconditioner.reset(
+      new InverseMassMatrixPreconditioner<dim, 1, Number>(matrix_free, param.degree, 0, 0));
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
-    preconditioner.reset(new JacobiPreconditioner<ConvectionDiffusionOperator<dim, degree, Number>>(
-      conv_diff_operator));
+    typedef ConvectionDiffusionOperator<dim, Number> Operator;
+    preconditioner.reset(new JacobiPreconditioner<Operator>(conv_diff_operator));
   }
   else if(param.preconditioner == Preconditioner::BlockJacobi)
   {
-    preconditioner.reset(
-      new BlockJacobiPreconditioner<ConvectionDiffusionOperator<dim, degree, Number>>(
-        conv_diff_operator));
+    typedef ConvectionDiffusionOperator<dim, Number> Operator;
+    preconditioner.reset(new BlockJacobiPreconditioner<Operator>(conv_diff_operator));
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
@@ -328,12 +329,11 @@ DGOperation<dim, degree, Number>::initialize_preconditioner()
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
-    typedef MultigridPreconditioner<dim, degree, Number, MultigridNumber> MULTIGRID;
+    typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-
 
     parallel::Triangulation<dim> const * tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
@@ -357,9 +357,9 @@ DGOperation<dim, degree, Number>::initialize_preconditioner()
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::initialize_solver()
+DGOperator<dim, Number>::initialize_solver()
 {
   if(param.solver == Solver::CG)
   {
@@ -374,7 +374,7 @@ DGOperation<dim, degree, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new CGSolver<ConvectionDiffusionOperator<dim, degree, Number>,
+      new CGSolver<ConvectionDiffusionOperator<dim, Number>,
                    PreconditionerBase<Number>,
                    VectorType>(conv_diff_operator, *preconditioner, solver_data));
   }
@@ -392,7 +392,7 @@ DGOperation<dim, degree, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new GMRESSolver<ConvectionDiffusionOperator<dim, degree, Number>,
+      new GMRESSolver<ConvectionDiffusionOperator<dim, Number>,
                       PreconditionerBase<Number>,
                       VectorType>(conv_diff_operator, *preconditioner, solver_data));
   }
@@ -410,7 +410,7 @@ DGOperation<dim, degree, Number>::initialize_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new FGMRESSolver<ConvectionDiffusionOperator<dim, degree, Number>,
+      new FGMRESSolver<ConvectionDiffusionOperator<dim, Number>,
                        PreconditionerBase<Number>,
                        VectorType>(conv_diff_operator, *preconditioner, solver_data));
   }
@@ -420,27 +420,36 @@ DGOperation<dim, degree, Number>::initialize_solver()
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::initialize_dof_vector(VectorType & src) const
+DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
-  data.initialize_dof_vector(src);
+  matrix_free.initialize_dof_vector(src);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::prescribe_initial_conditions(VectorType & src,
-                                                               double const evaluation_time) const
+DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src,
+                                                      double const evaluation_time) const
 {
   field_functions->analytical_solution->set_time(evaluation_time);
-  VectorTools::interpolate(dof_handler, *(field_functions->analytical_solution), src);
+
+  // This is necessary if Number == float
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+  VectorTypeDouble src_double;
+  src_double = src;
+
+  VectorTools::interpolate(dof_handler, *(field_functions->analytical_solution), src_double);
+
+  src = src_double;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::evaluate(VectorType &       dst,
-                                           VectorType const & src,
-                                           double const       evaluation_time) const
+DGOperator<dim, Number>::evaluate(VectorType &       dst,
+                                  VectorType const & src,
+                                  double const       evaluation_time) const
 {
   // apply volume and surface integrals for each operator separately
   if(param.runtime_optimization == false)
@@ -486,18 +495,18 @@ DGOperation<dim, degree, Number>::evaluate(VectorType &       dst,
   inverse_mass_matrix_operator.apply(dst, dst);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::evaluate_convective_term(VectorType &       dst,
-                                                           VectorType const & src,
-                                                           double const       evaluation_time) const
+DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
+                                                  VectorType const & src,
+                                                  double const       evaluation_time) const
 {
   convective_operator.evaluate(dst, src, evaluation_time);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
+DGOperator<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
   VectorType &       dst,
   VectorType const & src,
   double const       evaluation_time) const
@@ -517,9 +526,9 @@ DGOperation<dim, degree, Number>::evaluate_negative_convective_term_and_apply_in
   inverse_mass_matrix_operator.apply(dst, dst);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::rhs(VectorType & dst, double const evaluation_time) const
+DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) const
 {
   // set dst to zero since we call functions of type ..._add()
   dst = 0;
@@ -550,21 +559,20 @@ DGOperation<dim, degree, Number>::rhs(VectorType & dst, double const evaluation_
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::apply_mass_matrix_add(VectorType &       dst,
-                                                        VectorType const & src) const
+DGOperator<dim, Number>::apply_mass_matrix_add(VectorType & dst, VectorType const & src) const
 {
   mass_matrix_operator.apply_add(dst, src);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 unsigned int
-DGOperation<dim, degree, Number>::solve(VectorType &       sol,
-                                        VectorType const & rhs,
-                                        bool const         update_preconditioner,
-                                        double const       scaling_factor,
-                                        double const       time)
+DGOperator<dim, Number>::solve(VectorType &       sol,
+                               VectorType const & rhs,
+                               bool const         update_preconditioner,
+                               double const       scaling_factor,
+                               double const       time)
 {
   conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
   conv_diff_operator.set_evaluation_time(time);
@@ -575,91 +583,92 @@ DGOperation<dim, degree, Number>::solve(VectorType &       sol,
 }
 
 // use numerical velocity field
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 double
-DGOperation<dim, degree, Number>::calculate_time_step_cfl_numerical_velocity(
+DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
   double const cfl,
   double const exponent_degree) const
 {
-  return calculate_time_step_cfl_local<dim, degree /* = degree_velocity */, Number>(
-    data,
-    /*dof_index_velocity = */ 1,
-    /*quad_index = */ 0,
-    convective_operator.get_velocity(),
-    cfl,
-    exponent_degree,
-    param.adaptive_time_stepping_cfl_type);
+  return calculate_time_step_cfl_local<dim, Number>(matrix_free,
+                                                    /*dof_index_velocity = */ 1,
+                                                    /*quad_index = */ 0,
+                                                    convective_operator.get_velocity(),
+                                                    cfl,
+                                                    param.degree,
+                                                    exponent_degree,
+                                                    param.adaptive_time_stepping_cfl_type);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 double
-DGOperation<dim, degree, Number>::calculate_time_step_cfl_analytical_velocity(
+DGOperator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
   double const time,
   double const cfl,
   double const exponent_degree) const
 {
-  return calculate_time_step_cfl_local<dim, degree, Number>(data,
-                                                            0 /*dof_index*/,
-                                                            0 /*quad_index*/,
-                                                            field_functions->velocity,
-                                                            time,
-                                                            cfl,
-                                                            exponent_degree,
-                                                            param.adaptive_time_stepping_cfl_type);
+  return calculate_time_step_cfl_local<dim, Number>(matrix_free,
+                                                    0 /*dof_index*/,
+                                                    0 /*quad_index*/,
+                                                    field_functions->velocity,
+                                                    time,
+                                                    cfl,
+                                                    param.degree,
+                                                    exponent_degree,
+                                                    param.adaptive_time_stepping_cfl_type);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 double
-DGOperation<dim, degree, Number>::calculate_maximum_velocity(double const time) const
+DGOperator<dim, Number>::calculate_maximum_velocity(double const time) const
 {
   return calculate_max_velocity(dof_handler.get_triangulation(), field_functions->velocity, time);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 double
-DGOperation<dim, degree, Number>::calculate_minimum_element_length() const
+DGOperator<dim, Number>::calculate_minimum_element_length() const
 {
   return calculate_minimum_vertex_distance(dof_handler.get_triangulation());
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-DGOperation<dim, degree, Number>::get_data() const
+DGOperator<dim, Number>::get_data() const
 {
-  return data;
+  return matrix_free;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 Mapping<dim> const &
-DGOperation<dim, degree, Number>::get_mapping() const
+DGOperator<dim, Number>::get_mapping() const
 {
   return mapping;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperation<dim, degree, Number>::get_dof_handler() const
+DGOperator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 unsigned int
-DGOperation<dim, degree, Number>::get_polynomial_degree() const
+DGOperator<dim, Number>::get_polynomial_degree() const
 {
-  return degree;
+  return param.degree;
 }
 
-template<int dim, int degree, typename Number>
-unsigned int
-DGOperation<dim, degree, Number>::get_number_of_dofs() const
+template<int dim, typename Number>
+types::global_dof_index
+DGOperator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::set_velocity(VectorType const & velocity) const
+DGOperator<dim, Number>::set_velocity(VectorType const & velocity) const
 {
   AssertThrow(param.type_velocity_field == TypeVelocityField::Numerical,
               ExcMessage("Invalid parameter type_velocity_field."));
@@ -667,37 +676,40 @@ DGOperation<dim, degree, Number>::set_velocity(VectorType const & velocity) cons
   convective_operator.set_velocity(velocity);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::set_velocities_and_times(
-  std::vector<VectorType const *> & velocities_in,
-  std::vector<double> &             times_in) const
+DGOperator<dim, Number>::set_velocities_and_times(std::vector<VectorType const *> & velocities_in,
+                                                  std::vector<double> &             times_in) const
 {
   velocities = velocities_in;
   times      = times_in;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::do_postprocessing(VectorType const & solution,
-                                                    double const       time,
-                                                    int const          time_step_number) const
+DGOperator<dim, Number>::do_postprocessing(VectorType const & solution,
+                                           double const       time,
+                                           int const          time_step_number) const
 {
   postprocessor->do_postprocessing(solution, time, time_step_number);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::setup_postprocessor(
+DGOperator<dim, Number>::setup_postprocessor(
   std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
 {
   PostProcessorData pp_data;
   pp_data.output_data = param.output_data;
   pp_data.error_data  = param.error_data;
 
-  postprocessor->setup(pp_data, dof_handler, mapping, data, analytical_solution);
+  postprocessor->setup(pp_data, dof_handler, mapping, matrix_free, analytical_solution);
 }
 
-} // namespace ConvDiff
+template class DGOperator<2, float>;
+template class DGOperator<2, double>;
 
-#include "dg_convection_diffusion_operation.hpp"
+template class DGOperator<3, float>;
+template class DGOperator<3, double>;
+
+} // namespace ConvDiff

@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_BODY_FORCE_OPERATOR_H_
 
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "../../../functionalities/evaluate_functions.h"
 
@@ -30,11 +30,11 @@ struct BodyForceOperatorData
   std::shared_ptr<Function<dim>> rhs;
 };
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 class BodyForceOperator
 {
 public:
-  typedef BodyForceOperator<dim, degree, Number> This;
+  typedef BodyForceOperator<dim, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -43,17 +43,17 @@ public:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef FEEvaluation<dim, degree, degree + 1, dim, Number> FEEval;
+  typedef CellIntegrator<dim, dim, Number> Integrator;
 
-  BodyForceOperator() : data(nullptr), eval_time(0.0)
+  BodyForceOperator() : matrix_free(nullptr), eval_time(0.0)
   {
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &    mf_data,
+  initialize(MatrixFree<dim, Number> const &    matrix_free_in,
              BodyForceOperatorData<dim> const & operator_data_in)
   {
-    this->data          = &mf_data;
+    this->matrix_free   = &matrix_free_in;
     this->operator_data = operator_data_in;
   }
 
@@ -63,7 +63,7 @@ public:
     this->eval_time = evaluation_time;
 
     VectorType src;
-    data->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
+    matrix_free->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
   }
 
   void
@@ -72,43 +72,43 @@ public:
     this->eval_time = evaluation_time;
 
     VectorType src;
-    data->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
+    matrix_free->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
   }
 
 private:
-  template<typename FEEvaluation>
+  template<typename CellIntegrator>
   void
-  do_cell_integral(FEEvaluation & fe_eval) const
+  do_cell_integral(CellIntegrator & integrator) const
   {
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
+      Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
       vector rhs = evaluate_vectorial_function(operator_data.rhs, q_points, eval_time);
 
-      fe_eval.submit_value(rhs, q);
+      integrator.submit_value(rhs, q);
     }
   }
 
   void
-  cell_loop(MatrixFree<dim, Number> const & data,
+  cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &,
             Range const & cell_range) const
   {
-    FEEval fe_eval(data, operator_data.dof_index, operator_data.quad_index);
+    Integrator integrator(matrix_free, operator_data.dof_index, operator_data.quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
+      integrator.reinit(cell);
 
-      do_cell_integral(fe_eval);
+      do_cell_integral(integrator);
 
-      fe_eval.integrate_scatter(true, false, dst);
+      integrator.integrate_scatter(true, false, dst);
     }
   }
 
-  MatrixFree<dim, Number> const * data;
+  MatrixFree<dim, Number> const * matrix_free;
 
   BodyForceOperatorData<dim> operator_data;
 

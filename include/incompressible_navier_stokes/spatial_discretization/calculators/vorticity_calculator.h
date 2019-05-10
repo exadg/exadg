@@ -9,17 +9,17 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_CALCULATORS_VORTICITY_CALCULATOR_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 using namespace dealii;
 
 namespace IncNS
 {
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 class VorticityCalculator
 {
 private:
-  typedef VorticityCalculator<dim, degree, Number> This;
+  typedef VorticityCalculator<dim, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -29,13 +29,13 @@ private:
 
   static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
 
-  typedef FEEvaluation<dim, degree, degree + 1, dim, Number> FEEval;
+  typedef CellIntegrator<dim, dim, Number> Integrator;
 
 public:
   VorticityCalculator();
 
   void
-  initialize(MatrixFree<dim, Number> const & data_in,
+  initialize(MatrixFree<dim, Number> const & matrix_free_in,
              unsigned int const              dof_index_in,
              unsigned int const              quad_index_in);
 
@@ -44,12 +44,12 @@ public:
 
 private:
   void
-  cell_loop(MatrixFree<dim, Number> const & data,
+  cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &              src,
             Range const &                   cell_range) const;
 
-  MatrixFree<dim, Number> const * data;
+  MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index;
   unsigned int quad_index;

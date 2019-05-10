@@ -20,12 +20,12 @@ namespace IncNS
  * Multigrid preconditioner for velocity (reaction-)convection-diffusion operator of the
  * incompressible Navier-Stokes equations.
  */
-template<int dim, int degree, typename Number, typename MultigridNumber>
+template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 private:
-  typedef MomentumOperator<dim, degree, Number>          PDEOperator;
-  typedef MomentumOperator<dim, degree, MultigridNumber> MultigridOperator;
+  typedef MomentumOperator<dim, Number>          PDEOperator;
+  typedef MomentumOperator<dim, MultigridNumber> MultigridOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
   typedef typename BASE::Map                                        Map;

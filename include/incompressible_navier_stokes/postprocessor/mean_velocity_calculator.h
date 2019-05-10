@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_MEAN_VELOCITY_CALCULATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_MEAN_VELOCITY_CALCULATOR_H_
 
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/matrix_free.h>
 #include <deal.II/matrix_free/operators.h>
 
@@ -63,17 +63,22 @@ struct MeanVelocityCalculatorData
   std::string filename_prefix;
 };
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 class MeanVelocityCalculator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MeanVelocityCalculator(MatrixFree<dim, Number> const &         matrix_free_data_in,
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+
+  typedef MeanVelocityCalculator<dim, Number> This;
+
+  MeanVelocityCalculator(MatrixFree<dim, Number> const &         matrix_free_in,
                          DofQuadIndexData const &                dof_quad_index_data_in,
                          MeanVelocityCalculatorData<dim> const & data_in)
     : data(data_in),
-      matrix_free_data(matrix_free_data_in),
+      matrix_free(matrix_free_in),
       dof_quad_index_data(dof_quad_index_data_in),
       area_has_been_initialized(false),
       volume_has_been_initialized(false),
@@ -212,39 +217,37 @@ private:
   Number
   calculate_area() const
   {
-    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval_velocity(
-      matrix_free_data,
-      true,
-      dof_quad_index_data.dof_index_velocity,
-      dof_quad_index_data.quad_index_velocity);
+    FaceIntegratorU integrator(matrix_free,
+                               true,
+                               dof_quad_index_data.dof_index_velocity,
+                               dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval_velocity.n_q_points);
+    AlignedVector<VectorizedArray<Number>> JxW_values(integrator.n_q_points);
 
     Number area = 0.0;
 
-    for(unsigned int face = matrix_free_data.n_inner_face_batches();
-        face <
-        (matrix_free_data.n_inner_face_batches() + matrix_free_data.n_boundary_face_batches());
+    for(unsigned int face = matrix_free.n_inner_face_batches();
+        face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
         face++)
     {
       typename std::set<types::boundary_id>::iterator it;
-      types::boundary_id boundary_id = matrix_free_data.get_boundary_id(face);
+      types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
       it = data.boundary_IDs.find(boundary_id);
       if(it != data.boundary_IDs.end())
       {
-        fe_eval_velocity.reinit(face);
-        fe_eval_velocity.fill_JxW_values(JxW_values);
+        integrator.reinit(face);
+        integrator.fill_JxW_values(JxW_values);
 
         VectorizedArray<Number> area_local = make_vectorized_array<Number>(0.0);
 
-        for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
           area_local += JxW_values[q];
         }
 
         // sum over all entries of VectorizedArray
-        for(unsigned int n = 0; n < matrix_free_data.n_active_entries_per_face_batch(face); ++n)
+        for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
           area += area_local[n];
       }
     }
@@ -260,11 +263,7 @@ private:
     std::vector<Number> dst(1, 0.0);
 
     VectorType src_dummy;
-    matrix_free_data.cell_loop(
-      &MeanVelocityCalculator<dim, fe_degree, Number>::local_calculate_volume,
-      this,
-      dst,
-      src_dummy);
+    matrix_free.cell_loop(&This::local_calculate_volume, this, dst, src_dummy);
 
     // sum over all MPI processes
     Number volume = 1.0;
@@ -279,22 +278,23 @@ private:
                          VectorType const &,
                          std::pair<unsigned int, unsigned int> const & cell_range)
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
-      data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
+    CellIntegratorU integrator(data,
+                               dof_quad_index_data.dof_index_velocity,
+                               dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval.n_q_points);
+    AlignedVector<VectorizedArray<Number>> JxW_values(integrator.n_q_points);
 
     Number volume = 0.;
 
     // Loop over all elements
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.fill_JxW_values(JxW_values);
+      integrator.reinit(cell);
+      integrator.fill_JxW_values(JxW_values);
 
       VectorizedArray<Number> volume_vec = make_vectorized_array<Number>(0.);
 
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         volume_vec += JxW_values[q];
       }
@@ -312,43 +312,41 @@ private:
   Number
   do_calculate_flow_rate_area(VectorType const & velocity)
   {
-    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval_velocity(
-      matrix_free_data,
-      true,
-      dof_quad_index_data.dof_index_velocity,
-      dof_quad_index_data.quad_index_velocity);
+    FaceIntegratorU integrator(matrix_free,
+                               true,
+                               dof_quad_index_data.dof_index_velocity,
+                               dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval_velocity.n_q_points);
+    AlignedVector<VectorizedArray<Number>> JxW_values(integrator.n_q_points);
 
     // initialize with zero since we accumulate into this variable
     Number flow_rate = 0.0;
 
-    for(unsigned int face = matrix_free_data.n_inner_face_batches();
-        face <
-        (matrix_free_data.n_inner_face_batches() + matrix_free_data.n_boundary_face_batches());
+    for(unsigned int face = matrix_free.n_inner_face_batches();
+        face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
         face++)
     {
       typename std::set<types::boundary_id>::iterator it;
-      types::boundary_id boundary_id = matrix_free_data.get_boundary_id(face);
+      types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
       it = data.boundary_IDs.find(boundary_id);
       if(it != data.boundary_IDs.end())
       {
-        fe_eval_velocity.reinit(face);
-        fe_eval_velocity.read_dof_values(velocity);
-        fe_eval_velocity.evaluate(true, false);
-        fe_eval_velocity.fill_JxW_values(JxW_values);
+        integrator.reinit(face);
+        integrator.read_dof_values(velocity);
+        integrator.evaluate(true, false);
+        integrator.fill_JxW_values(JxW_values);
 
         VectorizedArray<Number> flow_rate_face = make_vectorized_array<Number>(0.0);
 
-        for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
           flow_rate_face +=
-            JxW_values[q] * fe_eval_velocity.get_value(q) * fe_eval_velocity.get_normal_vector(q);
+            JxW_values[q] * integrator.get_value(q) * integrator.get_normal_vector(q);
         }
 
         // sum over all entries of VectorizedArray
-        for(unsigned int n = 0; n < matrix_free_data.n_active_entries_per_face_batch(face); ++n)
+        for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
           flow_rate += flow_rate_face[n];
       }
     }
@@ -362,11 +360,7 @@ private:
   do_calculate_mean_velocity_volume(VectorType const & velocity)
   {
     std::vector<Number> dst(1, 0.0);
-    matrix_free_data.cell_loop(
-      &MeanVelocityCalculator<dim, fe_degree, Number>::local_calculate_flow_rate_volume,
-      this,
-      dst,
-      velocity);
+    matrix_free.cell_loop(&This::local_calculate_flow_rate_volume, this, dst, velocity);
 
     // sum over all MPI processes
     Number mean_velocity = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
@@ -384,11 +378,7 @@ private:
   do_calculate_flow_rate_volume(VectorType const & velocity)
   {
     std::vector<Number> dst(1, 0.0);
-    matrix_free_data.cell_loop(
-      &MeanVelocityCalculator<dim, fe_degree, Number>::local_calculate_flow_rate_volume,
-      this,
-      dst,
-      velocity);
+    matrix_free.cell_loop(&This::local_calculate_flow_rate_volume, this, dst, velocity);
 
     // sum over all MPI processes
     Number flow_rate_times_length = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
@@ -402,26 +392,27 @@ private:
                                    VectorType const &                            src,
                                    std::pair<unsigned int, unsigned int> const & cell_range)
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
-      data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
+    CellIntegratorU integrator(data,
+                               dof_quad_index_data.dof_index_velocity,
+                               dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval.n_q_points);
+    AlignedVector<VectorizedArray<Number>> JxW_values(integrator.n_q_points);
 
     Number flow_rate = 0.;
 
     // Loop over all elements
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(src);
-      fe_eval.evaluate(true, false);
-      fe_eval.fill_JxW_values(JxW_values);
+      integrator.reinit(cell);
+      integrator.read_dof_values(src);
+      integrator.evaluate(true, false);
+      integrator.fill_JxW_values(JxW_values);
 
       VectorizedArray<Number> flow_rate_vec = make_vectorized_array<Number>(0.);
 
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        VectorizedArray<Number> velocity_direction = this->data.direction * fe_eval.get_value(q);
+        VectorizedArray<Number> velocity_direction = this->data.direction * integrator.get_value(q);
 
         flow_rate_vec += velocity_direction * JxW_values[q];
       }
@@ -438,7 +429,7 @@ private:
   }
 
   MeanVelocityCalculatorData<dim> const & data;
-  MatrixFree<dim, Number> const &         matrix_free_data;
+  MatrixFree<dim, Number> const &         matrix_free;
   DofQuadIndexData                        dof_quad_index_data;
   bool                                    area_has_been_initialized, volume_has_been_initialized;
   double                                  area, volume;
@@ -485,18 +476,21 @@ struct FlowRateCalculatorData
   std::string filename_prefix;
 };
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 class FlowRateCalculator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  FlowRateCalculator(MatrixFree<dim, Number> const &     matrix_free_data_in,
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+
+  FlowRateCalculator(MatrixFree<dim, Number> const &     matrix_free_in,
                      const DoFHandler<dim> &             dof_handler_velocity_in,
                      DofQuadIndexData const &            dof_quad_index_data_in,
                      FlowRateCalculatorData<dim> const & data_in)
     : data(data_in),
-      matrix_free_data(matrix_free_data_in),
+      matrix_free(matrix_free_in),
       dof_quad_index_data(dof_quad_index_data_in),
       clear_files(true),
       communicator(dynamic_cast<const parallel::Triangulation<dim> *>(
@@ -574,40 +568,38 @@ private:
       iterator->second = 0.0;
     }
 
-    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval_velocity(
-      matrix_free_data,
-      true,
-      dof_quad_index_data.dof_index_velocity,
-      dof_quad_index_data.quad_index_velocity);
+    FaceIntegratorU integrator(matrix_free,
+                               true,
+                               dof_quad_index_data.dof_index_velocity,
+                               dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval_velocity.n_q_points);
+    AlignedVector<VectorizedArray<Number>> JxW_values(integrator.n_q_points);
 
-    for(unsigned int face = matrix_free_data.n_inner_face_batches();
-        face <
-        (matrix_free_data.n_inner_face_batches() + matrix_free_data.n_boundary_face_batches());
+    for(unsigned int face = matrix_free.n_inner_face_batches();
+        face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
         face++)
     {
       typename std::set<types::boundary_id>::iterator it;
-      types::boundary_id boundary_id = matrix_free_data.get_boundary_id(face);
+      types::boundary_id boundary_id = matrix_free.get_boundary_id(face);
 
       it = data.boundary_IDs.find(boundary_id);
       if(it != data.boundary_IDs.end())
       {
-        fe_eval_velocity.reinit(face);
-        fe_eval_velocity.read_dof_values(velocity);
-        fe_eval_velocity.evaluate(true, false);
-        fe_eval_velocity.fill_JxW_values(JxW_values);
+        integrator.reinit(face);
+        integrator.read_dof_values(velocity);
+        integrator.evaluate(true, false);
+        integrator.fill_JxW_values(JxW_values);
 
         VectorizedArray<Number> flow_rate_face = make_vectorized_array<Number>(0.0);
 
-        for(unsigned int q = 0; q < fe_eval_velocity.n_q_points; ++q)
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
           flow_rate_face +=
-            JxW_values[q] * fe_eval_velocity.get_value(q) * fe_eval_velocity.get_normal_vector(q);
+            JxW_values[q] * integrator.get_value(q) * integrator.get_normal_vector(q);
         }
 
         // sum over all entries of VectorizedArray
-        for(unsigned int n = 0; n < matrix_free_data.n_active_entries_per_face_batch(face); ++n)
+        for(unsigned int n = 0; n < matrix_free.n_active_entries_per_face_batch(face); ++n)
           flow_rates.at(boundary_id) += flow_rate_face[n];
       }
     }
@@ -632,7 +624,7 @@ private:
   }
 
   FlowRateCalculatorData<dim> const & data;
-  MatrixFree<dim, Number> const &     matrix_free_data;
+  MatrixFree<dim, Number> const &     matrix_free;
   DofQuadIndexData                    dof_quad_index_data;
   bool                                clear_files;
 

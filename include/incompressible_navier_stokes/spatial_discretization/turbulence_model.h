@@ -9,8 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_TURBULENCE_MODEL_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "operators/viscous_operator.h"
 
@@ -35,11 +34,11 @@ struct TurbulenceModelData
 /*
  *  Algebraic subgrid-scale turbulence models for LES of incompressible flows.
  */
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 class TurbulenceModel
 {
 private:
-  typedef TurbulenceModel<dim, degree, Number> This;
+  typedef TurbulenceModel<dim, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -48,8 +47,8 @@ private:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef FEEvaluation<dim, degree, degree + 1, dim, Number>     FEEvalCell;
-  typedef FEFaceEvaluation<dim, degree, degree + 1, dim, Number> FEEvalFace;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
 public:
   /*
@@ -61,10 +60,10 @@ public:
    * Initialization function.
    */
   void
-  initialize(MatrixFree<dim, Number> const &        matrix_free_data_in,
-             Mapping<dim> const &                   mapping,
-             ViscousOperator<dim, degree, Number> & viscous_operator_in,
-             TurbulenceModelData const &            model_data);
+  initialize(MatrixFree<dim, Number> const & matrix_free_in,
+             Mapping<dim> const &            mapping_in,
+             ViscousOperator<dim, Number> &  viscous_operator_in,
+             TurbulenceModelData const &     data_in);
 
   /*
    *  This function calculates the turbulent viscosity for a given velocity field.
@@ -214,9 +213,9 @@ private:
 
   TurbulenceModelData turb_model_data;
 
-  MatrixFree<dim, Number> const * matrix_free_data;
+  MatrixFree<dim, Number> const * matrix_free;
 
-  ViscousOperator<dim, degree, Number> * viscous_operator;
+  ViscousOperator<dim, Number> * viscous_operator;
 
   AlignedVector<scalar> filter_width_vector;
 };

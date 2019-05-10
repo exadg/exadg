@@ -21,6 +21,7 @@ public:
       ),
       // clang-format on
       IP_factor(1.0),
+      degree(1),
       degree_mapping(1)
   {
     this->mapping_update_flags = update_gradients | update_JxW_values;
@@ -30,17 +31,18 @@ public:
       this->mapping_update_flags_inner_faces | update_quadrature_points;
   }
 
-  double IP_factor;
-  int    degree_mapping;
+  double       IP_factor;
+  unsigned int degree;
+  int          degree_mapping;
 
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
 };
 
-template<int dim, int degree, typename Number>
-class LaplaceOperator : public OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>
+template<int dim, typename Number>
+class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim>>
 {
 private:
-  typedef OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>> Base;
+  typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>> Base;
 
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
@@ -48,7 +50,6 @@ private:
   typedef VectorizedArray<Number> scalar;
 
 public:
-  static const int                  DIM = dim;
   typedef Number                    value_type;
   typedef typename Base::VectorType VectorType;
 

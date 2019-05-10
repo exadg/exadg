@@ -1,7 +1,5 @@
 #include "multigrid_preconditioner_base.h"
 
-#include <navierstokes/config.h>
-
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
@@ -878,4 +876,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   smoother->initialize(matrix, smoother_data);
 }
 
-#include "multigrid_preconditioner_base.hpp"
+template class MultigridPreconditionerBase<2, float, float>;
+template class MultigridPreconditionerBase<2, double, float>;
+template class MultigridPreconditionerBase<2, double, double>;
+
+template class MultigridPreconditionerBase<3, float, float>;
+template class MultigridPreconditionerBase<3, double, float>;
+template class MultigridPreconditionerBase<3, double, double>;

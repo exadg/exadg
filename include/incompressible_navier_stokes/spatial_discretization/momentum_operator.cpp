@@ -8,8 +8,8 @@
 
 namespace IncNS
 {
-template<int dim, int degree, typename Number>
-MomentumOperator<dim, degree, Number>::MomentumOperator()
+template<int dim, typename Number>
+MomentumOperator<dim, Number>::MomentumOperator()
   : data(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
@@ -20,18 +20,19 @@ MomentumOperator<dim, degree, Number>::MomentumOperator()
 {
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   data,
-                                              AffineConstraints<double> const & constraint_matrix,
-                                              MomentumOperatorData<dim> const & operator_data)
+MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   data,
+                                      AffineConstraints<double> const & constraint_matrix,
+                                      MomentumOperatorData<dim> const & operator_data)
 {
   (void)constraint_matrix;
 
   // setup own mass matrix operator
   own_mass_matrix_operator_storage.initialize(data, operator_data.mass_matrix_operator_data);
 
-  // TODO: refactor viscous operator, s.t. it does not need mappding
+  // TODO: refactor viscous operator, s.t. it does not need mapping
+  unsigned int const   degree = operator_data.viscous_operator_data.degree;
   MappingQGeneric<dim> mapping(degree);
   own_viscous_operator_storage.initialize(mapping, data, operator_data.viscous_operator_data);
   own_convective_operator_storage.initialize(data, operator_data.convective_operator_data);
@@ -48,14 +49,13 @@ MomentumOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   
   this->initialize_dof_vector(temp_vector);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::reinit(
-  MatrixFree<dim, Number> const &                 data,
-  MomentumOperatorData<dim> const &               operator_data,
-  MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
-  ViscousOperator<dim, degree, Number> const &    viscous_operator,
-  ConvectiveOperator<dim, degree, Number> const & convective_operator)
+MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &         data,
+                                      MomentumOperatorData<dim> const &       operator_data,
+                                      MassMatrixOperator<dim, Number> const & mass_matrix_operator,
+                                      ViscousOperator<dim, Number> const &    viscous_operator,
+                                      ConvectiveOperator<dim, Number> const & convective_operator)
 {
   // copy parameters into element variables
   this->data                 = &data;
@@ -69,25 +69,23 @@ MomentumOperator<dim, degree, Number>::reinit(
   set_scaling_factor_time_derivative_term(this->operator_data.scaling_factor_time_derivative_term);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::set_scaling_factor_time_derivative_term(
-  double const & factor)
+MomentumOperator<dim, Number>::set_scaling_factor_time_derivative_term(double const & factor)
 {
   this->scaling_factor_time_derivative_term = factor;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 double
-MomentumOperator<dim, degree, Number>::get_scaling_factor_time_derivative_term() const
+MomentumOperator<dim, Number>::get_scaling_factor_time_derivative_term() const
 {
   return this->scaling_factor_time_derivative_term;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::set_solution_linearization(
-  VectorType const & solution_linearization)
+MomentumOperator<dim, Number>::set_solution_linearization(VectorType const & solution_linearization)
 {
   if(operator_data.convective_problem == true)
   {
@@ -95,9 +93,9 @@ MomentumOperator<dim, degree, Number>::set_solution_linearization(
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-MomentumOperator<dim, degree, Number>::get_solution_linearization() const
+MomentumOperator<dim, Number>::get_solution_linearization() const
 {
   AssertThrow(operator_data.convective_problem == true,
               ExcMessage(
@@ -106,58 +104,58 @@ MomentumOperator<dim, degree, Number>::get_solution_linearization() const
   return convective_operator->get_solution_linearization();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::set_evaluation_time(double const evaluation_time_in)
+MomentumOperator<dim, Number>::set_evaluation_time(double const evaluation_time_in)
 {
   evaluation_time = evaluation_time_in;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 double
-MomentumOperator<dim, degree, Number>::get_evaluation_time() const
+MomentumOperator<dim, Number>::get_evaluation_time() const
 {
   return evaluation_time;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 MomentumOperatorData<dim> const &
-MomentumOperator<dim, degree, Number>::get_operator_data() const
+MomentumOperator<dim, Number>::get_operator_data() const
 {
   return this->operator_data;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 MassMatrixOperatorData const &
-MomentumOperator<dim, degree, Number>::get_mass_matrix_operator_data() const
+MomentumOperator<dim, Number>::get_mass_matrix_operator_data() const
 {
   return mass_matrix_operator->get_operator_data();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 ConvectiveOperatorData<dim> const &
-MomentumOperator<dim, degree, Number>::get_convective_operator_data() const
+MomentumOperator<dim, Number>::get_convective_operator_data() const
 {
   return convective_operator->get_operator_data();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 ViscousOperatorData<dim> const &
-MomentumOperator<dim, degree, Number>::get_viscous_operator_data() const
+MomentumOperator<dim, Number>::get_viscous_operator_data() const
 {
   return viscous_operator->get_operator_data();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-MomentumOperator<dim, degree, Number>::get_data() const
+MomentumOperator<dim, Number>::get_data() const
 {
   return *data;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::vmult(VectorType & dst, VectorType const & src) const
+MomentumOperator<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -182,9 +180,9 @@ MomentumOperator<dim, degree, Number>::vmult(VectorType & dst, VectorType const 
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::vmult_add(VectorType & dst, VectorType const & src) const
+MomentumOperator<dim, Number>::vmult_add(VectorType & dst, VectorType const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -205,10 +203,9 @@ MomentumOperator<dim, degree, Number>::vmult_add(VectorType & dst, VectorType co
 }
 
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::vmult_block_jacobi(VectorType &       dst,
-                                                          VectorType const & src) const
+MomentumOperator<dim, Number>::vmult_block_jacobi(VectorType & dst, VectorType const & src) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -231,23 +228,23 @@ MomentumOperator<dim, degree, Number>::vmult_block_jacobi(VectorType &       dst
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 unsigned int
-MomentumOperator<dim, degree, Number>::get_dof_index() const
+MomentumOperator<dim, Number>::get_dof_index() const
 {
   return operator_data.dof_index;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 unsigned int
-MomentumOperator<dim, degree, Number>::get_quad_index() const
+MomentumOperator<dim, Number>::get_quad_index() const
 {
   return operator_data.quad_index_std;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::calculate_inverse_diagonal(VectorType & diagonal) const
+MomentumOperator<dim, Number>::calculate_inverse_diagonal(VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
 
@@ -256,9 +253,9 @@ MomentumOperator<dim, degree, Number>::calculate_inverse_diagonal(VectorType & d
   invert_diagonal(diagonal);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::calculate_diagonal(VectorType & diagonal) const
+MomentumOperator<dim, Number>::calculate_diagonal(VectorType & diagonal) const
 {
   if(operator_data.unsteady_problem == true)
   {
@@ -281,9 +278,9 @@ MomentumOperator<dim, degree, Number>::calculate_diagonal(VectorType & diagonal)
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::initialize_block_diagonal_preconditioner_matrix_free() const
+MomentumOperator<dim, Number>::initialize_block_diagonal_preconditioner_matrix_free() const
 {
   elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
 
@@ -295,7 +292,7 @@ MomentumOperator<dim, degree, Number>::initialize_block_diagonal_preconditioner_
   else if(this->operator_data.preconditioner_block_jacobi ==
           PreconditionerBlockDiagonal::InverseMassMatrix)
   {
-    typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, degree, Number> INVERSE_MASS;
+    typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
 
     elementwise_preconditioner.reset(
       new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
@@ -319,9 +316,9 @@ MomentumOperator<dim, degree, Number>::initialize_block_diagonal_preconditioner_
     iterative_solver_data));
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::update_block_diagonal_preconditioner() const
+MomentumOperator<dim, Number>::update_block_diagonal_preconditioner() const
 {
   // initialization
 
@@ -361,10 +358,10 @@ MomentumOperator<dim, degree, Number>::update_block_diagonal_preconditioner() co
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::apply_inverse_block_diagonal(VectorType &       dst,
-                                                                    VectorType const & src) const
+MomentumOperator<dim, Number>::apply_inverse_block_diagonal(VectorType &       dst,
+                                                            VectorType const & src) const
 {
   // matrix-free
   if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
@@ -382,9 +379,9 @@ MomentumOperator<dim, degree, Number>::apply_inverse_block_diagonal(VectorType &
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::add_block_diagonal_matrices(
+MomentumOperator<dim, Number>::add_block_diagonal_matrices(
   std::vector<LAPACKFullMatrix<value_type>> & matrices) const
 {
   // calculate block Jacobi matrices
@@ -411,9 +408,9 @@ MomentumOperator<dim, degree, Number>::add_block_diagonal_matrices(
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::apply_add_block_diagonal_elementwise(
+MomentumOperator<dim, Number>::apply_add_block_diagonal_elementwise(
   unsigned int const                    cell,
   VectorizedArray<Number> * const       dst,
   VectorizedArray<Number> const * const src,
@@ -438,45 +435,45 @@ MomentumOperator<dim, degree, Number>::apply_add_block_diagonal_elementwise(
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::cell_loop_apply_inverse_block_diagonal(
+MomentumOperator<dim, Number>::cell_loop_apply_inverse_block_diagonal(
   MatrixFree<dim, Number> const &               data,
   VectorType &                                  dst,
   VectorType const &                            src,
   std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  FEEval fe_eval(data, operator_data.dof_index, operator_data.quad_index_std);
+  Integrator integrator(data, operator_data.dof_index, operator_data.quad_index_std);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
-    fe_eval.reinit(cell);
-    fe_eval.read_dof_values(src);
+    integrator.reinit(cell);
+    integrator.read_dof_values(src);
 
-    unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+    unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
     for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
     {
       // fill source vector
       Vector<Number> src_vector(dofs_per_cell);
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        src_vector(j) = fe_eval.begin_dof_values()[j][v];
+        src_vector(j) = integrator.begin_dof_values()[j][v];
 
       // apply inverse matrix
       matrices[cell * VectorizedArray<Number>::n_array_elements + v].solve(src_vector, false);
 
       // write solution to dst-vector
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        fe_eval.begin_dof_values()[j][v] = src_vector(j);
+        integrator.begin_dof_values()[j][v] = src_vector(j);
     }
 
-    fe_eval.set_dof_values(dst);
+    integrator.set_dof_values(dst);
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::check_block_jacobi_matrices() const
+MomentumOperator<dim, Number>::check_block_jacobi_matrices() const
 {
   VectorType src;
   this->initialize_dof_vector(src);
@@ -507,22 +504,22 @@ MomentumOperator<dim, degree, Number>::check_block_jacobi_matrices() const
             << std::endl;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-MomentumOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
+MomentumOperator<dim, Number>::cell_loop_apply_block_diagonal(
   MatrixFree<dim, Number> const &               data,
   VectorType &                                  dst,
   VectorType const &                            src,
   std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  FEEval fe_eval(data, operator_data.dof_index, operator_data.quad_index_std);
+  Integrator integrator(data, operator_data.dof_index, operator_data.quad_index_std);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
-    fe_eval.reinit(cell);
-    fe_eval.read_dof_values(src);
+    integrator.reinit(cell);
+    integrator.read_dof_values(src);
 
-    unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+    unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
     for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
     {
@@ -530,7 +527,7 @@ MomentumOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
       Vector<Number> src_vector(dofs_per_cell);
       Vector<Number> dst_vector(dofs_per_cell);
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        src_vector(j) = fe_eval.begin_dof_values()[j][v];
+        src_vector(j) = integrator.begin_dof_values()[j][v];
 
       // apply matrix-vector product
       matrices[cell * VectorizedArray<Number>::n_array_elements + v].vmult(dst_vector,
@@ -539,85 +536,94 @@ MomentumOperator<dim, degree, Number>::cell_loop_apply_block_diagonal(
 
       // write solution to dst-vector
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        fe_eval.begin_dof_values()[j][v] = dst_vector(j);
+        integrator.begin_dof_values()[j][v] = dst_vector(j);
     }
 
-    fe_eval.set_dof_values(dst);
+    integrator.set_dof_values(dst);
   }
 }
 
-template<int dim, int degree, typename Number>
+// TODO
+template<int dim, typename Number>
 PreconditionableOperator<dim, Number> *
-MomentumOperator<dim, degree, Number>::get_new(unsigned int deg) const
+MomentumOperator<dim, Number>::get_new(unsigned int /*deg*/) const
 {
-  switch(deg)
-  {
-#if DEGREE_1
-    case 1:
-      return new MomentumOperator<dim, 1, Number>();
-#endif
-#if DEGREE_2
-    case 2:
-      return new MomentumOperator<dim, 2, Number>();
-#endif
-#if DEGREE_3
-    case 3:
-      return new MomentumOperator<dim, 3, Number>();
-#endif
-#if DEGREE_4
-    case 4:
-      return new MomentumOperator<dim, 4, Number>();
-#endif
-#if DEGREE_5
-    case 5:
-      return new MomentumOperator<dim, 5, Number>();
-#endif
-#if DEGREE_6
-    case 6:
-      return new MomentumOperator<dim, 6, Number>();
-#endif
-#if DEGREE_7
-    case 7:
-      return new MomentumOperator<dim, 7, Number>();
-#endif
-#if DEGREE_8
-    case 8:
-      return new MomentumOperator<dim, 8, Number>();
-#endif
-#if DEGREE_9
-    case 9:
-      return new MomentumOperator<dim, 9, Number>();
-#endif
-#if DEGREE_10
-    case 10:
-      return new MomentumOperator<dim, 10, Number>();
-#endif
-#if DEGREE_11
-    case 11:
-      return new MomentumOperator<dim, 11, Number>();
-#endif
-#if DEGREE_12
-    case 12:
-      return new MomentumOperator<dim, 12, Number>();
-#endif
-#if DEGREE_13
-    case 13:
-      return new MomentumOperator<dim, 13, Number>();
-#endif
-#if DEGREE_14
-    case 14:
-      return new MomentumOperator<dim, 14, Number>();
-#endif
-#if DEGREE_15
-    case 15:
-      return new MomentumOperator<dim, 15, Number>();
-#endif
-    default:
-      AssertThrow(false, ExcMessage("MomentumOperator not implemented for this degree!"));
-      return nullptr;
-  }
+  return new MomentumOperator<dim, Number>();
+
+  // TODO
+  //  switch(deg)
+  //  {
+  //#if DEGREE_1
+  //    case 1:
+  //      return new MomentumOperator<dim, 1, Number>();
+  //#endif
+  //#if DEGREE_2
+  //    case 2:
+  //      return new MomentumOperator<dim, 2, Number>();
+  //#endif
+  //#if DEGREE_3
+  //    case 3:
+  //      return new MomentumOperator<dim, 3, Number>();
+  //#endif
+  //#if DEGREE_4
+  //    case 4:
+  //      return new MomentumOperator<dim, 4, Number>();
+  //#endif
+  //#if DEGREE_5
+  //    case 5:
+  //      return new MomentumOperator<dim, 5, Number>();
+  //#endif
+  //#if DEGREE_6
+  //    case 6:
+  //      return new MomentumOperator<dim, 6, Number>();
+  //#endif
+  //#if DEGREE_7
+  //    case 7:
+  //      return new MomentumOperator<dim, 7, Number>();
+  //#endif
+  //#if DEGREE_8
+  //    case 8:
+  //      return new MomentumOperator<dim, 8, Number>();
+  //#endif
+  //#if DEGREE_9
+  //    case 9:
+  //      return new MomentumOperator<dim, 9, Number>();
+  //#endif
+  //#if DEGREE_10
+  //    case 10:
+  //      return new MomentumOperator<dim, 10, Number>();
+  //#endif
+  //#if DEGREE_11
+  //    case 11:
+  //      return new MomentumOperator<dim, 11, Number>();
+  //#endif
+  //#if DEGREE_12
+  //    case 12:
+  //      return new MomentumOperator<dim, 12, Number>();
+  //#endif
+  //#if DEGREE_13
+  //    case 13:
+  //      return new MomentumOperator<dim, 13, Number>();
+  //#endif
+  //#if DEGREE_14
+  //    case 14:
+  //      return new MomentumOperator<dim, 14, Number>();
+  //#endif
+  //#if DEGREE_15
+  //    case 15:
+  //      return new MomentumOperator<dim, 15, Number>();
+  //#endif
+  //    default:
+  //      AssertThrow(false, ExcMessage("MomentumOperator not implemented for this degree!"));
+  //      return nullptr;
+  //  }
 }
+
+
+template class MomentumOperator<2, float>;
+template class MomentumOperator<2, double>;
+
+template class MomentumOperator<3, float>;
+template class MomentumOperator<3, double>;
 
 } // namespace IncNS
-
-#include "momentum_operator.hpp"

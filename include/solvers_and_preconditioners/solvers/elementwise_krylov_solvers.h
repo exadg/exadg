@@ -196,15 +196,32 @@ enum class SolverType
 };
 
 /*
+ * Base class.
+ */
+template<typename value_type, typename Matrix, typename Preconditioner>
+class SolverBase
+{
+public:
+  virtual ~SolverBase()
+  {
+  }
+
+  virtual void
+  solve(Matrix const *         matrix,
+        value_type *           solution,
+        value_type const *     rhs,
+        Preconditioner const * preconditioner) = 0;
+};
+
+/*
  * CG solver.
  */
-template<typename value_type>
-class SolverCG
+template<typename value_type, typename Matrix, typename Preconditioner>
+class SolverCG : public SolverBase<value_type, Matrix, Preconditioner>
 {
 public:
   SolverCG(unsigned int const unknowns, SolverData const & solver_data);
 
-  template<typename Matrix, typename Preconditioner>
   void
   solve(Matrix const *         matrix,
         value_type *           solution,
@@ -223,8 +240,9 @@ private:
 /*
  *  Implementation of CG solver
  */
-template<typename value_type>
-SolverCG<value_type>::SolverCG(unsigned int const unknowns, SolverData const & solver_data)
+template<typename value_type, typename Matrix, typename Preconditioner>
+SolverCG<value_type, Matrix, Preconditioner>::SolverCG(unsigned int const unknowns,
+                                                       SolverData const & solver_data)
   : M(unknowns),
     ABS_TOL(solver_data.abs_tol),
     REL_TOL(solver_data.rel_tol),
@@ -236,13 +254,12 @@ SolverCG<value_type>::SolverCG(unsigned int const unknowns, SolverData const & s
   v = storage.begin() + 2 * M;
 }
 
-template<typename value_type>
-template<typename Matrix, typename Preconditioner>
+template<typename value_type, typename Matrix, typename Preconditioner>
 void
-SolverCG<value_type>::solve(Matrix const *         matrix,
-                            value_type *           solution,
-                            value_type const *     rhs,
-                            Preconditioner const * preconditioner)
+SolverCG<value_type, Matrix, Preconditioner>::solve(Matrix const *         matrix,
+                                                    value_type *           solution,
+                                                    value_type const *     rhs,
+                                                    Preconditioner const * preconditioner)
 {
   value_type one;
   one = 1.0;
@@ -324,15 +341,14 @@ SolverCG<value_type>::solve(Matrix const *         matrix,
 /*
  *  GMRES solver with right preconditioning and restart.
  */
-template<typename value_type>
-class SolverGMRES
+template<typename value_type, typename Matrix, typename Preconditioner>
+class SolverGMRES : public SolverBase<value_type, Matrix, Preconditioner>
 {
 public:
   SolverGMRES(unsigned int const unknowns, SolverData const & solver_data);
 
-  template<typename Matrix, typename Preconditioner>
   void
-  solve(Matrix const * A, value_type * x, value_type const * b, Preconditioner const * P = nullptr);
+  solve(Matrix const * A, value_type * x, value_type const * b, Preconditioner const * P);
 
 private:
   // Matrix size MxM
@@ -384,7 +400,6 @@ private:
   void
   clear();
 
-  template<typename Matrix, typename Preconditioner>
   void
   do_solve(Matrix const * A, value_type * x, value_type const * b, Preconditioner const * P);
 
@@ -411,8 +426,9 @@ private:
 /*
  * Implementation of GMRES solver.
  */
-template<typename value_type>
-SolverGMRES<value_type>::SolverGMRES(unsigned int const unknowns, SolverData const & solver_data)
+template<typename value_type, typename Matrix, typename Preconditioner>
+SolverGMRES<value_type, Matrix, Preconditioner>::SolverGMRES(unsigned int const unknowns,
+                                                             SolverData const & solver_data)
   : M(unknowns),
     ABS_TOL(solver_data.abs_tol),
     REL_TOL(solver_data.rel_tol),
@@ -433,9 +449,9 @@ SolverGMRES<value_type>::SolverGMRES(unsigned int const unknowns, SolverData con
   one = 1.0;
 }
 
-template<typename value_type>
+template<typename value_type, typename Matrix, typename Preconditioner>
 void
-SolverGMRES<value_type>::clear()
+SolverGMRES<value_type, Matrix, Preconditioner>::clear()
 {
   // clear all data
   V.clear();
@@ -445,19 +461,19 @@ SolverGMRES<value_type>::clear()
   c.clear();
 }
 
-template<typename value_type>
+template<typename value_type, typename Matrix, typename Preconditioner>
 template<typename Number>
-void SolverGMRES<value_type>::print(Number, std::string)
+void SolverGMRES<value_type, Matrix, Preconditioner>::print(Number, std::string)
 {
 }
 
 /*
  *  Print function for data of type VectorizedArray
  */
-template<typename value_type>
+template<typename value_type, typename Matrix, typename Preconditioner>
 template<typename Number>
 void
-SolverGMRES<value_type>::print(VectorizedArray<Number> y, std::string name)
+SolverGMRES<value_type, Matrix, Preconditioner>::print(VectorizedArray<Number> y, std::string name)
 {
   for(unsigned int v = 0; v < VectorizedArray<double>::n_array_elements; ++v)
   {
@@ -484,12 +500,13 @@ SolverGMRES<value_type>::print(VectorizedArray<Number> y, std::string name)
  *  (we explicitly overwrite this column of the Hessenberg
  *  matrix when performing the Givens rotation.
  */
-template<typename value_type>
+template<typename value_type, typename Matrix, typename Preconditioner>
 void
-SolverGMRES<value_type>::modified_gram_schmidt(AlignedVector<value_type> &                      w,
-                                               AlignedVector<AlignedVector<value_type>> &       H,
-                                               AlignedVector<AlignedVector<value_type>> const & V,
-                                               unsigned int const                               dim)
+SolverGMRES<value_type, Matrix, Preconditioner>::modified_gram_schmidt(
+  AlignedVector<value_type> &                      w,
+  AlignedVector<AlignedVector<value_type>> &       H,
+  AlignedVector<AlignedVector<value_type>> const & V,
+  unsigned int const                               dim)
 {
   for(unsigned int i = 0; i < dim; ++i)
   {
@@ -500,9 +517,11 @@ SolverGMRES<value_type>::modified_gram_schmidt(AlignedVector<value_type> &      
   H[dim - 1][dim] = l2_norm(w.begin(), M);
 }
 
-template<typename value_type>
+template<typename value_type, typename Matrix, typename Preconditioner>
 template<typename Number>
-void SolverGMRES<value_type>::perform_givens_rotation_and_calculate_residual(Number)
+void
+  SolverGMRES<value_type, Matrix, Preconditioner>::perform_givens_rotation_and_calculate_residual(
+    Number)
 {
   // Givens rotations for Hessenberg matrix
   for(int i = 0; i <= int(k) - 1; ++i)
@@ -527,10 +546,11 @@ void SolverGMRES<value_type>::perform_givens_rotation_and_calculate_residual(Num
   res.push_back(-s[k] * res_k_store);
 }
 
-template<typename value_type>
+template<typename value_type, typename Matrix, typename Preconditioner>
 template<typename Number>
 void
-  SolverGMRES<value_type>::perform_givens_rotation_and_calculate_residual(VectorizedArray<Number>)
+  SolverGMRES<value_type, Matrix, Preconditioner>::perform_givens_rotation_and_calculate_residual(
+    VectorizedArray<Number>)
 {
   VectorizedArray<Number> H_i_k   = VectorizedArray<Number>();
   VectorizedArray<Number> H_ip1_k = VectorizedArray<Number>();
@@ -607,13 +627,12 @@ void
  *  b: rhs vector
  *  r: residual r = b - A*x
  */
-template<typename value_type>
-template<typename Matrix, typename Preconditioner>
+template<typename value_type, typename Matrix, typename Preconditioner>
 void
-SolverGMRES<value_type>::solve(Matrix const *         A,
-                               value_type *           x,
-                               value_type const *     b,
-                               Preconditioner const * P)
+SolverGMRES<value_type, Matrix, Preconditioner>::solve(Matrix const *         A,
+                                                       value_type *           x,
+                                                       value_type const *     b,
+                                                       Preconditioner const * P)
 {
   iterations = 0;
 
@@ -654,13 +673,12 @@ SolverGMRES<value_type>::solve(Matrix const *         A,
   //    print(l2_norm(temp.begin()),"l2-norm of residual");
 }
 
-template<typename value_type>
-template<typename Matrix, typename Preconditioner>
+template<typename value_type, typename Matrix, typename Preconditioner>
 void
-SolverGMRES<value_type>::do_solve(Matrix const *         A,
-                                  value_type *           x,
-                                  value_type const *     b,
-                                  Preconditioner const * P)
+SolverGMRES<value_type, Matrix, Preconditioner>::do_solve(Matrix const *         A,
+                                                          value_type *           x,
+                                                          value_type const *     b,
+                                                          Preconditioner const * P)
 {
   // apply matrix vector product: r = A*x
   V.push_back(AlignedVector<value_type>(M));

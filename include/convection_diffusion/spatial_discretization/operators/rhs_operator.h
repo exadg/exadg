@@ -1,10 +1,8 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_RHS
 #define INCLUDE_CONVECTION_DIFFUSION_RHS
 
-
-#include <deal.II/matrix_free/fe_evaluation.h>
-
-#include "../../../../include/functionalities/evaluate_functions.h"
+#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/matrix_free/matrix_free.h>
 
 using namespace dealii;
 
@@ -23,13 +21,13 @@ struct RHSOperatorData
   std::shared_ptr<Function<dim>> rhs;
 };
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 class RHSOperator
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef RHSOperator<dim, degree, Number> This;
+  typedef RHSOperator<dim, Number> This;
 
   typedef VectorizedArray<Number> scalar;
 
@@ -45,7 +43,8 @@ public:
    * Initialization.
    */
   void
-  reinit(MatrixFree<dim, Number> const & mf_data, RHSOperatorData<dim> const & operator_data_in);
+  reinit(MatrixFree<dim, Number> const & matrix_free_in,
+         RHSOperatorData<dim> const &    operator_data_in);
 
   /*
    * Evaluate operator and overwrite dst-vector.
@@ -60,21 +59,21 @@ public:
   evaluate_add(VectorType & dst, double const evaluation_time) const;
 
 private:
-  template<typename FEEvaluation>
+  template<typename Integrator>
   void
-  do_cell_integral(FEEvaluation & fe_eval) const;
+  do_cell_integral(Integrator & integrator) const;
 
   /*
    * The right-hand side operator involves only cell integrals so we only need a function looping
    * over all cells and computing the cell integrals.
    */
   void
-  cell_loop(MatrixFree<dim, Number> const & data,
+  cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const & /*src*/,
             Range const & cell_range) const;
 
-  MatrixFree<dim, Number> const * data;
+  MatrixFree<dim, Number> const * matrix_free;
 
   RHSOperatorData<dim> operator_data;
 

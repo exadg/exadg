@@ -35,9 +35,9 @@
 //#include "compressible_navier_stokes_test_cases/channel_flow.h"
 //#include "compressible_navier_stokes_test_cases/couette_flow.h"
 //#include "compressible_navier_stokes_test_cases/steady_shear_flow.h"
-//#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
+#include "compressible_navier_stokes_test_cases/manufactured_solution.h"
 //#include "compressible_navier_stokes_test_cases/flow_past_cylinder.h"
-#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+//#include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "compressible_navier_stokes_test_cases/turbulent_channel.h"
 
 using namespace dealii;
@@ -140,9 +140,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
 
   param = param_in;
   param.check_input_parameters();
-
-  if(param.print_input_parameters == true)
-    param.print(pcout);
+  param.print(pcout, "List of input parameters:");
 
   // triangulation
   if(param.triangulation_type == TriangulationType::Distributed)
@@ -290,9 +288,9 @@ Problem<dim, Number>::analyze_computing_times() const
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 
   // Throughput in DoFs/s per time step per core
-  unsigned int const DoFs              = comp_navier_stokes_operator->get_number_of_dofs();
-  unsigned int       N_time_steps      = time_integrator->get_number_of_time_steps();
-  double const       time_per_timestep = overall_time_avg / (double)N_time_steps;
+  types::global_dof_index const DoFs         = comp_navier_stokes_operator->get_number_of_dofs();
+  unsigned int                  N_time_steps = time_integrator->get_number_of_time_steps();
+  double const                  time_per_timestep = overall_time_avg / (double)N_time_steps;
   this->pcout << std::endl
               << "Throughput per time step (including setup + postprocessing):" << std::endl
               << "  Degrees of freedom      = " << DoFs << std::endl
@@ -352,16 +350,16 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        Problem<DIMENSION> navier_stokes_problem(refine_steps_space, refine_steps_time);
+        Problem<DIMENSION> problem(refine_steps_space, refine_steps_time);
 
         CompNS::InputParameters<DIMENSION> param;
         param.set_input_parameters();
 
-        navier_stokes_problem.setup(param, do_restart);
+        problem.setup(param, do_restart);
 
-        navier_stokes_problem.solve();
+        problem.solve();
 
-        navier_stokes_problem.analyze_computing_times();
+        problem.analyze_computing_times();
       }
     }
   }

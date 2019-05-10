@@ -9,7 +9,7 @@
 #define INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTION_DIFFUSION_OPERATOR_EFFICIENCY_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "../../../operators/linear_operator_base.h"
 #include "convection_diffusion/user_interface/boundary_descriptor.h"
@@ -54,13 +54,16 @@ struct ConvectionDiffusionOperatorDataEfficiency
   RHSOperatorData<dim>        rhs_data;
 };
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 class ConvectionDiffusionOperatorEfficiency
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef ConvectionDiffusionOperatorEfficiency<dim, degree, Number> This;
+  typedef ConvectionDiffusionOperatorEfficiency<dim, Number> This;
+
+  typedef CellIntegrator<dim, 1, Number> CellInt;
+  typedef FaceIntegrator<dim, 1, Number> FaceInt;
 
   ConvectionDiffusionOperatorEfficiency() : data(nullptr), diffusivity(-1.0)
   {
@@ -74,8 +77,11 @@ public:
     this->data          = &mf_data;
     this->operator_data = operator_data_in;
 
-    IP::calculate_penalty_parameter<dim, Number>(
-      array_penalty_parameter, *this->data, mapping, degree, operator_data.diff_data.dof_index);
+    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
+                                                 *this->data,
+                                                 mapping,
+                                                 operator_data.diff_data.degree,
+                                                 operator_data.diff_data.dof_index);
 
     diffusivity = operator_data.diff_data.diffusivity;
   }
@@ -110,9 +116,7 @@ private:
                    VectorType const &                            src,
                    std::pair<unsigned int, unsigned int> const & cell_range) const
   {
-    FEEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(data,
-                                                             operator_data.diff_data.dof_index,
-                                                             operator_data.diff_data.quad_index);
+    CellInt fe_eval(data, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);
 
     // set the correct time for the evaluation of the velocity field
     operator_data.conv_data.velocity->set_time(eval_time);
@@ -174,10 +178,14 @@ private:
                    VectorType const &                            src,
                    std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(
-      data, true, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);
-    FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval_neighbor(
-      data, false, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);
+    FaceInt fe_eval(data,
+                    true,
+                    operator_data.diff_data.dof_index,
+                    operator_data.diff_data.quad_index);
+    FaceInt fe_eval_neighbor(data,
+                             false,
+                             operator_data.diff_data.dof_index,
+                             operator_data.diff_data.quad_index);
 
     // set the correct time for the evaluation of the velocity field
     operator_data.conv_data.velocity->set_time(eval_time);
@@ -195,7 +203,8 @@ private:
       VectorizedArray<Number> tau_IP =
         std::max(fe_eval.read_cell_data(array_penalty_parameter),
                  fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-        IP::get_penalty_factor<Number>(degree, operator_data.diff_data.IP_factor);
+        IP::get_penalty_factor<Number>(operator_data.diff_data.degree,
+                                       operator_data.diff_data.IP_factor);
 
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
@@ -268,8 +277,10 @@ private:
                                VectorType const &                            src,
                                std::pair<unsigned int, unsigned int> const & face_range) const
   {
-    FEFaceEvaluation<dim, degree, degree + 1, 1, Number> fe_eval(
-      data, true, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);
+    FaceInt fe_eval(data,
+                    true,
+                    operator_data.diff_data.dof_index,
+                    operator_data.diff_data.quad_index);
 
     // set the correct time for the evaluation of the velocity field
     operator_data.conv_data.velocity->set_time(eval_time);
@@ -283,7 +294,8 @@ private:
 
       VectorizedArray<Number> tau_IP =
         fe_eval.read_cell_data(array_penalty_parameter) *
-        IP::get_penalty_factor<Number>(degree, operator_data.diff_data.IP_factor);
+        IP::get_penalty_factor<Number>(operator_data.diff_data.degree,
+                                       operator_data.diff_data.IP_factor);
 
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
       types::boundary_id boundary_id = data.get_boundary_id(face);

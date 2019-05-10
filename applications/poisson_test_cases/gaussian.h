@@ -32,6 +32,7 @@ Poisson::InputParameters::set_input_parameters()
   // TEMPORAL DISCRETIZATION
 
   // SPATIAL DISCRETIZATION
+  degree = FE_DEGREE;
   IP_factor = 1.0;
 
   // SOLVER
@@ -58,7 +59,6 @@ Poisson::InputParameters::set_input_parameters()
 /******************************************************************************/
 /*                                                                            */
 /* FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.) */
-/*                                                                            */
 /*                                                                            */
 /******************************************************************************/
 
@@ -160,10 +160,10 @@ public:
   {
   }
 
-  virtual double
+  double
   value(const Point<dim> & p, const unsigned int component = 0) const;
 
-  virtual Tensor<1, dim>
+  Tensor<1, dim>
   gradient(const Point<dim> & p, const unsigned int component = 0) const;
 };
 
@@ -218,7 +218,7 @@ public:
   {
   }
 
-  virtual double
+  double
   value(const Point<dim> & p, const unsigned int component = 0) const;
 };
 

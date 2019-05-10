@@ -7,7 +7,7 @@
 
 #include "driver_steady_problems.h"
 
-#include "../interface_space_time/operator.h"
+#include "../spatial_discretization/interface.h"
 
 namespace ConvDiff
 {
@@ -111,13 +111,8 @@ DriverSteadyProblems<Number>::get_wall_times(std::vector<std::string> & name,
 }
 
 // instantiations
-#include <navierstokes/config.h>
 
-#if OP_FLOAT
 template class DriverSteadyProblems<float>;
-#endif
-#if OP_DOUBLE
 template class DriverSteadyProblems<double>;
-#endif
 
 } // namespace ConvDiff

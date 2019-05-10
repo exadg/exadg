@@ -8,11 +8,15 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_PERTURBATION_ENERGY_ORR_SOMMERFELD_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_PERTURBATION_ENERGY_ORR_SOMMERFELD_H_
 
-template<int dim, int fe_degree, typename Number>
+#include "deal.II/matrix_free/fe_evaluation_notemplate.h"
+
+template<int dim, typename Number>
 class PerturbationEnergyCalculator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef PerturbationEnergyCalculator<dim, Number> This;
 
   PerturbationEnergyCalculator()
     : clear_files(true),
@@ -128,10 +132,7 @@ private:
             Number &                        energy)
   {
     std::vector<Number> dst(1, 0.0);
-    matrix_free_data.cell_loop(&PerturbationEnergyCalculator<dim, fe_degree, Number>::local_compute,
-                               this,
-                               dst,
-                               velocity);
+    matrix_free_data.cell_loop(&This::local_compute, this, dst, velocity);
 
     // sum over all MPI processes
     energy = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
@@ -143,8 +144,9 @@ private:
                 VectorType const &                            src,
                 std::pair<unsigned int, unsigned int> const & cell_range)
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
-      data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
+    CellIntegrator<dim, dim, Number> fe_eval(data,
+                                             dof_quad_index_data.dof_index_velocity,
+                                             dof_quad_index_data.quad_index_velocity);
 
     AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval.n_q_points);
 

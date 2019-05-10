@@ -10,6 +10,11 @@
 namespace IncNS
 {
 // currently implemented in header-file
-}
 
-#include "gradient_operator.hpp"
+template class GradientOperator<2, float>;
+template class GradientOperator<2, double>;
+
+template class GradientOperator<3, float>;
+template class GradientOperator<3, double>;
+
+} // namespace IncNS

@@ -10,6 +10,11 @@
 namespace IncNS
 {
 // currently implemented in header-file
-}
 
-#include "convective_operator.hpp"
+template class ConvectiveOperator<2, float>;
+template class ConvectiveOperator<2, double>;
+
+template class ConvectiveOperator<3, float>;
+template class ConvectiveOperator<3, double>;
+
+} // namespace IncNS

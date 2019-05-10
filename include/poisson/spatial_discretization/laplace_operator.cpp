@@ -1,51 +1,52 @@
 #include "laplace_operator.h"
 
-#include <navierstokes/config.h>
 #include "../../functionalities/evaluate_functions.h"
 
 namespace Poisson
 {
-template<int dim, int degree, typename Number>
-LaplaceOperator<dim, degree, Number>::LaplaceOperator()
-  : OperatorBase<dim, degree, Number, LaplaceOperatorData<dim>>()
+template<int dim, typename Number>
+LaplaceOperator<dim, Number>::LaplaceOperator()
+  : OperatorBase<dim, Number, LaplaceOperatorData<dim>>()
 {
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
-                                             AffineConstraints<double> const & constraint_matrix,
-                                             LaplaceOperatorData<dim> const &  operator_data) const
+LaplaceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
+                                     AffineConstraints<double> const & constraint_matrix,
+                                     LaplaceOperatorData<dim> const &  operator_data) const
 {
   Base::reinit(mf_data, constraint_matrix, operator_data);
   // calculate penalty parameters
   MappingQGeneric<dim> mapping(operator_data.degree_mapping);
-  IP::calculate_penalty_parameter<dim, Number>(
-    array_penalty_parameter, *this->data, mapping, degree, this->operator_data.dof_index);
+  IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
+                                               *this->data,
+                                               mapping,
+                                               this->operator_data.degree,
+                                               this->operator_data.dof_index);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 bool
-LaplaceOperator<dim, degree, Number>::is_singular() const
+LaplaceOperator<dim, Number>::is_singular() const
 {
   return this->operator_is_singular();
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, degree, Number>::calculate_value_flux(scalar const & jump_value) const
+  LaplaceOperator<dim, Number>::calculate_value_flux(scalar const & jump_value) const
 {
   return -0.5 * jump_value;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, degree, Number>::calculate_interior_value(
-    unsigned int const   q,
-    FEEvalFace const &   fe_eval,
-    OperatorType const & operator_type) const
+  LaplaceOperator<dim, Number>::calculate_interior_value(unsigned int const   q,
+                                                         FEEvalFace const &   fe_eval,
+                                                         OperatorType const & operator_type) const
 {
   scalar value_m = make_vectorized_array<Number>(0.0);
 
@@ -65,16 +66,15 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_m;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, degree, Number>::calculate_exterior_value(
-    scalar const &           value_m,
-    unsigned int const       q,
-    FEEvalFace const &       fe_eval,
-    OperatorType const &     operator_type,
-    BoundaryType const &     boundary_type,
-    types::boundary_id const boundary_id) const
+  LaplaceOperator<dim, Number>::calculate_exterior_value(scalar const &           value_m,
+                                                         unsigned int const       q,
+                                                         FEEvalFace const &       fe_eval,
+                                                         OperatorType const &     operator_type,
+                                                         BoundaryType const &     boundary_type,
+                                                         types::boundary_id const boundary_id) const
 {
   scalar value_p = make_vectorized_array<Number>(0.0);
 
@@ -111,22 +111,21 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, degree, Number>::calculate_gradient_flux(
-    scalar const & normal_gradient_m,
-    scalar const & normal_gradient_p,
-    scalar const & jump_value,
-    scalar const & penalty_parameter) const
+  LaplaceOperator<dim, Number>::calculate_gradient_flux(scalar const & normal_gradient_m,
+                                                        scalar const & normal_gradient_p,
+                                                        scalar const & jump_value,
+                                                        scalar const & penalty_parameter) const
 {
   return 0.5 * (normal_gradient_m + normal_gradient_p) - penalty_parameter * jump_value;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, degree, Number>::calculate_interior_normal_gradient(
+  LaplaceOperator<dim, Number>::calculate_interior_normal_gradient(
     unsigned int const   q,
     FEEvalFace const &   fe_eval,
     OperatorType const & operator_type) const
@@ -149,10 +148,10 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_m;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, degree, Number>::calculate_exterior_normal_gradient(
+  LaplaceOperator<dim, Number>::calculate_exterior_normal_gradient(
     scalar const &           normal_gradient_m,
     unsigned int const       q,
     FEEvalFace const &       fe_eval,
@@ -195,24 +194,25 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_p;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_cell_integral(FEEvalCell & fe_eval,
-                                                       unsigned int const /*cell*/) const
+LaplaceOperator<dim, Number>::do_cell_integral(FEEvalCell & fe_eval,
+                                               unsigned int const /*cell*/) const
 {
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     fe_eval.submit_gradient(fe_eval.get_gradient(q), q);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_face_integral(FEEvalFace & fe_eval,
-                                                       FEEvalFace & fe_eval_neighbor,
-                                                       unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_face_integral(FEEvalFace & fe_eval,
+                                               FEEvalFace & fe_eval_neighbor,
+                                               unsigned int const /*face*/) const
 {
-  scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                           fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -232,15 +232,16 @@ LaplaceOperator<dim, degree, Number>::do_face_integral(FEEvalFace & fe_eval,
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                           FEEvalFace & fe_eval_neighbor,
-                                                           unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_face_int_integral(FEEvalFace & fe_eval,
+                                                   FEEvalFace & fe_eval_neighbor,
+                                                   unsigned int const /*face*/) const
 {
-  scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                           fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -259,15 +260,16 @@ LaplaceOperator<dim, degree, Number>::do_face_int_integral(FEEvalFace & fe_eval,
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
-                                                           FEEvalFace & fe_eval_neighbor,
-                                                           unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
+                                                   FEEvalFace & fe_eval_neighbor,
+                                                   unsigned int const /*face*/) const
 {
-  scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                           fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -288,17 +290,18 @@ LaplaceOperator<dim, degree, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
-                                                           OperatorType const &       operator_type,
-                                                           types::boundary_id const & boundary_id,
-                                                           unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
+                                                   OperatorType const &       operator_type,
+                                                   types::boundary_id const & boundary_id,
+                                                   unsigned int const /*face*/) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-  scalar tau_IP = fe_eval.read_cell_data(array_penalty_parameter) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    fe_eval.read_cell_data(array_penalty_parameter) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -319,85 +322,89 @@ LaplaceOperator<dim, degree, Number>::do_boundary_integral(FEEvalFace &         
   }
 }
 
-template<int dim, int degree, typename Number>
+// TODO
+template<int dim, typename Number>
 PreconditionableOperator<dim, Number> *
-LaplaceOperator<dim, degree, Number>::get_new(unsigned int deg) const
+LaplaceOperator<dim, Number>::get_new(unsigned int /*deg*/) const
 {
-  switch(deg)
-  {
-#if DEGREE_0
-    case 0:
-      return new LaplaceOperator<dim, 0, Number>();
-#endif
-#if DEGREE_1
-    case 1:
-      return new LaplaceOperator<dim, 1, Number>();
-#endif
-#if DEGREE_2
-    case 2:
-      return new LaplaceOperator<dim, 2, Number>();
-#endif
-#if DEGREE_3
-    case 3:
-      return new LaplaceOperator<dim, 3, Number>();
-#endif
-#if DEGREE_4
-    case 4:
-      return new LaplaceOperator<dim, 4, Number>();
-#endif
-#if DEGREE_5
-    case 5:
-      return new LaplaceOperator<dim, 5, Number>();
-#endif
-#if DEGREE_6
-    case 6:
-      return new LaplaceOperator<dim, 6, Number>();
-#endif
-#if DEGREE_7
-    case 7:
-      return new LaplaceOperator<dim, 7, Number>();
-#endif
-#if DEGREE_8
-    case 8:
-      return new LaplaceOperator<dim, 8, Number>();
-#endif
-#if DEGREE_9
-    case 9:
-      return new LaplaceOperator<dim, 9, Number>();
-#endif
-#if DEGREE_10
-    case 10:
-      return new LaplaceOperator<dim, 10, Number>();
-#endif
-#if DEGREE_11
-    case 11:
-      return new LaplaceOperator<dim, 11, Number>();
-#endif
-#if DEGREE_12
-    case 12:
-      return new LaplaceOperator<dim, 12, Number>();
-#endif
-#if DEGREE_13
-    case 13:
-      return new LaplaceOperator<dim, 13, Number>();
-#endif
-#if DEGREE_14
-    case 14:
-      return new LaplaceOperator<dim, 14, Number>();
-#endif
-#if DEGREE_15
-    case 15:
-      return new LaplaceOperator<dim, 15, Number>();
-#endif
-    default:
-      AssertThrow(false, ExcMessage("LaplaceOperator not implemented for this degree!"));
-      return new LaplaceOperator<dim, 1, Number>(); // dummy return (statement not reached)
-  }
+  return new LaplaceOperator<dim, Number>();
+
+  // TODO
+  //  switch(deg)
+  //  {
+  //#if DEGREE_0
+  //    case 0:
+  //      return new LaplaceOperator<dim, 0, Number>();
+  //#endif
+  //#if DEGREE_1
+  //    case 1:
+  //      return new LaplaceOperator<dim, 1, Number>();
+  //#endif
+  //#if DEGREE_2
+  //    case 2:
+  //      return new LaplaceOperator<dim, 2, Number>();
+  //#endif
+  //#if DEGREE_3
+  //    case 3:
+  //      return new LaplaceOperator<dim, 3, Number>();
+  //#endif
+  //#if DEGREE_4
+  //    case 4:
+  //      return new LaplaceOperator<dim, 4, Number>();
+  //#endif
+  //#if DEGREE_5
+  //    case 5:
+  //      return new LaplaceOperator<dim, 5, Number>();
+  //#endif
+  //#if DEGREE_6
+  //    case 6:
+  //      return new LaplaceOperator<dim, 6, Number>();
+  //#endif
+  //#if DEGREE_7
+  //    case 7:
+  //      return new LaplaceOperator<dim, 7, Number>();
+  //#endif
+  //#if DEGREE_8
+  //    case 8:
+  //      return new LaplaceOperator<dim, 8, Number>();
+  //#endif
+  //#if DEGREE_9
+  //    case 9:
+  //      return new LaplaceOperator<dim, 9, Number>();
+  //#endif
+  //#if DEGREE_10
+  //    case 10:
+  //      return new LaplaceOperator<dim, 10, Number>();
+  //#endif
+  //#if DEGREE_11
+  //    case 11:
+  //      return new LaplaceOperator<dim, 11, Number>();
+  //#endif
+  //#if DEGREE_12
+  //    case 12:
+  //      return new LaplaceOperator<dim, 12, Number>();
+  //#endif
+  //#if DEGREE_13
+  //    case 13:
+  //      return new LaplaceOperator<dim, 13, Number>();
+  //#endif
+  //#if DEGREE_14
+  //    case 14:
+  //      return new LaplaceOperator<dim, 14, Number>();
+  //#endif
+  //#if DEGREE_15
+  //    case 15:
+  //      return new LaplaceOperator<dim, 15, Number>();
+  //#endif
+  //    default:
+  //      AssertThrow(false, ExcMessage("LaplaceOperator not implemented for this degree!"));
+  //      return new LaplaceOperator<dim, 1, Number>(); // dummy return (statement not reached)
+  //  }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-LaplaceOperator<dim, degree, Number>::do_verify_boundary_conditions(
+LaplaceOperator<dim, Number>::do_verify_boundary_conditions(
   types::boundary_id const             boundary_id,
   LaplaceOperatorData<dim> const &     operator_data,
   std::set<types::boundary_id> const & periodic_boundary_ids) const
@@ -415,6 +422,10 @@ LaplaceOperator<dim, degree, Number>::do_verify_boundary_conditions(
   AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
 }
 
-} // namespace Poisson
+template class LaplaceOperator<2, float>;
+template class LaplaceOperator<2, double>;
 
-#include "laplace_operator.hpp"
+template class LaplaceOperator<3, float>;
+template class LaplaceOperator<3, double>;
+
+} // namespace Poisson

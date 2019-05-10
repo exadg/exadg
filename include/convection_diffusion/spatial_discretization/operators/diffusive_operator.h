@@ -12,12 +12,17 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim>
 {
   DiffusiveOperatorData()
     // clang-format off
-    : OperatorBaseData<dim>(0, 0,
-          false, true, false, false, true, false, // cell
-          true,  true,        true,  true         // face
+    : OperatorBaseData<dim>(
+          0, // dof_index
+          0, // quad_index
+          false, true, false, // cell evaluate
+          false, true, false, // cell integrate
+          true,  true,        // face evaluate
+          true,  true         // face integrate
       ),
       // clang-format on
       IP_factor(1.0),
+      degree(1),
       degree_mapping(1),
       diffusivity(1.0)
   {
@@ -27,21 +32,28 @@ struct DiffusiveOperatorData : public OperatorBaseData<dim>
     this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
 
-  double IP_factor;
-  int    degree_mapping;
-  double diffusivity;
+  double       IP_factor;
+  unsigned int degree;
+  int          degree_mapping;
+  double       diffusivity;
 
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
-template<int dim, int degree, typename Number>
-class DiffusiveOperator : public OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>>
+template<int dim, typename Number>
+class DiffusiveOperator : public OperatorBase<dim, Number, DiffusiveOperatorData<dim>>
 {
-public:
-  static const int                                                      DIM = dim;
-  typedef OperatorBase<dim, degree, Number, DiffusiveOperatorData<dim>> Base;
-  typedef typename Base::VectorType                                     VectorType;
+private:
+  typedef OperatorBase<dim, Number, DiffusiveOperatorData<dim>> Base;
 
+  typedef typename Base::VectorType VectorType;
+
+  typedef typename Base::FEEvalCell FEEvalCell;
+  typedef typename Base::FEEvalFace FEEvalFace;
+
+  typedef VectorizedArray<Number> scalar;
+
+public:
   DiffusiveOperator();
 
   void
@@ -56,11 +68,6 @@ public:
   apply_add(VectorType & dst, VectorType const & src) const;
 
 private:
-  typedef typename Base::FEEvalCell FEEvalCell;
-  typedef typename Base::FEEvalFace FEEvalFace;
-
-  typedef VectorizedArray<Number> scalar;
-
   /*
    *  Calculation of "value_flux".
    */

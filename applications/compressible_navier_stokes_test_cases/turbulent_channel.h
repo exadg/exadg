@@ -141,7 +141,6 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   use_combined_operator = true;
 
   // OUTPUT AND POSTPROCESSING
-  print_input_parameters = true;
   calculate_velocity = true; // activate this for kinetic energy calculations (see below)
   output_data.write_output = false;
   output_data.write_pressure = true;

@@ -10,71 +10,60 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/operators.h>
 
 using namespace dealii;
 
-template<int dim, typename Number>
-class InverseMassInterface
+template<int dim, int n_components, typename Number>
+class InverseMassMatrixOperator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  virtual ~InverseMassInterface()
-  {
-  }
+  typedef InverseMassMatrixOperator<dim, n_components, Number> This;
 
-  virtual void
-  initialize(MatrixFree<dim, Number> const & mf_data,
-             unsigned int const              dof_index,
-             unsigned int const              quad_index) = 0;
+  typedef CellIntegrator<dim, n_components, Number> Integrator;
 
-  virtual void
-  apply(VectorType & dst, VectorType const & src) const = 0;
-};
+  // use a template parameter of -1 to select the precompiled version of this operator
+  typedef MatrixFreeOperators::CellwiseInverseMassMatrix<dim, -1, n_components, Number>
+    CellwiseInverseMass;
 
-template<int dim, int degree, typename Number, int n_components = dim>
-class InverseMassMatrixOperator : public InverseMassInterface<dim, Number>
-{
-public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef std::pair<unsigned int, unsigned int> Range;
 
-  InverseMassMatrixOperator()
-    : matrix_free_data(nullptr), coefficients(Utilities::pow(degree + 1, dim))
+  InverseMassMatrixOperator() : matrix_free(nullptr)
   {
   }
 
   virtual ~InverseMassMatrixOperator(){};
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free,
+  initialize(MatrixFree<dim, Number> const & matrix_free_in,
+             unsigned int const              degree,
              unsigned int const              dof_index,
              unsigned int const              quad_index)
   {
-    this->matrix_free_data = &matrix_free;
+    this->matrix_free = &matrix_free_in;
 
-    fe_eval.reset(new FEEvaluation<dim, degree, degree + 1, n_components, Number>(*matrix_free_data,
-                                                                                  dof_index,
-                                                                                  quad_index));
-    inverse.reset(
-      new MatrixFreeOperators::CellwiseInverseMassMatrix<dim, degree, n_components, Number>(
-        *fe_eval));
+    coefficients.resize(Utilities::pow(degree + 1, dim));
+
+    fe_eval.reset(new Integrator(*matrix_free, dof_index, quad_index));
+
+    inverse.reset(new CellwiseInverseMass(*fe_eval));
   }
 
   void
   apply(VectorType & dst, VectorType const & src) const
   {
-    matrix_free_data->cell_loop(
-      &InverseMassMatrixOperator<dim, degree, Number, n_components>::local_apply, this, dst, src);
+    matrix_free->cell_loop(&This::cell_loop, this, dst, src);
   }
 
 private:
   virtual void
-  local_apply(MatrixFree<dim, Number> const &,
-              VectorType &                                  dst,
-              VectorType const &                            src,
-              std::pair<unsigned int, unsigned int> const & cell_range) const
+  cell_loop(MatrixFree<dim, Number> const &,
+            VectorType &       dst,
+            VectorType const & src,
+            Range const &      cell_range) const
   {
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -91,14 +80,13 @@ private:
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free_data;
+  MatrixFree<dim, Number> const * matrix_free;
 
-  std::shared_ptr<FEEvaluation<dim, degree, degree + 1, n_components, Number>> fe_eval;
+  std::shared_ptr<Integrator> fe_eval;
 
   mutable AlignedVector<VectorizedArray<Number>> coefficients;
 
-  std::shared_ptr<MatrixFreeOperators::CellwiseInverseMassMatrix<dim, degree, n_components, Number>>
-    inverse;
+  std::shared_ptr<CellwiseInverseMass> inverse;
 };
 
 

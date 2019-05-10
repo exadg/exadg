@@ -1,11 +1,9 @@
-#include <navierstokes/config.h>
-
 #include "compatible_laplace_operator.h"
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p, typename Number>
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::CompatibleLaplaceOperator()
+template<int dim, typename Number>
+CompatibleLaplaceOperator<dim, Number>::CompatibleLaplaceOperator()
   : data(nullptr),
     gradient_operator(nullptr),
     divergence_operator(nullptr),
@@ -13,10 +11,10 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::CompatibleLaplaceOpe
 {
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
 // clang-format off
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::reinit(
+CompatibleLaplaceOperator<dim, Number>::reinit(
   MatrixFree<dim, Number> const &                 data,
   AffineConstraints<double> const &               constraint_matrix,
   CompatibleLaplaceOperatorData<dim> const &      operator_data)
@@ -36,6 +34,7 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::reinit(
     // (i.e. on would use quad_index = 0 also if quad_index_velocity would be 1 !)
     unsigned int quad_index = 0;
     own_inv_mass_matrix_operator_storage.initialize(data,
+                                                    operator_data.degree_u,
                                                     operator_data.dof_index_velocity,
                                                     quad_index);
 
@@ -47,15 +46,15 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::reinit(
                own_inv_mass_matrix_operator_storage);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::
+CompatibleLaplaceOperator<dim, Number>::
   initialize(
     MatrixFree<dim, Number> const &                             mf_data_in,
     CompatibleLaplaceOperatorData<dim> const &                  operator_data_in,
-    GradientOperator<dim, degree_u, degree_p, Number> const &   gradient_operator_in,
-    DivergenceOperator<dim, degree_u, degree_p, Number> const & divergence_operator_in,
-    InverseMassMatrixOperator<dim, degree_u, Number> const &    inv_mass_matrix_operator_in)
+    GradientOperator<dim, Number> const &   gradient_operator_in,
+    DivergenceOperator<dim, Number> const & divergence_operator_in,
+    InverseMassMatrixOperator<dim, dim, Number> const &    inv_mass_matrix_operator_in)
 {
   // copy parameters into element variables
   this->data                             = &mf_data_in;
@@ -68,42 +67,42 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::
   initialize_dof_vector_velocity(tmp);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 bool
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::is_singular() const
+CompatibleLaplaceOperator<dim, Number>::is_singular() const
 {
   return this->operator_data.operator_is_singular;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult(VectorType &       dst,
+CompatibleLaplaceOperator<dim, Number>::vmult(VectorType &       dst,
                                                                   VectorType const & src) const
 {
   dst = 0;
   vmult_add(dst, src);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::Tvmult(VectorType &       dst,
+CompatibleLaplaceOperator<dim, Number>::Tvmult(VectorType &       dst,
                                                                    VectorType const & src) const
 {
   vmult(dst, src);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::Tvmult_add(
+CompatibleLaplaceOperator<dim, Number>::Tvmult_add(
   VectorType &       dst,
   VectorType const & src) const
 {
   vmult_add(dst, src);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult_add(
+CompatibleLaplaceOperator<dim, Number>::vmult_add(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -115,57 +114,57 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult_add(
   divergence_operator->apply_add(dst, tmp);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult_interface_down(
+CompatibleLaplaceOperator<dim, Number>::vmult_interface_down(
   VectorType &       dst,
   VectorType const & src) const
 {
   vmult(dst, src);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::vmult_add_interface_up(
+CompatibleLaplaceOperator<dim, Number>::vmult_add_interface_up(
   VectorType &       dst,
   VectorType const & src) const
 {
   vmult_add(dst, src);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 types::global_dof_index
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::m() const
+CompatibleLaplaceOperator<dim, Number>::m() const
 {
   return data->get_vector_partitioner(operator_data.dof_index_pressure)->size();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 types::global_dof_index
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::n() const
+CompatibleLaplaceOperator<dim, Number>::n() const
 {
   return data->get_vector_partitioner(operator_data.dof_index_pressure)->size();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 Number
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::el(const unsigned int,
+CompatibleLaplaceOperator<dim, Number>::el(const unsigned int,
                                                                const unsigned int) const
 {
   AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
   return Number();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::get_data() const
+CompatibleLaplaceOperator<dim, Number>::get_data() const
 {
   return *data;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::calculate_diagonal(
+CompatibleLaplaceOperator<dim, Number>::calculate_diagonal(
   VectorType & diagonal) const
 {
   std::cout << "Calculation of diagonal for compatible Laplace operator ..." << std::flush;
@@ -184,9 +183,9 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::calculate_diagonal(
   std::cout << " done." << std::endl;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::calculate_inverse_diagonal(
+CompatibleLaplaceOperator<dim, Number>::calculate_inverse_diagonal(
   VectorType & diagonal) const
 {
   calculate_diagonal(diagonal);
@@ -194,33 +193,33 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::calculate_inverse_di
   invert_diagonal(diagonal);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::initialize_dof_vector(
+CompatibleLaplaceOperator<dim, Number>::initialize_dof_vector(
   VectorType & vector) const
 {
   initialize_dof_vector_pressure(vector);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::initialize_dof_vector_pressure(
+CompatibleLaplaceOperator<dim, Number>::initialize_dof_vector_pressure(
   VectorType & vector) const
 {
   data->initialize_dof_vector(vector, operator_data.dof_index_pressure);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::initialize_dof_vector_velocity(
+CompatibleLaplaceOperator<dim, Number>::initialize_dof_vector_velocity(
   VectorType & vector) const
 {
   data->initialize_dof_vector(vector, operator_data.dof_index_velocity);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::apply_inverse_block_diagonal(
+CompatibleLaplaceOperator<dim, Number>::apply_inverse_block_diagonal(
   VectorType & /*dst*/,
   VectorType const & /*src*/) const
 {
@@ -229,94 +228,100 @@ CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::apply_inverse_block_
                 "Block Jacobi preconditioner not implemented for compatible Laplace operator."));
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::update_inverse_block_diagonal()
+CompatibleLaplaceOperator<dim, Number>::update_inverse_block_diagonal()
   const
 {
   AssertThrow(false,
               ExcMessage("Function update_inverse_block_diagonal() has not been implemented."));
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+// TODO
+template<int dim, typename Number>
 PreconditionableOperator<dim, Number> *
-CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>::get_new(unsigned int deg_p) const
+CompatibleLaplaceOperator<dim, Number>::get_new(unsigned int /*deg_p*/) const
 {
-  unsigned int const offset = degree_u - degree_p;
-  unsigned int const deg_u = deg_p + offset;
+  return new CompatibleLaplaceOperator<dim, Number>();
 
-  switch(deg_u)
-  {
-#if DEGREE_1
-    case 1:
-      return new CompatibleLaplaceOperator<dim, 1,  1-offset, Number>();
-#endif
-#if DEGREE_2
-    case 2:
-      return new CompatibleLaplaceOperator<dim, 2,  2-offset, Number>();
-#endif
-#if DEGREE_3
-    case 3:
-      return new CompatibleLaplaceOperator<dim, 3,  3-offset, Number>();
-#endif
-#if DEGREE_4
-    case 4:
-      return new CompatibleLaplaceOperator<dim, 4,  4-offset, Number>();
-#endif
-#if DEGREE_5
-    case 5:
-      return new CompatibleLaplaceOperator<dim, 5,  5-offset, Number>();
-#endif
-#if DEGREE_6
-    case 6:
-      return new CompatibleLaplaceOperator<dim, 6,  6-offset, Number>();
-#endif
-#if DEGREE_7
-    case 7:
-      return new CompatibleLaplaceOperator<dim, 7,  7-offset, Number>();
-#endif
-#if DEGREE_8
-    case 8:
-      return new CompatibleLaplaceOperator<dim, 8,  8-offset, Number>();
-#endif
-#if DEGREE_9
-    case 9:
-      return new CompatibleLaplaceOperator<dim, 9,  9-offset, Number>();
-#endif
-#if DEGREE_10
-    case 10:
-      return new CompatibleLaplaceOperator<dim, 10,  10-offset, Number>();
-#endif
-#if DEGREE_11
-    case 11:
-      return new CompatibleLaplaceOperator<dim, 11,  11-offset, Number>();
-#endif
-#if DEGREE_12
-    case 12:
-      return new CompatibleLaplaceOperator<dim, 12,  12-offset, Number>();
-#endif
-#if DEGREE_13
-    case 13:
-      return new CompatibleLaplaceOperator<dim, 13,  13-offset, Number>();
-#endif
-#if DEGREE_14
-    case 14:
-      return new CompatibleLaplaceOperator<dim, 14,  14-offset, Number>();
-#endif
-#if DEGREE_15
-    case 15:
-      return new CompatibleLaplaceOperator<dim, 15,  15-offset, Number>();
-#endif
-    default:
-      AssertThrow(false,
-                  ExcMessage("CompatibleLaplaceOperator not implemented for this degree!"));
-      return nullptr;
-  }
+//  unsigned int const offset = degree_u - degree_p;
+//  unsigned int const deg_u = deg_p + offset;
+//
+//  switch(deg_u)
+//  {
+//#if DEGREE_1
+//    case 1:
+//      return new CompatibleLaplaceOperator<dim, 1,  1-offset, Number>();
+//#endif
+//#if DEGREE_2
+//    case 2:
+//      return new CompatibleLaplaceOperator<dim, 2,  2-offset, Number>();
+//#endif
+//#if DEGREE_3
+//    case 3:
+//      return new CompatibleLaplaceOperator<dim, 3,  3-offset, Number>();
+//#endif
+//#if DEGREE_4
+//    case 4:
+//      return new CompatibleLaplaceOperator<dim, 4,  4-offset, Number>();
+//#endif
+//#if DEGREE_5
+//    case 5:
+//      return new CompatibleLaplaceOperator<dim, 5,  5-offset, Number>();
+//#endif
+//#if DEGREE_6
+//    case 6:
+//      return new CompatibleLaplaceOperator<dim, 6,  6-offset, Number>();
+//#endif
+//#if DEGREE_7
+//    case 7:
+//      return new CompatibleLaplaceOperator<dim, 7,  7-offset, Number>();
+//#endif
+//#if DEGREE_8
+//    case 8:
+//      return new CompatibleLaplaceOperator<dim, 8,  8-offset, Number>();
+//#endif
+//#if DEGREE_9
+//    case 9:
+//      return new CompatibleLaplaceOperator<dim, 9,  9-offset, Number>();
+//#endif
+//#if DEGREE_10
+//    case 10:
+//      return new CompatibleLaplaceOperator<dim, 10,  10-offset, Number>();
+//#endif
+//#if DEGREE_11
+//    case 11:
+//      return new CompatibleLaplaceOperator<dim, 11,  11-offset, Number>();
+//#endif
+//#if DEGREE_12
+//    case 12:
+//      return new CompatibleLaplaceOperator<dim, 12,  12-offset, Number>();
+//#endif
+//#if DEGREE_13
+//    case 13:
+//      return new CompatibleLaplaceOperator<dim, 13,  13-offset, Number>();
+//#endif
+//#if DEGREE_14
+//    case 14:
+//      return new CompatibleLaplaceOperator<dim, 14,  14-offset, Number>();
+//#endif
+//#if DEGREE_15
+//    case 15:
+//      return new CompatibleLaplaceOperator<dim, 15,  15-offset, Number>();
+//#endif
+//    default:
+//      AssertThrow(false,
+//                  ExcMessage("CompatibleLaplaceOperator not implemented for this degree!"));
+//      return nullptr;
+//  }
   
   }
 
+template class CompatibleLaplaceOperator<2, float>;
+template class CompatibleLaplaceOperator<2, double>;
+
+template class CompatibleLaplaceOperator<3, float>;
+template class CompatibleLaplaceOperator<3, double>;
 
 } // namespace IncNS
 
-
-#include "compatible_laplace_operator.hpp"

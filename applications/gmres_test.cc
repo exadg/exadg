@@ -157,9 +157,12 @@ gmres_test_1a()
 {
   std::cout << std::endl << "GMRES solver (double), size M=3:" << std::endl << std::endl;
 
-  SolverData                                  solver_data(100, 1e-12, 1e-12, 30);
-  Elementwise::SolverGMRES<double>            gmres_solver(M, solver_data);
-  Elementwise::PreconditionerIdentity<double> preconditioner(M);
+  SolverData solver_data(100, 1e-12, 1e-12, 30);
+
+  typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;
+  typedef MyMatrix<double>                                 Matrix;
+  Preconditioner                                           preconditioner(M);
+  Elementwise::SolverGMRES<double, Matrix, Preconditioner> gmres_solver(M, solver_data);
 
   MyVector<double> b(M);
   b.set_value(1.0, 0);
@@ -169,7 +172,7 @@ gmres_test_1a()
   MyVector<double> x(M);
   x.init();
 
-  MyMatrix<double> matrix(M);
+  Matrix matrix(M);
   matrix.set_value(1.0, 0, 0);
   matrix.set_value(2.0, 0, 1);
   matrix.set_value(3.0, 0, 2);
@@ -201,10 +204,13 @@ gmres_test_1b()
 {
   std::cout << std::endl << "GMRES solver (double), size M=10000:" << std::endl << std::endl;
 
-  const unsigned int                          M_large = 10000;
-  SolverData                                  solver_data(100, 1e-12, 1e-12, 30);
-  Elementwise::SolverGMRES<double>            gmres_solver(M_large, solver_data);
-  Elementwise::PreconditionerIdentity<double> preconditioner(M_large);
+  const unsigned int M_large = 10000;
+  SolverData         solver_data(100, 1e-12, 1e-12, 30);
+
+  typedef Elementwise::PreconditionerIdentity<double>      Preconditioner;
+  typedef MyMatrix<double>                                 Matrix;
+  Preconditioner                                           preconditioner(M_large);
+  Elementwise::SolverGMRES<double, Matrix, Preconditioner> gmres_solver(M_large, solver_data);
 
   MyVector<double> b(M_large);
   for(unsigned int i = 0; i < M_large; ++i)
@@ -213,7 +219,7 @@ gmres_test_1b()
   MyVector<double> x(M_large);
   x.init();
 
-  MyMatrix<double> matrix(M_large);
+  Matrix matrix(M_large);
 
   // use this parameter to switch between two different matrices
   bool matrix_type = true;
@@ -264,10 +270,15 @@ gmres_test_2a()
             << std::endl
             << std::endl;
 
-  SolverData                                                   solver_data(100, 1e-12, 1e-12, 30);
-  Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
-  Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
-  MyVector<VectorizedArray<double>>                            b(M);
+  SolverData solver_data(100, 1e-12, 1e-12, 30);
+
+  typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
+  typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
+  Preconditioner                                                            preconditioner(M);
+  Elementwise::SolverGMRES<VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
+    M, solver_data);
+
+  MyVector<VectorizedArray<double>> b(M);
   b.set_value(make_vectorized_array<double>(1.0), 0);
   b.set_value(make_vectorized_array<double>(2.0), 1);
   b.set_value(make_vectorized_array<double>(3.0), 2);
@@ -278,7 +289,7 @@ gmres_test_2a()
   x.set_value(make_vectorized_array<double>(1.0), 1);
   x.set_value(make_vectorized_array<double>(1.0), 2);
 
-  MyMatrix<VectorizedArray<double>> A(M);
+  Matrix A(M);
   A.set_value(make_vectorized_array<double>(1.0), 0, 0);
   A.set_value(make_vectorized_array<double>(2.0), 1, 1);
   A.set_value(make_vectorized_array<double>(3.0), 2, 2);
@@ -313,9 +324,13 @@ gmres_test_2b()
             << std::endl
             << std::endl;
 
-  SolverData                                                   solver_data(100, 1e-12, 1e-12, 30);
-  Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
-  Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
+  SolverData solver_data(100, 1e-12, 1e-12, 30);
+
+  typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
+  typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
+  Preconditioner                                                            preconditioner(M);
+  Elementwise::SolverGMRES<VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
+    M, solver_data);
 
   MyVector<VectorizedArray<double>> b(M);
   b.set_value(make_vectorized_array<double>(1.0), 0);
@@ -325,7 +340,7 @@ gmres_test_2b()
   MyVector<VectorizedArray<double>> x(M);
   x.init();
 
-  MyMatrix<VectorizedArray<double>> A(M);
+  Matrix A(M);
   A.set_value(make_vectorized_array<double>(1.0), 0, 0);
   A.set_value(make_vectorized_array<double>(2.0), 0, 1);
   A.set_value(make_vectorized_array<double>(3.0), 0, 2);
@@ -367,10 +382,15 @@ gmres_test_2c()
             << std::endl
             << std::endl;
 
-  SolverData                                                   solver_data(100, 1e-12, 1e-12, 30);
-  Elementwise::SolverGMRES<VectorizedArray<double>>            gmres_solver(M, solver_data);
-  Elementwise::PreconditionerIdentity<VectorizedArray<double>> preconditioner(M);
-  MyVector<VectorizedArray<double>>                            b(M);
+  SolverData solver_data(100, 1e-12, 1e-12, 30);
+
+  typedef Elementwise::PreconditionerIdentity<VectorizedArray<double>>      Preconditioner;
+  typedef MyMatrix<VectorizedArray<double>>                                 Matrix;
+  Preconditioner                                                            preconditioner(M);
+  Elementwise::SolverGMRES<VectorizedArray<double>, Matrix, Preconditioner> gmres_solver(
+    M, solver_data);
+
+  MyVector<VectorizedArray<double>> b(M);
   b.set_value(make_vectorized_array<double>(1.0), 0);
   b.set_value(make_vectorized_array<double>(2.0), 1);
   b.set_value(make_vectorized_array<double>(3.0), 2);
@@ -387,7 +407,7 @@ gmres_test_2c()
 
   x.set_value(inhom_array, 2);
 
-  MyMatrix<VectorizedArray<double>> A(M);
+  Matrix A(M);
   A.set_value(make_vectorized_array<double>(1.0), 0, 0);
   A.set_value(make_vectorized_array<double>(2.0), 1, 1);
   A.set_value(make_vectorized_array<double>(3.0), 2, 2);

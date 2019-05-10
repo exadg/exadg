@@ -126,7 +126,6 @@ public:
       use_combined_operator(false),
 
       // OUTPUT AND POSTPROCESSING
-      print_input_parameters(false),
       calculate_velocity(false),
       calculate_pressure(false),
 
@@ -234,9 +233,9 @@ public:
 
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream & pcout, std::string const & name)
   {
-    pcout << std::endl << "List of input parameters:" << std::endl;
+    pcout << std::endl << name << std::endl;
 
     // MATHEMATICAL MODEL
     print_parameters_mathematical_model(pcout);
@@ -523,9 +522,6 @@ public:
   /*                               OUTPUT AND POSTPROCESSING                            */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // print a list of all input parameters at the beginning of the simulation
-  bool print_input_parameters;
 
   // calculate velocity field
   bool calculate_velocity;

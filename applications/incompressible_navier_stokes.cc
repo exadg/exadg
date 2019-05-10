@@ -17,16 +17,14 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
-
-#include "../include/incompressible_navier_stokes/interface_space_time/operator.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
 
 // temporal discretization
+#include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
-
-#include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
 
 // Parameters, BCs, etc.
 #include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
@@ -52,12 +50,12 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
 //#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
-#include "incompressible_navier_stokes_test_cases/shear_layer_problem.h"
+//#include "incompressible_navier_stokes_test_cases/shear_layer_problem.h"
 
 // 2D/3D Navier-Stokes flow
 //#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
@@ -74,15 +72,14 @@ using namespace IncNS;
 // incompressible flow with scalar transport (but can be used for pure fluid simulations also)
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
-template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
-class NavierStokesProblem
+template<int dim, typename Number = double>
+class Problem
 {
 public:
-  NavierStokesProblem(unsigned int const refine_steps_space,
-                      unsigned int const refine_steps_time = 0);
+  Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
 
   void
-  setup(bool const do_restart);
+  setup(InputParameters<dim> const & param, bool const do_restart);
 
   void
   solve() const;
@@ -109,14 +106,14 @@ private:
 
   InputParameters<dim> param;
 
-  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number>               DGBase;
-  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number>            DGCoupled;
-  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>      DGDualSplitting;
-  typedef DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number> DGPressureCorrection;
+  typedef DGNavierStokesBase<dim, Number>               DGBase;
+  typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
+  typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
+  typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
 
   std::shared_ptr<DGBase> navier_stokes_operation;
 
-  typedef PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
+  typedef PostProcessorBase<dim, Number> Postprocessor;
 
   std::shared_ptr<Postprocessor> postprocessor;
 
@@ -141,10 +138,9 @@ private:
   double         setup_time;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
-  unsigned int const refine_steps_space,
-  unsigned int const refine_steps_time)
+template<int dim, typename Number>
+Problem<dim, Number>::Problem(unsigned int const refine_steps_space,
+                              unsigned int const refine_steps_time)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(refine_steps_space),
     n_refine_time(refine_steps_time),
@@ -153,9 +149,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
 {
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
+Problem<dim, Number>::print_header() const
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -168,9 +164,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
   // clang-format on
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restart)
+Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do_restart)
 {
   timer.restart();
 
@@ -178,11 +174,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   print_MPI_info(pcout);
 
   // input parameters
-  param.set_input_parameters();
+  param = param_in;
   param.check_input_parameters();
-
-  if(param.print_input_parameters == true)
-    param.print(pcout);
+  param.print(pcout, "List of input parameters:");
 
   // triangulation
   if(param.triangulation_type == TriangulationType::Distributed)
@@ -226,7 +220,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor = construct_postprocessor<dim, degree_u, degree_p, Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -325,9 +319,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   setup_time = timer.wall_time();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
+Problem<dim, Number>::solve() const
 {
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -355,9 +349,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
   overall_time += this->timer.wall_time();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times() const
+Problem<dim, Number>::analyze_computing_times() const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -460,7 +454,7 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times() 
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 
   // Throughput in DoFs/s per time step per core
-  unsigned int const DoFs = this->navier_stokes_operation->get_number_of_dofs();
+  types::global_dof_index const DoFs = this->navier_stokes_operation->get_number_of_dofs();
 
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -534,10 +528,12 @@ main(int argc, char ** argv)
           refine_steps_time <= REFINE_STEPS_TIME_MAX;
           ++refine_steps_time)
       {
-        NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, VALUE_TYPE> problem(
-          refine_steps_space, refine_steps_time);
+        Problem<DIMENSION, VALUE_TYPE> problem(refine_steps_space, refine_steps_time);
 
-        problem.setup(do_restart);
+        InputParameters<DIMENSION> param;
+        param.set_input_parameters();
+
+        problem.setup(param, do_restart);
 
         problem.solve();
 

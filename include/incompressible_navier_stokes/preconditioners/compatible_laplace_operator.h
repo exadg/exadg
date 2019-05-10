@@ -22,13 +22,17 @@ template<int dim>
 struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
 {
   CompatibleLaplaceOperatorData()
-    : dof_index_velocity(0),
+    : degree_u(1),
+      degree_p(1),
+      dof_index_velocity(0),
       dof_index_pressure(1),
       operator_is_singular(false),
       dof_handler_u(nullptr)
   {
   }
 
+  unsigned int                degree_u;
+  unsigned int                degree_p;
   unsigned int                dof_index_velocity;
   unsigned int                dof_index_pressure;
   bool                        operator_is_singular;
@@ -37,12 +41,11 @@ struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
   DivergenceOperatorData<dim> divergence_operator_data;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number = double>
+template<int dim, typename Number = double>
 class CompatibleLaplaceOperator : public PreconditionableOperator<dim, Number>
 {
 public:
-  static const int DIM = dim;
-  typedef Number   value_type;
+  typedef Number value_type;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -55,9 +58,9 @@ public:
   void
   initialize(MatrixFree<dim, Number> const &            mf_data_in,
              CompatibleLaplaceOperatorData<dim> const & compatible_laplace_operator_data_in,
-             GradientOperator<dim, degree_u, degree_p, Number> const &   gradient_operator_in,
-             DivergenceOperator<dim, degree_u, degree_p, Number> const & divergence_operator_in,
-             InverseMassMatrixOperator<dim, degree_u, Number> const & inv_mass_matrix_operator_in);
+             GradientOperator<dim, Number> const &      gradient_operator_in,
+             DivergenceOperator<dim, Number> const &    divergence_operator_in,
+             InverseMassMatrixOperator<dim, dim, Number> const & inv_mass_matrix_operator_in);
 
 
 
@@ -270,11 +273,11 @@ public:
 private:
   MatrixFree<dim, Number> const * data;
 
-  GradientOperator<dim, degree_u, degree_p, Number> const * gradient_operator;
+  GradientOperator<dim, Number> const * gradient_operator;
 
-  DivergenceOperator<dim, degree_u, degree_p, Number> const * divergence_operator;
+  DivergenceOperator<dim, Number> const * divergence_operator;
 
-  InverseMassMatrixOperator<dim, degree_u, Number> const * inv_mass_matrix_operator;
+  InverseMassMatrixOperator<dim, dim, Number> const * inv_mass_matrix_operator;
 
   CompatibleLaplaceOperatorData<dim> operator_data;
 
@@ -282,8 +285,8 @@ private:
 
   /*
    * The following variables are necessary when applying the multigrid preconditioner to the
-   * compatible Laplace operator In that case, the CompatibleLaplaceOperator has to be generated for
-   * each level of the multigrid algorithm. Accordingly, in a first step one has to setup own
+   * compatible Laplace operator. In that case, the CompatibleLaplaceOperator has to be generated
+   * for each level of the multigrid algorithm. Accordingly, in a first step one has to setup own
    * objects of MatrixFree, GradientOperator, DivergenceOperator, e.g.,
    * own_matrix_free_storage.reinit(...); and later initialize the CompatibleLaplaceOperator with
    * these ojects by setting the above pointers to the own_objects_storage, e.g., data =
@@ -291,11 +294,11 @@ private:
    */
   MatrixFree<dim, Number> own_matrix_free_storage;
 
-  GradientOperator<dim, degree_u, degree_p, Number> own_gradient_operator_storage;
+  GradientOperator<dim, Number> own_gradient_operator_storage;
 
-  DivergenceOperator<dim, degree_u, degree_p, Number> own_divergence_operator_storage;
+  DivergenceOperator<dim, Number> own_divergence_operator_storage;
 
-  InverseMassMatrixOperator<dim, degree_u, Number> own_inv_mass_matrix_operator_storage;
+  InverseMassMatrixOperator<dim, dim, Number> own_inv_mass_matrix_operator_storage;
 };
 
 

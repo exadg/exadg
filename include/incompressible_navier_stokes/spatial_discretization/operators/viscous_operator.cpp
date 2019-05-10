@@ -11,6 +11,11 @@
 namespace IncNS
 {
 // currently implemented in header-file
-}
 
-#include "viscous_operator.hpp"
+template class ViscousOperator<2, float>;
+template class ViscousOperator<2, double>;
+
+template class ViscousOperator<3, float>;
+template class ViscousOperator<3, double>;
+
+} // namespace IncNS

@@ -29,7 +29,7 @@
 namespace IncNS
 {
 // forward declaration
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 class DGNavierStokesCoupled;
 
 // clang-format off
@@ -159,14 +159,14 @@ struct BlockPreconditionerData
   SolverData                    solver_data_schur_complement;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 class BlockPreconditioner
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number> PDEOperator;
+  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
 
   typedef float MultigridNumber;
 
@@ -227,13 +227,12 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> multigrid_preconditioner_schur_complement;
   std::shared_ptr<PreconditionerBase<Number>> inv_mass_matrix_preconditioner_schur_complement;
 
-  std::shared_ptr<PressureConvectionDiffusionOperator<dim, degree_p, degree_u, Number>>
+  std::shared_ptr<PressureConvectionDiffusionOperator<dim, Number>>
     pressure_convection_diffusion_operator;
 
-  std::shared_ptr<Poisson::LaplaceOperator<dim, degree_p, Number>> laplace_operator_classical;
+  std::shared_ptr<Poisson::LaplaceOperator<dim, Number>> laplace_operator_classical;
 
-  std::shared_ptr<CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>>
-    laplace_operator_compatible;
+  std::shared_ptr<CompatibleLaplaceOperator<dim, Number>> laplace_operator_compatible;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> solver_pressure_block;
 
@@ -250,8 +249,8 @@ private:
   VectorType mutable tmp_projection_vector;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-BlockPreconditioner<dim, degree_u, degree_p, Number>::BlockPreconditioner(
+template<int dim, typename Number>
+BlockPreconditioner<dim, Number>::BlockPreconditioner(
   PDEOperator *                   underlying_operator_in,
   BlockPreconditionerData const & preconditioner_data_in)
 {
@@ -265,9 +264,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::BlockPreconditioner(
   initialize_preconditioner_pressure_block();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::update(PDEOperator const * /*operator*/)
+BlockPreconditioner<dim, Number>::update(PDEOperator const * /*operator*/)
 {
   // momentum block
   preconditioner_momentum->update(&underlying_operator->momentum_operator);
@@ -284,10 +283,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::update(PDEOperator const *
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::vmult(BlockVectorType &       dst,
-                                                            BlockVectorType const & src) const
+BlockPreconditioner<dim, Number>::vmult(BlockVectorType & dst, BlockVectorType const & src) const
 {
   if(preconditioner_data.preconditioner_type == PreconditionerCoupled::BlockDiagonal)
   {
@@ -428,11 +426,10 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::vmult(BlockVectorType &   
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_preconditioner_velocity_block(
-  VectorType &       dst,
-  VectorType const & src) const
+BlockPreconditioner<dim, Number>::apply_preconditioner_velocity_block(VectorType &       dst,
+                                                                      VectorType const & src) const
 {
   if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::None)
   {
@@ -498,11 +495,10 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_preconditioner_veloc
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_preconditioner_pressure_block(
-  VectorType &       dst,
-  VectorType const & src) const
+BlockPreconditioner<dim, Number>::apply_preconditioner_pressure_block(VectorType &       dst,
+                                                                      VectorType const & src) const
 {
   if(preconditioner_data.schur_complement_preconditioner == SchurComplementPreconditioner::None)
   {
@@ -637,9 +633,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_preconditioner_press
   dst *= inverse_scaling_factor * inverse_scaling_factor;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_inverse_negative_laplace_operator(
+BlockPreconditioner<dim, Number>::apply_inverse_negative_laplace_operator(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -677,9 +673,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::apply_inverse_negative_lap
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_vectors()
+BlockPreconditioner<dim, Number>::initialize_vectors()
 {
   if(preconditioner_data.preconditioner_type == PreconditionerCoupled::BlockTriangular)
   {
@@ -694,28 +690,28 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_vectors()
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_preconditioner_velocity_block()
+BlockPreconditioner<dim, Number>::initialize_preconditioner_velocity_block()
 {
   if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::PointJacobi)
   {
     // Point Jacobi preconditioner
-    preconditioner_momentum.reset(new JacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(
+    preconditioner_momentum.reset(new JacobiPreconditioner<MomentumOperator<dim, Number>>(
       underlying_operator->momentum_operator));
   }
   else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::BlockJacobi)
   {
     // Block Jacobi preconditioner
-    preconditioner_momentum.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, degree_u, Number>>(
-        underlying_operator->momentum_operator));
+    preconditioner_momentum.reset(new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(
+      underlying_operator->momentum_operator));
   }
   else if(preconditioner_data.momentum_preconditioner == MomentumPreconditioner::InverseMassMatrix)
   {
     // inverse mass matrix
-    preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>(
+    preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
       underlying_operator->get_data(),
+      underlying_operator->param.degree_u,
       underlying_operator->get_dof_index_velocity(),
       underlying_operator->get_quad_index_velocity_linear()));
   }
@@ -737,21 +733,22 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_preconditioner_
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_multigrid_preconditioner_momentum()
+BlockPreconditioner<dim, Number>::setup_multigrid_preconditioner_momentum()
 {
-  typedef MultigridPreconditioner<dim, degree_u, Number, MultigridNumber> MULTIGRID;
+  typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
   preconditioner_momentum.reset(new MULTIGRID());
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
-  auto &                               dof_handler = underlying_operator->get_dof_handler_u();
+  auto & dof_handler = underlying_operator->get_dof_handler_u();
+
   parallel::Triangulation<dim> const * tria =
-    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
-  const FiniteElement<dim> & fe = dof_handler.get_fe();
+    dynamic_cast<parallel::Triangulation<dim> const *>(&dof_handler.get_triangulation());
+  FiniteElement<dim> const & fe = dof_handler.get_fe();
 
   mg_preconditioner->initialize(preconditioner_data.multigrid_data_momentum_preconditioner,
                                 tria,
@@ -760,9 +757,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_multigrid_preconditi
                                 underlying_operator->momentum_operator.get_operator_data());
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_momentum()
+BlockPreconditioner<dim, Number>::setup_iterative_solver_momentum()
 {
   AssertThrow(preconditioner_momentum.get() != 0,
               ExcMessage("preconditioner_momentum is uninitialized"));
@@ -775,24 +772,23 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_mom
   gmres_data.solver_tolerance_rel = preconditioner_data.solver_data_momentum_block.rel_tol;
   gmres_data.max_n_tmp_vectors    = preconditioner_data.solver_data_momentum_block.max_krylov_size;
 
-  solver_velocity_block.reset(new FGMRESSolver<MomentumOperator<dim, degree_u, Number>,
-                                               PreconditionerBase<Number>,
-                                               VectorType>(underlying_operator->momentum_operator,
-                                                           *preconditioner_momentum,
-                                                           gmres_data));
+  solver_velocity_block.reset(
+    new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+      underlying_operator->momentum_operator, *preconditioner_momentum, gmres_data));
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_preconditioner_pressure_block()
+BlockPreconditioner<dim, Number>::initialize_preconditioner_pressure_block()
 {
   if(preconditioner_data.schur_complement_preconditioner ==
      SchurComplementPreconditioner::InverseMassMatrix)
   {
     // inverse mass matrix
     inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, degree_p, Number, 1>(
+      new InverseMassMatrixPreconditioner<dim, 1, Number>(
         underlying_operator->get_data(),
+        underlying_operator->param.degree_p,
         underlying_operator->get_dof_index_pressure(),
         underlying_operator->get_quad_index_pressure()));
   }
@@ -829,8 +825,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_preconditioner_
     // inverse mass matrix to also include the part of the preconditioner that is beneficial when
     // using large time steps and large viscosities.
     inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, degree_p, Number, 1>(
+      new InverseMassMatrixPreconditioner<dim, 1, Number>(
         underlying_operator->get_data(),
+        underlying_operator->param.degree_p,
         underlying_operator->get_dof_index_pressure(),
         underlying_operator->get_quad_index_pressure()));
 
@@ -855,8 +852,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_preconditioner_
       // -S^{-1} = - (BM^{-1}B^T)^{-1} (-B M^{-1} A M^{-1} B^T) (BM^{-1}B^T)^{-1}
       // --> inverse velocity mass matrix needed for inner factor
       inv_mass_matrix_preconditioner_schur_complement.reset(
-        new InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>(
+        new InverseMassMatrixPreconditioner<dim, dim, Number>(
           underlying_operator->get_data(),
+          underlying_operator->param.degree_u,
           underlying_operator->get_dof_index_velocity(),
           underlying_operator->get_quad_index_velocity_linear()));
     }
@@ -884,8 +882,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_preconditioner_
 
     // III. inverse pressure mass matrix
     inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, degree_p, Number, 1>(
+      new InverseMassMatrixPreconditioner<dim, 1, Number>(
         underlying_operator->get_data(),
+        underlying_operator->param.degree_p,
         underlying_operator->get_dof_index_pressure(),
         underlying_operator->get_quad_index_pressure()));
 
@@ -900,21 +899,15 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::initialize_preconditioner_
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::
-  setup_multigrid_preconditioner_schur_complement()
+BlockPreconditioner<dim, Number>::setup_multigrid_preconditioner_schur_complement()
 {
   if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Compatible)
   {
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-    typedef CompatibleLaplaceMultigridPreconditioner<dim,
-                                                     degree_u,
-                                                     degree_p,
-                                                     Number,
-                                                     MultigridNumber>
-      MULTIGRID;
+    typedef CompatibleLaplaceMultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -940,6 +933,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
     laplace_operator_data.dof_index            = underlying_operator->get_dof_index_pressure();
     laplace_operator_data.quad_index           = underlying_operator->get_quad_index_pressure();
     laplace_operator_data.IP_factor            = 1.0;
+    laplace_operator_data.degree               = underlying_operator->param.degree_p;
     laplace_operator_data.degree_mapping       = underlying_operator->param.degree_mapping;
     laplace_operator_data.operator_is_singular = underlying_operator->param.pure_dirichlet_bc;
 
@@ -947,7 +941,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
 
     MultigridData mg_data = preconditioner_data.multigrid_data_schur_complement_preconditioner;
 
-    typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
 
@@ -978,9 +972,9 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_schur_complement()
+BlockPreconditioner<dim, Number>::setup_iterative_solver_schur_complement()
 {
   AssertThrow(
     multigrid_preconditioner_schur_complement.get() != 0,
@@ -999,56 +993,41 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_iterative_solver_sch
     laplace_operator_data.dof_index      = underlying_operator->get_dof_index_pressure();
     laplace_operator_data.quad_index     = underlying_operator->get_quad_index_pressure();
     laplace_operator_data.IP_factor      = 1.0;
+    laplace_operator_data.degree         = underlying_operator->param.degree_p;
     laplace_operator_data.degree_mapping = underlying_operator->param.degree_mapping;
     laplace_operator_data.bc             = underlying_operator->boundary_descriptor_laplace;
 
-    laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, degree_p, Number>());
+    laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
     laplace_operator_classical->reinit(underlying_operator->get_data(),
                                        underlying_operator->constraint_p,
                                        laplace_operator_data);
 
-    solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, degree_p, Number>,
-                                             PreconditionerBase<Number>,
-                                             VectorType>(*laplace_operator_classical,
-                                                         *multigrid_preconditioner_schur_complement,
-                                                         solver_data));
+    solver_pressure_block.reset(
+      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+        *laplace_operator_classical, *multigrid_preconditioner_schur_complement, solver_data));
   }
   else if(preconditioner_data.discretization_of_laplacian == DiscretizationOfLaplacian::Compatible)
   {
-    CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data;
-    compatible_laplace_operator_data.dof_index_velocity =
-      underlying_operator->get_dof_index_velocity();
-    compatible_laplace_operator_data.dof_index_pressure =
-      underlying_operator->get_dof_index_pressure();
-    compatible_laplace_operator_data.operator_is_singular =
-      underlying_operator->param.pure_dirichlet_bc;
-    compatible_laplace_operator_data.dof_handler_u = &underlying_operator->get_dof_handler_u();
-    compatible_laplace_operator_data.gradient_operator_data =
-      underlying_operator->get_gradient_operator_data();
-    compatible_laplace_operator_data.divergence_operator_data =
-      underlying_operator->get_divergence_operator_data();
+    CompatibleLaplaceOperatorData<dim> compatible_laplace_operator_data =
+      underlying_operator->get_compatible_laplace_operator_data();
 
-    laplace_operator_compatible.reset(
-      new CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>());
+    laplace_operator_compatible.reset(new CompatibleLaplaceOperator<dim, Number>());
 
     laplace_operator_compatible->initialize(underlying_operator->get_data(),
                                             compatible_laplace_operator_data,
                                             underlying_operator->gradient_operator,
                                             underlying_operator->divergence_operator,
-                                            *underlying_operator->inverse_mass_matrix_operator);
+                                            underlying_operator->inverse_mass_velocity);
 
     solver_pressure_block.reset(
-      new CGSolver<CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>,
-                   PreconditionerBase<Number>,
-                   VectorType>(*laplace_operator_compatible,
-                               *multigrid_preconditioner_schur_complement,
-                               solver_data));
+      new CGSolver<CompatibleLaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+        *laplace_operator_compatible, *multigrid_preconditioner_schur_complement, solver_data));
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_pressure_convection_diffusion_operator()
+BlockPreconditioner<dim, Number>::setup_pressure_convection_diffusion_operator()
 {
   // pressure convection-diffusion operator
   // a) mass matrix operator
@@ -1092,6 +1071,7 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_pressure_convection_
   diffusive_operator_data.dof_index      = underlying_operator->get_dof_index_pressure();
   diffusive_operator_data.quad_index     = underlying_operator->get_quad_index_pressure();
   diffusive_operator_data.IP_factor      = underlying_operator->param.IP_factor_viscous;
+  diffusive_operator_data.degree         = underlying_operator->param.degree_p;
   diffusive_operator_data.degree_mapping = underlying_operator->param.degree_mapping;
   diffusive_operator_data.bc             = boundary_descriptor;
   // TODO: the pressure convection-diffusion operator is initialized with constant viscosity, in
@@ -1121,12 +1101,11 @@ BlockPreconditioner<dim, degree_u, degree_p, Number>::setup_pressure_convection_
   pressure_convection_diffusion_operator_data.convective_problem =
     underlying_operator->nonlinear_problem_has_to_be_solved();
 
-  pressure_convection_diffusion_operator.reset(
-    new PressureConvectionDiffusionOperator<dim, degree_p, degree_u, Number>(
-      underlying_operator->mapping,
-      underlying_operator->get_data(),
-      pressure_convection_diffusion_operator_data,
-      underlying_operator->constraint_p));
+  pressure_convection_diffusion_operator.reset(new PressureConvectionDiffusionOperator<dim, Number>(
+    underlying_operator->mapping,
+    underlying_operator->get_data(),
+    pressure_convection_diffusion_operator_data,
+    underlying_operator->constraint_p));
 
   if(underlying_operator->unsteady_problem_has_to_be_solved())
     pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(

@@ -180,9 +180,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
 
   param = param_in;
   param.check_input_parameters();
-
-  if(param.print_input_parameters == true)
-    param.print(pcout);
+  param.print(pcout, "List of input parameters:");
 
   // triangulation
   if(param.triangulation_type == TriangulationType::Distributed)
@@ -313,7 +311,7 @@ Problem<dim, Number>::apply_operator()
       << std::endl;
   }
 
-  unsigned int dofs = comp_navier_stokes_operator->get_dof_handler().n_dofs();
+  types::global_dof_index const dofs = comp_navier_stokes_operator->get_number_of_dofs();
 
   double wall_time_per_dofs = wall_time / (double)dofs;
 
@@ -419,7 +417,7 @@ main(int argc, char ** argv)
       param.n_q_points_conv = degree + 1;
       // param.n_q_points_conv = degree+(degree+2)/2;
       // param.n_q_points_conv = 2 * degree + 1;
-      param.n_q_points_vis = param.n_q_points_conv;
+      param.n_q_points_vis  = param.n_q_points_conv;
 
       Problem<DIMENSION> problem(REFINE_LEVELS[degree - 1]);
       problem.setup(param);

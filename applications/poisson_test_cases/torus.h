@@ -27,6 +27,7 @@ Poisson::InputParameters::set_input_parameters()
   // PHYSICAL QUANTITIES
 
   // SPATIAL DISCRETIZATION
+  degree = FE_DEGREE;
   degree_mapping = FE_DEGREE;
   IP_factor = 1.0;
 
@@ -68,9 +69,7 @@ public:
   {
   }
 
-  virtual ~AnalyticalSolution(){};
-
-  virtual double
+  double
   value(const Point<dim> & /*p*/, const unsigned int /*component*/ = 0) const
   {
     return 0.0;
@@ -90,9 +89,7 @@ public:
   {
   }
 
-  virtual ~RightHandSide(){};
-
-  virtual double
+  double
   value(const Point<dim> & /*p*/, const unsigned int /* component */) const
   {
     return 1.0;
@@ -112,9 +109,7 @@ public:
   {
   }
 
-  virtual ~NeumannBoundary(){};
-
-  virtual double
+  double
   value(const Point<dim> & /* p */, const unsigned int /* component */) const
   {
     double result = 0.0;

@@ -217,18 +217,20 @@ protected:
 
 namespace IncNS
 {
-// forward declarations
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class DGNavierStokesBase;
+namespace Interface
+{
+template<int dim, typename Number>
+class OperatorBase;
+}
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+template<int dim, typename Number>
 class KineticEnergyCalculatorDetailed : public KineticEnergyCalculator<dim, Number>
 {
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef KineticEnergyCalculator<dim, Number> Base;
 
-  typedef DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, Number> NavierStokesOperator;
+  typedef Interface::OperatorBase<dim, Number> NavierStokesOperator;
 
 public:
   KineticEnergyCalculatorDetailed()

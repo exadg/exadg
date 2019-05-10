@@ -58,7 +58,7 @@ template<int dim, typename Number>
 class PostProcessor
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef DGOperator<dim, Number> NavierStokesOperator;
 
@@ -77,7 +77,7 @@ public:
         DoFHandler<dim> const & /*dof_handler_vector_in*/,
         DoFHandler<dim> const &                          dof_handler_scalar_in,
         Mapping<dim> const &                             mapping_in,
-        MatrixFree<dim, double> const &                  matrix_free_data_in,
+        MatrixFree<dim, Number> const &                  matrix_free_data_in,
         DofQuadIndexData const &                         dof_quad_index_data_in,
         std::shared_ptr<CompNS::AnalyticalSolution<dim>> analytical_solution_in)
   {
@@ -272,7 +272,7 @@ private:
 
   SmartPointer<NavierStokesOperator const> navier_stokes_operator;
 
-  OutputGenerator<dim>                         output_generator;
+  OutputGenerator<dim, Number>                 output_generator;
   ErrorCalculator<dim, Number>                 error_calculator;
   LiftAndDragCalculator<dim, Number>           lift_and_drag_calculator;
   PressureDifferenceCalculator<dim, Number>    pressure_difference_calculator;

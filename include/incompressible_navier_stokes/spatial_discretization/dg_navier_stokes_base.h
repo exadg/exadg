@@ -54,9 +54,7 @@
 #include "../../operators/elementwise_operator.h"
 #include "../../operators/inverse_mass_matrix.h"
 #include "../../operators/linear_operator_base.h"
-
-// interface space-time
-#include "../interface_space_time/operator.h"
+#include "interface.h"
 #include "projection_operator.h"
 
 // time integration
@@ -66,13 +64,13 @@ using namespace dealii;
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p, typename Number>
-class DGNavierStokesBase : public LinearOperatorBase, public Interface::OperatorBase<Number>
+template<int dim, typename Number>
+class DGNavierStokesBase : public LinearOperatorBase, public Interface::OperatorBase<dim, Number>
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
+  typedef PostProcessorBase<dim, Number> Postprocessor;
 
   typedef float MultigridNumber;
 
@@ -190,7 +188,7 @@ public:
   DoFHandler<dim> const &
   get_dof_handler_p() const;
 
-  unsigned int
+  types::global_dof_index
   get_number_of_dofs() const;
 
   double
@@ -375,10 +373,10 @@ public:
   double
   calculate_dissipation_viscous_term(VectorType const & velocity) const;
 
-  virtual double
+  double
   calculate_dissipation_divergence_term(VectorType const & velocity) const;
 
-  virtual double
+  double
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
 protected:
@@ -387,6 +385,11 @@ protected:
    */
   void
   setup_projection_solver();
+
+  /*
+   * List of input parameters.
+   */
+  InputParameters<dim> const & param;
 
   /*
    * Basic finite element ingredients.
@@ -401,14 +404,9 @@ protected:
   DoFHandler<dim> dof_handler_p;
   DoFHandler<dim> dof_handler_u_scalar;
 
-  MatrixFree<dim, Number> data;
+  MatrixFree<dim, Number> matrix_free;
 
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-
-  /*
-   * List of input parameters.
-   */
-  InputParameters<dim> const & param;
 
   /*
    * Special case: pure Dirichlet boundary conditions.
@@ -451,50 +449,47 @@ protected:
   GradientOperatorData<dim>   gradient_operator_data;
   DivergenceOperatorData<dim> divergence_operator_data;
 
-  MassMatrixOperator<dim, degree_u, Number>           mass_matrix_operator;
-  ConvectiveOperator<dim, degree_u, Number>           convective_operator;
-  ViscousOperator<dim, degree_u, Number>              viscous_operator;
-  BodyForceOperator<dim, degree_u, Number>            body_force_operator;
-  GradientOperator<dim, degree_u, degree_p, Number>   gradient_operator;
-  DivergenceOperator<dim, degree_u, degree_p, Number> divergence_operator;
+  MassMatrixOperator<dim, Number> mass_matrix_operator;
+  ConvectiveOperator<dim, Number> convective_operator;
+  ViscousOperator<dim, Number>    viscous_operator;
+  BodyForceOperator<dim, Number>  body_force_operator;
+  GradientOperator<dim, Number>   gradient_operator;
+  DivergenceOperator<dim, Number> divergence_operator;
 
   /*
    * Inverse mass matrix operator.
    */
-  std::shared_ptr<InverseMassMatrixOperator<dim, degree_u, Number, dim>>
-    inverse_mass_matrix_operator;
-  std::shared_ptr<InverseMassMatrixOperator<dim, degree_u, Number, 1>>
-    inverse_velocity_mass_matrix_operator_scalar;
+  InverseMassMatrixOperator<dim, dim, Number> inverse_mass_velocity;
+  InverseMassMatrixOperator<dim, 1, Number>   inverse_mass_velocity_scalar;
 
   /*
    * Projection operator.
    */
-  typedef ProjectionOperator<dim, degree_u, Number> PROJ_OPERATOR;
-
-  std::shared_ptr<PROJ_OPERATOR> projection_operator;
+  typedef ProjectionOperator<dim, Number> PROJ_OPERATOR;
+  std::shared_ptr<PROJ_OPERATOR>          projection_operator;
 
   /*
    * Projection solver.
    */
+
+  // elementwise solver/preconditioner
   typedef Elementwise::OperatorBase<dim, Number, PROJ_OPERATOR> ELEMENTWISE_PROJ_OPERATOR;
+  std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR>                    elementwise_projection_operator;
 
-  std::shared_ptr<ELEMENTWISE_PROJ_OPERATOR> elementwise_projection_operator;
-
-  // preconditioner for elementwise solver
-  std::shared_ptr<Elementwise::PreconditionerBase<VectorizedArray<Number>>>
-    elementwise_preconditioner_projection;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> ELEMENTWISE_PRECONDITIONER;
+  std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner_projection;
 
   // projection solver
   std::shared_ptr<IterativeSolverBase<VectorType>> projection_solver;
   std::shared_ptr<PreconditionerBase<Number>>      preconditioner_projection;
 
   /*
-   * Calculators.
+   * Calculators used to obtain derived quantities.
    */
-  VorticityCalculator<dim, degree_u, Number>         vorticity_calculator;
-  DivergenceCalculator<dim, degree_u, Number>        divergence_calculator;
-  VelocityMagnitudeCalculator<dim, degree_u, Number> velocity_magnitude_calculator;
-  QCriterionCalculator<dim, degree_u, Number>        q_criterion_calculator;
+  VorticityCalculator<dim, Number>         vorticity_calculator;
+  DivergenceCalculator<dim, Number>        divergence_calculator;
+  VelocityMagnitudeCalculator<dim, Number> velocity_magnitude_calculator;
+  QCriterionCalculator<dim, Number>        q_criterion_calculator;
 
   /*
    * Postprocessor.
@@ -537,7 +532,7 @@ private:
   /*
    * LES turbulence modeling.
    */
-  TurbulenceModel<dim, degree_u, Number> turbulence_model;
+  TurbulenceModel<dim, Number> turbulence_model;
 };
 
 } // namespace IncNS

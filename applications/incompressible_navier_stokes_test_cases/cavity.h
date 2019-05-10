@@ -28,7 +28,7 @@ typedef double VALUE_TYPE;
 unsigned int const DIMENSION = 2;
 
 // set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
+unsigned int const FE_DEGREE_VELOCITY = 4;
 unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
 
 // set the number of refine levels for spatial convergence tests
@@ -90,6 +90,10 @@ void InputParameters<dim>::set_input_parameters()
 
   // triangulation
   triangulation_type = TriangulationType::Distributed;
+
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
 
   // mapping
   degree_mapping = FE_DEGREE_VELOCITY;
@@ -205,7 +209,8 @@ void InputParameters<dim>::set_input_parameters()
   output_data.output_start_time = start_time;
   output_data.output_interval_time = (end_time-start_time)/100;
   output_data.write_divergence = true;
-  output_data.write_streamfunction = false;
+  output_data.write_vorticity = true;
+  output_data.write_streamfunction = true; //false;
   output_data.write_processor_id = true;
   output_data.degree = FE_DEGREE_VELOCITY;
 
@@ -357,8 +362,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, int degree_u, int degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, degree_u, degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -371,8 +376,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.line_plot_data = param.line_plot_data;
 
-  std::shared_ptr<PostProcessor<dim,degree_u,degree_p,Number> > pp;
-  pp.reset(new PostProcessor<dim,degree_u,degree_p,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
 
   return pp;
 }

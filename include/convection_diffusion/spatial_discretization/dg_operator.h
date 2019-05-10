@@ -25,30 +25,26 @@
 #include "operators/convection_diffusion_operator.h"
 #include "operators/convection_diffusion_operator_efficiency.h"
 
-// preconditioners
+// solvers and preconditioners
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
+#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../preconditioners/multigrid_preconditioner.h"
 
-// solvers
-#include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-
 // interface space-time
-#include "../interface_space_time/operator.h"
-
-// time integration
 #include "time_integration/interpolate.h"
 #include "time_integration/time_step_calculation.h"
 
 // postprocessor
 #include "../postprocessor/postprocessor.h"
+#include "interface.h"
 
 using namespace dealii;
 
 namespace ConvDiff
 {
-template<int dim, int degree, typename Number>
-class DGOperation : public dealii::Subscriptor, public Interface::Operator<Number>
+template<int dim, typename Number>
+class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
 private:
   typedef float MultigridNumber;
@@ -62,9 +58,9 @@ public:
   /*
    * Constructor.
    */
-  DGOperation(parallel::Triangulation<dim> const &        triangulation,
-              InputParameters const &                     param_in,
-              std::shared_ptr<PostProcessor<dim, degree>> postprocessor_in);
+  DGOperator(parallel::Triangulation<dim> const &        triangulation,
+             InputParameters const &                     param_in,
+             std::shared_ptr<PostProcessor<dim, Number>> postprocessor_in);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -193,7 +189,7 @@ public:
   unsigned int
   get_polynomial_degree() const;
 
-  unsigned int
+  types::global_dof_index
   get_number_of_dofs() const;
 
   /*
@@ -260,6 +256,11 @@ private:
   setup_postprocessor(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution);
 
   /*
+   * List of input parameters.
+   */
+  InputParameters const & param;
+
+  /*
    * Basic finite element ingredients.
    */
   FE_DGQ<dim>          fe;
@@ -269,12 +270,7 @@ private:
   AffineConstraints<double> constraint_matrix;
 
 
-  MatrixFree<dim, Number> data;
-
-  /*
-   * List of input parameters.
-   */
-  InputParameters const & param;
+  MatrixFree<dim, Number> matrix_free;
 
   /*
    * User interface: Boundary conditions and field functions.
@@ -290,11 +286,11 @@ private:
   /*
    * Basic operators.
    */
-  MassMatrixOperator<dim, degree, Number>           mass_matrix_operator;
-  InverseMassMatrixOperator<dim, degree, Number, 1> inverse_mass_matrix_operator;
-  ConvectiveOperator<dim, degree, degree, Number>   convective_operator;
-  DiffusiveOperator<dim, degree, Number>            diffusive_operator;
-  RHSOperator<dim, degree, Number>                  rhs_operator;
+  MassMatrixOperator<dim, Number>           mass_matrix_operator;
+  InverseMassMatrixOperator<dim, 1, Number> inverse_mass_matrix_operator;
+  ConvectiveOperator<dim, Number>           convective_operator;
+  DiffusiveOperator<dim, Number>            diffusive_operator;
+  RHSOperator<dim, Number>                  rhs_operator;
 
   /*
    * Numerical velocity field.
@@ -309,7 +305,7 @@ private:
   /*
    * Solution of linear systems of equations
    */
-  ConvectionDiffusionOperator<dim, degree, Number> conv_diff_operator;
+  ConvectionDiffusionOperator<dim, Number> conv_diff_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
@@ -324,13 +320,12 @@ private:
    * Convection-diffusion operator for runtime optimization (merged operators including
    * rhs-operator). This operator can only be used for explicit time integration.
    */
-  ConvectionDiffusionOperatorEfficiency<dim, degree, Number>
-    convection_diffusion_operator_efficiency;
+  ConvectionDiffusionOperatorEfficiency<dim, Number> convection_diffusion_operator_efficiency;
 
   /*
    * Postprocessor.
    */
-  std::shared_ptr<PostProcessor<dim, degree>> postprocessor;
+  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
 };
 
 } // namespace ConvDiff

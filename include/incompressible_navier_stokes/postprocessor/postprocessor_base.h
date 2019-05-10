@@ -9,14 +9,11 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_POSTPROCESSOR_BASE_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
+//#include <deal.II/matrix_free/fe_evaluation.h>
 #include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/operators.h>
+//#include <deal.II/matrix_free/operators.h>
 
 #include "../../incompressible_navier_stokes/user_interface/analytical_solution.h"
-#include "../../postprocessor/output_data.h"
-#include "../../postprocessor/solution_field.h"
-
 
 /*
  *  This struct contains information about
@@ -36,22 +33,24 @@ struct DofQuadIndexData
 
 namespace IncNS
 {
-// forward declarations
-template<int dim, int fe_degree, int fe_degree_p, typename Number>
-class DGNavierStokesBase;
+namespace Interface
+{
+template<int dim, typename Number>
+class OperatorBase;
+}
 
 /*
  *  Interface class for postprocessor of the
  *  incompressible Navier-Stokes equation.
  *
  */
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+template<int dim, typename Number>
 class PostProcessorBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, Number> NavierStokesOperator;
+  typedef Interface::OperatorBase<dim, Number> NavierStokesOperator;
 
   PostProcessorBase()
   {
@@ -76,9 +75,6 @@ public:
 
   /*
    * This function has to be called to apply the postprocessing tools.
-   * It is currently used for unsteady solvers, but the plan is to use this
-   * function also for the steady solver and that the individual postprocessing
-   * tools decide whether to apply the steady or unsteady postprocessing functions.
    */
   virtual void
   do_postprocessing(VectorType const & velocity,

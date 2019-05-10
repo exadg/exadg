@@ -9,8 +9,8 @@
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p, typename Number>
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::DGNavierStokesCoupled(
+template<int dim, typename Number>
+DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters<dim> const &         parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
@@ -23,14 +23,14 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::DGNavierStokesCoupled(
 {
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::~DGNavierStokesCoupled()
+template<int dim, typename Number>
+DGNavierStokesCoupled<dim, Number>::~DGNavierStokesCoupled()
 {
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup(
+DGNavierStokesCoupled<dim, Number>::setup(
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -47,9 +47,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup(
   this->initialize_vector_velocity(temp_vector);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup_solvers(
+DGNavierStokesCoupled<dim, Number>::setup_solvers(
   double const & scaling_factor_time_derivative_term)
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
@@ -71,9 +71,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::setup_solvers(
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_momentum_operator(
+DGNavierStokesCoupled<dim, Number>::initialize_momentum_operator(
   double const & scaling_factor_time_derivative_term)
 {
   MomentumOperatorData<dim> momentum_operator_data;
@@ -112,9 +112,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_momentum_oper
                            this->convective_operator);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_preconditioner_coupled()
+DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_coupled()
 {
   // setup preconditioner
   if(this->param.preconditioner_coupled != PreconditionerCoupled::None)
@@ -137,9 +137,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_preconditione
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_coupled()
+DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
 {
   // setup linear solver
   if(this->param.solver_coupled == SolverCoupled::GMRES)
@@ -189,85 +189,83 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_solver_couple
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::update_divergence_penalty_operator(
+DGNavierStokesCoupled<dim, Number>::update_divergence_penalty_operator(
   VectorType const & velocity) const
 {
-  this->projection_operator->calculate_array_div_penalty_parameter(velocity);
+  this->projection_operator->calculate_div_penalty_parameter(velocity);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::update_continuity_penalty_operator(
+DGNavierStokesCoupled<dim, Number>::update_continuity_penalty_operator(
   VectorType const & velocity) const
 {
-  this->projection_operator->calculate_array_conti_penalty_parameter(velocity);
+  this->projection_operator->calculate_conti_penalty_parameter(velocity);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_block_vector_velocity_pressure(
+DGNavierStokesCoupled<dim, Number>::initialize_block_vector_velocity_pressure(
   BlockVectorType & src) const
 {
   // velocity(1st block) + pressure(2nd block)
   src.reinit(2);
 
-  this->data.initialize_dof_vector(src.block(0), this->get_dof_index_velocity());
-  this->data.initialize_dof_vector(src.block(1), this->get_dof_index_pressure());
+  this->matrix_free.initialize_dof_vector(src.block(0), this->get_dof_index_velocity());
+  this->matrix_free.initialize_dof_vector(src.block(1), this->get_dof_index_pressure());
 
   src.collect_sizes();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::initialize_vector_for_newton_solver(
-  BlockVectorType & src) const
+DGNavierStokesCoupled<dim, Number>::initialize_vector_for_newton_solver(BlockVectorType & src) const
 {
   initialize_block_vector_velocity_pressure(src);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 bool
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::nonlinear_problem_has_to_be_solved() const
+DGNavierStokesCoupled<dim, Number>::nonlinear_problem_has_to_be_solved() const
 {
   return this->param.nonlinear_problem_has_to_be_solved();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 bool
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::unsteady_problem_has_to_be_solved() const
+DGNavierStokesCoupled<dim, Number>::unsteady_problem_has_to_be_solved() const
 {
   return (this->param.solver_type == SolverType::Unsteady);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::set_scaling_factor_continuity(
-  double const scaling_factor)
+DGNavierStokesCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling_factor)
 {
   scaling_factor_continuity = scaling_factor;
   this->gradient_operator.set_scaling_factor_pressure(scaling_factor);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::set_sum_alphai_ui(VectorType const * vector)
+DGNavierStokesCoupled<dim, Number>::set_sum_alphai_ui(VectorType const * vector)
 {
   this->sum_alphai_ui = vector;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::set_solution_linearization(
+DGNavierStokesCoupled<dim, Number>::set_solution_linearization(
   BlockVectorType const & solution_linearization)
 {
   momentum_operator.set_solution_linearization(solution_linearization.block(0));
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::get_velocity_linearization() const
+DGNavierStokesCoupled<dim, Number>::get_velocity_linearization() const
 {
   AssertThrow(this->param.nonlinear_problem_has_to_be_solved() == true,
               ExcMessage(
@@ -276,11 +274,13 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::get_velocity_linearizati
   return momentum_operator.get_solution_linearization();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 CompatibleLaplaceOperatorData<dim> const
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::get_compatible_laplace_operator_data() const
+DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
 {
   CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
+  comp_laplace_operator_data.degree_u                 = this->param.degree_u;
+  comp_laplace_operator_data.degree_p                 = this->param.degree_p;
   comp_laplace_operator_data.dof_index_velocity       = this->get_dof_index_velocity();
   comp_laplace_operator_data.dof_index_pressure       = this->get_dof_index_pressure();
   comp_laplace_operator_data.operator_is_singular     = this->param.pure_dirichlet_bc;
@@ -291,9 +291,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::get_compatible_laplace_o
   return comp_laplace_operator_data;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 unsigned int
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_linear_stokes_problem(
+DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(
   BlockVectorType &       dst,
   BlockVectorType const & src,
   bool const &            update_preconditioner,
@@ -309,11 +309,10 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_linear_stokes_prob
   return linear_solver->solve(dst, src, update_preconditioner);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::rhs_stokes_problem(
-  BlockVectorType & dst,
-  double const &    eval_time) const
+DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
+                                                       double const &    eval_time) const
 {
   // velocity-block
   this->gradient_operator.rhs(dst.block(0), eval_time);
@@ -334,10 +333,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::rhs_stokes_problem(
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::vmult(BlockVectorType &       dst,
-                                                              BlockVectorType const & src) const
+DGNavierStokesCoupled<dim, Number>::vmult(BlockVectorType & dst, BlockVectorType const & src) const
 {
   // (1,1) block of saddle point matrix
   momentum_operator.vmult(dst.block(0), src.block(0));
@@ -365,9 +363,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::vmult(BlockVectorType & 
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_steady_problem(
+DGNavierStokesCoupled<dim, Number>::solve_nonlinear_steady_problem(
   BlockVectorType & dst,
   bool const &      update_preconditioner,
   unsigned int &    newton_iterations,
@@ -381,9 +379,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_steady_p
                        this->param.update_preconditioner_coupled_every_newton_iter);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
+DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
   BlockVectorType &  dst,
   VectorType const & sum_alphai_ui,
   double const &     eval_time,
@@ -416,11 +414,10 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::solve_nonlinear_problem(
   this->sum_alphai_ui = nullptr;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_residual(
-  BlockVectorType &       dst,
-  BlockVectorType const & src) const
+DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &       dst,
+                                                                BlockVectorType const & src) const
 {
   // velocity-block
 
@@ -474,9 +471,9 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_resid
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_residual_steady(
+DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
   BlockVectorType &       dst,
   BlockVectorType const & src) const
 {
@@ -524,13 +521,12 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::evaluate_nonlinear_resid
   dst.block(1) *= -scaling_factor_continuity;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing(
-  VectorType const & velocity,
-  VectorType const & pressure,
-  double const       time,
-  unsigned int const time_step_number) const
+DGNavierStokesCoupled<dim, Number>::do_postprocessing(VectorType const & velocity,
+                                                      VectorType const & pressure,
+                                                      double const       time,
+                                                      unsigned int const time_step_number) const
 {
   bool const standard = true;
   if(standard)
@@ -557,15 +553,19 @@ DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing(
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, degree_u, degree_p, Number>::do_postprocessing_steady_problem(
+DGNavierStokesCoupled<dim, Number>::do_postprocessing_steady_problem(
   VectorType const & velocity,
   VectorType const & pressure) const
 {
   this->postprocessor->do_postprocessing(velocity, pressure);
 }
 
-} // namespace IncNS
+template class DGNavierStokesCoupled<2, float>;
+template class DGNavierStokesCoupled<2, double>;
 
-#include "dg_navier_stokes_coupled_solver.hpp"
+template class DGNavierStokesCoupled<3, float>;
+template class DGNavierStokesCoupled<3, double>;
+
+} // namespace IncNS

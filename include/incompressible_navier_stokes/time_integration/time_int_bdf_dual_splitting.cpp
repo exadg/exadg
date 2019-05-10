@@ -8,7 +8,7 @@
 #include "time_int_bdf_dual_splitting.h"
 
 #include "../../time_integration/push_back_vectors.h"
-#include "../interface_space_time/operator.h"
+#include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "functionalities/set_zero_mean_value.h"
 
@@ -846,22 +846,13 @@ TimeIntBDFDualSplitting<dim, Number>::get_wall_times(std::vector<std::string> & 
 }
 
 // instantiations
-#include <navierstokes/config.h>
 
 // float
-#if DIM_2 && OP_FLOAT
 template class TimeIntBDFDualSplitting<2, float>;
-#endif
-#if DIM_3 && OP_FLOAT
 template class TimeIntBDFDualSplitting<3, float>;
-#endif
 
 // double
-#if DIM_2 && OP_DOUBLE
 template class TimeIntBDFDualSplitting<2, double>;
-#endif
-#if DIM_3 && OP_DOUBLE
 template class TimeIntBDFDualSplitting<3, double>;
-#endif
 
 } // namespace IncNS

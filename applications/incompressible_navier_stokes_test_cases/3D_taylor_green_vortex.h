@@ -97,6 +97,10 @@ void InputParameters<dim>::set_input_parameters()
   // triangulation
   triangulation_type = TriangulationType::Distributed;
 
+  // polynomial degrees
+  degree_u = FE_DEGREE_VELOCITY;
+  degree_p = FE_DEGREE_PRESSURE;
+
   // mapping
   if(MESH_TYPE == MeshType::Cartesian)
     degree_mapping = 1;
@@ -239,9 +243,11 @@ void InputParameters<dim>::set_input_parameters()
   kinetic_energy_data.viscosity = VISCOSITY;
   kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
-  kinetic_energy_spectrum_data.calculate = false; // true;
-  kinetic_energy_spectrum_data.calculate_every_time_steps = 100;
-  kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum";
+  kinetic_energy_spectrum_data.calculate = true;
+  kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
+  kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
+  kinetic_energy_spectrum_data.degree = FE_DEGREE_VELOCITY;
+  kinetic_energy_spectrum_data.evaluation_points_per_cell = (FE_DEGREE_VELOCITY + 1) * 2.0;
 
   // output of solver information
   solver_info_data.print_to_screen = true;
@@ -412,8 +418,8 @@ void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytica
 // Postprocessor
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-std::shared_ptr<PostProcessorBase<dim, fe_degree_u, fe_degree_p, Number> >
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(InputParameters<dim> const &param)
 {
   PostProcessorData<dim> pp_data;
@@ -425,8 +431,8 @@ construct_postprocessor(InputParameters<dim> const &param)
   pp_data.kinetic_energy_data = param.kinetic_energy_data;
   pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
 
-  std::shared_ptr<PostProcessor<dim,fe_degree_u,fe_degree_p,Number> > pp;
-  pp.reset(new PostProcessor<dim,fe_degree_u,fe_degree_p,Number>(pp_data));
+  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
 
   return pp;
 }

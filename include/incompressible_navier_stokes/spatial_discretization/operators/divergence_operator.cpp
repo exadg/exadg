@@ -10,6 +10,11 @@
 namespace IncNS
 {
 // currently implemented in header-file
-}
 
-#include "divergence_operator.hpp"
+template class DivergenceOperator<2, float>;
+template class DivergenceOperator<2, double>;
+
+template class DivergenceOperator<3, float>;
+template class DivergenceOperator<3, double>;
+
+} // namespace IncNS
