@@ -10,6 +10,11 @@
 namespace IncNS
 {
 // all functions are currently implemented in .h-file.
-}
 
-#include "projection_operator.hpp"
+template class ProjectionOperator<2, float>;
+template class ProjectionOperator<2, double>;
+
+template class ProjectionOperator<3, float>;
+template class ProjectionOperator<3, double>;
+
+} // namespace IncNS

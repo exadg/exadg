@@ -22,7 +22,7 @@ class InputParameters;
 
 namespace Interface
 {
-template<typename Number>
+template<int dim, typename Number>
 class OperatorBase;
 template<typename Number>
 class OperatorCoupled;
@@ -35,8 +35,8 @@ class DriverSteadyProblems
 public:
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef Interface::OperatorBase<Number>    OperatorBase;
-  typedef Interface::OperatorCoupled<Number> OperatorPDE;
+  typedef Interface::OperatorBase<dim, Number> OperatorBase;
+  typedef Interface::OperatorCoupled<Number>   OperatorPDE;
 
   DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
                        std::shared_ptr<OperatorPDE>  operator_in,

@@ -20,7 +20,7 @@ class InputParameters;
 
 namespace Interface
 {
-template<typename Number>
+template<int dim, typename Number>
 class OperatorBase;
 template<typename Number>
 class OperatorPressureCorrection;
@@ -35,7 +35,7 @@ public:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef Interface::OperatorBase<Number>               InterfaceBase;
+  typedef Interface::OperatorBase<dim, Number>          InterfaceBase;
   typedef Interface::OperatorPressureCorrection<Number> InterfacePDE;
 
   TimeIntBDFPressureCorrection(std::shared_ptr<InterfaceBase> operator_base_in,

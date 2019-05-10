@@ -1,5 +1,5 @@
 /*
- * PostProcessor.h
+ * postprocessor.h
  *
  *  Created on: Aug 8, 2016
  *      Author: krank
@@ -45,11 +45,11 @@ struct PostProcessorData
   LinePlotData<dim>           line_plot_data;
 };
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class PostProcessor : public PostProcessorBase<dim, fe_degree_u, fe_degree_p, Number>
+template<int dim, typename Number>
+class PostProcessor : public PostProcessorBase<dim, Number>
 {
 public:
-  typedef PostProcessorBase<dim, fe_degree_u, fe_degree_p, Number> Base;
+  typedef PostProcessorBase<dim, Number> Base;
 
   typedef typename Base::VectorType VectorType;
 
@@ -164,7 +164,7 @@ private:
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results (e.g., using paraview)
-  OutputGenerator<dim, fe_degree_u, fe_degree_p, Number> output_generator;
+  OutputGenerator<dim, Number> output_generator;
 
   // calculate errors for verification purposes for problems with known analytical solution
   ErrorCalculator<dim, Number> error_calculator;
@@ -177,17 +177,17 @@ private:
 
   // calculate divergence and continuity errors as a measure of mass conservation (particularly
   // relevant for turbulent flows)
-  DivergenceAndMassErrorCalculator<dim, fe_degree_u, Number> div_and_mass_error_calculator;
+  DivergenceAndMassErrorCalculator<dim, Number> div_and_mass_error_calculator;
 
   // calculate kinetic energy as well as dissipation rates (particularly relevant for turbulent
   // flows)
-  KineticEnergyCalculatorDetailed<dim, fe_degree_u, fe_degree_p, Number> kinetic_energy_calculator;
+  KineticEnergyCalculatorDetailed<dim, Number> kinetic_energy_calculator;
 
   // evaluate kinetic energy in spectral space (i.e., as a function of the wavenumber)
   KineticEnergySpectrumCalculator<dim, Number> kinetic_energy_spectrum_calculator;
 
   // evaluate quantities along lines through the domain
-  LinePlotCalculator<dim, fe_degree_u, fe_degree_p, Number> line_plot_calculator;
+  LinePlotCalculator<dim, Number> line_plot_calculator;
 };
 
 

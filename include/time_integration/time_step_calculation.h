@@ -10,7 +10,7 @@
 
 #include <deal.II/base/function.h>
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include "../functionalities/calculate_characteristic_element_length.h"
 #include "enum_types.h"
 
@@ -157,7 +157,7 @@ calculate_const_time_step_diff(double const       diffusion_number,
  * Calculate time step size according to local CFL criterion where the velocity field is a
  * prescribed analytical function.
  */
-template<int dim, int fe_degree, typename value_type>
+template<int dim, typename value_type>
 inline double
 calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
                               unsigned int const                   dof_index,
@@ -165,14 +165,15 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
                               std::shared_ptr<Function<dim>> const velocity,
                               double const                         time,
                               double const                         cfl,
+                              unsigned int const                   degree,
                               double const                         exponent_fe_degree,
                               CFLConditionType const               cfl_condition_type)
 {
-  FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(data, dof_index, quad_index);
+  CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
   double new_time_step = std::numeric_limits<double>::max();
 
-  double const cfl_p = cfl / pow(fe_degree, exponent_fe_degree);
+  double const cfl_p = cfl / pow(degree, exponent_fe_degree);
 
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
@@ -212,7 +213,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
     double dt = std::numeric_limits<double>::max();
     for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
     {
-      dt = std::min(dt, delta_t_cell[v]);
+      dt = std::min(dt, (double)delta_t_cell[v]);
     }
 
     new_time_step = std::min(new_time_step, dt);
@@ -228,21 +229,22 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
  * Calculate time step size according to local CFL criterion where the velocity field is a numerical
  * solution field.
  */
-template<int dim, int fe_degree, typename value_type>
+template<int dim, typename value_type>
 inline double
 calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &                    data,
                               unsigned int const                                     dof_index,
                               unsigned int const                                     quad_index,
                               LinearAlgebra::distributed::Vector<value_type> const & velocity,
                               double const                                           cfl,
+                              unsigned int const                                     degree,
                               double const           exponent_fe_degree,
                               CFLConditionType const cfl_condition_type)
 {
-  FEEvaluation<dim, fe_degree, fe_degree + 1, dim, value_type> fe_eval(data, dof_index, quad_index);
+  CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
   double new_time_step = std::numeric_limits<double>::max();
 
-  double const cfl_p = cfl / pow(fe_degree, exponent_fe_degree);
+  double const cfl_p = cfl / pow(degree, exponent_fe_degree);
 
   // loop over cells of processor
   for(unsigned int cell = 0; cell < data.n_macro_cells(); ++cell)
@@ -285,7 +287,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
     double dt = std::numeric_limits<double>::max();
     for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
     {
-      dt = std::min(dt, delta_t_cell[v]);
+      dt = std::min(dt, (double)delta_t_cell[v]);
     }
 
     new_time_step = std::min(new_time_step, dt);

@@ -75,6 +75,10 @@ template<int dim, typename Number = double>
 class ConvectionDiffusionOperatorAbstract : virtual public PreconditionableOperator<dim, Number>
 {
 public:
+  virtual ~ConvectionDiffusionOperatorAbstract()
+  {
+  }
+
   virtual LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const = 0;
 
@@ -88,29 +92,25 @@ public:
   set_evaluation_time(double const evaluation_time_in) const = 0;
 };
 
-template<int dim, int degree, typename Number = double>
+template<int dim, typename Number = double>
 class ConvectionDiffusionOperator
-  : public OperatorBase<dim, degree, Number, ConvectionDiffusionOperatorData<dim>>,
+  : public OperatorBase<dim, Number, ConvectionDiffusionOperatorData<dim>>,
     virtual public ConvectionDiffusionOperatorAbstract<dim, Number>
 {
 public:
-  static const int DIM = dim;
-
   typedef Number value_type;
 
 private:
-  typedef OperatorBase<dim, degree, value_type, ConvectionDiffusionOperatorData<dim>> Base;
-  typedef ConvectionDiffusionOperator<dim, degree, Number>                            This;
+  typedef OperatorBase<dim, value_type, ConvectionDiffusionOperatorData<dim>> Base;
+  typedef ConvectionDiffusionOperator<dim, Number>                            This;
 
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
 
   typedef typename Base::BlockMatrix BlockMatrix;
 
-public:
   typedef typename Base::VectorType VectorType;
 
-private:
 #ifdef DEAL_II_WITH_TRILINOS
   typedef typename Base::SparseMatrix SparseMatrix;
 #endif
@@ -124,12 +124,12 @@ public:
          ConvectionDiffusionOperatorData<dim> const & operator_data) const;
 
   void
-  reinit(MatrixFree<dim, Number> const &                         mf_data,
-         AffineConstraints<double> const &                       constraint_matrix,
-         ConvectionDiffusionOperatorData<dim> const &            operator_data,
-         MassMatrixOperator<dim, degree, Number> const &         mass_matrix_operator,
-         ConvectiveOperator<dim, degree, degree, Number> const & convective_operator,
-         DiffusiveOperator<dim, degree, Number> const &          diffusive_operator) const;
+  reinit(MatrixFree<dim, Number> const &              mf_data,
+         AffineConstraints<double> const &            constraint_matrix,
+         ConvectionDiffusionOperatorData<dim> const & operator_data,
+         MassMatrixOperator<dim, Number> const &      mass_matrix_operator,
+         ConvectiveOperator<dim, Number> const &      convective_operator,
+         DiffusiveOperator<dim, Number> const &       diffusive_operator) const;
 
   /*
    *  Scaling factor of time derivative term (mass matrix term)
@@ -168,17 +168,17 @@ public:
   void
   vmult_add(VectorType & dst, VectorType const & src) const;
 
-  virtual void
+  void
   apply(VectorType & dst, VectorType const & src) const;
 
-  virtual void
+  void
   apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
-  virtual void
+  void
   apply_add(VectorType & dst, VectorType const & src) const;
 
 
-  virtual void
+  void
   set_evaluation_time(double const evaluation_time_in) const
   {
     Base::set_evaluation_time(evaluation_time_in);
@@ -195,10 +195,10 @@ public:
   void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 
-  virtual void
+  void
   do_calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
 
-  virtual void
+  void
   do_calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
@@ -246,9 +246,9 @@ private:
   void
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
-  mutable lazy_ptr<MassMatrixOperator<dim, degree, Number>>         mass_matrix_operator;
-  mutable lazy_ptr<ConvectiveOperator<dim, degree, degree, Number>> convective_operator;
-  mutable lazy_ptr<DiffusiveOperator<dim, degree, Number>>          diffusive_operator;
+  mutable lazy_ptr<MassMatrixOperator<dim, Number>> mass_matrix_operator;
+  mutable lazy_ptr<ConvectiveOperator<dim, Number>> convective_operator;
+  mutable lazy_ptr<DiffusiveOperator<dim, Number>>  diffusive_operator;
 
   mutable VectorType temp;
 
@@ -259,13 +259,9 @@ private:
 
   typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PRECONDITIONER_BASE;
 
-  typedef Elementwise::IterativeSolver<dim,
-                                       1 /*scalar equation*/,
-                                       degree,
-                                       Number,
-                                       ELEMENTWISE_OPERATOR,
-                                       PRECONDITIONER_BASE>
-    ELEMENTWISE_SOLVER;
+  typedef Elementwise::
+    IterativeSolver<dim, 1 /*scalar equation*/, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
+      ELEMENTWISE_SOLVER;
 
   mutable std::shared_ptr<ELEMENTWISE_OPERATOR> elementwise_operator;
   mutable std::shared_ptr<PRECONDITIONER_BASE>  elementwise_preconditioner;

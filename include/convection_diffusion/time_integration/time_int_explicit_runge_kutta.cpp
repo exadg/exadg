@@ -7,7 +7,7 @@
 
 #include "time_int_explicit_runge_kutta.h"
 
-#include "../interface_space_time/operator.h"
+#include "../spatial_discretization/interface.h"
 #include "convection_diffusion/user_interface/input_parameters.h"
 #include "functionalities/print_functions.h"
 #include "time_integration/time_step_calculation.h"
@@ -352,13 +352,8 @@ TimeIntExplRK<Number>::postprocessing() const
 }
 
 // instantiations
-#include <navierstokes/config.h>
 
-#if OP_FLOAT
 template class TimeIntExplRK<float>;
-#endif
-#if OP_DOUBLE
 template class TimeIntExplRK<double>;
-#endif
 
 } // namespace ConvDiff

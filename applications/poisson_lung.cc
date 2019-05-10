@@ -7,8 +7,6 @@
  *      Author: münch
  */
 
-#include <navierstokes/config.h>
-
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/revision.h>
@@ -20,8 +18,6 @@
 #include <vector>
 
 #include "../include/poisson/spatial_discretization/laplace_operator.h"
-#include "../include/poisson/spatial_discretization/poisson_operation.h"
-
 #include "../include/poisson/user_interface/analytical_solution.h"
 #include "../include/poisson/user_interface/boundary_descriptor.h"
 #include "../include/poisson/user_interface/field_functions.h"
@@ -29,6 +25,8 @@
 
 #include "../include/functionalities/dynamic_convergence_table.h"
 #include "../include/functionalities/measure_minimum_time.h"
+#include "../include/poisson/spatial_discretization/operator.h"
+#include "../include/solvers_and_preconditioners/smoother/chebyshev_smoother.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 
@@ -105,7 +103,7 @@ private:
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution;
 
-  std::shared_ptr<Poisson::DGOperation<dim, fe_degree, value_type>> poisson_operation;
+  std::shared_ptr<Poisson::DGOperator<dim, value_type>> poisson_operation;
 };
 
 template<int dim, int fe_degree, typename Number>
@@ -120,11 +118,12 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(bool use_cg,
     use_block(use_block)
 {
   print_header();
+  print_MPI_info(pcout);
 
   // create triangulation
-#if VERSION == 0 || VERSION == 1 
+#if VERSION == 0 || VERSION == 1
   triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
-#elif VERSION == 2 || VERSION == 3|| VERSION == 4
+#elif VERSION == 2 || VERSION == 3 || VERSION == 4
   triangulation.reset(new parallel::distributed::Triangulation<dim>(
     MPI_COMM_WORLD,
     dealii::Triangulation<dim>::none,
@@ -189,10 +188,7 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(bool use_cg,
   }
 
   param.check_input_parameters();
-
-  print_MPI_info(pcout);
-  if(param.print_input_parameters)
-    param.print(pcout);
+  param.print(pcout, "List of input parameters:");
 
   field_functions.reset(new Poisson::FieldFunctions<dim>());
   set_field_functions(field_functions);
@@ -202,7 +198,7 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(bool use_cg,
 
   boundary_descriptor.reset(new Poisson::BoundaryDescriptor<dim>());
 
-  poisson_operation.reset(new Poisson::DGOperation<dim, fe_degree, Number>(*triangulation, param));
+  poisson_operation.reset(new Poisson::DGOperator<dim, Number>(*triangulation, param));
 }
 
 template<int dim, int fe_degree, typename Number>
@@ -251,13 +247,13 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
 
   std::map<std::string, double> timings;
 
-    unsigned int outlet_id_first = 2, outlet_id_last = 2;
+  unsigned int outlet_id_first = 2, outlet_id_last = 2;
 #if VERSION == 0 || VERSION == 1 || VERSION == 4
   // create triangulation
   if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
   {
     std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(generations));
-    std::string spline_file = get_lung_spline_file_from_environment();
+    std::string                      spline_file = get_lung_spline_file_from_environment();
     dealii::GridGenerator::lung(*tria,
                                 n_refine_space,
                                 create_tree,
@@ -285,7 +281,7 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
   // boundary_descriptor->neumann_bc.insert({0, zero_function_scalar});
   boundary_descriptor->dirichlet_bc.insert({0, zero_function_scalar});
   boundary_descriptor->dirichlet_bc.insert({1, zero_function_scalar});
-  
+
   for(unsigned int i = outlet_id_first; i <= outlet_id_last; i++)
     boundary_descriptor->dirichlet_bc.insert({i, zero_function_scalar});
 
@@ -359,15 +355,16 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
   poisson_operation->initialize_dof_vector(check5);
   poisson_operation->initialize_dof_vector(check6);
   poisson_operation->initialize_dof_vector(tmp);
-  for(unsigned int i = 0; i < check1.local_size(); ++i)
-    if(!poisson_operation->constraint_matrix.is_constrained(
-         check1.get_partitioner()->local_to_global(i)))
-      check1.local_element(i) = (double)rand() / RAND_MAX;
-
-  poisson_operation->laplace_operator.apply(tmp, check1);
-  tmp *= -1.0;
-  poisson_operation->preconditioner->vmult(check2, tmp);
-  check2 += check1;
+  // TODO
+  //  for(unsigned int i = 0; i < check1.local_size(); ++i)
+  //    if(!poisson_operation->constraint_matrix.is_constrained(
+  //         check1.get_partitioner()->local_to_global(i)))
+  //      check1.local_element(i) = (double)rand() / RAND_MAX;
+  //
+  //  poisson_operation->laplace_operator.apply(tmp, check1);
+  //  tmp *= -1.0;
+  //  poisson_operation->preconditioner.vmult(check2, tmp);
+  //  check2 += check1;
 
 
   //  LinearAlgebra::distributed::Vector<float>  tmp_float, check3_float;
@@ -383,16 +380,17 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
   //  check3 += check1;
 
 
-  typedef ChebyshevSmoother<Poisson::LaplaceOperator<dim, fe_degree, Number>,
+  typedef ChebyshevSmoother<Poisson::LaplaceOperator<dim, Number>,
                             LinearAlgebra::distributed::Vector<Number>>
                                               CHEBYSHEV_SMOOTHER;
   typename CHEBYSHEV_SMOOTHER::AdditionalData smoother_data;
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  poisson_operation->laplace_operator.initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
-  poisson_operation->laplace_operator.calculate_inverse_diagonal(
-    smoother_data.matrix_diagonal_inverse);
+  // TODO
+//  poisson_operation->laplace_operator.initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
+//  poisson_operation->laplace_operator.calculate_inverse_diagonal(
+//    smoother_data.matrix_diagonal_inverse);
 #pragma GCC diagnostic pop
 
   /*
@@ -416,7 +414,8 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(
   // param.multigrid_data.chebyshev_smoother_data.eig_cg_n_iterations;
 
   CHEBYSHEV_SMOOTHER smoother;
-  smoother.initialize(poisson_operation->laplace_operator, smoother_data);
+  // TODO
+  //  smoother.initialize(poisson_operation->laplace_operator, smoother_data);
   smoother.vmult(check3, tmp);
   check3 += check1;
 

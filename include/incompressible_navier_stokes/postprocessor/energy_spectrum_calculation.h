@@ -157,8 +157,8 @@ private:
                   << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl;
 
       // extract beginning of vector...
-      const double * temp = velocity.begin();
-      deal_spectrum_wrapper.execute(temp);
+      const Number * temp = velocity.begin();
+      deal_spectrum_wrapper.execute((double *)temp);
 
       // write output file
       if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)

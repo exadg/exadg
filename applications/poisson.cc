@@ -5,8 +5,6 @@
  *      Author: münch
  */
 
-#include <navierstokes/config.h>
-
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/revision.h>
@@ -18,8 +16,6 @@
 #include <vector>
 
 #include "../include/poisson/spatial_discretization/laplace_operator.h"
-#include "../include/poisson/spatial_discretization/poisson_operation.h"
-
 #include "../include/poisson/user_interface/analytical_solution.h"
 #include "../include/poisson/user_interface/boundary_descriptor.h"
 #include "../include/poisson/user_interface/field_functions.h"
@@ -27,17 +23,16 @@
 
 #include "../include/functionalities/dynamic_convergence_table.h"
 #include "../include/functionalities/measure_minimum_time.h"
+#include "../include/poisson/spatial_discretization/operator.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-// laplace problems
+// Laplace problems
 //#include "poisson_test_cases/cosinus.h"
-//#include "poisson_test_cases/cosinus_dual.h"
 //#include "poisson_test_cases/gaussian.h"
 #include "poisson_test_cases/lung.h"
-//#include "poisson_test_cases/hyper_l.h"
 //#include "poisson_test_cases/torus.h"
 
 using namespace dealii;
@@ -45,7 +40,7 @@ using namespace Poisson;
 
 const int BEST_OF = 1;
 
-template<int dim, int fe_degree, typename Number = double>
+template<int dim, typename Number = double>
 class PoissonProblem
 {
 public:
@@ -106,7 +101,7 @@ private:
     // ranks = rank;
     // data_out.add_data_vector(ranks, "ranks");
 
-    data_out.build_patches(fe_degree);
+    data_out.build_patches(param.degree);
 
     data_out.write_vtu_in_parallel(filename.c_str(), MPI_COMM_WORLD);
   }
@@ -123,17 +118,17 @@ private:
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution;
 
-  std::shared_ptr<Poisson::DGOperation<dim, fe_degree, value_type>> poisson_operation;
+  std::shared_ptr<Poisson::DGOperator<dim, value_type>> poisson_operation;
 };
 
-template<int dim, int fe_degree, typename Number>
-PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refine_space_in,
-                                                       PSequenceType      psqeuence,
-                                                       bool               use_amg,
-                                                       bool               use_dg,
-                                                       MultigridType      mg_type,
-                                                       bool               use_aux,
-                                                       bool /*use_pcg*/)
+template<int dim, typename Number>
+PoissonProblem<dim, Number>::PoissonProblem(const unsigned int n_refine_space_in,
+                                            PSequenceType      psqeuence,
+                                            bool               use_amg,
+                                            bool               use_dg,
+                                            MultigridType      mg_type,
+                                            bool               use_aux,
+                                            bool /*use_pcg*/)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(n_refine_space_in)
 {
@@ -146,7 +141,6 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
   //                                                                    parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
 
 
-  param.degree_mapping = fe_degree;
   if(use_dg)
     param.spatial_discretization = SpatialDiscretization::DG;
   else
@@ -172,8 +166,7 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
   param.check_input_parameters();
 
   print_MPI_info(pcout);
-  if(param.print_input_parameters == true)
-    param.print(pcout);
+  param.print(pcout, "List of input parameters:");
 
   field_functions.reset(new Poisson::FieldFunctions<dim>());
   set_field_functions(field_functions);
@@ -183,12 +176,12 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(const unsigned int n_refi
 
   boundary_descriptor.reset(new Poisson::BoundaryDescriptor<dim>());
 
-  poisson_operation.reset(new Poisson::DGOperation<dim, fe_degree, Number>(*triangulation, param));
+  poisson_operation.reset(new Poisson::DGOperator<dim, Number>(*triangulation, param));
 }
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 void
-PoissonProblem<dim, fe_degree, Number>::print_header()
+PoissonProblem<dim, Number>::print_header()
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -201,9 +194,9 @@ PoissonProblem<dim, fe_degree, Number>::print_header()
   // clang-format on
 }
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 void
-PoissonProblem<dim, fe_degree, Number>::print_grid_data()
+PoissonProblem<dim, Number>::print_grid_data()
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl
@@ -215,12 +208,12 @@ PoissonProblem<dim, fe_degree, Number>::print_grid_data()
   print_parameter(pcout, "Number of vertices", triangulation->n_vertices());
 }
 
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 void
-PoissonProblem<dim, fe_degree, Number>::solve_problem(bool               is_not_convergence_study,
-                                                      ConvergenceTable & convergence_table,
-                                                      DynamicConvergenceTable & dct,
-                                                      unsigned int              best_of)
+PoissonProblem<dim, Number>::solve_problem(bool                      is_not_convergence_study,
+                                           ConvergenceTable &        convergence_table,
+                                           DynamicConvergenceTable & dct,
+                                           unsigned int              best_of)
 {
   Timer timer;
   // create grid and set bc
@@ -250,7 +243,7 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(bool               is_not_
   MPI_Comm_size(MPI_COMM_WORLD, &procs);
   convergence_table.add_value("procs", procs);
   convergence_table.add_value("dim", dim);
-  convergence_table.add_value("degree", fe_degree);
+  convergence_table.add_value("degree", param.degree);
   convergence_table.add_value("refs", n_refine_space);
   convergence_table.add_value("dofs", solution.size());
   convergence_table.add_value("setup", time_setup);
@@ -261,7 +254,7 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(bool               is_not_
 #endif
   dct.put("procs", procs);
   dct.put("_dim", dim);
-  dct.put("_degree", fe_degree);
+  dct.put("_degree", param.degree);
   dct.put("_refs", n_refine_space);
   dct.put("_dofs", solution.size());
 
@@ -308,6 +301,7 @@ struct DataC
       use_amg(true),
       refinements_provided(false),
       sequence(PSequenceType::Manual),
+      fe_degree_eff(FE_DEGREE_MIN), // TODO
       mg_type(MultigridType::Undefined),
       use_aux(true),
       use_pcg(true)
@@ -330,7 +324,7 @@ struct DataC
   bool          use_pcg;
 };
 
-template<int dim, int fe_degree>
+template<int dim>
 class Run
 {
 public:
@@ -341,7 +335,7 @@ public:
     {
       for(unsigned int refinement = d.size_min; refinement <= d.size_max; refinement++)
       {
-        PoissonProblem<dim, fe_degree> conv_diff_problem(
+        PoissonProblem<dim> conv_diff_problem(
           refinement, d.sequence, d.use_amg, d.use_dg, d.mg_type, d.use_aux, d.use_pcg);
         conv_diff_problem.solve_problem(false, convergence_table, dct, d.best_of);
       }
@@ -360,7 +354,7 @@ public:
           continue;
         int refinement = std::log(size / d.fe_degree_eff) / std::log(2.0);
 
-        PoissonProblem<dim, fe_degree> conv_diff_problem(
+        PoissonProblem<dim> conv_diff_problem(
           refinement, d.sequence, d.use_amg, d.use_dg, d.mg_type, d.use_aux, d.use_pcg);
         conv_diff_problem.solve_problem(false, convergence_table, dct, d.best_of);
       }
@@ -375,56 +369,60 @@ do_run(ConvergenceTable & convergence_table, DynamicConvergenceTable & dct, Data
   for(unsigned int fe_degree = d.fe_degree_min; fe_degree <= d.fe_degree_max; fe_degree++)
   {
     d.fe_degree_eff = fe_degree + d.use_amg;
-    switch(fe_degree)
-    {
-// clang-format off
-#if DEGREE_1
-          case  1: Run<dim,  1>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_2
-          case  2: Run<dim,  2>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_3
-          case  3: Run<dim,  3>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_4
-          case  4: Run<dim,  4>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_5
-          case  5: Run<dim,  5>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_6
-          case  6: Run<dim,  6>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_7
-          case  7: Run<dim,  7>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_8
-          case  8: Run<dim,  8>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_9
-          case  9: Run<dim,  9>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_10
-          case 10: Run<dim, 10>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_11
-          case 11: Run<dim, 11>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_12
-          case 12: Run<dim, 12>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_13
-          case 13: Run<dim, 13>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_14
-          case 14: Run<dim, 14>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_15
-          case 15: Run<dim, 15>::run(convergence_table,dct,d); break;
-#endif
-        // clang-format on
-    }
+
+    Run<dim>::run(convergence_table, dct, d);
+
+    // TODO
+    //    switch(fe_degree)
+    //    {
+    //// clang-format off
+    //#if DEGREE_1
+    //          case  1: Run<dim,  1>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_2
+    //          case  2: Run<dim,  2>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_3
+    //          case  3: Run<dim,  3>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_4
+    //          case  4: Run<dim,  4>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_5
+    //          case  5: Run<dim,  5>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_6
+    //          case  6: Run<dim,  6>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_7
+    //          case  7: Run<dim,  7>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_8
+    //          case  8: Run<dim,  8>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_9
+    //          case  9: Run<dim,  9>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_10
+    //          case 10: Run<dim, 10>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_11
+    //          case 11: Run<dim, 11>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_12
+    //          case 12: Run<dim, 12>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_13
+    //          case 13: Run<dim, 13>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_14
+    //          case 14: Run<dim, 14>::run(convergence_table,dct,d); break;
+    //#endif
+    //#if DEGREE_15
+    //          case 15: Run<dim, 15>::run(convergence_table,dct,d); break;
+    //#endif
+    //        // clang-format on
+    //    }
   }
 }
 
@@ -484,7 +482,7 @@ main(int argc, char ** argv)
     }
     else if(type == "-s" || type == "--simple")
     {
-      PoissonProblem<DIMENSION, FE_DEGREE> poisson_problem(REFINE_STEPS);
+      PoissonProblem<DIMENSION> poisson_problem(REFINE_STEPS);
       poisson_problem.solve_problem();
     }
     else if(type == "-c" || type == "--convergence")
@@ -604,14 +602,14 @@ main(int argc, char ** argv)
         }
       }
 
-#if DIM_2 == 1
+      //#if DIM_2 == 1
       if(dim == 2)
         do_run<2>(convergence_table, dct, d);
-#endif
-#if DIM_3 == 1
+      //#endif
+      //#if DIM_3 == 1
       if(dim == 3)
         do_run<3>(convergence_table, dct, d);
-#endif
+      //#endif
 
       if(!rank)
       {

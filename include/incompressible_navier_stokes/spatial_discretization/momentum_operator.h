@@ -26,8 +26,6 @@
 #include "solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
 #include "solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
 
-#include <navierstokes/config.h>
-
 namespace IncNS
 {
 template<int dim>
@@ -88,6 +86,10 @@ template<int dim, typename Number = double>
 class MomentumOperatorAbstract //: public PreconditionableOperator<dim, Number>
 {
 public:
+  virtual ~MomentumOperatorAbstract()
+  {
+  }
+
   virtual LinearAlgebra::distributed::Vector<Number> const &
   get_solution_linearization() const = 0;
 
@@ -101,19 +103,19 @@ public:
   set_evaluation_time(double const time) = 0;
 };
 
-template<int dim, int degree, typename Number = double>
+template<int dim, typename Number = double>
 class MomentumOperator : public PreconditionableOperator<dim, Number>,
                          public MomentumOperatorAbstract<dim, Number>
 {
 public:
-  typedef MomentumOperator<dim, degree, Number> This;
+  typedef MomentumOperator<dim, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   static const int DIM = dim;
   typedef Number   value_type;
 
-  typedef FEEvaluation<dim, degree, degree + 1, dim, Number> FEEval;
+  typedef CellIntegrator<dim, dim, Number> Integrator;
 
   MomentumOperator();
 
@@ -136,11 +138,11 @@ public:
          MomentumOperatorData<dim> const & operator_data);
 
   void
-  reinit(MatrixFree<dim, Number> const &                 data,
-         MomentumOperatorData<dim> const &               operator_data,
-         MassMatrixOperator<dim, degree, Number> const & mass_matrix_operator,
-         ViscousOperator<dim, degree, Number> const &    viscous_operator,
-         ConvectiveOperator<dim, degree, Number> const & convective_operator);
+  reinit(MatrixFree<dim, Number> const &         data,
+         MomentumOperatorData<dim> const &       operator_data,
+         MassMatrixOperator<dim, Number> const & mass_matrix_operator,
+         ViscousOperator<dim, Number> const &    viscous_operator,
+         ConvectiveOperator<dim, Number> const & convective_operator);
 
 
   virtual void
@@ -457,11 +459,11 @@ private:
 
   MatrixFree<dim, Number> const * data;
 
-  MassMatrixOperator<dim, degree, Number> const * mass_matrix_operator;
+  MassMatrixOperator<dim, Number> const * mass_matrix_operator;
 
-  ViscousOperator<dim, degree, Number> const * viscous_operator;
+  ViscousOperator<dim, Number> const * viscous_operator;
 
-  ConvectiveOperator<dim, degree, Number> const * convective_operator;
+  ConvectiveOperator<dim, Number> const * convective_operator;
 
   /*
    * The following variables are necessary when applying the multigrid
@@ -475,11 +477,11 @@ private:
    * ojects by setting the above pointers to the own_objects_storage,
    *   e.g., data = &own_mass_matrix_operator_storage;
    */
-  MassMatrixOperator<dim, degree, Number> own_mass_matrix_operator_storage;
+  MassMatrixOperator<dim, Number> own_mass_matrix_operator_storage;
 
-  ViscousOperator<dim, degree, Number> own_viscous_operator_storage;
+  ViscousOperator<dim, Number> own_viscous_operator_storage;
 
-  ConvectiveOperator<dim, degree, Number> own_convective_operator_storage;
+  ConvectiveOperator<dim, Number> own_convective_operator_storage;
 
   VectorType mutable temp_vector;
   VectorType mutable velocity_linearization;
@@ -504,9 +506,8 @@ private:
    */
   typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
   typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PRECONDITIONER_BASE;
-  typedef Elementwise::
-    IterativeSolver<dim, dim, degree, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
-      ELEMENTWISE_SOLVER;
+  typedef Elementwise::IterativeSolver<dim, dim, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
+    ELEMENTWISE_SOLVER;
 
   mutable std::shared_ptr<ELEMENTWISE_OPERATOR> elementwise_operator;
   mutable std::shared_ptr<PRECONDITIONER_BASE>  elementwise_preconditioner;

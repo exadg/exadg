@@ -8,29 +8,30 @@
 #include "dg_navier_stokes_projection_methods.h"
 
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
+#include "../../solvers_and_preconditioners/util/check_multigrid.h"
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p, typename Number>
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::DGNavierStokesProjectionMethods(
+template<int dim, typename Number>
+DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters<dim> const &         parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
   : BASE(triangulation, parameters_in, postprocessor_in)
 {
-  AssertThrow(degree_p > 0,
+  AssertThrow(this->param.degree_p > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
                          "zero for dual splitting scheme and pressure-correction scheme."));
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::~DGNavierStokesProjectionMethods()
+template<int dim, typename Number>
+DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
 {
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure_poisson_solver()
+DGNavierStokesProjectionMethods<dim, Number>::setup_pressure_poisson_solver()
 {
   initialize_laplace_operator();
 
@@ -39,15 +40,16 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::setup_pressure
   initialize_solver_pressure_poisson();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::initialize_laplace_operator()
+DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 {
   // setup Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.dof_index      = this->get_dof_index_pressure();
   laplace_operator_data.quad_index     = this->get_quad_index_pressure();
   laplace_operator_data.IP_factor      = this->param.IP_factor_pressure;
+  laplace_operator_data.degree         = this->param.degree_p;
   laplace_operator_data.degree_mapping = this->param.IP_factor_pressure;
 
   /*
@@ -96,31 +98,25 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::initialize_lap
   laplace_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
-  laplace_operator.reinit(this->data, this->constraint_p, laplace_operator_data);
+  laplace_operator.reinit(this->matrix_free, this->constraint_p, laplace_operator_data);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
-  initialize_preconditioner_pressure_poisson()
+DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poisson()
 {
   // setup preconditioner
   if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
   {
     preconditioner_pressure_poisson.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, degree_p, Number>>(laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
     MultigridData mg_data;
     mg_data = this->param.multigrid_data_pressure_poisson;
 
-    // use single precision for multigrid
-    typedef float MultigridNumber;
-
-    typedef PreconditionableOperator<dim, MultigridNumber>                           MG_BASE;
-    typedef Poisson::LaplaceOperator<dim, degree_p, MultigridNumber>                 MG_OPERATOR;
-    typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID());
 
@@ -146,10 +142,9 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
-  initialize_solver_pressure_poisson()
+DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson()
 {
   if(this->param.solver_pressure_poisson == SolverPressurePoisson::CG)
   {
@@ -167,9 +162,8 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
 
     // setup solver
     pressure_poisson_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, degree_p, Number>,
-                   PreconditionerBase<Number>,
-                   VectorType>(laplace_operator, *preconditioner_pressure_poisson, solver_data));
+      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+        laplace_operator, *preconditioner_pressure_poisson, solver_data));
   }
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
@@ -185,7 +179,7 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, degree_p, Number>,
+    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, Number>,
                                                    PreconditionerBase<Number>,
                                                    VectorType>(laplace_operator,
                                                                *preconditioner_pressure_poisson,
@@ -198,70 +192,66 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::
   }
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_rhs_add_viscous_term(
+DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(
   VectorType & dst,
   double const evaluation_time) const
 {
   this->viscous_operator.rhs_add(dst, evaluation_time);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_rhs_ppe_laplace_add(
+DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(
   VectorType &   dst,
   double const & evaluation_time) const
 {
   this->laplace_operator.rhs_add(dst, evaluation_time);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 unsigned int
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::do_solve_pressure(
-  VectorType &       dst,
-  VectorType const & src) const
+DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(VectorType &       dst,
+                                                                VectorType const & src) const
 {
   // Check multigrid algorithm
 
-  //  typedef float MultigridNumber;
-  //  typedef MyMultigridPreconditionerLaplace<dim, Number,
-  //      LaplaceOperator<dim, degree_p, MultigridNumber>, LaplaceOperatorData<dim> > MULTIGRID;
+  //  typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
   //
   //  std::shared_ptr<MULTIGRID> mg_preconditioner
   //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
   //
-  //  CheckMultigrid<dim,Number,LaplaceOperator<dim,degree_p, Number>,MULTIGRID>
-  //    check_multigrid(this->laplace_operator,mg_preconditioner);
+  //  CheckMultigrid<dim, Number, Poisson::LaplaceOperator<dim, Number>, MULTIGRID>
+  //    check_multigrid(this->laplace_operator, mg_preconditioner);
   //  check_multigrid.check();
 
   // Use multigrid as a solver (use double precision here)
 
-  //  typedef double MultigridNumber;
-  //  typedef Poisson::MultigridPreconditioner<dim, degree_p, Number, MultigridNumber> MULTIGRID;
+  //  typedef Poisson::MultigridPreconditioner<dim, Number, double> MULTIGRID;
   //
   //  std::shared_ptr<MULTIGRID> mg_preconditioner
   //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
   //  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
+  // call pressure Poisson solver
   unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, false);
 
   return n_iter;
 }
 
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::apply_laplace_operator(
-  VectorType &       dst,
-  VectorType const & src) const
+DGNavierStokesProjectionMethods<dim, Number>::apply_laplace_operator(VectorType &       dst,
+                                                                     VectorType const & src) const
 {
   this->laplace_operator.vmult(dst, src);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::apply_projection_operator(
+DGNavierStokesProjectionMethods<dim, Number>::apply_projection_operator(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -271,6 +261,10 @@ DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>::apply_projecti
   this->projection_operator->vmult(dst, src);
 }
 
-} // namespace IncNS
+template class DGNavierStokesProjectionMethods<2, float>;
+template class DGNavierStokesProjectionMethods<2, double>;
 
-#include "dg_navier_stokes_projection_methods.hpp"
+template class DGNavierStokesProjectionMethods<3, float>;
+template class DGNavierStokesProjectionMethods<3, double>;
+
+} // namespace IncNS

@@ -7,10 +7,10 @@
 
 #include "time_int_bdf.h"
 
+#include "../spatial_discretization/interface.h"
 #include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
-#include "../interface_space_time/operator.h"
 #include "../user_interface/input_parameters.h"
 
 namespace ConvDiff
@@ -528,13 +528,8 @@ TimeIntBDF<Number>::get_wall_times(std::vector<std::string> & name,
 }
 
 // instantiations
-#include <navierstokes/config.h>
 
-#if OP_FLOAT
 template class TimeIntBDF<float>;
-#endif
-#if OP_DOUBLE
 template class TimeIntBDF<double>;
-#endif
 
 } // namespace ConvDiff

@@ -10,6 +10,11 @@
 namespace IncNS
 {
 // currently implemented in header-file
-}
 
-#include "body_force_operator.hpp"
+template class BodyForceOperator<2, float>;
+template class BodyForceOperator<2, double>;
+
+template class BodyForceOperator<3, float>;
+template class BodyForceOperator<3, double>;
+
+} // namespace IncNS

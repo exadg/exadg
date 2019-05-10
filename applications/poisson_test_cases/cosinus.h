@@ -29,6 +29,7 @@ Poisson::InputParameters::set_input_parameters()
   // TEMPORAL DISCRETIZATION
 
   // SPATIAL DISCRETIZATION
+  degree = FE_DEGREE;
   degree_mapping = FE_DEGREE;
   IP_factor      = 1.0;
 
@@ -56,7 +57,6 @@ Poisson::InputParameters::set_input_parameters()
 /*                                                                            */
 /* FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.) */
 /*                                                                            */
-/*                                                                            */
 /******************************************************************************/
 
 /*
@@ -72,9 +72,7 @@ public:
   {
   }
 
-  virtual ~AnalyticalSolution(){};
-
-  virtual double
+  double
   value(const Point<dim> & p, const unsigned int /*component*/) const
   {
     double result = 0.1 * p[0];
@@ -95,9 +93,7 @@ public:
   {
   }
 
-  virtual ~RightHandSide(){};
-
-  virtual double
+  double
   value(const Point<dim> & p, const unsigned int /* component */) const
   {
     const double coef = 1.0;
@@ -121,9 +117,7 @@ public:
   {
   }
 
-  virtual ~NeumannBoundary(){};
-
-  virtual double
+  double
   value(const Point<dim> & /* p */, const unsigned int /* component */) const
   {
     double result = 0.0;

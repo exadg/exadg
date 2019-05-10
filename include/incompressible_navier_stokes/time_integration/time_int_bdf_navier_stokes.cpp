@@ -6,7 +6,8 @@
  */
 
 #include "time_int_bdf_navier_stokes.h"
-#include "../interface_space_time/operator.h"
+
+#include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "time_integration/time_step_calculation.h"
 
@@ -47,65 +48,65 @@ TimeIntBDF<dim, Number>::initialize_oif()
   if(param.equation_type == EquationType::NavierStokes &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    convective_operator_OIF.reset(new Interface::OperatorOIF<Number>(operator_base));
+    convective_operator_OIF.reset(new Interface::OperatorOIF<dim, Number>(operator_base));
 
     // initialize OIF time integrator
     if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK1Stage1)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
           1, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK2Stage2)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
           2, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage3)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
           3, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage4)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
           4, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage4Reg2C)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK3Stage4Reg2C<Interface::OperatorOIF<Number>, VectorType>(
+        new LowStorageRK3Stage4Reg2C<Interface::OperatorOIF<dim, Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg2C)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK4Stage5Reg2C<Interface::OperatorOIF<Number>, VectorType>(
+        new LowStorageRK4Stage5Reg2C<Interface::OperatorOIF<dim, Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg3C)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK4Stage5Reg3C<Interface::OperatorOIF<Number>, VectorType>(
+        new LowStorageRK4Stage5Reg3C<Interface::OperatorOIF<dim, Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK5Stage9Reg2S)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK5Stage9Reg2S<Interface::OperatorOIF<Number>, VectorType>(
+        new LowStorageRK5Stage9Reg2S<Interface::OperatorOIF<dim, Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage7Reg2)
     {
-      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<Number>, VectorType>(
+      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<dim, Number>, VectorType>(
         convective_operator_OIF, 3, 7));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage8Reg2)
     {
-      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<Number>, VectorType>(
+      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<dim, Number>, VectorType>(
         convective_operator_OIF, 4, 8));
     }
     else
@@ -366,22 +367,13 @@ TimeIntBDF<dim, Number>::do_timestep_oif_substepping_and_update_vectors(double c
 }
 
 // instantiations
-#include <navierstokes/config.h>
 
 // float
-#if DIM_2 && OP_FLOAT
 template class TimeIntBDF<2, float>;
-#endif
-#if DIM_3 && OP_FLOAT
 template class TimeIntBDF<3, float>;
-#endif
 
 // double
-#if DIM_2 && OP_DOUBLE
 template class TimeIntBDF<2, double>;
-#endif
-#if DIM_3 && OP_DOUBLE
 template class TimeIntBDF<3, double>;
-#endif
 
 } // namespace IncNS

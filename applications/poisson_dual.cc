@@ -5,8 +5,6 @@
  *      Author: münch
  */
 
-#include <navierstokes/config.h>
-
 #include <deal.II/base/conditional_ostream.h>
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/revision.h>
@@ -18,8 +16,6 @@
 #include <vector>
 
 #include "../include/poisson/spatial_discretization/laplace_operator.h"
-#include "../include/poisson/spatial_discretization/poisson_operation.h"
-
 #include "../include/poisson/user_interface/analytical_solution.h"
 #include "../include/poisson/user_interface/boundary_descriptor.h"
 #include "../include/poisson/user_interface/field_functions.h"
@@ -27,12 +23,14 @@
 
 #include "../include/functionalities/dynamic_convergence_table.h"
 #include "../include/functionalities/measure_minimum_time.h"
+#include "../include/poisson/spatial_discretization/operator.h"
+#include "../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 
 // SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
 
-// laplace problems
+// Laplace problems
 //#include "poisson_test_cases/cosinus.h"
 //#include "poisson_test_cases/cosinus_dual.h"
 #include "poisson_test_cases/gaussian.h"
@@ -59,6 +57,8 @@ public:
     : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
       n_refine_space(n_refine_space_in)
   {
+    print_MPI_info(pcout);
+
     param.set_input_parameters();
 
     triangulation.reset(new parallel::distributed::Triangulation<dim>(
@@ -93,11 +93,9 @@ public:
     }
     if(!(psqeuence == PSequenceType::Manual))
       param.multigrid_data.p_sequence = psqeuence;
-    param.check_input_parameters();
 
-    print_MPI_info(pcout);
-    if(param.print_input_parameters == true)
-      param.print(pcout);
+    param.check_input_parameters();
+    param.print(pcout, "List of input parameters:");
 
     field_functions.reset(new Poisson::FieldFunctions<dim>());
     set_field_functions(field_functions);
@@ -107,8 +105,7 @@ public:
 
     boundary_descriptor.reset(new Poisson::BoundaryDescriptor<dim>());
 
-    poisson_operation.reset(
-      new Poisson::DGOperation<dim, fe_degree, Number>(*triangulation, param));
+    poisson_operation.reset(new Poisson::DGOperator<dim, Number>(*triangulation, param));
   }
 
   void
@@ -140,7 +137,7 @@ public:
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution;
 
-  std::shared_ptr<Poisson::DGOperation<dim, fe_degree, value_type>> poisson_operation;
+  std::shared_ptr<Poisson::DGOperator<dim, value_type>> poisson_operation;
 };
 
 template<int dim, int fe_degree, typename Number = double>
@@ -273,13 +270,22 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(bool /*is_not_convergence_
   ppi_cg.poisson_operation->initialize_dof_vector(rhs_cg_temp);
   ppi_cg.poisson_operation->initialize_dof_vector(solution_cg);
 
-  Timer                          time;
-  MGTransferMFC<dim, value_type> transfer(ppi_dg.poisson_operation->data,
-                                          ppi_cg.poisson_operation->data,
-                                          ppi_dg.poisson_operation->constraint_matrix,
-                                          ppi_cg.poisson_operation->constraint_matrix,
+  Timer time;
+
+  // TODO
+  AffineConstraints<double>      constraint_matrix;
+  MGTransferMFC<dim, value_type> transfer(ppi_dg.poisson_operation->get_data(),
+                                          ppi_cg.poisson_operation->get_data(),
+                                          constraint_matrix,
+                                          constraint_matrix,
                                           n_refine_space_in,
                                           fe_degree);
+  //  MGTransferMFC<dim, value_type> transfer(ppi_dg.poisson_operation->matrix_free,
+  //                                          ppi_cg.poisson_operation->matrix_free,
+  //                                          ppi_dg.poisson_operation->constraint_matrix,
+  //                                          ppi_cg.poisson_operation->constraint_matrix,
+  //                                          n_refine_space_in,
+  //                                          fe_degree);
 
   ppi_dg.poisson_operation->rhs(rhs_dg);
   ppi_cg.poisson_operation->rhs(rhs_cg);
@@ -310,7 +316,8 @@ PoissonProblem<dim, fe_degree, Number>::solve_problem(bool /*is_not_convergence_
     transfer.prolongate(0, solution_dg, solution_cg);
 
     temp = 0.0;
-    ppi_dg.poisson_operation->laplace_operator.vmult(temp, solution_dg);
+    // TODO
+    //    ppi_dg.poisson_operation->laplace_operator.vmult(temp, solution_dg);
     rhs_dg -= temp;
     double time_0 = time.wall_time();
 
@@ -395,6 +402,7 @@ struct DataC
       use_amg(true),
       refinements_provided(false),
       sequence(PSequenceType::Manual),
+      fe_degree_eff(FE_DEGREE_MIN), // TODO
       mg_type(MultigridType::Undefined),
       use_aux(true),
       use_pcg(true)
@@ -464,52 +472,52 @@ do_run(ConvergenceTable & convergence_table, DynamicConvergenceTable & dct, Data
     d.fe_degree_eff = fe_degree + d.use_amg;
     switch(fe_degree)
     {
-// clang-format off
-#if DEGREE_1
+        // clang-format off
+//#if DEGREE_1
           case  1: Run<dim,  1>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_2
+//#endif
+//#if DEGREE_2
           case  2: Run<dim,  2>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_3
+//#endif
+//#if DEGREE_3
           case  3: Run<dim,  3>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_4
+//#endif
+//#if DEGREE_4
           case  4: Run<dim,  4>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_5
+//#endif
+//#if DEGREE_5
           case  5: Run<dim,  5>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_6
+//#endif
+//#if DEGREE_6
           case  6: Run<dim,  6>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_7
+//#endif
+//#if DEGREE_7
           case  7: Run<dim,  7>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_8
+//#endif
+//#if DEGREE_8
           case  8: Run<dim,  8>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_9
+//#endif
+//#if DEGREE_9
           case  9: Run<dim,  9>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_10
+//#endif
+//#if DEGREE_10
           case 10: Run<dim, 10>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_11
+//#endif
+//#if DEGREE_11
           case 11: Run<dim, 11>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_12
+//#endif
+//#if DEGREE_12
           case 12: Run<dim, 12>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_13
+//#endif
+//#if DEGREE_13
           case 13: Run<dim, 13>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_14
+//#endif
+//#if DEGREE_14
           case 14: Run<dim, 14>::run(convergence_table,dct,d); break;
-#endif
-#if DEGREE_15
+//#endif
+//#if DEGREE_15
           case 15: Run<dim, 15>::run(convergence_table,dct,d); break;
-#endif
+//#endif
         // clang-format on
     }
   }
@@ -691,14 +699,14 @@ main(int argc, char ** argv)
         }
       }
 
-#if DIM_2 == 1
+      //#if DIM_2 == 1
       if(dim == 2)
         do_run<2>(convergence_table, dct, d);
-#endif
-#if DIM_3 == 1
+      //#endif
+      //#if DIM_3 == 1
       if(dim == 3)
         do_run<3>(convergence_table, dct, d);
-#endif
+      //#endif
 
       if(!rank)
       {

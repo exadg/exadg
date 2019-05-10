@@ -10,7 +10,7 @@
 
 #include "driver_steady_problems.h"
 
-#include "../interface_space_time/operator.h"
+#include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "functionalities/set_zero_mean_value.h"
 
@@ -188,22 +188,13 @@ DriverSteadyProblems<dim, Number>::postprocessing()
 }
 
 // instantiations
-#include <navierstokes/config.h>
 
 // float
-#if DIM_2 && OP_FLOAT
 template class DriverSteadyProblems<2, float>;
-#endif
-#if DIM_3 && OP_FLOAT
 template class DriverSteadyProblems<3, float>;
-#endif
 
 // double
-#if DIM_2 && OP_DOUBLE
 template class DriverSteadyProblems<2, double>;
-#endif
-#if DIM_3 && OP_DOUBLE
 template class DriverSteadyProblems<3, double>;
-#endif
 
 } // namespace IncNS

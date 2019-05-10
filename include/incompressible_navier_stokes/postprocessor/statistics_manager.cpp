@@ -593,11 +593,6 @@ StatisticsManager<dim>::do_evaluate(const std::vector<const VectorType *> & velo
   number_of_samples++;
 }
 
-#include <navierstokes/config.h>
 
-#if DIM_2
 template class StatisticsManager<2>;
-#endif
-#if DIM_3
 template class StatisticsManager<3>;
-#endif

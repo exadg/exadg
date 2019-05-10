@@ -62,6 +62,7 @@ public:
 
       // SPATIAL DISCRETIZATION
       triangulation_type(TriangulationType::Undefined),
+      degree(1),
       degree_mapping(1),
       numerical_flux_convective_operator(NumericalFluxConvectiveOperator::Undefined),
       IP_factor(1.0),
@@ -83,7 +84,6 @@ public:
       runtime_optimization(false),
 
       // OUTPUT AND POSTPROCESSING
-      print_input_parameters(false),
 
       // write output
       output_data(OutputData()),
@@ -214,6 +214,8 @@ public:
     AssertThrow(triangulation_type != TriangulationType::Undefined,
                 ExcMessage("parameter must be defined"));
 
+    AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
+
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
 
     if(equation_type == EquationType::Convection ||
@@ -262,11 +264,10 @@ public:
   }
 
 
-
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream & pcout, std::string const & name)
   {
-    pcout << std::endl << "List of input parameters:" << std::endl;
+    pcout << std::endl << name << std::endl;
 
     // MATHEMATICAL MODEL
     print_parameters_mathematical_model(pcout);
@@ -387,6 +388,8 @@ public:
     pcout << std::endl << "Spatial Discretization:" << std::endl;
 
     print_parameter(pcout, "Triangulation type", enum_to_string(triangulation_type));
+
+    print_parameter(pcout, "Polynomial degree of shape functions", degree);
 
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
@@ -598,6 +601,9 @@ public:
   // triangulation type
   TriangulationType triangulation_type;
 
+  // Polynomial degree of shape functions
+  unsigned int degree;
+
   // Polynomial degree of shape functions used for geometry approximation (mapping from
   // parameter space to physical space)
   unsigned int degree_mapping;
@@ -687,9 +693,6 @@ public:
   /*                               OUTPUT AND POSTPROCESSING                            */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // print a list of all input parameters at the beginning of the simulation
-  bool print_input_parameters;
 
   // writing output
   OutputData output_data;

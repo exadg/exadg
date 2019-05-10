@@ -285,7 +285,7 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
   this->quad_index                 = numbers::invalid_unsigned_int;
   const unsigned int n_q_points_1d = degree_1 + 1;
   const unsigned int n_q_points    = std::pow(n_q_points_1d, dim);
-  
+
   for(unsigned int quad_index = 0; quad_index < data_1_cm->get_mapping_info().cell_data.size();
       quad_index++)
   {
@@ -537,4 +537,17 @@ MGTransferMFP<dim, Number, VectorType, components>::prolongate(const unsigned in
 }
 
 
-#include "mg_transfer_mf_p.hpp"
+typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
+typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+template class MGTransferMFP<2, float, VectorTypeFloat, 1>;
+template class MGTransferMFP<2, float, VectorTypeFloat, 2>;
+
+template class MGTransferMFP<3, float, VectorTypeFloat, 1>;
+template class MGTransferMFP<3, float, VectorTypeFloat, 3>;
+
+template class MGTransferMFP<2, double, VectorTypeDouble, 1>;
+template class MGTransferMFP<2, double, VectorTypeDouble, 2>;
+
+template class MGTransferMFP<3, double, VectorTypeDouble, 1>;
+template class MGTransferMFP<3, double, VectorTypeDouble, 3>;

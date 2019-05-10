@@ -46,11 +46,8 @@ SET( TARGET_SRC
      include/matrix_free/resolve_templates_float_3d.cpp
      include/matrix_free/resolve_templates_double_2d.cpp
      include/matrix_free/resolve_templates_double_3d.cpp
-     include/operators/inverse_mass_matrix_float_2d.cpp
-     include/operators/inverse_mass_matrix_float_3d.cpp
-     include/operators/inverse_mass_matrix_double_2d.cpp
-     include/operators/inverse_mass_matrix_double_3d.cpp
      include/poisson/user_interface/enum_types.cpp
+     include/poisson/spatial_discretization/operator.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp     
      include/convection_diffusion/user_interface/enum_types.cpp
      include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
@@ -58,8 +55,8 @@ SET( TARGET_SRC
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/rhs_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
-     include/convection_diffusion/spatial_discretization/dg_convection_diffusion_operation.cpp
-     include/convection_diffusion/interface_space_time/operator.cpp
+     include/convection_diffusion/spatial_discretization/dg_operator.cpp
+     include/convection_diffusion/spatial_discretization/interface.cpp
      include/convection_diffusion/time_integration/time_int_bdf.cpp
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
@@ -79,15 +76,12 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/momentum_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/projection_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/turbulence_model.cpp 
-     include/incompressible_navier_stokes/spatial_discretization/boundary_conditions_dual_splitting/pressure_neumann_bc_convective_term.cpp 
-     include/incompressible_navier_stokes/spatial_discretization/boundary_conditions_dual_splitting/pressure_neumann_bc_viscous_term.cpp 
-     include/incompressible_navier_stokes/spatial_discretization/boundary_conditions_dual_splitting/velocity_divergence_convective_term.cpp 
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_projection_methods.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.cpp
-     include/incompressible_navier_stokes/interface_space_time/operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/interface.cpp 
      include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.cpp
@@ -96,7 +90,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/postprocessor/statistics_manager.cpp 
      include/compressible_navier_stokes/user_interface/enum_types.cpp
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
-     include/compressible_navier_stokes/interface_space_time/operator.cpp
+     include/compressible_navier_stokes/spatial_discretization/interface.cpp
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp     

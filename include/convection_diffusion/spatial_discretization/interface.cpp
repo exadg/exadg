@@ -5,7 +5,7 @@
  *      Author: fehn
  */
 
-#include "operator.h"
+#include "interface.h"
 
 namespace ConvDiff
 {
@@ -15,17 +15,11 @@ namespace Interface
 // virtual.
 
 // instantiations
-#include <navierstokes/config.h>
-
-#if OP_FLOAT
 template class Operator<float>;
 template class OperatorOIF<float>;
-#endif
 
-#if OP_DOUBLE
 template class Operator<double>;
 template class OperatorOIF<double>;
-#endif
 
 } // namespace Interface
 

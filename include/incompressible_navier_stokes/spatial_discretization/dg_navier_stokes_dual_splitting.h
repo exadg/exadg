@@ -11,31 +11,37 @@
 // base class
 #include "dg_navier_stokes_projection_methods.h"
 
-// boundary conditions specifically related to dual splitting scheme
-#include "boundary_conditions_dual_splitting/pressure_neumann_bc_convective_term.h"
-#include "boundary_conditions_dual_splitting/pressure_neumann_bc_viscous_term.h"
-#include "boundary_conditions_dual_splitting/velocity_divergence_convective_term.h"
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../interface_space_time/operator.h"
+#include "interface.h"
+
+#include "curl_compute.h"
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
-class DGNavierStokesDualSplitting
-  : public DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>,
-    public Interface::OperatorDualSplitting<Number>
+template<int dim, typename Number = double>
+class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, Number>,
+                                    public Interface::OperatorDualSplitting<Number>
 {
 private:
-  typedef DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number> PROJECTION_METHODS_BASE;
+  typedef DGNavierStokesProjectionMethods<dim, Number> PROJECTION_METHODS_BASE;
 
   typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
   typedef typename PROJECTION_METHODS_BASE::Postprocessor Postprocessor;
 
-  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number> THIS;
+  typedef DGNavierStokesDualSplitting<dim, Number> THIS;
+
+  typedef std::pair<unsigned int, unsigned int> Range;
+
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
+
+  typedef typename PROJECTION_METHODS_BASE::MultigridNumber MultigridNumber;
 
 public:
   /*
@@ -185,13 +191,6 @@ private:
   setup_convective_solver();
 
   /*
-   * Setup of pressure Poisson solver: call function of base class and do additional for dual
-   * splitting scheme
-   */
-  void
-  setup_pressure_poisson_solver();
-
-  /*
    * Setup of helmholtz solver (operator, preconditioner, solver).
    */
   void
@@ -210,21 +209,33 @@ private:
    * rhs pressure Poisson equation
    */
 
-  // boundary conditions for intermediate velocity u_hat: body force term
   void
-  local_rhs_ppe_div_term_body_forces(
-    MatrixFree<dim, Number> const &               data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & cell_range) const;
+  cell_loop_empty(MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
 
   void
-  local_rhs_ppe_div_term_body_forces_face(
+  face_loop_empty(MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
+
+  // rhs PPE: velocity divergence term
+
+  // convective term
+  void
+  local_rhs_ppe_div_term_convective_term_boundary_face(
     MatrixFree<dim, Number> const &               data,
     VectorType &                                  dst,
     VectorType const &                            src,
     std::pair<unsigned int, unsigned int> const & face_range) const;
 
+  // body force term
   void
   local_rhs_ppe_div_term_body_forces_boundary_face(
     MatrixFree<dim, Number> const &               data,
@@ -233,20 +244,26 @@ private:
     std::pair<unsigned int, unsigned int> const & face_range) const;
 
   // Neumann boundary condition term
-  void
-  local_rhs_ppe_nbc_add(MatrixFree<dim, Number> const &               data,
-                        VectorType &                                  dst,
-                        VectorType const &                            src,
-                        std::pair<unsigned int, unsigned int> const & cell_range) const;
 
-  void
-  local_rhs_ppe_nbc_add_face(MatrixFree<dim, Number> const &               data,
-                             VectorType &                                  dst,
-                             VectorType const &                            src,
-                             std::pair<unsigned int, unsigned int> const & face_range) const;
-
+  // du/dt term and body force term
   void
   local_rhs_ppe_nbc_add_boundary_face(
+    MatrixFree<dim, Number> const &               data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const;
+
+  // convective term
+  void
+  local_rhs_ppe_nbc_convective_add_boundary_face(
+    MatrixFree<dim, Number> const &               data,
+    VectorType &                                  dst,
+    VectorType const &                            src,
+    std::pair<unsigned int, unsigned int> const & face_range) const;
+
+  // viscous term
+  void
+  local_rhs_ppe_nbc_viscous_add_boundary_face(
     MatrixFree<dim, Number> const &               data,
     VectorType &                                  dst,
     VectorType const &                            src,
@@ -256,7 +273,7 @@ private:
   /*
    * Viscous step (Helmholtz-like equation).
    */
-  MomentumOperator<dim, degree_u, Number> helmholtz_operator;
+  MomentumOperator<dim, Number> helmholtz_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
@@ -269,27 +286,14 @@ private:
   VectorType const * sum_alphai_ui;
 
   // implicit solution of convective step
-  std::shared_ptr<InverseMassMatrixPreconditioner<dim, degree_u, Number, dim>>
-    preconditioner_convective_problem;
+  std::shared_ptr<PreconditionerBase<Number>> preconditioner_convective_problem;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
   std::shared_ptr<NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>>
     newton_solver;
 
   /*
-   * pressure Poisson equation: Calculation of right-hand side vector
-   */
-
-  // velocity divergence term
-  VelocityDivergenceConvectiveTerm<dim, degree_u, degree_p, Number>
-    velocity_divergence_convective_term;
-
-  // pressure Neumann boundary condition
-  PressureNeumannBCConvectiveTerm<dim, degree_u, degree_p, Number> pressure_nbc_convective_term;
-  PressureNeumannBCViscousTerm<dim, degree_u, degree_p, Number>    pressure_nbc_viscous_term;
-
-  /*
-   * Element variable used to store the current pyhsical time. Note that this variable is not only
+   * Element variable used to store the current physical time. Note that this variable is not only
    * needed in case of an implicit treatment of the convective term, but also for the evaluation of
    * the right-hand side of the pressure Poisson equation.
    */

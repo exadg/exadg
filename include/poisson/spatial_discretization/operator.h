@@ -27,14 +27,16 @@
 
 namespace Poisson
 {
-template<int dim, int degree, typename Number>
-class DGOperation : public dealii::Subscriptor
+template<int dim, typename Number>
+class DGOperator : public dealii::Subscriptor
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  DGOperation(parallel::Triangulation<dim> const & triangulation,
-              Poisson::InputParameters const &     param_in);
+  typedef float MultigridNumber;
+
+  DGOperator(parallel::Triangulation<dim> const & triangulation,
+             Poisson::InputParameters const &     param_in);
 
   void
   setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
@@ -73,37 +75,31 @@ private:
   void
   setup_operators();
 
+  Poisson::InputParameters const & param;
+
   FE_DGQ<dim> fe_dgq;
   FE_Q<dim>   fe_q;
 
   MappingQGeneric<dim> mapping;
   DoFHandler<dim>      dof_handler;
 
-public:
   AffineConstraints<double> constraint_matrix;
 
-  MatrixFree<dim, Number> data;
-
-private:
-  Poisson::InputParameters const & param;
+  MatrixFree<dim, Number> matrix_free;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
 
-  ConvDiff::RHSOperator<dim, degree, Number> rhs_operator;
+  ConvDiff::RHSOperator<dim, Number> rhs_operator;
 
-public:
-  Poisson::LaplaceOperator<dim, degree, Number> laplace_operator;
-  std::shared_ptr<PreconditionerBase<Number>>   preconditioner;
+  LaplaceOperator<dim, Number>                laplace_operator;
+  std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
-private:
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 };
 } // namespace Poisson
-
-#include "poisson_operation.cpp"
 
 #endif

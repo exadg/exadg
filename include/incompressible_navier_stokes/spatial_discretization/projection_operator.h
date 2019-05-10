@@ -8,6 +8,8 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATOR_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_PROJECTION_OPERATOR_H_
 
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+
 #include "../user_interface/input_parameters.h"
 
 #include "../../operators/linear_operator_base.h"
@@ -80,6 +82,7 @@ struct ProjectionOperatorData
       viscosity(0.0),
       use_divergence_penalty(true),
       use_continuity_penalty(true),
+      degree(1),
       penalty_factor_div(1.0),
       penalty_factor_conti(1.0),
       which_components(ContinuityPenaltyComponents::Normal),
@@ -99,6 +102,9 @@ struct ProjectionOperatorData
   // specify which penalty terms to be used
   bool use_divergence_penalty, use_continuity_penalty;
 
+  // degree of finite element shape functions
+  unsigned int degree;
+
   // scaling factor
   double penalty_factor_div, penalty_factor_conti;
 
@@ -117,11 +123,11 @@ struct ProjectionOperatorData
   SolverData                  block_jacobi_solver_data;
 };
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 class ProjectionOperator : public LinearOperatorBase
 {
 private:
-  typedef ProjectionOperator<dim, degree, Number> This;
+  typedef ProjectionOperator<dim, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -130,17 +136,17 @@ private:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef FEEvaluation<dim, degree, degree + 1, dim, Number>     FEEvalCell;
-  typedef FEFaceEvaluation<dim, degree, degree + 1, dim, Number> FEEvalFace;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
 
 public:
   typedef Number value_type;
 
-  ProjectionOperator(MatrixFree<dim, Number> const & data_in,
+  ProjectionOperator(MatrixFree<dim, Number> const & matrix_free_in,
                      unsigned int const              dof_index_in,
                      unsigned int const              quad_index_in,
                      ProjectionOperatorData const    operator_data_in)
-    : data(data_in),
+    : matrix_free(matrix_free_in),
       dof_index(dof_index_in),
       quad_index(quad_index_in),
       array_conti_penalty_parameter(0),
@@ -152,7 +158,7 @@ public:
       n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD)),
       block_diagonal_preconditioner_is_initialized(false)
   {
-    unsigned int n_cells = data.n_cell_batches() + data.n_ghost_cell_batches();
+    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
 
     if(operator_data.use_divergence_penalty)
       array_div_penalty_parameter.resize(n_cells);
@@ -161,22 +167,22 @@ public:
       array_conti_penalty_parameter.resize(n_cells);
 
     if(operator_data.use_divergence_penalty)
-      fe_eval.reset(
-        new FEEvalCell(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+      integrator.reset(
+        new CellIntegratorU(this->get_data(), this->get_dof_index(), this->get_quad_index()));
 
     if(operator_data.use_continuity_penalty)
     {
-      fe_eval_m.reset(
-        new FEEvalFace(this->get_data(), true, this->get_dof_index(), this->get_quad_index()));
-      fe_eval_p.reset(
-        new FEEvalFace(this->get_data(), false, this->get_dof_index(), this->get_quad_index()));
+      integrator_m.reset(
+        new FaceIntegratorU(this->get_data(), true, this->get_dof_index(), this->get_quad_index()));
+      integrator_p.reset(new FaceIntegratorU(
+        this->get_data(), false, this->get_dof_index(), this->get_quad_index()));
     }
   }
 
   MatrixFree<dim, Number> const &
   get_data() const
   {
-    return data;
+    return matrix_free;
   }
 
   AlignedVector<VectorizedArray<Number>> const &
@@ -216,24 +222,25 @@ public:
   }
 
   void
-  calculate_array_penalty_parameter(VectorType const & velocity)
+  calculate_penalty_parameter(VectorType const & velocity)
   {
     if(operator_data.use_divergence_penalty)
-      calculate_array_div_penalty_parameter(velocity);
+      calculate_div_penalty_parameter(velocity);
     if(operator_data.use_continuity_penalty)
-      calculate_array_conti_penalty_parameter(velocity);
+      calculate_conti_penalty_parameter(velocity);
   }
 
   void
-  calculate_array_div_penalty_parameter(VectorType const & velocity)
+  calculate_div_penalty_parameter(VectorType const & velocity)
   {
     velocity.update_ghost_values();
 
-    FEEvalCell fe_eval(data, dof_index, quad_index);
+    CellIntegratorU integrator(matrix_free, dof_index, quad_index);
 
-    AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
+    AlignedVector<scalar> JxW_values(integrator.n_q_points);
 
-    for(unsigned int cell = 0; cell < data.n_cell_batches() + data.n_ghost_cell_batches(); ++cell)
+    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
+    for(unsigned int cell = 0; cell < n_cells; ++cell)
     {
       scalar tau_convective = make_vectorized_array<Number>(0.0);
       scalar tau_viscous    = make_vectorized_array<Number>(operator_data.viscosity);
@@ -241,23 +248,23 @@ public:
       if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
          operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
       {
-        fe_eval.reinit(cell);
-        fe_eval.read_dof_values(velocity);
-        fe_eval.evaluate(true, false);
+        integrator.reinit(cell);
+        integrator.read_dof_values(velocity);
+        integrator.evaluate(true, false);
 
         scalar volume      = make_vectorized_array<Number>(0.0);
         scalar norm_U_mean = make_vectorized_array<Number>(0.0);
-        JxW_values.resize(fe_eval.n_q_points);
-        fe_eval.fill_JxW_values(JxW_values);
-        for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+        JxW_values.resize(integrator.n_q_points);
+        integrator.fill_JxW_values(JxW_values);
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
           volume += JxW_values[q];
-          norm_U_mean += JxW_values[q] * fe_eval.get_value(q).norm();
+          norm_U_mean += JxW_values[q] * integrator.get_value(q).norm();
         }
         norm_U_mean /= volume;
 
-        tau_convective =
-          norm_U_mean * std::exp(std::log(volume) / (double)dim) / (double)(degree + 1);
+        tau_convective = norm_U_mean * std::exp(std::log(volume) / (double)dim) /
+                         (double)(operator_data.degree + 1);
       }
 
       if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
@@ -278,33 +285,34 @@ public:
   }
 
   void
-  calculate_array_conti_penalty_parameter(VectorType const & velocity)
+  calculate_conti_penalty_parameter(VectorType const & velocity)
   {
     velocity.update_ghost_values();
 
-    FEEvalCell fe_eval(data, dof_index, quad_index);
+    CellIntegratorU integrator(matrix_free, dof_index, quad_index);
 
-    AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
+    AlignedVector<scalar> JxW_values(integrator.n_q_points);
 
-    for(unsigned int cell = 0; cell < data.n_cell_batches() + data.n_ghost_cell_batches(); ++cell)
+    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
+    for(unsigned int cell = 0; cell < n_cells; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(velocity);
-      fe_eval.evaluate(true, false);
+      integrator.reinit(cell);
+      integrator.read_dof_values(velocity);
+      integrator.evaluate(true, false);
       scalar volume      = make_vectorized_array<Number>(0.0);
       scalar norm_U_mean = make_vectorized_array<Number>(0.0);
-      JxW_values.resize(fe_eval.n_q_points);
-      fe_eval.fill_JxW_values(JxW_values);
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      JxW_values.resize(integrator.n_q_points);
+      integrator.fill_JxW_values(JxW_values);
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         volume += JxW_values[q];
-        norm_U_mean += JxW_values[q] * fe_eval.get_value(q).norm();
+        norm_U_mean += JxW_values[q] * integrator.get_value(q).norm();
       }
       norm_U_mean /= volume;
 
       scalar tau_convective = norm_U_mean;
-      scalar h              = std::exp(std::log(volume) / (double)dim) / (double)(degree + 1);
-      scalar tau_viscous    = make_vectorized_array<Number>(operator_data.viscosity) / h;
+      scalar h = std::exp(std::log(volume) / (double)dim) / (double)(operator_data.degree + 1);
+      scalar tau_viscous = make_vectorized_array<Number>(operator_data.viscosity) / h;
 
       if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
       {
@@ -409,7 +417,7 @@ public:
   void
   initialize_dof_vector(VectorType & vector) const
   {
-    data.initialize_dof_vector(vector, dof_index);
+    matrix_free.initialize_dof_vector(vector, dof_index);
   }
 
   /*
@@ -432,7 +440,7 @@ public:
     {
       // Simply apply inverse of block matrices (using the LU factorization that has been computed
       // before).
-      data.cell_loop(&This::cell_loop_apply_inverse_block_diagonal, this, dst, src);
+      matrix_free.cell_loop(&This::cell_loop_apply_inverse_block_diagonal, this, dst, src);
     }
   }
 
@@ -455,9 +463,9 @@ public:
       else // matrix-based variant
       {
         // Note that the velocity has dim components.
-        unsigned int dofs_per_cell = data.get_shape_info().dofs_per_component_on_cell * dim;
+        unsigned int dofs_per_cell = matrix_free.get_shape_info().dofs_per_component_on_cell * dim;
 
-        matrices.resize(data.n_macro_cells() * VectorizedArray<Number>::n_array_elements,
+        matrices.resize(matrix_free.n_macro_cells() * VectorizedArray<Number>::n_array_elements,
                         LAPACKFullMatrix<Number>(dofs_per_cell, dofs_per_cell));
       }
 
@@ -493,21 +501,21 @@ public:
 
     if(operator_data.use_divergence_penalty)
     {
-      fe_eval->reinit(cell);
+      integrator->reinit(cell);
 
-      unsigned int dofs_per_cell = fe_eval->dofs_per_cell;
-
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        fe_eval->begin_dof_values()[i] = src[i];
-
-      fe_eval->evaluate(true, true, false);
-
-      do_cell_integral(*fe_eval);
-
-      fe_eval->integrate(true, true);
+      unsigned int dofs_per_cell = integrator->dofs_per_cell;
 
       for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        dst[i] += fe_eval->begin_dof_values()[i];
+        integrator->begin_dof_values()[i] = src[i];
+
+      integrator->evaluate(true, true, false);
+
+      do_cell_integral(*integrator);
+
+      integrator->integrate(true, true);
+
+      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        dst[i] += integrator->begin_dof_values()[i];
     }
 
     if(operator_data.use_continuity_penalty)
@@ -516,35 +524,35 @@ public:
       unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
       for(unsigned int face = 0; face < n_faces; ++face)
       {
-        fe_eval_m->reinit(cell, face);
-        fe_eval_p->reinit(cell, face);
+        integrator_m->reinit(cell, face);
+        integrator_p->reinit(cell, face);
 
-        unsigned int dofs_per_cell = fe_eval_m->dofs_per_cell;
+        unsigned int dofs_per_cell = integrator_m->dofs_per_cell;
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval_m->begin_dof_values()[i] = src[i];
+          integrator_m->begin_dof_values()[i] = src[i];
 
-        // do not need to read dof values for fe_eval_p (already initialized with 0)
+        // do not need to read dof values for integrator_p (already initialized with 0)
 
-        fe_eval_m->evaluate(true, false);
+        integrator_m->evaluate(true, false);
 
-        auto bids = data.get_faces_by_cells_boundary_id(cell, face);
+        auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
         auto bid  = bids[0];
 
         if(bid == numbers::internal_face_boundary_id) // internal face
         {
-          do_face_int_integral(*fe_eval_m, *fe_eval_p);
+          do_face_int_integral(*integrator_m, *integrator_p);
         }
         else // boundary face
         {
-          // use same fe_eval so that the result becomes zero (only jumps involved)
-          do_face_int_integral(*fe_eval_m, *fe_eval_m);
+          // use same integrator so that the result becomes zero (only jumps involved)
+          do_face_int_integral(*integrator_m, *integrator_m);
         }
 
-        fe_eval_m->integrate(true, false);
+        integrator_m->integrate(true, false);
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          dst[i] += fe_eval_m->begin_dof_values()[i];
+          dst[i] += integrator_m->begin_dof_values()[i];
       }
     }
   }
@@ -553,7 +561,7 @@ private:
   void
   do_apply_div_penalty(VectorType & dst, VectorType const & src, bool const zero_dst_vector) const
   {
-    data.cell_loop(&This::cell_loop_div_penalty, this, dst, src, zero_dst_vector);
+    matrix_free.cell_loop(&This::cell_loop_div_penalty, this, dst, src, zero_dst_vector);
   }
 
   void
@@ -561,90 +569,90 @@ private:
                             VectorType const & src,
                             bool const         zero_dst_vector) const
   {
-    data.cell_loop(&This::cell_loop, this, dst, src, zero_dst_vector);
+    matrix_free.cell_loop(&This::cell_loop, this, dst, src, zero_dst_vector);
   }
 
   void
   do_apply_conti_penalty(VectorType & dst, VectorType const & src, bool const zero_dst_vector) const
   {
-    data.loop(&This::cell_loop_empty,
-              &This::face_loop,
-              &This::boundary_face_loop_empty,
-              this,
-              dst,
-              src,
-              zero_dst_vector,
-              MatrixFree<dim, Number>::DataAccessOnFaces::values,
-              MatrixFree<dim, Number>::DataAccessOnFaces::values);
+    matrix_free.loop(&This::cell_loop_empty,
+                     &This::face_loop,
+                     &This::boundary_face_loop_empty,
+                     this,
+                     dst,
+                     src,
+                     zero_dst_vector,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   void
   do_apply(VectorType & dst, VectorType const & src, bool const zero_dst_vector) const
   {
-    data.loop(&This::cell_loop,
-              &This::face_loop,
-              &This::boundary_face_loop_empty,
-              this,
-              dst,
-              src,
-              zero_dst_vector,
-              MatrixFree<dim, Number>::DataAccessOnFaces::values,
-              MatrixFree<dim, Number>::DataAccessOnFaces::values);
+    matrix_free.loop(&This::cell_loop,
+                     &This::face_loop,
+                     &This::boundary_face_loop_empty,
+                     this,
+                     dst,
+                     src,
+                     zero_dst_vector,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   template<typename FEEval>
   void
-  do_cell_integral(FEEval & fe_eval) const
+  do_cell_integral(FEEval & integrator) const
   {
-    scalar tau = fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
+    scalar tau = integrator.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
 
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      fe_eval.submit_value(fe_eval.get_value(q), q);
-      fe_eval.submit_divergence(tau * fe_eval.get_divergence(q), q);
+      integrator.submit_value(integrator.get_value(q), q);
+      integrator.submit_divergence(tau * integrator.get_divergence(q), q);
     }
   }
 
   template<typename FEEval>
   void
-  do_cell_integral_div_penalty(FEEval & fe_eval) const
+  do_cell_integral_div_penalty(FEEval & integrator) const
   {
-    scalar tau = fe_eval.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
+    scalar tau = integrator.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
 
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      fe_eval.submit_divergence(tau * fe_eval.get_divergence(q), q);
+      integrator.submit_divergence(tau * integrator.get_divergence(q), q);
     }
   }
 
   template<typename FEFaceEval>
   void
-  do_face_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
+  do_face_integral(FEFaceEval & integrator_m, FEFaceEval & integrator_p) const
   {
     scalar tau = 0.5 *
-                 (fe_eval.read_cell_data(array_conti_penalty_parameter) +
-                  fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
+                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
+                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
                  scaling_factor_conti;
 
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      vector uM         = fe_eval.get_value(q);
-      vector uP         = fe_eval_neighbor.get_value(q);
+      vector uM         = integrator_m.get_value(q);
+      vector uP         = integrator_p.get_value(q);
       vector jump_value = uM - uP;
 
       if(operator_data.which_components == ContinuityPenaltyComponents::All)
       {
         // penalize all velocity components
-        fe_eval.submit_value(tau * jump_value, q);
-        fe_eval_neighbor.submit_value(-tau * jump_value, q);
+        integrator_m.submit_value(tau * jump_value, q);
+        integrator_p.submit_value(-tau * jump_value, q);
       }
       else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
       {
         // penalize normal components only
-        vector normal = fe_eval.get_normal_vector(q);
+        vector normal = integrator_m.get_normal_vector(q);
 
-        fe_eval.submit_value(tau * (jump_value * normal) * normal, q);
-        fe_eval_neighbor.submit_value(-tau * (jump_value * normal) * normal, q);
+        integrator_m.submit_value(tau * (jump_value * normal) * normal, q);
+        integrator_p.submit_value(-tau * (jump_value * normal) * normal, q);
       }
       else
       {
@@ -657,29 +665,29 @@ private:
 
   template<typename FEFaceEval>
   void
-  do_face_int_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
+  do_face_int_integral(FEFaceEval & integrator_m, FEFaceEval & integrator_p) const
   {
     scalar tau = 0.5 *
-                 (fe_eval.read_cell_data(array_conti_penalty_parameter) +
-                  fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
+                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
+                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
                  scaling_factor_conti;
 
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      vector uM = fe_eval.get_value(q);
+      vector uM = integrator_m.get_value(q);
       vector uP; // set uP to zero
       vector jump_value = uM - uP;
 
       if(operator_data.which_components == ContinuityPenaltyComponents::All)
       {
         // penalize all velocity components
-        fe_eval.submit_value(tau * jump_value, q);
+        integrator_m.submit_value(tau * jump_value, q);
       }
       else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
       {
         // penalize normal components only
-        vector normal = fe_eval.get_normal_vector(q);
-        fe_eval.submit_value(tau * (jump_value * normal) * normal, q);
+        vector normal = integrator_m.get_normal_vector(q);
+        integrator_m.submit_value(tau * (jump_value * normal) * normal, q);
       }
       else
       {
@@ -692,29 +700,30 @@ private:
 
   template<typename FEFaceEval>
   void
-  do_face_ext_integral(FEFaceEval & fe_eval, FEFaceEval & fe_eval_neighbor) const
+  do_face_ext_integral(FEFaceEval & integrator_m, FEFaceEval & integrator_p) const
   {
     scalar tau = 0.5 *
-                 (fe_eval.read_cell_data(array_conti_penalty_parameter) +
-                  fe_eval_neighbor.read_cell_data(array_conti_penalty_parameter)) *
+                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
+                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
                  scaling_factor_conti;
 
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
     {
       vector uM; // set uM to zero
-      vector uP         = fe_eval_neighbor.get_value(q);
+      vector uP = integrator_p.get_value(q);
+
       vector jump_value = uP - uM; // interior - exterior = uP - uM (neighbor!)
 
       if(operator_data.which_components == ContinuityPenaltyComponents::All)
       {
         // penalize all velocity components
-        fe_eval_neighbor.submit_value(tau * jump_value, q);
+        integrator_p.submit_value(tau * jump_value, q);
       }
       else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
       {
         // penalize normal components only
-        vector normal = fe_eval_neighbor.get_normal_vector(q);
-        fe_eval_neighbor.submit_value(tau * (jump_value * normal) * normal, q);
+        vector normal = integrator_p.get_normal_vector(q);
+        integrator_p.submit_value(tau * (jump_value * normal) * normal, q);
       }
       else
       {
@@ -732,16 +741,16 @@ private:
             VectorType const &              src,
             Range const &                   cell_range) const
   {
-    FEEvalCell fe_eval(data, dof_index, quad_index);
+    CellIntegratorU integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.gather_evaluate(src, true, true);
+      integrator.reinit(cell);
+      integrator.gather_evaluate(src, true, true);
 
-      do_cell_integral(fe_eval);
+      do_cell_integral(integrator);
 
-      fe_eval.integrate_scatter(true, true, dst);
+      integrator.integrate_scatter(true, true, dst);
     }
   }
 
@@ -751,16 +760,16 @@ private:
                         VectorType const &              src,
                         Range const &                   cell_range) const
   {
-    FEEvalCell fe_eval(data, dof_index, quad_index);
+    CellIntegratorU integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.gather_evaluate(src, false, true);
+      integrator.reinit(cell);
+      integrator.gather_evaluate(src, false, true);
 
-      do_cell_integral_div_penalty(fe_eval);
+      do_cell_integral_div_penalty(integrator);
 
-      fe_eval.integrate_scatter(false, true, dst);
+      integrator.integrate_scatter(false, true, dst);
     }
   }
 
@@ -779,29 +788,29 @@ private:
             VectorType const &              src,
             Range const &                   face_range) const
   {
-    FEEvalFace fe_eval(data, true, dof_index, quad_index);
-    FEEvalFace fe_eval_neighbor(data, false, dof_index, quad_index);
+    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
+    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      fe_eval.reinit(face);
-      fe_eval_neighbor.reinit(face);
+      integrator_m.reinit(face);
+      integrator_p.reinit(face);
 
-      fe_eval.gather_evaluate(src, true, false);
-      fe_eval_neighbor.gather_evaluate(src, true, false);
+      integrator_m.gather_evaluate(src, true, false);
+      integrator_p.gather_evaluate(src, true, false);
 
-      do_face_integral(fe_eval, fe_eval_neighbor);
+      do_face_integral(integrator_m, integrator_p);
 
-      fe_eval.integrate_scatter(true, false, dst);
-      fe_eval_neighbor.integrate_scatter(true, false, dst);
+      integrator_m.integrate_scatter(true, false, dst);
+      integrator_p.integrate_scatter(true, false, dst);
     }
   }
 
   void
-  boundary_face_loop_empty(MatrixFree<dim, Number> const & /*data*/,
-                           VectorType & /*dst*/,
-                           VectorType const & /*src*/,
-                           Range const & /*face_range*/) const
+  boundary_face_loop_empty(MatrixFree<dim, Number> const &,
+                           VectorType &,
+                           VectorType const &,
+                           Range const &) const
   {
     // do nothing
   }
@@ -818,15 +827,15 @@ private:
     scaling_factor_conti = time_step_size;
 
     VectorType src_dummy(diagonal);
-    data.loop(&This::cell_loop_diagonal,
-              &This::face_loop_diagonal,
-              &This::boundary_face_loop_diagonal,
-              this,
-              diagonal,
-              src_dummy,
-              true /*zero dst vector = true*/,
-              MatrixFree<dim, Number>::DataAccessOnFaces::values,
-              MatrixFree<dim, Number>::DataAccessOnFaces::values);
+    matrix_free.loop(&This::cell_loop_diagonal,
+                     &This::face_loop_diagonal,
+                     &This::boundary_face_loop_diagonal,
+                     this,
+                     diagonal,
+                     src_dummy,
+                     true /*zero dst vector = true*/,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                     MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   /*
@@ -838,33 +847,33 @@ private:
                      VectorType const & /*src*/,
                      Range const & cell_range) const
   {
-    FEEvalCell fe_eval(data, dof_index, quad_index);
+    CellIntegratorU integrator(data, dof_index, quad_index);
+
+    unsigned int const    dofs_per_cell = integrator.dofs_per_cell;
+    AlignedVector<scalar> local_diagonal_vector(dofs_per_cell);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
+      integrator.reinit(cell);
 
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
-
-      VectorizedArray<Number> local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-        fe_eval.evaluate(true, true);
+        integrator.evaluate(true, true);
 
-        do_cell_integral(fe_eval);
+        do_cell_integral(integrator);
 
-        fe_eval.integrate(true, true);
+        integrator.integrate(true, true);
 
-        local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
+        local_diagonal_vector[j] = integrator.begin_dof_values()[j];
       }
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
+        integrator.begin_dof_values()[j] = local_diagonal_vector[j];
 
-      fe_eval.distribute_local_to_global(dst);
+      integrator.distribute_local_to_global(dst);
     }
   }
 
@@ -877,59 +886,59 @@ private:
                      VectorType const & /*src*/,
                      Range const & face_range) const
   {
-    FEEvalFace fe_eval(data, true, dof_index, quad_index);
-    FEEvalFace fe_eval_neighbor(data, false, dof_index, quad_index);
+    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
+    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      fe_eval.reinit(face);
-      fe_eval_neighbor.reinit(face);
+      integrator_m.reinit(face);
+      integrator_p.reinit(face);
 
       // element-
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
-      scalar       local_diagonal_vector[fe_eval.tensor_dofs_per_cell];
+      unsigned int const    dofs_per_cell = integrator_m.dofs_per_cell;
+      AlignedVector<scalar> local_diagonal_vector(dofs_per_cell);
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+          integrator_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        integrator_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-        fe_eval.evaluate(true, false);
+        integrator_m.evaluate(true, false);
 
-        do_face_int_integral(fe_eval, fe_eval_neighbor);
+        do_face_int_integral(integrator_m, integrator_p);
 
-        fe_eval.integrate(true, false);
+        integrator_m.integrate(true, false);
 
-        local_diagonal_vector[j] = fe_eval.begin_dof_values()[j];
+        local_diagonal_vector[j] = integrator_m.begin_dof_values()[j];
       }
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        fe_eval.begin_dof_values()[j] = local_diagonal_vector[j];
+        integrator_m.begin_dof_values()[j] = local_diagonal_vector[j];
 
-      fe_eval.distribute_local_to_global(dst);
+      integrator_m.distribute_local_to_global(dst);
 
       // neighbor (element+)
-      unsigned int dofs_per_cell_neighbor = fe_eval_neighbor.dofs_per_cell;
-      scalar       local_diagonal_vector_neighbor[fe_eval_neighbor.tensor_dofs_per_cell];
+      unsigned int const    dofs_per_cell_neighbor = integrator_p.dofs_per_cell;
+      AlignedVector<scalar> local_diagonal_vector_neighbor(dofs_per_cell_neighbor);
       for(unsigned int j = 0; j < dofs_per_cell_neighbor; ++j)
       {
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
         for(unsigned int i = 0; i < dofs_per_cell_neighbor; ++i)
-          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+          integrator_p.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        integrator_p.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-        fe_eval_neighbor.evaluate(true, false);
+        integrator_p.evaluate(true, false);
 
-        do_face_ext_integral(fe_eval, fe_eval_neighbor);
+        do_face_ext_integral(integrator_m, integrator_p);
 
-        fe_eval_neighbor.integrate(true, false);
+        integrator_p.integrate(true, false);
 
-        local_diagonal_vector_neighbor[j] = fe_eval_neighbor.begin_dof_values()[j];
+        local_diagonal_vector_neighbor[j] = integrator_p.begin_dof_values()[j];
       }
       for(unsigned int j = 0; j < dofs_per_cell_neighbor; ++j)
-        fe_eval_neighbor.begin_dof_values()[j] = local_diagonal_vector_neighbor[j];
+        integrator_p.begin_dof_values()[j] = local_diagonal_vector_neighbor[j];
 
-      fe_eval_neighbor.distribute_local_to_global(dst);
+      integrator_p.distribute_local_to_global(dst);
     }
   }
 
@@ -937,10 +946,10 @@ private:
    * Calculation of diagonal (boundary face loop).
    */
   void
-  boundary_face_loop_diagonal(MatrixFree<dim, Number> const & /*data*/,
-                              VectorType & /*dst*/,
-                              VectorType const & /*src*/,
-                              Range const & /*face_range*/) const
+  boundary_face_loop_diagonal(MatrixFree<dim, Number> const &,
+                              VectorType &,
+                              VectorType const &,
+                              Range const &) const
   {
     // do nothing
   }
@@ -958,7 +967,7 @@ private:
     else if(this->operator_data.preconditioner_block_jacobi ==
             PreconditionerBlockDiagonal::InverseMassMatrix)
     {
-      typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, degree, Number> INVERSE_MASS;
+      typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
 
       elementwise_preconditioner.reset(
         new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
@@ -988,7 +997,7 @@ private:
 
     if(operator_data.use_cell_based_loops)
     {
-      data.cell_loop(&This::cell_based_loop_calculate_block_diagonal, this, matrices, src);
+      matrix_free.cell_loop(&This::cell_based_loop_calculate_block_diagonal, this, matrices, src);
     }
     else
     {
@@ -998,12 +1007,12 @@ private:
           "Block diagonal calculation with separate loops over cells and faces only works in serial. "
           "Use cell based loops for parallel computations."));
 
-      data.loop(&This::cell_loop_calculate_block_diagonal,
-                &This::face_loop_calculate_block_diagonal,
-                &This::boundary_face_loop_calculate_block_diagonal,
-                this,
-                matrices,
-                src);
+      matrix_free.loop(&This::cell_loop_calculate_block_diagonal,
+                       &This::face_loop_calculate_block_diagonal,
+                       &This::boundary_face_loop_calculate_block_diagonal,
+                       this,
+                       matrices,
+                       src);
     }
   }
 
@@ -1014,30 +1023,30 @@ private:
                                      VectorType const &,
                                      Range const & cell_range) const
   {
-    FEEvalCell fe_eval(data, dof_index, quad_index);
+    CellIntegratorU integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
+      integrator.reinit(cell);
 
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-        fe_eval.evaluate(true, true);
+        integrator.evaluate(true, true);
 
-        do_cell_integral(fe_eval);
+        do_cell_integral(integrator);
 
-        fe_eval.integrate(true, true);
+        integrator.integrate(true, true);
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
           for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
             matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-              fe_eval.begin_dof_values()[i][v];
+              integrator.begin_dof_values()[i][v];
       }
     }
   }
@@ -1048,36 +1057,36 @@ private:
                                      VectorType const &,
                                      Range const & face_range) const
   {
-    FEEvalFace fe_eval(data, true, dof_index, quad_index);
-    FEEvalFace fe_eval_neighbor(data, false, dof_index, quad_index);
+    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
+    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
 
     // Perform face integrals for element e⁻.
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      fe_eval.reinit(face);
-      fe_eval_neighbor.reinit(face);
+      integrator_m.reinit(face);
+      integrator_p.reinit(face);
 
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      unsigned int dofs_per_cell = integrator_m.dofs_per_cell;
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         // set dof value j of element- to 1 and all other dof values of element- to zero
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+          integrator_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        integrator_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-        fe_eval.evaluate(true, false);
+        integrator_m.evaluate(true, false);
 
-        do_face_int_integral(fe_eval, fe_eval_neighbor);
+        do_face_int_integral(integrator_m, integrator_p);
 
-        fe_eval.integrate(true, false);
+        integrator_m.integrate(true, false);
 
         for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
         {
           const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
           if(cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              matrices[cell_number](i, j) += fe_eval.begin_dof_values()[i][v];
+              matrices[cell_number](i, j) += integrator_m.begin_dof_values()[i][v];
         }
       }
     }
@@ -1085,31 +1094,31 @@ private:
     // Perform face integrals for element e⁺.
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      fe_eval.reinit(face);
-      fe_eval_neighbor.reinit(face);
+      integrator_m.reinit(face);
+      integrator_p.reinit(face);
 
       // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = fe_eval_neighbor.dofs_per_cell;
+      unsigned int dofs_per_cell = integrator_p.dofs_per_cell;
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         // set dof value j of element+ to 1 and all other dof values of element+ to zero
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval_neighbor.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        fe_eval_neighbor.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+          integrator_p.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        integrator_p.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-        fe_eval_neighbor.evaluate(true, false);
+        integrator_p.evaluate(true, false);
 
-        do_face_ext_integral(fe_eval, fe_eval_neighbor);
+        do_face_ext_integral(integrator_m, integrator_p);
 
-        fe_eval_neighbor.integrate(true, false);
+        integrator_p.integrate(true, false);
 
         for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
         {
           const unsigned int cell_number = data.get_face_info(face).cells_exterior[v];
           if(cell_number != numbers::invalid_unsigned_int)
             for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              matrices[cell_number](i, j) += fe_eval_neighbor.begin_dof_values()[i][v];
+              matrices[cell_number](i, j) += integrator_p.begin_dof_values()[i][v];
         }
       }
     }
@@ -1130,70 +1139,70 @@ private:
                                            VectorType const &,
                                            Range const & cell_range) const
   {
-    FEEvalCell fe_eval(data, dof_index, quad_index);
-    FEEvalFace fe_eval_m(data, true, dof_index, quad_index);
-    FEEvalFace fe_eval_p(data, false, dof_index, quad_index);
+    CellIntegratorU integrator(data, dof_index, quad_index);
+    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
+    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       // cell integral
       unsigned int const n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
 
-      fe_eval.reinit(cell);
+      integrator.reinit(cell);
 
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-        fe_eval.evaluate(true, true);
+        integrator.evaluate(true, true);
 
-        do_cell_integral(fe_eval);
+        do_cell_integral(integrator);
 
-        fe_eval.integrate(true, true);
+        integrator.integrate(true, true);
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-              fe_eval.begin_dof_values()[i][v];
+              integrator.begin_dof_values()[i][v];
       }
 
       // loop over all faces
       unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
       for(unsigned int face = 0; face < n_faces; ++face)
       {
-        fe_eval_m.reinit(cell, face);
-        fe_eval_p.reinit(cell, face);
+        integrator_m.reinit(cell, face);
+        integrator_p.reinit(cell, face);
         auto bids = data.get_faces_by_cells_boundary_id(cell, face);
         auto bid  = bids[0];
 
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           for(unsigned int i = 0; i < dofs_per_cell; ++i)
-            fe_eval_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-          fe_eval_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+            integrator_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+          integrator_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
-          fe_eval_m.evaluate(true, false);
+          integrator_m.evaluate(true, false);
 
           if(bid == numbers::internal_face_boundary_id) // internal face
           {
-            do_face_int_integral(fe_eval_m, fe_eval_p);
+            do_face_int_integral(integrator_m, integrator_p);
           }
           else // boundary face
           {
-            // use same fe_eval so that the result becomes zero (only jumps involved)
-            do_face_int_integral(fe_eval_m, fe_eval_m);
+            // use same integrator so that the result becomes zero (only jumps involved)
+            do_face_int_integral(integrator_m, integrator_m);
           }
 
-          fe_eval_m.integrate(true, false);
+          integrator_m.integrate(true, false);
 
           for(unsigned int i = 0; i < dofs_per_cell; ++i)
             for(unsigned int v = 0; v < n_filled_lanes; ++v)
               matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-                fe_eval_m.begin_dof_values()[i][v];
+                integrator_m.begin_dof_values()[i][v];
         }
       }
     }
@@ -1211,35 +1220,35 @@ private:
                                          VectorType const &              src,
                                          Range const &                   cell_range) const
   {
-    FEEvalCell fe_eval(data, dof_index, quad_index);
+    CellIntegratorU integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(src);
+      integrator.reinit(cell);
+      integrator.read_dof_values(src);
 
-      unsigned int dofs_per_cell = fe_eval.dofs_per_cell;
+      unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
       for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
       {
         // fill source vector
         Vector<Number> src_vector(dofs_per_cell);
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
-          src_vector(j) = fe_eval.begin_dof_values()[j][v];
+          src_vector(j) = integrator.begin_dof_values()[j][v];
 
         // apply inverse matrix
         matrices[cell * VectorizedArray<Number>::n_array_elements + v].solve(src_vector, false);
 
         // write solution to dst-vector
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
-          fe_eval.begin_dof_values()[j][v] = src_vector(j);
+          integrator.begin_dof_values()[j][v] = src_vector(j);
       }
 
-      fe_eval.set_dof_values(dst);
+      integrator.set_dof_values(dst);
     }
   }
 
-  MatrixFree<dim, Number> const & data;
+  MatrixFree<dim, Number> const & matrix_free;
 
   unsigned int const dof_index;
   unsigned int const quad_index;
@@ -1279,9 +1288,8 @@ private:
    */
   typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
   typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> PRECONDITIONER_BASE;
-  typedef Elementwise::
-    IterativeSolver<dim, dim, degree, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
-      ELEMENTWISE_SOLVER;
+  typedef Elementwise::IterativeSolver<dim, dim, Number, ELEMENTWISE_OPERATOR, PRECONDITIONER_BASE>
+    ELEMENTWISE_SOLVER;
 
   mutable std::shared_ptr<ELEMENTWISE_OPERATOR> elementwise_operator;
   mutable std::shared_ptr<PRECONDITIONER_BASE>  elementwise_preconditioner;
@@ -1290,9 +1298,9 @@ private:
   /*
    * FEEvaluation objects required for elementwise block Jacobi operations
    */
-  std::shared_ptr<FEEvalCell> fe_eval;
-  std::shared_ptr<FEEvalFace> fe_eval_m;
-  std::shared_ptr<FEEvalFace> fe_eval_p;
+  std::shared_ptr<CellIntegratorU> integrator;
+  std::shared_ptr<FaceIntegratorU> integrator_m;
+  std::shared_ptr<FaceIntegratorU> integrator_p;
 };
 
 } // namespace IncNS

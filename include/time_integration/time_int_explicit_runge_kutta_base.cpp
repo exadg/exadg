@@ -167,11 +167,5 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
 }
 
 // instantiations
-#include <navierstokes/config.h>
-
-#if OP_FLOAT
 template class TimeIntExplRKBase<float>;
-#endif
-#if OP_DOUBLE
 template class TimeIntExplRKBase<double>;
-#endif

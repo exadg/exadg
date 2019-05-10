@@ -5,7 +5,7 @@
  *      Author: fehn
  */
 
-#include "operator.h"
+#include "interface.h"
 
 namespace CompNS
 {
@@ -15,14 +15,9 @@ namespace Interface
 // virtual.
 
 // instantiations
-#include <navierstokes/config.h>
 
-#if OP_FLOAT
 template class Operator<float>;
-#endif
-#if OP_DOUBLE
 template class Operator<double>;
-#endif
 
 } // namespace Interface
 

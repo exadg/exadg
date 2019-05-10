@@ -16,15 +16,17 @@ namespace IncNS
  * Base class for projection-type incompressible Navier-Stokes solvers such as the high-order dual
  * splitting (velocity-correction) scheme or pressure correction schemes.
  */
-template<int dim, int degree_u, int degree_p, typename Number>
-class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, degree_u, degree_p, Number>
+template<int dim, typename Number>
+class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, Number>
 {
 protected:
-  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> BASE;
+  typedef DGNavierStokesBase<dim, Number> BASE;
 
   typedef typename BASE::VectorType VectorType;
 
   typedef typename BASE::Postprocessor Postprocessor;
+
+  typedef typename BASE::MultigridNumber MultigridNumber;
 
 public:
   /*
@@ -35,7 +37,7 @@ public:
                                   std::shared_ptr<Postprocessor>       postprocessor_in);
 
   /*
-   * Desctructor.
+   * Destructor.
    */
   virtual ~DGNavierStokesProjectionMethods();
 
@@ -82,7 +84,7 @@ protected:
   setup_pressure_poisson_solver();
 
   // Pressure Poisson equation (operator, preconditioner, solver).
-  Poisson::LaplaceOperator<dim, degree_p, Number> laplace_operator;
+  Poisson::LaplaceOperator<dim, Number> laplace_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_pressure_poisson;
 

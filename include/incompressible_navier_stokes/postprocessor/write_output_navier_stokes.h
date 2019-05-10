@@ -10,6 +10,9 @@
 
 #include <deal.II/numerics/data_out.h>
 
+#include "../../postprocessor/output_data.h"
+#include "../../postprocessor/solution_field.h"
+
 #include "../../incompressible_navier_stokes/postprocessor/output_data_navier_stokes.h"
 
 template<int dim, typename Number>
@@ -94,17 +97,19 @@ write_output(OutputDataNavierStokes const &                     output_data,
 
 namespace IncNS
 {
-// forward declarations
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
-class DGNavierStokesBase;
+namespace Interface
+{
+template<int dim, typename Number>
+class OperatorBase;
+}
 
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+template<int dim, typename Number>
 class OutputGenerator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesBase<dim, fe_degree_u, fe_degree_p, Number> NavierStokesOperator;
+  typedef Interface::OperatorBase<dim, Number> NavierStokesOperator;
 
   OutputGenerator() : output_counter(0), reset_counter(true), counter_mean_velocity(0)
   {

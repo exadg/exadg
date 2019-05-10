@@ -7,7 +7,7 @@
 
 #include "time_int_explicit_runge_kutta.h"
 
-#include "../interface_space_time/operator.h"
+#include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "time_integration/time_step_calculation.h"
 
@@ -293,20 +293,10 @@ TimeIntExplRK<dim, Number>::get_wall_times(std::vector<std::string> & name,
 }
 
 // instantiations
-#include <navierstokes/config.h>
-
-#if DIM_2 && OP_FLOAT
 template class TimeIntExplRK<2, float>;
-#endif
-#if DIM_3 && OP_FLOAT
 template class TimeIntExplRK<3, float>;
-#endif
 
-#if DIM_2 && OP_DOUBLE
 template class TimeIntExplRK<2, double>;
-#endif
-#if DIM_3 && OP_DOUBLE
 template class TimeIntExplRK<3, double>;
-#endif
 
 } // namespace CompNS

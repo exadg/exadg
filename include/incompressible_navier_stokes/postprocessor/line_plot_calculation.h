@@ -29,7 +29,7 @@
  *
  *   - no statistical averaging, instantaneous quantities are calculated
  */
-template<int dim, int fe_degree_u, int fe_degree_p, typename Number>
+template<int dim, typename Number>
 class LinePlotCalculator
 {
 public:
@@ -73,12 +73,7 @@ public:
           points[i] = line->begin + double(i) / double(n_points - 1) * (line->end - line->begin);
 
         // filename prefix for current line
-        std::string filename_prefix =
-          data.filename_prefix + "l" +
-          Utilities::int_to_string(dof_handler_velocity->get_triangulation().n_global_levels() -
-                                   1) +
-          "_ku" + Utilities::int_to_string(fe_degree_u) + "_kp" +
-          Utilities::int_to_string(fe_degree_p) + "_" + line->name;
+        std::string filename_prefix = data.filename_prefix + "_" + line->name;
 
         // write output for all specified quantities
         for(std::vector<Quantity *>::const_iterator quantity = line->quantities.begin();

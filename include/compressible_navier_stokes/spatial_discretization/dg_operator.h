@@ -28,13 +28,11 @@
 #include "operators/inverse_mass_matrix.h"
 
 // interface space-time
-#include "../interface_space_time/operator.h"
-
-// time integration
 #include "time_integration/time_step_calculation.h"
 
 // postprocessor
 #include "../postprocessor/postprocessor.h"
+#include "interface.h"
 
 namespace CompNS
 {
@@ -133,7 +131,7 @@ public:
     pcout << std::endl << "... done!" << std::endl;
   }
 
-  unsigned int
+  types::global_dof_index
   get_number_of_dofs() const
   {
     return dof_handler.n_dofs();
@@ -164,7 +162,18 @@ public:
   {
     this->field_functions->initial_solution->set_time(time);
 
-    VectorTools::interpolate(mapping, dof_handler, *(this->field_functions->initial_solution), src);
+    // This is necessary if Number == float
+    typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+    VectorTypeDouble src_double;
+    src_double = src;
+
+    VectorTools::interpolate(mapping,
+                             dof_handler,
+                             *(this->field_functions->initial_solution),
+                             src_double);
+
+    src = src_double;
   }
 
   /*
@@ -192,7 +201,7 @@ public:
     }
 
     // apply inverse mass matrix
-    inverse_mass_all->apply(dst, dst);
+    inverse_mass_all.apply(dst, dst);
 
     wall_time_operator_evaluation += timer.wall_time();
   }
@@ -248,7 +257,7 @@ public:
   apply_inverse_mass(VectorType & dst, VectorType const & src) const
   {
     // apply inverse mass matrix
-    inverse_mass_all->apply(dst, src);
+    inverse_mass_all.apply(dst, src);
   }
 
   // getters
@@ -311,7 +320,7 @@ public:
   compute_pressure(VectorType & dst, VectorType const & src) const
   {
     p_u_T_calculator.compute_pressure(dst, src);
-    inverse_mass_scalar->apply(dst, dst);
+    inverse_mass_scalar.apply(dst, dst);
   }
 
   // velocity
@@ -319,7 +328,7 @@ public:
   compute_velocity(VectorType & dst, VectorType const & src) const
   {
     p_u_T_calculator.compute_velocity(dst, src);
-    inverse_mass_vector->apply(dst, dst);
+    inverse_mass_vector.apply(dst, dst);
   }
 
   // temperature
@@ -327,7 +336,7 @@ public:
   compute_temperature(VectorType & dst, VectorType const & src) const
   {
     p_u_T_calculator.compute_temperature(dst, src);
-    inverse_mass_scalar->apply(dst, dst);
+    inverse_mass_scalar.apply(dst, dst);
   }
 
   // vorticity
@@ -335,7 +344,7 @@ public:
   compute_vorticity(VectorType & dst, VectorType const & src) const
   {
     vorticity_calculator.compute_vorticity(dst, src);
-    inverse_mass_vector->apply(dst, dst);
+    inverse_mass_vector.apply(dst, dst);
   }
 
   // divergence
@@ -343,7 +352,7 @@ public:
   compute_divergence(VectorType & dst, VectorType const & src) const
   {
     divergence_calculator.compute_divergence(dst, src);
-    inverse_mass_scalar->apply(dst, dst);
+    inverse_mass_scalar.apply(dst, dst);
   }
 
   double
@@ -454,95 +463,9 @@ private:
     mass_matrix_operator.initialize(data, mass_matrix_operator_data);
 
     // inverse mass matrix operator
-    switch(param.degree)
-    {
-      case 0:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 0, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 0, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 0, Number, 1>());
-        break;
-      case 1:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 1, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 1, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 1, Number, 1>());
-        break;
-      case 2:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 2, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 2, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 2, Number, 1>());
-        break;
-      case 3:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 3, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 3, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 3, Number, 1>());
-        break;
-      case 4:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 4, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 4, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 4, Number, 1>());
-        break;
-      case 5:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 5, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 5, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 5, Number, 1>());
-        break;
-      case 6:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 6, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 6, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 6, Number, 1>());
-        break;
-      case 7:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 7, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 7, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 7, Number, 1>());
-        break;
-      case 8:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 8, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 8, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 8, Number, 1>());
-        break;
-      case 9:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 9, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 9, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 9, Number, 1>());
-        break;
-      case 10:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 10, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 10, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 10, Number, 1>());
-        break;
-      case 11:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 11, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 11, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 11, Number, 1>());
-        break;
-      case 12:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 12, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 12, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 12, Number, 1>());
-        break;
-      case 13:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 13, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 13, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 13, Number, 1>());
-        break;
-      case 14:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 14, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 14, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 14, Number, 1>());
-        break;
-      case 15:
-        inverse_mass_all.reset(new InverseMassMatrixOperator<dim, 15, Number, dim + 2>());
-        inverse_mass_vector.reset(new InverseMassMatrixOperator<dim, 15, Number, dim>());
-        inverse_mass_scalar.reset(new InverseMassMatrixOperator<dim, 15, Number, 1>());
-        break;
-      default:
-        AssertThrow(false, ExcMessage("not implemented for this degree!"));
-    }
-
-    inverse_mass_all->initialize(data, dof_index_all, quad_index_standard);
-    inverse_mass_vector->initialize(data, dof_index_vector, quad_index_standard);
-    inverse_mass_scalar->initialize(data, dof_index_scalar, quad_index_standard);
+    inverse_mass_all.initialize(data, param.degree, dof_index_all, quad_index_standard);
+    inverse_mass_vector.initialize(data, param.degree, dof_index_vector, quad_index_standard);
+    inverse_mass_scalar.initialize(data, param.degree, dof_index_scalar, quad_index_standard);
 
     // body force operator
     BodyForceOperatorData<dim> body_force_operator_data;
@@ -663,9 +586,9 @@ private:
   ViscousOperator<dim, Number>    viscous_operator;
   CombinedOperator<dim, Number>   combined_operator;
 
-  std::shared_ptr<InverseMassInterface<dim, Number>> inverse_mass_all;
-  std::shared_ptr<InverseMassInterface<dim, Number>> inverse_mass_vector;
-  std::shared_ptr<InverseMassInterface<dim, Number>> inverse_mass_scalar;
+  InverseMassMatrixOperator<dim, dim + 2, Number> inverse_mass_all;
+  InverseMassMatrixOperator<dim, dim, Number>     inverse_mass_vector;
+  InverseMassMatrixOperator<dim, 1, Number>       inverse_mass_scalar;
 
   // L2 projections to calculate derived quantities
   p_u_T_Calculator<dim, Number>     p_u_T_calculator;

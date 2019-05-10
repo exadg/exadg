@@ -14,17 +14,18 @@
 #include "../preconditioner/preconditioner_base.h"
 #include "operators/inverse_mass_matrix.h"
 
-template<int dim, int degree, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 class InverseMassMatrixPreconditioner : public PreconditionerBase<Number>
 {
 public:
   typedef typename PreconditionerBase<Number>::VectorType VectorType;
 
-  InverseMassMatrixPreconditioner(MatrixFree<dim, Number> const & mf_data,
+  InverseMassMatrixPreconditioner(MatrixFree<dim, Number> const & matrix_free,
+                                  unsigned int const              degree,
                                   unsigned int const              dof_index,
                                   unsigned int const              quad_index)
   {
-    inverse_mass_matrix_operator.initialize(mf_data, dof_index, quad_index);
+    inverse_mass_matrix_operator.initialize(matrix_free, degree, dof_index, quad_index);
   }
 
   void
@@ -40,7 +41,7 @@ public:
   }
 
 private:
-  InverseMassMatrixOperator<dim, degree, Number, n_components> inverse_mass_matrix_operator;
+  InverseMassMatrixOperator<dim, n_components, Number> inverse_mass_matrix_operator;
 };
 
 

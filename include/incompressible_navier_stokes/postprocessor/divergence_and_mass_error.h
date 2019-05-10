@@ -12,9 +12,7 @@
 #include <sstream>
 
 #include <deal.II/lac/la_parallel_vector.h>
-#include <deal.II/matrix_free/fe_evaluation.h>
-#include <deal.II/matrix_free/matrix_free.h>
-#include <deal.II/matrix_free/operators.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 #include "incompressible_navier_stokes/user_interface/input_parameters.h"
@@ -24,11 +22,16 @@ using namespace dealii;
 
 namespace IncNS
 {
-template<int dim, int fe_degree, typename Number>
+template<int dim, typename Number>
 class DivergenceAndMassErrorCalculator
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+
+  typedef DivergenceAndMassErrorCalculator<dim, Number> This;
 
   DivergenceAndMassErrorCalculator()
     : clear_files_mass_error(true),
@@ -92,13 +95,12 @@ private:
               Number &                        mass_error_reference)
   {
     std::vector<Number> dst(4, 0.0);
-    matrix_free_data.loop(
-      &DivergenceAndMassErrorCalculator<dim, fe_degree, Number>::local_compute_div,
-      &DivergenceAndMassErrorCalculator<dim, fe_degree, Number>::local_compute_div_face,
-      &DivergenceAndMassErrorCalculator<dim, fe_degree, Number>::local_compute_div_boundary_face,
-      this,
-      dst,
-      velocity);
+    matrix_free_data.loop(&This::local_compute_div,
+                          &This::local_compute_div_face,
+                          &This::local_compute_div_boundary_face,
+                          this,
+                          dst,
+                          velocity);
 
     div_error            = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
     div_error_reference  = Utilities::MPI::sum(dst.at(1), MPI_COMM_WORLD);
@@ -112,29 +114,30 @@ private:
                     const VectorType &                            source,
                     const std::pair<unsigned int, unsigned int> & cell_range)
   {
-    FEEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
-      data, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
+    CellIntegratorU integrator(data,
+                               dof_quad_index_data.dof_index_velocity,
+                               dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval.n_q_points);
+    AlignedVector<VectorizedArray<Number>> JxW_values(integrator.n_q_points);
 
     Number div = 0.;
     Number ref = 0.;
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval.reinit(cell);
-      fe_eval.read_dof_values(source);
-      fe_eval.evaluate(true, true);
-      fe_eval.fill_JxW_values(JxW_values);
+      integrator.reinit(cell);
+      integrator.read_dof_values(source);
+      integrator.evaluate(true, true);
+      integrator.fill_JxW_values(JxW_values);
 
       VectorizedArray<Number> div_vec = make_vectorized_array<Number>(0.);
       VectorizedArray<Number> ref_vec = make_vectorized_array<Number>(0.);
 
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        Tensor<1, dim, VectorizedArray<Number>> velocity = fe_eval.get_value(q);
+        Tensor<1, dim, VectorizedArray<Number>> velocity = integrator.get_value(q);
         ref_vec += JxW_values[q] * velocity.norm();
-        div_vec += JxW_values[q] * std::abs(fe_eval.get_divergence(q));
+        div_vec += JxW_values[q] * std::abs(integrator.get_divergence(q));
       }
 
       // sum over entries of VectorizedArray, but only over those that are "active"
@@ -155,37 +158,41 @@ private:
                          const VectorType &                            source,
                          const std::pair<unsigned int, unsigned int> & face_range)
   {
-    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval(
-      data, true, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
-    FEFaceEvaluation<dim, fe_degree, fe_degree + 1, dim, Number> fe_eval_neighbor(
-      data, false, dof_quad_index_data.dof_index_velocity, dof_quad_index_data.quad_index_velocity);
+    FaceIntegratorU integrator_m(data,
+                                 true,
+                                 dof_quad_index_data.dof_index_velocity,
+                                 dof_quad_index_data.quad_index_velocity);
+    FaceIntegratorU integrator_p(data,
+                                 false,
+                                 dof_quad_index_data.dof_index_velocity,
+                                 dof_quad_index_data.quad_index_velocity);
 
-    AlignedVector<VectorizedArray<Number>> JxW_values(fe_eval.n_q_points);
+    AlignedVector<VectorizedArray<Number>> JxW_values(integrator_m.n_q_points);
 
     Number diff_mass_flux = 0.;
     Number mean_mass_flux = 0.;
 
     for(unsigned int face = face_range.first; face < face_range.second; ++face)
     {
-      fe_eval.reinit(face);
-      fe_eval.read_dof_values(source);
-      fe_eval.evaluate(true, false);
-      fe_eval_neighbor.reinit(face);
-      fe_eval_neighbor.read_dof_values(source);
-      fe_eval_neighbor.evaluate(true, false);
-      fe_eval.fill_JxW_values(JxW_values);
+      integrator_m.reinit(face);
+      integrator_m.read_dof_values(source);
+      integrator_m.evaluate(true, false);
+      integrator_p.reinit(face);
+      integrator_p.read_dof_values(source);
+      integrator_p.evaluate(true, false);
+      integrator_m.fill_JxW_values(JxW_values);
 
       VectorizedArray<Number> diff_mass_flux_vec = make_vectorized_array<Number>(0.);
       VectorizedArray<Number> mean_mass_flux_vec = make_vectorized_array<Number>(0.);
 
-      for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
       {
         diff_mass_flux_vec +=
-          JxW_values[q] * std::abs((fe_eval.get_value(q) - fe_eval_neighbor.get_value(q)) *
-                                   fe_eval.get_normal_vector(q));
+          JxW_values[q] * std::abs((integrator_m.get_value(q) - integrator_p.get_value(q)) *
+                                   integrator_m.get_normal_vector(q));
         mean_mass_flux_vec +=
-          JxW_values[q] * std::abs(0.5 * (fe_eval.get_value(q) + fe_eval_neighbor.get_value(q)) *
-                                   fe_eval.get_normal_vector(q));
+          JxW_values[q] * std::abs(0.5 * (integrator_m.get_value(q) + integrator_p.get_value(q)) *
+                                   integrator_m.get_normal_vector(q));
       }
 
       // sum over entries of VectorizedArray, but only over those that are "active"

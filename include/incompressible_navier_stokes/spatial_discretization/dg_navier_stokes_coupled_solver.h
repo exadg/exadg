@@ -8,20 +8,20 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 
-#include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
-#include "solvers_and_preconditioners/newton/newton_solver.h"
+#include "dg_navier_stokes_base.h"
+#include "interface.h"
 
-#include "../interface_space_time/operator.h"
 #include "../preconditioners/block_preconditioner.h"
+#include "solvers_and_preconditioners/newton/newton_solver.h"
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
-class DGNavierStokesCoupled : public DGNavierStokesBase<dim, degree_u, degree_p, Number>,
+template<int dim, typename Number = double>
+class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>,
                               public Interface::OperatorCoupled<Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> BASE;
+  typedef DGNavierStokesBase<dim, Number> BASE;
 
   typedef typename BASE::Postprocessor Postprocessor;
 
@@ -29,7 +29,7 @@ private:
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number> THIS;
+  typedef DGNavierStokesCoupled<dim, Number> THIS;
 
 public:
   /*
@@ -218,10 +218,10 @@ private:
   /*
    * Coupled system of equations (operator, preconditioner, solver).
    */
-  typedef BlockPreconditioner<dim, degree_u, degree_p, Number> Preconditioner;
-  friend class BlockPreconditioner<dim, degree_u, degree_p, Number>;
+  typedef BlockPreconditioner<dim, Number> Preconditioner;
+  friend class BlockPreconditioner<dim, Number>;
 
-  MomentumOperator<dim, degree_u, Number> momentum_operator;
+  MomentumOperator<dim, Number> momentum_operator;
 
   VectorType mutable temp_vector;
   VectorType const *      sum_alphai_ui;

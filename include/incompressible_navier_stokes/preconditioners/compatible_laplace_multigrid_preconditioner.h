@@ -18,16 +18,14 @@ namespace IncNS
 /*
  *  Multigrid preconditioner for compatible Laplace operator.
  */
-template<int dim, int degree_u, int degree_p, typename Number, typename MultigridNumber>
+template<int dim, typename Number, typename MultigridNumber>
 class CompatibleLaplaceMultigridPreconditioner
   : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
-  // TODO: remove unnecessary typedefs
   typedef PreconditionableOperator<dim, MultigridNumber> MG_OPERATOR_BASE;
 
-  typedef CompatibleLaplaceOperator<dim, degree_u, degree_p, Number>          PDEOperator;
-  typedef CompatibleLaplaceOperator<dim, degree_u, degree_p, MultigridNumber> MultigridOperator;
+  typedef CompatibleLaplaceOperator<dim, MultigridNumber> MultigridOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
   typedef typename BASE::Map                                        Map;
@@ -66,7 +64,7 @@ public:
     BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
   }
 
-  virtual void
+  void
   initialize_additional_mg_dof_handler_and_constraints(
     bool is_singular,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
@@ -82,14 +80,17 @@ public:
     (void)fe;
     (void)p_levels;
     (void)dirichlet_bc;
-    (void)operator_data_in;
+
+    const auto & operator_data =
+      static_cast<CompatibleLaplaceOperatorData<dim> const &>(operator_data_in);
 
     std::vector<MGLevelInfo>            global_levels_vel;
     std::vector<MGDofHandlerIdentifier> p_levels_vel;
 
     // setup global velocity levels
     for(auto & i : global_levels)
-      global_levels_vel.push_back({i.level, i.degree + degree_u - degree_p, i.is_dg});
+      global_levels_vel.push_back(
+        {i.level, i.degree + operator_data.degree_u - operator_data.degree_p, i.is_dg});
 
     // setup p velocity levels
     for(auto i : global_levels_vel)
@@ -100,8 +101,9 @@ public:
     std::reverse(std::begin(p_levels_vel), std::end(p_levels_vel));
 
     // setup dofhandler and constraint matrices
-    FE_DGQ<dim>                                                  temp(degree_u);
-    FESystem<dim>                                                fe_vel(temp, dim);
+    FE_DGQ<dim>   temp(operator_data.degree_u);
+    FESystem<dim> fe_vel(temp, dim);
+
     std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc_vel;
     BASE::initialize_mg_dof_handler_and_constraints(false,
                                                     periodic_face_pairs,
@@ -153,7 +155,8 @@ public:
       // velocity mass matrix operator
       std::vector<Quadrature<1>> quadrature_vec;
       quadrature_vec.resize(2);
-      quadrature_vec[0] = QGauss<1>(global_levels[level].degree + 1 + (degree_u - degree_p));
+      quadrature_vec[0] = QGauss<1>(global_levels[level].degree + 1 +
+                                    (operator_data.degree_u - operator_data.degree_p));
       // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature is
       // needed for p-transfer
       quadrature_vec[1] = QGauss<1>(global_levels[level].degree + 1);

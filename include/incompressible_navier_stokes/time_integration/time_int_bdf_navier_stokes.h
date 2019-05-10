@@ -23,9 +23,9 @@ class InputParameters;
 
 namespace Interface
 {
-template<typename Number>
+template<int dim, typename Number>
 class OperatorBase;
-template<typename Number>
+template<int dim, typename Number>
 class OperatorOIF;
 
 } // namespace Interface
@@ -37,7 +37,7 @@ class TimeIntBDF : public TimeIntBDFBase
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef Interface::OperatorBase<Number> InterfaceBase;
+  typedef Interface::OperatorBase<dim, Number> InterfaceBase;
 
   TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
              InputParameters<dim> const &   param_in,
@@ -128,10 +128,10 @@ private:
   unsigned int const n_refine_time;
 
   // Operator-integration-factor splitting for convective term
-  std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;
+  std::shared_ptr<Interface::OperatorOIF<dim, Number>> convective_operator_OIF;
 
   // OIF splitting
-  std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>>
+  std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>>
     time_integrator_OIF;
 
   // solution vectors needed for OIF substepping of convective term

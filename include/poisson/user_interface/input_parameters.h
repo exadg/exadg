@@ -29,6 +29,7 @@ public:
       // PHYSICAL QUANTITIES
 
       // SPATIAL DISCRETIZATION
+      degree(1),
       degree_mapping(1),
       IP_factor(1.0),
       spatial_discretization(SpatialDiscretization::DG),
@@ -39,10 +40,9 @@ public:
       compute_performance_metrics(false),
       preconditioner(Preconditioner::Undefined),
       multigrid_data(MultigridData()),
-      enable_cell_based_face_loops(false),
+      enable_cell_based_face_loops(false)
 
-      // OUTPUT AND POSTPROCESSING
-      print_input_parameters(true)
+  // OUTPUT AND POSTPROCESSING
   {
   }
 
@@ -57,13 +57,14 @@ public:
   check_input_parameters()
   {
     // SPATIAL DISCRETIZATION
+    AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
     AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
   }
 
   void
-  print(ConditionalOStream & pcout)
+  print(ConditionalOStream & pcout, std::string const & name)
   {
-    pcout << std::endl << "List of input parameters:" << std::endl;
+    pcout << std::endl << name << std::endl;
 
     // MATHEMATICAL MODEL
     print_parameters_mathematical_model(pcout);
@@ -103,6 +104,8 @@ public:
   print_parameters_spatial_discretization(ConditionalOStream & pcout)
   {
     pcout << std::endl << "Spatial Discretization:" << std::endl;
+
+    print_parameter(pcout, "Polynomial degree of shape functions", degree);
 
     print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
 
@@ -160,6 +163,9 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
+  // Polynomial degree of shape functions
+  unsigned int degree;
+
   // Polynomial degree of shape functions used for geometry approximation (mapping from
   // parameter space to physical space)
   unsigned int degree_mapping;
@@ -209,9 +215,6 @@ public:
   /*                               OUTPUT AND POSTPROCESSING                            */
   /*                                                                                    */
   /**************************************************************************************/
-
-  // print a list of all input parameters at the beginning of the simulation
-  bool print_input_parameters;
 
   // writing output
   OutputData output_data;

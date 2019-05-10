@@ -1,25 +1,23 @@
-#include "poisson_operation.h"
-
-
+#include "operator.h"
 #include "../preconditioner/multigrid_preconditioner.h"
 
 namespace Poisson
 {
-template<int dim, int degree, typename Number>
-DGOperation<dim, degree, Number>::DGOperation(parallel::Triangulation<dim> const & triangulation,
-                                              Poisson::InputParameters const &     param_in)
+template<int dim, typename Number>
+DGOperator<dim, Number>::DGOperator(parallel::Triangulation<dim> const & triangulation,
+                                    Poisson::InputParameters const &     param_in)
   : dealii::Subscriptor(),
-    fe_dgq(degree),
-    fe_q(degree),
-    mapping(param_in.degree_mapping),
-    dof_handler(triangulation),
-    param(param_in)
+    param(param_in),
+    fe_dgq(param.degree),
+    fe_q(param.degree),
+    mapping(param.degree_mapping),
+    dof_handler(triangulation)
 {
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::setup(
+DGOperator<dim, Number>::setup(
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs_in,
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
@@ -41,9 +39,9 @@ DGOperation<dim, degree, Number>::setup(
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::setup_solver()
+DGOperator<dim, Number>::setup_solver()
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup solver ..." << std::endl;
@@ -52,31 +50,24 @@ DGOperation<dim, degree, Number>::setup_solver()
   if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
     preconditioner.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, degree, Number>>(laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
     preconditioner.reset(
-      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, degree, Number>>(
-        laplace_operator));
+      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
-    typedef float MultigridNumber;
-
-    typedef PreconditionableOperator<dim, MultigridNumber>                         MG_BASE;
-    typedef Poisson::LaplaceOperator<dim, degree, MultigridNumber>                 MG_OPERATOR;
-    typedef Poisson::MultigridPreconditioner<dim, degree, Number, MultigridNumber> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-
-
 
     parallel::Triangulation<dim> const * tria =
       dynamic_cast<const parallel::Triangulation<dim> *>(&this->dof_handler.get_triangulation());
@@ -113,9 +104,8 @@ DGOperation<dim, degree, Number>::setup_solver()
 
     // initialize solver
     iterative_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, degree, Number>,
-                   PreconditionerBase<Number>,
-                   VectorType>(laplace_operator, *preconditioner, solver_data));
+      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
+        laplace_operator, *preconditioner, solver_data));
   }
   else
   {
@@ -126,16 +116,16 @@ DGOperation<dim, degree, Number>::setup_solver()
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::initialize_dof_vector(VectorType & src) const
+DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
-  data.initialize_dof_vector(src);
+  matrix_free.initialize_dof_vector(src);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::rhs(VectorType & dst, double const evaluation_time) const
+DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) const
 {
   dst = 0;
   if(param.spatial_discretization == SpatialDiscretization::DG)
@@ -144,39 +134,39 @@ DGOperation<dim, degree, Number>::rhs(VectorType & dst, double const evaluation_
     rhs_operator.evaluate_add(dst, evaluation_time);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 unsigned int
-DGOperation<dim, degree, Number>::solve(VectorType & sol, VectorType const & rhs)
+DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs)
 {
   unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
 
   return iterations;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-DGOperation<dim, degree, Number>::get_data() const
+DGOperator<dim, Number>::get_data() const
 {
-  return data;
+  return matrix_free;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 Mapping<dim> const &
-DGOperation<dim, degree, Number>::get_mapping() const
+DGOperator<dim, Number>::get_mapping() const
 {
   return mapping;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperation<dim, degree, Number>::get_dof_handler() const
+DGOperator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::create_dofs()
+DGOperator<dim, Number>::create_dofs()
 {
   // enumerate degrees of freedom
   if(param.spatial_discretization == SpatialDiscretization::DG)
@@ -185,7 +175,7 @@ DGOperation<dim, degree, Number>::create_dofs()
     dof_handler.distribute_dofs(fe_q);
   dof_handler.distribute_mg_dofs();
 
-  unsigned int ndofs_per_cell = Utilities::pow(degree + 1, dim);
+  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
 
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
 
@@ -193,17 +183,17 @@ DGOperation<dim, degree, Number>::create_dofs()
         << "Discontinuous Galerkin finite element discretization:" << std::endl
         << std::endl;
 
-  print_parameter(pcout, "degree of 1D polynomials", degree);
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::initialize_matrix_free()
+DGOperator<dim, Number>::initialize_matrix_free()
 {
   // quadrature formula used to perform integrals
-  QGauss<1> quadrature(degree + 1);
+  QGauss<1> quadrature(param.degree + 1);
 
   // initialize matrix_free_data
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
@@ -243,29 +233,37 @@ DGOperation<dim, degree, Number>::initialize_matrix_free()
   }
 
   constraint_matrix.close();
-  data.reinit(mapping, dof_handler, constraint_matrix, quadrature, additional_data);
+  matrix_free.reinit(mapping, dof_handler, constraint_matrix, quadrature, additional_data);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DGOperation<dim, degree, Number>::setup_operators()
+DGOperator<dim, Number>::setup_operators()
 {
-  // laplace operator
+  // Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.dof_index            = 0;
   laplace_operator_data.quad_index           = 0;
   laplace_operator_data.IP_factor            = param.IP_factor;
+  laplace_operator_data.degree               = param.degree;
   laplace_operator_data.degree_mapping       = param.degree_mapping;
   laplace_operator_data.bc                   = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
 
-  laplace_operator.reinit(data, constraint_matrix, laplace_operator_data);
+  laplace_operator.reinit(matrix_free, constraint_matrix, laplace_operator_data);
 
   // rhs operator
   ConvDiff::RHSOperatorData<dim> rhs_operator_data;
   rhs_operator_data.dof_index  = 0;
   rhs_operator_data.quad_index = 0;
   rhs_operator_data.rhs        = field_functions->right_hand_side;
-  rhs_operator.reinit(data, rhs_operator_data);
+  rhs_operator.reinit(matrix_free, rhs_operator_data);
 }
+
+template class DGOperator<2, float>;
+template class DGOperator<2, double>;
+
+template class DGOperator<3, float>;
+template class DGOperator<3, double>;
+
 } // namespace Poisson

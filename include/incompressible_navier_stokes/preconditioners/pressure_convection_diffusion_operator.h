@@ -31,7 +31,7 @@ struct PressureConvectionDiffusionOperatorData
   ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
 };
 
-template<int dim, int fe_degree, int fe_degree_velocity, typename value_type>
+template<int dim, typename value_type>
 class PressureConvectionDiffusionOperator
 {
 public:
@@ -110,9 +110,9 @@ private:
   MatrixFree<dim, value_type> const &          matrix_free_data;
   PressureConvectionDiffusionOperatorData<dim> operator_data;
 
-  ConvDiff::MassMatrixOperator<dim, fe_degree, value_type>                     mass_matrix_operator;
-  ConvDiff::DiffusiveOperator<dim, fe_degree, value_type>                      diffusive_operator;
-  ConvDiff::ConvectiveOperator<dim, fe_degree, fe_degree_velocity, value_type> convective_operator;
+  ConvDiff::MassMatrixOperator<dim, value_type> mass_matrix_operator;
+  ConvDiff::DiffusiveOperator<dim, value_type>  diffusive_operator;
+  ConvDiff::ConvectiveOperator<dim, value_type> convective_operator;
 
   double scaling_factor_time_derivative_term;
 };

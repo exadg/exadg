@@ -1,6 +1,8 @@
 #ifndef CONV_DIFF_CONVECTION_OPERATOR
 #define CONV_DIFF_CONVECTION_OPERATOR
 
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
+
 #include "../../../operators/operator_base.h"
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
@@ -44,28 +46,22 @@ struct ConvectiveOperatorData : public OperatorBaseData<dim>
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
-template<int dim, int degree, int degree_velocity, typename Number>
-class ConvectiveOperator : public OperatorBase<dim, degree, Number, ConvectiveOperatorData<dim>>
+template<int dim, typename Number>
+class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorData<dim>>
 {
 private:
-  typedef OperatorBase<dim, degree, Number, ConvectiveOperatorData<dim>> Base;
+  typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>> Base;
 
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
 
-public:
   typedef typename Base::VectorType VectorType;
 
-private:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
-public:
-  static const int DIM = dim;
-
-private:
-  typedef FEEvaluation<dim, degree_velocity, degree + 1, dim, Number>     FEEvalCellVelocity;
-  typedef FEFaceEvaluation<dim, degree_velocity, degree + 1, dim, Number> FEEvalFaceVelocity;
+  typedef CellIntegrator<dim, dim, Number> FEEvalCellVelocity;
+  typedef FaceIntegrator<dim, dim, Number> FEEvalFaceVelocity;
 
 public:
   void

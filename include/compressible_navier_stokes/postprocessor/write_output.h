@@ -11,16 +11,18 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/data_out_dof_data.h>
 
+#include "../../postprocessor/solution_field.h"
+
 #include "../../incompressible_navier_stokes/postprocessor/output_data_navier_stokes.h"
 #include "../user_interface/input_parameters.h"
 
-template<int dim, typename VectorType>
+template<int dim, typename Number, typename VectorType>
 void
 write_output(CompNS::OutputDataCompNavierStokes const &      output_data,
              DoFHandler<dim> const &                         dof_handler,
              Mapping<dim> const &                            mapping,
              VectorType const &                              solution_conserved,
-             std::vector<SolutionField<dim, double>> const & additional_fields,
+             std::vector<SolutionField<dim, Number>> const & additional_fields,
              unsigned int const                              output_counter)
 {
   DataOut<dim> data_out;
@@ -47,7 +49,7 @@ write_output(CompNS::OutputDataCompNavierStokes const &      output_data,
                            solution_component_interpretation);
 
   // additional solution fields
-  for(typename std::vector<SolutionField<dim, double>>::const_iterator it =
+  for(typename std::vector<SolutionField<dim, Number>>::const_iterator it =
         additional_fields.begin();
       it != additional_fields.end();
       ++it)
@@ -96,11 +98,11 @@ write_output(CompNS::OutputDataCompNavierStokes const &      output_data,
   }
 }
 
-template<int dim>
+template<int dim, typename Number>
 class OutputGenerator
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   OutputGenerator() : output_counter(0), reset_counter(true)
   {
@@ -121,7 +123,7 @@ public:
 
   void
   evaluate(VectorType const &                              solution_conserved,
-           std::vector<SolutionField<dim, double>> const & additional_fields,
+           std::vector<SolutionField<dim, Number>> const & additional_fields,
            double const &                                  time,
            int const &                                     time_step_number)
   {
@@ -132,7 +134,7 @@ public:
       if(time_step_number >= 0) // unsteady problem
       {
         // small number which is much smaller than the time step size
-        const double EPSILON = 1.0e-10;
+        double const EPSILON = 1.0e-10;
 
         // In the first time step, the current time might be larger than output_start_time. In that
         // case, we first have to reset the counter in order to avoid that output is written every
@@ -152,12 +154,12 @@ public:
                 << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4)
                 << time << std::endl;
 
-          write_output<dim>(output_data,
-                            *dof_handler,
-                            *mapping,
-                            solution_conserved,
-                            additional_fields,
-                            output_counter);
+          write_output<dim, Number, VectorType>(output_data,
+                                                *dof_handler,
+                                                *mapping,
+                                                solution_conserved,
+                                                additional_fields,
+                                                output_counter);
 
           ++output_counter;
         }
@@ -168,12 +170,12 @@ public:
               << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"
               << std::endl;
 
-        write_output<dim>(output_data,
-                          *dof_handler,
-                          *mapping,
-                          solution_conserved,
-                          additional_fields,
-                          output_counter);
+        write_output<dim, Number, VectorType>(output_data,
+                                              *dof_handler,
+                                              *mapping,
+                                              solution_conserved,
+                                              additional_fields,
+                                              output_counter);
 
         ++output_counter;
       }

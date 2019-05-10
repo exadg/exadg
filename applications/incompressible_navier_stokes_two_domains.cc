@@ -17,8 +17,7 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
-
-#include "../include/incompressible_navier_stokes/interface_space_time/operator.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
 
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
@@ -43,16 +42,18 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
 #include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
-template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
-class NavierStokesProblem
+template<int dim, typename Number = double>
+class Problem
 {
 public:
-  NavierStokesProblem(unsigned int const refine_steps_space1,
-                      unsigned int const refine_steps_space2,
-                      unsigned int const refine_steps_time = 0);
+  Problem(unsigned int const refine_steps_space1,
+          unsigned int const refine_steps_space2,
+          unsigned int const refine_steps_time = 0);
 
   void
-  setup(bool const do_restart);
+  setup(InputParameters<dim> const & param_1_in,
+        InputParameters<dim> const & param_2_in,
+        bool const                   do_restart);
 
   void
   solve() const;
@@ -90,14 +91,14 @@ private:
 
   InputParameters<dim> param_1, param_2;
 
-  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number>               DGBase;
-  typedef DGNavierStokesCoupled<dim, degree_u, degree_p, Number>            DGCoupled;
-  typedef DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number>      DGDualSplitting;
-  typedef DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number> DGPressureCorrection;
+  typedef DGNavierStokesBase<dim, Number>               DGBase;
+  typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
+  typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
+  typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
 
   std::shared_ptr<DGBase> navier_stokes_operation_1, navier_stokes_operation_2;
 
-  typedef PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
+  typedef PostProcessorBase<dim, Number> Postprocessor;
 
   std::shared_ptr<Postprocessor> postprocessor_1, postprocessor_2;
 
@@ -126,11 +127,10 @@ private:
                           std::shared_ptr<TimeInt> const time_integrator) const;
 };
 
-template<int dim, int degree_u, int degree_p, typename Number>
-NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
-  unsigned int const refine_steps_space1,
-  unsigned int const refine_steps_space2,
-  unsigned int const refine_steps_time)
+template<int dim, typename Number>
+Problem<dim, Number>::Problem(unsigned int const refine_steps_space1,
+                              unsigned int const refine_steps_space2,
+                              unsigned int const refine_steps_time)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space_domain1(refine_steps_space1),
     n_refine_space_domain2(refine_steps_space2),
@@ -141,9 +141,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::NavierStokesProblem(
 {
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
+Problem<dim, Number>::print_header() const
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -157,9 +157,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::print_header() const
   // clang-format on
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time() const
+Problem<dim, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
   double time_1 = param_1.start_time, time_2 = param_2.start_time;
@@ -171,9 +171,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::set_start_time() const
   time_integrator_2->reset_time(time);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size() const
+Problem<dim, Number>::synchronize_time_step_size() const
 {
   double const EPSILON = 1.e-10;
 
@@ -215,30 +215,24 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::synchronize_time_step_size
   time_integrator_2->set_time_step_size(time_step_size);
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restart)
+Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
+                            InputParameters<dim> const & param_2_in,
+                            bool const                   do_restart)
 {
   timer.restart();
 
-  param_1.set_input_parameters(1);
-  param_1.check_input_parameters();
-
-  param_2.set_input_parameters(2);
-  param_2.check_input_parameters();
-
   print_header();
   print_MPI_info(pcout);
-  if(param_1.print_input_parameters == true)
-  {
-    pcout << std::endl << "List of input parameters for DOMAIN 1:" << std::endl;
-    param_1.print(pcout);
-  }
-  if(param_2.print_input_parameters == true)
-  {
-    pcout << std::endl << "List of input parameters for DOMAIN 2:" << std::endl;
-    param_2.print(pcout);
-  }
+
+  param_1 = param_1_in;
+  param_1.check_input_parameters();
+  param_1.print(pcout, "List of input parameters for DOMAIN 1:");
+
+  param_2 = param_2_in;
+  param_2.check_input_parameters();
+  param_2.print(pcout, "List of input parameters for DOMAIN 2:");
 
   // triangulation
   if(param_1.triangulation_type == TriangulationType::Distributed)
@@ -328,8 +322,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor_1 = construct_postprocessor<dim, degree_u, degree_p, Number>(param_1);
-  postprocessor_2 = construct_postprocessor<dim, degree_u, degree_p, Number>(param_2);
+  postprocessor_1 = construct_postprocessor<dim, Number>(param_1);
+  postprocessor_2 = construct_postprocessor<dim, Number>(param_2);
 
   // initialize navier_stokes_operation_1 (DOMAIN 1)
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -474,9 +468,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::setup(bool const do_restar
   setup_time = timer.wall_time();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
+Problem<dim, Number>::solve() const
 {
   // run time loop
 
@@ -510,11 +504,10 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::solve() const
   overall_time += this->timer.wall_time();
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_iterations(
-  InputParameters<dim> const &   param,
-  std::shared_ptr<TimeInt> const time_integrator) const
+Problem<dim, Number>::analyze_iterations(InputParameters<dim> const &   param,
+                                         std::shared_ptr<TimeInt> const time_integrator) const
 {
   // Iterations
   if(param.solver_type == SolverType::Unsteady)
@@ -532,11 +525,10 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_iterations(
     }
   }
 }
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 double
-NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times(
-  InputParameters<dim> const &   param,
-  std::shared_ptr<TimeInt> const time_integrator) const
+Problem<dim, Number>::analyze_computing_times(InputParameters<dim> const &   param,
+                                              std::shared_ptr<TimeInt> const time_integrator) const
 {
   // overall wall time including postprocessing
   Utilities::MPI::MinMaxAvg overall_time_data =
@@ -571,9 +563,9 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times(
   return sum_of_substeps;
 }
 
-template<int dim, int degree_u, int degree_p, typename Number>
+template<int dim, typename Number>
 void
-NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times() const
+Problem<dim, Number>::analyze_computing_times() const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -643,8 +635,8 @@ NavierStokesProblem<dim, degree_u, degree_p, Number>::analyze_computing_times() 
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 
   // Throughput in DoFs/s per time step per core
-  unsigned int const DoFs = navier_stokes_operation_1->get_number_of_dofs() +
-                            navier_stokes_operation_2->get_number_of_dofs();
+  types::global_dof_index const DoFs = navier_stokes_operation_1->get_number_of_dofs() +
+                                       navier_stokes_operation_2->get_number_of_dofs();
 
   if(param_1.solver_type == SolverType::Unsteady)
   {
@@ -707,10 +699,15 @@ main(int argc, char ** argv)
         refine_steps_time <= REFINE_STEPS_TIME_MAX;
         ++refine_steps_time)
     {
-      NavierStokesProblem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, VALUE_TYPE> problem(
-        REFINE_STEPS_SPACE_DOMAIN1, REFINE_STEPS_SPACE_DOMAIN2, refine_steps_time);
+      Problem<DIMENSION, VALUE_TYPE> problem(REFINE_STEPS_SPACE_DOMAIN1,
+                                             REFINE_STEPS_SPACE_DOMAIN2,
+                                             refine_steps_time);
 
-      problem.setup(do_restart);
+      InputParameters<DIMENSION> param_1, param_2;
+      param_1.set_input_parameters(1);
+      param_2.set_input_parameters(2);
+
+      problem.setup(param_1, param_2, do_restart);
 
       problem.solve();
 

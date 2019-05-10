@@ -21,7 +21,7 @@ class InputParameters;
 
 namespace Interface
 {
-template<typename Number>
+template<int dim, typename Number>
 class OperatorBase;
 template<typename Number>
 class OperatorCoupled;
@@ -38,8 +38,8 @@ public:
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef Interface::OperatorBase<Number>    InterfaceBase;
-  typedef Interface::OperatorCoupled<Number> InterfacePDE;
+  typedef Interface::OperatorBase<dim, Number> InterfaceBase;
+  typedef Interface::OperatorCoupled<Number>   InterfacePDE;
 
   TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
                     std::shared_ptr<InterfacePDE>  pde_operator_in,

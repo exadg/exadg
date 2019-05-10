@@ -209,4 +209,17 @@ MGTransferMFC<dim, Number, VectorType, components>::prolongate(const unsigned in
   }
 }
 
-#include "mg_transfer_mf_c.hpp"
+typedef dealii::LinearAlgebra::distributed::Vector<float>  VectorTypeFloat;
+typedef dealii::LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+template class MGTransferMFC<2, float, VectorTypeFloat, 1>;
+template class MGTransferMFC<2, float, VectorTypeFloat, 2>;
+
+template class MGTransferMFC<3, float, VectorTypeFloat, 1>;
+template class MGTransferMFC<3, float, VectorTypeFloat, 3>;
+
+template class MGTransferMFC<2, double, VectorTypeDouble, 1>;
+template class MGTransferMFC<2, double, VectorTypeDouble, 2>;
+
+template class MGTransferMFC<3, double, VectorTypeDouble, 1>;
+template class MGTransferMFC<3, double, VectorTypeDouble, 3>;

@@ -10,7 +10,7 @@
 
 #include "dg_navier_stokes_projection_methods.h"
 
-#include "../interface_space_time/operator.h"
+#include "interface.h"
 #include "momentum_operator.h"
 
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
@@ -20,21 +20,22 @@
 
 namespace IncNS
 {
-template<int dim, int degree_u, int degree_p = degree_u - 1, typename Number = double>
-class DGNavierStokesPressureCorrection
-  : public DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number>,
-    public Interface::OperatorPressureCorrection<Number>
+template<int dim, typename Number = double>
+class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, Number>,
+                                         public Interface::OperatorPressureCorrection<Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, degree_u, degree_p, Number> BASE;
+  typedef DGNavierStokesBase<dim, Number> BASE;
 
-  typedef DGNavierStokesProjectionMethods<dim, degree_u, degree_p, Number> PROJECTION_METHODS_BASE;
+  typedef DGNavierStokesProjectionMethods<dim, Number> PROJECTION_METHODS_BASE;
 
   typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
 
   typedef typename PROJECTION_METHODS_BASE::Postprocessor Postprocessor;
 
-  typedef DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number> THIS;
+  typedef DGNavierStokesPressureCorrection<dim, Number> THIS;
+
+  typedef typename PROJECTION_METHODS_BASE::MultigridNumber MultigridNumber;
 
 public:
   /*
@@ -177,25 +178,23 @@ private:
   initialize_momentum_solver();
 
   /*
-   * Setup of inverse mass matrix operator for pressure (required by pressure-correction scheme).
+   * Setup of inverse mass matrix operator for pressure.
    */
   void
   setup_inverse_mass_matrix_operator_pressure();
 
-  InverseMassMatrixOperator<dim, degree_p, Number, 1> inverse_mass_matrix_operator_pressure;
+  InverseMassMatrixOperator<dim, 1, Number> inverse_mass_pressure;
 
   /*
    * Momentum equation.
    */
-  MomentumOperator<dim, degree_u, Number> momentum_operator;
+  MomentumOperator<dim, Number> momentum_operator;
 
   std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;
 
-  std::shared_ptr<NewtonSolver<VectorType,
-                               THIS,
-                               MomentumOperator<dim, degree_u, Number>,
-                               IterativeSolverBase<VectorType>>>
+  std::shared_ptr<
+    NewtonSolver<VectorType, THIS, MomentumOperator<dim, Number>, IterativeSolverBase<VectorType>>>
     momentum_newton_solver;
 
   VectorType         temp_vector;

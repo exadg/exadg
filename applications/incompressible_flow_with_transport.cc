@@ -10,15 +10,13 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 
+#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
 // CONVECTION-DIFFUSION
 
 // postprocessor
 #include "convection_diffusion/postprocessor/postprocessor.h"
 
 // spatial discretization
-#include "convection_diffusion/spatial_discretization/dg_convection_diffusion_operation.h"
-
-// time integration
 #include "convection_diffusion/time_integration/time_int_bdf.h"
 #include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
 
@@ -39,8 +37,7 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
-
-#include "../include/incompressible_navier_stokes/interface_space_time/operator.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
 
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
@@ -63,7 +60,7 @@ using namespace dealii;
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number = double>
+template<int dim, typename Number = double>
 class Problem
 {
 public:
@@ -72,7 +69,9 @@ public:
           unsigned int const n_scalars         = 1);
 
   void
-  setup(bool const do_restart);
+  setup(IncNS::InputParameters<dim> const &            fluid_param_in,
+        std::vector<ConvDiff::InputParameters> const & scalar_param_in,
+        bool const                                     do_restart);
 
   void
   solve() const;
@@ -128,15 +127,14 @@ private:
 
   IncNS::InputParameters<dim> fluid_param;
 
-  typedef IncNS::DGNavierStokesBase<dim, degree_u, degree_p, Number>          DGBase;
-  typedef IncNS::DGNavierStokesCoupled<dim, degree_u, degree_p, Number>       DGCoupled;
-  typedef IncNS::DGNavierStokesDualSplitting<dim, degree_u, degree_p, Number> DGDualSplitting;
-  typedef IncNS::DGNavierStokesPressureCorrection<dim, degree_u, degree_p, Number>
-    DGPressureCorrection;
+  typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;
+  typedef IncNS::DGNavierStokesCoupled<dim, Number>            DGCoupled;
+  typedef IncNS::DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
+  typedef IncNS::DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
 
   std::shared_ptr<DGBase> navier_stokes_operation;
 
-  typedef IncNS::PostProcessorBase<dim, degree_u, degree_p, Number> Postprocessor;
+  typedef IncNS::PostProcessorBase<dim, Number> Postprocessor;
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
@@ -155,10 +153,9 @@ private:
 
   std::vector<std::shared_ptr<ConvDiff::AnalyticalSolution<dim>>> scalar_analytical_solution;
 
-  typedef ConvDiff::DGOperation<dim, degree_s, Number> ConvDiffOperator;
-  std::vector<std::shared_ptr<ConvDiffOperator>>       conv_diff_operator;
+  std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
 
-  std::vector<std::shared_ptr<ConvDiff::PostProcessor<dim, degree_s>>> scalar_postprocessor;
+  std::vector<std::shared_ptr<ConvDiff::PostProcessor<dim, Number>>> scalar_postprocessor;
 
   std::vector<std::shared_ptr<TimeIntBase>> scalar_time_integrator;
 
@@ -172,10 +169,10 @@ private:
   unsigned int const length = 15;
 };
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
-Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const refine_steps_space,
-                                                            unsigned int const refine_steps_time,
-                                                            unsigned int const n_scalars)
+template<int dim, typename Number>
+Problem<dim, Number>::Problem(unsigned int const refine_steps_space,
+                              unsigned int const refine_steps_time,
+                              unsigned int const n_scalars)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     n_refine_space(refine_steps_space),
     n_refine_time(refine_steps_time),
@@ -194,9 +191,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::Problem(unsigned int const r
   scalar_time_integrator.resize(n_scalars);
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::print_header() const
+Problem<dim, Number>::print_header() const
 {
   // clang-format off
   pcout << std::endl << std::endl << std::endl
@@ -210,9 +207,11 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::print_header() const
   // clang-format on
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
+Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid_param_in,
+                            std::vector<ConvDiff::InputParameters> const & scalar_param_in,
+                            bool const                                     do_restart)
 {
   timer.restart();
 
@@ -220,21 +219,20 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
   print_MPI_info(pcout);
 
   // parameters (fluid + scalar)
-  fluid_param.set_input_parameters();
+  fluid_param = fluid_param_in;
   fluid_param.check_input_parameters();
+  fluid_param.print(pcout, "List of input parameters for fluid solver:");
 
-  if(fluid_param.print_input_parameters == true)
-    fluid_param.print(pcout);
-
+  scalar_param = scalar_param_in;
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_param[i].set_input_parameters(i);
     scalar_param[i].check_input_parameters();
     AssertThrow(scalar_param[i].problem_type == ConvDiff::ProblemType::Unsteady,
                 ExcMessage("ProblemType must be unsteady!"));
 
-    if(scalar_param[i].print_input_parameters)
-      scalar_param[i].print(pcout);
+    scalar_param[i].print(pcout,
+                          "List of input parameters for scalar quantity " +
+                            Utilities::to_string(i) + ":");
   }
 
   // triangulation
@@ -293,8 +291,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize postprocessor
-  fluid_postprocessor =
-    IncNS::construct_postprocessor<dim, degree_u, degree_p, Number>(fluid_param);
+  fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param);
 
   // initialize navier_stokes_operation
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
@@ -379,11 +376,12 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
     ConvDiff::set_analytical_solution(scalar_analytical_solution[i], i);
 
     // initialize postprocessor
-    scalar_postprocessor[i].reset(new ConvDiff::PostProcessor<dim, degree_s>());
+    scalar_postprocessor[i].reset(new ConvDiff::PostProcessor<dim, Number>());
 
     // initialize convection diffusion operation
-    conv_diff_operator[i].reset(new ConvDiff::DGOperation<dim, degree_s, Number>(
-      *triangulation, scalar_param[i], scalar_postprocessor[i]));
+    conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
+                                                                      scalar_param[i],
+                                                                      scalar_postprocessor[i]));
 
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
@@ -446,9 +444,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::setup(bool const do_restart)
   setup_time = timer.wall_time();
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time() const
+Problem<dim, Number>::set_start_time() const
 {
   // Setup time integrator and get time step size
   double const fluid_time = fluid_time_integrator->get_time();
@@ -473,9 +471,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::set_start_time() const
   }
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size() const
+Problem<dim, Number>::synchronize_time_step_size() const
 {
   double const EPSILON = 1.e-10;
 
@@ -519,9 +517,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::synchronize_time_step_size()
   }
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop() const
+Problem<dim, Number>::run_timeloop() const
 {
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
@@ -597,19 +595,18 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::run_timeloop() const
   }
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::solve() const
+Problem<dim, Number>::solve() const
 {
   run_timeloop();
 
   overall_time += this->timer.wall_time();
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 double
-Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times_fluid(
-  double const overall_time_avg) const
+Problem<dim, Number>::analyze_computing_times_fluid(double const overall_time_avg) const
 {
   this->pcout << std::endl << "Incompressible Navier-Stokes solver:" << std::endl;
 
@@ -642,9 +639,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times_flui
   return sum_of_substeps;
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_fluid() const
+Problem<dim, Number>::analyze_iterations_fluid() const
 {
   this->pcout << std::endl << "Incompressible Navier-Stokes solver:" << std::endl;
 
@@ -665,10 +662,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_fluid() c
   }
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 double
-Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times_transport(
-  double const overall_time_avg) const
+Problem<dim, Number>::analyze_computing_times_transport(double const overall_time_avg) const
 {
   double wall_time_summed_over_all_scalars = 0.0;
 
@@ -708,9 +704,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times_tran
   return wall_time_summed_over_all_scalars;
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_transport() const
+Problem<dim, Number>::analyze_iterations_transport() const
 {
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
@@ -748,9 +744,9 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_iterations_transport
   }
 }
 
-template<int dim, int degree_u, int degree_p, int degree_s, typename Number>
+template<int dim, typename Number>
 void
-Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times() const
+Problem<dim, Number>::analyze_computing_times() const
 {
   this->pcout << std::endl
               << "_________________________________________________________________________________"
@@ -807,7 +803,7 @@ Problem<dim, degree_u, degree_p, degree_s, Number>::analyze_computing_times() co
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 
   // Throughput in DoFs/s per time step per core
-  unsigned int DoFs = this->navier_stokes_operation->get_number_of_dofs();
+  types::global_dof_index DoFs = this->navier_stokes_operation->get_number_of_dofs();
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
@@ -869,10 +865,21 @@ main(int argc, char ** argv)
     AssertThrow(REFINE_STEPS_TIME_MIN == 0, ExcMessage("Invalid parameters!"));
     AssertThrow(REFINE_STEPS_TIME_MIN == REFINE_STEPS_TIME_MAX, ExcMessage("Invalid parameters!"));
 
-    Problem<DIMENSION, FE_DEGREE_VELOCITY, FE_DEGREE_PRESSURE, FE_DEGREE_SCALAR, VALUE_TYPE>
-      problem(REFINE_STEPS_SPACE_MIN, REFINE_STEPS_TIME_MIN, N_SCALARS);
+    Problem<DIMENSION, VALUE_TYPE> problem(REFINE_STEPS_SPACE_MIN,
+                                           REFINE_STEPS_TIME_MIN,
+                                           N_SCALARS);
 
-    problem.setup(do_restart);
+    IncNS::InputParameters<DIMENSION> fluid_param;
+    fluid_param.set_input_parameters();
+
+    std::vector<ConvDiff::InputParameters> scalar_param;
+    scalar_param.resize(N_SCALARS);
+    for(unsigned int i = 0; i < N_SCALARS; ++i)
+    {
+      scalar_param[i].set_input_parameters(i);
+    }
+
+    problem.setup(fluid_param, scalar_param, do_restart);
 
     problem.solve();
 

@@ -8,7 +8,7 @@
 #ifdef DEAL_II_WITH_TRILINOS
 #  include <deal.II/lac/trilinos_sparse_matrix.h>
 #endif
-#include <deal.II/matrix_free/fe_evaluation.h>
+#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
 #include "operator_type.h"
@@ -141,7 +141,7 @@ struct OperatorBaseData : public PreconditionableOperatorData<dim>
   }
 };
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components = 1>
+template<int dim, typename Number, typename AdditionalData, int n_components = 1>
 class OperatorBase : virtual public PreconditionableOperator<dim, Number>
 {
 public:
@@ -149,22 +149,22 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef OperatorBase<dim, degree, Number, AdditionalData, n_components> This;
+  typedef OperatorBase<dim, Number, AdditionalData, n_components> This;
 
 #ifdef DEAL_II_WITH_TRILINOS
   typedef FullMatrix<TrilinosScalar>     FullMatrix_;
   typedef TrilinosWrappers::SparseMatrix SparseMatrix;
 #endif
 
-  typedef std::vector<LAPACKFullMatrix<Number>>                           BlockMatrix;
-  typedef std::pair<unsigned int, unsigned int>                           Range;
-  typedef FEEvaluation<dim, degree, degree + 1, n_components, Number>     FEEvalCell;
-  typedef FEFaceEvaluation<dim, degree, degree + 1, n_components, Number> FEEvalFace;
+  typedef std::vector<LAPACKFullMatrix<Number>>     BlockMatrix;
+  typedef std::pair<unsigned int, unsigned int>     Range;
+  typedef CellIntegrator<dim, n_components, Number> FEEvalCell;
+  typedef FaceIntegrator<dim, n_components, Number> FEEvalFace;
+
   typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>
     PeriodicFacePairIterator;
 
   static const unsigned int vectorization_length = VectorizedArray<Number>::n_array_elements;
-  static const unsigned int dofs_per_cell        = FEEvalCell::static_dofs_per_cell;
 
   OperatorBase();
 

@@ -7,7 +7,7 @@
 
 #include "time_int_bdf_coupled_solver.h"
 
-#include "../interface_space_time/operator.h"
+#include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "functionalities/set_zero_mean_value.h"
 #include "time_integration/push_back_vectors.h"
@@ -687,21 +687,12 @@ TimeIntBDFCoupled<dim, Number>::get_wall_times(std::vector<std::string> & name,
 }
 
 // instantiations
-#include <navierstokes/config.h>
 
 // float
-#if DIM_2 && OP_FLOAT
 template class TimeIntBDFCoupled<2, float>;
-#endif
-#if DIM_3 && OP_FLOAT
 template class TimeIntBDFCoupled<3, float>;
-#endif
 
 // double
-#if DIM_2 && OP_DOUBLE
 template class TimeIntBDFCoupled<2, double>;
-#endif
-#if DIM_3 && OP_DOUBLE
 template class TimeIntBDFCoupled<3, double>;
-#endif
 } // namespace IncNS

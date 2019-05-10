@@ -9,8 +9,8 @@
 #include "../functionalities/set_zero_mean_value.h"
 #include "operator_base.h"
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::OperatorBase()
+template<int dim, typename Number, typename AdditionalData, int n_components>
+OperatorBase<dim, Number, AdditionalData, n_components>::OperatorBase()
   : operator_data(AdditionalData()),
     data(),
     eval_time(0.0),
@@ -23,9 +23,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::OperatorBase()
 {
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
+OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   MatrixFree<dim, Number> const &   matrix_free,
   AffineConstraints<double> const & constraint_matrix,
   AdditionalData const &            operator_data) const
@@ -82,20 +82,19 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::reinit(
   this->is_mg = (this->level_mg_handler != numbers::invalid_unsigned_int);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply(VectorType &       dst,
-                                                                       VectorType const & src) const
+OperatorBase<dim, Number, AdditionalData, n_components>::apply(VectorType &       dst,
+                                                               VectorType const & src) const
 {
   dst = 0;
   apply_add(dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(
-  VectorType &       dst,
-  VectorType const & src) const
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
+                                                                   VectorType const & src) const
 {
   if(is_dg && do_eval_faces)
   {
@@ -122,36 +121,36 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
-                                                                           VectorType const & src,
-                                                                           Number const time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
+                                                                   VectorType const & src,
+                                                                   Number const       time) const
 {
   this->set_evaluation_time(time);
   this->apply_add(dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs(VectorType & dst) const
+OperatorBase<dim, Number, AdditionalData, n_components>::rhs(VectorType & dst) const
 {
   dst = 0;
   this->rhs_add(dst);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs(VectorType & dst,
-                                                                     Number const time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::rhs(VectorType & dst,
+                                                             Number const time) const
 {
   this->set_evaluation_time(time);
   this->rhs(dst);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorType & dst) const
+OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & dst) const
 {
   VectorType tmp;
   tmp.reinit(dst, false);
@@ -167,31 +166,30 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorT
   dst.add(-1.0, tmp);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::rhs_add(VectorType & dst,
-                                                                         Number const time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & dst,
+                                                                 Number const time) const
 {
   this->set_evaluation_time(time);
   this->rhs_add(dst);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate(VectorType &       dst,
-                                                                          VectorType const & src,
-                                                                          Number const time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::evaluate(VectorType &       dst,
+                                                                  VectorType const & src,
+                                                                  Number const       time) const
 {
   dst = 0;
   evaluate_add(dst, src, time);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate_add(
-  VectorType &       dst,
-  VectorType const & src,
-  Number const       time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::evaluate_add(VectorType &       dst,
+                                                                      VectorType const & src,
+                                                                      Number const       time) const
 {
   this->eval_time = time;
 
@@ -199,9 +197,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::evaluate_add(
     &This::cell_loop, &This::face_loop, &This::boundary_face_loop_full_operator, this, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::calculate_diagonal(
   VectorType & diagonal) const
 {
   if(diagonal.size() == 0)
@@ -210,10 +208,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_diago
   add_diagonal(diagonal);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(
-  VectorType & diagonal) const
+OperatorBase<dim, Number, AdditionalData, n_components>::add_diagonal(VectorType & diagonal) const
 {
   // compute diagonal
   if(is_dg && do_eval_faces)
@@ -247,20 +244,20 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(
     set_constraint_diagonal(diagonal);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_diagonal(
-  VectorType & diagonal,
-  Number const time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::add_diagonal(VectorType & diagonal,
+                                                                      Number const time) const
 {
   this->set_evaluation_time(time);
   this->add_diagonal(diagonal);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
-  apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_diagonal_matrix_based(
+  VectorType &       dst,
+  VectorType const & src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
   AssertThrow(block_diagonal_preconditioner_is_initialized,
@@ -269,31 +266,31 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
   data->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based, this, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
-  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src,
-                                       Number const                          evaluation_time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
+  unsigned int const                    cell,
+  VectorizedArray<Number> * const       dst,
+  VectorizedArray<Number> const * const src,
+  Number const                          evaluation_time) const
 {
   this->set_evaluation_time(evaluation_time);
 
   apply_add_block_diagonal_elementwise(cell, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
-  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src) const
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
+  unsigned int const                    cell,
+  VectorizedArray<Number> * const       dst,
+  VectorizedArray<Number> const * const src) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
   fe_eval->reinit(cell);
 
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+  for(unsigned int i = 0; i < fe_eval->dofs_per_cell; ++i)
     fe_eval->begin_dof_values()[i] = src[i];
 
   fe_eval->evaluate(this->operator_data.cell_evaluate.value,
@@ -305,7 +302,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
   fe_eval->integrate(this->operator_data.cell_integrate.value,
                      this->operator_data.cell_integrate.gradient);
 
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+  for(unsigned int i = 0; i < fe_eval->dofs_per_cell; ++i)
     dst[i] += fe_eval->begin_dof_values()[i];
 
   if(is_dg && do_eval_faces)
@@ -317,7 +314,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
       fe_eval_m->reinit(cell, face);
       fe_eval_p->reinit(cell, face);
 
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval_m->dofs_per_cell; ++i)
         fe_eval_m->begin_dof_values()[i] = src[i];
 
       // do not need to read dof values for fe_eval_p (already initialized with 0)
@@ -336,15 +333,15 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
       fe_eval_m->integrate(this->operator_data.face_integrate.value,
                            this->operator_data.face_integrate.gradient);
 
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval_m->dofs_per_cell; ++i)
         dst[i] += fe_eval_m->begin_dof_values()[i];
     }
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_block_diagonal_matrix_based(
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_block_diagonal_matrix_based(
   VectorType &       dst,
   VectorType const & src) const
 {
@@ -355,10 +352,10 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::apply_block_dia
   data->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
-  do_update_block_diagonal_preconditioner() const
+OperatorBase<dim, Number, AdditionalData, n_components>::do_update_block_diagonal_preconditioner()
+  const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -373,7 +370,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
     else // matrix-based variant
     {
       // allocate memory only the first time
-      auto dofs = data->get_shape_info().dofs_per_component_on_cell;
+      auto dofs = data->get_shape_info(this->operator_data.dof_index).dofs_per_component_on_cell *
+                  n_components;
       matrices.resize(data->n_macro_cells() * vectorization_length,
                       LAPACKFullMatrix<Number>(dofs, dofs));
     }
@@ -397,10 +395,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_block_diagonal_matrices()
-  const
+OperatorBase<dim, Number, AdditionalData, n_components>::calculate_block_diagonal_matrices() const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
@@ -408,8 +405,10 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_block
   if(!block_diagonal_preconditioner_is_initialized ||
      data->n_macro_cells() * vectorization_length != matrices.size())
   {
+    auto dofs =
+      data->get_shape_info(this->operator_data.dof_index).dofs_per_component_on_cell * n_components;
     matrices.resize(data->n_macro_cells() * vectorization_length,
-                    LAPACKFullMatrix<Number>(dofs_per_cell, dofs_per_cell));
+                    LAPACKFullMatrix<Number>(dofs, dofs));
     block_diagonal_preconditioner_is_initialized = true;
   } // else: reuse old memory
 
@@ -420,9 +419,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::calculate_block
   add_block_diagonal_matrices(matrices);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
+OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
   BlockMatrix & matrices) const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
@@ -455,9 +454,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_block_diago
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
+OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
   BlockMatrix & matrices,
   Number const  time) const
 {
@@ -466,9 +465,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::add_block_diago
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_init_system_matrix(
+OperatorBase<dim, Number, AdditionalData, n_components>::do_init_system_matrix(
   SparseMatrix & system_matrix) const
 {
   DoFHandler<dim> const & dof_handler = this->data->get_dof_handler();
@@ -504,9 +503,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_init_system_
   system_matrix.reinit(dsp);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_calculate_system_matrix(
+OperatorBase<dim, Number, AdditionalData, n_components>::do_calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
   // assemble matrix locally on each process
@@ -537,9 +536,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_calculate_sy
   } // nothing to do for dg
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_calculate_system_matrix(
+OperatorBase<dim, Number, AdditionalData, n_components>::do_calculate_system_matrix(
   SparseMatrix & system_matrix,
   Number const   time) const
 {
@@ -548,109 +547,109 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_calculate_sy
 }
 #endif
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 AdditionalData const &
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::get_operator_data() const
+OperatorBase<dim, Number, AdditionalData, n_components>::get_operator_data() const
 {
   return operator_data;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_evaluation_time(
+OperatorBase<dim, Number, AdditionalData, n_components>::set_evaluation_time(
   double const time) const
 {
   eval_time = time;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 double
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::get_evaluation_time() const
+OperatorBase<dim, Number, AdditionalData, n_components>::get_evaluation_time() const
 {
   return eval_time;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 unsigned int
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::get_level() const
+OperatorBase<dim, Number, AdditionalData, n_components>::get_level() const
 {
   return level_mg_handler;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 AffineConstraints<double> const &
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_get_constraint_matrix() const
+OperatorBase<dim, Number, AdditionalData, n_components>::do_get_constraint_matrix() const
 {
   return *constraint;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 MatrixFree<dim, Number> const &
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_get_data() const
+OperatorBase<dim, Number, AdditionalData, n_components>::do_get_data() const
 {
   return *data;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::do_initialize_dof_vector(
+OperatorBase<dim, Number, AdditionalData, n_components>::do_initialize_dof_vector(
   VectorType & vector) const
 {
   data->initialize_dof_vector(vector, operator_data.dof_index);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 bool
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::operator_is_singular() const
+OperatorBase<dim, Number, AdditionalData, n_components>::operator_is_singular() const
 {
   return this->operator_data.operator_is_singular;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(
+OperatorBase<dim, Number, AdditionalData, n_components>::create_standard_basis(
   unsigned int j,
   FEEvalCell & fe_eval) const
 {
   // create a standard basis in the dof values of FEEvalution
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+  for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
     fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
   fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(
+OperatorBase<dim, Number, AdditionalData, n_components>::create_standard_basis(
   unsigned int j,
   FEEvalFace & fe_eval) const
 {
   // create a standard basis in the dof values of FEEvalution
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+  for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
     fe_eval.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
   fe_eval.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 }
 
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::create_standard_basis(
+OperatorBase<dim, Number, AdditionalData, n_components>::create_standard_basis(
   unsigned int j,
   FEEvalFace & fe_eval_1,
   FEEvalFace & fe_eval_2) const
 {
   // create a standard basis in the dof values of the first FEFaceEvalution
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+  for(unsigned int i = 0; i < fe_eval_1.dofs_per_cell; ++i)
     fe_eval_1.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
   fe_eval_1.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
 
   // clear dof values of the second FEFaceEvalution
-  for(unsigned int i = 0; i < dofs_per_cell; ++i)
+  for(unsigned int i = 0; i < fe_eval_2.dofs_per_cell; ++i)
     fe_eval_2.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop(
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &              src,
@@ -675,9 +674,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop(
+OperatorBase<dim, Number, AdditionalData, n_components>::face_loop(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &              src,
@@ -709,9 +708,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop(
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_hom_operator(
+OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_hom_operator(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &              src,
@@ -735,9 +734,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_inhom_operator(
+OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_inhom_operator(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -760,9 +759,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_full_operator(
+OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_full_operator(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const &              src,
@@ -786,9 +785,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -796,11 +795,12 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_diago
 {
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
 
+  // create temporal array for local diagonal
+  unsigned int const                     dofs_per_cell = fe_eval.dofs_per_cell;
+  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    // create temporal array for local diagonal
-    VectorizedArray<Number> local_diag[dofs_per_cell];
-
     fe_eval.reinit(cell);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -829,9 +829,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_diago
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -840,10 +840,12 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_diago
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_data.dof_index, operator_data.quad_index);
 
+  // create temporal array for local diagonal
+  unsigned int const                     dofs_per_cell = fe_eval_m.dofs_per_cell;
+  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+
   for(auto face = range.first; face < range.second; ++face)
   {
-    VectorizedArray<Number> local_diag[dofs_per_cell];
-
     fe_eval_m.reinit(face);
     fe_eval_p.reinit(face);
 
@@ -891,9 +893,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_diago
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -901,10 +903,12 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
 {
   FEEvalFace fe_eval(data, true, operator_data.dof_index, operator_data.quad_index);
 
+  // create temporal array for local diagonal
+  unsigned int const                     dofs_per_cell = fe_eval.dofs_per_cell;
+  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+
   for(unsigned int face = range.first; face < range.second; face++)
   {
-    VectorizedArray<Number> local_diag[dofs_per_cell];
-
     auto bid = data.get_boundary_id(face);
 
     fe_eval.reinit(face);
@@ -932,9 +936,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
 }
 
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_based_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
   VectorType const & /*src*/,
@@ -944,9 +948,12 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_data.dof_index, operator_data.quad_index);
 
+  // create temporal array for local diagonal
+  unsigned int const                     dofs_per_cell = fe_eval.dofs_per_cell;
+  AlignedVector<VectorizedArray<Number>> local_diag(dofs_per_cell);
+
   for(auto cell = range.first; cell < range.second; ++cell)
   {
-    VectorizedArray<Number> local_diag[dofs_per_cell];
     fe_eval.reinit(cell);
 
     for(unsigned int j = 0; j < dofs_per_cell; ++j)
@@ -1009,9 +1016,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+OperatorBase<dim, Number, AdditionalData, n_components>::
   cell_loop_apply_inverse_block_diagonal_matrix_based(MatrixFree<dim, Number> const & data,
                                                       VectorType &                    dst,
                                                       VectorType const &              src,
@@ -1041,9 +1048,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
+OperatorBase<dim, Number, AdditionalData, n_components>::
   cell_loop_apply_block_diagonal_matrix_based(MatrixFree<dim, Number> const & data,
                                               VectorType &                    dst,
                                               VectorType const &              src,
@@ -1074,9 +1081,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_block_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1088,7 +1095,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_block
   {
     unsigned int const n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
     fe_eval.reinit(cell);
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
 
@@ -1101,16 +1108,16 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_block
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
 
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
     }
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_block_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1127,7 +1134,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_block
     fe_eval_p.reinit(face);
 
     // interior face
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval_m.dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_m);
 
@@ -1142,13 +1149,13 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_block
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         unsigned int const cell = data.get_face_info(face).cells_interior[v];
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        for(unsigned int i = 0; i < fe_eval_m.dofs_per_cell; ++i)
           matrices[cell](i, j) += fe_eval_m.begin_dof_values()[i][v];
       }
     }
 
     // exterior face
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval_p.dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval_p);
 
@@ -1163,16 +1170,16 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_block
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         unsigned int const cell = data.get_face_info(face).cells_exterior[v];
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        for(unsigned int i = 0; i < fe_eval_p.dofs_per_cell; ++i)
           matrices[cell](i, j) += fe_eval_p.begin_dof_values()[i][v];
       }
     }
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_loop_block_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1186,7 +1193,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
     fe_eval.reinit(face);
     auto bid = data.get_boundary_id(face);
 
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
 
@@ -1201,7 +1208,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
       for(unsigned int v = 0; v < n_filled_lanes; ++v)
       {
         unsigned int const cell = data.get_face_info(face).cells_interior[v];
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
           matrices[cell](i, j) += fe_eval.begin_dof_values()[i][v];
       }
     }
@@ -1209,9 +1216,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::boundary_face_l
 }
 
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop_block_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_based_loop_block_diagonal(
   MatrixFree<dim, Number> const & data,
   BlockMatrix &                   matrices,
   BlockMatrix const &,
@@ -1227,7 +1234,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop
 
     fe_eval.reinit(cell);
 
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
 
@@ -1240,7 +1247,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
 
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices[cell * vectorization_length + v](i, j) += fe_eval.begin_dof_values()[i][v];
     }
@@ -1260,7 +1267,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop
                ExcMessage("Cell-based face loop encountered face batch with different bids."));
 #endif
 
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
+      for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
       {
         this->create_standard_basis(j, fe_eval_m);
 
@@ -1276,7 +1283,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop
         fe_eval_m.integrate(this->operator_data.face_integrate.value,
                             this->operator_data.face_integrate.gradient);
 
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
+        for(unsigned int i = 0; i < fe_eval_m.dofs_per_cell; ++i)
           for(unsigned int v = 0; v < n_filled_lanes; ++v)
             matrices[cell * vectorization_length + v](i, j) += fe_eval_m.begin_dof_values()[i][v];
       }
@@ -1285,9 +1292,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_based_loop
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_calculate_system_matrix(
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
   SparseMatrix const & /*src*/,
@@ -1303,11 +1310,13 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_calcu
     // cell of each macro cell and ...
     FullMatrix_ matrices[vectorization_length];
     // set their size
-    std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    std::fill_n(matrices,
+                vectorization_length,
+                FullMatrix_(fe_eval.dofs_per_cell, fe_eval.dofs_per_cell));
 
     fe_eval.reinit(cell);
 
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
 
@@ -1320,7 +1329,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_calcu
       fe_eval.integrate(this->operator_data.cell_integrate.value,
                         this->operator_data.cell_integrate.gradient);
 
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices[v](i, j) = fe_eval.begin_dof_values()[i][v];
     }
@@ -1332,7 +1341,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_calcu
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-      std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
+      std::vector<types::global_dof_index> dof_indices(fe_eval.dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
       else
@@ -1354,9 +1363,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::cell_loop_calcu
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calculate_system_matrix(
+OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
   SparseMatrix const & /*src*/,
@@ -1376,10 +1385,14 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
 
   // create two local matrix: first one tested by test functions on element m and ...
   FullMatrix_ matrices_m[vectorization_length];
-  std::fill_n(matrices_m, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
+  std::fill_n(matrices_m,
+              vectorization_length,
+              FullMatrix_(fe_eval_m.dofs_per_cell, fe_eval_m.dofs_per_cell));
   // ... the other tested by test functions on element p
   FullMatrix_ matrices_p[vectorization_length];
-  std::fill_n(matrices_p, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
+  std::fill_n(matrices_p,
+              vectorization_length,
+              FullMatrix_(fe_eval_m.dofs_per_cell, fe_eval_m.dofs_per_cell));
 
   for(auto face = range.first; face < range.second; ++face)
   {
@@ -1390,7 +1403,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
     fe_eval_p.reinit(face);
 
     // process minus trial function
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval_m.dofs_per_cell; ++j)
     {
       // write standard basis into dof values of first FEFaceEvaluation and
       // clear dof values of second FEFaceEvaluation
@@ -1409,12 +1422,12 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
                           this->operator_data.face_integrate.gradient);
 
       // insert result vector into local matrix u1_v1
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval_m.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices_m[v](i, j) = fe_eval_m.begin_dof_values()[i][v];
 
       // insert result vector into local matrix  u1_v2
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval_p.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices_p[v](i, j) = fe_eval_p.begin_dof_values()[i][v];
     }
@@ -1433,8 +1446,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       // get position in global matrix
-      std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
-      std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
+      std::vector<types::global_dof_index> dof_indices_m(fe_eval_m.dofs_per_cell);
+      std::vector<types::global_dof_index> dof_indices_p(fe_eval_p.dofs_per_cell);
       if(is_mg)
       {
         cell_m->get_mg_dof_indices(dof_indices_m);
@@ -1454,7 +1467,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
     }
 
     // process positive trial function
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval_m.dofs_per_cell; ++j)
     {
       // write standard basis into dof values of first FEFaceEvaluation and
       // clear dof values of second FEFaceEvaluation
@@ -1473,12 +1486,12 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
                           this->operator_data.face_integrate.gradient);
 
       // insert result vector into local matrix M_mp
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval_m.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices_m[v](i, j) = fe_eval_m.begin_dof_values()[i][v];
 
       // insert result vector into local matrix  M_pp
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval_p.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices_p[v](i, j) = fe_eval_p.begin_dof_values()[i][v];
     }
@@ -1497,8 +1510,8 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       // get position in global matrix
-      std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
-      std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
+      std::vector<types::global_dof_index> dof_indices_m(fe_eval_m.dofs_per_cell);
+      std::vector<types::global_dof_index> dof_indices_p(fe_eval_p.dofs_per_cell);
       if(is_mg)
       {
         cell_m->get_mg_dof_indices(dof_indices_m);
@@ -1519,13 +1532,13 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::face_loop_calcu
   }
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::
-  boundary_face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & data,
-                                             SparseMatrix &                  dst,
-                                             SparseMatrix const & /*src*/,
-                                             Range const & range) const
+OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_calculate_system_matrix(
+  MatrixFree<dim, Number> const & data,
+  SparseMatrix &                  dst,
+  SparseMatrix const & /*src*/,
+  Range const & range) const
 {
   FEEvalFace fe_eval(data, true, operator_data.dof_index, operator_data.quad_index);
 
@@ -1535,12 +1548,14 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
 
     // create temporary matrices for local blocks
     FullMatrix_ matrices[vectorization_length];
-    std::fill_n(matrices, vectorization_length, FullMatrix_(dofs_per_cell, dofs_per_cell));
+    std::fill_n(matrices,
+                vectorization_length,
+                FullMatrix_(fe_eval.dofs_per_cell, fe_eval.dofs_per_cell));
 
     fe_eval.reinit(face);
     auto bid = data.get_boundary_id(face);
 
-    for(unsigned int j = 0; j < dofs_per_cell; ++j)
+    for(unsigned int j = 0; j < fe_eval.dofs_per_cell; ++j)
     {
       this->create_standard_basis(j, fe_eval);
 
@@ -1552,7 +1567,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
       fe_eval.integrate(this->operator_data.face_integrate.value,
                         this->operator_data.face_integrate.gradient);
 
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
+      for(unsigned int i = 0; i < fe_eval.dofs_per_cell; ++i)
         for(unsigned int v = 0; v < n_filled_lanes; ++v)
           matrices[v](i, j) = fe_eval.begin_dof_values()[i][v];
     }
@@ -1567,7 +1582,7 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
 
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-      std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
+      std::vector<types::global_dof_index> dof_indices(fe_eval.dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
       else
@@ -1580,9 +1595,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::
 }
 #endif
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_constraint_diagonal(
+OperatorBase<dim, Number, AdditionalData, n_components>::set_constraint_diagonal(
   VectorType & diagonal) const
 {
   // set (diagonal) entries to 1.0 for constrained dofs
@@ -1590,9 +1605,9 @@ OperatorBase<dim, degree, Number, AdditionalData, n_components>::set_constraint_
     diagonal.local_element(i) = 1.0;
 }
 
-template<int dim, int degree, typename Number, typename AdditionalData, int n_components>
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, degree, Number, AdditionalData, n_components>::verify_boundary_conditions(
+OperatorBase<dim, Number, AdditionalData, n_components>::verify_boundary_conditions(
   DoFHandler<dim> const &                 dof_handler,
   std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const
 {

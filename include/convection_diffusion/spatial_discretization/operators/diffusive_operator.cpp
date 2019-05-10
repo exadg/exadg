@@ -7,40 +7,42 @@
 
 namespace ConvDiff
 {
-template<int dim, int degree, typename Number>
-DiffusiveOperator<dim, degree, Number>::DiffusiveOperator() : diffusivity(-1.0)
+template<int dim, typename Number>
+DiffusiveOperator<dim, Number>::DiffusiveOperator() : diffusivity(-1.0)
 {
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::reinit(
-  MatrixFree<dim, Number> const &    mf_data,
-  AffineConstraints<double> const &  constraint_matrix,
-  DiffusiveOperatorData<dim> const & operator_data) const
+DiffusiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    mf_data,
+                                       AffineConstraints<double> const &  constraint_matrix,
+                                       DiffusiveOperatorData<dim> const & operator_data) const
 {
   Base::reinit(mf_data, constraint_matrix, operator_data);
 
   MappingQGeneric<dim> mapping(operator_data.degree_mapping);
-  IP::calculate_penalty_parameter<dim, Number>(
-    array_penalty_parameter, *this->data, mapping, degree, this->operator_data.dof_index);
+  IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
+                                               *this->data,
+                                               mapping,
+                                               this->operator_data.degree,
+                                               this->operator_data.dof_index);
 
   diffusivity = this->operator_data.diffusivity;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::apply_add(VectorType & dst, VectorType const & src) const
+DiffusiveOperator<dim, Number>::apply_add(VectorType & dst, VectorType const & src) const
 {
   AssertThrow(diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
   Base::apply_add(dst, src);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::apply_add(VectorType & /*dst*/,
-                                                  VectorType const & /*src*/,
-                                                  Number const /*time*/) const
+DiffusiveOperator<dim, Number>::apply_add(VectorType & /*dst*/,
+                                          VectorType const & /*src*/,
+                                          Number const /*time*/) const
 {
   // This function has to be overwritten explicitly. Otherwise the compiler
   // complains that this function of the base class is hidden by the other apply_add
@@ -48,10 +50,10 @@ DiffusiveOperator<dim, degree, Number>::apply_add(VectorType & /*dst*/,
               ExcMessage("DiffusiveOperator cannot be called with additional parameter time!"));
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  DiffusiveOperator<dim, degree, Number>::calculate_value_flux(scalar const & jump_value) const
+  DiffusiveOperator<dim, Number>::calculate_value_flux(scalar const & jump_value) const
 {
   return -0.5 * diffusivity * jump_value;
 }
@@ -71,13 +73,12 @@ inline DEAL_II_ALWAYS_INLINE //
  *  | inhomogeneous operator  | phi⁺ = -phi⁻ + 2g, phi⁻ = 0 | phi⁺ = phi⁻, phi⁻ = 0 |
  *  +-------------------------+-----------------------------+-----------------------+
  */
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  DiffusiveOperator<dim, degree, Number>::calculate_interior_value(
-    unsigned int const   q,
-    FEEvalFace const &   fe_eval,
-    OperatorType const & operator_type) const
+  DiffusiveOperator<dim, Number>::calculate_interior_value(unsigned int const   q,
+                                                           FEEvalFace const &   fe_eval,
+                                                           OperatorType const & operator_type) const
 {
   scalar value_m = make_vectorized_array<Number>(0.0);
 
@@ -97,10 +98,10 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_m;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  DiffusiveOperator<dim, degree, Number>::calculate_exterior_value(
+  DiffusiveOperator<dim, Number>::calculate_exterior_value(
     scalar const &           value_m,
     unsigned int const       q,
     FEEvalFace const &       fe_eval,
@@ -150,14 +151,13 @@ inline DEAL_II_ALWAYS_INLINE //
  * numerical_flux * normal,
  *  where normal denotes the normal vector of element e⁻.
  */
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  DiffusiveOperator<dim, degree, Number>::calculate_gradient_flux(
-    scalar const & normal_gradient_m,
-    scalar const & normal_gradient_p,
-    scalar const & jump_value,
-    scalar const & penalty_parameter) const
+  DiffusiveOperator<dim, Number>::calculate_gradient_flux(scalar const & normal_gradient_m,
+                                                          scalar const & normal_gradient_p,
+                                                          scalar const & jump_value,
+                                                          scalar const & penalty_parameter) const
 {
   return diffusivity * 0.5 * (normal_gradient_m + normal_gradient_p) -
          diffusivity * penalty_parameter * jump_value;
@@ -190,10 +190,10 @@ inline DEAL_II_ALWAYS_INLINE //
    *  +-------------------------+-----------------------------------------------+------------------------------------------------------+
    */
 // clang-format on
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  DiffusiveOperator<dim, degree, Number>::calculate_interior_normal_gradient(
+  DiffusiveOperator<dim, Number>::calculate_interior_normal_gradient(
     unsigned int const   q,
     FEEvalFace const &   fe_eval,
     OperatorType const & operator_type) const
@@ -216,10 +216,10 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_m;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  DiffusiveOperator<dim, degree, Number>::calculate_exterior_normal_gradient(
+  DiffusiveOperator<dim, Number>::calculate_exterior_normal_gradient(
     scalar const &           normal_gradient_m,
     unsigned int const       q,
     FEEvalFace const &       fe_eval,
@@ -262,24 +262,25 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_p;
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::do_cell_integral(FEEvalCell & fe_eval,
-                                                         unsigned int const /*cell*/) const
+DiffusiveOperator<dim, Number>::do_cell_integral(FEEvalCell & fe_eval,
+                                                 unsigned int const /*cell*/) const
 {
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     fe_eval.submit_gradient(fe_eval.get_gradient(q) * diffusivity, q);
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::do_face_integral(FEEvalFace & fe_eval,
-                                                         FEEvalFace & fe_eval_neighbor,
-                                                         unsigned int const /*face*/) const
+DiffusiveOperator<dim, Number>::do_face_integral(FEEvalFace & fe_eval,
+                                                 FEEvalFace & fe_eval_neighbor,
+                                                 unsigned int const /*face*/) const
 {
-  scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                           fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -300,15 +301,16 @@ DiffusiveOperator<dim, degree, Number>::do_face_integral(FEEvalFace & fe_eval,
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                             FEEvalFace & fe_eval_neighbor,
-                                                             unsigned int const /*face*/) const
+DiffusiveOperator<dim, Number>::do_face_int_integral(FEEvalFace & fe_eval,
+                                                     FEEvalFace & fe_eval_neighbor,
+                                                     unsigned int const /*face*/) const
 {
-  scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                           fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -327,15 +329,16 @@ DiffusiveOperator<dim, degree, Number>::do_face_int_integral(FEEvalFace & fe_eva
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
-                                                             FEEvalFace & fe_eval_neighbor,
-                                                             unsigned int const /*face*/) const
+DiffusiveOperator<dim, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
+                                                     FEEvalFace & fe_eval_neighbor,
+                                                     unsigned int const /*face*/) const
 {
-  scalar tau_IP = std::max(fe_eval.read_cell_data(array_penalty_parameter),
-                           fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    std::max(fe_eval.read_cell_data(array_penalty_parameter),
+             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -356,17 +359,18 @@ DiffusiveOperator<dim, degree, Number>::do_face_ext_integral(FEEvalFace & fe_eva
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::do_boundary_integral(FEEvalFace &         fe_eval,
-                                                             OperatorType const & operator_type,
-                                                             types::boundary_id const & boundary_id,
-                                                             unsigned int const /*face*/) const
+DiffusiveOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
+                                                     OperatorType const &       operator_type,
+                                                     types::boundary_id const & boundary_id,
+                                                     unsigned int const /*face*/) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-  scalar tau_IP = fe_eval.read_cell_data(array_penalty_parameter) *
-                  IP::get_penalty_factor<Number>(degree, this->operator_data.IP_factor);
+  scalar tau_IP =
+    fe_eval.read_cell_data(array_penalty_parameter) *
+    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
@@ -387,9 +391,9 @@ DiffusiveOperator<dim, degree, Number>::do_boundary_integral(FEEvalFace &       
   }
 }
 
-template<int dim, int degree, typename Number>
+template<int dim, typename Number>
 void
-DiffusiveOperator<dim, degree, Number>::do_verify_boundary_conditions(
+DiffusiveOperator<dim, Number>::do_verify_boundary_conditions(
   types::boundary_id const             boundary_id,
   DiffusiveOperatorData<dim> const &   operator_data,
   std::set<types::boundary_id> const & periodic_boundary_ids) const
@@ -397,6 +401,10 @@ DiffusiveOperator<dim, degree, Number>::do_verify_boundary_conditions(
   ConvDiff::do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
 }
 
-} // namespace ConvDiff
+template class DiffusiveOperator<2, float>;
+template class DiffusiveOperator<2, double>;
 
-#include "diffusive_operator.hpp"
+template class DiffusiveOperator<3, float>;
+template class DiffusiveOperator<3, double>;
+
+} // namespace ConvDiff
