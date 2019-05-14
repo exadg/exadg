@@ -8,9 +8,7 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -18,124 +16,115 @@
 /*                                                                                    */
 /**************************************************************************************/
 
-// single or double precision?
-//typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
-// set the number of space dimensions: DIMENSION = 2, 3
-const unsigned int DIMENSION = 2;
+unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MAX = 2;
 
-// set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 5;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
-// set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 2;
-const unsigned int REFINE_STEPS_SPACE_MAX = 2;
+// problem specific parameters
+double const START_TIME = 0.0;
+double const END_TIME = 1.0;
 
-// set the number of refine levels for temporal convergence tests
-const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 0;
-
-
-void ConvDiff::InputParameters::set_input_parameters()
+namespace ConvDiff
+{
+void
+set_input_parameters(ConvDiff::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
-  equation_type = EquationType::Convection;
-  right_hand_side = false;
+  param.dim = 2;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::Convection;
+  param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
-  start_time = 0.0;
-  end_time = 1.0;
-  diffusivity = 0.0;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
+  param.diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
+  param.temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
 
   // Explicit RK
-  time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
+  param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
 
   // BDF
-  order_time_integrator = 2; // instabilities for BDF 3 and 4
-  start_with_low_order = false;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //ExplicitOIF;
-  time_integrator_oif = TimeIntegratorRK::ExplRK2Stage2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
+  param.order_time_integrator = 2; // instabilities for BDF 3 and 4
+  param.start_with_low_order = false;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //ExplicitOIF;
+  param.time_integrator_oif = TimeIntegratorRK::ExplRK2Stage2; //ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;
 
-  calculation_of_time_step_size = TimeStepCalculation::CFL;
-  adaptive_time_stepping = false;
-  time_step_size = 1.e-2;
-  cfl_oif = 0.5;
-  cfl = cfl_oif * 1.0;
-  diffusion_number = 0.01;
-  exponent_fe_degree_convection = 2.0;
-  exponent_fe_degree_diffusion = 3.0;
-  c_eff = 1.0e0;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = false;
+  param.time_step_size = 1.e-2;
+  param.cfl_oif = 0.5;
+  param.cfl = param.cfl_oif * 1.0;
+  param.diffusion_number = 0.01;
+  param.exponent_fe_degree_convection = 2.0;
+  param.exponent_fe_degree_diffusion = 3.0;
+  param.c_eff = 1.0e0;
+  param.dt_refinements = REFINE_TIME_MIN;
+
+  // restart
+  param.restart_data.write_restart = false;
+  param.restart_data.filename = "output_conv_diff/rotating_hill";
+  param.restart_data.interval_time = 0.4;
+
 
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  triangulation_type = TriangulationType::Distributed;
+  param.triangulation_type = TriangulationType::Distributed;
 
   // polynomial degree
-  degree = FE_DEGREE;
-  degree_mapping = 1;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Affine;
+
+  // h-refinements
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
-  numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+  param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
   // viscous term
-  IP_factor = 1.0;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::GMRES;
-  solver_data = SolverData(1e3, 1.e-20, 1.e-8, 100);
-  preconditioner = Preconditioner::Multigrid; //None; //InverseMassMatrix; //PointJacobi; //BlockJacobi; //Multigrid;
-  update_preconditioner = true;
+  param.solver = Solver::GMRES;
+  param.solver_data = SolverData(1e3, 1.e-20, 1.e-8, 100);
+  param.preconditioner = Preconditioner::Multigrid; //None; //InverseMassMatrix; //PointJacobi; //BlockJacobi; //Multigrid;
+  param.update_preconditioner = true;
 
   // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
-  implement_block_diagonal_preconditioner_matrix_free = true;
-  preconditioner_block_diagonal = PreconditionerBlockDiagonal::InverseMassMatrix;
-  block_jacobi_solver_data = SolverData(1000,1.e-12,1.e-2,1000);
+  param.implement_block_diagonal_preconditioner_matrix_free = true;
+  param.preconditioner_block_diagonal = PreconditionerBlockDiagonal::InverseMassMatrix;
+  param.block_jacobi_solver_data = SolverData(1000,1.e-12,1.e-2,1000);
 
   // Multigrid
-  mg_operator_type = MultigridOperatorType::ReactionConvection;
-  multigrid_data.type = MultigridType::hMG;
+  param.mg_operator_type = MultigridOperatorType::ReactionConvection;
+  param.multigrid_data.type = MultigridType::hMG;
 
   // MG smoother
-  multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
-  multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-  multigrid_data.smoother_data.iterations = 5;
-  multigrid_data.smoother_data.relaxation_factor = 0.8;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
+  param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data.smoother_data.iterations = 5;
+  param.multigrid_data.smoother_data.relaxation_factor = 0.8;
 
   // MG coarse grid solver
-  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
-
-
-  // NUMERICAL PARAMETERS
-  use_cell_based_face_loops = true;
-  runtime_optimization = false;
-
-  // OUTPUT AND POSTPROCESSING
-  output_data.write_output = true;
-  output_data.output_folder = "output_conv_diff/";
-  output_data.output_name = "rotating_hill";
-  output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.degree = FE_DEGREE;
-
-  error_data.analytical_solution_available = true;
-  error_data.calculate_relative_errors = true;
-  error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
   // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (end_time-start_time)/20;
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = (END_TIME-START_TIME)/20;
 
-  // restart
-  restart_data.write_restart = false;
-  restart_data.filename = "output_conv_diff/rotating_hill";
-  restart_data.interval_time = 0.4;
+  // NUMERICAL PARAMETERS
+  param.use_cell_based_face_loops = true;
+  param.runtime_optimization = false;
+}
 }
 
 /**************************************************************************************/
@@ -147,8 +136,12 @@ void ConvDiff::InputParameters::set_input_parameters()
 template<int dim>
 void create_grid_and_set_boundary_ids(
     std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
-    unsigned int const                                  n_refine_space)
+    unsigned int const                                  n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >              &periodic_faces)
 {
+  (void)periodic_faces;
+
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(*triangulation,left,right);
@@ -212,13 +205,12 @@ public:
     else if(component ==1)
       value =  point[0]*2.0*numbers::PI;
 
-    // TODO time dependent velocity field to test adaptive time stepping
-  //  double t = this->get_time();
-  //  value *= 1.0-t;
-
     return value;
   }
 };
+
+namespace ConvDiff
+{
 
 template<int dim>
 void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
@@ -232,7 +224,7 @@ void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> >
 template<int dim>
 void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
-  field_functions->analytical_solution.reset(new Solution<dim>());
+  field_functions->initial_solution.reset(new Solution<dim>());
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new VelocityField<dim>());
 }
@@ -243,5 +235,29 @@ void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> >
   analytical_solution->solution.reset(new Solution<dim>(1));
 }
 
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
+construct_postprocessor()
+{
+  PostProcessorData pp_data;
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = "output_conv_diff/";
+  pp_data.output_data.output_name = "rotating_hill";
+  pp_data.output_data.output_start_time = START_TIME;
+  pp_data.output_data.output_interval_time = (END_TIME-START_TIME)/20;
+  pp_data.output_data.degree = DEGREE_MIN;
+
+  pp_data.error_data.analytical_solution_available = true;
+  pp_data.error_data.calculate_relative_errors = true;
+  pp_data.error_data.error_calc_start_time = START_TIME;
+  pp_data.error_data.error_calc_interval_time = (END_TIME-START_TIME)/20;
+
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
+
+  return pp;
+}
+
+}
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_ROTATING_HILL_H_ */

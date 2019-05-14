@@ -8,9 +8,7 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_CONST_RHS_CONST_AND_CIRCULAR_WIND_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_CONST_RHS_CONST_AND_CIRCULAR_WIND_H_
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -19,114 +17,107 @@
 /**************************************************************************************/
 
 // constant source term inside rectangular domain
-// pure dirichlet boundary conditions (homogeneous)
+// pure Dirichlet boundary conditions (homogeneous)
 // use constant or circular advection velocity
 
-// single or double precision?
-//typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 4;
+unsigned int const DEGREE_MAX = 4;
 
-// set the number of space dimensions: DIMENSION = 2, 3
-const unsigned int DIMENSION = 2;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
-// set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 4;
-
-// set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 3;
-const unsigned int REFINE_STEPS_SPACE_MAX = 3;
-
-// set the number of refine levels for temporal convergence tests
-const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // problem specific parameters
-const double START_TIME = 0.0;
 const double DIFFUSIVITY = 1.0e0;
+
+double const START_TIME = 0.0;
+double const END_TIME = 1.0;
 
 enum class TypeVelocityField { Constant, Circular, CircularZeroAtBoundary };
 TypeVelocityField const TYPE_VELOCITY_FIELD = TypeVelocityField::Constant; //Circular;
 
-void ConvDiff::InputParameters::set_input_parameters()
+namespace ConvDiff
+{
+void
+set_input_parameters(ConvDiff::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Steady;
-  equation_type = EquationType::ConvectionDiffusion;
-  right_hand_side = true;
+  param.dim = 2;
+  param.problem_type = ProblemType::Steady;
+  param.equation_type = EquationType::ConvectionDiffusion;
+  param.right_hand_side = true;
 
   // PHYSICAL QUANTITIES
-  start_time = START_TIME;
-  end_time = 1.0;
-  diffusivity = DIFFUSIVITY;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
+  param.diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  order_time_integrator = 2;
-  start_with_low_order = true;
-  calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  time_step_size = 1.0e-1;
-  cfl = 0.2;
-  diffusion_number = 0.01;
+  param.temporal_discretization = TemporalDiscretization::BDF;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = true;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+  param.time_step_size = 1.0e-1;
+  param.cfl = 0.2;
+  param.diffusion_number = 0.01;
+  param.dt_refinements = REFINE_TIME_MIN;
 
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  triangulation_type = TriangulationType::Distributed;
+  param.triangulation_type = TriangulationType::Distributed;
 
   // polynomial degree
-  degree = FE_DEGREE;
-  degree_mapping = 1;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Affine;
+
+  // h-refinements
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
-  numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+  param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
   // viscous term
-  IP_factor = 1.0;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::GMRES;
-  solver_data = SolverData(1e4,1.e-20, 1.e-8, 100);
-  preconditioner = Preconditioner::Multigrid; //PointJacobi; //BlockJacobi;
-  multigrid_data.type = MultigridType::phMG;
-  use_cell_based_face_loops = true;
-  mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
+  param.solver = Solver::GMRES;
+  param.solver_data = SolverData(1e4,1.e-20, 1.e-8, 100);
+  param.preconditioner = Preconditioner::Multigrid; //PointJacobi; //BlockJacobi;
+  param.multigrid_data.type = MultigridType::phMG;
+  param.use_cell_based_face_loops = true;
+  param.mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
 
   // MG smoother data: Chebyshev smoother
-//  multigrid_data.smoother_data.iterations = 3;
+//  param.multigrid_data.smoother_data.iterations = 3;
 
   // MG smoother data: GMRES smoother, CG smoother
-  multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-  multigrid_data.smoother_data.iterations = 4;
+  param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data.smoother_data.iterations = 4;
 
   // MG smoother data: Jacobi smoother
-//  multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-//  multigrid_data.smoother_data.iterations = 5;
-//  multigrid_data.smoother_data.relaxation_factor = 0.8;
+//  param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+//  param.multigrid_data.smoother_data.iterations = 5;
+//  param.multigrid_data.smoother_data.relaxation_factor = 0.8;
 
   // MG coarse grid solver
-  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
-  update_preconditioner = false;
-
-  // NUMERICAL PARAMETERS
-  runtime_optimization = false;
-
-  // OUTPUT AND POSTPROCESSING
-
-  // writing output
-  output_data.write_output = false; //true;
-  output_data.output_folder = "output_conv_diff/";
-  output_data.output_name = "const_wind_const_rhs";
-  output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time);
-  output_data.degree = FE_DEGREE;
+  param.update_preconditioner = false;
 
   // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (end_time-start_time)/10;
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = (param.end_time-param.start_time)/10;
+
+  // NUMERICAL PARAMETERS
+  param.runtime_optimization = false;
+}
 }
 
 
@@ -139,8 +130,12 @@ void ConvDiff::InputParameters::set_input_parameters()
 template<int dim>
 void create_grid_and_set_boundary_ids(
     std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
-    unsigned int const                                  n_refine_space)
+    unsigned int const                                  n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >              &periodic_faces)
 {
+  (void)periodic_faces;
+
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(*triangulation,left,right);
@@ -252,6 +247,9 @@ public:
   }
 };
 
+namespace ConvDiff
+{
+
 template<int dim>
 void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
@@ -263,7 +261,7 @@ void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> >
 template<int dim>
 void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
-  field_functions->analytical_solution.reset(new Solution<dim>());
+  field_functions->initial_solution.reset(new Solution<dim>());
   field_functions->right_hand_side.reset(new RightHandSide<dim>());
   field_functions->velocity.reset(new VelocityField<dim>());
 }
@@ -274,5 +272,26 @@ void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> >
   analytical_solution->solution.reset(new Solution<dim>(1));
 }
 
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
+construct_postprocessor()
+{
+  PostProcessorData pp_data;
+  pp_data.output_data.write_output = false; //true;
+  pp_data.output_data.output_folder = "output_conv_diff/";
+  pp_data.output_data.output_name = "const_wind_const_rhs";
+  pp_data.output_data.output_start_time = START_TIME;
+  pp_data.output_data.output_interval_time = END_TIME-START_TIME;
+  pp_data.output_data.degree = DEGREE_MIN;
+
+  pp_data.error_data = ErrorCalculationData();
+
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
+
+  return pp;
+}
+
+}
 
 #endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_CONST_RHS_CONST_AND_CIRCULAR_WIND_H_ */

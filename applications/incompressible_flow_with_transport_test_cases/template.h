@@ -6,6 +6,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_
 
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
+
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                                              INPUT PARAMETERS                                            */
@@ -203,7 +205,7 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functio
   (void)scalar_index;
 
   // these lines show exemplarily how the field functions are filled
-  field_functions->analytical_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(1));
 }
@@ -226,14 +228,16 @@ set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analy
 /************************************************************************************************************/
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessor<dim, Number> >
-construct_postprocessor()
+std::shared_ptr<PostProcessorBase<dim, Number> >
+construct_postprocessor(unsigned int const scalar_index)
 {
+  (void)scalar_index;
+
   PostProcessorData pp_data;
   pp_data.output_data = OutputData();
   pp_data.error_data  = ErrorCalculationData();
 
-  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));
 
   return pp;

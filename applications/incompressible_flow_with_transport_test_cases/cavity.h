@@ -11,6 +11,8 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 INPUT PARAMETERS                                   */
@@ -225,94 +227,94 @@ void IncNS::InputParameters<dim>::set_input_parameters()
   restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_fluid";
 }
 
-void ConvDiff::InputParameters::set_input_parameters(unsigned int scalar_index)
+namespace ConvDiff
+{
+void set_input_parameters(InputParameters &param, unsigned int const scalar_index)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
-  equation_type = EquationType::ConvectionDiffusion;
-  type_velocity_field = TypeVelocityField::Numerical;
-  right_hand_side = false;
+  param.dim = 2;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::ConvectionDiffusion;
+  param.type_velocity_field = TypeVelocityField::Numerical;
+  param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
-  start_time = START_TIME;
-  end_time = END_TIME;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
   if(scalar_index == 0)
   {
-    diffusivity = 1.e-5;
+    param.diffusivity = 1.e-5;
   }
   else
   {
-    diffusivity = 1.e-3;
+    param.diffusivity = 1.e-3;
   }
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
-  order_time_integrator = 2;
-  time_integrator_oif = TimeIntegratorRK::ExplRK3Stage7Reg2;
-  start_with_low_order = true;
-  calculation_of_time_step_size = TimeStepCalculation::CFL;
-  time_step_size = 1.0e-2;
-  cfl_oif = CFL_OIF;
-  cfl = CFL;
-  max_velocity = MAX_VELOCITY;
-  exponent_fe_degree_convection = 1.5;
-  diffusion_number = 0.01;
+  param.temporal_discretization = TemporalDiscretization::BDF;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
+  param.order_time_integrator = 2;
+  param.time_integrator_oif = TimeIntegratorRK::ExplRK3Stage7Reg2;
+  param.start_with_low_order = true;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.time_step_size = 1.0e-2;
+  param.cfl_oif = CFL_OIF;
+  param.cfl = CFL;
+  param.max_velocity = MAX_VELOCITY;
+  param.exponent_fe_degree_convection = 1.5;
+  param.diffusion_number = 0.01;
+  param.dt_refinements = 0;
+
+  // restart
+  param.restart_data.write_restart = WRITE_RESTART;
+  param.restart_data.interval_time = RESTART_INTERVAL_TIME;
+  param.restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
 
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  triangulation_type = TriangulationType::Distributed;
+  param.triangulation_type = TriangulationType::Distributed;
 
   // polynomial degree
-  degree = FE_DEGREE_SCALAR;
-  degree_mapping = 1;
+  param.degree = FE_DEGREE_SCALAR;
+  param.mapping = MappingType::Affine;
+
+  // h-refinements
+  param.h_refinements = REFINE_STEPS_SPACE_MIN;
 
   // convective term
-  numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+  param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
   // viscous term
-  IP_factor = 1.0;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::GMRES;
-  solver_data = SolverData(1e4, 1.e-12, 1.e-6, 100);
-  preconditioner = Preconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
-  implement_block_diagonal_preconditioner_matrix_free = true;
-  use_cell_based_face_loops = true;
-  update_preconditioner = true;
+  param.solver = Solver::GMRES;
+  param.solver_data = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.preconditioner = Preconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
+  param.implement_block_diagonal_preconditioner_matrix_free = true;
+  param.use_cell_based_face_loops = true;
+  param.update_preconditioner = true;
 
-  multigrid_data.type = MultigridType::hMG;
-  mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
+  param.multigrid_data.type = MultigridType::hMG;
+  param.mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
-  multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
   // MG smoother data
-  multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-  multigrid_data.smoother_data.iterations = 5;
+  param.multigrid_data.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data.smoother_data.iterations = 5;
 
   // MG coarse grid solver
-  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
-
-  // NUMERICAL PARAMETERS
-  runtime_optimization = false;
-
-  // OUTPUT AND POSTPROCESSING
-  output_data.write_output = WRITE_OUTPUT;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name = OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
-  output_data.output_start_time = OUTPUT_START_TIME;
-  output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  output_data.degree = FE_DEGREE_SCALAR;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
   // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
 
-  // restart
-  restart_data.write_restart = WRITE_RESTART;
-  restart_data.interval_time = RESTART_INTERVAL_TIME;
-  restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
+  // NUMERICAL PARAMETERS
+  param.runtime_optimization = false;
+}
 }
 
 /**************************************************************************************/
@@ -493,6 +495,26 @@ set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > anal
   (void)scalar_index; // only one scalar quantity considered
 
   analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
+}
+
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
+construct_postprocessor(unsigned int const scalar_index)
+{
+  PostProcessorData pp_data;
+  pp_data.output_data.write_output = WRITE_OUTPUT;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
+  pp_data.output_data.output_start_time = OUTPUT_START_TIME;
+  pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
+  pp_data.output_data.degree = FE_DEGREE_SCALAR;
+
+  pp_data.error_data = ErrorCalculationData();
+
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
+
+  return pp;
 }
 
 }

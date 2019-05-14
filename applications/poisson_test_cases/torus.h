@@ -1,84 +1,88 @@
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/manifold_lib.h>
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 
-/******************************************************************************/
-/*                                                                            */
-/*                             INPUT PARAMETERS                               */
-/*                                                                            */
-/******************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-const unsigned int DIMENSION              = 3;
-const unsigned int FE_DEGREE              = 2;
-const unsigned int REFINE_STEPS_SPACE_MIN = 5;
-const unsigned int REFINE_STEPS_SPACE_MAX = 5;
+// convergence studies in space
+unsigned int const DEGREE_MIN = 1;
+unsigned int const DEGREE_MAX = 7;
 
-std::string OUTPUT_FOLDER     = "output/poisson_torus/";
+unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MAX = 2;
+
+// problem specific parameters
+std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME       = "torus";
 
-
+namespace Poisson
+{
 void
-Poisson::InputParameters::set_input_parameters()
+set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  right_hand_side = true;
-
-  // PHYSICAL QUANTITIES
+  param.dim = 3;
+  param.right_hand_side = true;
 
   // SPATIAL DISCRETIZATION
-  degree = FE_DEGREE;
-  degree_mapping = FE_DEGREE;
-  IP_factor = 1.0;
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Affine; //Isoparametric; // TODO does not converge with Isoparametric mapping
+  param.spatial_discretization = SpatialDiscretization::DG;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::CG;
-  solver_data = SolverData(1e4, 1.e-20, 1.e-8);
-  preconditioner = Preconditioner::Multigrid;
+  param.solver = Solver::CG;
+  param.solver_data = SolverData(1e4, 1.e-20, 1.e-8);
+  param.preconditioner = Preconditioner::Multigrid;
+  param.multigrid_data.type = MultigridType::pMG;
+  param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::None;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::Chebyshev;
-  // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
-  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML; // GMRES_PointJacobi;
-  multigrid_data.type = MultigridType::pMG;
-
-  // write output for visualization of results
-  output_data.write_output  = true;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name   = OUTPUT_NAME;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+}
 }
 
-/******************************************************************************/
-/*                                                                            */
-/* FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.) */
-/*                                                                            */
-/******************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-/*
- *  Analytical solution
- */
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<2>> /*triangulation*/,
+                                 unsigned int const                          /*n_refine_space*/,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<2>::cell_iterator> >         &/*periodic_faces*/)
+{
+  AssertThrow(false, ExcMessage("This test case is only implemented for dim=3."));
+}
 
 template<int dim>
-class AnalyticalSolution : public Function<dim>
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >         &/*periodic_faces*/)
 {
-public:
-  AnalyticalSolution(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
+  double const r = 0.5, R = 1.5;
+  static TorusManifold<dim> manifold(R, r);
+  triangulation->set_manifold(0, manifold);
+  GridGenerator::torus(*triangulation, R, r);
 
-  double
-  value(const Point<dim> & /*p*/, const unsigned int /*component*/ = 0) const
-  {
-    return 0.0;
-  }
-};
+  triangulation->refine_global(n_refine_space);
+}
 
-/*
- *  Right-hand side
- */
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class RightHandSide : public Function<dim>
@@ -96,76 +100,55 @@ public:
   }
 };
 
-/*
- *  Neumann boundary condition
- */
-
-template<int dim>
-class NeumannBoundary : public Function<dim>
+namespace Poisson
 {
-public:
-  NeumannBoundary(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  double
-  value(const Point<dim> & /* p */, const unsigned int /* component */) const
-  {
-    double result = 0.0;
-    return result;
-  }
-};
-
-/******************************************************************************/
-/*                                                                            */
-/*     GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR    */
-/*                                                                            */
-/******************************************************************************/
 
 template<int dim>
 void
-create_grid_and_set_boundary_conditions(
-  parallel::distributed::Triangulation<dim> &       triangulation,
-  unsigned int const                                n_refine_space,
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/
-)
+set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
 {
-  const double              R = 1.5;
-  const double              r = 0.5;
-  static TorusManifold<dim> manifold(R, r);
-  triangulation.set_manifold(0, manifold);
-  GridGenerator::torus(triangulation, R, r);
+  typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-  triangulation.refine_global(n_refine_space);
-
-  //  GridTools::regularize_corner_cells(triangulation);
-
-  // dirichlet bc:
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  boundary_descriptor->dirichlet_bc.insert({0, analytical_solution});
+  boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
 }
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-
-  std::shared_ptr<Function<dim>> right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->analytical_solution = analytical_solution;
-  field_functions->right_hand_side     = right_hand_side;
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
 template<int dim>
 void
-set_analytical_solution(std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution)
+set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim, typename Number>
+std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
+construct_postprocessor()
+{
+  ConvDiff::PostProcessorData pp_data;
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME;
+  pp_data.output_data.degree = DEGREE_MIN;
+
+  pp_data.error_data = ErrorCalculationData();
+
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
+  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));
+
+  return pp;
+}
+
 }
