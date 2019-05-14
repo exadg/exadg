@@ -152,6 +152,9 @@ template<int dim, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & dst) const
 {
+  AssertThrow(is_dg == true,
+              ExcMessage("Inhomogeneous BCs are not implemented for continuous elements."));
+
   VectorType tmp;
   tmp.reinit(dst, false);
 

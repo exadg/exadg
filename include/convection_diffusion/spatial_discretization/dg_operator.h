@@ -8,6 +8,7 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
 #define INCLUDE_CONVECTION_DIFFUSION_DG_CONVECTION_DIFFUSION_OPERATION_H_
 
+// deal.II
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
@@ -31,13 +32,13 @@
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../preconditioners/multigrid_preconditioner.h"
 
-// interface space-time
+// time integration and interface
+#include "interface.h"
 #include "time_integration/interpolate.h"
 #include "time_integration/time_step_calculation.h"
 
 // postprocessor
-#include "../postprocessor/postprocessor.h"
-#include "interface.h"
+#include "../postprocessor/postprocessor_base.h"
 
 using namespace dealii;
 
@@ -58,9 +59,9 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::Triangulation<dim> const &        triangulation,
-             InputParameters const &                     param_in,
-             std::shared_ptr<PostProcessor<dim, Number>> postprocessor_in);
+  DGOperator(parallel::Triangulation<dim> const &            triangulation,
+             InputParameters const &                         param_in,
+             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -87,7 +88,7 @@ public:
   initialize_dof_vector(VectorType & src) const;
 
   /*
-   * Prescribe initial conditions using a specified analytical/initial solution function.
+   * Prescribe initial conditions using a specified analytical function.
    */
   void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const;
@@ -263,9 +264,10 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  FE_DGQ<dim>          fe;
-  MappingQGeneric<dim> mapping;
-  DoFHandler<dim>      dof_handler;
+  FE_DGQ<dim>                           fe;
+  unsigned int                          mapping_degree;
+  std::shared_ptr<MappingQGeneric<dim>> mapping;
+  DoFHandler<dim>                       dof_handler;
 
   AffineConstraints<double> constraint_matrix;
 
@@ -325,7 +327,7 @@ private:
   /*
    * Postprocessor.
    */
-  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 };
 
 } // namespace ConvDiff

@@ -133,7 +133,7 @@ PoissonProblem<dim, fe_degree, Number>::PoissonProblem(bool use_cg,
 #endif
 
   // get default input parameters
-  param.set_input_parameters();
+  set_input_parameters(param);
 
   // override parameters
   param.degree_mapping = fe_degree;

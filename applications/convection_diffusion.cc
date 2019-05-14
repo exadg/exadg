@@ -5,10 +5,12 @@
  *      Author: fehn
  */
 
-
+// deal.II
 #include <deal.II/base/revision.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
 
 // spatial discretization
 #include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
@@ -20,7 +22,7 @@
 #include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
 
 // postprocessor
-#include "convection_diffusion/postprocessor/postprocessor.h"
+#include "convection_diffusion/postprocessor/postprocessor_base.h"
 
 // user interface, etc.
 #include "convection_diffusion/user_interface/analytical_solution.h"
@@ -31,7 +33,10 @@
 #include "functionalities/print_general_infos.h"
 
 
-// SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
+// specify the test case that has to be solved
+
+// template
+//#include "convection_diffusion_test_cases/template.h"
 
 // convection problems
 
@@ -52,14 +57,32 @@
 using namespace dealii;
 using namespace ConvDiff;
 
-template<int dim, typename Number = double>
-class Problem
+template<typename Number>
+class ProblemBase
 {
 public:
-  Problem(unsigned int const n_refine_space, unsigned int const n_refine_time);
+  virtual ~ProblemBase()
+  {
+  }
+
+  virtual void
+  setup(InputParameters const & param) = 0;
+
+  virtual void
+  solve() = 0;
+
+  virtual void
+  analyze_computing_times() const = 0;
+};
+
+template<int dim, typename Number = double>
+class Problem : public ProblemBase<Number>
+{
+public:
+  Problem();
 
   void
-  setup(InputParameters const & param_in, bool const do_restart);
+  setup(InputParameters const & param);
 
   void
   solve();
@@ -78,9 +101,6 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  unsigned int const n_refine_space;
-  unsigned int const n_refine_time;
-
   InputParameters param;
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
@@ -90,7 +110,7 @@ private:
 
   std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
-  std::shared_ptr<PostProcessor<dim, Number>> postprocessor;
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 
   std::shared_ptr<TimeIntBase> time_integrator;
 
@@ -105,11 +125,8 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem(unsigned int const n_refine_space_in,
-                              unsigned int const n_refine_time_in)
+Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    n_refine_space(n_refine_space_in),
-    n_refine_time(n_refine_time_in),
     overall_time(0.0),
     setup_time(0.0)
 {
@@ -124,7 +141,7 @@ Problem<dim, Number>::print_header()
   << "_________________________________________________________________________________" << std::endl
   << "                                                                                 " << std::endl
   << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                     unsteady convection-diffusion equation                      " << std::endl
+  << "                          convection-diffusion equation                          " << std::endl
   << "_________________________________________________________________________________" << std::endl
   << std::endl;
   // clang-format on
@@ -132,11 +149,12 @@ Problem<dim, Number>::print_header()
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::setup(InputParameters const & param_in, bool const do_restart)
+Problem<dim, Number>::setup(InputParameters const & param_in)
 {
   timer.restart();
 
   print_header();
+  print_dealii_info(pcout);
   print_MPI_info(pcout);
 
   param = param_in;
@@ -160,25 +178,20 @@ Problem<dim, Number>::setup(InputParameters const & param_in, bool const do_rest
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_ids(triangulation, n_refine_space);
+  create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
+  print_grid_data(pcout, param.h_refinements, *triangulation);
 
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
   set_boundary_conditions(boundary_descriptor);
 
-  print_grid_data(pcout, n_refine_space, *triangulation);
-
   field_functions.reset(new FieldFunctions<dim>());
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
   set_field_functions(field_functions);
 
   analytical_solution.reset(new AnalyticalSolution<dim>());
   set_analytical_solution(analytical_solution);
 
   // initialize postprocessor
-  postprocessor.reset(new PostProcessor<dim, Number>());
+  postprocessor = construct_postprocessor<dim, Number>();
 
   // initialize convection diffusion operation
   conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
@@ -188,11 +201,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in, bool const do_rest
     // initialize time integrator
     if(param.temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param, n_refine_time));
+      time_integrator.reset(
+        new TimeIntExplRK<Number>(conv_diff_operator, param, param.dt_refinements));
     }
     else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param, n_refine_time));
+      time_integrator.reset(
+        new TimeIntBDF<Number>(conv_diff_operator, param, param.dt_refinements));
     }
     else
     {
@@ -219,7 +234,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in, bool const do_rest
   if(param.problem_type == ProblemType::Unsteady)
   {
     // setup time integrator
-    time_integrator->setup(do_restart);
+    time_integrator->setup(param.restarted_simulation);
 
     // setup solvers in case of BDF time integration
     if(param.temporal_discretization == TemporalDiscretization::BDF)
@@ -410,57 +425,71 @@ Problem<dim, Number>::analyze_computing_times() const
               << std::endl;
 }
 
+
+// instantiations
+template class Problem<2, double>;
+template class Problem<3, double>;
+
 int
 main(int argc, char ** argv)
 {
   try
   {
-    // using namespace ConvectionDiffusionProblem;
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
-
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
-                << DEAL_II_GIT_BRANCH << std::endl
-                << std::endl;
-    }
 
     deallog.depth_console(0);
 
-    bool do_restart = false;
-    if(argc > 1)
-    {
-      do_restart = std::atoi(argv[1]);
-      if(do_restart)
-      {
-        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX,
-                    ExcMessage("Spatial refinement not possible in combination with restart!"));
+    // set parameters
+    ConvDiff::InputParameters param;
+    set_input_parameters(param);
 
-        AssertThrow(REFINE_STEPS_TIME_MIN == REFINE_STEPS_TIME_MAX,
-                    ExcMessage("Temporal refinement not possible in combination with restart!"));
-      }
+    // check parameters in case of restart
+    if(param.restarted_simulation)
+    {
+      AssertThrow(DEGREE_MIN == DEGREE_MAX && REFINE_SPACE_MIN == REFINE_SPACE_MAX,
+                  ExcMessage("Spatial refinement not possible in combination with restart!"));
+
+      AssertThrow(REFINE_TIME_MIN == REFINE_TIME_MAX,
+                  ExcMessage("Temporal refinement not possible in combination with restart!"));
     }
 
-    // mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
-        refine_steps_space <= REFINE_STEPS_SPACE_MAX;
-        ++refine_steps_space)
+    // k-refinement
+    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
     {
-      // time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;
-          refine_steps_time <= REFINE_STEPS_TIME_MAX;
-          ++refine_steps_time)
+      // h-refinement
+      for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
+          ++h_refinements)
       {
-        Problem<DIMENSION, VALUE_TYPE> problem(refine_steps_space, refine_steps_time);
+        // dt-refinement
+        for(unsigned int dt_refinements = REFINE_TIME_MIN; dt_refinements <= REFINE_TIME_MAX;
+            ++dt_refinements)
+        {
+          // reset degree
+          param.degree = degree;
 
-        ConvDiff::InputParameters param;
-        param.set_input_parameters();
+          // reset mesh refinement
+          param.h_refinements = h_refinements;
 
-        problem.setup(param, do_restart);
+          // reset dt_refinements
+          param.dt_refinements = dt_refinements;
 
-        problem.solve();
+          // setup problem and run simulation
+          typedef double                       Number;
+          std::shared_ptr<ProblemBase<Number>> problem;
 
-        problem.analyze_computing_times();
+          if(param.dim == 2)
+            problem.reset(new Problem<2, Number>());
+          else if(param.dim == 3)
+            problem.reset(new Problem<3, Number>());
+          else
+            AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
+
+          problem->setup(param);
+
+          problem->solve();
+
+          problem->analyze_computing_times();
+        }
       }
     }
   }

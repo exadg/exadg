@@ -22,137 +22,36 @@ class InputParameters
 {
 public:
   // standard constructor that initializes parameters with default values
-  InputParameters()
-    : // MATHEMATICAL MODEL
-      right_hand_side(false),
-
-      // PHYSICAL QUANTITIES
-
-      // SPATIAL DISCRETIZATION
-      degree(1),
-      degree_mapping(1),
-      IP_factor(1.0),
-      spatial_discretization(SpatialDiscretization::DG),
-
-      // SOLVER
-      solver(Solver::Undefined),
-      solver_data(SolverData(1e4, 1.e-20, 1.e-12)),
-      compute_performance_metrics(false),
-      preconditioner(Preconditioner::Undefined),
-      multigrid_data(MultigridData()),
-      enable_cell_based_face_loops(false)
-
-  // OUTPUT AND POSTPROCESSING
-  {
-  }
-
-  /*
-   *  This function is implemented in the header file of the test case
-   *  that has to be solved.
-   */
-  void
-  set_input_parameters();
+  InputParameters();
 
   void
-  check_input_parameters()
-  {
-    // SPATIAL DISCRETIZATION
-    AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
-    AssertThrow(degree_mapping > 0, ExcMessage("Invalid parameter."));
-  }
+  check_input_parameters();
 
   void
-  print(ConditionalOStream & pcout, std::string const & name)
-  {
-    pcout << std::endl << name << std::endl;
+  print(ConditionalOStream & pcout, std::string const & name);
 
-    // MATHEMATICAL MODEL
-    print_parameters_mathematical_model(pcout);
-
-    // PHYSICAL QUANTITIES
-    print_parameters_physical_quantities(pcout);
-
-    // SPATIAL DISCRETIZATION
-    print_parameters_spatial_discretization(pcout);
-
-    // SOLVER
-    print_parameters_solver(pcout);
-
-    // NUMERICAL PARAMETERS
-    print_parameters_numerical_parameters(pcout);
-
-    // OUTPUT AND POSTPROCESSING
-    print_parameters_output_and_postprocessing(pcout);
-  }
+private:
+  void
+  print_parameters_mathematical_model(ConditionalOStream & pcout);
 
   void
-  print_parameters_mathematical_model(ConditionalOStream & pcout)
-  {
-    pcout << std::endl << "Mathematical model:" << std::endl;
-
-    // right hand side
-    print_parameter(pcout, "Right-hand side", right_hand_side);
-  }
+  print_parameters_spatial_discretization(ConditionalOStream & pcout);
 
   void
-  print_parameters_physical_quantities(ConditionalOStream & pcout)
-  {
-    pcout << std::endl << "Physical quantities:" << std::endl;
-  }
+  print_parameters_solver(ConditionalOStream & pcout);
 
   void
-  print_parameters_spatial_discretization(ConditionalOStream & pcout)
-  {
-    pcout << std::endl << "Spatial Discretization:" << std::endl;
+  print_parameters_numerical_parameters(ConditionalOStream & pcout);
 
-    print_parameter(pcout, "Polynomial degree of shape functions", degree);
-
-    print_parameter(pcout, "Polynomial degree of mapping", degree_mapping);
-
-    print_parameter(pcout, "IP factor viscous term", IP_factor);
-
-    print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
-  }
-
-  void
-  print_parameters_solver(ConditionalOStream & pcout)
-  {
-    pcout << std::endl << "Solver:" << std::endl;
-
-    print_parameter(pcout, "Solver", enum_to_string(solver));
-
-    solver_data.print(pcout);
-
-    print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner));
-
-    if(preconditioner == Preconditioner::Multigrid)
-      multigrid_data.print(pcout);
-  }
-
-
-  void
-  print_parameters_numerical_parameters(ConditionalOStream & pcout)
-  {
-    pcout << std::endl << "Numerical parameters:" << std::endl;
-
-    print_parameter(pcout, "Enable cell-based face loops", enable_cell_based_face_loops);
-  }
-
-
-  void
-  print_parameters_output_and_postprocessing(ConditionalOStream & pcout)
-  {
-    pcout << std::endl << "Output and postprocessing:" << std::endl;
-
-    output_data.print(pcout, false /*steady*/);
-  }
-
-
+public:
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 MATHEMATICAL MODEL                                 */
   /*                                                                                    */
   /**************************************************************************************/
+
+  // number of space dimensions
+  unsigned int dim;
 
   // if the rhs f is unequal zero, set right_hand_side = true
   bool right_hand_side;
@@ -163,18 +62,24 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
+  // triangulation type
+  TriangulationType triangulation_type;
+
   // Polynomial degree of shape functions
   unsigned int degree;
 
-  // Polynomial degree of shape functions used for geometry approximation (mapping from
-  // parameter space to physical space)
-  unsigned int degree_mapping;
+  // Type of mapping (polynomial degree) use for geometry approximation
+  MappingType mapping;
+
+  // Number of mesh refinement steps
+  unsigned int h_refinements;
+
+  // type of spatial discretization approach
+  SpatialDiscretization spatial_discretization;
 
   // Symmetric interior penalty Galerkin (SIPG) discretization
   // interior penalty parameter scaling factor: default value is 1.0
-  double                IP_factor;
-  SpatialDiscretization spatial_discretization;
-
+  double IP_factor;
 
 
   /**************************************************************************************/

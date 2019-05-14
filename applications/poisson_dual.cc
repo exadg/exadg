@@ -59,7 +59,7 @@ public:
   {
     print_MPI_info(pcout);
 
-    param.set_input_parameters();
+    set_input_parameters(param);
 
     triangulation.reset(new parallel::distributed::Triangulation<dim>(
       MPI_COMM_WORLD,

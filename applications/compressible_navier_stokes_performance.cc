@@ -176,6 +176,7 @@ void
 Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
 {
   print_header();
+  print_dealii_info(pcout);
   print_MPI_info(pcout);
 
   param = param_in;
@@ -392,13 +393,6 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
-                << DEAL_II_GIT_BRANCH << std::endl
-                << std::endl;
-    }
-
     deallog.depth_console(0);
 
     for(unsigned int degree = FE_DEGREE_MIN; degree <= FE_DEGREE_MAX; ++degree)
@@ -417,7 +411,7 @@ main(int argc, char ** argv)
       param.n_q_points_conv = degree + 1;
       // param.n_q_points_conv = degree+(degree+2)/2;
       // param.n_q_points_conv = 2 * degree + 1;
-      param.n_q_points_vis  = param.n_q_points_conv;
+      param.n_q_points_vis = param.n_q_points_conv;
 
       Problem<DIMENSION> problem(REFINE_LEVELS[degree - 1]);
       problem.setup(param);

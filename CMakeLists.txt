@@ -47,9 +47,11 @@ SET( TARGET_SRC
      include/matrix_free/resolve_templates_double_2d.cpp
      include/matrix_free/resolve_templates_double_3d.cpp
      include/poisson/user_interface/enum_types.cpp
+     include/poisson/user_interface/input_parameters.cpp
      include/poisson/spatial_discretization/operator.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp     
      include/convection_diffusion/user_interface/enum_types.cpp
+     include/convection_diffusion/user_interface/input_parameters.cpp
      include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
@@ -60,6 +62,8 @@ SET( TARGET_SRC
      include/convection_diffusion/time_integration/time_int_bdf.cpp
      include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.cpp
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
+     include/convection_diffusion/postprocessor/postprocessor.cpp
+     include/convection_diffusion/postprocessor/output_generator.cpp
      include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
      include/incompressible_navier_stokes/user_interface/enum_types.cpp
      include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.cpp     

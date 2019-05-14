@@ -179,6 +179,7 @@ void
 Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
 {
   print_header();
+  print_dealii_info(pcout);
   print_MPI_info(pcout);
 
   // input parameters
@@ -567,13 +568,6 @@ main(int argc, char ** argv)
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
-
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
-                << DEAL_II_GIT_BRANCH << std::endl
-                << std::endl;
-    }
 
     deallog.depth_console(0);
 
