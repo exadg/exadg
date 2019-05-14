@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -e
+
+# make sure that parameters are understood correctly
+if [ "$1" == "" ]; then
+    echo -e "\nUse the following syntax:\n\n./makerun [EXE]\n"
+    exit 0
+fi
+
+EXE=$1
+
+# build the executable
+echo -e "make -j1 $EXE\n"
+make $EXE
+
+# run the executable
+mpirun -np 1 $EXE
