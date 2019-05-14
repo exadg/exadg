@@ -13,25 +13,22 @@
 /*                                                                                                          */
 /************************************************************************************************************/
 
-// convergence studies in space or time
+// convergence studies in space
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
 unsigned int const REFINE_SPACE_MIN = 0;
 unsigned int const REFINE_SPACE_MAX = 0;
 
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
-
-namespace ConvDiff
+namespace Poisson
 {
 void
-set_input_parameters(ConvDiff::InputParameters &param)
+set_input_parameters(InputParameters &param)
 {
   (void)param;
 
   // Here, set all parameters differing from their default values as initialized in
-  // ConvDiff::InputParameters::InputParameters()
+  // Poisson::InputParameters::InputParameters()
 }
 }
 
@@ -82,12 +79,12 @@ public:
   }
 };
 
-namespace ConvDiff
+namespace Poisson
 {
 
 template<int dim>
 void
-set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
+set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
 {
   typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -99,17 +96,16 @@ set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bound
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions)
+set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 {
   // these lines show exemplarily how the field functions are filled
   field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
-  field_functions->velocity.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 template<int dim>
 void
-set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution)
+set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
 {
   // these lines show exemplarily how the analytical solution is filled
   analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
@@ -122,15 +118,15 @@ set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analy
 /************************************************************************************************************/
 
 template<int dim, typename Number>
-std::shared_ptr<PostProcessorBase<dim, Number> >
+std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
 construct_postprocessor()
 {
-  PostProcessorData pp_data;
+  ConvDiff::PostProcessorData pp_data;
   pp_data.output_data = OutputData();
   pp_data.error_data  = ErrorCalculationData();
 
-  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
+  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));
 
   return pp;
 }
