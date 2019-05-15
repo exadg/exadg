@@ -310,26 +310,32 @@ Problem<dim, Number>::analyze_computing_times() const
               << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
   // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  // Throughput in DoFs/s per time step per core
+  unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  types::global_dof_index const DoFs            = poisson_operator->get_number_of_dofs();
 
   this->pcout << std::endl
-              << "Computational costs (including setup + postprocessing):" << std::endl
+              << "Computational costs and throughput:" << std::endl
               << "  Number of MPI processes = " << N_mpi_processes << std::endl
+              << "  Degrees of freedom      = " << DoFs << std::endl
+              << std::endl
+              << "Overall costs (including setup + postprocessing):" << std::endl
               << "  Wall time               = " << std::scientific << std::setprecision(2)
               << overall_time_avg << " s" << std::endl
               << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
-
-  // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs = poisson_operator->get_number_of_dofs();
-
-  this->pcout << std::endl
-              << "Throughput (including setup + postprocessing):" << std::endl
-              << "  Degrees of freedom      = " << DoFs << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
+              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl
               << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / (overall_time_avg * N_mpi_processes) << " DoFs/s/core" << std::endl;
+              << DoFs / (overall_time_avg * N_mpi_processes) << " DoFs/s/core" << std::endl
+              << std::endl
+              << "Right-hand side + solver:" << std::endl
+              << "  Wall time               = " << std::scientific << std::setprecision(2)
+              << wall_time_rhs + wall_time_solver << " s" << std::endl
+              << "  Computational costs     = " << std::scientific << std::setprecision(2)
+              << (wall_time_rhs + wall_time_solver) * (double)N_mpi_processes / 3600.0 << " CPUh"
+              << std::endl
+              << "  Throughput              = " << std::scientific << std::setprecision(2)
+              << DoFs / ((wall_time_rhs + wall_time_solver) * N_mpi_processes) << " DoFs/s/core"
+              << std::endl;
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl

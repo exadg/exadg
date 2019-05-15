@@ -12,13 +12,20 @@
 unsigned int const DEGREE_MIN = 7;
 unsigned int const DEGREE_MAX = 7;
 
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME       = "cosinus";
+
+enum class MeshType{
+  Cartesian,
+  DeformedCubeManifold
+};
+
+MeshType const MESH_TYPE = MeshType::Cartesian;
 
 namespace Poisson
 {
@@ -70,10 +77,12 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   const double deformation = +0.1, frequnency = +2.0;
   GridGenerator::hyper_cube(*triangulation, left, right);
 
-  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
-  triangulation->set_all_manifold_ids(1);
-  triangulation->set_manifold(1, manifold);
-  triangulation->refine_global(n_refine_space);
+  if(MESH_TYPE == MeshType::DeformedCubeManifold)
+  {
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    triangulation->set_all_manifold_ids(1);
+    triangulation->set_manifold(1, manifold);
+  }
 
   for (auto cell : (*triangulation))
   {
@@ -92,6 +101,8 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
   GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
   triangulation->add_periodicity(periodic_faces);
+
+  triangulation->refine_global(n_refine_space);
 }
 
 

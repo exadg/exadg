@@ -9,16 +9,23 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 6;
-unsigned int const DEGREE_MAX = 6;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 5;
+unsigned int const REFINE_SPACE_MAX = 5;
 
 // problem specific parameters
-std::string OUTPUT_FOLDER     = "output/poisson_gaussian/";
+std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME       = "gaussian";
+
+enum class MeshType{
+  Cartesian,
+  DeformedCubeManifold
+};
+
+MeshType const MESH_TYPE = MeshType::DeformedCubeManifold;
 
 namespace Poisson
 {
@@ -26,7 +33,7 @@ void
 set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  param.dim = 2;
+  param.dim = 3;
   param.right_hand_side = true;
 
   // SPATIAL DISCRETIZATION
@@ -72,12 +79,15 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   const double deformation = +0.1, frequnency = +2.0;
   GridGenerator::hyper_cube(*triangulation, left, right);
 
-  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
-  triangulation->set_all_manifold_ids(1);
-  triangulation->set_manifold(1, manifold);
+  if(MESH_TYPE == MeshType::DeformedCubeManifold)
+  {
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    triangulation->set_all_manifold_ids(1);
+    triangulation->set_manifold(1, manifold);
+  }
+
   triangulation->refine_global(n_refine_space);
 }
-
 
 /************************************************************************************************************/
 /*                                                                                                          */
