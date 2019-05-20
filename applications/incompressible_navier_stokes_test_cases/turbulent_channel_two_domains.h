@@ -705,7 +705,7 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+  typedef typename Base::Operator Operator;
 
   PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel)
     :
@@ -716,27 +716,20 @@ public:
     inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_turb_channel.inflow_data));
   }
 
-  void setup(NavierStokesOperator const                &navier_stokes_operator_in,
-             DoFHandler<dim> const                     &dof_handler_velocity_in,
-             DoFHandler<dim> const                     &dof_handler_pressure_in,
-             Mapping<dim> const                        &mapping_in,
-             MatrixFree<dim,Number> const              &matrix_free_data_in)
+  void setup(Operator const & pde_operator)
   {
     // call setup function of base class
-    Base::setup(
-        navier_stokes_operator_in,
-        dof_handler_velocity_in,
-        dof_handler_pressure_in,
-        mapping_in,
-        matrix_free_data_in);
+    Base::setup(pde_operator);
 
     // perform setup of turbulent channel related things
-    statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_velocity_in,mapping_in));
+    statistics_turb_ch.reset(new StatisticsManager<dim>(pde_operator.get_dof_handler_u(),
+                                                        pde_operator.get_mapping()));
 
     statistics_turb_ch->setup(&grid_transform_y,turb_ch_data);
 
     // inflow data
-    inflow_data_calculator->setup(dof_handler_velocity_in,mapping_in);
+    inflow_data_calculator->setup(pde_operator.get_dof_handler_u(),
+                                  pde_operator.get_mapping());
   }
 
   void do_postprocessing(VectorType const &velocity,

@@ -399,24 +399,15 @@ public:
     turb_ch_data(pp_data_turb_channel.turb_ch_data)
   {}
 
-  void setup(DGOperator<dim, Number> const                     &navier_stokes_operator_in,
-             DoFHandler<dim> const                             &dof_handler_in,
-             DoFHandler<dim> const                             &dof_handler_vector_in,
-             DoFHandler<dim> const                             &dof_handler_scalar_in,
-             Mapping<dim> const                                &mapping_in,
-             MatrixFree<dim,double> const                      &matrix_free_data_in)
+  void setup(DGOperator<dim, Number> const &pde_operator)
   {
     // call setup function of base class
-    Base::setup(
-        navier_stokes_operator_in,
-        dof_handler_in,
-        dof_handler_vector_in,
-        dof_handler_scalar_in,
-        mapping_in,
-        matrix_free_data_in);
+    Base::setup(pde_operator);
 
     // perform setup of turbulent channel related things
-    statistics_turb_ch.reset(new StatisticsManager<dim>(dof_handler_vector_in,mapping_in));
+    statistics_turb_ch.reset(new StatisticsManager<dim>(pde_operator.get_dof_handler_vector(),
+                                                        pde_operator.get_mapping()));
+
     statistics_turb_ch->setup(&grid_transform_y,turb_ch_data);
   }
 

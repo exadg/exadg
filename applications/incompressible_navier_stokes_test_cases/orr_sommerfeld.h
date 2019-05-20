@@ -375,7 +375,7 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+  typedef typename Base::Operator Operator;
 
   PostProcessorOrrSommerfeld(PostProcessorDataOrrSommerfeld<dim> const & pp_data_os)
     :
@@ -383,23 +383,15 @@ public:
     energy_data(pp_data_os.energy_data)
   {}
 
-  void setup(NavierStokesOperator const                &navier_stokes_operator_in,
-             DoFHandler<dim> const                     &dof_handler_velocity_in,
-             DoFHandler<dim> const                     &dof_handler_pressure_in,
-             Mapping<dim> const                        &mapping_in,
-             MatrixFree<dim,Number> const              &matrix_free_data_in)
+  void
+  setup(Operator const & pde_operator)
   {
     // call setup function of base class
-    Base::setup(
-        navier_stokes_operator_in,
-        dof_handler_velocity_in,
-        dof_handler_pressure_in,
-        mapping_in,
-        matrix_free_data_in);
+    Base::setup(pde_operator);
 
-    energy_calculator.setup(matrix_free_data_in,
-                            navier_stokes_operator_in.get_dof_index_velocity(),
-                            navier_stokes_operator_in.get_quad_index_velocity_linear(),
+    energy_calculator.setup(pde_operator.get_data(),
+                            pde_operator.get_dof_index_velocity(),
+                            pde_operator.get_quad_index_velocity_linear(),
                             energy_data);
   }
 

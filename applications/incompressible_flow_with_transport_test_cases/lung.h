@@ -771,7 +771,7 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+  typedef typename Base::Operator Operator;
 
   PostProcessorLung(PostProcessorDataLung<dim> const & pp_data_in)
     :
@@ -781,19 +781,10 @@ public:
   {
   }
 
-  void setup(NavierStokesOperator const                &navier_stokes_operator_in,
-             DoFHandler<dim> const                     &dof_handler_velocity_in,
-             DoFHandler<dim> const                     &dof_handler_pressure_in,
-             Mapping<dim> const                        &mapping_in,
-             MatrixFree<dim,Number> const              &matrix_free_data_in)
+  void setup(Operator const & pde_operator)
   {
     // call setup function of base class
-    Base::setup(
-        navier_stokes_operator_in,
-        dof_handler_velocity_in,
-        dof_handler_pressure_in,
-        mapping_in,
-        matrix_free_data_in);
+    Base::setup(pde_operator);
 
     // fill flow_rates map
     for(auto iterator = OUTFLOW_BOUNDARIES.begin(); iterator != OUTFLOW_BOUNDARIES.end(); ++iterator)
@@ -802,10 +793,10 @@ public:
     }
 
     flow_rate_calculator.reset(new FlowRateCalculator<dim,Number>(
-        matrix_free_data_in,
-        dof_handler_velocity_in,
-        navier_stokes_operator_in.get_dof_index_velocity(),
-        navier_stokes_operator_in.get_quad_index_velocity_linear(),
+        pde_operator.get_data(),
+        pde_operator.get_dof_handler_u(),
+        pde_operator.get_dof_index_velocity(),
+        pde_operator.get_quad_index_velocity_linear(),
         pp_data_lung.flow_rate_data));
   }
 
@@ -821,7 +812,9 @@ public:
         time_step_number);
 
     // calculate flow rates for all outflow boundaries
-    AssertThrow(pp_data_lung.flow_rate_data.calculate == true, ExcMessage("Activate flow rate computation."));
+    AssertThrow(pp_data_lung.flow_rate_data.calculate == true,
+        ExcMessage("Activate flow rate computation."));
+
     flow_rate_calculator->calculate_flow_rates(velocity, time, flow_rates);
 
     // set flow rate for all outflow boundaries and update volume (i.e., integrate flow rate over time)
