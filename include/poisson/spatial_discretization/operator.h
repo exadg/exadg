@@ -53,8 +53,7 @@ public:
   void
   setup(PeriodicFaces const                                     periodic_face_pairs,
         std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor_in,
-        std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions_in,
-        std::shared_ptr<Poisson::AnalyticalSolution<dim>> const analytical_solution_in);
+        std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions_in);
 
   void
   setup_solver();
@@ -100,7 +99,7 @@ private:
   setup_operators();
 
   void
-  setup_postprocessor(std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution);
+  setup_postprocessor();
 
   Poisson::InputParameters const & param;
 

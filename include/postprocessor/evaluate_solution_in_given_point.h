@@ -8,8 +8,14 @@
 #ifndef INCLUDE_POSTPROCESSOR_EVALUATE_SOLUTION_IN_GIVEN_POINT_H_
 #define INCLUDE_POSTPROCESSOR_EVALUATE_SOLUTION_IN_GIVEN_POINT_H_
 
+#include <deal.II/base/point.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/lac/la_parallel_vector.h>
+
+using namespace dealii;
 
 template<int dim, typename Number>
 void

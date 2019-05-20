@@ -15,11 +15,11 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &         parameters_in,
+  InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
   : BASE(triangulation, parameters_in, postprocessor_in)
 {
-  AssertThrow(this->param.degree_p > 0,
+  AssertThrow(this->param.get_degree_p() > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
                          "zero for dual splitting scheme and pressure-correction scheme."));
 }
@@ -49,7 +49,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
   laplace_operator_data.dof_index      = this->get_dof_index_pressure();
   laplace_operator_data.quad_index     = this->get_quad_index_pressure();
   laplace_operator_data.IP_factor      = this->param.IP_factor_pressure;
-  laplace_operator_data.degree         = this->param.degree_p;
+  laplace_operator_data.degree         = this->param.get_degree_p();
   laplace_operator_data.degree_mapping = this->param.IP_factor_pressure;
 
   /*
@@ -94,7 +94,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 
   laplace_operator_data.bc                   = this->boundary_descriptor_laplace;
   laplace_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  laplace_operator_data.degree_mapping       = this->param.degree_mapping;
+  laplace_operator_data.degree_mapping       = this->mapping_degree;
   laplace_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
@@ -130,7 +130,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  this->mapping,
+                                  *this->mapping,
                                   laplace_operator.get_operator_data(),
                                   &laplace_operator.get_operator_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);

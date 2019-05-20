@@ -1,7 +1,7 @@
 /*
- * convection_diffusion.cc
+ * poisson.cc
  *
- *  Created on: Aug 18, 2016
+ *  Created on: May, 2019
  *      Author: fehn
  */
 
@@ -40,7 +40,6 @@
 using namespace dealii;
 using namespace Poisson;
 
-template<typename Number>
 class ProblemBase
 {
 public:
@@ -59,7 +58,7 @@ public:
 };
 
 template<int dim, typename Number = double>
-class Problem : public ProblemBase<Number>
+class Problem : public ProblemBase
 {
 public:
   Problem();
@@ -88,8 +87,6 @@ private:
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-
-  std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution;
 
   std::shared_ptr<DGOperator<dim, Number>> poisson_operator;
 
@@ -175,19 +172,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  set_analytical_solution(analytical_solution);
-
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>();
 
   // initialize Poisson operator
   poisson_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
 
-  poisson_operator->setup(periodic_faces,
-                          boundary_descriptor,
-                          field_functions,
-                          analytical_solution);
+  poisson_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 
   poisson_operator->setup_solver();
 
@@ -374,8 +365,8 @@ main(int argc, char ** argv)
         param.h_refinements = h_refinements;
 
         // setup problem and run simulation
-        typedef double                       Number;
-        std::shared_ptr<ProblemBase<Number>> problem;
+        typedef double               Number;
+        std::shared_ptr<ProblemBase> problem;
 
         if(param.dim == 2)
           problem.reset(new Problem<2, Number>());

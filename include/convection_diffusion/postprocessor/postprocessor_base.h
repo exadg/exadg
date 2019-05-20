@@ -32,10 +32,9 @@ public:
   }
 
   virtual void
-  setup(DoFHandler<dim> const &              dof_handler_in,
-        Mapping<dim> const &                 mapping_in,
-        MatrixFree<dim, Number> const &      matrix_free_data_in,
-        std::shared_ptr<Function<dim>> const analytical_solution_in) = 0;
+  setup(DoFHandler<dim> const &         dof_handler_in,
+        Mapping<dim> const &            mapping_in,
+        MatrixFree<dim, Number> const & matrix_free_data_in) = 0;
 
   virtual void
   do_postprocessing(VectorType const & solution,

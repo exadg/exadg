@@ -11,10 +11,10 @@
 #include "dg_navier_stokes_base.h"
 #include "interface.h"
 
-#include "../../solvers_and_preconditioners/newton/newton_solver.h"
-#include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../poisson/spatial_discretization/laplace_operator.h"
+#include "../../solvers_and_preconditioners/newton/newton_solver.h"
+#include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/compatible_laplace_operator.h"
 #include "../preconditioners/multigrid_preconditioner.h"
@@ -83,7 +83,7 @@ public:
    * Constructor.
    */
   DGNavierStokesCoupled(parallel::Triangulation<dim> const & triangulation,
-                        InputParameters<dim> const &         parameters_in,
+                        InputParameters const &              parameters_in,
                         std::shared_ptr<Postprocessor>       postprocessor_in);
 
   /*
@@ -96,8 +96,7 @@ public:
                                                         periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-        std::shared_ptr<AnalyticalSolution<dim>> const  analytical_solution);
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term = 1.0);

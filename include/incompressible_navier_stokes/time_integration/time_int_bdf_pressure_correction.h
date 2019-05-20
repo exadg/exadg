@@ -15,32 +15,31 @@
 namespace IncNS
 {
 // forward declarations
-template<int dim>
 class InputParameters;
 
 namespace Interface
 {
-template<int dim, typename Number>
+template<typename Number>
 class OperatorBase;
 template<typename Number>
 class OperatorPressureCorrection;
 
 } // namespace Interface
 
-template<int dim, typename Number>
-class TimeIntBDFPressureCorrection : public TimeIntBDF<dim, Number>
+template<typename Number>
+class TimeIntBDFPressureCorrection : public TimeIntBDF<Number>
 {
 public:
-  typedef TimeIntBDF<dim, Number> Base;
+  typedef TimeIntBDF<Number> Base;
 
   typedef typename Base::VectorType VectorType;
 
-  typedef Interface::OperatorBase<dim, Number>          InterfaceBase;
+  typedef Interface::OperatorBase<Number>               InterfaceBase;
   typedef Interface::OperatorPressureCorrection<Number> InterfacePDE;
 
   TimeIntBDFPressureCorrection(std::shared_ptr<InterfaceBase> operator_base_in,
                                std::shared_ptr<InterfacePDE>  operator_pressure_correction_in,
-                               InputParameters<dim> const &   param_in,
+                               InputParameters const &        param_in,
                                unsigned int const             n_refine_time_in);
 
   void

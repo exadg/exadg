@@ -46,6 +46,12 @@ SET( TARGET_SRC
      include/matrix_free/resolve_templates_float_3d.cpp
      include/matrix_free/resolve_templates_double_2d.cpp
      include/matrix_free/resolve_templates_double_3d.cpp
+     include/postprocessor/error_calculation.cpp
+     include/postprocessor/lift_and_drag_calculation.cpp
+     include/postprocessor/pressure_difference_calculation.cpp
+     include/postprocessor/kinetic_energy_spectrum.cpp
+     include/postprocessor/kinetic_energy_calculation.cpp
+     include/postprocessor/statistics_manager.cpp 
      include/poisson/user_interface/enum_types.cpp
      include/poisson/user_interface/input_parameters.cpp
      include/poisson/spatial_discretization/operator.cpp
@@ -64,7 +70,7 @@ SET( TARGET_SRC
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
      include/convection_diffusion/postprocessor/postprocessor.cpp
      include/convection_diffusion/postprocessor/output_generator.cpp
-     include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
+     include/incompressible_navier_stokes/user_interface/input_parameters.cpp
      include/incompressible_navier_stokes/user_interface/enum_types.cpp
      include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.cpp     
      include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp 
@@ -86,16 +92,29 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.cpp
      include/incompressible_navier_stokes/spatial_discretization/interface.cpp 
+     include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.cpp
      include/incompressible_navier_stokes/time_integration/driver_steady_problems.cpp
-     include/incompressible_navier_stokes/postprocessor/statistics_manager.cpp 
+     include/incompressible_navier_stokes/postprocessor/output_generator.cpp 
+     include/incompressible_navier_stokes/postprocessor/divergence_and_mass_error.cpp 
+     include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.cpp 
+     include/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.cpp 
+     include/incompressible_navier_stokes/postprocessor/line_plot_calculation.cpp 
+     include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.cpp 
+     include/incompressible_navier_stokes/postprocessor/perturbation_energy_orr_sommerfeld.cpp 
+     include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.cpp 
+     include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp 
+     include/incompressible_navier_stokes/postprocessor/postprocessor.cpp 
      include/compressible_navier_stokes/user_interface/enum_types.cpp
+     include/compressible_navier_stokes/user_interface/input_parameters.cpp
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
      include/compressible_navier_stokes/spatial_discretization/interface.cpp
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
+     include/compressible_navier_stokes/postprocessor/write_output.cpp
+     include/compressible_navier_stokes/postprocessor/postprocessor.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp     
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp

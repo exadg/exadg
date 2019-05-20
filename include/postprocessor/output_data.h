@@ -12,9 +12,9 @@
 
 using namespace dealii;
 
-struct OutputData
+struct OutputDataBase
 {
-  OutputData()
+  OutputDataBase()
     : write_output(false),
       output_counter_start(0),
       output_folder("output"),

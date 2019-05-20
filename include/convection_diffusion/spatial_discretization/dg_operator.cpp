@@ -51,8 +51,7 @@ void
 DGOperator<dim, Number>::setup(
   PeriodicFaces const                            periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
-  std::shared_ptr<AnalyticalSolution<dim>> const analytical_solution_in)
+  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in)
 {
   pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
 
@@ -66,7 +65,7 @@ DGOperator<dim, Number>::setup(
 
   setup_operators();
 
-  setup_postprocessor(analytical_solution_in);
+  setup_postprocessor();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -712,10 +711,9 @@ DGOperator<dim, Number>::do_postprocessing(VectorType const & solution,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_postprocessor(
-  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
+DGOperator<dim, Number>::setup_postprocessor()
 {
-  postprocessor->setup(dof_handler, *mapping, matrix_free, analytical_solution->solution);
+  postprocessor->setup(dof_handler, *mapping, matrix_free);
 }
 
 template class DGOperator<2, float>;

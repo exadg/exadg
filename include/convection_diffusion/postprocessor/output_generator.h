@@ -28,7 +28,7 @@ public:
   void
   setup(DoFHandler<dim> const & dof_handler_in,
         Mapping<dim> const &    mapping_in,
-        OutputData const &      output_data_in);
+        OutputDataBase const &  output_data_in);
 
   void
   evaluate(VectorType const & solution, double const & time, int const & time_step_number);
@@ -39,7 +39,7 @@ private:
 
   SmartPointer<DoFHandler<dim> const> dof_handler;
   SmartPointer<Mapping<dim> const>    mapping;
-  OutputData                          output_data;
+  OutputDataBase                      output_data;
 };
 
 } // namespace ConvDiff

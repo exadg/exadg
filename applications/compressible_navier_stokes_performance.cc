@@ -12,10 +12,12 @@
 #include <deal.II/grid/grid_tools.h>
 
 // postprocessor
-#include "../include/compressible_navier_stokes/postprocessor/postprocessor.h"
-#include "../include/compressible_navier_stokes/spatial_discretization/dg_operator.h"
+#include "../include/compressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // spatial discretization
+#include "../include/compressible_navier_stokes/spatial_discretization/dg_operator.h"
+
+// temporal discretization
 #include "../include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.h"
 
 // Parameters, BCs, etc.
@@ -30,7 +32,7 @@
 #  include <likwid.h>
 #endif
 
-// SPECIFY THE TEST CASE THAT HAS TO BE SOLVED
+// specify the test case that has to be solved
 
 #include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 
@@ -92,24 +94,36 @@ std::vector<std::pair<unsigned int, double>> wall_times;
 using namespace dealii;
 using namespace CompNS;
 
+class ProblemBase
+{
+public:
+  virtual ~ProblemBase()
+  {
+  }
+
+  virtual void
+  setup(InputParameters const & param) = 0;
+
+  virtual void
+  apply_operator() = 0;
+};
+
 namespace CompNS
 {
 template<int dim, typename Number = double>
-class Problem
+class Problem : public ProblemBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef DGOperator<dim, Number> DG_OPERATOR;
 
-  typedef TimeIntExplRK<dim, Number> TIME_INT;
+  typedef PostProcessorBase<dim, Number> POSTPROCESSOR;
 
-  typedef PostProcessor<dim, Number> POSTPROCESSOR;
-
-  Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
+  Problem();
 
   void
-  setup(InputParameters<dim> const & param_in);
+  setup(InputParameters const & param_in);
 
   void
   apply_operator();
@@ -125,17 +139,13 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  const unsigned int n_refine_space;
-  const unsigned int n_refine_time;
-
   std::shared_ptr<FieldFunctions<dim>>           field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
   std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
-  std::shared_ptr<AnalyticalSolution<dim>>       analytical_solution;
 
-  InputParameters<dim> param;
+  InputParameters param;
 
   std::shared_ptr<DG_OPERATOR> comp_navier_stokes_operator;
 
@@ -146,11 +156,8 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem(unsigned int const n_refine_space_in,
-                              unsigned int const n_refine_time_in)
+Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    n_refine_space(n_refine_space_in),
-    n_refine_time(n_refine_time_in),
     n_repetitions_inner(N_REPETITIONS_INNER),
     n_repetitions_outer(N_REPETITIONS_OUTER)
 {
@@ -173,7 +180,7 @@ Problem<dim, Number>::print_header()
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
+Problem<dim, Number>::setup(InputParameters const & param_in)
 {
   print_header();
   print_dealii_info(pcout);
@@ -200,11 +207,8 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  // this function has to be defined in the header file that implements
-  // all problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
-
-  print_grid_data(pcout, n_refine_space, *triangulation);
+  create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
+  print_grid_data(pcout, param.h_refinements, *triangulation);
 
   boundary_descriptor_density.reset(new BoundaryDescriptor<dim>());
   boundary_descriptor_velocity.reset(new BoundaryDescriptor<dim>());
@@ -219,13 +223,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  set_analytical_solution(analytical_solution);
-
   // initialize postprocessor
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
   postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize compressible Navier-Stokes operator
@@ -235,8 +233,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
                                      boundary_descriptor_velocity,
                                      boundary_descriptor_pressure,
                                      boundary_descriptor_energy,
-                                     field_functions,
-                                     analytical_solution);
+                                     field_functions);
 }
 
 template<int dim, typename Number>
@@ -395,27 +392,27 @@ main(int argc, char ** argv)
 
     deallog.depth_console(0);
 
-    for(unsigned int degree = FE_DEGREE_MIN; degree <= FE_DEGREE_MAX; ++degree)
-    {
-      CompNS::InputParameters<DIMENSION> param;
-      param.set_input_parameters();
+    CompNS::InputParameters param;
+    set_input_parameters(param);
 
-      // manipulate polynomial degree and select quadrature rule
+    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+    {
+      // manipulate polynomial degree
       param.degree = degree;
 
-      // mapping
-      param.degree_mapping = 1;
-      // param.degree_mapping = degree;
+      // setup problem and run simulation
+      typedef double               Number;
+      std::shared_ptr<ProblemBase> problem;
 
-      // quadrature
-      param.n_q_points_conv = degree + 1;
-      // param.n_q_points_conv = degree+(degree+2)/2;
-      // param.n_q_points_conv = 2 * degree + 1;
-      param.n_q_points_vis = param.n_q_points_conv;
+      if(param.dim == 2)
+        problem.reset(new Problem<2, Number>());
+      else if(param.dim == 3)
+        problem.reset(new Problem<3, Number>());
+      else
+        AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 
-      Problem<DIMENSION> problem(REFINE_LEVELS[degree - 1]);
-      problem.setup(param);
-      problem.apply_operator();
+      problem->setup(param);
+      problem->apply_operator();
     }
 
     print_wall_times(wall_times);

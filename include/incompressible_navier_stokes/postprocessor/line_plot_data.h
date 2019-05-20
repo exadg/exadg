@@ -1,5 +1,5 @@
 /*
- * stress_data.h
+ * line_plot_data.h
  *
  *  Created on: Aug 30, 2017
  *      Author: fehn
@@ -9,7 +9,9 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_LINE_PLOT_DATA_H_
 
 
-#include <deal.II/base/types.h>
+#include <deal.II/base/point.h>
+
+#include "../../functionalities/print_functions.h"
 
 using namespace dealii;
 
@@ -201,7 +203,7 @@ struct LinePlotData
   std::string filename_prefix;
 
   /*
-   *  precision (number of decimal places)
+   *  precision (number of decimal places when writing to files)
    */
   unsigned int precision;
 

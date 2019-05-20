@@ -21,7 +21,6 @@ using namespace dealii;
 namespace CompNS
 {
 // forward declarations
-template<int dim>
 class InputParameters;
 
 namespace Interface
@@ -30,7 +29,7 @@ template<typename Number>
 class Operator;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 class TimeIntExplRK : public TimeIntExplRKBase<Number>
 {
 public:
@@ -38,9 +37,9 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntExplRK(std::shared_ptr<Operator>    operator_in,
-                InputParameters<dim> const & param_in,
-                unsigned int const           n_refine_time_in);
+  TimeIntExplRK(std::shared_ptr<Operator> operator_in,
+                InputParameters const &   param_in,
+                unsigned int const        n_refine_time_in);
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
@@ -92,7 +91,7 @@ private:
 
   std::shared_ptr<ExplicitTimeIntegrator<Operator, VectorType>> rk_time_integrator;
 
-  InputParameters<dim> const & param;
+  InputParameters const & param;
 
   // timer
   mutable Timer  timer_postprocessing;

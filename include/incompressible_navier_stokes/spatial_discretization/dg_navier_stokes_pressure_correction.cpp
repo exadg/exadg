@@ -12,7 +12,7 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &         parameters_in,
+  InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
   : PROJECTION_METHODS_BASE(triangulation, parameters_in, postprocessor_in),
     rhs_vector(nullptr),
@@ -227,7 +227,7 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_matrix_operato
   // inverse mass matrix operator pressure (needed for pressure update in case of rotational
   // formulation)
   inverse_mass_pressure.initialize(this->matrix_free,
-                                   this->param.degree_p,
+                                   this->param.get_degree_p(),
                                    this->get_dof_index_pressure(),
                                    this->get_quad_index_pressure());
 }

@@ -71,8 +71,7 @@ public:
   void
   setup(PeriodicFaces const                            periodic_face_pairs_in,
         std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
-        std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
-        std::shared_ptr<AnalyticalSolution<dim>> const analytical_solution_in);
+        std::shared_ptr<FieldFunctions<dim>> const     field_functions_in);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -254,7 +253,7 @@ private:
    * Initializes the postprocessor.
    */
   void
-  setup_postprocessor(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution);
+  setup_postprocessor();
 
   /*
    * List of input parameters.

@@ -14,13 +14,13 @@
 
 namespace IncNS
 {
-template<int dim, typename Number>
-TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
+template<typename Number>
+TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
   std::shared_ptr<InterfaceBase> operator_base_in,
   std::shared_ptr<InterfacePDE>  pde_operator_in,
-  InputParameters<dim> const &   param_in,
+  InputParameters const &        param_in,
   unsigned int const             n_refine_time_in)
-  : TimeIntBDF<dim, Number>(operator_base_in, param_in, n_refine_time_in),
+  : TimeIntBDF<Number>(operator_base_in, param_in, n_refine_time_in),
     pde_operator(pde_operator_in),
     velocity(param_in.order_time_integrator),
     pressure(param_in.order_time_integrator),
@@ -34,12 +34,12 @@ TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
 {
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::update_time_integrator_constants()
+TimeIntBDFPressureCorrection<Number>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
-  TimeIntBDF<dim, Number>::update_time_integrator_constants();
+  TimeIntBDF<Number>::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure gradient term
 
@@ -63,9 +63,9 @@ TimeIntBDFPressureCorrection<dim, Number>::update_time_integrator_constants()
   //  this->get_time_step_number() << std::endl; extra_pressure_gradient.print();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::setup_derived()
+TimeIntBDFPressureCorrection<Number>::setup_derived()
 {
   if(this->param.convective_problem() && this->start_with_low_order == false &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
@@ -77,9 +77,9 @@ TimeIntBDFPressureCorrection<dim, Number>::setup_derived()
     initialize_vec_pressure_gradient_term();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::allocate_vectors()
+TimeIntBDFPressureCorrection<Number>::allocate_vectors()
 {
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -109,16 +109,16 @@ TimeIntBDFPressureCorrection<dim, Number>::allocate_vectors()
 }
 
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::initialize_current_solution()
+TimeIntBDFPressureCorrection<Number>::initialize_current_solution()
 {
   this->operator_base->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::initialize_former_solutions()
+TimeIntBDFPressureCorrection<Number>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
@@ -129,9 +129,9 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_former_solutions()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::initialize_vec_convective_term()
+TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
@@ -142,9 +142,9 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_vec_convective_term()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::initialize_vec_pressure_gradient_term()
+TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
@@ -155,46 +155,46 @@ TimeIntBDFPressureCorrection<dim, Number>::initialize_vec_pressure_gradient_term
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFPressureCorrection<dim, Number>::get_velocity() const
+TimeIntBDFPressureCorrection<Number>::get_velocity() const
 {
   return velocity[0];
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFPressureCorrection<dim, Number>::get_velocity(unsigned int i) const
+TimeIntBDFPressureCorrection<Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFPressureCorrection<dim, Number>::get_pressure(unsigned int i) const
+TimeIntBDFPressureCorrection<Number>::get_pressure(unsigned int i) const
 {
   return pressure[i];
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::set_velocity(VectorType const & velocity_in,
-                                                        unsigned int const i)
+TimeIntBDFPressureCorrection<Number>::set_velocity(VectorType const & velocity_in,
+                                                   unsigned int const i)
 {
   velocity[i] = velocity_in;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::set_pressure(VectorType const & pressure_in,
-                                                        unsigned int const i)
+TimeIntBDFPressureCorrection<Number>::set_pressure(VectorType const & pressure_in,
+                                                   unsigned int const i)
 {
   pressure[i] = pressure_in;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::postprocessing() const
+TimeIntBDFPressureCorrection<Number>::postprocessing() const
 {
   pde_operator->do_postprocessing(velocity[0],
                                   pressure[0],
@@ -202,16 +202,16 @@ TimeIntBDFPressureCorrection<dim, Number>::postprocessing() const
                                   this->get_time_step_number());
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::postprocessing_steady_problem() const
+TimeIntBDFPressureCorrection<Number>::postprocessing_steady_problem() const
 {
   pde_operator->do_postprocessing_steady_problem(velocity[0], pressure[0]);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::postprocessing_stability_analysis()
+TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
@@ -268,9 +268,9 @@ TimeIntBDFPressureCorrection<dim, Number>::postprocessing_stability_analysis()
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::solve_timestep()
+TimeIntBDFPressureCorrection<Number>::solve_timestep()
 {
   // perform the substeps of the pressure-correction scheme
   momentum_step();
@@ -280,9 +280,9 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_timestep()
   projection_step();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
+TimeIntBDFPressureCorrection<Number>::momentum_step()
 {
   Timer timer;
   timer.restart();
@@ -430,9 +430,9 @@ TimeIntBDFPressureCorrection<dim, Number>::momentum_step()
   computing_times[0] += timer.wall_time();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
+TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
 {
   rhs = 0.0;
 
@@ -507,9 +507,9 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_momentum(VectorType & rhs)
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::pressure_step()
+TimeIntBDFPressureCorrection<Number>::pressure_step()
 {
   Timer timer;
   timer.restart();
@@ -591,9 +591,9 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_step()
   iterations[1] += iterations_pressure;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::calculate_chi(double & chi) const
+TimeIntBDFPressureCorrection<Number>::calculate_chi(double & chi) const
 {
   if(this->param.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
   {
@@ -613,9 +613,9 @@ TimeIntBDFPressureCorrection<dim, Number>::calculate_chi(double & chi) const
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
+TimeIntBDFPressureCorrection<Number>::rhs_pressure(VectorType & rhs) const
 {
   /*
    *  I. calculate divergence term
@@ -657,9 +657,9 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_pressure(VectorType & rhs) const
     set_zero_mean_value(rhs);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::pressure_update()
+TimeIntBDFPressureCorrection<Number>::pressure_update()
 {
   // First set pressure solution to zero.
   pressure_np = 0.0;
@@ -696,9 +696,9 @@ TimeIntBDFPressureCorrection<dim, Number>::pressure_update()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::rhs_projection(VectorType & rhs) const
+TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
 {
   /*
    *  I. calculate mass matrix term
@@ -732,9 +732,9 @@ TimeIntBDFPressureCorrection<dim, Number>::rhs_projection(VectorType & rhs) cons
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::projection_step()
+TimeIntBDFPressureCorrection<Number>::projection_step()
 {
   Timer timer;
   timer.restart();
@@ -783,9 +783,9 @@ TimeIntBDFPressureCorrection<dim, Number>::projection_step()
   iterations[2] += iterations_projection;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::prepare_vectors_for_next_timestep()
+TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
 {
   push_back(velocity);
   velocity[0].swap(velocity_np);
@@ -805,9 +805,9 @@ TimeIntBDFPressureCorrection<dim, Number>::prepare_vectors_for_next_timestep()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
+TimeIntBDFPressureCorrection<Number>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -905,9 +905,9 @@ TimeIntBDFPressureCorrection<dim, Number>::solve_steady_problem()
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 double
-TimeIntBDFPressureCorrection<dim, Number>::evaluate_residual()
+TimeIntBDFPressureCorrection<Number>::evaluate_residual()
 {
   pde_operator->evaluate_nonlinear_residual_steady(
     velocity_np, pressure_np, velocity[0], pressure[0], this->get_time());
@@ -930,10 +930,10 @@ TimeIntBDFPressureCorrection<dim, Number>::evaluate_residual()
 }
 
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                                          std::vector<double> & iteration) const
+TimeIntBDFPressureCorrection<Number>::get_iterations(std::vector<std::string> & name,
+                                                     std::vector<double> &      iteration) const
 {
   unsigned int N_time_steps = this->get_time_step_number() - 1;
 
@@ -976,10 +976,10 @@ TimeIntBDFPressureCorrection<dim, Number>::get_iterations(std::vector<std::strin
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFPressureCorrection<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                                          std::vector<double> & wall_time) const
+TimeIntBDFPressureCorrection<Number>::get_wall_times(std::vector<std::string> & name,
+                                                     std::vector<double> &      wall_time) const
 {
   name.resize(3);
   std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
@@ -994,12 +994,7 @@ TimeIntBDFPressureCorrection<dim, Number>::get_wall_times(std::vector<std::strin
 
 // instantiations
 
-// float
-template class TimeIntBDFPressureCorrection<2, float>;
-template class TimeIntBDFPressureCorrection<3, float>;
-
-// double
-template class TimeIntBDFPressureCorrection<2, double>;
-template class TimeIntBDFPressureCorrection<3, double>;
+template class TimeIntBDFPressureCorrection<float>;
+template class TimeIntBDFPressureCorrection<double>;
 
 } // namespace IncNS

@@ -11,7 +11,7 @@
 #include <deal.II/grid/grid_tools.h>
 
 // postprocessor
-#include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // spatial discretization
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
@@ -26,7 +26,6 @@
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Parameters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
@@ -38,22 +37,39 @@ using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
+// template
+#include "incompressible_navier_stokes_test_cases/template_two_domains.h"
+
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel_two_domains.h"
 //#include "incompressible_navier_stokes_test_cases/backward_facing_step_two_domains.h"
-#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
+//#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
-template<int dim, typename Number = double>
-class Problem
+template<typename Number>
+class ProblemBase
 {
 public:
-  Problem(unsigned int const refine_steps_space1,
-          unsigned int const refine_steps_space2,
-          unsigned int const refine_steps_time = 0);
+  virtual ~ProblemBase()
+  {
+  }
+
+  virtual void
+  setup(InputParameters const & param_1_in, InputParameters const & param_2_in) = 0;
+
+  virtual void
+  solve() const = 0;
+
+  virtual void
+  analyze_computing_times() const = 0;
+};
+
+template<int dim, typename Number>
+class Problem : public ProblemBase<Number>
+{
+public:
+  Problem();
 
   void
-  setup(InputParameters<dim> const & param_1_in,
-        InputParameters<dim> const & param_2_in,
-        bool const                   do_restart);
+  setup(InputParameters const & param_1_in, InputParameters const & param_2_in);
 
   void
   solve() const;
@@ -77,8 +93,6 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_1, periodic_faces_2;
 
-  const unsigned int n_refine_space_domain1, n_refine_space_domain2, n_refine_time;
-
   bool use_adaptive_time_stepping;
 
   std::shared_ptr<FieldFunctions<dim>>      field_functions_1, field_functions_2;
@@ -87,9 +101,7 @@ private:
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure_1,
     boundary_descriptor_pressure_2;
 
-  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution_1, analytical_solution_2;
-
-  InputParameters<dim> param_1, param_2;
+  InputParameters param_1, param_2;
 
   typedef DGNavierStokesBase<dim, Number>               DGBase;
   typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
@@ -102,10 +114,10 @@ private:
 
   std::shared_ptr<Postprocessor> postprocessor_1, postprocessor_2;
 
-  typedef TimeIntBDF<dim, Number>                   TimeInt;
-  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
+  typedef TimeIntBDF<Number>                   TimeInt;
+  typedef TimeIntBDFCoupled<Number>            TimeIntCoupled;
+  typedef TimeIntBDFDualSplitting<Number>      TimeIntDualSplitting;
+  typedef TimeIntBDFPressureCorrection<Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> time_integrator_1, time_integrator_2;
 
@@ -119,22 +131,17 @@ private:
   unsigned int const length = 15;
 
   void
-  analyze_iterations(InputParameters<dim> const &   param,
+  analyze_iterations(InputParameters const &        param,
                      std::shared_ptr<TimeInt> const time_integrator) const;
 
   double
-  analyze_computing_times(InputParameters<dim> const &   param,
+  analyze_computing_times(InputParameters const &        param,
                           std::shared_ptr<TimeInt> const time_integrator) const;
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem(unsigned int const refine_steps_space1,
-                              unsigned int const refine_steps_space2,
-                              unsigned int const refine_steps_time)
+Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    n_refine_space_domain1(refine_steps_space1),
-    n_refine_space_domain2(refine_steps_space2),
-    n_refine_time(refine_steps_time),
     use_adaptive_time_stepping(false),
     overall_time(0.0),
     setup_time(0.0)
@@ -217,9 +224,7 @@ Problem<dim, Number>::synchronize_time_step_size() const
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
-                            InputParameters<dim> const & param_2_in,
-                            bool const                   do_restart)
+Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters const & param_2_in)
 {
   timer.restart();
 
@@ -234,6 +239,8 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
   param_2 = param_2_in;
   param_2.check_input_parameters();
   param_2.print(pcout, "List of input parameters for DOMAIN 2:");
+
+  AssertThrow(param_1.dim == param_2.dim, ExcMessage("Invalid parameters."));
 
   // triangulation
   if(param_1.triangulation_type == TriangulationType::Distributed)
@@ -269,15 +276,11 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
   }
 
   // create grid
-
-  // this function has to be defined in the header file that implements all problem specific things
-  // like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_ids_1(triangulation_1, n_refine_space_domain1, periodic_faces_1);
-
-  create_grid_and_set_boundary_ids_2(triangulation_2, n_refine_space_domain2, periodic_faces_2);
+  create_grid_and_set_boundary_ids_1(triangulation_1, param_1.h_refinements, periodic_faces_1);
+  create_grid_and_set_boundary_ids_2(triangulation_2, param_2.h_refinements, periodic_faces_2);
 
   print_grid_data(
-    pcout, n_refine_space_domain1, *triangulation_1, n_refine_space_domain2, *triangulation_2);
+    pcout, param_1.h_refinements, *triangulation_1, param_2.h_refinements, *triangulation_2);
 
   boundary_descriptor_velocity_1.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure_1.reset(new BoundaryDescriptorP<dim>());
@@ -292,19 +295,8 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
 
   field_functions_1.reset(new FieldFunctions<dim>());
   field_functions_2.reset(new FieldFunctions<dim>());
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
   set_field_functions_1(field_functions_1);
   set_field_functions_2(field_functions_2);
-
-  analytical_solution_1.reset(new AnalyticalSolution<dim>());
-  analytical_solution_2.reset(new AnalyticalSolution<dim>());
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
-  set_analytical_solution(analytical_solution_1);
-  set_analytical_solution(analytical_solution_2);
 
   // constant vs. adaptive time stepping
   use_adaptive_time_stepping = param_1.adaptive_time_stepping;
@@ -323,8 +315,8 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor_1 = construct_postprocessor<dim, Number>(param_1);
-  postprocessor_2 = construct_postprocessor<dim, Number>(param_2);
+  postprocessor_1 = construct_postprocessor<dim, Number>(param_1, 1);
+  postprocessor_2 = construct_postprocessor<dim, Number>(param_2, 2);
 
   // initialize navier_stokes_operation_1 (DOMAIN 1)
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -339,7 +331,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
     time_integrator_1.reset(new TimeIntCoupled(navier_stokes_operation_coupled_1,
                                                navier_stokes_operation_coupled_1,
                                                param_1,
-                                               n_refine_time));
+                                               param_1.dt_refinements));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -353,7 +345,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
     time_integrator_1.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_1,
                                                      navier_stokes_operation_dual_splitting_1,
                                                      param_1,
-                                                     n_refine_time));
+                                                     param_1.dt_refinements));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -368,7 +360,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_1,
                                     navier_stokes_operation_pressure_correction_1,
                                     param_1,
-                                    n_refine_time));
+                                    param_1.dt_refinements));
   }
   else
   {
@@ -388,7 +380,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
     time_integrator_2.reset(new TimeIntCoupled(navier_stokes_operation_coupled_2,
                                                navier_stokes_operation_coupled_2,
                                                param_2,
-                                               n_refine_time));
+                                               param_2.dt_refinements));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
@@ -402,7 +394,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
     time_integrator_2.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_2,
                                                      navier_stokes_operation_dual_splitting_2,
                                                      param_2,
-                                                     n_refine_time));
+                                                     param_2.dt_refinements));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
@@ -417,7 +409,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_2,
                                     navier_stokes_operation_pressure_correction_2,
                                     param_2,
-                                    n_refine_time));
+                                    param_2.dt_refinements));
   }
   else
   {
@@ -432,14 +424,12 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
   navier_stokes_operation_1->setup(periodic_faces_1,
                                    boundary_descriptor_velocity_1,
                                    boundary_descriptor_pressure_1,
-                                   field_functions_1,
-                                   analytical_solution_1);
+                                   field_functions_1);
 
   navier_stokes_operation_2->setup(periodic_faces_2,
                                    boundary_descriptor_velocity_2,
                                    boundary_descriptor_pressure_2,
-                                   field_functions_2,
-                                   analytical_solution_2);
+                                   field_functions_2);
 
   // Setup time integrator
 
@@ -455,8 +445,8 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_1_in,
 
   // setup time integrator before calling setup_solvers (this is necessary since the setup of the
   // solvers depends on quantities such as the time_step_size or gamma0!!!)
-  time_integrator_1->setup(do_restart);
-  time_integrator_2->setup(do_restart);
+  time_integrator_1->setup(param_1.restarted_simulation);
+  time_integrator_2->setup(param_2.restarted_simulation);
 
   // setup solvers
 
@@ -507,7 +497,7 @@ Problem<dim, Number>::solve() const
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::analyze_iterations(InputParameters<dim> const &   param,
+Problem<dim, Number>::analyze_iterations(InputParameters const &        param,
                                          std::shared_ptr<TimeInt> const time_integrator) const
 {
   // Iterations
@@ -528,7 +518,7 @@ Problem<dim, Number>::analyze_iterations(InputParameters<dim> const &   param,
 }
 template<int dim, typename Number>
 double
-Problem<dim, Number>::analyze_computing_times(InputParameters<dim> const &   param,
+Problem<dim, Number>::analyze_computing_times(InputParameters const &        param,
                                               std::shared_ptr<TimeInt> const time_integrator) const
 {
   // overall wall time including postprocessing
@@ -665,6 +655,10 @@ Problem<dim, Number>::analyze_computing_times() const
               << std::endl;
 }
 
+// instantiations
+template class Problem<2, double>;
+template class Problem<3, double>;
+
 int
 main(int argc, char ** argv)
 {
@@ -674,39 +668,30 @@ main(int argc, char ** argv)
 
     deallog.depth_console(0);
 
-    bool do_restart = false;
-    if(argc > 1)
-    {
-      do_restart = std::atoi(argv[1]);
-      if(do_restart)
-      {
-        // this does in principle work although it doesn't make much sense
-        if(REFINE_STEPS_TIME_MIN != REFINE_STEPS_TIME_MAX &&
-           Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-          std::cout << "Warning: you are starting from a restart and refine the time steps!"
-                    << std::endl;
-      }
-    }
+    InputParameters param_1, param_2;
+    set_input_parameters(param_1, 1);
+    set_input_parameters(param_2, 2);
 
-    // time refinements in order to perform temporal convergence tests
-    for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;
-        refine_steps_time <= REFINE_STEPS_TIME_MAX;
-        ++refine_steps_time)
-    {
-      Problem<DIMENSION, VALUE_TYPE> problem(REFINE_STEPS_SPACE_DOMAIN1,
-                                             REFINE_STEPS_SPACE_DOMAIN2,
-                                             refine_steps_time);
+    AssertThrow(param_1.dim == param_2.dim, ExcMessage("Invalid parameters!"));
+    AssertThrow(param_1.restarted_simulation == param_2.restarted_simulation,
+                ExcMessage("Invalid parameters!"));
 
-      InputParameters<DIMENSION> param_1, param_2;
-      param_1.set_input_parameters(1);
-      param_2.set_input_parameters(2);
+    // setup problem and run simulation
+    typedef double                       Number;
+    std::shared_ptr<ProblemBase<Number>> problem;
 
-      problem.setup(param_1, param_2, do_restart);
+    if(param_1.dim == 2)
+      problem.reset(new Problem<2, Number>());
+    else if(param_1.dim == 3)
+      problem.reset(new Problem<3, Number>());
+    else
+      AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 
-      problem.solve();
+    problem->setup(param_1, param_2);
 
-      problem.analyze_computing_times();
-    }
+    problem->solve();
+
+    problem->analyze_computing_times();
   }
   catch(std::exception & exc)
   {

@@ -17,30 +17,29 @@ using namespace dealii;
 namespace IncNS
 {
 // forward declarations
-template<int dim>
 class InputParameters;
 
 namespace Interface
 {
-template<int dim, typename Number>
+template<typename Number>
 class OperatorBase;
 template<typename Number>
 class OperatorCoupled;
 
 } // namespace Interface
 
-template<int dim, typename Number>
+template<typename Number>
 class DriverSteadyProblems
 {
 public:
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef Interface::OperatorBase<dim, Number> OperatorBase;
-  typedef Interface::OperatorCoupled<Number>   OperatorPDE;
+  typedef Interface::OperatorBase<Number>    OperatorBase;
+  typedef Interface::OperatorCoupled<Number> OperatorPDE;
 
   DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
                        std::shared_ptr<OperatorPDE>  operator_in,
-                       InputParameters<dim> const &  param_in);
+                       InputParameters const &       param_in);
 
   void
   setup();
@@ -67,7 +66,7 @@ private:
   std::shared_ptr<OperatorBase> operator_base;
   std::shared_ptr<OperatorPDE>  pde_operator;
 
-  InputParameters<dim> const & param;
+  InputParameters const & param;
 
   std::vector<double> computing_times;
 

@@ -37,8 +37,7 @@ void
 DGOperator<dim, Number>::setup(
   PeriodicFaces const                                     periodic_face_pairs_in,
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor_in,
-  std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions_in,
-  std::shared_ptr<Poisson::AnalyticalSolution<dim>> const analytical_solution_in)
+  std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Poisson operation ..." << std::endl;
@@ -53,7 +52,7 @@ DGOperator<dim, Number>::setup(
 
   setup_operators();
 
-  setup_postprocessor(analytical_solution_in);
+  setup_postprocessor();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -306,10 +305,9 @@ DGOperator<dim, Number>::setup_operators()
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_postprocessor(
-  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
+DGOperator<dim, Number>::setup_postprocessor()
 {
-  postprocessor->setup(dof_handler, *mapping, matrix_free, analytical_solution->solution);
+  postprocessor->setup(dof_handler, *mapping, matrix_free);
 }
 
 template<int dim, typename Number>

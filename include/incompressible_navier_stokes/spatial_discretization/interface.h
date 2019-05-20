@@ -23,8 +23,8 @@ namespace Interface
 /*
  * Base operator for incompressible Navier-Stokes solvers.
  */
-template<int dim, typename Number>
-class OperatorBase : public Subscriptor
+template<typename Number>
+class OperatorBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -47,12 +47,6 @@ public:
 
   virtual unsigned int
   get_polynomial_degree() const = 0;
-
-  virtual DoFHandler<dim> const &
-  get_dof_handler_u() const = 0;
-
-  virtual DoFHandler<dim> const &
-  get_dof_handler_u_scalar() const = 0;
 
   virtual void
   initialize_vector_velocity(VectorType & src) const = 0;
@@ -121,40 +115,6 @@ public:
 
   virtual void
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
-
-  // Postprocessing
-
-  // divergence
-  virtual void
-  compute_divergence(VectorType & dst, VectorType const & src) const = 0;
-
-  // velocity_magnitude
-  virtual void
-  compute_velocity_magnitude(VectorType & dst, VectorType const & src) const = 0;
-
-  // vorticity_magnitude
-  virtual void
-  compute_vorticity_magnitude(VectorType & dst, VectorType const & src) const = 0;
-
-  // streamfunction
-  virtual void
-  compute_streamfunction(VectorType & dst, VectorType const & src) const = 0;
-
-  // Q criterion
-  virtual void
-  compute_q_criterion(VectorType & dst, VectorType const & src) const = 0;
-
-  virtual double
-  calculate_dissipation_convective_term(VectorType const & velocity, double const time) const = 0;
-
-  virtual double
-  calculate_dissipation_viscous_term(VectorType const & velocity) const = 0;
-
-  virtual double
-  calculate_dissipation_divergence_term(VectorType const & velocity) const = 0;
-
-  virtual double
-  calculate_dissipation_continuity_term(VectorType const & velocity) const = 0;
 };
 
 /*
@@ -379,13 +339,13 @@ public:
 /*
  * Operator-integration-factor (OIF) sub-stepping.
  */
-template<int dim, typename Number>
+template<typename Number>
 class OperatorOIF
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OperatorOIF(std::shared_ptr<IncNS::Interface::OperatorBase<dim, Number>> operator_in)
+  OperatorOIF(std::shared_ptr<IncNS::Interface::OperatorBase<Number>> operator_in)
     : pde_operator(operator_in),
       transport_with_interpolated_velocity(true) // TODO adjust this parameter manually
   {
@@ -426,7 +386,7 @@ public:
   }
 
 private:
-  std::shared_ptr<IncNS::Interface::OperatorBase<dim, Number>> pde_operator;
+  std::shared_ptr<IncNS::Interface::OperatorBase<Number>> pde_operator;
 
   // OIF splitting (transport with interpolated velocity)
   bool                            transport_with_interpolated_velocity;
