@@ -29,7 +29,7 @@ class PostProcessorBase
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGNavierStokesBase<dim, Number> NavierStokesOperator;
+  typedef DGNavierStokesBase<dim, Number> Operator;
 
   PostProcessorBase()
   {
@@ -43,11 +43,7 @@ public:
    * Setup function.
    */
   virtual void
-  setup(NavierStokesOperator const &    navier_stokes_operator,
-        DoFHandler<dim> const &         dof_handler_velocity,
-        DoFHandler<dim> const &         dof_handler_pressure,
-        Mapping<dim> const &            mapping,
-        MatrixFree<dim, Number> const & matrix_free_data) = 0;
+  setup(Operator const & pde_operator) = 0;
 
 
   /*

@@ -24,51 +24,51 @@ PostProcessor<dim, Number>::~PostProcessor()
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup(NavierStokesOperator const &    navier_stokes_operator_in,
-                                  DoFHandler<dim> const &         dof_handler_velocity_in,
-                                  DoFHandler<dim> const &         dof_handler_pressure_in,
-                                  Mapping<dim> const &            mapping_in,
-                                  MatrixFree<dim, Number> const & matrix_free_in)
+PostProcessor<dim, Number>::setup(Operator const & pde_operator)
 {
-  output_generator.setup(navier_stokes_operator_in,
-                         dof_handler_velocity_in,
-                         dof_handler_pressure_in,
-                         mapping_in,
+  output_generator.setup(pde_operator,
+                         pde_operator.get_dof_handler_u(),
+                         pde_operator.get_dof_handler_p(),
+                         pde_operator.get_mapping(),
                          pp_data.output_data);
 
-  error_calculator_u.setup(dof_handler_velocity_in, mapping_in, pp_data.error_data_u);
+  error_calculator_u.setup(pde_operator.get_dof_handler_u(),
+                           pde_operator.get_mapping(),
+                           pp_data.error_data_u);
 
-  error_calculator_p.setup(dof_handler_pressure_in, mapping_in, pp_data.error_data_p);
+  error_calculator_p.setup(pde_operator.get_dof_handler_p(),
+                           pde_operator.get_mapping(),
+                           pp_data.error_data_p);
 
-  lift_and_drag_calculator.setup(dof_handler_velocity_in,
-                                 matrix_free_in,
-                                 navier_stokes_operator_in.get_dof_index_velocity(),
-                                 navier_stokes_operator_in.get_dof_index_pressure(),
-                                 navier_stokes_operator_in.get_quad_index_velocity_linear(),
+  lift_and_drag_calculator.setup(pde_operator.get_dof_handler_u(),
+                                 pde_operator.get_data(),
+                                 pde_operator.get_dof_index_velocity(),
+                                 pde_operator.get_dof_index_pressure(),
+                                 pde_operator.get_quad_index_velocity_linear(),
                                  pp_data.lift_and_drag_data);
 
-  pressure_difference_calculator.setup(dof_handler_pressure_in,
-                                       mapping_in,
+  pressure_difference_calculator.setup(pde_operator.get_dof_handler_p(),
+                                       pde_operator.get_mapping(),
                                        pp_data.pressure_difference_data);
 
-  div_and_mass_error_calculator.setup(matrix_free_in,
-                                      navier_stokes_operator_in.get_dof_index_velocity(),
-                                      navier_stokes_operator_in.get_quad_index_velocity_linear(),
+  div_and_mass_error_calculator.setup(pde_operator.get_data(),
+                                      pde_operator.get_dof_index_velocity(),
+                                      pde_operator.get_quad_index_velocity_linear(),
                                       pp_data.mass_data);
 
-  kinetic_energy_calculator.setup(navier_stokes_operator_in,
-                                  matrix_free_in,
-                                  navier_stokes_operator_in.get_dof_index_velocity(),
-                                  navier_stokes_operator_in.get_quad_index_velocity_linear(),
+  kinetic_energy_calculator.setup(pde_operator,
+                                  pde_operator.get_data(),
+                                  pde_operator.get_dof_index_velocity(),
+                                  pde_operator.get_quad_index_velocity_linear(),
                                   pp_data.kinetic_energy_data);
 
-  kinetic_energy_spectrum_calculator.setup(matrix_free_in,
-                                           dof_handler_velocity_in.get_triangulation(),
+  kinetic_energy_spectrum_calculator.setup(pde_operator.get_data(),
+                                           pde_operator.get_dof_handler_u().get_triangulation(),
                                            pp_data.kinetic_energy_spectrum_data);
 
-  line_plot_calculator.setup(dof_handler_velocity_in,
-                             dof_handler_pressure_in,
-                             mapping_in,
+  line_plot_calculator.setup(pde_operator.get_dof_handler_u(),
+                             pde_operator.get_dof_handler_p(),
+                             pde_operator.get_mapping(),
                              pp_data.line_plot_data);
 }
 

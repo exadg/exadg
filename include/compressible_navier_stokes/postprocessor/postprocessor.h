@@ -48,12 +48,7 @@ public:
   virtual ~PostProcessor();
 
   virtual void
-  setup(DGOperator<dim, Number> const & navier_stokes_operator_in,
-        DoFHandler<dim> const &         dof_handler_in,
-        DoFHandler<dim> const &         dof_handler_vector_in,
-        DoFHandler<dim> const &         dof_handler_scalar_in,
-        Mapping<dim> const &            mapping_in,
-        MatrixFree<dim, Number> const & matrix_free_data_in);
+  setup(DGOperator<dim, Number> const & pde_operator);
 
   virtual void
   do_postprocessing(VectorType const & solution, double const time, int const time_step_number);

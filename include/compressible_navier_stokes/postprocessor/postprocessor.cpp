@@ -23,41 +23,38 @@ PostProcessor<dim, Number>::~PostProcessor()
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup(DGOperator<dim, Number> const & navier_stokes_operator_in,
-                                  DoFHandler<dim> const &         dof_handler_in,
-                                  DoFHandler<dim> const &         dof_handler_vector_in,
-                                  DoFHandler<dim> const &         dof_handler_scalar_in,
-                                  Mapping<dim> const &            mapping_in,
-                                  MatrixFree<dim, Number> const & matrix_free_in)
+PostProcessor<dim, Number>::setup(DGOperator<dim, Number> const & pde_operator)
 {
-  (void)dof_handler_vector_in;
-
-  navier_stokes_operator = &navier_stokes_operator_in;
+  navier_stokes_operator = &pde_operator;
 
   initialize_additional_vectors();
 
-  output_generator.setup(dof_handler_in, mapping_in, pp_data.output_data);
+  output_generator.setup(pde_operator.get_dof_handler(),
+                         pde_operator.get_mapping(),
+                         pp_data.output_data);
 
-  error_calculator.setup(dof_handler_in, mapping_in, pp_data.error_data);
+  error_calculator.setup(pde_operator.get_dof_handler(),
+                         pde_operator.get_mapping(),
+                         pp_data.error_data);
 
-  lift_and_drag_calculator.setup(dof_handler_in,
-                                 matrix_free_in,
-                                 navier_stokes_operator_in.get_dof_index_vector(),
-                                 navier_stokes_operator_in.get_dof_index_scalar(),
-                                 navier_stokes_operator_in.get_quad_index_standard(),
+  lift_and_drag_calculator.setup(pde_operator.get_dof_handler(),
+                                 pde_operator.get_data(),
+                                 pde_operator.get_dof_index_vector(),
+                                 pde_operator.get_dof_index_scalar(),
+                                 pde_operator.get_quad_index_standard(),
                                  pp_data.lift_and_drag_data);
 
-  pressure_difference_calculator.setup(dof_handler_scalar_in,
-                                       mapping_in,
+  pressure_difference_calculator.setup(pde_operator.get_dof_handler_scalar(),
+                                       pde_operator.get_mapping(),
                                        pp_data.pressure_difference_data);
 
-  kinetic_energy_calculator.setup(matrix_free_in,
-                                  navier_stokes_operator_in.get_dof_index_vector(),
-                                  navier_stokes_operator_in.get_quad_index_standard(),
+  kinetic_energy_calculator.setup(pde_operator.get_data(),
+                                  pde_operator.get_dof_index_vector(),
+                                  pde_operator.get_quad_index_standard(),
                                   pp_data.kinetic_energy_data);
 
-  kinetic_energy_spectrum_calculator.setup(matrix_free_in,
-                                           dof_handler_in.get_triangulation(),
+  kinetic_energy_spectrum_calculator.setup(pde_operator.get_data(),
+                                           pde_operator.get_dof_handler().get_triangulation(),
                                            pp_data.kinetic_energy_spectrum_data);
 }
 
