@@ -146,7 +146,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   timer.restart();
 
   print_header();
-  print_dealii_info(pcout);
+  print_dealii_info<Number>(pcout);
   print_MPI_info(pcout);
 
   param = param_in;

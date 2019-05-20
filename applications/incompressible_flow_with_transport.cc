@@ -223,7 +223,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   timer.restart();
 
   print_header();
-  print_dealii_info(pcout);
+  print_dealii_info<Number>(pcout);
   print_MPI_info(pcout);
 
   // parameters (fluid + scalar)

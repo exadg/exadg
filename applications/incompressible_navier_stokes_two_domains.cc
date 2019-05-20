@@ -229,7 +229,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   timer.restart();
 
   print_header();
-  print_dealii_info(pcout);
+  print_dealii_info<Number>(pcout);
   print_MPI_info(pcout);
 
   param_1 = param_1_in;
