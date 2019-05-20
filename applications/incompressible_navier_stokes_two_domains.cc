@@ -655,10 +655,6 @@ Problem<dim, Number>::analyze_computing_times() const
               << std::endl;
 }
 
-// instantiations
-template class Problem<2, double>;
-template class Problem<3, double>;
-
 int
 main(int argc, char ** argv)
 {

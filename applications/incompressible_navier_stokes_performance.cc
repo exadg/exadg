@@ -38,16 +38,6 @@ using namespace IncNS;
 
 #include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                          FURTHER INPUT PARAMETERS                                  */
-/*                                                                                    */
-/**************************************************************************************/
-
-// set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_U_MIN = 2;
-unsigned int const FE_DEGREE_U_MAX = 15;
-
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
 std::vector<int> REFINE_LEVELS = {
   7, /* k=1 */
@@ -553,16 +543,6 @@ print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times
   }
 }
 
-// instantiations
-template class Problem<2, double>;
-template class Problem<3, double>;
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                         MAIN                                       */
-/*                                                                                    */
-/**************************************************************************************/
-
 int
 main(int argc, char ** argv)
 {
@@ -572,7 +552,7 @@ main(int argc, char ** argv)
 
     deallog.depth_console(0);
 
-    for(unsigned int degree = FE_DEGREE_U_MIN; degree <= FE_DEGREE_U_MAX; ++degree)
+    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
     {
       InputParameters param;
       set_input_parameters(param);

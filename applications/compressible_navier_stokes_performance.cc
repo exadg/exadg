@@ -36,16 +36,6 @@
 
 #include "compressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                          FURTHER INPUT PARAMETERS                                  */
-/*                                                                                    */
-/**************************************************************************************/
-
-// set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_MIN = 1;
-unsigned int const FE_DEGREE_MAX = 5;
-
 // refinement level: l = REFINE_LEVELS[degree-1]
 std::vector<int> REFINE_LEVELS = {
   7, /* k=1 */
@@ -372,12 +362,6 @@ print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times
               << std::endl;
   }
 }
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                         MAIN                                       */
-/*                                                                                    */
-/**************************************************************************************/
 
 int
 main(int argc, char ** argv)
