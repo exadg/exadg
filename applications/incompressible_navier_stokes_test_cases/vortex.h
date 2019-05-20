@@ -1,5 +1,5 @@
 /*
- * Vortex.h
+ * vortex.h
  *
  *  Created on: Aug 18, 2016
  *      Author: fehn
@@ -8,34 +8,26 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/manifold_lib.h>
+#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+#include "../grid_tools/deformed_cube_manifold.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 INPUT PARAMETERS                                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-// single or double precision?
-//typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 4;
+unsigned int const DEGREE_MAX = 4;
 
-// set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 2;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
-// set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 4;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
-// set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
-
-// set the number of refine levels for temporal convergence tests
-unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters like physical dimensions, etc.
 const double U_X_MAX = 1.0;
@@ -45,223 +37,196 @@ const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Curvilinear; //UniformCartesian;
 
-template<int dim>
-void InputParameters<dim>::set_input_parameters()
+namespace IncNS
+{
+void set_input_parameters(InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
-  equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
-  right_hand_side = false;
+  param.dim = 2;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::NavierStokes;
+  param.formulation_viscous_term = FORMULATION_VISCOUS_TERM;
+  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  param.right_hand_side = false;
 
 
   // PHYSICAL QUANTITIES
-  start_time = 0.0;
-  end_time = 1.0;
-  viscosity = VISCOSITY;
+  param.start_time = 0.0;
+  param.end_time = 1.0;
+  param.viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  calculation_of_time_step_size = TimeStepCalculation::CFL;
-  adaptive_time_stepping = false;
-  max_velocity = 1.4 * U_X_MAX;
-  cfl = 0.4;
-  cfl_oif = cfl/1.0;
-  cfl_exponent_fe_degree_velocity = 1.5;
-  c_eff = 8.0;
-  time_step_size = 5.e-5;
-  order_time_integrator = 2;
-  start_with_low_order = false;
+  param.solver_type = SolverType::Unsteady;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = false;
+  param.max_velocity = 1.4 * U_X_MAX;
+  param.cfl = 0.4;
+  param.cfl_oif = param.cfl/1.0;
+  param.cfl_exponent_fe_degree_velocity = 1.5;
+  param.c_eff = 8.0;
+  param.time_step_size = 5.e-5;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = false;
+  param.dt_refinements = REFINE_TIME_MIN;
+
+  // output of solver information
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = 0.1;
+
+  // restart
+  param.restarted_simulation = false;
+  param.restart_data.write_restart = true;
+  param.restart_data.interval_time = 0.25;
+  param.restart_data.interval_wall_time = 1.e6;
+  param.restart_data.interval_time_steps = 1e8;
+  param.restart_data.filename = "output/vortex/vortex";
 
 
   // SPATIAL DISCRETIZATION
-
-  // triangulation
-  triangulation_type = TriangulationType::Distributed;
-
-  // polynomial degrees
-  degree_u = FE_DEGREE_VELOCITY;
-  degree_p = FE_DEGREE_PRESSURE;
-
-  // mapping
-  degree_mapping = FE_DEGREE_VELOCITY;
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree_u = DEGREE_MIN;
+  param.degree_p = DegreePressure::MixedOrder;
+  param.mapping = MappingType::Isoparametric;
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
-  upwind_factor = 1.0;
+  param.upwind_factor = 1.0;
 
   // viscous term
-  IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
-  penalty_term_div_formulation = PenaltyTermDivergenceFormulation::Symmetrized;
+  param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // special case: pure DBC's
-  pure_dirichlet_bc = false;
-
-  // divergence and continuity penalty terms
-  add_penalty_terms_to_monolithic_system = false;
+  param.pure_dirichlet_bc = false;
 
   // NUMERICAL PARAMETERS
-  implement_block_diagonal_preconditioner_matrix_free = true;
-  use_cell_based_face_loops = true;
+  param.implement_block_diagonal_preconditioner_matrix_free = true;
+  param.use_cell_based_face_loops = true;
 
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  solver_pressure_poisson = SolverPressurePoisson::CG;
-  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
-  multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
+  param.solver_pressure_poisson = SolverPressurePoisson::CG;
+  param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 
   // projection step
-  solver_projection = SolverProjection::CG;
-  solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
-  solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2,1000);
+  param.solver_projection = SolverProjection::CG;
+  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
+  param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  param.preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
+  param.solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2,1000);
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulations
-  order_extrapolation_pressure_nbc = order_time_integrator<=2 ? order_time_integrator : 2;
+  param.order_extrapolation_pressure_nbc = param.order_time_integrator<=2 ? param.order_time_integrator : 2;
 
   // viscous step
-  solver_viscous = SolverViscous::CG;
-  solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //Multigrid;
-  update_preconditioner_viscous = false;
+  param.solver_viscous = SolverViscous::CG;
+  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
+  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //Multigrid;
+  param.update_preconditioner_viscous = false;
 
 
   // PRESSURE-CORRECTION SCHEME
+
   // formulation
-  order_pressure_extrapolation = order_time_integrator-1;
-  rotational_formulation = true;
+  param.order_pressure_extrapolation = param.order_time_integrator-1;
+  param.rotational_formulation = true;
 
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum = NewtonSolverData(100,1.e-12,1.e-6);
+  param.newton_solver_data_momentum = NewtonSolverData(100,1.e-12,1.e-6);
 
   // linear solver
-  solver_momentum = SolverMomentum::FGMRES;
-  solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
-  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-  multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
-  multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-  update_preconditioner_momentum = true;
+  param.solver_momentum = SolverMomentum::FGMRES;
+  param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+  param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
+  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+  param.update_preconditioner_momentum = true;
 
   // Jacobi smoother data
-  multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-  multigrid_data_momentum.smoother_data.iterations = 5;
-  multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+  param.multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data_momentum.smoother_data.iterations = 5;
+  param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
   // Chebyshev smoother data
-//  multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
-//  multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+//  param.multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
+//  param.multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // GMRES smoother data
-//    multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
+//    param.multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
 
 
   // COUPLED NAVIER-STOKES SOLVER
-  use_scaling_continuity = false;
+  param.use_scaling_continuity = false;
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-6);
+  param.newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-6);
 
   // linear solver
-  solver_coupled = SolverCoupled::FGMRES; //FGMRES; //GMRES;
-  solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.solver_coupled = SolverCoupled::FGMRES; //FGMRES; //GMRES;
+  param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
 
   // preconditioner linear solver
-  preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
-  update_preconditioner_coupled = false; //true;
+  param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
+  param.update_preconditioner_coupled = false; //true;
 
   // preconditioner momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::Multigrid; // InverseMassMatrix;
-  multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
-  multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
-  multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
-  multigrid_data_velocity_block.smoother_data.iterations = 5;
-  multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
+  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid; // InverseMassMatrix;
+  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
+  param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  param.multigrid_data_velocity_block.smoother_data.iterations = 5;
+  param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
   // coarse grid solver
-  multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
+  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
 
   // preconditioner Schur-complement block
-  preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
-  discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-
-
-  // OUTPUT AND POSTPROCESSING
-
-  // write output for visualization of results
-  output_data.write_output = true;
-  output_data.output_folder = "output/vortex/vtu/";
-  output_data.output_name = "vortex_curvilinear";
-  output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.write_vorticity = true;
-  output_data.write_divergence = true;
-  output_data.write_velocity_magnitude = true;
-  output_data.write_vorticity_magnitude = true;
-  output_data.write_processor_id = true;
-  output_data.mean_velocity.calculate = true;
-  output_data.mean_velocity.sample_start_time = start_time;
-  output_data.mean_velocity.sample_end_time = end_time;
-  output_data.mean_velocity.sample_every_timesteps = 1;
-  output_data.write_higher_order = true;
-  output_data.degree = FE_DEGREE_VELOCITY;
-
-  // calculation of error
-  error_data.analytical_solution_available = true;
-  error_data.calculate_relative_errors = true;
-  error_data.calculate_H1_seminorm_velocity = false;
-  error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = (end_time - start_time)/20;
-  error_data.write_errors_to_file = false;
-  error_data.filename_prefix = "output/vortex/error";
-
-  // analysis of mass conservation error
-  mass_data.calculate_error = false;
-  mass_data.start_time = 0.0;
-  mass_data.sample_every_time_steps = 1;
-  mass_data.filename_prefix = "test";
-
-  // output of solver information
-  solver_info_data.print_to_screen = true;
-//  solver_info_data.interval_time_steps = 10;
-//  solver_info_data.interval_time = 0.1;
-  solver_info_data.interval_wall_time = 2;
-
-  // restart
-  restart_data.write_restart = true;
-  restart_data.interval_time = 0.25;
-  restart_data.interval_wall_time = 1.e6;
-  restart_data.interval_time_steps = 1e8;
-  restart_data.filename = "output/vortex/vortex";
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+}
 }
 
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
-#include "../grid_tools/deformed_cube_manifold.h"
+// GridTools::rotate() is only implemented for dim = 2 so we have to provide a dummy function for dim=3
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<3>> triangulation,
+                                 unsigned int const                          n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<3>::cell_iterator> >        &periodic_faces)
+{
+  // to avoid warnings (unused variable) use ...
+  (void)triangulation;
+  (void)n_refine_space;
+  (void)periodic_faces;
+
+  AssertThrow(false, ExcMessage("This test case is only implemented for dim=2."));
+}
 
 template<int dim>
-void create_grid_and_set_boundary_ids(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
+  (void)periodic_faces;
+
   const double left = -0.5, right = 0.5;
 
   if(MESH_TYPE == MeshType::UniformCartesian)
@@ -387,17 +352,19 @@ void create_grid_and_set_boundary_ids(
            ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
            ((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
            ((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
+       {
          cell->face(face_number)->set_boundary_id (1);
+       }
     }
   }
   triangulation->refine_global(n_refine_space);
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*          FUNCTIONS (ANALYTICAL/INITIAL SOLUTION, BOUNDARY CONDITIONS, etc.)        */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -562,28 +529,53 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  analytical_solution->pressure.reset(new AnalyticalSolutionPressure<dim>());
-}
-
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters<dim> const &param)
+construct_postprocessor(InputParameters const &param)
 {
   PostProcessorData<dim> pp_data;
 
-  pp_data.output_data = param.output_data;
-  pp_data.error_data = param.error_data;
-  pp_data.lift_and_drag_data = param.lift_and_drag_data;
-  pp_data.pressure_difference_data = param.pressure_difference_data;
-  pp_data.mass_data = param.mass_data;
+  // write output for visualization of results
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = "output/vortex/vtu/";
+  pp_data.output_data.output_name = "vortex_curvilinear";
+  pp_data.output_data.output_start_time = param.start_time;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.write_vorticity = true;
+  pp_data.output_data.write_divergence = true;
+  pp_data.output_data.write_velocity_magnitude = true;
+  pp_data.output_data.write_vorticity_magnitude = true;
+  pp_data.output_data.write_processor_id = true;
+  pp_data.output_data.mean_velocity.calculate = true;
+  pp_data.output_data.mean_velocity.sample_start_time = param.start_time;
+  pp_data.output_data.mean_velocity.sample_end_time = param.end_time;
+  pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
+  pp_data.output_data.write_higher_order = true;
+  pp_data.output_data.degree = param.degree_u;
 
-  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  // calculation of velocity error
+  pp_data.error_data_u.analytical_solution_available = true;
+  pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>());
+  pp_data.error_data_u.calculate_relative_errors = true;
+  pp_data.error_data_u.error_calc_start_time = param.start_time;
+  pp_data.error_data_u.error_calc_interval_time = (param.end_time - param.start_time)/20;
+  pp_data.error_data_u.name = "velocity";
+
+  // ... pressure error
+  pp_data.error_data_p.analytical_solution_available = true;
+  pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>());
+  pp_data.error_data_p.calculate_relative_errors = true;
+  pp_data.error_data_p.error_calc_start_time = param.start_time;
+  pp_data.error_data_p.error_calc_interval_time = (param.end_time - param.start_time)/20;
+  pp_data.error_data_p.name = "pressure";
+
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));
 
   return pp;

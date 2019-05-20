@@ -8,46 +8,42 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 
-
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-
 #include "../grid_tools/lung/lung_environment.h"
 #include "../grid_tools/lung/lung_grid.h"
 
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.h"
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 INPUT PARAMETERS                                   */
-/*                                                                                    */
-/**************************************************************************************/
+#include "convection_diffusion/user_interface/boundary_descriptor.h"
+#include "convection_diffusion/user_interface/field_functions.h"
+#include "convection_diffusion/user_interface/input_parameters.h"
 
-// which lung
-#define BABY
-//#define ADULT
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-// single or double precision?
-//typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-// set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 3;
+unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MAX = 0;
 
-// set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
-unsigned int const FE_DEGREE_SCALAR = FE_DEGREE_VELOCITY;
-
-// degree used for mapping
-unsigned int const DEGREE_MAPPING = FE_DEGREE_VELOCITY;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
 
-// set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 0;
-unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
+// problem specific parameters
+
+// which lung
+#define BABY
+//#define ADULT
 
 // number of lung generations
 unsigned int const N_GENERATIONS = 6;
@@ -55,10 +51,6 @@ unsigned int const N_GENERATIONS = 6;
 // triangulation type
 IncNS::TriangulationType const TRIANGULATION_TYPE_FLUID = IncNS::TriangulationType::Distributed;
 ConvDiff::TriangulationType const TRIANGULATION_TYPE_SCALAR = ConvDiff::TriangulationType::Distributed;
-
-// set the number of refine levels for temporal convergence tests
-unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 // set problem specific parameters
 double const VISCOSITY = 1.7e-5;  // m^2/s
@@ -179,7 +171,7 @@ double const OUTPUT_INTERVAL_TIME = PERIOD/300;
 
 std::string const OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/lung/child/";
 std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string const OUTPUT_NAME = "gen6_l0_k32";
+std::string const OUTPUT_NAME = "gen6_l0_k32_xyz";
 
 // restart
 bool const WRITE_RESTART = false;
@@ -207,178 +199,142 @@ double get_equivalent_resistance()
   return resistance;
 }
 
-template<int dim>
-void
-IncNS::InputParameters<dim>::
-set_input_parameters()
+namespace IncNS
+{
+void set_input_parameters(InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
-  equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
-  use_outflow_bc_convective_term = true;
-  right_hand_side = false;
+  param.dim = 3;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::NavierStokes;
+  param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  param.use_outflow_bc_convective_term = true;
+  param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
-  start_time = START_TIME;
-  end_time = END_TIME;
-  viscosity = VISCOSITY;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
+  param.viscosity = VISCOSITY;
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
-  calculation_of_time_step_size = TimeStepCalculation::CFL;
-  adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
-  time_step_size_max = TIME_STEP_SIZE_MAX;
-  max_velocity = MAX_VELOCITY;
-  cfl = CFL;
-  cfl_oif = CFL;
-  cfl_exponent_fe_degree_velocity = 1.5;
-  order_time_integrator = 2;
-  start_with_low_order = true;
+  param.solver_type = SolverType::Unsteady;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
+  param.time_step_size_max = TIME_STEP_SIZE_MAX;
+  param.max_velocity = MAX_VELOCITY;
+  param.cfl = CFL;
+  param.cfl_oif = CFL;
+  param.cfl_exponent_fe_degree_velocity = 1.5;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = true;
+  param.dt_refinements = REFINE_TIME_MIN;
+
+  // output of solver information
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = PERIOD/30;
 
   // NUMERICAL PARAMETERS
-  implement_block_diagonal_preconditioner_matrix_free = false;
-  use_cell_based_face_loops = false;
+  param.implement_block_diagonal_preconditioner_matrix_free = false;
+  param.use_cell_based_face_loops = false;
 
   // SPATIAL DISCRETIZATION
-
-  // triangulation
-  triangulation_type = TRIANGULATION_TYPE_FLUID;
-
-  // polynomial degrees
-  degree_u = FE_DEGREE_VELOCITY;
-  degree_p = FE_DEGREE_PRESSURE;
-
-  // mapping
-  degree_mapping = DEGREE_MAPPING;
+  param.triangulation_type = TRIANGULATION_TYPE_FLUID;
+  param.degree_u = DEGREE_MIN;
+  param.degree_p = DegreePressure::MixedOrder;
+  param.mapping = MappingType::Affine; // TODO
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
-  if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
-    upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
+  if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
+    param.upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
 
   // viscous term
-  IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+  param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // special case: pure DBC's (only periodic BCs -> pure_dirichlet_bc = true)
-  pure_dirichlet_bc = false;
+  param.pure_dirichlet_bc = false;
 
   // div-div and continuity penalty
-  use_divergence_penalty = true;
-  divergence_penalty_factor = 1.0e0;
-  use_continuity_penalty = true;
-  continuity_penalty_factor = divergence_penalty_factor;
-  add_penalty_terms_to_monolithic_system = false;
+  param.use_divergence_penalty = true;
+  param.divergence_penalty_factor = 1.0e0;
+  param.use_continuity_penalty = true;
+  param.continuity_penalty_factor = param.divergence_penalty_factor;
+  param.add_penalty_terms_to_monolithic_system = false;
 
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  solver_data_pressure_poisson = SolverData(1000,ABS_TOL,REL_TOL,100);
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  multigrid_data_pressure_poisson.type = MultigridType::phMG;
-  multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
-  multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
-  multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-  multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+  param.solver_data_pressure_poisson = SolverData(1000,ABS_TOL,REL_TOL,100);
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  param.multigrid_data_pressure_poisson.type = MultigridType::phMG;
+  param.multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
+  param.multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
+  param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
   // projection step
-  solver_projection = SolverProjection::CG;
-  solver_data_projection = SolverData(1000, ABS_TOL, REL_TOL);
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  update_preconditioner_projection = false;
+  param.solver_projection = SolverProjection::CG;
+  param.solver_data_projection = SolverData(1000, ABS_TOL, REL_TOL);
+  param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  param.update_preconditioner_projection = false;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulations
-  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+  param.order_extrapolation_pressure_nbc = param.order_time_integrator <=2 ? param.order_time_integrator : 2;
 
   // viscous step
-  solver_viscous = SolverViscous::CG;
-  solver_data_viscous = SolverData(1000,ABS_TOL,REL_TOL);
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+  param.solver_viscous = SolverViscous::CG;
+  param.solver_data_viscous = SolverData(1000,ABS_TOL,REL_TOL);
+  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
   // PRESSURE-CORRECTION SCHEME
 
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum = NewtonSolverData(100,1.e-20,1.e-6);
+  param.newton_solver_data_momentum = NewtonSolverData(100,1.e-20,1.e-6);
 
   // linear solver
-  solver_momentum = SolverMomentum::GMRES;
-  if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-    solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, 100);
+  param.solver_momentum = SolverMomentum::GMRES;
+  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, 100);
   else
-    solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
+    param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
 
-  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-  update_preconditioner_momentum = true;
+  param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+  param.update_preconditioner_momentum = true;
 
   // formulation
-  order_pressure_extrapolation = order_time_integrator-1;
-  rotational_formulation = true;
+  param.order_pressure_extrapolation = param.order_time_integrator-1;
+  param.rotational_formulation = true;
 
 
   // COUPLED NAVIER-STOKES SOLVER
-  use_scaling_continuity = false;
+  param.use_scaling_continuity = false;
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-6);
+  param.newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-6);
 
   // linear solver
-  solver_coupled = SolverCoupled::GMRES;
-  solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
+  param.solver_coupled = SolverCoupled::GMRES;
+  param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
 
   // preconditioning linear solver
-  preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
+  param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
+  param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
   // preconditioner Schur-complement block
-  preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion;
-  discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion;
+  param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+}
 
-
-  // OUTPUT AND POSTPROCESSING
-
-  // write output for visualization of results
-  output_data.write_output = WRITE_OUTPUT;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name = OUTPUT_NAME + "_fluid";
-  output_data.output_start_time = OUTPUT_START_TIME;
-  output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  output_data.write_vorticity = true;
-  output_data.write_divergence = true;
-  output_data.write_velocity_magnitude = true;
-  output_data.write_vorticity_magnitude = true;
-  output_data.write_q_criterion = true;
-  output_data.write_processor_id = true;
-  output_data.degree = FE_DEGREE_VELOCITY;
-  output_data.write_higher_order = HIGH_ORDER_OUTPUT;
-
-  // calculation of error
-  error_data.analytical_solution_available = false;
-
-  // calculate div and mass error
-  mass_data.calculate_error = false;
-  mass_data.start_time = 0.0;
-  mass_data.sample_every_time_steps = 1e2;
-  mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
-  mass_data.reference_length_scale = 1.0;
-
-  // calculation of flow rate
-  flow_rate_data.calculate = true;
-  flow_rate_data.write_to_file = true;
-  flow_rate_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_flow_rate";
-  // Note: The set with boundary IDs is filled later once we know the grid and the outlet boundaries
-
-  // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = PERIOD/30;
 }
 
 namespace ConvDiff
@@ -431,7 +387,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.triangulation_type = TRIANGULATION_TYPE_SCALAR;
 
   // polynomial degree
-  param.degree = FE_DEGREE_SCALAR;
+  param.degree = DEGREE_MIN;
   param.mapping = MappingType::Affine; // TODO
 
   // convective term
@@ -648,9 +604,6 @@ private:
 // we need individual outflow boundary conditions for each outlet
 std::vector<std::shared_ptr<OutflowBoundary>> OUTFLOW_BOUNDARIES;
 
-// we need to compute the flow rate for each outlet
-std::map<types::boundary_id, double> FLOW_RATES;
-
 template<int dim>
 class PressureOutlet : public Function<dim>
 {
@@ -672,19 +625,34 @@ private:
   std::shared_ptr<OutflowBoundary> outflow_boundary;
 };
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+void create_grid_and_set_boundary_ids(
+    std::shared_ptr<parallel::Triangulation<2>>     triangulation,
+    unsigned int const                              n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<2>::cell_iterator> >            &periodic_faces)
+{
+  (void)triangulation;
+  (void)n_refine_space;
+  (void)periodic_faces;
+
+  AssertThrow(false, ExcMessage("This test case can only be used for dim==3!"));
+}
 
 template<int dim>
 void create_grid_and_set_boundary_ids(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+      Triangulation<dim>::cell_iterator> >            &periodic_faces)
 {
+  (void)periodic_faces;
+
   AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));
 
   std::vector<std::string> files;
@@ -731,14 +699,15 @@ void create_grid_and_set_boundary_ids(
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
   }
 
-  //AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1), ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
+  AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1),
+      ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*          FUNCTIONS (ANALYTICAL/INITIAL SOLUTION, BOUNDARY CONDITIONS, etc.)        */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 namespace IncNS
 {
@@ -781,16 +750,11 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
-}
-
-// Postprocessor
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 struct PostProcessorDataLung
@@ -821,9 +785,7 @@ public:
              DoFHandler<dim> const                     &dof_handler_velocity_in,
              DoFHandler<dim> const                     &dof_handler_pressure_in,
              Mapping<dim> const                        &mapping_in,
-             MatrixFree<dim,Number> const              &matrix_free_data_in,
-             DofQuadIndexData const                    &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_in)
+             MatrixFree<dim,Number> const              &matrix_free_data_in)
   {
     // call setup function of base class
     Base::setup(
@@ -831,27 +793,20 @@ public:
         dof_handler_velocity_in,
         dof_handler_pressure_in,
         mapping_in,
-        matrix_free_data_in,
-        dof_quad_index_data_in,
-        analytical_solution_in);
+        matrix_free_data_in);
 
-    // fill FLOW_RATES map
+    // fill flow_rates map
     for(auto iterator = OUTFLOW_BOUNDARIES.begin(); iterator != OUTFLOW_BOUNDARIES.end(); ++iterator)
     {
-      FLOW_RATES.insert(std::pair<types::boundary_id, double>((*iterator)->get_boundary_id(),0.0));
-    }
-
-    // flow rates:
-    // In a first step, fill the set with boundary IDs. Note that we have to do that here and cannot do this step
-    // in the function set_input_parameters() since the list of outflow boundaries is not known at that time.
-    // The list of outflow boundaries is known once the grid has been created and the outflow boundary IDs have been set.
-    for(auto iterator = OUTFLOW_BOUNDARIES.begin(); iterator != OUTFLOW_BOUNDARIES.end(); ++iterator)
-    {
-      pp_data_lung.flow_rate_data.boundary_IDs.insert((*iterator)->get_boundary_id());
+      flow_rates.insert(std::pair<types::boundary_id, double>((*iterator)->get_boundary_id(),0.0));
     }
 
     flow_rate_calculator.reset(new FlowRateCalculator<dim,Number>(
-        matrix_free_data_in, dof_handler_velocity_in, dof_quad_index_data_in, pp_data_lung.flow_rate_data));
+        matrix_free_data_in,
+        dof_handler_velocity_in,
+        navier_stokes_operator_in.get_dof_index_velocity(),
+        navier_stokes_operator_in.get_quad_index_velocity_linear(),
+        pp_data_lung.flow_rate_data));
   }
 
   void do_postprocessing(VectorType const &velocity,
@@ -867,13 +822,13 @@ public:
 
     // calculate flow rates for all outflow boundaries
     AssertThrow(pp_data_lung.flow_rate_data.calculate == true, ExcMessage("Activate flow rate computation."));
-    flow_rate_calculator->calculate_flow_rates(velocity, time, FLOW_RATES);
+    flow_rate_calculator->calculate_flow_rates(velocity, time, flow_rates);
 
     // set flow rate for all outflow boundaries and update volume (i.e., integrate flow rate over time)
     Number volume = 0.0;
     for(auto iterator = OUTFLOW_BOUNDARIES.begin(); iterator != OUTFLOW_BOUNDARIES.end(); ++iterator)
     {
-      (*iterator)->set_flow_rate(FLOW_RATES.at((*iterator)->get_boundary_id()));
+      (*iterator)->set_flow_rate(flow_rates.at((*iterator)->get_boundary_id()));
       (*iterator)->integrate_volume(time);
       volume += (*iterator)->get_volume();
     }
@@ -936,6 +891,9 @@ private:
   // postprocessor data supplemented with data required for lung
   PostProcessorDataLung<dim> pp_data_lung;
 
+  // we need to compute the flow rate for each outlet
+  std::map<types::boundary_id, double> flow_rates;
+
   // calculate flow rates for all outflow boundaries
   std::shared_ptr<FlowRateCalculator<dim,Number> > flow_rate_calculator;
 
@@ -944,23 +902,37 @@ private:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters<dim> const &param)
+construct_postprocessor(InputParameters const &param)
 {
+  (void)param;
+
   PostProcessorData<dim> pp_data;
-  pp_data.output_data = param.output_data;
-  pp_data.error_data = param.error_data;
-  pp_data.lift_and_drag_data = param.lift_and_drag_data;
-  pp_data.pressure_difference_data = param.pressure_difference_data;
-  pp_data.mass_data = param.mass_data;
-  pp_data.kinetic_energy_data = param.kinetic_energy_data;
-  pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
+
+  // write output for visualization of results
+  pp_data.output_data.write_output = WRITE_OUTPUT;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME + "_fluid";
+  pp_data.output_data.output_start_time = OUTPUT_START_TIME;
+  pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
+  pp_data.output_data.write_vorticity = true;
+  pp_data.output_data.write_divergence = true;
+  pp_data.output_data.write_velocity_magnitude = true;
+  pp_data.output_data.write_vorticity_magnitude = true;
+  pp_data.output_data.write_q_criterion = true;
+  pp_data.output_data.write_processor_id = true;
+  pp_data.output_data.degree = param.degree_u;
+  pp_data.output_data.write_higher_order = HIGH_ORDER_OUTPUT;
 
   // Lung specific modules
   PostProcessorDataLung<dim> pp_data_lung;
   pp_data_lung.pp_data = pp_data;
-  pp_data_lung.flow_rate_data = param.flow_rate_data;
 
-  std::shared_ptr<PostProcessorLung<dim,Number> > pp;
+  // calculation of flow rate
+  pp_data_lung.flow_rate_data.calculate = true;
+  pp_data_lung.flow_rate_data.write_to_file = true;
+  pp_data_lung.flow_rate_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_flow_rate";
+
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessorLung<dim,Number>(pp_data_lung));
 
   return pp;
@@ -968,12 +940,14 @@ construct_postprocessor(InputParameters<dim> const &param)
 
 }
 
-#include "convection_diffusion/user_interface/analytical_solution.h"
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-
 namespace ConvDiff
 {
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class DirichletBC : public Function<dim>
@@ -1020,34 +994,30 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functi
 {
   (void)scalar_index; // only one scalar quantity considered
 
-  field_functions->analytical_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
-template<int dim>
-void
-set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution, unsigned int scalar_index = 0)
-{
-  (void)scalar_index; // only one scalar quantity considered
-
-  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
-}
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(unsigned int const scalar_index)
+construct_postprocessor(ConvDiff::InputParameters const &param,
+                        unsigned int const              scalar_index)
 {
-  PostProcessorData pp_data;
+  PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = WRITE_OUTPUT;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
   pp_data.output_data.output_start_time = OUTPUT_START_TIME;
   pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  pp_data.output_data.degree = FE_DEGREE_SCALAR;
+  pp_data.output_data.degree = param.degree;
   pp_data.output_data.write_higher_order = HIGH_ORDER_OUTPUT;
-
-  pp_data.error_data  = ErrorCalculationData();
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

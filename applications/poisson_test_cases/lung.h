@@ -165,13 +165,6 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
 }
 
-template<int dim>
-void
-set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
-{
-  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
-}
-
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                                              POSTPROCESSOR                                               */
@@ -182,12 +175,10 @@ template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
 construct_postprocessor()
 {
-  ConvDiff::PostProcessorData pp_data;
+  ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
-
-  pp_data.error_data = ErrorCalculationData();
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
   pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));

@@ -1,48 +1,29 @@
 /*
- * test_comp_NS.h
- *
+ * couette_flow.h
  */
 
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COMP_NS_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEST_COMP_NS_H_
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/base/function.h>
+#include "../../include/compressible_navier_stokes/postprocessor/postprocessor.h"
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 INPUT PARAMETERS                                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-/*
- *  This 2D test case is a quasi one-dimensional problem with periodic boundary
- *  conditions in x_2-direction. The velocity u_2 is zero. The energy is constant.
- *  The density and the velocity u_1 are a function of x_1 and time t.
- */
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-// set the number of space dimensions: DIMENSION = 2, 3
-const unsigned int DIMENSION = 2;
+unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MAX = 0;
 
-// set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 3;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
-//number of quadrature points in 1D
-const unsigned int QPOINTS_CONV = FE_DEGREE + 1;
-const unsigned int QPOINTS_VIS = QPOINTS_CONV;
-
-// set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 0;
-const unsigned int REFINE_STEPS_SPACE_MAX = 0;
-
-// set the number of refine levels for temporal convergence tests
-const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 0;
-
+// problem specific parameters
 const double DYN_VISCOSITY = 1.0e-2;
 const double GAMMA = 1.4;
 const double LAMBDA = 0.0262;
@@ -59,87 +40,68 @@ const double L = 2.0*H;
 std::string OUTPUT_FOLDER = "output_comp_ns/";
 std::string FILENAME = "couette_flow";
 
-template<int dim>
-void CompNS::InputParameters<dim>::set_input_parameters()
+namespace CompNS
+{
+void set_input_parameters(InputParameters & param)
 {
   // MATHEMATICAL MODEL
-  equation_type = EquationType::NavierStokes;
-  right_hand_side = true;
+  param.dim = 2;
+  param.equation_type = EquationType::NavierStokes;
+  param.right_hand_side = true;
 
   // PHYSICAL QUANTITIES
-  start_time = 0.0;
-  end_time = 25.0;
-  dynamic_viscosity = DYN_VISCOSITY;
-  reference_density = RHO_0;
-  heat_capacity_ratio = GAMMA;
-  thermal_conductivity = LAMBDA;
-  specific_gas_constant = R;
-  max_temperature = T_0;
+  param.start_time = 0.0;
+  param.end_time = 25.0;
+  param.dynamic_viscosity = DYN_VISCOSITY;
+  param.reference_density = RHO_0;
+  param.heat_capacity_ratio = GAMMA;
+  param.thermal_conductivity = LAMBDA;
+  param.specific_gas_constant = R;
+  param.max_temperature = T_0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK;
-  order_time_integrator = 2;
-  calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
-  time_step_size = 1.0e-3;
-  max_velocity = U_0;
-  cfl_number = 0.1;
-  diffusion_number = 0.01;
-  exponent_fe_degree_cfl = 2.0;
-  exponent_fe_degree_viscous = 4.0;
-
-  // SPATIAL DISCRETIZATION
-
-  // triangulation
-  triangulation_type = TriangulationType::Distributed;
-
-  degree = FE_DEGREE;
-  degree_mapping = FE_DEGREE;
-  n_q_points_conv = QPOINTS_CONV;
-  n_q_points_vis = QPOINTS_VIS;
-
-  // viscous term
-  IP_factor = 1.0e0;
-
-  // SOLVER
-
-  // NUMERICAL PARAMETERS
-  use_combined_operator = false;
-
-  // OUTPUT AND POSTPROCESSING
-  calculate_velocity = true;
-  output_data.write_output = true; //false;
-  output_data.write_pressure = true;
-  output_data.write_velocity = true;
-  output_data.write_temperature = true;
-  output_data.write_vorticity = true;
-  output_data.write_divergence = true;
-  output_data.output_folder = OUTPUT_FOLDER;
-  output_data.output_name = FILENAME;
-  output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.degree = FE_DEGREE;
-
-  error_data.analytical_solution_available = true;
-  error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
+  param.temporal_discretization = TemporalDiscretization::ExplRK;
+  param.order_time_integrator = 2;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
+  param.time_step_size = 1.0e-3;
+  param.max_velocity = U_0;
+  param.cfl_number = 0.1;
+  param.diffusion_number = 0.01;
+  param.exponent_fe_degree_cfl = 2.0;
+  param.exponent_fe_degree_viscous = 4.0;
+  param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (end_time-start_time)/20;
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = (param.end_time-param.start_time)/20;
+
+  // SPATIAL DISCRETIZATION
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Isoparametric;
+  param.n_q_points_convective = QuadratureRule::Standard;
+  param.n_q_points_viscous = QuadratureRule::Standard;
+  param.h_refinements = REFINE_SPACE_MIN;
+
+  // viscous term
+  param.IP_factor = 1.0;
+
+  // NUMERICAL PARAMETERS
+  param.use_combined_operator = false;
+}
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
-void create_grid_and_set_boundary_ids(
-  std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
-  unsigned int const                                       n_refine_space,
-  std::vector<GridTools::PeriodicFacePair<typename
-    Triangulation<dim>::cell_iterator> >                   &periodic_faces)
+void create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                      unsigned int const                            n_refine_space,
+                                      std::vector<GridTools::PeriodicFacePair<typename
+                                        Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
  std::vector<unsigned int> repetitions({2,1});
  Point<dim> point1(0.0,0.0), point2(L,H);
@@ -190,11 +152,11 @@ void create_grid_and_set_boundary_ids(
  triangulation->refine_global(n_refine_space);
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 /*
  *  Analytical solutions for initial field functions
@@ -209,33 +171,27 @@ public:
   Function<dim>(n_components, time)
   {}
 
-  virtual ~Solution(){};
+  double value (const Point<dim>   &p,
+                const unsigned int component = 0) const
+  {
+    const double T = T_0  + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1]*p[1]/(H*H) - 1.0);
+    const double rho = PRESSURE / (R * T);
+    const double u =  U_0  / H * p[1];
 
-  virtual double value (const Point<dim>   &p,
-                        const unsigned int component = 0) const;
+    double result = 0.0;
+
+    if(component==0)
+      result = rho;
+    else if (component==1)
+      result = rho * u;
+    else if (component==2)
+      result = 0.0;
+    else if (component==1+dim)
+      result = rho * (0.5 * u*u + R * T / (GAMMA -1.0));
+
+    return result;
+  }
 };
-
-template<int dim>
-double Solution<dim>::value(const Point<dim>    &p,
-                            const unsigned int  component) const
-{
-  const double T = T_0  + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1]*p[1]/(H*H) - 1.0);
-  const double rho = PRESSURE / (R * T);
-  const double u =  U_0  / H * p[1];
-
-  double result = 0.0;
-
-  if(component==0)
-    result = rho;
-  else if (component==1)
-    result = rho * u;
-  else if (component==2)
-    result = 0.0;
-  else if (component==1+dim)
-    result = rho * (0.5 * u*u + R * T / (GAMMA -1.0));
-
-  return result;
-}
 
  template<int dim>
  class VelocityBC : public Function<dim>
@@ -247,25 +203,19 @@ double Solution<dim>::value(const Point<dim>    &p,
      Function<dim>(n_components, time)
    {}
 
-   virtual ~VelocityBC(){};
+   double value (const Point<dim>    &p,
+                 const unsigned int  component = 0) const
+   {
+     double result = 0.0;
 
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
+     if (component==0)
+       result = U_0 * p[1]/H;
+     else if (component==1)
+       result = 0.0;
+
+     return result;
+   }
  };
-
- template<int dim>
- double VelocityBC<dim>::value(const Point<dim>   &p,
-                               const unsigned int component) const
- {
-   double result = 0.0;
-
-   if (component==0)
-     result = U_0 * p[1]/H;
-   else if (component==1)
-     result = 0.0;
-
-   return result;
- }
 
  template<int dim>
  class EnergyBC : public Function<dim>
@@ -276,20 +226,17 @@ double Solution<dim>::value(const Point<dim>    &p,
      Function<dim>(1, time)
    {}
 
-   virtual ~EnergyBC(){};
+   double value (const Point<dim>    &p,
+                  const unsigned int  component = 0) const
+   {
+     (void)p;
+     (void)component;
 
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
+     double result = T_0;
+
+     return result;
+   }
  };
-
- template<int dim>
- double EnergyBC<dim>::value(const Point<dim>   &/*p*/,
-                             const unsigned int /*component*/) const
- {
-   double result = T_0;
-
-   return result;
- }
 
  template<int dim>
  class DensityBC : public Function<dim>
@@ -300,22 +247,18 @@ double Solution<dim>::value(const Point<dim>    &p,
      Function<dim>(1, time)
    {}
 
-   virtual ~DensityBC(){};
+   double value (const Point<dim>    &p,
+                 const unsigned int  component = 0) const
+   {
+     (void)component;
 
-   virtual double value (const Point<dim>    &p,
-                         const unsigned int  component = 0) const;
+     const double T = T_0 + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1]*p[1]/(H*H) - 1.0);
+
+     const double rho = PRESSURE / (R * T);
+
+     return rho;
+   }
  };
-
- template<int dim>
- double DensityBC<dim>::value(const Point<dim>   &p,
-                              const unsigned int /*component*/) const
- {
-   const double T = T_0 + DYN_VISCOSITY * U_0 * U_0 / (2.0 * LAMBDA) * (p[1]*p[1]/(H*H) - 1.0);
-
-   const double rho = PRESSURE / (R * T);
-
-   return rho;
- }
 
 namespace CompNS
 {
@@ -327,90 +270,70 @@ void set_boundary_conditions(
   std::shared_ptr<CompNS::BoundaryDescriptor<dim> >        boundary_descriptor_pressure,
   std::shared_ptr<CompNS::BoundaryDescriptorEnergy<dim> >  boundary_descriptor_energy)
 {
- // zero function scalar
- std::shared_ptr<Function<dim> > zero_function_scalar;
- zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
+  typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+  typedef typename std::pair<types::boundary_id, EnergyBoundaryVariable> pair_variable;
 
- // zero function vectorial
- std::shared_ptr<Function<dim> > zero_function_vectorial;
- zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
+  // density
+  boundary_descriptor_density->dirichlet_bc.insert(pair(0,new DensityBC<dim>()));
+  boundary_descriptor_density->dirichlet_bc.insert(pair(1,new DensityBC<dim>()));
+//  boundary_descriptor_density->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
+//  boundary_descriptor_density->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(1)));
 
- // density
- std::shared_ptr<Function<dim> > density_bc;
- density_bc.reset(new DensityBC<dim>());
- boundary_descriptor_density->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,density_bc));
- boundary_descriptor_density->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,density_bc));
-//   boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
-//   boundary_descriptor_density->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_scalar));
+  // velocity
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new VelocityBC<dim>()));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(1,new VelocityBC<dim>()));
 
- // velocity
- std::shared_ptr<Function<dim> > velocity_bc;
- velocity_bc.reset(new VelocityBC<dim>());
- boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,velocity_bc));
- boundary_descriptor_velocity->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,velocity_bc));
+  // pressure
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(1)));
 
- // pressure
- boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
- boundary_descriptor_pressure->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,zero_function_scalar));
+  // energy: prescribe temperature
+  boundary_descriptor_energy->boundary_variable.insert(pair_variable(0,CompNS::EnergyBoundaryVariable::Temperature));
+  boundary_descriptor_energy->boundary_variable.insert(pair_variable(1,CompNS::EnergyBoundaryVariable::Temperature));
 
- // energy: prescribe temperature
- boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(0,CompNS::EnergyBoundaryVariable::Temperature));
- boundary_descriptor_energy->boundary_variable.insert(std::pair<types::boundary_id,CompNS::EnergyBoundaryVariable>(1,CompNS::EnergyBoundaryVariable::Temperature));
-
- std::shared_ptr<Function<dim> > energy_bc;
- energy_bc.reset(new EnergyBC<dim>());
- boundary_descriptor_energy->neumann_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(0,zero_function_scalar));
- boundary_descriptor_energy->dirichlet_bc.insert(std::pair<types::boundary_id,std::shared_ptr<Function<dim> > >(1,energy_bc));
+  boundary_descriptor_energy->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
+  boundary_descriptor_energy->dirichlet_bc.insert(pair(1,new EnergyBC<dim>()));
 }
 
 template<int dim>
 void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_functions)
 {
-  // zero function scalar
-  std::shared_ptr<Function<dim> > zero_function_scalar;
-  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
-
-  // zero function vectorial
-  std::shared_ptr<Function<dim> > zero_function_vectorial;
-  zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
-
-  // initial solution
-  std::shared_ptr<Function<dim> > initial_solution;
-  initial_solution.reset(new Solution<dim>());
-  field_functions->initial_solution = initial_solution;
-
-  // rhs density
-  field_functions->right_hand_side_density = zero_function_scalar;
-
-  // rhs velocity
-  field_functions->right_hand_side_velocity = zero_function_vectorial;
-
-  // rhs energy
-  field_functions->right_hand_side_energy = zero_function_scalar;
+  field_functions->initial_solution.reset(new Solution<dim>());
+  field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->solution.reset(new Solution<dim>());
-}
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim, typename Number>
-std::shared_ptr<CompNS::PostProcessor<dim, Number> >
-construct_postprocessor(CompNS::InputParameters<dim> const &param)
+std::shared_ptr<CompNS::PostProcessorBase<dim, Number> >
+construct_postprocessor(CompNS::InputParameters const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
 
-  pp_data.calculate_velocity = param.calculate_velocity;
-  pp_data.calculate_pressure = param.calculate_pressure;
-  pp_data.output_data = param.output_data;
-  pp_data.error_data = param.error_data;
-  pp_data.lift_and_drag_data = param.lift_and_drag_data;
-  pp_data.pressure_difference_data = param.pressure_difference_data;
-  pp_data.kinetic_energy_data = param.kinetic_energy_data;
-  pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_pressure = true;
+  pp_data.output_data.write_velocity = true;
+  pp_data.output_data.write_temperature = true;
+  pp_data.output_data.write_vorticity = true;
+  pp_data.output_data.write_divergence = true;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER;
+  pp_data.output_data.output_name = FILENAME;
+  pp_data.output_data.output_start_time = param.start_time;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.degree = param.degree;
 
-  std::shared_ptr<CompNS::PostProcessor<dim, Number> > pp;
+  pp_data.error_data.analytical_solution_available = true;
+  pp_data.error_data.analytical_solution.reset(new Solution<dim>());
+  pp_data.error_data.error_calc_start_time = param.start_time;
+  pp_data.error_data.error_calc_interval_time = (param.end_time-param.start_time)/20;
+
+  std::shared_ptr<CompNS::PostProcessorBase<dim, Number> > pp;
   pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data));
 
   return pp;
