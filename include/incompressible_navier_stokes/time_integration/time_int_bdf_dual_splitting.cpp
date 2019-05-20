@@ -14,13 +14,13 @@
 
 namespace IncNS
 {
-template<int dim, typename Number>
-TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
+template<typename Number>
+TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
   std::shared_ptr<InterfaceBase> operator_base_in,
   std::shared_ptr<InterfacePDE>  pde_operator_in,
-  InputParameters<dim> const &   param_in,
+  InputParameters const &        param_in,
   unsigned int const             n_refine_time_in)
-  : TimeIntBDF<dim, Number>(operator_base_in, param_in, n_refine_time_in),
+  : TimeIntBDF<Number>(operator_base_in, param_in, n_refine_time_in),
     pde_operator(pde_operator_in),
     velocity(this->order),
     pressure(this->order),
@@ -33,12 +33,12 @@ TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
 {
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::update_time_integrator_constants()
+TimeIntBDFDualSplitting<Number>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
-  TimeIntBDF<dim, Number>::update_time_integrator_constants();
+  TimeIntBDF<Number>::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure Neumann bc
   if(this->adaptive_time_stepping == false)
@@ -55,9 +55,9 @@ TimeIntBDFDualSplitting<dim, Number>::update_time_integrator_constants()
   //  extra_pressure_nbc.print();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::setup_derived()
+TimeIntBDFDualSplitting<Number>::setup_derived()
 {
   initialize_vorticity();
 
@@ -67,9 +67,9 @@ TimeIntBDFDualSplitting<dim, Number>::setup_derived()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
+TimeIntBDFDualSplitting<Number>::allocate_vectors()
 {
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
@@ -97,16 +97,16 @@ TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
 }
 
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::initialize_current_solution()
+TimeIntBDFDualSplitting<Number>::initialize_current_solution()
 {
   this->operator_base->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::initialize_former_solutions()
+TimeIntBDFDualSplitting<Number>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
@@ -117,9 +117,9 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_former_solutions()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::initialize_vorticity()
+TimeIntBDFDualSplitting<Number>::initialize_vorticity()
 {
   this->operator_base->compute_vorticity(vorticity[0], velocity[0]);
 
@@ -132,9 +132,9 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_vorticity()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::initialize_vec_convective_term()
+TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
@@ -144,46 +144,44 @@ TimeIntBDFDualSplitting<dim, Number>::initialize_vec_convective_term()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFDualSplitting<dim, Number>::get_velocity() const
+TimeIntBDFDualSplitting<Number>::get_velocity() const
 {
   return velocity[0];
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFDualSplitting<dim, Number>::get_velocity(unsigned int i) const
+TimeIntBDFDualSplitting<Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFDualSplitting<dim, Number>::get_pressure(unsigned int i) const
+TimeIntBDFDualSplitting<Number>::get_pressure(unsigned int i) const
 {
   return pressure[i];
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::set_velocity(VectorType const & velocity_in,
-                                                   unsigned int const i)
+TimeIntBDFDualSplitting<Number>::set_velocity(VectorType const & velocity_in, unsigned int const i)
 {
   velocity[i] = velocity_in;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::set_pressure(VectorType const & pressure_in,
-                                                   unsigned int const i)
+TimeIntBDFDualSplitting<Number>::set_pressure(VectorType const & pressure_in, unsigned int const i)
 {
   pressure[i] = pressure_in;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::postprocessing() const
+TimeIntBDFDualSplitting<Number>::postprocessing() const
 {
   bool const standard = true;
   if(standard)
@@ -213,16 +211,16 @@ TimeIntBDFDualSplitting<dim, Number>::postprocessing() const
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::postprocessing_steady_problem() const
+TimeIntBDFDualSplitting<Number>::postprocessing_steady_problem() const
 {
   pde_operator->do_postprocessing_steady_problem(velocity[0], pressure[0]);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
+TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
@@ -283,9 +281,9 @@ TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::solve_timestep()
+TimeIntBDFDualSplitting<Number>::solve_timestep()
 {
   // perform the four substeps of the dual-splitting method
   convective_step();
@@ -297,9 +295,9 @@ TimeIntBDFDualSplitting<dim, Number>::solve_timestep()
   viscous_step();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::convective_step()
+TimeIntBDFDualSplitting<Number>::convective_step()
 {
   Timer timer;
   timer.restart();
@@ -393,9 +391,9 @@ TimeIntBDFDualSplitting<dim, Number>::convective_step()
   computing_times[0] += timer.wall_time();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::pressure_step()
+TimeIntBDFDualSplitting<Number>::pressure_step()
 {
   Timer timer;
   timer.restart();
@@ -453,9 +451,9 @@ TimeIntBDFDualSplitting<dim, Number>::pressure_step()
   iterations[1] += iterations_pressure;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
+TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
 {
   /*
    *  I. calculate divergence term
@@ -547,9 +545,9 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
     set_zero_mean_value(rhs);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::projection_step()
+TimeIntBDFDualSplitting<Number>::projection_step()
 {
   Timer timer;
   timer.restart();
@@ -600,9 +598,9 @@ TimeIntBDFDualSplitting<dim, Number>::projection_step()
   iterations[2] += iterations_projection;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::rhs_projection(VectorType & rhs) const
+TimeIntBDFDualSplitting<Number>::rhs_projection(VectorType & rhs) const
 {
   /*
    *  I. calculate pressure gradient term
@@ -617,9 +615,9 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_projection(VectorType & rhs) const
   this->operator_base->apply_mass_matrix_add(rhs, velocity_np);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::viscous_step()
+TimeIntBDFDualSplitting<Number>::viscous_step()
 {
   Timer timer;
   timer.restart();
@@ -688,9 +686,9 @@ TimeIntBDFDualSplitting<dim, Number>::viscous_step()
   computing_times[3] += timer.wall_time();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType & rhs) const
+TimeIntBDFDualSplitting<Number>::rhs_viscous(VectorType & rhs) const
 {
   /*
    *  I. calculate mass matrix term
@@ -704,9 +702,9 @@ TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType & rhs) const
   pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::prepare_vectors_for_next_timestep()
+TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 {
   push_back(velocity);
   velocity[0].swap(velocity_np);
@@ -723,9 +721,9 @@ TimeIntBDFDualSplitting<dim, Number>::prepare_vectors_for_next_timestep()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
+TimeIntBDFDualSplitting<Number>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -811,10 +809,10 @@ TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                                     std::vector<double> &      iteration) const
+TimeIntBDFDualSplitting<Number>::get_iterations(std::vector<std::string> & name,
+                                                std::vector<double> &      iteration) const
 {
   name.resize(4);
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
@@ -829,10 +827,10 @@ TimeIntBDFDualSplitting<dim, Number>::get_iterations(std::vector<std::string> & 
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFDualSplitting<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                                     std::vector<double> &      wall_time) const
+TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
+                                                std::vector<double> &      wall_time) const
 {
   name.resize(4);
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
@@ -847,12 +845,7 @@ TimeIntBDFDualSplitting<dim, Number>::get_wall_times(std::vector<std::string> & 
 
 // instantiations
 
-// float
-template class TimeIntBDFDualSplitting<2, float>;
-template class TimeIntBDFDualSplitting<3, float>;
-
-// double
-template class TimeIntBDFDualSplitting<2, double>;
-template class TimeIntBDFDualSplitting<3, double>;
+template class TimeIntBDFDualSplitting<float>;
+template class TimeIntBDFDualSplitting<double>;
 
 } // namespace IncNS

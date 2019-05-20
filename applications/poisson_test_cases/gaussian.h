@@ -33,7 +33,7 @@ void
 set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  param.dim = 3;
+  param.dim = 2;
   param.right_hand_side = true;
 
   // SPATIAL DISCRETIZATION
@@ -251,13 +251,6 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
-template<int dim>
-void
-set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
-{
-  analytical_solution->solution.reset(new Solution<dim>());
-}
-
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                                              POSTPROCESSOR                                               */
@@ -268,12 +261,13 @@ template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
 construct_postprocessor()
 {
-  ConvDiff::PostProcessorData pp_data;
+  ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
 
   pp_data.error_data.analytical_solution_available = true;
+  pp_data.error_data.analytical_solution.reset(new Solution<dim>());
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
   pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));

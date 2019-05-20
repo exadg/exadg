@@ -8,10 +8,12 @@
 // deal.II
 #include <deal.II/base/revision.h>
 #include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
 
 // postprocessor
-#include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // spatial discretization
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
@@ -27,7 +29,6 @@
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Parameters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
@@ -38,6 +39,9 @@ using namespace dealii;
 using namespace IncNS;
 
 // specify the flow problem that has to be solved
+
+// template
+//#include "incompressible_navier_stokes_test_cases/template.h"
 
 // 2D Stokes flow
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
@@ -72,14 +76,32 @@ using namespace IncNS;
 // incompressible flow with scalar transport (but can be used for pure fluid simulations also)
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
-template<int dim, typename Number = double>
-class Problem
+template<typename Number>
+class ProblemBase
 {
 public:
-  Problem(unsigned int const refine_steps_space, unsigned int const refine_steps_time = 0);
+  virtual ~ProblemBase()
+  {
+  }
+
+  virtual void
+  setup(InputParameters const & param) = 0;
+
+  virtual void
+  solve() const = 0;
+
+  virtual void
+  analyze_computing_times() const = 0;
+};
+
+template<int dim, typename Number>
+class Problem : public ProblemBase<Number>
+{
+public:
+  Problem();
 
   void
-  setup(InputParameters<dim> const & param, bool const do_restart);
+  setup(InputParameters const & param);
 
   void
   solve() const;
@@ -97,14 +119,11 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  const unsigned int n_refine_space, n_refine_time;
-
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
-  std::shared_ptr<AnalyticalSolution<dim>>  analytical_solution;
 
-  InputParameters<dim> param;
+  InputParameters param;
 
   typedef DGNavierStokesBase<dim, Number>               DGBase;
   typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
@@ -118,15 +137,15 @@ private:
   std::shared_ptr<Postprocessor> postprocessor;
 
   // unsteady solvers
-  typedef TimeIntBDF<dim, Number>                   TimeInt;
-  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
+  typedef TimeIntBDF<Number>                   TimeInt;
+  typedef TimeIntBDFCoupled<Number>            TimeIntCoupled;
+  typedef TimeIntBDFDualSplitting<Number>      TimeIntDualSplitting;
+  typedef TimeIntBDFPressureCorrection<Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> time_integrator;
 
   // steady solver
-  typedef DriverSteadyProblems<dim, Number> DriverSteady;
+  typedef DriverSteadyProblems<Number> DriverSteady;
 
   std::shared_ptr<DriverSteady> driver_steady;
 
@@ -139,11 +158,8 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem(unsigned int const refine_steps_space,
-                              unsigned int const refine_steps_time)
+Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    n_refine_space(refine_steps_space),
-    n_refine_time(refine_steps_time),
     overall_time(0.0),
     setup_time(0.0)
 {
@@ -166,12 +182,12 @@ Problem<dim, Number>::print_header() const
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do_restart)
+Problem<dim, Number>::setup(InputParameters const & param_in)
 {
   timer.restart();
 
   print_header();
-  print_dealii_info(pcout);
+  print_dealii_info<Number>(pcout);
   print_MPI_info(pcout);
 
   // input parameters
@@ -196,11 +212,8 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  // this function has to be defined in the header file that implements all
-  // problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
-
-  print_grid_data(pcout, n_refine_space, *triangulation);
+  create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
+  print_grid_data(pcout, param.h_refinements, *triangulation);
 
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
@@ -211,16 +224,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
-  set_analytical_solution(analytical_solution);
-
   // initialize postprocessor
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
   postprocessor = construct_postprocessor<dim, Number>(param);
 
   if(param.solver_type == SolverType::Unsteady)
@@ -234,8 +238,10 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
 
       navier_stokes_operation = navier_stokes_operation_coupled;
 
-      time_integrator.reset(new TimeIntCoupled(
-        navier_stokes_operation_coupled, navier_stokes_operation_coupled, param, n_refine_time));
+      time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
+                                               navier_stokes_operation_coupled,
+                                               param,
+                                               param.dt_refinements));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -249,7 +255,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
       time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
                                                      navier_stokes_operation_dual_splitting,
                                                      param,
-                                                     n_refine_time));
+                                                     param.dt_refinements));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
@@ -264,7 +270,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
         new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
                                       navier_stokes_operation_pressure_correction,
                                       param,
-                                      n_refine_time));
+                                      param.dt_refinements));
     }
     else
     {
@@ -293,15 +299,14 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in, bool const do
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
-                                 field_functions,
-                                 analytical_solution);
+                                 field_functions);
 
   if(param.solver_type == SolverType::Unsteady)
   {
     // setup time integrator before calling setup_solvers
     // (this is necessary since the setup of the solvers
     // depends on quantities such as the time_step_size or gamma0!!!)
-    time_integrator->setup(do_restart);
+    time_integrator->setup(param.restarted_simulation);
 
     navier_stokes_operation->setup_solvers(
       time_integrator->get_scaling_factor_time_derivative_term());
@@ -496,42 +501,57 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    deallog.depth_console(0);
+    // set parameters
+    InputParameters param;
+    set_input_parameters(param);
 
-    bool do_restart = false;
-    if(argc > 1)
+    // check parameters in case of restart
+    if(param.restarted_simulation)
     {
-      do_restart = std::atoi(argv[1]);
-      if(do_restart)
-      {
-        AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX,
-                    ExcMessage("Spatial refinement not possible in combination with restart!"));
+      AssertThrow(DEGREE_MIN == DEGREE_MAX && REFINE_SPACE_MIN == REFINE_SPACE_MAX,
+                  ExcMessage("Spatial refinement not possible in combination with restart!"));
 
-        AssertThrow(REFINE_STEPS_TIME_MIN == REFINE_STEPS_TIME_MAX,
-                    ExcMessage("Temporal refinement not possible in combination with restart!"));
-      }
+      AssertThrow(REFINE_TIME_MIN == REFINE_TIME_MAX,
+                  ExcMessage("Temporal refinement not possible in combination with restart!"));
     }
 
-    // mesh refinements in order to perform spatial convergence tests
-    for(unsigned int refine_steps_space = REFINE_STEPS_SPACE_MIN;
-        refine_steps_space <= REFINE_STEPS_SPACE_MAX;
-        ++refine_steps_space)
+    // k-refinement
+    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
     {
-      // time refinements in order to perform temporal convergence tests
-      for(unsigned int refine_steps_time = REFINE_STEPS_TIME_MIN;
-          refine_steps_time <= REFINE_STEPS_TIME_MAX;
-          ++refine_steps_time)
+      // h-refinement
+      for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
+          ++h_refinements)
       {
-        Problem<DIMENSION, VALUE_TYPE> problem(refine_steps_space, refine_steps_time);
+        // dt-refinement
+        for(unsigned int dt_refinements = REFINE_TIME_MIN; dt_refinements <= REFINE_TIME_MAX;
+            ++dt_refinements)
+        {
+          // reset degree
+          param.degree_u = degree;
 
-        InputParameters<DIMENSION> param;
-        param.set_input_parameters();
+          // reset mesh refinements
+          param.h_refinements = h_refinements;
 
-        problem.setup(param, do_restart);
+          // reset dt refinements
+          param.dt_refinements = dt_refinements;
 
-        problem.solve();
+          // setup problem and run simulation
+          typedef double                       Number;
+          std::shared_ptr<ProblemBase<Number>> problem;
 
-        problem.analyze_computing_times();
+          if(param.dim == 2)
+            problem.reset(new Problem<2, Number>());
+          else if(param.dim == 3)
+            problem.reset(new Problem<3, Number>());
+          else
+            AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
+
+          problem->setup(param);
+
+          problem->solve();
+
+          problem->analyze_computing_times();
+        }
       }
     }
   }

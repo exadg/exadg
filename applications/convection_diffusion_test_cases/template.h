@@ -47,7 +47,7 @@ void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
-                                   Triangulation<dim>::cell_iterator> >         &periodic_faces)
+                                   Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
   // to avoid warnings (unused variable) use ...
   (void)triangulation;
@@ -123,11 +123,11 @@ set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analy
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(ConvDiff::InputParameters const &param)
 {
-  PostProcessorData pp_data;
-  pp_data.output_data = OutputData();
-  pp_data.error_data  = ErrorCalculationData();
+  (void)param;
+
+  PostProcessorData<dim> pp_data;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

@@ -14,13 +14,13 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &         parameters_in,
+  InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
   : param(parameters_in),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
-    fe_p(param.degree_p),
+    fe_p(param.get_degree_p()),
     fe_u_scalar(param.degree_u),
-    mapping(param.degree_mapping),
+    mapping_degree(1),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
     dof_handler_u_scalar(triangulation),
@@ -28,6 +28,20 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     postprocessor(postprocessor_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
 {
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree_u;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
 }
 
 template<int dim, typename Number>
@@ -43,8 +57,7 @@ DGNavierStokesBase<dim, Number>::setup(
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  std::shared_ptr<AnalyticalSolution<dim>> const  analytical_solution_in)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
 {
   pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
@@ -83,7 +96,7 @@ DGNavierStokesBase<dim, Number>::setup(
   }
 
   // depending on DoFHandler, Mapping, MatrixFree
-  initialize_postprocessor(analytical_solution_in);
+  initialize_postprocessor();
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
 }
@@ -129,7 +142,7 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
 
   unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
-  unsigned int const ndofs_per_cell_pressure = Utilities::pow(param.degree_p + 1, dim);
+  unsigned int const ndofs_per_cell_pressure = Utilities::pow(param.get_degree_p() + 1, dim);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl
@@ -142,7 +155,7 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   print_parameter(pcout, "number of dofs (total)", dof_handler_u.n_dofs());
 
   pcout << "Pressure:" << std::endl;
-  print_parameter(pcout, "degree of 1D polynomials", param.degree_p);
+  print_parameter(pcout, "degree of 1D polynomials", param.get_degree_p());
   print_parameter(pcout, "number of dofs per cell", ndofs_per_cell_pressure);
   print_parameter(pcout, "number of dofs (total)", dof_handler_p.n_dofs());
 
@@ -219,12 +232,13 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   // velocity
   quadratures[quad_index_u] = QGauss<1>(param.degree_u + 1);
   // pressure
-  quadratures[quad_index_p] = QGauss<1>(param.degree_p + 1);
+  quadratures[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
   // exact integration of nonlinear convective term
   quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
 
   // reinit
-  matrix_free.reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+  matrix_free.reinit(
+    *mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
 template<int dim, typename Number>
@@ -292,7 +306,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_operator_data.quad_index                   = quad_index_u;
   viscous_operator_data.viscosity                    = param.viscosity;
   viscous_operator_data.use_cell_based_loops         = param.use_cell_based_face_loops;
-  viscous_operator.initialize(mapping, matrix_free, viscous_operator_data);
+  viscous_operator.initialize(*mapping, matrix_free, viscous_operator_data);
 }
 
 
@@ -307,7 +321,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   TurbulenceModelData model_data;
   model_data.turbulence_model = param.turbulence_model;
   model_data.constant         = param.turbulence_model_constant;
-  turbulence_model.initialize(matrix_free, mapping, viscous_operator, model_data);
+  turbulence_model.initialize(matrix_free, *mapping, viscous_operator, model_data);
 }
 
 template<int dim, typename Number>
@@ -372,22 +386,9 @@ DGNavierStokesBase<dim, Number>::initialization_pure_dirichlet_bc()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_postprocessor(
-  std::shared_ptr<AnalyticalSolution<dim>> const analytical_solution)
+DGNavierStokesBase<dim, Number>::initialize_postprocessor()
 {
-  // postprocessor
-  DofQuadIndexData dof_quad_index_data;
-  dof_quad_index_data.dof_index_velocity  = dof_index_u;
-  dof_quad_index_data.dof_index_pressure  = dof_index_p;
-  dof_quad_index_data.quad_index_velocity = quad_index_u;
-
-  postprocessor->setup(*this,
-                       dof_handler_u,
-                       dof_handler_p,
-                       mapping,
-                       matrix_free,
-                       dof_quad_index_data,
-                       analytical_solution);
+  postprocessor->setup(*this, dof_handler_u, dof_handler_p, *mapping, matrix_free);
 }
 
 template<int dim, typename Number>
@@ -443,7 +444,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGNavierStokesBase<dim, Number>::get_mapping() const
 {
-  return mapping;
+  return *mapping;
 }
 
 template<int dim, typename Number>
@@ -576,11 +577,12 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
   velocity_double = velocity;
   pressure_double = pressure;
 
-  VectorTools::interpolate(mapping,
+  VectorTools::interpolate(*mapping,
                            dof_handler_u,
                            *(field_functions->initial_solution_velocity),
                            velocity_double);
-  VectorTools::interpolate(mapping,
+
+  VectorTools::interpolate(*mapping,
                            dof_handler_p,
                            *(field_functions->initial_solution_pressure),
                            pressure_double);
@@ -632,11 +634,6 @@ void
 DGNavierStokesBase<dim, Number>::shift_pressure(VectorType &   pressure,
                                                 double const & eval_time) const
 {
-  AssertThrow(
-    param.error_data.analytical_solution_available == true,
-    ExcMessage(
-      "The function shift_pressure is intended to be used only if an analytical solution is available!"));
-
   VectorType vec1(pressure);
   for(unsigned int i = 0; i < vec1.local_size(); ++i)
     vec1.local_element(i) = 1.;
@@ -654,11 +651,6 @@ void
 DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressure,
                                                            double const & eval_time) const
 {
-  AssertThrow(
-    param.error_data.analytical_solution_available == true,
-    ExcMessage(
-      "The function shift_pressure_mean_value is intended to be used only if an analytical solution is available!"));
-
   // one cannot use Number as template here since Number might be float
   // while analytical_solution_pressure is of type Function<dim,double>
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -667,7 +659,7 @@ DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressu
   vec_double = pressure; // initialize
 
   field_functions->analytical_solution_pressure->set_time(eval_time);
-  VectorTools::interpolate(mapping,
+  VectorTools::interpolate(*mapping,
                            dof_handler_p,
                            *(field_functions->analytical_solution_pressure),
                            vec_double);
@@ -796,7 +788,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   mg_preconditioner->initialize(mg_data,
                                 tria,
                                 fe,
-                                mapping,
+                                *mapping,
                                 laplace_operator.get_operator_data(),
                                 &laplace_operator.get_operator_data().bc->dirichlet_bc,
                                 &periodic_face_pairs);

@@ -196,28 +196,23 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
   field_functions->velocity.reset(new VelocityField<dim>());
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->solution.reset(new Solution<dim>(1));
-}
-
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(ConvDiff::InputParameters const &param)
 {
-  PostProcessorData pp_data;
+  PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = "output_conv_diff/deforming_hill/";
   pp_data.output_data.output_name = "deforming_hill";
-  pp_data.output_data.output_start_time = START_TIME;
-  pp_data.output_data.output_interval_time = (END_TIME-START_TIME)/20;
-  pp_data.output_data.degree = DEGREE_MIN;
+  pp_data.output_data.output_start_time = param.start_time;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.degree = param.degree;
 
   //analytical solution only available at t = start_time and t = end_time
   pp_data.error_data.analytical_solution_available = true;
-  pp_data.error_data.error_calc_start_time = START_TIME;
-  pp_data.error_data.error_calc_interval_time = END_TIME-START_TIME;
+  pp_data.error_data.analytical_solution.reset(new Solution<dim>(1));
+  pp_data.error_data.error_calc_start_time = param.start_time;
+  pp_data.error_data.error_calc_interval_time = (param.end_time-param.start_time)/20;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

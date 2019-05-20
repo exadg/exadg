@@ -8,48 +8,32 @@
 #ifndef APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 #define APPLICATIONS_COMPRESSIBLE_NAVIER_STOKES_TEST_CASES_3D_TAYLOR_GREEN_VORTEX_H_
 
+#include "../grid_tools/deformed_cube_manifold.h"
+#include "../../include/compressible_navier_stokes/postprocessor/postprocessor.h"
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria_accessor.h>
-#include <deal.II/grid/tria_iterator.h>
-#include <deal.II/grid/manifold_lib.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/base/function.h>
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 INPUT PARAMETERS                                   */
-/*                                                                                    */
-/**************************************************************************************/
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-// set the number of space dimensions: DIMENSION = 2, 3
-const unsigned int DIMENSION = 3;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
-// set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 3;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
-//number of quadrature points in 1D
-//const unsigned int QPOINTS_CONV = FE_DEGREE + 1;
-const unsigned int QPOINTS_CONV = FE_DEGREE + (FE_DEGREE+2)/2; // 3/2-overintegration
-//const unsigned int QPOINTS_CONV = 2*FE_DEGREE+1;
-
-const unsigned int QPOINTS_VIS = QPOINTS_CONV;
-//const unsigned int QPOINTS_VIS = FE_DEGREE + 1;
-
-// set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 4;
-const unsigned int REFINE_STEPS_SPACE_MAX = 4;
+// problem specific parameters
 
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
 
 // only relevant for Cartesian mesh
 const unsigned int N_CELLS_1D_COARSE_GRID = 1;
-
-// set the number of refine levels for temporal convergence tests
-const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 0;
 
 // set parameters according to Wiart et al. ("Assessment of discontinuous Galerkin method
 // for the simulation of vortical flows at high Reynolds number"):
@@ -81,30 +65,26 @@ const double CHARACTERISTIC_TIME = L/V_0;
 std::string OUTPUT_FOLDER = "output_comp_ns/taylor_green_vortex/";
 std::string FILENAME = "test";
 
-template<int dim>
-void CompNS::InputParameters<dim>::set_input_parameters()
+namespace CompNS
+{
+void set_input_parameters(InputParameters & param)
 {
   // MATHEMATICAL MODEL
-  equation_type = EquationType::NavierStokes;
-  right_hand_side = false;
+  param.dim = 3;
+  param.equation_type = EquationType::NavierStokes;
+  param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
-  start_time = 0.0;
-  end_time = 20.0*CHARACTERISTIC_TIME;
-  dynamic_viscosity = DYN_VISCOSITY;
-  reference_density = RHO_0;
-  heat_capacity_ratio = GAMMA;
-  thermal_conductivity = LAMBDA;
-  specific_gas_constant = R;
-  max_temperature = T_0;
+  param.start_time = 0.0;
+  param.end_time = 20.0*CHARACTERISTIC_TIME;
+  param.dynamic_viscosity = DYN_VISCOSITY;
+  param.reference_density = RHO_0;
+  param.heat_capacity_ratio = GAMMA;
+  param.thermal_conductivity = LAMBDA;
+  param.specific_gas_constant = R;
+  param.max_temperature = T_0;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::ExplRK3Stage7Reg2; //ExplRK; //SSPRK; //ExplRK4Stage5Reg3C; //ExplRK3Stage7Reg2;
-  order_time_integrator = 3;
-  stages = 7;
-  calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
-  time_step_size = 1.0e-3;
-  max_velocity = MAX_VELOCITY;
 
   // l=4, k=3 (64³), exponent_fe_degree_cfl = 2:
   // Classical RK:
@@ -129,82 +109,54 @@ void CompNS::InputParameters<dim>::set_input_parameters()
   // SSPRK(8,3): CFL_crit = 1.5 - 1.6, costs = stages / CFL = 5.0 - 5.3, computational costs = 0.77 CPUh
   // SSPRK(8,4): CFL_crit = 1.25 - 1.3, costs = stages / CFL = 6.2 - 6.4
 
-  cfl_number = 0.6;
-  diffusion_number = 0.02;
-  exponent_fe_degree_cfl = 1.5; //2.0;
-  exponent_fe_degree_viscous = 3.0; //4.0;
-
-  // SPATIAL DISCRETIZATION
-
-  // triangulation
-  triangulation_type = TriangulationType::Distributed;
-
-  degree = FE_DEGREE;
-  degree_mapping = 1;
-  n_q_points_conv = QPOINTS_CONV;
-  n_q_points_vis = QPOINTS_VIS;
-
-  // viscous term
-  IP_factor = 1.0;
-
-  // SOLVER
-
-  // NUMERICAL PARAMETERS
-  use_combined_operator = true;
-
-  // OUTPUT AND POSTPROCESSING
-  calculate_velocity = true; // activate this for kinetic energy calculations (see below)
-  output_data.write_output = false;
-  output_data.write_pressure = true;
-  output_data.write_velocity = true;
-  output_data.write_temperature = true;
-  output_data.write_vorticity = true;
-  output_data.write_divergence = true;
-  output_data.output_folder = OUTPUT_FOLDER + "vtu/";
-  output_data.output_name = FILENAME;
-  output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.degree = FE_DEGREE;
-
-  // kinetic energy
-  kinetic_energy_data.calculate = true;
-  kinetic_energy_data.calculate_every_time_steps = 1;
-  kinetic_energy_data.viscosity = DYN_VISCOSITY/RHO_0;
-  kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + FILENAME;
-
-  // kinetic energy spectrum
-  kinetic_energy_spectrum_data.calculate = true;
-  kinetic_energy_spectrum_data.calculate_every_time_steps = -1;
-  kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-  kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum_" + FILENAME;
-  kinetic_energy_spectrum_data.degree = FE_DEGREE;
-  kinetic_energy_spectrum_data.evaluation_points_per_cell = (FE_DEGREE+1)*1;
-  kinetic_energy_spectrum_data.output_tolerance = 1.e-12;
+  param.temporal_discretization = TemporalDiscretization::ExplRK3Stage7Reg2;
+  param.order_time_integrator = 3;
+  param.stages = 7;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFLAndDiffusion;
+  param.time_step_size = 1.0e-3;
+  param.max_velocity = MAX_VELOCITY;
+  param.cfl_number = 0.6;
+  param.diffusion_number = 0.02;
+  param.exponent_fe_degree_cfl = 1.5;
+  param.exponent_fe_degree_viscous = 3.0;
+  param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (end_time-start_time)/20;
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = (param.end_time-param.start_time)/20;
 
   // restart
-  restart_data.write_restart = false;
-  restart_data.interval_time = 1.0;
-  restart_data.filename = OUTPUT_FOLDER + FILENAME + "_restart";
+  param.restart_data.write_restart = false;
+  param.restart_data.interval_time = 1.0;
+  param.restart_data.filename = OUTPUT_FOLDER + FILENAME + "_restart";
+
+  // SPATIAL DISCRETIZATION
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Affine;
+  param.n_q_points_convective = QuadratureRule::Overintegration32k;
+  param.n_q_points_viscous = QuadratureRule::Overintegration32k;
+  param.h_refinements = REFINE_SPACE_MIN;
+
+  // viscous term
+  param.IP_factor = 1.0;
+
+  // NUMERICAL PARAMETERS
+  param.use_combined_operator = true;
+}
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
-/*                                                                                    */
-/**************************************************************************************/
-
-#include "../grid_tools/deformed_cube_manifold.h"
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
-void create_grid_and_set_boundary_ids(
-  std::shared_ptr<parallel::Triangulation<dim>>            triangulation,
-  unsigned int const                                       n_refine_space,
-  std::vector<GridTools::PeriodicFacePair<typename
-    Triangulation<dim>::cell_iterator> >                   &periodic_faces)
+void create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                      unsigned int const                            n_refine_space,
+                                      std::vector<GridTools::PeriodicFacePair<typename
+                                        Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
   const double pi = numbers::PI;
   const double left = - pi * L, right = pi * L;
@@ -268,14 +220,14 @@ void create_grid_and_set_boundary_ids(
   triangulation->refine_global(n_refine_space);
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 /*
- *  Analytical solutions for initial field functions
+ *  Analytical solution
  */
 
 template<int dim>
@@ -288,40 +240,33 @@ public:
   Function<dim>(n_components, time)
   {}
 
-  virtual ~Solution(){};
+  double value (const Point<dim>   &x,
+                const unsigned int component = 0) const
+  {
+    double const u1 = V_0*std::sin(x[0]/L)*std::cos(x[1]/L)*std::cos(x[2]/L);
+    double const u2 = -V_0*std::cos(x[0]/L)*std::sin(x[1]/L)*std::cos(x[2]/L);
+    double const p = p_0 + RHO_0 * V_0 * V_0 / 16.0 * (std::cos(2.0*x[0]/L) + std::cos(2.0*x[1]/L)) * (std::cos(2.0*x[2]/L) + 2.0);
+    double const T = T_0;
+    double const rho = p/(R*T);
+    double const E = R/(GAMMA-1.0)*T /* e = c_v * T */
+                     + 0.5*(u1*u1 + u2*u2 /* + u3*u3 with u3=0*/);
 
-  virtual double value (const Point<dim>   &x,
-                        const unsigned int component = 0) const;
+    double result = 0.0;
+
+    if(component==0)
+      result = rho;
+    else if (component==1)
+      result = rho * u1;
+    else if (component==2)
+      result = rho * u2;
+    else if (component==3)
+      result = 0.0;
+    else if (component==1+dim)
+      result = rho * E;
+
+    return result;
+  }
 };
-
-template<int dim>
-double Solution<dim>::value(const Point<dim>    &x,
-                            const unsigned int  component) const
-{
-  double const u1 = V_0*std::sin(x[0]/L)*std::cos(x[1]/L)*std::cos(x[2]/L);
-  double const u2 = -V_0*std::cos(x[0]/L)*std::sin(x[1]/L)*std::cos(x[2]/L);
-  double const p = p_0 + RHO_0 * V_0 * V_0 / 16.0 * (std::cos(2.0*x[0]/L) + std::cos(2.0*x[1]/L)) * (std::cos(2.0*x[2]/L) + 2.0);
-  double const T = T_0;
-  double const rho = p/(R*T);
-  double const E = R/(GAMMA-1.0)*T /* e = c_v * T */
-                   + 0.5*(u1*u1 + u2*u2 /* + u3*u3 with u3=0*/);
-
-  double result = 0.0;
-
-  if(component==0)
-    result = rho;
-  else if (component==1)
-    result = rho * u1;
-  else if (component==2)
-    result = rho * u2;
-  else if (component==3)
-    result = 0.0;
-  else if (component==1+dim)
-    result = rho * E;
-
-  return result;
-}
-
 
 namespace CompNS
 {
@@ -339,51 +284,53 @@ void set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_functions)
 {
-  // zero function scalar
-  std::shared_ptr<Function<dim> > zero_function_scalar;
-  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
-
-  // zero function vectorial
-  std::shared_ptr<Function<dim> > zero_function_vectorial;
-  zero_function_vectorial.reset(new Functions::ZeroFunction<dim>(dim));
-
-  // initial solution
-  std::shared_ptr<Function<dim> > initial_solution;
-  initial_solution.reset(new Solution<dim>());
-  field_functions->initial_solution = initial_solution;
-
-  // rhs density
-  field_functions->right_hand_side_density = zero_function_scalar;
-
-  // rhs velocity
-  field_functions->right_hand_side_velocity = zero_function_vectorial;
-
-  // rhs energy
-  field_functions->right_hand_side_energy = zero_function_scalar;
+  field_functions->initial_solution.reset(new Solution<dim>());
+  field_functions->right_hand_side_density.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->right_hand_side_energy.reset(new Functions::ZeroFunction<dim>(1));
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<CompNS::AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->solution.reset(new Solution<dim>());
-}
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim, typename Number>
-std::shared_ptr<CompNS::PostProcessor<dim, Number> >
-construct_postprocessor(CompNS::InputParameters<dim> const &param)
+std::shared_ptr<CompNS::PostProcessorBase<dim, Number> >
+construct_postprocessor(CompNS::InputParameters const &param)
 {
   CompNS::PostProcessorData<dim> pp_data;
 
-  pp_data.calculate_velocity = param.calculate_velocity;
-  pp_data.calculate_pressure = param.calculate_pressure;
-  pp_data.output_data = param.output_data;
-  pp_data.error_data = param.error_data;
-  pp_data.lift_and_drag_data = param.lift_and_drag_data;
-  pp_data.pressure_difference_data = param.pressure_difference_data;
-  pp_data.kinetic_energy_data = param.kinetic_energy_data;
-  pp_data.kinetic_energy_spectrum_data = param.kinetic_energy_spectrum_data;
+  pp_data.calculate_velocity = true; // activate this for kinetic energy calculations (see below)
+  pp_data.output_data.write_output = false;
+  pp_data.output_data.write_pressure = true;
+  pp_data.output_data.write_velocity = true;
+  pp_data.output_data.write_temperature = true;
+  pp_data.output_data.write_vorticity = true;
+  pp_data.output_data.write_divergence = true;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER + "vtu/";
+  pp_data.output_data.output_name = FILENAME;
+  pp_data.output_data.output_start_time = param.start_time;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.degree = param.degree;
 
-  std::shared_ptr<CompNS::PostProcessor<dim, Number> > pp;
+  // kinetic energy
+  pp_data.kinetic_energy_data.calculate = true;
+  pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
+  pp_data.kinetic_energy_data.viscosity = DYN_VISCOSITY/RHO_0;
+  pp_data.kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + FILENAME;
+
+  // kinetic energy spectrum
+  pp_data.kinetic_energy_spectrum_data.calculate = true;
+  pp_data.kinetic_energy_spectrum_data.calculate_every_time_steps = -1;
+  pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
+  pp_data.kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum_" + FILENAME;
+  pp_data.kinetic_energy_spectrum_data.degree = param.degree;
+  pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree+1)*1;
+  pp_data.kinetic_energy_spectrum_data.output_tolerance = 1.e-12;
+
+  std::shared_ptr<CompNS::PostProcessorBase<dim, Number> > pp;
   pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data));
 
   return pp;

@@ -103,14 +103,6 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
 }
 
-template<int dim>
-void
-set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
-{
-  // these lines show exemplarily how the analytical solution is filled
-  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
-}
-
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                                              POSTPROCESSOR                                               */
@@ -121,9 +113,7 @@ template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
 construct_postprocessor()
 {
-  ConvDiff::PostProcessorData pp_data;
-  pp_data.output_data = OutputData();
-  pp_data.error_data  = ErrorCalculationData();
+  ConvDiff::PostProcessorData<dim> pp_data;
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
   pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));

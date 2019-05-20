@@ -16,34 +16,33 @@
 namespace IncNS
 {
 // forward declarations
-template<int dim>
 class InputParameters;
 
 namespace Interface
 {
-template<int dim, typename Number>
+template<typename Number>
 class OperatorBase;
 template<typename Number>
 class OperatorCoupled;
 
 } // namespace Interface
 
-template<int dim, typename Number>
-class TimeIntBDFCoupled : public TimeIntBDF<dim, Number>
+template<typename Number>
+class TimeIntBDFCoupled : public TimeIntBDF<Number>
 {
 public:
-  typedef TimeIntBDF<dim, Number> Base;
+  typedef TimeIntBDF<Number> Base;
 
   typedef typename Base::VectorType VectorType;
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef Interface::OperatorBase<dim, Number> InterfaceBase;
-  typedef Interface::OperatorCoupled<Number>   InterfacePDE;
+  typedef Interface::OperatorBase<Number>    InterfaceBase;
+  typedef Interface::OperatorCoupled<Number> InterfacePDE;
 
   TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
                     std::shared_ptr<InterfacePDE>  pde_operator_in,
-                    InputParameters<dim> const &   param_in,
+                    InputParameters const &        param_in,
                     unsigned int const             n_refine_time_in);
 
   void

@@ -13,10 +13,10 @@
 
 namespace CompNS
 {
-template<int dim, typename Number>
-TimeIntExplRK<dim, Number>::TimeIntExplRK(std::shared_ptr<Operator>    operator_in,
-                                          InputParameters<dim> const & param_in,
-                                          unsigned int const           n_refine_time_in)
+template<typename Number>
+TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
+                                     InputParameters const &   param_in,
+                                     unsigned int const        n_refine_time_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,
@@ -32,9 +32,9 @@ TimeIntExplRK<dim, Number>::TimeIntExplRK(std::shared_ptr<Operator>    operator_
 {
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::initialize_time_integrator()
+TimeIntExplRK<Number>::initialize_time_integrator()
 {
   // initialize Runge-Kutta time integrator
   if(this->param.temporal_discretization == TemporalDiscretization::ExplRK)
@@ -77,9 +77,9 @@ TimeIntExplRK<dim, Number>::initialize_time_integrator()
 /*
  *  initialize global solution vectors (allocation)
  */
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::initialize_vectors()
+TimeIntExplRK<Number>::initialize_vectors()
 {
   pde_operator->initialize_dof_vector(this->solution_n);
   pde_operator->initialize_dof_vector(this->solution_np);
@@ -88,9 +88,9 @@ TimeIntExplRK<dim, Number>::initialize_vectors()
 /*
  *  initializes the solution by interpolation of analytical solution
  */
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::initialize_solution()
+TimeIntExplRK<Number>::initialize_solution()
 {
   pde_operator->prescribe_initial_conditions(this->solution_n, this->time);
 }
@@ -98,9 +98,9 @@ TimeIntExplRK<dim, Number>::initialize_solution()
 /*
  *  calculate time step size
  */
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::calculate_time_step_size()
+TimeIntExplRK<Number>::calculate_time_step_size()
 {
   this->pcout << std::endl << "Calculation of time step size:" << std::endl << std::endl;
 
@@ -207,18 +207,18 @@ TimeIntExplRK<dim, Number>::calculate_time_step_size()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 double
-TimeIntExplRK<dim, Number>::recalculate_time_step_size() const
+TimeIntExplRK<Number>::recalculate_time_step_size() const
 {
   AssertThrow(false, ExcMessage("Currently no adaptive time stepping implemented."));
 
   return 1.0;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::detect_instabilities() const
+TimeIntExplRK<Number>::detect_instabilities() const
 {
   if(this->param.detect_instabilities == true)
   {
@@ -233,9 +233,9 @@ TimeIntExplRK<dim, Number>::detect_instabilities() const
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::postprocessing() const
+TimeIntExplRK<Number>::postprocessing() const
 {
   timer_postprocessing.restart();
 
@@ -246,9 +246,9 @@ TimeIntExplRK<dim, Number>::postprocessing() const
   time_postprocessing += timer_postprocessing.wall_time();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::solve_timestep()
+TimeIntExplRK<Number>::solve_timestep()
 {
   Timer timer;
   timer.restart();
@@ -269,19 +269,19 @@ TimeIntExplRK<dim, Number>::solve_timestep()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 bool
-TimeIntExplRK<dim, Number>::print_solver_info() const
+TimeIntExplRK<Number>::print_solver_info() const
 {
   return param.solver_info_data.write(this->global_timer.wall_time(),
                                       this->time,
                                       this->time_step_number);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntExplRK<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                           std::vector<double> &      wall_time_vector) const
+TimeIntExplRK<Number>::get_wall_times(std::vector<std::string> & name,
+                                      std::vector<double> &      wall_time_vector) const
 {
   name.resize(2);
   std::vector<std::string> names = {"Operator evaluation", "Postprocessing"};
@@ -293,10 +293,7 @@ TimeIntExplRK<dim, Number>::get_wall_times(std::vector<std::string> & name,
 }
 
 // instantiations
-template class TimeIntExplRK<2, float>;
-template class TimeIntExplRK<3, float>;
-
-template class TimeIntExplRK<2, double>;
-template class TimeIntExplRK<3, double>;
+template class TimeIntExplRK<float>;
+template class TimeIntExplRK<double>;
 
 } // namespace CompNS

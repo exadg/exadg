@@ -42,7 +42,7 @@ public:
    * Constructor.
    */
   DGNavierStokesPressureCorrection(parallel::Triangulation<dim> const & triangulation,
-                                   InputParameters<dim> const &         parameters_in,
+                                   InputParameters const &              parameters_in,
                                    std::shared_ptr<Postprocessor>       postprocessor_in);
 
   /*

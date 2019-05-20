@@ -1,10 +1,9 @@
 
-#include "../include/incompressible_navier_stokes/postprocessor/statistics_manager.h"
+#include "statistics_manager.h"
 
+#include <deal.II/base/quadrature_lib.h>
 #include <deal.II/distributed/tria_base.h>
 #include <deal.II/fe/fe_values.h>
-
-using namespace IncNS;
 
 template<int dim>
 StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> & dof_handler_velocity,

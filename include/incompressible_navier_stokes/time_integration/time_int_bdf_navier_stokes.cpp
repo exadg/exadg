@@ -13,10 +13,10 @@
 
 namespace IncNS
 {
-template<int dim, typename Number>
-TimeIntBDF<dim, Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
-                                    InputParameters<dim> const &   param_in,
-                                    unsigned int const             n_refine_time_in)
+template<typename Number>
+TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
+                               InputParameters const &        param_in,
+                               unsigned int const             n_refine_time_in)
   : TimeIntBDFBase(param_in.start_time,
                    param_in.end_time,
                    param_in.max_number_of_time_steps,
@@ -32,81 +32,81 @@ TimeIntBDF<dim, Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
 {
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::update_time_integrator_constants()
+TimeIntBDF<Number>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
   TimeIntBDFBase::update_time_integrator_constants();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::initialize_oif()
+TimeIntBDF<Number>::initialize_oif()
 {
   // Operator-integration-factor splitting
   if(param.equation_type == EquationType::NavierStokes &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    convective_operator_OIF.reset(new Interface::OperatorOIF<dim, Number>(operator_base));
+    convective_operator_OIF.reset(new Interface::OperatorOIF<Number>(operator_base));
 
     // initialize OIF time integrator
     if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK1Stage1)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
           1, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK2Stage2)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
           2, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage3)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
           3, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage4)
     {
       time_integrator_OIF.reset(
-        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new ExplicitRungeKuttaTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>(
           4, convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage4Reg2C)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK3Stage4Reg2C<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new LowStorageRK3Stage4Reg2C<Interface::OperatorOIF<Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg2C)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK4Stage5Reg2C<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new LowStorageRK4Stage5Reg2C<Interface::OperatorOIF<Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage5Reg3C)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK4Stage5Reg3C<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new LowStorageRK4Stage5Reg3C<Interface::OperatorOIF<Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK5Stage9Reg2S)
     {
       time_integrator_OIF.reset(
-        new LowStorageRK5Stage9Reg2S<Interface::OperatorOIF<dim, Number>, VectorType>(
+        new LowStorageRK5Stage9Reg2S<Interface::OperatorOIF<Number>, VectorType>(
           convective_operator_OIF));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK3Stage7Reg2)
     {
-      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<dim, Number>, VectorType>(
+      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<Number>, VectorType>(
         convective_operator_OIF, 3, 7));
     }
     else if(param.time_integrator_oif == IncNS::TimeIntegratorOIF::ExplRK4Stage8Reg2)
     {
-      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<dim, Number>, VectorType>(
+      time_integrator_OIF.reset(new LowStorageRKTD<Interface::OperatorOIF<Number>, VectorType>(
         convective_operator_OIF, 4, 8));
     }
     else
@@ -120,9 +120,9 @@ TimeIntBDF<dim, Number>::initialize_oif()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDF<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
@@ -138,9 +138,9 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDF<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
@@ -152,9 +152,9 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::calculate_time_step_size()
+TimeIntBDF<Number>::calculate_time_step_size()
 {
   unsigned int const degree_u = operator_base->get_polynomial_degree();
 
@@ -243,9 +243,9 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 double
-TimeIntBDF<dim, Number>::recalculate_time_step_size() const
+TimeIntBDF<Number>::recalculate_time_step_size() const
 {
   AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
               ExcMessage(
@@ -270,9 +270,9 @@ TimeIntBDF<dim, Number>::recalculate_time_step_size() const
   return new_time_step_size;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 bool
-TimeIntBDF<dim, Number>::print_solver_info() const
+TimeIntBDF<Number>::print_solver_info() const
 {
   //  return get_time_step_number() % param.output_solver_info_every_timesteps == 0;
 
@@ -281,18 +281,18 @@ TimeIntBDF<dim, Number>::print_solver_info() const
                                       this->time_step_number);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::initialize_solution_oif_substepping(unsigned int i)
+TimeIntBDF<Number>::initialize_solution_oif_substepping(unsigned int i)
 {
   // initialize solution: u_tilde(s=0) = u(t_{n-i})
   solution_tilde_m = get_velocity(i);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::get_velocities_and_times(std::vector<VectorType const *> & velocities,
-                                                  std::vector<double> &             times) const
+TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & velocities,
+                                             std::vector<double> &             times) const
 {
   /*
    * the convective term is nonlinear, so we have to initialize the transport velocity
@@ -323,10 +323,9 @@ TimeIntBDF<dim, Number>::get_velocities_and_times(std::vector<VectorType const *
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl,
-                                                                 double const cfl_oif)
+TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif)
 {
   std::vector<VectorType const *> velocities;
   std::vector<double>             times;
@@ -341,9 +340,9 @@ TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(double const cf
   TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::update_sum_alphai_ui_oif_substepping(unsigned int i)
+TimeIntBDF<Number>::update_sum_alphai_ui_oif_substepping(unsigned int i)
 {
   // calculate sum (alpha_i/dt * u_tilde_i)
   if(i == 0)
@@ -352,10 +351,10 @@ TimeIntBDF<dim, Number>::update_sum_alphai_ui_oif_substepping(unsigned int i)
     sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDF<dim, Number>::do_timestep_oif_substepping_and_update_vectors(double const start_time,
-                                                                        double const time_step_size)
+TimeIntBDF<Number>::do_timestep_oif_substepping_and_update_vectors(double const start_time,
+                                                                   double const time_step_size)
 {
   // solve sub-step
   time_integrator_OIF->solve_timestep(solution_tilde_mp,
@@ -368,12 +367,7 @@ TimeIntBDF<dim, Number>::do_timestep_oif_substepping_and_update_vectors(double c
 
 // instantiations
 
-// float
-template class TimeIntBDF<2, float>;
-template class TimeIntBDF<3, float>;
-
-// double
-template class TimeIntBDF<2, double>;
-template class TimeIntBDF<3, double>;
+template class TimeIntBDF<float>;
+template class TimeIntBDF<double>;
 
 } // namespace IncNS

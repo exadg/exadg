@@ -8,8 +8,77 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_
 
-#include "postprocessor/calculate_l2_error.h"
-#include "postprocessor/error_calculation_data.h"
+// deal.II
+#include <deal.II/base/function.h>
+#include <deal.II/dofs/dof_handler.h>
+#include <deal.II/fe/mapping_q.h>
+#include <deal.II/lac/la_parallel_vector.h>
+
+
+#include "../functionalities/print_functions.h"
+
+template<int dim>
+struct ErrorCalculationData
+{
+  ErrorCalculationData()
+    : analytical_solution_available(false),
+      calculate_relative_errors(true),
+      calculate_H1_seminorm_error(false),
+      error_calc_start_time(std::numeric_limits<double>::max()),
+      error_calc_interval_time(std::numeric_limits<double>::max()),
+      calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
+      write_errors_to_file(false),
+      folder("output/"),
+      name("all fields")
+  {
+  }
+
+  void
+  print(ConditionalOStream & pcout, bool unsteady)
+  {
+    print_parameter(pcout, "Calculate error", analytical_solution_available);
+    if(analytical_solution_available == true && unsteady == true)
+    {
+      print_parameter(pcout, "Calculate relative errors", calculate_relative_errors);
+      print_parameter(pcout, "Calculate H1-seminorm error", calculate_H1_seminorm_error);
+      print_parameter(pcout, "Error calculation start time", error_calc_start_time);
+      print_parameter(pcout, "Error calculation interval time", error_calc_interval_time);
+      print_parameter(pcout, "Calculate error every time steps", calculate_every_time_steps);
+      print_parameter(pcout, "Write errors to file", write_errors_to_file);
+      print_parameter(pcout, "Output folder", folder);
+      print_parameter(pcout, "Name", name);
+    }
+  }
+
+  // to calculate the error an analytical solution to the problem has to be available
+  bool analytical_solution_available;
+
+  std::shared_ptr<Function<dim>> analytical_solution;
+
+  // relative or absolute errors?
+  // If calculate_relative_errors == false, this implies that absolute errors are calculated
+  bool calculate_relative_errors;
+
+  // by default, only the L2-error is computed. Other norms have to be explicitly specified by the
+  // user.
+  bool calculate_H1_seminorm_error;
+
+  // before then no error calculation will be performed
+  double error_calc_start_time;
+
+  // specifies the time interval in which error calculation is performed
+  double error_calc_interval_time;
+
+  // calculate error every time steps
+  unsigned int calculate_every_time_steps;
+
+  // write errors to file?
+  bool write_errors_to_file;
+
+  // output folder and name (used as filename and as identifier for screen output)
+  std::string folder;
+  std::string name;
+};
 
 template<int dim, typename Number>
 class ErrorCalculator
@@ -17,97 +86,29 @@ class ErrorCalculator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  ErrorCalculator() : error_counter(0), reset_counter(true)
-  {
-  }
+  ErrorCalculator();
 
   void
-  setup(DoFHandler<dim> const &        dof_handler_in,
-        Mapping<dim> const &           mapping_in,
-        std::shared_ptr<Function<dim>> analytical_solution_in,
-        ErrorCalculationData const &   error_data_in)
-  {
-    dof_handler         = &dof_handler_in;
-    mapping             = &mapping_in;
-    analytical_solution = analytical_solution_in;
-    error_data          = error_data_in;
-  }
+  setup(DoFHandler<dim> const &           dof_handler_in,
+        Mapping<dim> const &              mapping_in,
+        ErrorCalculationData<dim> const & error_data_in);
 
   void
-  evaluate(VectorType const & solution, double const & time, int const & time_step_number)
-  {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-
-    if(error_data.analytical_solution_available == true)
-    {
-      if(time_step_number >= 0) // unsteady problem
-      {
-        // small number which is much smaller than the time step size
-        const double EPSILON = 1.0e-10;
-
-        // In the first time step, the current time might be larger than output_start_time. In that
-        // case, we first have to reset the counter in order to avoid that output is written every
-        // time step.
-        if(reset_counter)
-        {
-          error_counter += int((time - error_data.error_calc_start_time + EPSILON) /
-                               error_data.error_calc_interval_time);
-          reset_counter = false;
-        }
-
-        if((time > (error_data.error_calc_start_time +
-                    error_counter * error_data.error_calc_interval_time - EPSILON)))
-        {
-          pcout << std::endl
-                << "Calculate error at time t = " << std::scientific << std::setprecision(4) << time
-                << ":" << std::endl;
-
-          do_evaluate(solution, time);
-
-          ++error_counter;
-        }
-      }
-      else // steady problem (time_step_number = -1)
-      {
-        pcout << std::endl
-              << "Calculate error for " << (error_counter == 0 ? "initial" : "solution") << " data"
-              << std::endl;
-
-        do_evaluate(solution, time);
-
-        ++error_counter;
-      }
-    }
-  }
+  evaluate(VectorType const & solution, double const & time, int const & time_step_number);
 
 private:
+  void
+  do_evaluate(VectorType const & solution_vector, double const time);
+
   unsigned int error_counter;
   bool         reset_counter;
+
+  bool clear_files_L2, clear_files_H1_seminorm;
 
   SmartPointer<DoFHandler<dim> const> dof_handler;
   SmartPointer<Mapping<dim> const>    mapping;
 
-  std::shared_ptr<Function<dim>> analytical_solution;
-
-  ErrorCalculationData error_data;
-
-  void
-  do_evaluate(VectorType const & solution_vector, double const time) const
-  {
-    bool relative = true;
-
-    double const error = calculate_error<dim>(relative,
-                                              *dof_handler,
-                                              *mapping,
-                                              solution_vector,
-                                              analytical_solution,
-                                              time,
-                                              VectorTools::L2_norm);
-
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-    pcout << ((relative == true) ? "  Relative " : "  Absolute ")
-          << "error (L2-norm): " << std::scientific << std::setprecision(5) << error << std::endl;
-  }
+  ErrorCalculationData<dim> error_data;
 };
 
 #endif /* INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_ERROR_CALCULATION_H_ */

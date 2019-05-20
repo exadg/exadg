@@ -10,23 +10,22 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 
-#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
 // CONVECTION-DIFFUSION
 
 // postprocessor
 #include "convection_diffusion/postprocessor/postprocessor_base.h"
 
 // spatial discretization
+#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
+
+// time integration
 #include "convection_diffusion/time_integration/time_int_bdf.h"
 #include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
 
 // user interface, etc.
-#include "convection_diffusion/user_interface/analytical_solution.h"
 #include "convection_diffusion/user_interface/boundary_descriptor.h"
 #include "convection_diffusion/user_interface/field_functions.h"
 #include "convection_diffusion/user_interface/input_parameters.h"
-#include "functionalities/print_functions.h"
-#include "functionalities/print_general_infos.h"
 
 // NAVIER-STOKES
 
@@ -46,36 +45,52 @@
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Parameters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
-#include "../include/functionalities/print_general_infos.h"
+
+#include "functionalities/print_functions.h"
+#include "functionalities/print_general_infos.h"
 
 using namespace dealii;
 
 // specify the test case that has to be solved
 
 // template
-#include "incompressible_flow_with_transport_test_cases/template.h"
+//#include "incompressible_flow_with_transport_test_cases/template.h"
 
-//#include "incompressible_flow_with_transport_test_cases/cavity.h"
+#include "incompressible_flow_with_transport_test_cases/cavity.h"
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
-
-template<int dim, typename Number = double>
-class Problem
+template<typename Number>
+class ProblemBase
 {
 public:
-  Problem(unsigned int const refine_steps_space,
-          unsigned int const refine_steps_time = 0,
-          unsigned int const n_scalars         = 1);
+  virtual ~ProblemBase()
+  {
+  }
+
+  virtual void
+  setup(IncNS::InputParameters const &                 fluid_param_in,
+        std::vector<ConvDiff::InputParameters> const & scalar_param_in) = 0;
+
+  virtual void
+  solve() const = 0;
+
+  virtual void
+  analyze_computing_times() const = 0;
+};
+
+template<int dim, typename Number = double>
+class Problem : public ProblemBase<Number>
+{
+public:
+  Problem(unsigned int const n_scalars);
 
   void
-  setup(IncNS::InputParameters<dim> const &            fluid_param_in,
-        std::vector<ConvDiff::InputParameters> const & scalar_param_in,
-        bool const                                     do_restart);
+  setup(IncNS::InputParameters const &                 fluid_param_in,
+        std::vector<ConvDiff::InputParameters> const & scalar_param_in);
 
   void
   solve() const;
@@ -115,9 +130,6 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  // refinements in space or time
-  unsigned int const n_refine_space, n_refine_time;
-
   // number of scalar quantities
   unsigned int const n_scalars;
 
@@ -127,9 +139,8 @@ private:
   std::shared_ptr<IncNS::FieldFunctions<dim>>      fluid_field_functions;
   std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> fluid_boundary_descriptor_velocity;
   std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> fluid_boundary_descriptor_pressure;
-  std::shared_ptr<IncNS::AnalyticalSolution<dim>>  fluid_analytical_solution;
 
-  IncNS::InputParameters<dim> fluid_param;
+  IncNS::InputParameters fluid_param;
 
   typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;
   typedef IncNS::DGNavierStokesCoupled<dim, Number>            DGCoupled;
@@ -142,10 +153,10 @@ private:
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
-  typedef IncNS::TimeIntBDF<dim, Number>                   TimeInt;
-  typedef IncNS::TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef IncNS::TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
+  typedef IncNS::TimeIntBDF<Number>                   TimeInt;
+  typedef IncNS::TimeIntBDFCoupled<Number>            TimeIntCoupled;
+  typedef IncNS::TimeIntBDFDualSplitting<Number>      TimeIntDualSplitting;
+  typedef IncNS::TimeIntBDFPressureCorrection<Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> fluid_time_integrator;
 
@@ -154,8 +165,6 @@ private:
 
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
   std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
-
-  std::vector<std::shared_ptr<ConvDiff::AnalyticalSolution<dim>>> scalar_analytical_solution;
 
   std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
 
@@ -174,12 +183,8 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem(unsigned int const refine_steps_space,
-                              unsigned int const refine_steps_time,
-                              unsigned int const n_scalars)
+Problem<dim, Number>::Problem(unsigned int const n_scalars)
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    n_refine_space(refine_steps_space),
-    n_refine_time(refine_steps_time),
     n_scalars(n_scalars),
     use_adaptive_time_stepping(false),
     overall_time(0.0),
@@ -188,7 +193,6 @@ Problem<dim, Number>::Problem(unsigned int const refine_steps_space,
   scalar_param.resize(n_scalars);
   scalar_field_functions.resize(n_scalars);
   scalar_boundary_descriptor.resize(n_scalars);
-  scalar_analytical_solution.resize(n_scalars);
 
   conv_diff_operator.resize(n_scalars);
   scalar_postprocessor.resize(n_scalars);
@@ -213,14 +217,13 @@ Problem<dim, Number>::print_header() const
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid_param_in,
-                            std::vector<ConvDiff::InputParameters> const & scalar_param_in,
-                            bool const                                     do_restart)
+Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid_param_in,
+                            std::vector<ConvDiff::InputParameters> const & scalar_param_in)
 {
   timer.restart();
 
   print_header();
-  print_dealii_info(pcout);
+  print_dealii_info<Number>(pcout);
   print_MPI_info(pcout);
 
   // parameters (fluid + scalar)
@@ -271,9 +274,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
-  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
-
-  print_grid_data(pcout, n_refine_space, *triangulation);
+  create_grid_and_set_boundary_ids(triangulation, fluid_param.h_refinements, periodic_faces);
+  print_grid_data(pcout, fluid_param.h_refinements, *triangulation);
 
   // FLUID
 
@@ -287,10 +289,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
   // field functions
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
   IncNS::set_field_functions(fluid_field_functions);
-
-  // analytical solution
-  fluid_analytical_solution.reset(new IncNS::AnalyticalSolution<dim>());
-  IncNS::set_analytical_solution(fluid_analytical_solution);
 
   AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
@@ -311,7 +309,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
     fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
                                                    navier_stokes_operation_coupled,
                                                    fluid_param,
-                                                   n_refine_time));
+                                                   fluid_param.dt_refinements));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -326,7 +324,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
     fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
                                                          navier_stokes_operation_dual_splitting,
                                                          fluid_param,
-                                                         n_refine_time));
+                                                         fluid_param.dt_refinements));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -342,7 +340,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
                                     navier_stokes_operation_pressure_correction,
                                     fluid_param,
-                                    n_refine_time));
+                                    fluid_param.dt_refinements));
   }
   else
   {
@@ -353,13 +351,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
   navier_stokes_operation->setup(periodic_faces,
                                  fluid_boundary_descriptor_velocity,
                                  fluid_boundary_descriptor_pressure,
-                                 fluid_field_functions,
-                                 fluid_analytical_solution);
+                                 fluid_field_functions);
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers
   // depends on quantities such as the time_step_size or gamma0!!!)
-  fluid_time_integrator->setup(do_restart);
+  fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
   navier_stokes_operation->setup_solvers(
     fluid_time_integrator->get_scaling_factor_time_derivative_term());
@@ -376,12 +373,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
     scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());
     ConvDiff::set_field_functions(scalar_field_functions[i], i);
 
-    // analytical solution
-    scalar_analytical_solution[i].reset(new ConvDiff::AnalyticalSolution<dim>());
-    ConvDiff::set_analytical_solution(scalar_analytical_solution[i], i);
-
     // initialize postprocessor
-    scalar_postprocessor[i] = ConvDiff::construct_postprocessor<dim, Number>(i);
+    scalar_postprocessor[i] = ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], i);
 
     // initialize convection diffusion operation
     conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
@@ -391,13 +384,13 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
     {
-      scalar_time_integrator[i].reset(
-        new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i], scalar_param[i], n_refine_time));
+      scalar_time_integrator[i].reset(new ConvDiff::TimeIntExplRK<Number>(
+        conv_diff_operator[i], scalar_param[i], scalar_param[i].dt_refinements));
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
-      scalar_time_integrator[i].reset(
-        new ConvDiff::TimeIntBDF<Number>(conv_diff_operator[i], scalar_param[i], n_refine_time));
+      scalar_time_integrator[i].reset(new ConvDiff::TimeIntBDF<Number>(
+        conv_diff_operator[i], scalar_param[i], scalar_param[i].dt_refinements));
     }
     else
     {
@@ -431,10 +424,9 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
 
     conv_diff_operator[i]->setup(periodic_faces,
                                  scalar_boundary_descriptor[i],
-                                 scalar_field_functions[i],
-                                 scalar_analytical_solution[i]);
+                                 scalar_field_functions[i]);
 
-    scalar_time_integrator[i]->setup(do_restart);
+    scalar_time_integrator[i]->setup(scalar_param[i].restarted_simulation);
 
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
@@ -849,39 +841,43 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    deallog.depth_console(0);
+    AssertThrow(DEGREE_MIN == DEGREE_MAX, ExcMessage("Invalid parameters!"));
+    AssertThrow(REFINE_SPACE_MIN == REFINE_SPACE_MAX, ExcMessage("Invalid parameters!"));
+    AssertThrow(REFINE_TIME_MIN == 0, ExcMessage("Invalid parameters!"));
+    AssertThrow(REFINE_TIME_MIN == REFINE_TIME_MAX, ExcMessage("Invalid parameters!"));
 
-    bool do_restart = false;
-    if(argc > 1)
-    {
-      do_restart = std::atoi(argv[1]);
-    }
-
-    AssertThrow(FE_DEGREE_VELOCITY == FE_DEGREE_SCALAR, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_STEPS_SPACE_MIN == REFINE_STEPS_SPACE_MAX,
-                ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_STEPS_TIME_MIN == 0, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_STEPS_TIME_MIN == REFINE_STEPS_TIME_MAX, ExcMessage("Invalid parameters!"));
-
-    Problem<DIMENSION, VALUE_TYPE> problem(REFINE_STEPS_SPACE_MIN,
-                                           REFINE_STEPS_TIME_MIN,
-                                           N_SCALARS);
-
-    IncNS::InputParameters<DIMENSION> fluid_param;
-    fluid_param.set_input_parameters();
+    IncNS::InputParameters fluid_param;
+    set_input_parameters(fluid_param);
 
     std::vector<ConvDiff::InputParameters> scalar_param;
     scalar_param.resize(N_SCALARS);
     for(unsigned int i = 0; i < N_SCALARS; ++i)
     {
       set_input_parameters(scalar_param[i], i);
+
+      AssertThrow(fluid_param.dim == scalar_param[i].dim, ExcMessage("Invalid parameters!"));
+      AssertThrow(fluid_param.h_refinements == scalar_param[i].h_refinements,
+                  ExcMessage("Invalid parameters!"));
+      AssertThrow(fluid_param.restarted_simulation == scalar_param[i].restarted_simulation,
+                  ExcMessage("Invalid parameters!"));
     }
 
-    problem.setup(fluid_param, scalar_param, do_restart);
+    // setup problem and run simulation
+    typedef double                       Number;
+    std::shared_ptr<ProblemBase<Number>> problem;
 
-    problem.solve();
+    if(fluid_param.dim == 2)
+      problem.reset(new Problem<2, Number>(N_SCALARS));
+    else if(fluid_param.dim == 3)
+      problem.reset(new Problem<3, Number>(N_SCALARS));
+    else
+      AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 
-    problem.analyze_computing_times();
+    problem->setup(fluid_param, scalar_param);
+
+    problem->solve();
+
+    problem->analyze_computing_times();
   }
   catch(std::exception & exc)
   {

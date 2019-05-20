@@ -27,7 +27,7 @@ unsigned int const REFINE_SPACE_MIN = 2;
 unsigned int const REFINE_SPACE_MAX = 2;
 
 unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 10;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // problem specific parameters
 double const START_TIME = 0.0;
@@ -56,7 +56,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.start_with_low_order = false;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.time_step_size = 1.0e-1;
-  param.cfl = 0.4;
+  param.cfl = 0.2;
   param.cfl_oif = param.cfl/1.0;
   param.diffusion_number = 0.01;
   param.dt_refinements = REFINE_TIME_MIN;
@@ -205,27 +205,22 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
   field_functions->velocity.reset(new VelocityField<dim>());
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->solution.reset(new Solution<dim>(1));
-}
-
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(ConvDiff::InputParameters const &param)
 {
-  PostProcessorData pp_data;
+  PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = false; //true;
   pp_data.output_data.output_folder = "output_conv_diff/propagating_sine_wave/";
   pp_data.output_data.output_name = "propagating_sine_wave";
-  pp_data.output_data.output_start_time = START_TIME;
-  pp_data.output_data.output_interval_time = (END_TIME-START_TIME)/20;
-  pp_data.output_data.degree = DEGREE_MIN;
+  pp_data.output_data.output_start_time = param.start_time;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.degree = param.degree;
 
   pp_data.error_data.analytical_solution_available = true;
-  pp_data.error_data.error_calc_start_time = START_TIME;
-  pp_data.error_data.error_calc_interval_time = (END_TIME-START_TIME)/20;
+  pp_data.error_data.analytical_solution.reset(new Solution<dim>(1));
+  pp_data.error_data.error_calc_start_time = param.start_time;
+  pp_data.error_data.error_calc_interval_time = (param.end_time-param.start_time)/20;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

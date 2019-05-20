@@ -106,8 +106,6 @@ private:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
-  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
-
   std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
@@ -154,7 +152,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   timer.restart();
 
   print_header();
-  print_dealii_info(pcout);
+  print_dealii_info<Number>(pcout);
   print_MPI_info(pcout);
 
   param = param_in;
@@ -187,11 +185,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  set_analytical_solution(analytical_solution);
-
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>();
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize convection diffusion operation
   conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
@@ -226,10 +221,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented"));
   }
 
-  conv_diff_operator->setup(periodic_faces,
-                            boundary_descriptor,
-                            field_functions,
-                            analytical_solution);
+  conv_diff_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -425,19 +417,12 @@ Problem<dim, Number>::analyze_computing_times() const
               << std::endl;
 }
 
-
-// instantiations
-template class Problem<2, double>;
-template class Problem<3, double>;
-
 int
 main(int argc, char ** argv)
 {
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
-
-    deallog.depth_console(0);
 
     // set parameters
     ConvDiff::InputParameters param;

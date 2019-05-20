@@ -225,6 +225,30 @@ std::string
 enum_to_string(TriangulationType const enum_type);
 
 /*
+ *  Mapping type (polynomial degree)
+ */
+enum class MappingType
+{
+  Affine,
+  Isoparametric
+};
+
+std::string
+enum_to_string(MappingType const enum_type);
+
+/*
+ *  Polynomial degree of pressure shape functions in relation to velocity degree
+ */
+enum class DegreePressure
+{
+  MixedOrder,
+  EqualOrder
+};
+
+std::string
+enum_to_string(DegreePressure const enum_type);
+
+/*
  *  Type of imposition of Dirichlet BC's:
  *
  *  direct: u⁺ = g

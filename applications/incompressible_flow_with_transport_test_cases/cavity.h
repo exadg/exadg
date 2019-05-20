@@ -8,36 +8,24 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_CAVITY_H_
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 INPUT PARAMETERS                                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-// single or double precision?
-//typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-// set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 2;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
-// set the polynomial degree of the shape functions
-unsigned int const FE_DEGREE_VELOCITY = 3;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY-1;
-unsigned int const FE_DEGREE_SCALAR = FE_DEGREE_VELOCITY;
-
-// set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 4;
-unsigned int const REFINE_STEPS_SPACE_MAX = 4;
-
-// set the number of refine levels for temporal convergence tests
-unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
@@ -71,160 +59,142 @@ unsigned int const OUTPUT_SOLVER_INFO_EVERY_TIMESTEPS = 100;
 bool const WRITE_RESTART = false;
 double const RESTART_INTERVAL_TIME = 10.0;
 
-template<int dim>
-void IncNS::InputParameters<dim>::set_input_parameters()
+namespace IncNS
+{
+void set_input_parameters(InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
-  equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
-  right_hand_side = false;
+  param.dim = 2;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::NavierStokes;
+  param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  param.right_hand_side = false;
 
 
   // PHYSICAL QUANTITIES
-  start_time = START_TIME;
-  end_time = END_TIME;
-  viscosity = 1.0e-5;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
+  param.viscosity = 1.0e-5;
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
-  calculation_of_time_step_size = TimeStepCalculation::CFL;
-  max_velocity = MAX_VELOCITY;
-  cfl_exponent_fe_degree_velocity = 1.5;
-  cfl_oif = CFL_OIF;
-  cfl = CFL;
-  time_step_size = 1.0e-1;
-  order_time_integrator = 2;
-  start_with_low_order = true;
+  param.solver_type = SolverType::Unsteady;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
+  param.adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.max_velocity = MAX_VELOCITY;
+  param.cfl_exponent_fe_degree_velocity = 1.5;
+  param.cfl_oif = CFL_OIF;
+  param.cfl = CFL;
+  param.time_step_size = 1.0e-1;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = true;
+  param.dt_refinements = REFINE_TIME_MIN;
 
+  // output of solver information
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
+
+  // restart
+  param.restart_data.write_restart = WRITE_RESTART;
+  param.restart_data.interval_time = RESTART_INTERVAL_TIME;
+  param.restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_fluid";
 
   // SPATIAL DISCRETIZATION
-
-  // triangulation
-  triangulation_type = TriangulationType::Distributed;
-
-  // polynomial degrees
-  degree_u = FE_DEGREE_VELOCITY;
-  degree_p = FE_DEGREE_PRESSURE;
-
-  // mapping
-  degree_mapping = FE_DEGREE_VELOCITY;
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree_u = DEGREE_MIN;
+  param.degree_p = DegreePressure::MixedOrder;
+  param.mapping = MappingType::Isoparametric;
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
-  if(formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
-    upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
+  if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
+    param.upwind_factor = 0.5; // allows using larger CFL values for explicit formulations
 
   // viscous term
-  IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+  param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // special case: pure DBC's
-  pure_dirichlet_bc = true;
+  param.pure_dirichlet_bc = true;
 
 
   // NUMERICAL PARAMETERS
-  implement_block_diagonal_preconditioner_matrix_free = true;
-  use_cell_based_face_loops = true;
+  param.implement_block_diagonal_preconditioner_matrix_free = true;
+  param.use_cell_based_face_loops = true;
 
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
 
   // projection step
-  solver_projection = SolverProjection::CG;
-  solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  param.solver_projection = SolverProjection::CG;
+  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
+  param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulation
-  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+  param.order_extrapolation_pressure_nbc = param.order_time_integrator <=2 ? param.order_time_integrator : 2;
 
   // viscous step
-  solver_viscous = SolverViscous::CG;
-  solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+  param.solver_viscous = SolverViscous::CG;
+  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
+  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 
 
   // PRESSURE-CORRECTION SCHEME
 
   // formulation
-  order_pressure_extrapolation = 1;
-  rotational_formulation = true;
+  param.order_pressure_extrapolation = 1;
+  param.rotational_formulation = true;
 
   // momentum step
 
   // Newton solver
-  newton_solver_data_momentum = NewtonSolverData(100,1.e-20,1.e-6);
+  param.newton_solver_data_momentum = NewtonSolverData(100,1.e-20,1.e-6);
 
   // linear solver
   // use FGMRES for matrix-free BlockJacobi or Multigrid with Krylov methods as smoother/coarse grid solver
-  solver_momentum = SolverMomentum::FGMRES;
-  solver_data_momentum = SolverData(1e4,1.e-12,1.e-6,100);
-  preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
-  multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
-  update_preconditioner_momentum = true;
-  multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-  multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-  multigrid_data_momentum.smoother_data.iterations = 5;
-  multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
-  multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
-  multigrid_data_momentum.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::None;
+  param.solver_momentum = SolverMomentum::FGMRES;
+  param.solver_data_momentum = SolverData(1e4,1.e-12,1.e-6,100);
+  param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
+  param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
+  param.update_preconditioner_momentum = true;
+  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+  param.multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data_momentum.smoother_data.iterations = 5;
+  param.multigrid_data_momentum.smoother_data.relaxation_factor = 0.7;
+  param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+  param.multigrid_data_momentum.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::None;
 
 
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-6);
+  param.newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-6);
 
   // linear solver
-  solver_coupled = SolverCoupled::GMRES; //FGMRES;
-  solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
+  param.solver_coupled = SolverCoupled::GMRES; //FGMRES;
+  param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
 
   // preconditioner linear solver
-  preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
-  update_preconditioner_coupled = false;
+  param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
+  param.update_preconditioner_coupled = false;
 
   // preconditioner velocity/momentum block
-  preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
-  multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
 
   // preconditioner Schur-complement block
-  preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
-  discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+}
 
-
-  // OUTPUT AND POSTPROCESSING
-
-  // write output for visualization of results
-  output_data.write_output = WRITE_OUTPUT;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name = OUTPUT_NAME + "_fluid";
-  output_data.output_start_time = OUTPUT_START_TIME;
-  output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  output_data.write_processor_id = true;
-  output_data.degree = FE_DEGREE_VELOCITY;
-
-  // calculation of error
-  error_data.analytical_solution_available = false;
-  error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
-
-  // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
-
-  // restart
-  restart_data.write_restart = WRITE_RESTART;
-  restart_data.interval_time = RESTART_INTERVAL_TIME;
-  restart_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_fluid";
 }
 
 namespace ConvDiff
@@ -277,11 +247,11 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.triangulation_type = TriangulationType::Distributed;
 
   // polynomial degree
-  param.degree = FE_DEGREE_SCALAR;
+  param.degree = DEGREE_MIN;
   param.mapping = MappingType::Affine;
 
   // h-refinements
-  param.h_refinements = REFINE_STEPS_SPACE_MIN;
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
   param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
@@ -317,19 +287,21 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
 }
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
-void create_grid_and_set_boundary_ids(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &/*periodic_faces*/)
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
+  (void)periodic_faces;
+
   const double left = 0.0, right = L;
   GridGenerator::hyper_cube(*triangulation,left,right);
   triangulation->refine_global(n_refine_space);
@@ -348,14 +320,14 @@ void create_grid_and_set_boundary_ids(
   }
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*          FUNCTIONS (ANALYTICAL/INITIAL SOLUTION, BOUNDARY CONDITIONS, etc.)        */
-/*                                                                                    */
-/**************************************************************************************/
-
 namespace IncNS
 {
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class DirichletBC : public Function<dim>
@@ -410,30 +382,30 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
-}
-
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters<dim> const &param)
+construct_postprocessor(InputParameters const &param)
 {
+  (void)param;
+
   PostProcessorData<dim> pp_data;
 
-  pp_data.output_data = param.output_data;
-  pp_data.error_data = param.error_data;
-  pp_data.lift_and_drag_data = param.lift_and_drag_data;
-  pp_data.pressure_difference_data = param.pressure_difference_data;
-  pp_data.mass_data = param.mass_data;
-  pp_data.kinetic_energy_data = param.kinetic_energy_data;
-  pp_data.line_plot_data = param.line_plot_data;
+  // write output for visualization of results
+  pp_data.output_data.write_output = WRITE_OUTPUT;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME + "_fluid";
+  pp_data.output_data.output_start_time = OUTPUT_START_TIME;
+  pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
+  pp_data.output_data.write_processor_id = true;
+  pp_data.output_data.degree = param.degree_u;
 
-  std::shared_ptr<PostProcessor<dim,Number> > pp;
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));
 
   return pp;
@@ -441,12 +413,14 @@ construct_postprocessor(InputParameters<dim> const &param)
 
 }
 
-#include "convection_diffusion/user_interface/analytical_solution.h"
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-
 namespace ConvDiff
 {
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class DirichletBC : public Function<dim>
@@ -483,33 +457,29 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functi
 {
   (void)scalar_index; // only one scalar quantity considered
 
-  field_functions->analytical_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
-template<int dim>
-void
-set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim> > analytical_solution, unsigned int scalar_index = 0)
-{
-  (void)scalar_index; // only one scalar quantity considered
-
-  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
-}
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(unsigned int const scalar_index)
+construct_postprocessor(ConvDiff::InputParameters const &param,
+                        unsigned int const              scalar_index)
 {
-  PostProcessorData pp_data;
+  PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = WRITE_OUTPUT;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME + "_scalar_" + std::to_string(scalar_index);
   pp_data.output_data.output_start_time = OUTPUT_START_TIME;
   pp_data.output_data.output_interval_time = OUTPUT_INTERVAL_TIME;
-  pp_data.output_data.degree = FE_DEGREE_SCALAR;
-
-  pp_data.error_data = ErrorCalculationData();
+  pp_data.output_data.degree = param.degree;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

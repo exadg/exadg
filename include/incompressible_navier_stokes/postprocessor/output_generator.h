@@ -1,15 +1,18 @@
 /*
- * output_data_navier_stokes.h
+ * write_output_navier_stokes.h
  *
- *  Created on: Oct 12, 2016
+ *  Created on: Oct 13, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_
 
 #include "../../postprocessor/output_data.h"
+#include "../../postprocessor/solution_field.h"
 
+namespace IncNS
+{
 /*
  *  Average velocity field over time for statistically steady, turbulent
  *  flow problems in order to visualize the time-averaged velocity field.
@@ -44,9 +47,9 @@ struct OutputDataMeanVelocity
   unsigned int sample_every_timesteps;
 };
 
-struct OutputDataNavierStokes : public OutputData
+struct OutputData : public OutputDataBase
 {
-  OutputDataNavierStokes()
+  OutputData()
     : write_vorticity(false),
       write_divergence(false),
       write_velocity_magnitude(false),
@@ -61,7 +64,7 @@ struct OutputDataNavierStokes : public OutputData
   void
   print(ConditionalOStream & pcout, bool unsteady)
   {
-    OutputData::print(pcout, unsteady);
+    OutputDataBase::print(pcout, unsteady);
 
     print_parameter(pcout, "Write vorticity", write_vorticity);
     print_parameter(pcout, "Write divergence", write_divergence);
@@ -106,4 +109,74 @@ struct OutputDataNavierStokes : public OutputData
   OutputDataMeanVelocity mean_velocity;
 };
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_DATA_NAVIER_STOKES_H_ */
+template<int dim, typename Number>
+class DGNavierStokesBase;
+
+template<int dim, typename Number>
+class OutputGenerator
+{
+public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef DGNavierStokesBase<dim, Number> NavierStokesOperator;
+
+  OutputGenerator();
+
+  void
+  setup(NavierStokesOperator const & navier_stokes_operator_in,
+        DoFHandler<dim> const &      dof_handler_velocity_in,
+        DoFHandler<dim> const &      dof_handler_pressure_in,
+        Mapping<dim> const &         mapping_in,
+        OutputData const &           output_data_in);
+
+  void
+  evaluate(VectorType const & velocity,
+           VectorType const & pressure,
+           double const &     time,
+           int const &        time_step_number);
+
+private:
+  void
+  initialize_additional_fields();
+
+  void
+  compute_processor_id(VectorType & dst) const;
+
+  void
+  compute_mean_velocity(VectorType &       mean_velocity,
+                        VectorType const & velocity,
+                        double const       time,
+                        int const          time_step_number);
+
+  void
+  calculate_additional_fields(VectorType const & velocity,
+                              double const &     time,
+                              int const &        time_step_number);
+
+  unsigned int output_counter;
+  bool         reset_counter;
+
+  OutputData output_data;
+
+  SmartPointer<DoFHandler<dim> const>      dof_handler_velocity;
+  SmartPointer<DoFHandler<dim> const>      dof_handler_pressure;
+  SmartPointer<Mapping<dim> const>         mapping;
+  SmartPointer<NavierStokesOperator const> navier_stokes_operator;
+
+  // additional fields
+  VectorType   vorticity;
+  VectorType   divergence;
+  VectorType   velocity_magnitude;
+  VectorType   vorticity_magnitude;
+  VectorType   streamfunction;
+  VectorType   q_criterion;
+  VectorType   processor_id;
+  VectorType   mean_velocity; // velocity field averaged over time
+  unsigned int counter_mean_velocity;
+
+  std::vector<SolutionField<dim, Number>> additional_fields;
+};
+
+} // namespace IncNS
+
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_OUTPUT_GENERATOR_H_ */

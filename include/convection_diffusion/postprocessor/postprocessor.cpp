@@ -10,7 +10,7 @@
 namespace ConvDiff
 {
 template<int dim, typename Number>
-PostProcessor<dim, Number>::PostProcessor(PostProcessorData const & pp_data_in)
+PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in)
   : pp_data(pp_data_in)
 {
 }
@@ -19,10 +19,9 @@ template<int dim, typename Number>
 void
 PostProcessor<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
                                   Mapping<dim> const &    mapping_in,
-                                  MatrixFree<dim, Number> const & /*matrix_free_data_in*/,
-                                  std::shared_ptr<Function<dim>> const analytical_solution_in)
+                                  MatrixFree<dim, Number> const & /*matrix_free_data_in*/)
 {
-  error_calculator.setup(dof_handler_in, mapping_in, analytical_solution_in, pp_data.error_data);
+  error_calculator.setup(dof_handler_in, mapping_in, pp_data.error_data);
 
   output_generator.setup(dof_handler_in, mapping_in, pp_data.output_data);
 }

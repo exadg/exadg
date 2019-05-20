@@ -60,12 +60,15 @@
 // time integration
 #include "time_integration/time_step_calculation.h"
 
+// postprocessor
+#include "../postprocessor/postprocessor_base.h"
+
 using namespace dealii;
 
 namespace IncNS
 {
 template<int dim, typename Number>
-class DGNavierStokesBase : public LinearOperatorBase, public Interface::OperatorBase<dim, Number>
+class DGNavierStokesBase : public LinearOperatorBase, public Interface::OperatorBase<Number>
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
@@ -117,11 +120,11 @@ public:
    * Constructor.
    */
   DGNavierStokesBase(parallel::Triangulation<dim> const & triangulation,
-                     InputParameters<dim> const &         parameters_in,
+                     InputParameters const &              parameters_in,
                      std::shared_ptr<Postprocessor>       postprocessor_in);
 
   /*
-   * Desctructor.
+   * Destructor.
    */
   virtual ~DGNavierStokesBase();
 
@@ -135,8 +138,7 @@ public:
                                                         periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-        std::shared_ptr<AnalyticalSolution<dim>> const  analytical_solution);
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -169,6 +171,9 @@ public:
 
   unsigned int
   get_quad_index_pressure() const;
+
+  unsigned int
+  get_degree_p() const;
 
   Mapping<dim> const &
   get_mapping() const;
@@ -389,7 +394,7 @@ protected:
   /*
    * List of input parameters.
    */
-  InputParameters<dim> const & param;
+  InputParameters const & param;
 
   /*
    * Basic finite element ingredients.
@@ -398,7 +403,8 @@ protected:
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
 
-  MappingQGeneric<dim> mapping;
+  unsigned int                          mapping_degree;
+  std::shared_ptr<MappingQGeneric<dim>> mapping;
 
   DoFHandler<dim> dof_handler_u;
   DoFHandler<dim> dof_handler_p;
@@ -527,7 +533,7 @@ private:
   initialization_pure_dirichlet_bc();
 
   void
-  initialize_postprocessor(std::shared_ptr<AnalyticalSolution<dim>> const analytical_solution);
+  initialize_postprocessor();
 
   /*
    * LES turbulence modeling.

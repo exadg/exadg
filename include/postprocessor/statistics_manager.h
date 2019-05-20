@@ -2,11 +2,67 @@
 #ifndef __indexa_statistics_manager_h
 #define __indexa_statistics_manager_h
 
+#include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "../../incompressible_navier_stokes/user_interface/input_parameters.h"
+#include "../functionalities/print_functions.h"
 
-using namespace IncNS;
+// turbulent channel data
+
+struct TurbulentChannelData
+{
+  TurbulentChannelData()
+    : calculate_statistics(false),
+      cells_are_stretched(false),
+      sample_start_time(0.0),
+      sample_end_time(1.0),
+      sample_every_timesteps(1),
+      viscosity(1.0),
+      density(1.0),
+      filename_prefix("indexa")
+  {
+  }
+
+  void
+  print(ConditionalOStream & pcout)
+  {
+    if(calculate_statistics == true)
+    {
+      pcout << "  Turbulent channel statistics:" << std::endl;
+      print_parameter(pcout, "Calculate statistics", calculate_statistics);
+      print_parameter(pcout, "Cells are stretched", cells_are_stretched);
+      print_parameter(pcout, "Sample start time", sample_start_time);
+      print_parameter(pcout, "Sample end time", sample_end_time);
+      print_parameter(pcout, "Sample every timesteps", sample_every_timesteps);
+      print_parameter(pcout, "Dynamic viscosity", viscosity);
+      print_parameter(pcout, "Density", density);
+      print_parameter(pcout, "Filename prefix", filename_prefix);
+    }
+  }
+
+  // calculate statistics?
+  bool calculate_statistics;
+
+  // are cells stretched, i.e., is a volume manifold applied?
+  bool cells_are_stretched;
+
+  // start time for sampling
+  double sample_start_time;
+
+  // end time for sampling
+  double sample_end_time;
+
+  // perform sampling every ... timesteps
+  unsigned int sample_every_timesteps;
+
+  // dynamic viscosity
+  double viscosity;
+
+  // density
+  double density;
+
+  std::string filename_prefix;
+};
 
 template<int dim>
 class StatisticsManager
@@ -56,8 +112,10 @@ private:
 
   // mean velocity <u_i>, i=1,...,d (for all y-coordinates)
   std::vector<std::vector<double>> vel_glob;
+
   // square velocity <u_i²>, i=1,...,d (for all y-coordinates)
   std::vector<std::vector<double>> velsq_glob;
+
   // <u_1*u_2> = <u*v> (for all y-coordinates)
   std::vector<double> veluv_glob;
 

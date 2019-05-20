@@ -14,7 +14,7 @@ namespace ConvDiff
 {
 template<int dim, typename VectorType>
 void
-write_output(OutputData const &      output_data,
+write_output(OutputDataBase const &  output_data,
              DoFHandler<dim> const & dof_handler,
              Mapping<dim> const &    mapping,
              VectorType const &      solution_vector,
@@ -66,7 +66,7 @@ template<int dim, typename Number>
 void
 OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
                                     Mapping<dim> const &    mapping_in,
-                                    OutputData const &      output_data_in)
+                                    OutputDataBase const &  output_data_in)
 {
   dof_handler = &dof_handler_in;
   mapping     = &mapping_in;

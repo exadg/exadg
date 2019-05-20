@@ -8,33 +8,25 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                                 INPUT PARAMETERS                                   */
-/*                                                                                    */
-/**************************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-// single or double precision?
-//typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-// set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 3;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
-// set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 3;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY - 1;
-
-// set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 4;
-unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
-
-// set the number of refine levels for temporal convergence tests
-unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 bool const WRITE_OUTPUT = true;
 std::string OUTPUT_FOLDER = "output/periodic_hill/";
@@ -75,12 +67,12 @@ double const SAMPLE_END_TIME = END_TIME;
 unsigned int const SAMPLE_EVERY_TIMESTEPS = 1;
 bool const CALCULATE_STATISTICS = true;
 
-QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
-QuantityStatistics<DIMENSION> QUANTITY_REYNOLDS;
+QuantityStatistics<3> QUANTITY_VELOCITY;
+QuantityStatistics<3> QUANTITY_REYNOLDS;
 //QuantityStatistics<DIMENSION> QUANTITY_PRESSURE;
 //QuantityStatisticsPressureCoefficient<DIMENSION> QUANTITY_PRESSURE_COEFF;
 //QuantityStatisticsSkinFriction<3> QUANTITY_SKIN_FRICTION;
-const unsigned int N_POINTS_LINE = std::pow(2.0,REFINE_STEPS_SPACE_MIN)*(FE_DEGREE_VELOCITY+1)*2;
+const unsigned int N_POINTS_LINE = std::pow(2.0,REFINE_SPACE_MIN)*(DEGREE_MIN+1)*2;
 
 // data structures that we need to control the mass flow rate:
 // NOTA BENE: these variables will be modified by the postprocessor!
@@ -133,229 +125,112 @@ private:
 // in order to update the body force.
 FlowRateController FLOW_RATE_CONTROLLER;
 
-#include "../grid_tools/grid_functions_periodic_hill.h"
-
-template<int dim>
-void InputParameters<dim>::set_input_parameters()
+namespace IncNS
+{
+void set_input_parameters(InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
-  equation_type = EquationType::NavierStokes;
-  formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
-  right_hand_side = true;
+  param.dim = 3;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::NavierStokes;
+  param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  param.right_hand_side = true;
 
 
   // PHYSICAL QUANTITIES
-  start_time = START_TIME;
-  end_time = END_TIME;
-  viscosity = VISCOSITY;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
+  param.viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
-  solver_type = SolverType::Unsteady;
-  temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  calculation_of_time_step_size = TimeStepCalculation::CFL;
-  adaptive_time_stepping = true;
-  max_velocity = BULK_VELOCITY;
-  cfl = 0.375;
-  cfl_exponent_fe_degree_velocity = 1.5;
-  time_step_size = 1.0e-1;
-  order_time_integrator = 2;
-  start_with_low_order = true;
+  param.solver_type = SolverType::Unsteady;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = true;
+  param.max_velocity = BULK_VELOCITY;
+  param.cfl = 0.375;
+  param.cfl_exponent_fe_degree_velocity = 1.5;
+  param.time_step_size = 1.0e-1;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = true;
+  param.dt_refinements = REFINE_TIME_MIN;
+
+  // output of solver information
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = FLOW_THROUGH_TIME/10.0;
+//  param.solver_info_data.interval_time_steps = 10;
+//  param.solver_info_data.interval_wall_time = 10.0;
 
 
   // SPATIAL DISCRETIZATION
-
-  // triangulation
-  triangulation_type = TriangulationType::Distributed;
-
-  // polynomial degrees
-  degree_u = FE_DEGREE_VELOCITY;
-  degree_p = FE_DEGREE_PRESSURE;
-
-  // mapping
-  degree_mapping = FE_DEGREE_VELOCITY;
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree_u = DEGREE_MIN;
+  param.degree_p = DegreePressure::MixedOrder;
+  param.mapping = MappingType::Isoparametric;
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
-  upwind_factor = 0.5;
+  param.upwind_factor = 0.5;
 
   // viscous term
-  IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+  param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // special case: pure DBC's
-  pure_dirichlet_bc = true;
+  param.pure_dirichlet_bc = true;
 
   // TURBULENCE
-  use_turbulence_model = false;
-  turbulence_model = TurbulenceEddyViscosityModel::Sigma;
+  param.use_turbulence_model = false;
+  param.turbulence_model = TurbulenceEddyViscosityModel::Sigma;
   // Smagorinsky: 0.165
   // Vreman: 0.28
   // WALE: 0.50
   // Sigma: 1.35
-  turbulence_model_constant = 1.35;
+  param.turbulence_model_constant = 1.35;
 
   // PROJECTION METHODS
 
   // pressure Poisson equation
-  solver_pressure_poisson = SolverPressurePoisson::CG;
-  solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
-  preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  param.solver_pressure_poisson = SolverPressurePoisson::CG;
+  param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
 
   // projection step
-  solver_projection = SolverProjection::CG;
-  solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
-  preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  update_preconditioner_projection = true;
+  param.solver_projection = SolverProjection::CG;
+  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
+  param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  param.update_preconditioner_projection = true;
 
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
   // formulations
-  order_extrapolation_pressure_nbc = order_time_integrator <=2 ? order_time_integrator : 2;
+  param.order_extrapolation_pressure_nbc = param.order_time_integrator <=2 ? param.order_time_integrator : 2;
 
   // viscous step
-  solver_viscous = SolverViscous::CG;
-  solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
-  preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
-
-  // OUTPUT AND POSTPROCESSING
-
-  // write output for visualization of results
-  output_data.write_output = WRITE_OUTPUT;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name = OUTPUT_NAME;
-  output_data.output_start_time = start_time;
-  output_data.output_interval_time = FLOW_THROUGH_TIME/10.0;
-  output_data.write_velocity_magnitude = true;
-  output_data.write_vorticity = true;
-  output_data.write_vorticity_magnitude = true;
-  output_data.write_q_criterion = true;
-  output_data.degree = FE_DEGREE_VELOCITY;
-
-  // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = FLOW_THROUGH_TIME/10.0;
-//  solver_info_data.interval_time_steps = 10;
-//  solver_info_data.interval_wall_time = 10.0;
-
-  // calculation of flow rate (use volume-based computation)
-  mean_velocity_data.calculate = true;
-  mean_velocity_data.filename_prefix = OUTPUT_FOLDER + FILENAME_FLOWRATE;
-  Tensor<1,dim,double> direction; direction[0] = 1.0;
-  mean_velocity_data.direction = direction;
-  mean_velocity_data.write_to_file = true;
-
-  // line plot data: calculate statistics along lines
-  line_plot_data.write_output = true;
-  line_plot_data.filename_prefix = OUTPUT_FOLDER;
-  line_plot_data.statistics_data.calculate_statistics = CALCULATE_STATISTICS;
-  line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
-  line_plot_data.statistics_data.sample_end_time = END_TIME;
-  line_plot_data.statistics_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
-  line_plot_data.statistics_data.write_output_every_timesteps = SAMPLE_EVERY_TIMESTEPS*100;
-
-  // mean velocity
-  QUANTITY_VELOCITY.type = QuantityType::Velocity;
-  QUANTITY_VELOCITY.average_homogeneous_direction = true;
-  QUANTITY_VELOCITY.averaging_direction = 2;
-
-  // Reynolds stresses
-  QUANTITY_REYNOLDS.type = QuantityType::ReynoldsStresses;
-  QUANTITY_REYNOLDS.average_homogeneous_direction = true;
-  QUANTITY_REYNOLDS.averaging_direction = 2;
-
-  // lines
-  Line<dim> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8;
-
-  // begin and end points of all lines
-  double const eps = 1.e-10;
-  vel_0.begin = Point<dim> (0*H, H+f(0*H)+eps,0);
-  vel_0.end =   Point<dim> (0*H, H+HEIGHT-eps,0);
-  vel_1.begin = Point<dim> (1*H, H+f(1*H)+eps,0);
-  vel_1.end =   Point<dim> (1*H, H+HEIGHT-eps,0);
-  vel_2.begin = Point<dim> (2*H, H+f(2*H)+eps,0);
-  vel_2.end =   Point<dim> (2*H, H+HEIGHT-eps,0);
-  vel_3.begin = Point<dim> (3*H, H+f(3*H)+eps,0);
-  vel_3.end =   Point<dim> (3*H, H+HEIGHT-eps,0);
-  vel_4.begin = Point<dim> (4*H, H+f(4*H)+eps,0);
-  vel_4.end =   Point<dim> (4*H, H+HEIGHT-eps,0);
-  vel_5.begin = Point<dim> (5*H, H+f(5*H)+eps,0);
-  vel_5.end =   Point<dim> (5*H, H+HEIGHT-eps,0);
-  vel_6.begin = Point<dim> (6*H, H+f(6*H)+eps,0);
-  vel_6.end =   Point<dim> (6*H, H+HEIGHT-eps,0);
-  vel_7.begin = Point<dim> (7*H, H+f(7*H)+eps,0);
-  vel_7.end =   Point<dim> (7*H, H+HEIGHT-eps,0);
-  vel_8.begin = Point<dim> (8*H, H+f(8*H)+eps,0);
-  vel_8.end =   Point<dim> (8*H, H+HEIGHT-eps,0);
-
-  // set the number of points along the lines
-  vel_0.n_points = N_POINTS_LINE;
-  vel_1.n_points = N_POINTS_LINE;
-  vel_2.n_points = N_POINTS_LINE;
-  vel_3.n_points = N_POINTS_LINE;
-  vel_4.n_points = N_POINTS_LINE;
-  vel_5.n_points = N_POINTS_LINE;
-  vel_6.n_points = N_POINTS_LINE;
-  vel_7.n_points = N_POINTS_LINE;
-  vel_8.n_points = N_POINTS_LINE;
-
-  // set the quantities that we want to compute along the lines
-  vel_0.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_0.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_1.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_1.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_2.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_2.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_3.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_3.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_4.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_4.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_5.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_5.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_6.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_6.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_7.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_7.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_8.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_8.quantities.push_back(&QUANTITY_REYNOLDS);
-
-  // set line names
-  vel_0.name = "x_0";
-  vel_1.name = "x_1";
-  vel_2.name = "x_2";
-  vel_3.name = "x_3";
-  vel_4.name = "x_4";
-  vel_5.name = "x_5";
-  vel_6.name = "x_6";
-  vel_7.name = "x_7";
-  vel_8.name = "x_8";
-
-  // insert lines
-  line_plot_data.lines.push_back(vel_0);
-  line_plot_data.lines.push_back(vel_1);
-  line_plot_data.lines.push_back(vel_2);
-  line_plot_data.lines.push_back(vel_3);
-  line_plot_data.lines.push_back(vel_4);
-  line_plot_data.lines.push_back(vel_5);
-  line_plot_data.lines.push_back(vel_6);
-  line_plot_data.lines.push_back(vel_7);
-  line_plot_data.lines.push_back(vel_8);
+  param.solver_viscous = SolverViscous::CG;
+  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
+  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*                        GENERATE GRID AND SET BOUNDARY INDICATORS                   */
-/*                                                                                    */
-/**************************************************************************************/
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+#include "../grid_tools/grid_functions_periodic_hill.h"
 
 template<int dim>
-void create_grid_and_set_boundary_ids(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<dim>::cell_iterator> >            &periodic_faces)
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
   Point<dim> p_1;
   p_1[0] = 0.;
@@ -418,14 +293,11 @@ void create_grid_and_set_boundary_ids(
   triangulation->refine_global(n_refine_space);
 }
 
-/**************************************************************************************/
-/*                                                                                    */
-/*    FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.)      */
-/*                                                                                    */
-/**************************************************************************************/
-
-#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class InitialSolutionVelocity : public Function<dim>
@@ -511,21 +383,17 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
-template<int dim>
-void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
-{
-  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
-}
-
-// Postprocessor
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 struct PostProcessorDataPeriodicHill
 {
   PostProcessorData<dim> pp_data;
   MeanVelocityCalculatorData<dim> mean_velocity_data;
-  LinePlotData<dim> line_plot_data;
 };
 
 template<int dim, typename Number>
@@ -549,9 +417,7 @@ public:
              DoFHandler<dim> const                     &dof_handler_velocity_in,
              DoFHandler<dim> const                     &dof_handler_pressure_in,
              Mapping<dim> const                        &mapping_in,
-             MatrixFree<dim,Number> const              &matrix_free_data_in,
-             DofQuadIndexData const                    &dof_quad_index_data_in,
-             std::shared_ptr<AnalyticalSolution<dim> > analytical_solution_in)
+             MatrixFree<dim,Number> const              &matrix_free_data_in)
   {
     // call setup function of base class
     Base::setup(
@@ -559,18 +425,19 @@ public:
         dof_handler_velocity_in,
         dof_handler_pressure_in,
         mapping_in,
-        matrix_free_data_in,
-        dof_quad_index_data_in,
-        analytical_solution_in);
+        matrix_free_data_in);
 
     // calculation of mean velocity
     mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,Number>(
-        matrix_free_data_in, dof_quad_index_data_in, pp_data_periodic_hill.mean_velocity_data));
+        matrix_free_data_in,
+        navier_stokes_operator_in.get_dof_index_velocity(),
+        navier_stokes_operator_in.get_quad_index_velocity_linear(),
+        pp_data_periodic_hill.mean_velocity_data));
 
     // evaluation of characteristic quantities along lines
     line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneousDirection<dim>(
         dof_handler_velocity_in, dof_handler_pressure_in, mapping_in));
-    line_plot_calculator_statistics->setup(pp_data_periodic_hill.line_plot_data);
+    line_plot_calculator_statistics->setup(pp_data_periodic_hill.pp_data.line_plot_data);
   }
 
   void do_postprocessing(VectorType const &velocity,
@@ -619,19 +486,127 @@ private:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters<dim> const &param)
+construct_postprocessor(InputParameters const &param)
 {
   PostProcessorData<dim> pp_data;
-  pp_data.output_data = param.output_data;
-  pp_data.error_data = param.error_data;
-  pp_data.lift_and_drag_data = param.lift_and_drag_data;
-  pp_data.pressure_difference_data = param.pressure_difference_data;
-  pp_data.mass_data = param.mass_data;
+
+  // write output for visualization of results
+  pp_data.output_data.write_output = WRITE_OUTPUT;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME;
+  pp_data.output_data.output_start_time = param.start_time;
+  pp_data.output_data.output_interval_time = FLOW_THROUGH_TIME/10.0;
+  pp_data.output_data.write_velocity_magnitude = true;
+  pp_data.output_data.write_vorticity = true;
+  pp_data.output_data.write_vorticity_magnitude = true;
+  pp_data.output_data.write_q_criterion = true;
+  pp_data.output_data.degree = param.degree_u;
+
+  // line plot data: calculate statistics along lines
+  pp_data.line_plot_data.write_output = true;
+  pp_data.line_plot_data.filename_prefix = OUTPUT_FOLDER;
+  pp_data.line_plot_data.statistics_data.calculate_statistics = CALCULATE_STATISTICS;
+  pp_data.line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
+  pp_data.line_plot_data.statistics_data.sample_end_time = END_TIME;
+  pp_data.line_plot_data.statistics_data.sample_every_timesteps = SAMPLE_EVERY_TIMESTEPS;
+  pp_data.line_plot_data.statistics_data.write_output_every_timesteps = SAMPLE_EVERY_TIMESTEPS*100;
+
+  // mean velocity
+  QUANTITY_VELOCITY.type = QuantityType::Velocity;
+  QUANTITY_VELOCITY.average_homogeneous_direction = true;
+  QUANTITY_VELOCITY.averaging_direction = 2;
+
+  // Reynolds stresses
+  QUANTITY_REYNOLDS.type = QuantityType::ReynoldsStresses;
+  QUANTITY_REYNOLDS.average_homogeneous_direction = true;
+  QUANTITY_REYNOLDS.averaging_direction = 2;
+
+  // lines
+  Line<dim> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8;
+
+  // begin and end points of all lines
+  double const eps = 1.e-10;
+  vel_0.begin = Point<dim> (0*H, H+f(0*H)+eps,0);
+  vel_0.end =   Point<dim> (0*H, H+HEIGHT-eps,0);
+  vel_1.begin = Point<dim> (1*H, H+f(1*H)+eps,0);
+  vel_1.end =   Point<dim> (1*H, H+HEIGHT-eps,0);
+  vel_2.begin = Point<dim> (2*H, H+f(2*H)+eps,0);
+  vel_2.end =   Point<dim> (2*H, H+HEIGHT-eps,0);
+  vel_3.begin = Point<dim> (3*H, H+f(3*H)+eps,0);
+  vel_3.end =   Point<dim> (3*H, H+HEIGHT-eps,0);
+  vel_4.begin = Point<dim> (4*H, H+f(4*H)+eps,0);
+  vel_4.end =   Point<dim> (4*H, H+HEIGHT-eps,0);
+  vel_5.begin = Point<dim> (5*H, H+f(5*H)+eps,0);
+  vel_5.end =   Point<dim> (5*H, H+HEIGHT-eps,0);
+  vel_6.begin = Point<dim> (6*H, H+f(6*H)+eps,0);
+  vel_6.end =   Point<dim> (6*H, H+HEIGHT-eps,0);
+  vel_7.begin = Point<dim> (7*H, H+f(7*H)+eps,0);
+  vel_7.end =   Point<dim> (7*H, H+HEIGHT-eps,0);
+  vel_8.begin = Point<dim> (8*H, H+f(8*H)+eps,0);
+  vel_8.end =   Point<dim> (8*H, H+HEIGHT-eps,0);
+
+  // set the number of points along the lines
+  vel_0.n_points = N_POINTS_LINE;
+  vel_1.n_points = N_POINTS_LINE;
+  vel_2.n_points = N_POINTS_LINE;
+  vel_3.n_points = N_POINTS_LINE;
+  vel_4.n_points = N_POINTS_LINE;
+  vel_5.n_points = N_POINTS_LINE;
+  vel_6.n_points = N_POINTS_LINE;
+  vel_7.n_points = N_POINTS_LINE;
+  vel_8.n_points = N_POINTS_LINE;
+
+  // set the quantities that we want to compute along the lines
+  vel_0.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_0.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_1.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_1.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_2.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_2.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_3.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_3.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_4.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_4.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_5.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_5.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_6.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_6.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_7.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_7.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_8.quantities.push_back(&QUANTITY_VELOCITY);
+  vel_8.quantities.push_back(&QUANTITY_REYNOLDS);
+
+  // set line names
+  vel_0.name = "x_0";
+  vel_1.name = "x_1";
+  vel_2.name = "x_2";
+  vel_3.name = "x_3";
+  vel_4.name = "x_4";
+  vel_5.name = "x_5";
+  vel_6.name = "x_6";
+  vel_7.name = "x_7";
+  vel_8.name = "x_8";
+
+  // insert lines
+  pp_data.line_plot_data.lines.push_back(vel_0);
+  pp_data.line_plot_data.lines.push_back(vel_1);
+  pp_data.line_plot_data.lines.push_back(vel_2);
+  pp_data.line_plot_data.lines.push_back(vel_3);
+  pp_data.line_plot_data.lines.push_back(vel_4);
+  pp_data.line_plot_data.lines.push_back(vel_5);
+  pp_data.line_plot_data.lines.push_back(vel_6);
+  pp_data.line_plot_data.lines.push_back(vel_7);
+  pp_data.line_plot_data.lines.push_back(vel_8);
 
   PostProcessorDataPeriodicHill<dim> pp_data_periodic_hill;
   pp_data_periodic_hill.pp_data = pp_data;
-  pp_data_periodic_hill.mean_velocity_data = param.mean_velocity_data;
-  pp_data_periodic_hill.line_plot_data = param.line_plot_data;
+
+  // calculation of flow rate (use volume-based computation)
+  pp_data_periodic_hill.mean_velocity_data.calculate = true;
+  pp_data_periodic_hill.mean_velocity_data.filename_prefix = OUTPUT_FOLDER + FILENAME_FLOWRATE;
+  Tensor<1,dim,double> direction; direction[0] = 1.0;
+  pp_data_periodic_hill.mean_velocity_data.direction = direction;
+  pp_data_periodic_hill.mean_velocity_data.write_to_file = true;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessorPeriodicHill<dim,Number>(pp_data_periodic_hill));

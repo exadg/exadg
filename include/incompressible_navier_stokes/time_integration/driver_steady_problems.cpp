@@ -16,11 +16,10 @@
 
 namespace IncNS
 {
-template<int dim, typename Number>
-DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
-  std::shared_ptr<OperatorBase> operator_base_in,
-  std::shared_ptr<OperatorPDE>  operator_in,
-  InputParameters<dim> const &  param_in)
+template<typename Number>
+DriverSteadyProblems<Number>::DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
+                                                   std::shared_ptr<OperatorPDE>  operator_in,
+                                                   InputParameters const &       param_in)
   : operator_base(operator_base_in),
     pde_operator(operator_in),
     param(param_in),
@@ -29,9 +28,9 @@ DriverSteadyProblems<dim, Number>::DriverSteadyProblems(
 {
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-DriverSteadyProblems<dim, Number>::setup()
+DriverSteadyProblems<Number>::setup()
 {
   // initialize global solution vectors (allocation)
   initialize_vectors();
@@ -41,9 +40,9 @@ DriverSteadyProblems<dim, Number>::setup()
   initialize_solution();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-DriverSteadyProblems<dim, Number>::initialize_vectors()
+DriverSteadyProblems<Number>::initialize_vectors()
 {
   // solution
   pde_operator->initialize_block_vector_velocity_pressure(solution);
@@ -53,18 +52,18 @@ DriverSteadyProblems<dim, Number>::initialize_vectors()
     pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-DriverSteadyProblems<dim, Number>::initialize_solution()
+DriverSteadyProblems<Number>::initialize_solution()
 {
   double time = 0.0;
   operator_base->prescribe_initial_conditions(solution.block(0), solution.block(1), time);
 }
 
 
-template<int dim, typename Number>
+template<typename Number>
 void
-DriverSteadyProblems<dim, Number>::solve()
+DriverSteadyProblems<Number>::solve()
 {
   pcout << std::endl << "Solving steady state problem ..." << std::endl;
 
@@ -116,10 +115,23 @@ DriverSteadyProblems<dim, Number>::solve()
   // special case: pure Dirichlet BC's
   if(this->param.pure_dirichlet_bc)
   {
-    if(this->param.error_data.analytical_solution_available == true)
-      operator_base->shift_pressure(solution.block(1));
-    else // analytical_solution_available == false
+    if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
+    {
+      this->operator_base->shift_pressure(solution.block(1));
+    }
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
+    {
       set_zero_mean_value(solution.block(1));
+    }
+    else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
+    {
+      this->operator_base->shift_pressure_mean_value(solution.block(1));
+    }
+    else
+    {
+      AssertThrow(false,
+                  ExcMessage("Specified method to adjust pressure level is not implemented."));
+    }
   }
 
   computing_times[0] += timer.wall_time();
@@ -153,10 +165,10 @@ DriverSteadyProblems<dim, Number>::solve()
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-DriverSteadyProblems<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                                  std::vector<double> &      wall_time) const
+DriverSteadyProblems<Number>::get_wall_times(std::vector<std::string> & name,
+                                             std::vector<double> &      wall_time) const
 {
   name.resize(1);
   std::vector<std::string> names = {"Coupled system"};
@@ -169,9 +181,9 @@ DriverSteadyProblems<dim, Number>::get_wall_times(std::vector<std::string> & nam
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-DriverSteadyProblems<dim, Number>::solve_steady_problem()
+DriverSteadyProblems<Number>::solve_steady_problem()
 {
   postprocessing();
 
@@ -180,21 +192,16 @@ DriverSteadyProblems<dim, Number>::solve_steady_problem()
   postprocessing();
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-DriverSteadyProblems<dim, Number>::postprocessing()
+DriverSteadyProblems<Number>::postprocessing()
 {
   pde_operator->do_postprocessing_steady_problem(solution.block(0), solution.block(1));
 }
 
 // instantiations
 
-// float
-template class DriverSteadyProblems<2, float>;
-template class DriverSteadyProblems<3, float>;
-
-// double
-template class DriverSteadyProblems<2, double>;
-template class DriverSteadyProblems<3, double>;
+template class DriverSteadyProblems<float>;
+template class DriverSteadyProblems<double>;
 
 } // namespace IncNS

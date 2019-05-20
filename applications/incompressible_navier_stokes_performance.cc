@@ -17,9 +17,7 @@
 #include <deal.II/base/timer.h>
 
 // postprocessor
-#include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-
-#include "../include/postprocessor/output_data.h"
+#include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // Navier-Stokes operator
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
@@ -27,7 +25,6 @@
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 
 // Parameters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/analytical_solution.h"
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
@@ -40,16 +37,6 @@ using namespace IncNS;
 // specify the flow problem to be used for throughput measurements
 
 #include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                          FURTHER INPUT PARAMETERS                                  */
-/*                                                                                    */
-/**************************************************************************************/
-
-// set the polynomial degree k of the shape functions
-unsigned int const FE_DEGREE_U_MIN = 2;
-unsigned int const FE_DEGREE_U_MAX = 15;
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
 std::vector<int> REFINE_LEVELS = {
@@ -95,15 +82,29 @@ unsigned int const N_REPETITIONS_OUTER = 10;  // take the minimum of outer repet
 // global variable used to store the wall times for different polynomial degrees
 std::vector<std::pair<unsigned int, double>> wall_times;
 
-
-template<int dim, typename Number>
-class Problem
+template<typename Number>
+class ProblemBase
 {
 public:
-  Problem(unsigned int const refine_steps_space);
+  virtual ~ProblemBase()
+  {
+  }
+
+  virtual void
+  setup(InputParameters const & param) = 0;
+
+  virtual void
+  apply_operator() = 0;
+};
+
+template<int dim, typename Number>
+class Problem : public ProblemBase<Number>
+{
+public:
+  Problem();
 
   void
-  setup(InputParameters<dim> const & param);
+  setup(InputParameters const & param);
 
   void
   apply_operator();
@@ -118,15 +119,11 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  unsigned int const n_refine_space;
-
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
 
-  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution;
-
-  InputParameters<dim> param;
+  InputParameters param;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
@@ -150,9 +147,8 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem(unsigned int const refine_steps_space)
+Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
-    n_refine_space(refine_steps_space),
     n_repetitions_inner(N_REPETITIONS_INNER),
     n_repetitions_outer(N_REPETITIONS_OUTER)
 {
@@ -176,10 +172,10 @@ Problem<dim, Number>::print_header()
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
+Problem<dim, Number>::setup(InputParameters const & param_in)
 {
   print_header();
-  print_dealii_info(pcout);
+  print_dealii_info<Number>(pcout);
   print_MPI_info(pcout);
 
   // input parameters
@@ -206,9 +202,8 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
 
   // this function has to be defined in the header file that implements all
   // problem specific things like parameters, geometry, boundary conditions, etc.
-  create_grid_and_set_boundary_ids(triangulation, n_refine_space, periodic_faces);
-
-  print_grid_data(pcout, n_refine_space, *triangulation);
+  create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
+  print_grid_data(pcout, param.h_refinements, *triangulation);
 
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
@@ -218,12 +213,6 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
   // field functions and boundary conditions
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
-
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
-  set_analytical_solution(analytical_solution);
 
   // initialize postprocessor
   // this function has to be defined in the header file
@@ -264,8 +253,7 @@ Problem<dim, Number>::setup(InputParameters<dim> const & param_in)
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
-                                 field_functions,
-                                 analytical_solution);
+                                 field_functions);
 
   // use a dummy value of 1.0 for scaling_factor_time_derivative_term
   navier_stokes_operation->setup_solvers(1.0);
@@ -484,7 +472,7 @@ Problem<dim, Number>::apply_operator()
   {
     dofs = navier_stokes_operation->get_dof_handler_p().n_dofs();
 
-    fe_degree = param.degree_p;
+    fe_degree = param.get_degree_p();
   }
   else
   {
@@ -555,13 +543,6 @@ print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times
   }
 }
 
-
-/**************************************************************************************/
-/*                                                                                    */
-/*                                         MAIN                                       */
-/*                                                                                    */
-/**************************************************************************************/
-
 int
 main(int argc, char ** argv)
 {
@@ -569,27 +550,28 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    deallog.depth_console(0);
-
-    for(unsigned int degree = FE_DEGREE_U_MIN; degree <= FE_DEGREE_U_MAX; ++degree)
+    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
     {
-      InputParameters<DIMENSION> param;
-      param.set_input_parameters();
+      InputParameters param;
+      set_input_parameters(param);
 
       // manipulate polynomial degree
       param.degree_u = degree;
-      // mixed order
-      param.degree_p = degree - 1;
-      // equal order
-      //      param.degree_p = degree;
 
-      // mapping
-      param.degree_mapping = 1; // affine
-      // param.degree_mapping = degree; // isoparametric
+      // setup problem and run simulation
+      typedef double                       Number;
+      std::shared_ptr<ProblemBase<Number>> problem;
 
-      Problem<DIMENSION, VALUE_TYPE> problem(REFINE_LEVELS[degree - 1]);
-      problem.setup(param);
-      problem.apply_operator();
+      if(param.dim == 2)
+        problem.reset(new Problem<2, Number>());
+      else if(param.dim == 3)
+        problem.reset(new Problem<3, Number>());
+      else
+        AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
+
+      problem->setup(param);
+
+      problem->apply_operator();
     }
 
     print_wall_times(wall_times);

@@ -12,7 +12,7 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters<dim> const &         parameters_in,
+  InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
   : BASE(triangulation, parameters_in, postprocessor_in),
     sum_alphai_ui(nullptr),
@@ -34,14 +34,12 @@ DGNavierStokesCoupled<dim, Number>::setup(
                                                   periodic_face_pairs,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  std::shared_ptr<AnalyticalSolution<dim>> const  analytical_solution_in)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
 {
   BASE::setup(periodic_face_pairs,
               boundary_descriptor_velocity_in,
               boundary_descriptor_pressure_in,
-              field_functions_in,
-              analytical_solution_in);
+              field_functions_in);
 
   this->initialize_vector_velocity(temp_vector);
 }
@@ -647,7 +645,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   {
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_data(),
-                                                          this->param.degree_p,
+                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
   }
@@ -677,7 +675,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // using large time steps and large viscosities.
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_data(),
-                                                          this->param.degree_p,
+                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
 
@@ -728,7 +726,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // III. inverse pressure mass matrix
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_data(),
-                                                          this->param.degree_p,
+                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
 
@@ -747,7 +745,7 @@ DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
 {
   CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
   comp_laplace_operator_data.degree_u                 = this->param.degree_u;
-  comp_laplace_operator_data.degree_p                 = this->param.degree_p;
+  comp_laplace_operator_data.degree_p                 = this->param.get_degree_p();
   comp_laplace_operator_data.dof_index_velocity       = this->get_dof_index_velocity();
   comp_laplace_operator_data.dof_index_pressure       = this->get_dof_index_pressure();
   comp_laplace_operator_data.operator_is_singular     = this->param.pure_dirichlet_bc;
@@ -793,8 +791,8 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
     laplace_operator_data.dof_index            = this->get_dof_index_pressure();
     laplace_operator_data.quad_index           = this->get_quad_index_pressure();
     laplace_operator_data.IP_factor            = 1.0;
-    laplace_operator_data.degree               = this->param.degree_p;
-    laplace_operator_data.degree_mapping       = this->param.degree_mapping;
+    laplace_operator_data.degree               = this->param.get_degree_p();
+    laplace_operator_data.degree_mapping       = this->mapping_degree;
     laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
 
     laplace_operator_data.bc = this->boundary_descriptor_laplace;
@@ -855,8 +853,8 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
     laplace_operator_data.dof_index      = this->get_dof_index_pressure();
     laplace_operator_data.quad_index     = this->get_quad_index_pressure();
     laplace_operator_data.IP_factor      = 1.0;
-    laplace_operator_data.degree         = this->param.degree_p;
-    laplace_operator_data.degree_mapping = this->param.degree_mapping;
+    laplace_operator_data.degree         = this->param.get_degree_p();
+    laplace_operator_data.degree_mapping = this->mapping_degree;
     laplace_operator_data.bc             = this->boundary_descriptor_laplace;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
@@ -939,8 +937,8 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   diffusive_operator_data.dof_index      = this->get_dof_index_pressure();
   diffusive_operator_data.quad_index     = this->get_quad_index_pressure();
   diffusive_operator_data.IP_factor      = this->param.IP_factor_viscous;
-  diffusive_operator_data.degree         = this->param.degree_p;
-  diffusive_operator_data.degree_mapping = this->param.degree_mapping;
+  diffusive_operator_data.degree         = this->param.get_degree_p();
+  diffusive_operator_data.degree_mapping = this->mapping_degree;
   diffusive_operator_data.bc             = boundary_descriptor;
   // TODO: the pressure convection-diffusion operator is initialized with constant viscosity, in
   // case of varying viscosities the pressure convection-diffusion operator (the diffusive
@@ -970,7 +968,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
     nonlinear_problem_has_to_be_solved();
 
   pressure_convection_diffusion_operator.reset(new PressureConvectionDiffusionOperator<dim, Number>(
-    this->mapping,
+    *this->mapping,
     this->get_data(),
     pressure_convection_diffusion_operator_data,
     this->constraint_p));

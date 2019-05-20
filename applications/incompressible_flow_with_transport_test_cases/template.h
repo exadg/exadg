@@ -7,6 +7,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TEMPLATE_H_
 
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -14,37 +15,29 @@
 /*                                                                                                          */
 /************************************************************************************************************/
 
-// TODO remove all global variables
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 4;
+unsigned int const DEGREE_MAX = 4;
 
-// single or double precision?
-// typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
-// set the number of space dimensions: dimension = 2, 3
-unsigned int const DIMENSION = 2;
-
-// set the polynomial degree of the shape functions for velocity and pressure
-unsigned int const FE_DEGREE_VELOCITY = 4;
-unsigned int const FE_DEGREE_PRESSURE = FE_DEGREE_VELOCITY - 1;
-unsigned int const FE_DEGREE_SCALAR = FE_DEGREE_VELOCITY;
-
-// set the number of refine levels for spatial convergence tests
-unsigned int const REFINE_STEPS_SPACE_MIN = 3;
-unsigned int const REFINE_STEPS_SPACE_MAX = REFINE_STEPS_SPACE_MIN;
-
-// set the number of refine levels for temporal convergence tests
-unsigned int const REFINE_STEPS_TIME_MIN = 0;
-unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
 
-template<int dim>
-void
-IncNS::InputParameters<dim>::set_input_parameters()
+namespace IncNS
 {
+void
+set_input_parameters(InputParameters &param)
+{
+  (void)param;
+
   // Here, set all parameters differing from their default values as initialized in
-  // IncNS::InputParameters<dim>::InputParameters()
+  // IncNS::InputParameters::InputParameters()
+}
 }
 
 namespace ConvDiff
@@ -139,15 +132,6 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
 
-template<int dim>
-void
-set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
-{
-  // these lines show exemplarily how the analytical solution is filled
-  analytical_solution->velocity.reset(new Functions::ZeroFunction<dim>(dim));
-  analytical_solution->pressure.reset(new Functions::ZeroFunction<dim>(1));
-}
-
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -157,14 +141,14 @@ set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solu
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number>>
-construct_postprocessor(InputParameters<dim> const & param)
+construct_postprocessor(InputParameters const & param)
 {
+  (void)param;
+
   // these lines show exemplarily how the postprocessor is constructued
   PostProcessorData<dim> pp_data;
-  pp_data.output_data = param.output_data;
-  pp_data.error_data  = param.error_data;
 
-  std::shared_ptr<PostProcessor<dim, Number>> pp;
+  std::shared_ptr<PostProcessorBase<dim, Number>> pp;
   pp.reset(new PostProcessor<dim, Number>(pp_data));
 
   return pp;
@@ -210,17 +194,6 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functio
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(1));
 }
 
-template<int dim>
-void
-set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analytical_solution, 
-                        unsigned int const                                 scalar_index = 0)
-{
-  (void)scalar_index;
-
-  // these lines show exemplarily how the analytical solution is filled
-  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
-}
-
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                                              POSTPROCESSOR                                               */
@@ -229,13 +202,13 @@ set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analy
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(unsigned int const scalar_index)
+construct_postprocessor(ConvDiff::InputParameters const &param,
+                        unsigned int const              scalar_index)
 {
+  (void)param;
   (void)scalar_index;
 
-  PostProcessorData pp_data;
-  pp_data.output_data = OutputData();
-  pp_data.error_data  = ErrorCalculationData();
+  PostProcessorData<dim> pp_data;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

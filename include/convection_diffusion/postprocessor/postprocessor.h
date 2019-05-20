@@ -19,14 +19,15 @@
 
 namespace ConvDiff
 {
+template<int dim>
 struct PostProcessorData
 {
   PostProcessorData()
   {
   }
 
-  OutputData           output_data;
-  ErrorCalculationData error_data;
+  OutputDataBase            output_data;
+  ErrorCalculationData<dim> error_data;
 };
 
 template<int dim, typename Number>
@@ -36,13 +37,12 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  PostProcessor(PostProcessorData const & pp_data_in);
+  PostProcessor(PostProcessorData<dim> const & pp_data_in);
 
   void
-  setup(DoFHandler<dim> const &              dof_handler_in,
-        Mapping<dim> const &                 mapping_in,
-        MatrixFree<dim, Number> const &      matrix_free_data_in,
-        std::shared_ptr<Function<dim>> const analytical_solution_in);
+  setup(DoFHandler<dim> const &         dof_handler_in,
+        Mapping<dim> const &            mapping_in,
+        MatrixFree<dim, Number> const & matrix_free_data_in);
 
   void
   do_postprocessing(VectorType const & solution,
@@ -50,10 +50,10 @@ public:
                     int const          time_step_number = -1);
 
 private:
-  PostProcessorData pp_data;
+  PostProcessorData<dim> pp_data;
 
-  ConvDiff::OutputGenerator<dim, Number> output_generator;
-  ErrorCalculator<dim, Number>           error_calculator;
+  OutputGenerator<dim, Number> output_generator;
+  ErrorCalculator<dim, Number> error_calculator;
 };
 
 } // namespace ConvDiff

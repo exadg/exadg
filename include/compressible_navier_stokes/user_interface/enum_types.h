@@ -113,6 +113,31 @@ enum class TriangulationType
 std::string
 enum_to_string(TriangulationType const enum_type);
 
+/*
+ *  Mapping type (polynomial degree)
+ */
+enum class MappingType
+{
+  Affine,
+  Isoparametric
+};
+
+std::string
+enum_to_string(MappingType const enum_type);
+
+/*
+ *  QuadratureRule
+ */
+enum class QuadratureRule
+{
+  Standard,
+  Overintegration32k,
+  Overintegration2k
+};
+
+std::string
+enum_to_string(QuadratureRule const enum_type);
+
 
 /**************************************************************************************/
 /*                                                                                    */

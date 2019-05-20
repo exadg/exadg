@@ -15,12 +15,12 @@
 
 namespace IncNS
 {
-template<int dim, typename Number>
-TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
-                                                  std::shared_ptr<InterfacePDE>  pde_operator_in,
-                                                  InputParameters<dim> const &   param_in,
-                                                  unsigned int const             n_refine_time_in)
-  : TimeIntBDF<dim, Number>(operator_base_in, param_in, n_refine_time_in),
+template<typename Number>
+TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
+                                             std::shared_ptr<InterfacePDE>  pde_operator_in,
+                                             InputParameters const &        param_in,
+                                             unsigned int const             n_refine_time_in)
+  : TimeIntBDF<Number>(operator_base_in, param_in, n_refine_time_in),
     pde_operator(pde_operator_in),
     solution(this->order),
     vec_convective_term(this->order),
@@ -32,9 +32,9 @@ TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase>
 {
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::allocate_vectors()
+TimeIntBDFCoupled<Number>::allocate_vectors()
 {
   // solution
   for(unsigned int i = 0; i < solution.size(); ++i)
@@ -59,18 +59,18 @@ TimeIntBDFCoupled<dim, Number>::allocate_vectors()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::initialize_current_solution()
+TimeIntBDFCoupled<Number>::initialize_current_solution()
 {
   this->operator_base->prescribe_initial_conditions(solution[0].block(0),
                                                     solution[0].block(1),
                                                     this->get_time());
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::initialize_former_solutions()
+TimeIntBDFCoupled<Number>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
@@ -81,9 +81,9 @@ TimeIntBDFCoupled<dim, Number>::initialize_former_solutions()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::setup_derived()
+TimeIntBDFCoupled<Number>::setup_derived()
 {
   // scaling factor continuity equation:
   // Calculate characteristic element length h
@@ -103,9 +103,9 @@ TimeIntBDFCoupled<dim, Number>::setup_derived()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::initialize_vec_convective_term()
+TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
@@ -116,44 +116,44 @@ TimeIntBDFCoupled<dim, Number>::initialize_vec_convective_term()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFCoupled<dim, Number>::get_velocity() const
+TimeIntBDFCoupled<Number>::get_velocity() const
 {
   return solution[0].block(0);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFCoupled<dim, Number>::get_velocity(unsigned int i) const
+TimeIntBDFCoupled<Number>::get_velocity(unsigned int i) const
 {
   return solution[i].block(0);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFCoupled<dim, Number>::get_pressure(unsigned int i) const
+TimeIntBDFCoupled<Number>::get_pressure(unsigned int i) const
 {
   return solution[i].block(1);
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::set_velocity(VectorType const & velocity_in, unsigned int const i)
+TimeIntBDFCoupled<Number>::set_velocity(VectorType const & velocity_in, unsigned int const i)
 {
   solution[i].block(0) = velocity_in;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::set_pressure(VectorType const & pressure_in, unsigned int const i)
+TimeIntBDFCoupled<Number>::set_pressure(VectorType const & pressure_in, unsigned int const i)
 {
   solution[i].block(1) = pressure_in;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::solve_timestep()
+TimeIntBDFCoupled<Number>::solve_timestep()
 {
   Timer timer;
   timer.restart();
@@ -374,9 +374,9 @@ TimeIntBDFCoupled<dim, Number>::solve_timestep()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::projection_step()
+TimeIntBDFCoupled<Number>::projection_step()
 {
   Timer timer;
   timer.restart();
@@ -416,9 +416,9 @@ TimeIntBDFCoupled<dim, Number>::projection_step()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::postprocessing() const
+TimeIntBDFCoupled<Number>::postprocessing() const
 {
   pde_operator->do_postprocessing(solution[0].block(0),
                                   solution[0].block(1),
@@ -426,17 +426,17 @@ TimeIntBDFCoupled<dim, Number>::postprocessing() const
                                   this->get_time_step_number());
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::postprocessing_steady_problem() const
+TimeIntBDFCoupled<Number>::postprocessing_steady_problem() const
 {
   pde_operator->do_postprocessing_steady_problem(solution[0].block(0), solution[0].block(1));
 }
 
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::postprocessing_stability_analysis()
+TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis"));
@@ -493,9 +493,9 @@ TimeIntBDFCoupled<dim, Number>::postprocessing_stability_analysis()
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::prepare_vectors_for_next_timestep()
+TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
 {
   push_back(solution);
   solution[0].swap(solution_np);
@@ -507,9 +507,9 @@ TimeIntBDFCoupled<dim, Number>::prepare_vectors_for_next_timestep()
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
+TimeIntBDFCoupled<Number>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -607,9 +607,9 @@ TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 double
-TimeIntBDFCoupled<dim, Number>::evaluate_residual()
+TimeIntBDFCoupled<Number>::evaluate_residual()
 {
   this->pde_operator->evaluate_nonlinear_residual_steady(this->solution_np, this->solution[0]);
 
@@ -627,10 +627,10 @@ TimeIntBDFCoupled<dim, Number>::evaluate_residual()
   return residual;
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::get_iterations(std::vector<std::string> & name,
-                                               std::vector<double> &      iteration) const
+TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
+                                          std::vector<double> &      iteration) const
 {
   unsigned int N_time_steps = this->get_time_step_number() - 1;
 
@@ -670,10 +670,10 @@ TimeIntBDFCoupled<dim, Number>::get_iterations(std::vector<std::string> & name,
   }
 }
 
-template<int dim, typename Number>
+template<typename Number>
 void
-TimeIntBDFCoupled<dim, Number>::get_wall_times(std::vector<std::string> & name,
-                                               std::vector<double> &      wall_time) const
+TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
+                                          std::vector<double> &      wall_time) const
 {
   name.resize(2);
   std::vector<std::string> names = {"Coupled system", "Projection"};
@@ -688,11 +688,6 @@ TimeIntBDFCoupled<dim, Number>::get_wall_times(std::vector<std::string> & name,
 
 // instantiations
 
-// float
-template class TimeIntBDFCoupled<2, float>;
-template class TimeIntBDFCoupled<3, float>;
-
-// double
-template class TimeIntBDFCoupled<2, double>;
-template class TimeIntBDFCoupled<3, double>;
+template class TimeIntBDFCoupled<float>;
+template class TimeIntBDFCoupled<double>;
 } // namespace IncNS

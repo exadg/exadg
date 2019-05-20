@@ -11,8 +11,6 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../include/functionalities/print_functions.h"
-#include "postprocessor/error_calculation_data.h"
-#include "postprocessor/output_data.h"
 
 #include "enum_types.h"
 
@@ -114,15 +112,6 @@ public:
   // individual cells (for example block Jacobi). With this parameter, the loop structure
   // can be changed to such an algorithm (cell_based_face_loops).
   bool enable_cell_based_face_loops;
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                               OUTPUT AND POSTPROCESSING                            */
-  /*                                                                                    */
-  /**************************************************************************************/
-
-  // writing output
-  OutputData output_data;
 };
 
 } // namespace Poisson

@@ -18,29 +18,28 @@ using namespace dealii;
 namespace IncNS
 {
 // forward declarations
-template<int dim>
 class InputParameters;
 
 namespace Interface
 {
-template<int dim, typename Number>
+template<typename Number>
 class OperatorBase;
-template<int dim, typename Number>
+template<typename Number>
 class OperatorOIF;
 
 } // namespace Interface
 
 
-template<int dim, typename Number>
+template<typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef Interface::OperatorBase<dim, Number> InterfaceBase;
+  typedef Interface::OperatorBase<Number> InterfaceBase;
 
   TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
-             InputParameters<dim> const &   param_in,
+             InputParameters const &        param_in,
              unsigned int const             n_refine_time_in);
 
   virtual ~TimeIntBDF()
@@ -68,7 +67,7 @@ protected:
   void
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
 
-  InputParameters<dim> const & param;
+  InputParameters const & param;
 
   // BDF time integration: Sum_i (alpha_i/dt * u_i)
   VectorType sum_alphai_ui;
@@ -128,10 +127,10 @@ private:
   unsigned int const n_refine_time;
 
   // Operator-integration-factor splitting for convective term
-  std::shared_ptr<Interface::OperatorOIF<dim, Number>> convective_operator_OIF;
+  std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;
 
   // OIF splitting
-  std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<dim, Number>, VectorType>>
+  std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>>
     time_integrator_OIF;
 
   // solution vectors needed for OIF substepping of convective term

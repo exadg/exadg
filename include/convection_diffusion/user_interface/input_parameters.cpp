@@ -335,7 +335,7 @@ InputParameters::print_parameters_temporal_discretization(ConditionalOStream & p
   }
 
 
-  // here we do not print quantities such as  cfl, diffusion_number, time_step_size
+  // here we do not print quantities such as cfl, diffusion_number, time_step_size
   // because this is done by the time integration scheme (or the functions that
   // calculate the time step size)
 
