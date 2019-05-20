@@ -550,8 +550,6 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    deallog.depth_console(0);
-
     for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
     {
       InputParameters param;

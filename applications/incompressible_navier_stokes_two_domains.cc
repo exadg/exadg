@@ -662,8 +662,6 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    deallog.depth_console(0);
-
     InputParameters param_1, param_2;
     set_input_parameters(param_1, 1);
     set_input_parameters(param_2, 2);

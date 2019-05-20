@@ -841,8 +841,6 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    deallog.depth_console(0);
-
     AssertThrow(DEGREE_MIN == DEGREE_MAX, ExcMessage("Invalid parameters!"));
     AssertThrow(REFINE_SPACE_MIN == REFINE_SPACE_MAX, ExcMessage("Invalid parameters!"));
     AssertThrow(REFINE_TIME_MIN == 0, ExcMessage("Invalid parameters!"));
