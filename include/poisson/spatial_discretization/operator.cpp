@@ -4,24 +4,41 @@
 namespace Poisson
 {
 template<int dim, typename Number>
-DGOperator<dim, Number>::DGOperator(parallel::Triangulation<dim> const & triangulation,
-                                    Poisson::InputParameters const &     param_in)
+DGOperator<dim, Number>::DGOperator(
+  parallel::Triangulation<dim> const &                      triangulation,
+  Poisson::InputParameters const &                          param_in,
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor_in)
   : dealii::Subscriptor(),
     param(param_in),
     fe_dgq(param.degree),
     fe_q(param.degree),
-    mapping(param.degree_mapping),
-    dof_handler(triangulation)
+    mapping_degree(1),
+    dof_handler(triangulation),
+    postprocessor(postprocessor_in)
 {
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
 }
 
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup(
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                    periodic_face_pairs_in,
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_in,
-  std::shared_ptr<Poisson::FieldFunctions<dim>>     field_functions_in)
+  PeriodicFaces const                                     periodic_face_pairs_in,
+  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor_in,
+  std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions_in,
+  std::shared_ptr<Poisson::AnalyticalSolution<dim>> const analytical_solution_in)
 {
   ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
   pcout << std::endl << "Setup Poisson operation ..." << std::endl;
@@ -35,6 +52,8 @@ DGOperator<dim, Number>::setup(
   initialize_matrix_free();
 
   setup_operators();
+
+  setup_postprocessor(analytical_solution_in);
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -76,7 +95,7 @@ DGOperator<dim, Number>::setup_solver()
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  mapping,
+                                  *mapping,
                                   laplace_operator.get_operator_data(),
                                   &laplace_operator.get_operator_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
@@ -125,18 +144,36 @@ DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
 
 template<int dim, typename Number>
 void
+DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src) const
+{
+  field_functions->initial_solution->set_time(0.0);
+
+  // This is necessary if Number == float
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+  VectorTypeDouble src_double;
+  src_double = src;
+
+  VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
+
+  src = src_double;
+}
+
+template<int dim, typename Number>
+void
 DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) const
 {
   dst = 0;
-  if(param.spatial_discretization == SpatialDiscretization::DG)
-    laplace_operator.rhs_add(dst, evaluation_time);
+
+  laplace_operator.rhs_add(dst, evaluation_time);
+
   if(param.right_hand_side == true)
     rhs_operator.evaluate_add(dst, evaluation_time);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs)
+DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
 {
   unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
 
@@ -154,7 +191,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGOperator<dim, Number>::get_mapping() const
 {
-  return mapping;
+  return *mapping;
 }
 
 template<int dim, typename Number>
@@ -162,6 +199,13 @@ DoFHandler<dim> const &
 DGOperator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
+}
+
+template<int dim, typename Number>
+types::global_dof_index
+DGOperator<dim, Number>::get_number_of_dofs() const
+{
+  return dof_handler.n_dofs();
 }
 
 template<int dim, typename Number>
@@ -233,7 +277,7 @@ DGOperator<dim, Number>::initialize_matrix_free()
   }
 
   constraint_matrix.close();
-  matrix_free.reinit(mapping, dof_handler, constraint_matrix, quadrature, additional_data);
+  matrix_free.reinit(*mapping, dof_handler, constraint_matrix, quadrature, additional_data);
 }
 
 template<int dim, typename Number>
@@ -246,7 +290,7 @@ DGOperator<dim, Number>::setup_operators()
   laplace_operator_data.quad_index           = 0;
   laplace_operator_data.IP_factor            = param.IP_factor;
   laplace_operator_data.degree               = param.degree;
-  laplace_operator_data.degree_mapping       = param.degree_mapping;
+  laplace_operator_data.degree_mapping       = mapping_degree;
   laplace_operator_data.bc                   = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
 
@@ -258,6 +302,21 @@ DGOperator<dim, Number>::setup_operators()
   rhs_operator_data.quad_index = 0;
   rhs_operator_data.rhs        = field_functions->right_hand_side;
   rhs_operator.reinit(matrix_free, rhs_operator_data);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::setup_postprocessor(
+  std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
+{
+  postprocessor->setup(dof_handler, *mapping, matrix_free, analytical_solution->solution);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::do_postprocessing(VectorType const & solution) const
+{
+  postprocessor->do_postprocessing(solution);
 }
 
 template class DGOperator<2, float>;

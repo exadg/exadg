@@ -14,7 +14,7 @@
 // CONVECTION-DIFFUSION
 
 // postprocessor
-#include "convection_diffusion/postprocessor/postprocessor.h"
+#include "convection_diffusion/postprocessor/postprocessor_base.h"
 
 // spatial discretization
 #include "convection_diffusion/time_integration/time_int_bdf.h"
@@ -55,8 +55,12 @@
 
 using namespace dealii;
 
-// select the test case
-#include "incompressible_flow_with_transport_test_cases/cavity.h"
+// specify the test case that has to be solved
+
+// template
+#include "incompressible_flow_with_transport_test_cases/template.h"
+
+//#include "incompressible_flow_with_transport_test_cases/cavity.h"
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 
@@ -155,7 +159,7 @@ private:
 
   std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
 
-  std::vector<std::shared_ptr<ConvDiff::PostProcessor<dim, Number>>> scalar_postprocessor;
+  std::vector<std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>> scalar_postprocessor;
 
   std::vector<std::shared_ptr<TimeIntBase>> scalar_time_integrator;
 
@@ -216,6 +220,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
   timer.restart();
 
   print_header();
+  print_dealii_info(pcout);
   print_MPI_info(pcout);
 
   // parameters (fluid + scalar)
@@ -376,7 +381,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters<dim> const &            fluid
     ConvDiff::set_analytical_solution(scalar_analytical_solution[i], i);
 
     // initialize postprocessor
-    scalar_postprocessor[i].reset(new ConvDiff::PostProcessor<dim, Number>());
+    scalar_postprocessor[i] = ConvDiff::construct_postprocessor<dim, Number>(i);
 
     // initialize convection diffusion operation
     conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
@@ -844,13 +849,6 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-    {
-      std::cout << "deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch "
-                << DEAL_II_GIT_BRANCH << std::endl
-                << std::endl;
-    }
-
     deallog.depth_console(0);
 
     bool do_restart = false;
@@ -876,7 +874,7 @@ main(int argc, char ** argv)
     scalar_param.resize(N_SCALARS);
     for(unsigned int i = 0; i < N_SCALARS; ++i)
     {
-      scalar_param[i].set_input_parameters(i);
+      set_input_parameters(scalar_param[i], i);
     }
 
     problem.setup(fluid_param, scalar_param, do_restart);

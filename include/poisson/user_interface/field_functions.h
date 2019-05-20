@@ -13,7 +13,7 @@ namespace Poisson
 template<int dim>
 struct FieldFunctions
 {
-  std::shared_ptr<Function<dim>> analytical_solution;
+  std::shared_ptr<Function<dim>> initial_solution;
   std::shared_ptr<Function<dim>> right_hand_side;
 };
 

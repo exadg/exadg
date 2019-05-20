@@ -1,66 +1,99 @@
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
 
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 #include "../grid_tools/deformed_cube_manifold.h"
 
-/******************************************************************************/
-/*                                                                            */
-/*                             INPUT PARAMETERS                               */
-/*                                                                            */
-/******************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-const unsigned int DIMENSION              = 2;
-const unsigned int FE_DEGREE              = 5;
-const unsigned int FE_DEGREE_MIN          = 3;
-const unsigned int FE_DEGREE_MAX          = 13;
-const unsigned int REFINE_STEPS           = 4;
-const unsigned int REFINE_STEPS_SPACE_MIN = 5;
-const unsigned int REFINE_STEPS_SPACE_MAX = 5;
+// convergence studies in space
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-std::string OUTPUT_FOLDER     = "output/poisson_gaussian/";
+unsigned int const REFINE_SPACE_MIN = 5;
+unsigned int const REFINE_SPACE_MAX = 5;
+
+// problem specific parameters
+std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME       = "cosinus";
+std::string OUTPUT_NAME       = "gaussian";
 
+enum class MeshType{
+  Cartesian,
+  DeformedCubeManifold
+};
+
+MeshType const MESH_TYPE = MeshType::DeformedCubeManifold;
+
+namespace Poisson
+{
 void
-Poisson::InputParameters::set_input_parameters()
+set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  right_hand_side = true;
-
-  // PHYSICAL QUANTITIES
-
-  // TEMPORAL DISCRETIZATION
+  param.dim = 3;
+  param.right_hand_side = true;
 
   // SPATIAL DISCRETIZATION
-  degree = FE_DEGREE;
-  IP_factor = 1.0;
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Isoparametric;
+  param.spatial_discretization = SpatialDiscretization::DG;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver                      = Poisson::Solver::CG;
-  solver_data.abs_tol         = 1.e-20;
-  solver_data.rel_tol         = 1.e-8;
-  solver_data.max_iter        = 1e4;
-  compute_performance_metrics = true;
-  preconditioner              = Preconditioner::Multigrid;
+  param.solver = Poisson::Solver::CG;
+  param.solver_data.abs_tol = 1.e-20;
+  param.solver_data.rel_tol = 1.e-8;
+  param.solver_data.max_iter = 1e4;
+  param.compute_performance_metrics = true;
+  param.preconditioner = Preconditioner::Multigrid;
+  param.multigrid_data.type = MultigridType::pMG;
+  param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
   // MG smoother
-  multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG coarse grid solver
-  multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::AMG;
-  multigrid_data.type                  = MultigridType::pMG;
-
-  multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Coarse;
-
-  // write output for visualization of results
-  output_data.write_output  = true;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name   = OUTPUT_NAME;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+}
 }
 
-/******************************************************************************/
-/*                                                                            */
-/* FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.) */
-/*                                                                            */
-/******************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >         &/*periodic_faces*/)
+{
+  // hypercube: [left,right]^dim
+  const double length = 1.0;
+  const double left = -length, right = length;
+  const double deformation = +0.1, frequnency = +2.0;
+  GridGenerator::hyper_cube(*triangulation, left, right);
+
+  if(MESH_TYPE == MeshType::DeformedCubeManifold)
+  {
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    triangulation->set_all_manifold_ids(1);
+    triangulation->set_manifold(1, manifold);
+  }
+
+  triangulation->refine_global(n_refine_space);
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class CoefficientFunction : public Function<dim>
@@ -70,24 +103,20 @@ public:
   {
   }
 
-  virtual double
+  double
   value(const Point<dim> & p, const unsigned int c = 0) const
   {
     (void)c;
     return value<double>(p);
   }
 
-  virtual Tensor<1, dim>
+  Tensor<1, dim>
   gradient(const Point<dim> & p, const unsigned int c = 0) const
   {
     (void)c;
     (void)p;
     Tensor<1, dim> grad;
-#if MESH_TYPE == 1
-    for(unsigned int d = 0; d < dim; ++d)
-      grad[d] = -4e6 * numbers::PI * std::cos(2. * numbers::PI * p[d] + 0.1 * (d + 1)) *
-                std::sin(2. * numbers::PI * p[d] + 0.1 * (d + 1));
-#endif
+
     return grad;
   }
 
@@ -98,33 +127,10 @@ public:
     (void)p;
     Number value;
     value = 1;
-#if MESH_TYPE == 1
-    for(unsigned int d = 0; d < dim; ++d)
-    {
-      const Number cosp = std::cos(2. * dealii::numbers::PI * p[d] + 0.1 * (d + 1));
-      value += cosp * cosp * 1e6;
-    }
-#endif
+
     return value;
   }
 };
-
-/*
- *  Analytical solution
- */
-
-#if MESH_TYPE == 2
-
-template<int dim>
-class Solution : public Functions::SlitSingularityFunction<dim>
-{
-public:
-  Solution() : Functions::SlitSingularityFunction<dim>()
-  {
-  }
-};
-
-#else
 
 template<int dim>
 class SolutionBase
@@ -140,7 +146,6 @@ template<>
 const Point<1> SolutionBase<1>::source_centers[SolutionBase<1>::n_source_centers] =
   {Point<1>(-1.0 / 3.0), Point<1>(0.0), Point<1>(+1.0 / 3.0)};
 
-
 template<>
 const Point<2> SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers] =
   {Point<2>(-0.5, +0.5), Point<2>(-0.5, -0.5), Point<2>(+0.5, -0.5)};
@@ -153,65 +158,50 @@ template<int dim>
 const double SolutionBase<dim>::width = 1. / 5.;
 
 template<int dim>
-class AnalyticalSolution : public Function<dim>, protected SolutionBase<dim>
+class Solution : public Function<dim>, protected SolutionBase<dim>
 {
 public:
-  AnalyticalSolution() : Function<dim>()
+  Solution() : Function<dim>()
   {
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const;
+  value(const Point<dim> & p, const unsigned int /*component*/ = 0) const
+  {
+    double return_value = 0;
+    for(unsigned int i = 0; i < this->n_source_centers; ++i)
+    {
+      const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
+      return_value += std::exp(-x_minus_xi.norm_square() / (this->width * this->width));
+    }
+
+    return return_value / Utilities::fixed_power<dim>(std::sqrt(2. * numbers::PI) * this->width);
+  }
 
   Tensor<1, dim>
-  gradient(const Point<dim> & p, const unsigned int component = 0) const;
+  gradient(const Point<dim> & p, const unsigned int /*component*/ = 0) const
+  {
+    Tensor<1, dim> return_value;
+
+    for(unsigned int i = 0; i < this->n_source_centers; ++i)
+    {
+      const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
+
+      return_value +=
+        (-2 / (this->width * this->width) *
+         std::exp(-x_minus_xi.norm_square() / (this->width * this->width)) * x_minus_xi);
+    }
+
+    return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
+  }
 };
-
-template<int dim>
-double
-AnalyticalSolution<dim>::value(const Point<dim> & p, const unsigned int) const
-{
-  double return_value = 0;
-  for(unsigned int i = 0; i < this->n_source_centers; ++i)
-  {
-    const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
-    return_value += std::exp(-x_minus_xi.norm_square() / (this->width * this->width));
-  }
-
-  return return_value / Utilities::fixed_power<dim>(std::sqrt(2. * numbers::PI) * this->width);
-}
-
-template<int dim>
-Tensor<1, dim>
-AnalyticalSolution<dim>::gradient(const Point<dim> & p, const unsigned int) const
-{
-  Tensor<1, dim> return_value;
-
-  for(unsigned int i = 0; i < this->n_source_centers; ++i)
-  {
-    const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
-
-    return_value +=
-      (-2 / (this->width * this->width) *
-       std::exp(-x_minus_xi.norm_square() / (this->width * this->width)) * x_minus_xi);
-  }
-
-  return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
-}
-
-
-#endif
 
 /*
  *  Right-hand side
  */
 
 template<int dim>
-class RightHandSide : public Function<dim>
-#if MESH_TYPE != 2
-  ,
-                      protected SolutionBase<dim>
-#endif
+class RightHandSide : public Function<dim> , protected SolutionBase<dim>
 {
 public:
   RightHandSide() : Function<dim>()
@@ -219,111 +209,76 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const;
-};
-
-template<int dim>
-double
-RightHandSide<dim>::value(const Point<dim> & p, const unsigned int) const
-{
-#if MESH_TYPE == 2
-  return 0;
-#else
-  CoefficientFunction<dim> coefficient;
-  const double             coef         = coefficient.value(p);
-  const Tensor<1, dim>     coef_grad    = coefficient.gradient(p);
-  double                   return_value = 0;
-  for(unsigned int i = 0; i < this->n_source_centers; ++i)
+  value(const Point<dim> & p, const unsigned int /*component*/ = 0) const
   {
-    const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
+    CoefficientFunction<dim> coefficient;
+    const double             coef         = coefficient.value(p);
+    const Tensor<1, dim>     coef_grad    = coefficient.gradient(p);
+    double                   return_value = 0;
+    for(unsigned int i = 0; i < this->n_source_centers; ++i)
+    {
+      const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
 
-    return_value += ((2 * dim * coef + 2 * (coef_grad)*x_minus_xi -
-                      4 * coef * x_minus_xi.norm_square() / (this->width * this->width)) /
-                     (this->width * this->width) *
-                     std::exp(-x_minus_xi.norm_square() / (this->width * this->width)));
-  }
+      return_value += ((2 * dim * coef + 2 * (coef_grad)*x_minus_xi -
+                        4 * coef * x_minus_xi.norm_square() / (this->width * this->width)) /
+                       (this->width * this->width) *
+                       std::exp(-x_minus_xi.norm_square() / (this->width * this->width)));
+    }
 
-  return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
-#endif
-}
-
-/*
- *  Neumann boundary condition
- */
-
-template<int dim>
-class NeumannBoundary : public Function<dim>
-{
-public:
-  NeumannBoundary(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  virtual ~NeumannBoundary(){};
-
-  virtual double
-  value(const Point<dim> & /* p */, const unsigned int /* component */) const
-  {
-    double result = 0.0;
-    return result;
+    return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
   }
 };
 
-/******************************************************************************/
-/*                                                                            */
-/*     GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR    */
-/*                                                                            */
-/******************************************************************************/
+namespace Poisson
+{
 
 template<int dim>
 void
-create_grid_and_set_boundary_conditions(
-  std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-  unsigned int const                                n_refine_space,
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor,
-  std::vector<
-    GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
+set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
 {
-  // hypercube: [left,right]^dim
-  const double left = -1.0, right = +1.0;
-  const double deformation = +0.1, frequnency = +2.0;
-  GridGenerator::hyper_cube(*triangulation, left, right);
+  typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
-  triangulation->set_all_manifold_ids(1);
-  triangulation->set_manifold(1, manifold);
-  triangulation->refine_global(n_refine_space);
+  boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
 
-  // dirichlet bc:
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  boundary_descriptor->dirichlet_bc.insert({0, analytical_solution});
-
-  // neumann bc:
-  //  std::shared_ptr<Function<dim>> neumann_bc;
-  //  neumann_bc.reset(new NeumannBoundary<dim>());
-  //  boundary_descriptor->neumann_bc.insert({1, neumann_bc});
+//  boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
 }
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-
-  std::shared_ptr<Function<dim>> right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->analytical_solution = analytical_solution;
-  field_functions->right_hand_side     = right_hand_side;
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
 template<int dim>
 void
-set_analytical_solution(std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution)
+set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution->solution.reset(new Solution<dim>());
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim, typename Number>
+std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
+construct_postprocessor()
+{
+  ConvDiff::PostProcessorData pp_data;
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME;
+
+  pp_data.error_data.analytical_solution_available = true;
+
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
+  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));
+
+  return pp;
+}
+
 }

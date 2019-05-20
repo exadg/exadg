@@ -12,11 +12,13 @@ INCLUDE_DIRECTORIES(
 SET( SOURCE_FILES
      # Poisson
      poisson.cc
-     poisson_dual.cc
-     laplace_operator_matrix_free.cc
+     #poisson_old.cc
+     #poisson_dual.cc
      #multigrid_solver.cc
-     poisson_lung.cc
-     lung_tria.cc
+     #poisson_lung.cc
+     #lung_tria.cc
+     laplace_operator_matrix_free.cc
+ 
 
      # Scalar reaction-convection-diffusion
      convection_diffusion.cc

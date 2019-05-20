@@ -12,17 +12,33 @@
 namespace ConvDiff
 {
 template<int dim, typename Number>
-DGOperator<dim, Number>::DGOperator(parallel::Triangulation<dim> const &        triangulation,
-                                    InputParameters const &                     param_in,
-                                    std::shared_ptr<PostProcessor<dim, Number>> postprocessor_in)
+DGOperator<dim, Number>::DGOperator(
+  parallel::Triangulation<dim> const &            triangulation,
+  InputParameters const &                         param_in,
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
   : dealii::Subscriptor(),
     param(param_in),
     fe(param.degree),
-    mapping(param.degree_mapping),
+    mapping_degree(1),
     dof_handler(triangulation),
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     postprocessor(postprocessor_in)
 {
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
     fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
@@ -115,7 +131,7 @@ DGOperator<dim, Number>::initialize_matrix_free()
     // quadrature formula used to perform integrals
     QGauss<1> quadrature(param.degree + 1);
 
-    matrix_free.reinit(mapping, dof_handler, constraint_dummy, quadrature, additional_data);
+    matrix_free.reinit(*mapping, dof_handler, constraint_dummy, quadrature, additional_data);
   }
   // we need two dof-handlers in case the velocity field comes from the fluid solver.
   else if(param.type_velocity_field == TypeVelocityField::Numerical)
@@ -136,7 +152,7 @@ DGOperator<dim, Number>::initialize_matrix_free()
     quadrature_vec.resize(1);
     quadrature_vec[0] = QGauss<1>(param.degree + 1);
 
-    matrix_free.reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
+    matrix_free.reinit(*mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
   }
   else
   {
@@ -188,7 +204,7 @@ DGOperator<dim, Number>::setup_operators()
   diffusive_operator_data.IP_factor            = param.IP_factor;
   diffusive_operator_data.diffusivity          = param.diffusivity;
   diffusive_operator_data.degree               = param.degree;
-  diffusive_operator_data.degree_mapping       = param.degree_mapping;
+  diffusive_operator_data.degree_mapping       = mapping_degree;
   diffusive_operator_data.bc                   = boundary_descriptor;
   diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -208,7 +224,7 @@ DGOperator<dim, Number>::setup_operators()
   conv_diff_operator_data_eff.conv_data = convective_operator_data;
   conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
   conv_diff_operator_data_eff.rhs_data  = rhs_operator_data;
-  convection_diffusion_operator_efficiency.initialize(mapping,
+  convection_diffusion_operator_efficiency.initialize(*mapping,
                                                       matrix_free,
                                                       conv_diff_operator_data_eff);
 }
@@ -341,7 +357,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  mapping,
+                                  *mapping,
                                   conv_diff_operator.get_operator_data(),
                                   &conv_diff_operator.get_boundary_descriptor()->dirichlet_bc,
                                   &this->periodic_face_pairs);
@@ -432,7 +448,7 @@ void
 DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src,
                                                       double const evaluation_time) const
 {
-  field_functions->analytical_solution->set_time(evaluation_time);
+  field_functions->initial_solution->set_time(evaluation_time);
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -440,7 +456,7 @@ DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src,
   VectorTypeDouble src_double;
   src_double = src;
 
-  VectorTools::interpolate(dof_handler, *(field_functions->analytical_solution), src_double);
+  VectorTools::interpolate(dof_handler, *(field_functions->initial_solution), src_double);
 
   src = src_double;
 }
@@ -642,7 +658,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGOperator<dim, Number>::get_mapping() const
 {
-  return mapping;
+  return *mapping;
 }
 
 template<int dim, typename Number>
@@ -699,11 +715,7 @@ void
 DGOperator<dim, Number>::setup_postprocessor(
   std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
 {
-  PostProcessorData pp_data;
-  pp_data.output_data = param.output_data;
-  pp_data.error_data  = param.error_data;
-
-  postprocessor->setup(pp_data, dof_handler, mapping, matrix_free, analytical_solution);
+  postprocessor->setup(dof_handler, *mapping, matrix_free, analytical_solution->solution);
 }
 
 template class DGOperator<2, float>;

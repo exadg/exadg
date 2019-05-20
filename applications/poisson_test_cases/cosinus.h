@@ -1,73 +1,122 @@
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
 
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 #include "../grid_tools/deformed_cube_manifold.h"
 
-/******************************************************************************/
-/*                                                                            */
-/*                             INPUT PARAMETERS                               */
-/*                                                                            */
-/******************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-const unsigned int DIMENSION              = 3;
-const unsigned int FE_DEGREE              = 7;
-const unsigned int REFINE_STEPS_SPACE_MIN = 5;
-const unsigned int REFINE_STEPS_SPACE_MAX = 5;
+// convergence studies in space
+unsigned int const DEGREE_MIN = 7;
+unsigned int const DEGREE_MAX = 7;
 
-std::string OUTPUT_FOLDER     = "output/poisson_cosinus/";
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
+
+// problem specific parameters
+std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME       = "cosinus";
 
+enum class MeshType{
+  Cartesian,
+  DeformedCubeManifold
+};
+
+MeshType const MESH_TYPE = MeshType::Cartesian;
+
+namespace Poisson
+{
 void
-Poisson::InputParameters::set_input_parameters()
+set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  right_hand_side = true;
-
-  // PHYSICAL QUANTITIES
-
-  // TEMPORAL DISCRETIZATION
+  param.dim = 3;
+  param.right_hand_side = true;
 
   // SPATIAL DISCRETIZATION
-  degree = FE_DEGREE;
-  degree_mapping = FE_DEGREE;
-  IP_factor      = 1.0;
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Isoparametric;
+  param.spatial_discretization = SpatialDiscretization::DG;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::CG;
-  solver_data = SolverData(1e4, 1.e-20, 1.e-8);
-  preconditioner = Preconditioner::Multigrid;
+  param.solver = Solver::CG;
+  param.solver_data = SolverData(1e4, 1.e-20, 1.e-8);
+  param.preconditioner = Preconditioner::Multigrid;
+  param.multigrid_data.type = MultigridType::pMG;
+  param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
   // MG smoother
-  multigrid_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG smoother data
-  multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
-  multigrid_data.gmres_smoother_data.number_of_iterations = 5;
-  // MG coarse grid solver
-  multigrid_data.coarse_solver = MultigridCoarseGridSolver::AMG_ML; // GMRES_PointJacobi;
-  // multigrid_data.two_levels = true;
-  multigrid_data.type = MultigridType::pMG;
-
-  // write output for visualization of results
-  output_data.write_output  = false;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name   = OUTPUT_NAME;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 }
 
-/******************************************************************************/
-/*                                                                            */
-/* FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.) */
-/*                                                                            */
-/******************************************************************************/
+}
 
-/*
- *  Analytical solution
- */
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
-class AnalyticalSolution : public Function<dim>
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >         &periodic_faces)
+{
+  // hypercube: [left,right]^dim
+  const double left = -0.5 * numbers::PI, right = +0.5 * numbers::PI;
+  const double deformation = +0.1, frequnency = +2.0;
+  GridGenerator::hyper_cube(*triangulation, left, right);
+
+  if(MESH_TYPE == MeshType::DeformedCubeManifold)
+  {
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    triangulation->set_all_manifold_ids(1);
+    triangulation->set_manifold(1, manifold);
+  }
+
+  for (auto cell : (*triangulation))
+  {
+    for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell; ++face)
+    {
+      if (cell.face(face)->at_boundary())
+      {
+        if(std::abs(cell.face(face)->center()(1) - left) < 1e-12)
+            cell.face(face)->set_all_boundary_ids(2);
+        else if(std::abs(cell.face(face)->center()(1) - right) < 1e-12)
+            cell.face(face)->set_all_boundary_ids(3);
+      }
+    }
+  }
+
+  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
+  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
+  triangulation->add_periodicity(periodic_faces);
+
+  triangulation->refine_global(n_refine_space);
+}
+
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+class DirichletBC : public Function<dim>
 {
 public:
-  AnalyticalSolution(const unsigned int n_components = 1, const double time = 0.)
+  DirichletBC(const unsigned int n_components = 1, const double time = 0.)
     : Function<dim>(n_components, time)
   {
   }
@@ -104,95 +153,50 @@ public:
   }
 };
 
-/*
- *  Neumann boundary condition
- */
-
-template<int dim>
-class NeumannBoundary : public Function<dim>
+namespace Poisson
 {
-public:
-  NeumannBoundary(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  double
-  value(const Point<dim> & /* p */, const unsigned int /* component */) const
-  {
-    double result = 0.0;
-    return result;
-  }
-};
-
-/******************************************************************************/
-/*                                                                            */
-/*     GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR    */
-/*                                                                            */
-/******************************************************************************/
 
 template<int dim>
 void
-create_grid_and_set_boundary_conditions(
-  parallel::distributed::Triangulation<dim> &                                            triangulation,
-  unsigned int const                                                                     n_refine_space,
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>>                                      boundary_descriptor,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
+set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
 {
-  // hypercube: [left,right]^dim
-  const double left = -0.5 * numbers::PI, right = +0.5 * numbers::PI;
-  const double deformation = +0.1, frequnency = +2.0;
-  GridGenerator::hyper_cube(triangulation, left, right);
+  typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-  static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
-  triangulation.set_all_manifold_ids(1);
-  triangulation.set_manifold(1, manifold);
-  triangulation.refine_global(n_refine_space);
+  boundary_descriptor->dirichlet_bc.insert(pair(0, new DirichletBC<dim>()));
 
-  //  return;
-  //  for (auto cell : triangulation)
-  //    for (unsigned int face = 0; face < GeometryInfo<dim>::faces_per_cell;++face)
-  //      if (cell.face(face)->at_boundary()){
-  //             if(std::abs(cell.face(face)->center()(0) - right) < 1e-12)
-  //            cell.face(face)->set_all_boundary_ids(1);
-  //        else if(std::abs(cell.face(face)->center()(1) - left) < 1e-12)
-  //            cell.face(face)->set_all_boundary_ids(2);
-  //        else if(std::abs(cell.face(face)->center()(1) + right) < 1e-12)
-  //            cell.face(face)->set_all_boundary_ids(3);
-  //      }
-  //
-  //  GridTools::collect_periodic_faces(triangulation, 2, 3, 1 /*y-direction*/, periodic_faces);
-  //  triangulation.add_periodicity(periodic_faces);
-
-  // dirichlet bc:
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-  boundary_descriptor->dirichlet_bc.insert({0, analytical_solution});
-
-  // neumann bc:
-  //  std::shared_ptr<Function<dim>> neumann_bc;
-  //  neumann_bc.reset(new NeumannBoundary<dim>());
-  //  boundary_descriptor->neumann_bc.insert({1, neumann_bc});
+//  boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
 }
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-
-  std::shared_ptr<Function<dim>> right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->analytical_solution = analytical_solution;
-  field_functions->right_hand_side     = right_hand_side;
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }
 
 template<int dim>
 void
-set_analytical_solution(std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution)
+set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>(1));
+  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
+}
+
+template<int dim, typename Number>
+std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
+construct_postprocessor()
+{
+  ConvDiff::PostProcessorData pp_data;
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME;
+
+  pp_data.error_data = ErrorCalculationData();
+
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
+  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));
+
+  return pp;
+}
+
 }

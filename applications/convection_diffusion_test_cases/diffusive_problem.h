@@ -8,8 +8,7 @@
 #ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_H_
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_DIFFUSIVE_PROBLEM_H_
 
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -17,29 +16,21 @@
 /*                                                                                    */
 /**************************************************************************************/
 
-namespace ConvDiff
-{
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
-// single or double precision?
-//typedef float VALUE_TYPE;
-typedef double VALUE_TYPE;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
-// set the number of space dimensions: DIMENSION = 2, 3
-const unsigned int DIMENSION = 2;
-
-// set the polynomial degree of the shape functions
-const unsigned int FE_DEGREE = 5;
-
-// set the number of refine levels for spatial convergence tests
-const unsigned int REFINE_STEPS_SPACE_MIN = 4;
-const unsigned int REFINE_STEPS_SPACE_MAX = 4;
-
-// set the number of refine levels for temporal convergence tests
-const unsigned int REFINE_STEPS_TIME_MIN = 0;
-const unsigned int REFINE_STEPS_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // problem specific parameters
-const double DIFFUSIVITY = 1.0e-1;
+double const DIFFUSIVITY = 1.0e-1;
+
+double const START_TIME = 0.0;
+double const END_TIME = 1.0;
 
 enum class BoundaryConditionType{
   HomogeneousDBC,
@@ -51,70 +42,66 @@ const BoundaryConditionType BOUNDARY_TYPE = BoundaryConditionType::HomogeneousNB
 
 const bool RIGHT_HAND_SIDE = (BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS) ? true : false;
 
-void ConvDiff::InputParameters::set_input_parameters()
+namespace ConvDiff
+{
+void
+set_input_parameters(ConvDiff::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  problem_type = ProblemType::Unsteady;
-  equation_type = EquationType::Diffusion;
-  right_hand_side = RIGHT_HAND_SIDE;
+  param.dim = 2;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::Diffusion;
+  param.right_hand_side = RIGHT_HAND_SIDE;
 
   // PHYSICAL QUANTITIES
-  start_time = 0.0;
-  end_time = 1.0;
-  diffusivity = DIFFUSIVITY;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
+  param.diffusivity = DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
-  temporal_discretization = TemporalDiscretization::BDF; //ExplRK; //BDF;
-  treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  order_time_integrator = 2;
-  start_with_low_order = false;
-  calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  time_step_size = 1.0e-2;
-  cfl = 0.1;
-  diffusion_number = 0.01;
+  param.temporal_discretization = TemporalDiscretization::BDF;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = false;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+  param.time_step_size = 1.0e-2;
+  param.cfl = 0.1;
+  param.diffusion_number = 0.01;
+  param.dt_refinements = REFINE_TIME_MIN;
 
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  triangulation_type = TriangulationType::Distributed;
+  param.triangulation_type = TriangulationType::Distributed;
 
   // polynomial degree
-  degree = FE_DEGREE;
-  degree_mapping = 1;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Affine;
+
+  // h-refinements
+  param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
-  numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
+  param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 
   // viscous term
-  IP_factor = 1.0;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver = Solver::CG;
-  solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
-  preconditioner = Preconditioner::Multigrid; //BlockJacobi;
-  mg_operator_type = MultigridOperatorType::ReactionDiffusion;
-  multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
-
-  update_preconditioner = false;
-
-  // NUMERICAL PARAMETERS
-  runtime_optimization = false;
-
-  // OUTPUT AND POSTPROCESSING
-  output_data.write_output = true;
-  output_data.output_folder = "output_conv_diff/diffusive_problem_homogeneous_DBC/vtu/";
-  output_data.output_name = "output";
-  output_data.output_start_time = start_time;
-  output_data.output_interval_time = (end_time-start_time)/20;
-  output_data.degree = FE_DEGREE;
-
-  error_data.analytical_solution_available = true;
-  error_data.error_calc_start_time = start_time;
-  error_data.error_calc_interval_time = output_data.output_interval_time;
+  param.solver = Solver::CG;
+  param.solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
+  param.preconditioner = Preconditioner::Multigrid; //BlockJacobi;
+  param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
+  param.update_preconditioner = false;
 
   // output of solver information
-  solver_info_data.print_to_screen = true;
-  solver_info_data.interval_time = (end_time-start_time)/20;
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time = END_TIME-START_TIME;
+
+  // NUMERICAL PARAMETERS
+  param.runtime_optimization = false;
+}
 }
 
 /**************************************************************************************/
@@ -126,8 +113,12 @@ void ConvDiff::InputParameters::set_input_parameters()
 template<int dim>
 void create_grid_and_set_boundary_ids(
     std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
-    unsigned int const                                  n_refine_space)
+    unsigned int const                                  n_refine_space,
+    std::vector<GridTools::PeriodicFacePair<typename
+      Triangulation<dim>::cell_iterator> >              &periodic_faces)
 {
+  (void)periodic_faces;
+
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
   const double left = -1.0, right = 1.0;
   GridGenerator::hyper_cube(*triangulation,left,right);
@@ -228,6 +219,9 @@ public:
   }
 };
 
+namespace ConvDiff
+{
+
 template<int dim>
 void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
@@ -251,7 +245,7 @@ void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> >
 template<int dim>
 void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
-  field_functions->analytical_solution.reset(new Solution<dim>());
+  field_functions->initial_solution.reset(new Solution<dim>());
   field_functions->right_hand_side.reset(new RightHandSide<dim>());
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
 }
@@ -260,6 +254,28 @@ template<int dim>
 void set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim> > analytical_solution)
 {
   analytical_solution->solution.reset(new Solution<dim>(1));
+}
+
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
+construct_postprocessor()
+{
+  PostProcessorData pp_data;
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = "output_conv_diff/diffusive_problem_homogeneous_DBC/vtu/";
+  pp_data.output_data.output_name = "output";
+  pp_data.output_data.output_start_time = START_TIME;
+  pp_data.output_data.output_interval_time = (END_TIME-START_TIME)/20;
+  pp_data.output_data.degree = DEGREE_MIN;
+
+  pp_data.error_data.analytical_solution_available = true;
+  pp_data.error_data.error_calc_start_time = START_TIME;
+  pp_data.error_data.error_calc_interval_time = (END_TIME-START_TIME)/20;
+
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data));
+
+  return pp;
 }
 
 }

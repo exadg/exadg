@@ -1,342 +1,198 @@
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
 
-#include "../grid_tools/deformed_cube_manifold.h"
+#include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 #include "../grid_tools/lung/lung_environment.h"
 #include "../grid_tools/lung/lung_grid.h"
 
-/******************************************************************************/
-/*                                                                            */
-/*                             INPUT PARAMETERS                               */
-/*                                                                            */
-/******************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-const unsigned int DIMENSION              = 3;
-const unsigned int FE_DEGREE              = 4;
-const unsigned int FE_DEGREE_MIN          = 1;
-const unsigned int FE_DEGREE_MAX          = 7;
-const unsigned int REFINE_STEPS           = 2;
-const unsigned int REFINE_STEPS_SPACE_MIN = 5;
-const unsigned int REFINE_STEPS_SPACE_MAX = 5;
+// convergence studies in space
+unsigned int const DEGREE_MIN = 4;
+unsigned int const DEGREE_MAX = 4;
 
-std::string OUTPUT_FOLDER     = "output/poisson_gaussian/";
+unsigned int const REFINE_SPACE_MIN = 1;
+unsigned int const REFINE_SPACE_MAX = 1;
+
+// problem specific parameters
+std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME       = "cosinus";
+std::string OUTPUT_NAME       = "lung_8gen";
 
+// lung geometry
+std::string const FOLDER_LUNG_FILES = "lung/02_BronchialTreeGrowing_child/output/";
+
+// outlet boundary IDs
+types::boundary_id const OUTLET_ID_FIRST = 2;
+types::boundary_id OUTLET_ID_LAST = 2;
+
+// number of lung generations
+unsigned int const N_GENERATIONS = 8;
+
+namespace Poisson
+{
 void
-Poisson::InputParameters::set_input_parameters()
+set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  right_hand_side = true;
-
-  // PHYSICAL QUANTITIES
-
-  // TEMPORAL DISCRETIZATION
+  param.dim = 3;
+  param.right_hand_side = true;
 
   // SPATIAL DISCRETIZATION
-  degree = FE_DEGREE;
-  IP_factor = 1.0;
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree = DEGREE_MIN;
+  param.mapping = MappingType::Isoparametric;
+  param.spatial_discretization = SpatialDiscretization::DG;
+  param.IP_factor = 1.0;
 
   // SOLVER
-  solver               = Poisson::Solver::CG;
-  solver_data.abs_tol  = 1.e-20;
-  solver_data.rel_tol  = 1.e-8;
-  solver_data.max_iter = 1e4;
-
-  preconditioner = Preconditioner::Multigrid;
+  param.solver = Poisson::Solver::CG;
+  param.solver_data.abs_tol = 1.e-20;
+  param.solver_data.rel_tol = 1.e-8;
+  param.solver_data.max_iter = 1e4;
+  param.compute_performance_metrics = true;
+  param.preconditioner = Preconditioner::Multigrid;
+  param.multigrid_data.type = MultigridType::phMG;
+  param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
   // MG smoother
-  // multigrid_data.smoother = MultigridSmoother::Chebyshev;
-  // MG smoother data
-  // multigrid_data.chebyshev_smoother_data.smoother_smoothing_range = 30;
-  // multigrid_data.chebyshev_smoother_data.smoother_poly_degree     = 5;
-
-  // multigrid_data.gmres_smoother_data.preconditioner       = PreconditionerGMRESSmoother::None;
-  // multigrid_data.gmres_smoother_data.number_of_iterations = 5;
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG coarse grid solver
-  // multigrid_data.coarse_solver = MultigridCoarseGridSolver::GMRES_PointJacobi; //
-  // GMRES_PointJacobi;
-  multigrid_data.type = MultigridType::pMG;
-
-  multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Coarse;
-
-  // write output for visualization of results
-  output_data.write_output  = true;
-  output_data.output_folder = OUTPUT_FOLDER_VTU;
-  output_data.output_name   = OUTPUT_NAME;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+}
 }
 
-/******************************************************************************/
-/*                                                                            */
-/* FUNCTIONS (ANALYTICAL SOLUTION, BOUNDARY CONDITIONS, VELOCITY FIELD, etc.) */
-/*                                                                            */
-/******************************************************************************/
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
-template<int dim>
-class CoefficientFunction : public Function<dim>
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<2>> ,
+                                 unsigned int const                          ,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<2>::cell_iterator> >        &)
 {
-public:
-  CoefficientFunction() : Function<dim>(1)
-  {
-  }
-
-  virtual double
-  value(const Point<dim> & p, const unsigned int c = 0) const
-  {
-    (void)c;
-    return value<double>(p);
-  }
-
-  virtual Tensor<1, dim>
-  gradient(const Point<dim> & p, const unsigned int c = 0) const
-  {
-    (void)c;
-    (void)p;
-    Tensor<1, dim> grad;
-#if MESH_TYPE == 1
-    for(unsigned int d = 0; d < dim; ++d)
-      grad[d] = -4e6 * numbers::PI * std::cos(2. * numbers::PI * p[d] + 0.1 * (d + 1)) *
-                std::sin(2. * numbers::PI * p[d] + 0.1 * (d + 1));
-#endif
-    return grad;
-  }
-
-  template<typename Number>
-  Number
-  value(const dealii::Point<dim, Number> & p) const
-  {
-    (void)p;
-    Number value;
-    value = 1;
-#if MESH_TYPE == 1
-    for(unsigned int d = 0; d < dim; ++d)
-    {
-      const Number cosp = std::cos(2. * dealii::numbers::PI * p[d] + 0.1 * (d + 1));
-      value += cosp * cosp * 1e6;
-    }
-#endif
-    return value;
-  }
-};
-
-/*
- *  Analytical solution
- */
-
-#if MESH_TYPE == 2
-
-template<int dim>
-class Solution : public Functions::SlitSingularityFunction<dim>
-{
-public:
-  Solution() : Functions::SlitSingularityFunction<dim>()
-  {
-  }
-};
-
-#else
-
-template<int dim>
-class SolutionBase
-{
-protected:
-  static const unsigned int n_source_centers = 3;
-  static const Point<dim>   source_centers[n_source_centers];
-  static const double       width;
-};
-
-
-template<>
-const Point<1> SolutionBase<1>::source_centers[SolutionBase<1>::n_source_centers] =
-  {Point<1>(-1.0 / 3.0), Point<1>(0.0), Point<1>(+1.0 / 3.0)};
-
-
-template<>
-const Point<2> SolutionBase<2>::source_centers[SolutionBase<2>::n_source_centers] =
-  {Point<2>(-0.5, +0.5), Point<2>(-0.5, -0.5), Point<2>(+0.5, -0.5)};
-
-template<>
-const Point<3> SolutionBase<3>::source_centers[SolutionBase<3>::n_source_centers] =
-  {Point<3>(-0.5, +0.5, 0.25), Point<3>(-0.6, -0.5, -0.125), Point<3>(+0.5, -0.5, 0.5)};
-
-template<int dim>
-const double SolutionBase<dim>::width = 1. / 5.;
-
-template<int dim>
-class AnalyticalSolution : public Function<dim>, protected SolutionBase<dim>
-{
-public:
-  AnalyticalSolution() : Function<dim>()
-  {
-  }
-
-  double
-  value(const Point<dim> & p, const unsigned int component = 0) const;
-
-  Tensor<1, dim>
-  gradient(const Point<dim> & p, const unsigned int component = 0) const;
-};
-
-template<int dim>
-double
-AnalyticalSolution<dim>::value(const Point<dim> & p, const unsigned int) const
-{
-  double return_value = 0;
-  for(unsigned int i = 0; i < this->n_source_centers; ++i)
-  {
-    const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
-    return_value += std::exp(-x_minus_xi.norm_square() / (this->width * this->width));
-  }
-
-  return 1.0;
-
-  return return_value / Utilities::fixed_power<dim>(std::sqrt(2. * numbers::PI) * this->width);
+  AssertThrow(false, ExcMessage("This test case can only be used for dim = 3!"));
 }
-
-template<int dim>
-Tensor<1, dim>
-AnalyticalSolution<dim>::gradient(const Point<dim> & p, const unsigned int) const
-{
-  Tensor<1, dim> return_value;
-
-  for(unsigned int i = 0; i < this->n_source_centers; ++i)
-  {
-    const Tensor<1, dim> x_minus_xi = p - this->source_centers[i];
-
-    return_value +=
-      (-2 / (this->width * this->width) *
-       std::exp(-x_minus_xi.norm_square() / (this->width * this->width)) * x_minus_xi);
-  }
-
-  return return_value / Utilities::fixed_power<dim>(std::sqrt(2 * numbers::PI) * this->width);
-}
-
-
-#endif
-
-/*
- *  Right-hand side
- */
-
-template<int dim>
-class RightHandSide : public Function<dim>
-#if MESH_TYPE != 2
-  ,
-                      protected SolutionBase<dim>
-#endif
-{
-public:
-  RightHandSide() : Function<dim>()
-  {
-  }
-
-  double
-  value(const Point<dim> & p, const unsigned int component = 0) const;
-};
-
-template<int dim>
-double
-RightHandSide<dim>::value(const Point<dim> & /*p*/, const unsigned int) const
-{
-  return 1.0;
-}
-
-/*
- *  Neumann boundary condition
- */
-
-template<int dim>
-class NeumannBoundary : public Function<dim>
-{
-public:
-  NeumannBoundary(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  virtual ~NeumannBoundary(){};
-
-  virtual double
-  value(const Point<dim> & /* p */, const unsigned int /* component */) const
-  {
-    double result = 0.0;
-    return result;
-  }
-};
-
-/******************************************************************************/
-/*                                                                            */
-/*     GENERATE GRID, SET BOUNDARY INDICATORS AND FILL BOUNDARY DESCRIPTOR    */
-/*                                                                            */
-/******************************************************************************/
 
 template<int dim>
 void
-create_grid_and_set_boundary_conditions(
-  std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-  unsigned int const                                n_refine_space,
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor,
-  std::vector<
-    GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> & /*periodic_faces*/)
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >         &periodic_faces)
 {
+  (void)periodic_faces;
+
+  AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim = 3!"));
+
   std::vector<std::string> files;
-  get_lung_files_from_environment(files);
+  files.push_back(FOLDER_LUNG_FILES + "leftbot.dat");
+  files.push_back(FOLDER_LUNG_FILES + "lefttop.dat");
+  files.push_back(FOLDER_LUNG_FILES + "rightbot.dat");
+  files.push_back(FOLDER_LUNG_FILES + "rightmid.dat");
+  files.push_back(FOLDER_LUNG_FILES + "righttop.dat");
   auto tree_factory = dealii::GridGenerator::lung_files_to_node(files);
 
-  std::string spline_file = get_lung_spline_file_from_environment();
+  std::string spline_file = FOLDER_LUNG_FILES + "../splines_raw6.dat";
 
   std::map<std::string, double> timings;
-  const int                     refinements = 4;
   
-  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(refinements));
+  std::shared_ptr<LungID::Checker> generation_limiter(new LungID::GenerationChecker(N_GENERATIONS));
+  //std::shared_ptr<LungID::Checker> generation_limiter(new LungID::ManualChecker());
 
   // create triangulation
-  unsigned int outlet_id_first = 2, outlet_id_last = 2;
   if(auto tria = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
-    dealii::GridGenerator::lung(
-      *tria, n_refine_space, n_refine_space, tree_factory, timings, outlet_id_first, outlet_id_last, spline_file, generation_limiter);
+  {
+    dealii::GridGenerator::lung(*tria,
+                                n_refine_space,
+                                n_refine_space,
+                                tree_factory,
+                                timings,
+                                OUTLET_ID_FIRST,
+                                OUTLET_ID_LAST,
+                                spline_file,
+                                generation_limiter);
+  }
   else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
-    dealii::GridGenerator::lung(*tria, n_refine_space, tree_factory, timings, outlet_id_first, outlet_id_last, spline_file, generation_limiter);
+  {
+    dealii::GridGenerator::lung(*tria,
+                                n_refine_space,
+                                tree_factory,
+                                timings,
+                                OUTLET_ID_FIRST,
+                                OUTLET_ID_LAST,
+                                spline_file,
+                                generation_limiter);
+  }
   else
+  {
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
-
-  // set boundary conditions
-  std::shared_ptr<Function<dim>> zero_function_scalar;
-  zero_function_scalar.reset(new Functions::ZeroFunction<dim>(1));
-  // boundary_descriptor->neumann_bc.insert({0, zero_function_scalar});
-  boundary_descriptor->dirichlet_bc.insert({0, zero_function_scalar});
-  boundary_descriptor->dirichlet_bc.insert({1, zero_function_scalar});
-  boundary_descriptor->dirichlet_bc.insert({2, zero_function_scalar});
+  }
 }
 
-template<>
-void create_grid_and_set_boundary_conditions<2>(
-  std::shared_ptr<parallel::Triangulation<2>> /*triangulation*/,
-  unsigned int const /*n_refine_space*/,
-  std::shared_ptr<Poisson::BoundaryDescriptor<2>> /*boundary_descriptor*/,
-  std::vector<
-    GridTools::PeriodicFacePair<typename Triangulation<2>::cell_iterator>> & /*periodic_faces*/)
+namespace Poisson
 {
-  AssertThrow(false, ExcMessage("The lung case can be only run in 3D!"));
+
+template<int dim>
+void
+set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
+{
+  typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+
+  // 0 = walls -> Neumann
+  boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+
+  // 1 = inlet -> Dirichlet with constant value of 1
+  boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ConstantFunction<dim>(1 /* value */, 1 /* components */)));
+
+  // all outlets -> homogeneous Dirichlet boundary conditions
+  for(types::boundary_id id = OUTLET_ID_FIRST; id < OUTLET_ID_LAST; ++id)
+  {
+    boundary_descriptor->dirichlet_bc.insert(pair(id, new Functions::ZeroFunction<dim>(1)));
+  }
 }
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<Poisson::FieldFunctions<dim>> field_functions)
+set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 {
-  // initialize functions (analytical solution, rhs, boundary conditions)
-  std::shared_ptr<Function<dim>> analytical_solution;
-  analytical_solution.reset(new AnalyticalSolution<dim>());
-
-  std::shared_ptr<Function<dim>> right_hand_side;
-  right_hand_side.reset(new RightHandSide<dim>());
-
-  field_functions->analytical_solution = analytical_solution;
-  field_functions->right_hand_side     = right_hand_side;
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
 }
 
 template<int dim>
 void
-set_analytical_solution(std::shared_ptr<Poisson::AnalyticalSolution<dim>> analytical_solution)
+set_analytical_solution(std::shared_ptr<AnalyticalSolution<dim>> analytical_solution)
 {
-  analytical_solution->solution.reset(new AnalyticalSolution<dim>());
+  analytical_solution->solution.reset(new Functions::ZeroFunction<dim>(1));
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim, typename Number>
+std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
+construct_postprocessor()
+{
+  ConvDiff::PostProcessorData pp_data;
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
+  pp_data.output_data.output_name = OUTPUT_NAME;
+
+  pp_data.error_data = ErrorCalculationData();
+
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
+  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));
+
+  return pp;
+}
+
 }

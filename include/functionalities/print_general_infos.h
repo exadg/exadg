@@ -17,6 +17,17 @@ print_MPI_info(ConditionalOStream const & pcout)
   print_parameter(pcout, "Number of processes", Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
 }
 
+// print deal.II info
+void
+print_dealii_info(ConditionalOStream const & pcout)
+{
+  pcout << std::endl
+        << "deal.II info:" << std::endl
+        << std::endl
+        << "  deal.II git version " << DEAL_II_GIT_SHORTREV << " on branch " << DEAL_II_GIT_BRANCH
+        << std::endl;
+}
+
 // print grid info
 template<int dim>
 void

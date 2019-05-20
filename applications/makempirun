@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+# make sure that parameters are understood correctly
+if [ "$1" == "-np" ]; then
+    NPROCS=$2
+else
+    echo -e "\nUse the following syntax:\n\n./makempirun -np [NPROCS] [EXE]\n"
+    exit 0
+fi
+
+if [ "$3" == "" ]; then
+    echo -e "\nUse the following syntax:\n\n./makempirun -np [NPROCS] [EXE]\n"
+    exit 0
+fi
+
+EXE=$3
+
+# build the executable
+echo -e "make -j1 $EXE\n"
+make $EXE
+
+# run the executable
+mpirun -np $NPROCS $EXE
