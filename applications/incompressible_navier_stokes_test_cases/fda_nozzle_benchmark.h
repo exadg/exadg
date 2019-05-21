@@ -20,19 +20,29 @@
 /*                                                                                                          */
 /************************************************************************************************************/
 
+// convergence studies in space or time
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = DEGREE_MIN;
+
+unsigned int const REFINE_SPACE_MIN = 1;
+unsigned int const REFINE_SPACE_MAX = REFINE_SPACE_MIN;
+
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
+
 // problem specific parameters
 
 // space dimensions
 unsigned int const DIMENSION = 3;
 
 // polynomial degree (velocity)
-unsigned int const DEGREE_U = 4;
+unsigned int const DEGREE_U = DEGREE_MIN;
 
 // set the number of refine levels for DOMAIN 1
-unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 2;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = REFINE_SPACE_MIN + 1;
 
 // set the number of refine levels for DOMAIN 2
-unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 1;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = REFINE_SPACE_MIN;
 
 // prescribe velocity inflow profile for nozzle domain via precursor simulation?
 // USE_PRECURSOR_SIMULATION == true:  use solver incompressible_navier_stokes_two_domains.cc
@@ -1153,7 +1163,7 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+  typedef typename Base::Operator Operator;
 
   PostProcessorFDA(PostProcessorDataFDA<dim> const & pp_data_in)
     :
@@ -1164,33 +1174,28 @@ public:
     inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_in.inflow_data));
   }
 
-  void setup(NavierStokesOperator const                &navier_stokes_operator_in,
-             DoFHandler<dim> const                     &dof_handler_velocity_in,
-             DoFHandler<dim> const                     &dof_handler_pressure_in,
-             Mapping<dim> const                        &mapping_in,
-             MatrixFree<dim,Number> const              &matrix_free_data_in)
+  void setup(Operator const & pde_operator)
   {
     // call setup function of base class
-    Base::setup(
-        navier_stokes_operator_in,
-        dof_handler_velocity_in,
-        dof_handler_pressure_in,
-        mapping_in,
-        matrix_free_data_in);
+    Base::setup(pde_operator);
 
     // inflow data
-    inflow_data_calculator->setup(dof_handler_velocity_in,mapping_in);
+    inflow_data_calculator->setup(pde_operator.get_dof_handler_u(),
+                                  pde_operator.get_mapping());
 
     // calculation of mean velocity
     mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,Number>(
-        matrix_free_data_in,
-        navier_stokes_operator_in.get_dof_index_velocity(),
-        navier_stokes_operator_in.get_quad_index_velocity_linear(),
+        pde_operator.get_data(),
+        pde_operator.get_dof_index_velocity(),
+        pde_operator.get_quad_index_velocity_linear(),
         pp_data_fda.mean_velocity_data));
 
     // evaluation of results along lines
     line_plot_calculator_statistics.reset(new LinePlotCalculatorStatistics<dim>(
-        dof_handler_velocity_in, dof_handler_pressure_in, mapping_in));
+        pde_operator.get_dof_handler_u(),
+        pde_operator.get_dof_handler_p(),
+        pde_operator.get_mapping()));
+
     line_plot_calculator_statistics->setup(pp_data_fda.line_plot_data);
   }
 

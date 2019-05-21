@@ -388,7 +388,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_postprocessor()
 {
-  postprocessor->setup(*this, dof_handler_u, dof_handler_p, *mapping, matrix_free);
+  postprocessor->setup(*this);
 }
 
 template<int dim, typename Number>

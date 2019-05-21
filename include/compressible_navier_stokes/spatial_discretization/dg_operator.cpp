@@ -521,7 +521,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup_postprocessor()
 {
-  postprocessor->setup(*this, dof_handler, dof_handler_vector, dof_handler_scalar, *mapping, data);
+  postprocessor->setup(*this);
 }
 
 template class DGOperator<2, float>;

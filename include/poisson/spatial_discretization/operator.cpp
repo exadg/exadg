@@ -307,7 +307,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup_postprocessor()
 {
-  postprocessor->setup(dof_handler, *mapping, matrix_free);
+  postprocessor->setup(dof_handler, *mapping);
 }
 
 template<int dim, typename Number>

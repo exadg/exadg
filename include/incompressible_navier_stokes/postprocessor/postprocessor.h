@@ -48,18 +48,14 @@ public:
 
   typedef typename Base::VectorType VectorType;
 
-  typedef typename Base::NavierStokesOperator NavierStokesOperator;
+  typedef typename Base::Operator Operator;
 
   PostProcessor(PostProcessorData<dim> const & postprocessor_data);
 
   virtual ~PostProcessor();
 
   virtual void
-  setup(NavierStokesOperator const &    navier_stokes_operator_in,
-        DoFHandler<dim> const &         dof_handler_velocity_in,
-        DoFHandler<dim> const &         dof_handler_pressure_in,
-        Mapping<dim> const &            mapping_in,
-        MatrixFree<dim, Number> const & matrix_free_in);
+  setup(Operator const & pde_operator);
 
   virtual void
   do_postprocessing(VectorType const & velocity,

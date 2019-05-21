@@ -17,13 +17,11 @@ PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data
 
 template<int dim, typename Number>
 void
-PostProcessor<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
-                                  Mapping<dim> const &    mapping_in,
-                                  MatrixFree<dim, Number> const & /*matrix_free_data_in*/)
+PostProcessor<dim, Number>::setup(DoFHandler<dim> const & dof_handler, Mapping<dim> const & mapping)
 {
-  error_calculator.setup(dof_handler_in, mapping_in, pp_data.error_data);
+  error_calculator.setup(dof_handler, mapping, pp_data.error_data);
 
-  output_generator.setup(dof_handler_in, mapping_in, pp_data.output_data);
+  output_generator.setup(dof_handler, mapping, pp_data.output_data);
 }
 
 template<int dim, typename Number>

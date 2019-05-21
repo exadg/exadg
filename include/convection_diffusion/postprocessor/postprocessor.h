@@ -40,9 +40,7 @@ public:
   PostProcessor(PostProcessorData<dim> const & pp_data_in);
 
   void
-  setup(DoFHandler<dim> const &         dof_handler_in,
-        Mapping<dim> const &            mapping_in,
-        MatrixFree<dim, Number> const & matrix_free_data_in);
+  setup(DoFHandler<dim> const & dof_handler, Mapping<dim> const & mapping);
 
   void
   do_postprocessing(VectorType const & solution,
