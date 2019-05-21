@@ -37,9 +37,7 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                InputParameters const &   param_in,
-                unsigned int const        n_refine_time_in);
+  TimeIntExplRK(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
@@ -99,9 +97,6 @@ private:
 
   // monitor the L2-norm of the solution vector in order to detect instabilities
   mutable double l2_norm;
-
-  // time refinement steps
-  unsigned int const n_refine_time;
 
   // time step calculation
   double const cfl_number;

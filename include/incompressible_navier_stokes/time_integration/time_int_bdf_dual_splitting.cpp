@@ -18,9 +18,8 @@ template<typename Number>
 TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
   std::shared_ptr<InterfaceBase> operator_base_in,
   std::shared_ptr<InterfacePDE>  pde_operator_in,
-  InputParameters const &        param_in,
-  unsigned int const             n_refine_time_in)
-  : TimeIntBDF<Number>(operator_base_in, param_in, n_refine_time_in),
+  InputParameters const &        param_in)
+  : TimeIntBDF<Number>(operator_base_in, param_in),
     pde_operator(pde_operator_in),
     velocity(this->order),
     pressure(this->order),

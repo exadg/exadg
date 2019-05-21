@@ -196,13 +196,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     // initialize time integrator
     if(param.temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      time_integrator.reset(
-        new TimeIntExplRK<Number>(conv_diff_operator, param, param.dt_refinements));
+      time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param));
     }
     else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      time_integrator.reset(
-        new TimeIntBDF<Number>(conv_diff_operator, param, param.dt_refinements));
+      time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param));
     }
     else
     {

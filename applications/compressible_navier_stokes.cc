@@ -194,8 +194,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     new DGOperator<dim, Number>(*triangulation, param, postprocessor));
 
   // initialize time integrator
-  time_integrator.reset(
-    new TimeIntExplRK<Number>(comp_navier_stokes_operator, param, param.dt_refinements));
+  time_integrator.reset(new TimeIntExplRK<Number>(comp_navier_stokes_operator, param));
 
   comp_navier_stokes_operator->setup(boundary_descriptor_density,
                                      boundary_descriptor_velocity,

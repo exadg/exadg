@@ -36,9 +36,7 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                InputParameters const &   param_in,
-                unsigned int const        n_refine_time_in);
+  TimeIntExplRK(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
@@ -78,9 +76,8 @@ private:
   // recomputed in case of adaptive time stepping
   double time_step_diff;
 
-  unsigned int const n_refine_time;
-  double const       cfl;
-  double const       diffusion_number;
+  double const cfl;
+  double const diffusion_number;
 
   double wall_time;
 };

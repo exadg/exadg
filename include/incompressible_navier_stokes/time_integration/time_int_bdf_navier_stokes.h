@@ -38,9 +38,7 @@ public:
 
   typedef Interface::OperatorBase<Number> InterfaceBase;
 
-  TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
-             InputParameters const &        param_in,
-             unsigned int const             n_refine_time_in);
+  TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in, InputParameters const & param_in);
 
   virtual ~TimeIntBDF()
   {
@@ -123,8 +121,6 @@ private:
 
   void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
-
-  unsigned int const n_refine_time;
 
   // Operator-integration-factor splitting for convective term
   std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;

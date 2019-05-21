@@ -17,8 +17,7 @@ namespace ConvDiff
 {
 template<typename Number>
 TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator> operator_in,
-                               InputParameters const &   param_in,
-                               unsigned int const        n_refine_time_in)
+                               InputParameters const &   param_in)
   : TimeIntBDFBase(param_in.start_time,
                    param_in.end_time,
                    param_in.max_number_of_time_steps,
@@ -28,13 +27,12 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator> operator_in,
                    param_in.restart_data),
     pde_operator(operator_in),
     param(param_in),
-    n_refine_time(n_refine_time_in),
-    cfl(param.cfl / std::pow(2.0, n_refine_time_in)),
+    cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
     solution(param_in.order_time_integrator),
     vec_convective_term(param_in.order_time_integrator),
     iterations(0.0),
     wall_time(0.0),
-    cfl_oif(param.cfl_oif / std::pow(2.0, n_refine_time_in))
+    cfl_oif(param.cfl_oif / std::pow(2.0, param.dt_refinements))
 {
 }
 
@@ -193,7 +191,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    double const time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
+    double const time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
     this->set_time_step_size(time_step);
 
     pcout << "Calculation of time step size (user-specified):" << std::endl << std::endl;
@@ -273,7 +271,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
     double const h_min = pde_operator->calculate_minimum_element_length();
 
     double time_step =
-      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, n_refine_time);
+      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, param.dt_refinements);
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
@@ -282,7 +280,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
     pcout << std::endl
           << "Calculation of time step size (max efficiency):" << std::endl
           << std::endl;
-    print_parameter(pcout, "C_eff", param.c_eff / std::pow(2, n_refine_time));
+    print_parameter(pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
     print_parameter(pcout, "Time step size", time_step);
   }
   else
