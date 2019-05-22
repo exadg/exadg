@@ -15,8 +15,7 @@ namespace CompNS
 {
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                                     InputParameters const &   param_in,
-                                     unsigned int const        n_refine_time_in)
+                                     InputParameters const &   param_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,
@@ -26,9 +25,8 @@ TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
     param(param_in),
     time_postprocessing(0.0),
     l2_norm(0.0),
-    n_refine_time(n_refine_time_in),
-    cfl_number(param.cfl_number / std::pow(2.0, n_refine_time)),
-    diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time))
+    cfl_number(param.cfl_number / std::pow(2.0, param.dt_refinements)),
+    diffusion_number(param.diffusion_number / std::pow(2.0, param.dt_refinements))
 {
 }
 
@@ -108,7 +106,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    this->time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
+    this->time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
 
     print_parameter(this->pcout, "time step size", this->time_step);
   }

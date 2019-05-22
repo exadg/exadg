@@ -16,8 +16,7 @@ namespace ConvDiff
 {
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                                     InputParameters const &   param_in,
-                                     unsigned int const        n_refine_time_in)
+                                     InputParameters const &   param_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,
@@ -26,9 +25,8 @@ TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
     pde_operator(operator_in),
     param(param_in),
     time_step_diff(1.0),
-    n_refine_time(n_refine_time_in),
-    cfl(param.cfl / std::pow(2.0, n_refine_time)),
-    diffusion_number(param.diffusion_number / std::pow(2.0, n_refine_time)),
+    cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
+    diffusion_number(param.diffusion_number / std::pow(2.0, param.dt_refinements)),
     wall_time(0.0)
 {
 }
@@ -69,7 +67,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    this->time_step = calculate_const_time_step(param.time_step_size, n_refine_time);
+    this->time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
 
     this->pcout << std::endl
                 << "Calculation of time step size (user-specified):" << std::endl
@@ -197,7 +195,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     unsigned int const order = rk_time_integrator->get_order();
 
     this->time_step =
-      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, n_refine_time);
+      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, param.dt_refinements);
 
     this->time_step =
       adjust_time_step_to_hit_end_time(this->start_time, this->end_time, this->time_step);
@@ -205,7 +203,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
                 << std::endl;
-    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, n_refine_time));
+    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
     print_parameter(this->pcout, "Time step size", this->time_step);
   }
   else

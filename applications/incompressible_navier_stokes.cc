@@ -240,8 +240,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
       time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
                                                navier_stokes_operation_coupled,
-                                               param,
-                                               param.dt_refinements));
+                                               param));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -254,8 +253,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
       time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
                                                      navier_stokes_operation_dual_splitting,
-                                                     param,
-                                                     param.dt_refinements));
+                                                     param));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
@@ -269,8 +267,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       time_integrator.reset(
         new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
                                       navier_stokes_operation_pressure_correction,
-                                      param,
-                                      param.dt_refinements));
+                                      param));
     }
     else
     {

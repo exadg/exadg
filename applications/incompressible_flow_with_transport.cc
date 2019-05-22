@@ -308,8 +308,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
                                                    navier_stokes_operation_coupled,
-                                                   fluid_param,
-                                                   fluid_param.dt_refinements));
+                                                   fluid_param));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -323,8 +322,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
                                                          navier_stokes_operation_dual_splitting,
-                                                         fluid_param,
-                                                         fluid_param.dt_refinements));
+                                                         fluid_param));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -339,8 +337,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     fluid_time_integrator.reset(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
                                     navier_stokes_operation_pressure_correction,
-                                    fluid_param,
-                                    fluid_param.dt_refinements));
+                                    fluid_param));
   }
   else
   {
@@ -384,13 +381,13 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
     {
-      scalar_time_integrator[i].reset(new ConvDiff::TimeIntExplRK<Number>(
-        conv_diff_operator[i], scalar_param[i], scalar_param[i].dt_refinements));
+      scalar_time_integrator[i].reset(
+        new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i], scalar_param[i]));
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
-      scalar_time_integrator[i].reset(new ConvDiff::TimeIntBDF<Number>(
-        conv_diff_operator[i], scalar_param[i], scalar_param[i].dt_refinements));
+      scalar_time_integrator[i].reset(
+        new ConvDiff::TimeIntBDF<Number>(conv_diff_operator[i], scalar_param[i]));
     }
     else
     {

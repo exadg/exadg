@@ -36,9 +36,7 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntBDF(std::shared_ptr<Operator> operator_in,
-             InputParameters const &   param_in,
-             unsigned int const        n_refine_time_in);
+  TimeIntBDF(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
 
   void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
@@ -103,8 +101,7 @@ private:
 
   InputParameters const & param;
 
-  unsigned int const n_refine_time;
-  double const       cfl;
+  double const cfl;
 
   // solution vectors
   VectorType              solution_np;

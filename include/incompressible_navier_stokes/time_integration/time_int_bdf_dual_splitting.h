@@ -41,8 +41,7 @@ public:
 
   TimeIntBDFDualSplitting(std::shared_ptr<InterfaceBase> operator_base_in,
                           std::shared_ptr<InterfacePDE>  pde_operator_in,
-                          InputParameters const &        param_in,
-                          unsigned int const             n_refine_time_in);
+                          InputParameters const &        param_in);
 
   void
   postprocessing_stability_analysis();
