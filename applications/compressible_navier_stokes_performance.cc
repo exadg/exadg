@@ -10,6 +10,7 @@
 #include <deal.II/base/revision.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/grid_generator.h>
 
 // postprocessor
 #include "../include/compressible_navier_stokes/postprocessor/postprocessor_base.h"

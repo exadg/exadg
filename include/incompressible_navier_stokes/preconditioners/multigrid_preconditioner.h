@@ -68,6 +68,29 @@ public:
     // set quad index to 1 since matrix free object only contains two quadrature formulas
     operator_data.convective_operator_data.quad_index = operator_data.quad_index_over;
 
+    // When solving the reaction-convection-diffusion problem, it might be possible
+    // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
+    // operator (which is symmetric, Chebyshev smoother, etc.) instead of the non-symmetric
+    // reaction-convection-diffusion operator. Accordingly, we have to reset which
+    // operators should be "active" for the multigrid preconditioner, independently of
+    // the actual equation type that is solved.
+    AssertThrow(operator_data.mg_operator_type != MultigridOperatorType::Undefined,
+                ExcMessage("Invalid parameter mg_operator_type."));
+
+    if(operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    {
+      // deactivate convective term for multigrid preconditioner
+      operator_data.convective_problem = false;
+    }
+    else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    {
+      AssertThrow(operator_data.convective_problem == true, ExcMessage("Invalid parameter."));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
     BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
   }
 
