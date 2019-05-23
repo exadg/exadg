@@ -16,12 +16,13 @@
 #include "../functionalities/lazy_ptr.h"
 
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
-#include "operator_preconditionable.h"
+
+#include "linear_operator_base.h"
 
 using namespace dealii;
 
 template<int dim>
-struct OperatorBaseData : public PreconditionableOperatorData<dim>
+struct OperatorBaseData
 {
   OperatorBaseData(const unsigned int dof_index,
                    const unsigned int quad_index,
@@ -142,7 +143,7 @@ struct OperatorBaseData : public PreconditionableOperatorData<dim>
 };
 
 template<int dim, typename Number, typename AdditionalData, int n_components = 1>
-class OperatorBase : virtual public PreconditionableOperator<dim, Number>
+class OperatorBase : public LinearOperatorBase
 {
 public:
   static const int DIM = dim;
@@ -173,9 +174,9 @@ public:
   }
 
   void
-  reinit_preconditionable_operator_data(MatrixFree<dim, Number> const &           matrix_free,
-                                        AffineConstraints<double> const &         constraint_matrix,
-                                        PreconditionableOperatorData<dim> const & operator_data_in)
+  reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
+                   AffineConstraints<double> const & constraint_matrix,
+                   OperatorBaseData<dim> const &     operator_data_in)
   {
     auto operator_data = *static_cast<AdditionalData const *>(&operator_data_in);
     this->reinit(matrix_free, constraint_matrix, operator_data);
@@ -185,16 +186,6 @@ public:
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          AdditionalData const &            operator_data) const;
-
-  virtual PreconditionableOperator<dim, Number> *
-  get_new(unsigned int /*deg*/) const
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-
-    // in order to avoid warnings ...
-    PreconditionableOperator<dim, Number> * ptr;
-    return ptr;
-  }
 
   void
   vmult(VectorType & dst, VectorType const & src) const
@@ -783,8 +774,8 @@ private:
   }
 
   /*
-   * Do we have to evaluate (boundary) face integrals for this operator? For example, ome operators
-   * such as the mass matrix operator only involve cell integrals.
+   * Do we have to evaluate (boundary) face integrals for this operator? For example, operators
+   * such as the mass matrix operator only involve cell integrals (do_eval_faces = false).
    */
   const bool do_eval_faces;
 

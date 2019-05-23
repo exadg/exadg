@@ -3,12 +3,6 @@
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
-#include <map>
-#include <vector>
-
-#include "../transfer/mg_transfer_mf_c.h"
-#include "../transfer/mg_transfer_mf_h.h"
-#include "../transfer/mg_transfer_mf_p.h"
 
 #include "../preconditioner/preconditioner_amg.h"
 
@@ -18,26 +12,14 @@
 #include "../util/compute_eigenvalues.h"
 
 template<int dim, typename Number, typename MultigridNumber>
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::MultigridPreconditionerBase(
-  std::shared_ptr<Operator> multigrid_operator)
-  : underlying_operator(multigrid_operator)
-{
-}
-
-template<int dim, typename Number, typename MultigridNumber>
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::~MultigridPreconditionerBase()
-{
-}
-
-template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &                     mg_data,
-  parallel::Triangulation<dim> const *      tria,
-  FiniteElement<dim> const &                fe,
-  Mapping<dim> const &                      mapping,
-  PreconditionableOperatorData<dim> const & operator_data,
-  Map const *                               dirichlet_bc_in,
+  MultigridData const &                mg_data,
+  parallel::Triangulation<dim> const * tria,
+  FiniteElement<dim> const &           fe,
+  Mapping<dim> const &                 mapping,
+  bool const                           operator_is_singular,
+  Map const *                          dirichlet_bc_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
     periodic_face_pairs_in)
 {
@@ -54,7 +36,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
         "You have to provide Dirichlet BCs and periodic face pairs if you want to use CG or AMG!"));
   }
 
-  // in the case of nullptr initialize empty data structures
+  // In the case of nullptr, these data structures simply remain empty.
   Map dirichlet_bc;
   if(dirichlet_bc_in != nullptr)
     dirichlet_bc = *dirichlet_bc_in;
@@ -64,45 +46,20 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   if(dirichlet_bc_in != nullptr)
     periodic_face_pairs = *periodic_face_pairs_in;
 
-  // extract paramters
-  auto const   mg_type = this->mg_data.type;
-  unsigned int degree  = fe.degree;
+  this->initialize_mg_sequence(tria, fe.degree, is_dg);
 
-  // setup sequence
-  this->initialize_mg_sequence(tria, global_levels, h_levels, p_levels, degree, mg_type, is_dg);
-  this->check_mg_sequence(global_levels);
-  this->n_global_levels = global_levels.size(); // number of actual multigrid levels
-  this->min_level       = 0;
-  this->max_level       = this->n_global_levels - 1;
+  this->initialize_dof_handler_and_constraints(
+    operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
-  // setup of multigrid components
-  this->initialize_mg_dof_handler_and_constraints(underlying_operator->is_singular(),
-                                                  periodic_face_pairs,
-                                                  fe,
-                                                  tria,
-                                                  global_levels,
-                                                  p_levels,
-                                                  dirichlet_bc,
-                                                  this->mg_dofhandler,
-                                                  this->mg_constrained_dofs,
-                                                  this->mg_constraints);
+  this->initialize_matrixfree(mapping);
 
-  this->initialize_additional_mg_dof_handler_and_constraints(underlying_operator->is_singular(),
-                                                             periodic_face_pairs,
-                                                             fe,
-                                                             tria,
-                                                             global_levels,
-                                                             p_levels,
-                                                             dirichlet_bc,
-                                                             operator_data);
+  this->initialize_mg_matrices();
 
-  this->initialize_matrixfree(global_levels, mapping, operator_data);
-  this->initialize_mg_matrices(global_levels, operator_data);
   this->initialize_smoothers();
-  this->initialize_coarse_solver();
-  this->mg_transfer.template reinit<MultigridNumber>(mg_matrixfree,
-                                                     mg_constraints,
-                                                     mg_constrained_dofs);
+
+  this->initialize_coarse_solver(operator_is_singular);
+
+  this->initialize_mg_transfer();
 
   this->initialize_multigrid_preconditioner();
 }
@@ -144,14 +101,12 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequence(
-  parallel::Triangulation<dim> const *  tria,
-  std::vector<MGLevelInfo> &            global_levels,
-  std::vector<unsigned int> &           h_levels,
-  std::vector<MGDofHandlerIdentifier> & p_levels,
-  unsigned int const                    degree,
-  MultigridType const                   mg_type,
-  bool const                            is_dg)
+  parallel::Triangulation<dim> const * tria,
+  unsigned int const                   degree,
+  bool const                           is_dg)
 {
+  MultigridType const mg_type = this->mg_data.type;
+
   // setup h-levels
   if(mg_type == MultigridType::pMG) // p-MG is only working on the finest h-level
   {
@@ -222,6 +177,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_sequenc
     AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
 
   this->n_global_levels = global_levels.size(); // number of actual multigrid levels
+  this->min_level       = 0;
+  this->max_level       = this->n_global_levels - 1;
 
   this->check_mg_sequence(global_levels);
 }
@@ -233,6 +190,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_mg_sequence(
 {
   AssertThrow(this->n_global_levels == global_levels.size(),
               ExcMessage("Variable n_global_levels is not initialized correctly."));
+  AssertThrow(this->min_level == 0, ExcMessage("Variable min_level is not initialized correctly."));
+  AssertThrow(this->max_level == this->n_global_levels - 1,
+              ExcMessage("Variable max_level is not initialized correctly."));
 
   for(unsigned int i = 1; i < global_levels.size(); i++)
   {
@@ -249,26 +209,24 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_mg_sequence(
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_additional_mg_dof_handler_and_constraints(
-    bool is_singular,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                                                                         periodic_face_pairs,
-    FiniteElement<dim> const &                                           fe,
-    parallel::Triangulation<dim> const *                                 tria,
-    std::vector<MGLevelInfo> &                                           global_levels,
-    std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
-    PreconditionableOperatorData<dim> const &                            operator_data)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_dof_handler_and_constraints(
+  bool const operator_is_singular,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
+                                                                       periodic_face_pairs,
+  FiniteElement<dim> const &                                           fe,
+  parallel::Triangulation<dim> const *                                 tria,
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc)
 {
-  (void)is_singular;
-  (void)periodic_face_pairs;
-  (void)fe;
-  (void)tria;
-  (void)global_levels;
-  (void)p_levels;
-  (void)dirichlet_bc;
-  (void)operator_data;
+  this->initialize_mg_dof_handler_and_constraints(operator_is_singular,
+                                                  periodic_face_pairs,
+                                                  fe,
+                                                  tria,
+                                                  dirichlet_bc,
+                                                  this->global_levels,
+                                                  this->p_levels,
+                                                  this->mg_dofhandler,
+                                                  this->mg_constrained_dofs,
+                                                  this->mg_constraints);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -280,9 +238,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
                                                                          periodic_face_pairs,
     FiniteElement<dim> const &                                           fe,
     parallel::Triangulation<dim> const *                                 tria,
+    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     std::vector<MGLevelInfo> &                                           global_levels,
     std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              mg_dofhandler,
     MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  mg_constrained_dofs,
     MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          mg_constraints)
@@ -345,60 +303,54 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrixfree(
-  std::vector<MGLevelInfo> &                global_levels,
-  Mapping<dim> const &                      mapping,
-  PreconditionableOperatorData<dim> const & operator_data)
+  Mapping<dim> const & mapping)
 {
   this->mg_matrixfree.resize(0, this->n_global_levels - 1);
 
   for(unsigned int i = 0; i < this->n_global_levels; i++)
-  {
-    auto data = new MatrixFree<dim, MultigridNumber>;
+    this->mg_matrixfree[i] = this->initialize_matrix_free(i, mapping);
+}
 
-    // setup MatrixFree::AdditionalData
-    typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
-    additional_data.level_mg_handler     = global_levels[i].level;
-    additional_data.mapping_update_flags = operator_data.get_mapping_update_flags();
 
-    if(global_levels[i].is_dg)
-    {
-      additional_data.mapping_update_flags_inner_faces =
-        operator_data.get_mapping_update_flags_inner_faces();
-      additional_data.mapping_update_flags_boundary_faces =
-        operator_data.get_mapping_update_flags_boundary_faces();
-    }
+template<int dim, typename Number, typename MultigridNumber>
+std::shared_ptr<MatrixFree<dim, MultigridNumber>>
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_free(
+  unsigned int const   level,
+  Mapping<dim> const & mapping)
+{
+  (void)level;
+  (void)mapping;
 
-    if(operator_data.do_use_cell_based_loops() && global_levels[i].is_dg)
-    {
-      auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-        &mg_dofhandler[i]->get_triangulation());
-      Categorization::do_cell_based_loops(*tria, additional_data, global_levels[i].level);
-    }
+  AssertThrow(false, ExcMessage("This function needs to be implemented by derived classes."));
 
-    QGauss<1> const quad(global_levels[i].degree + 1);
-    data->reinit(mapping, *mg_dofhandler[i], *mg_constraints[i], quad, additional_data);
+  std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
 
-    this->mg_matrixfree[i].reset(data);
-  }
+  return matrix_free;
 }
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices(
-  std::vector<MGLevelInfo> &                global_levels,
-  PreconditionableOperatorData<dim> const & operator_data_in)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_matrices()
 {
   this->mg_matrices.resize(0, this->n_global_levels - 1);
 
   // create and setup operator on each level
   for(unsigned int i = 0; i < this->n_global_levels; i++)
-  {
-    auto matrix = static_cast<Operator *>(underlying_operator->get_new(global_levels[i].degree));
-    matrix->reinit_preconditionable_operator_data(*mg_matrixfree[i],
-                                                  *mg_constraints[i],
-                                                  operator_data_in);
-    mg_matrices[i].reset(matrix);
-  }
+    mg_matrices[i] = this->initialize_operator(i);
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+std::shared_ptr<MultigridOperatorBase<dim, MultigridNumber>>
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operator(
+  unsigned int const level)
+{
+  (void)level;
+
+  AssertThrow(false, ExcMessage("This function needs to be implemented by derived classes."));
+
+  std::shared_ptr<Operator> op;
+
+  return op;
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -585,7 +537,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_smoother(unsig
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
+  bool const operator_is_singular)
 {
   switch(mg_data.coarse_problem.solver)
   {
@@ -597,7 +550,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
           "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
 
       initialize_chebyshev_smoother_coarse_grid(*mg_matrices[0],
-                                                mg_data.coarse_problem.solver_data);
+                                                mg_data.coarse_problem.solver_data,
+                                                operator_is_singular);
       break;
     }
     case MultigridCoarseGridSolver::ChebyshevNonsymmetricOperator:
@@ -608,7 +562,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
           "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
 
       initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(
-        *mg_matrices[0], mg_data.coarse_problem.solver_data);
+        *mg_matrices[0], mg_data.coarse_problem.solver_data, operator_is_singular);
       break;
     }
     case MultigridCoarseGridSolver::CG:
@@ -640,7 +594,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_solver()
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_solver(
+  bool const operator_is_singular)
 {
   Operator & matrix = *mg_matrices[0];
 
@@ -654,7 +609,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
           "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
 
       mg_smoother[0].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
-      initialize_chebyshev_smoother_coarse_grid(matrix, mg_data.coarse_problem.solver_data);
+      initialize_chebyshev_smoother_coarse_grid(matrix,
+                                                mg_data.coarse_problem.solver_data,
+                                                operator_is_singular);
 
       mg_coarse.reset(new MGCoarseChebyshev<VectorTypeMG, SMOOTHER>(mg_smoother[0]));
       break;
@@ -668,7 +625,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
 
       mg_smoother[0].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
       initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(
-        matrix, mg_data.coarse_problem.solver_data);
+        matrix, mg_data.coarse_problem.solver_data, operator_is_singular);
 
       mg_coarse.reset(new MGCoarseChebyshev<VectorTypeMG, SMOOTHER>(mg_smoother[0]));
       break;
@@ -685,9 +642,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       else
         AssertThrow(false, ExcMessage("Not implemented."));
 
-      additional_data.solver_data    = mg_data.coarse_problem.solver_data;
-      additional_data.preconditioner = mg_data.coarse_problem.preconditioner;
-      additional_data.amg_data       = mg_data.coarse_problem.amg_data;
+      additional_data.solver_data          = mg_data.coarse_problem.solver_data;
+      additional_data.operator_is_singular = operator_is_singular;
+      additional_data.preconditioner       = mg_data.coarse_problem.preconditioner;
+      additional_data.amg_data             = mg_data.coarse_problem.amg_data;
 
       mg_coarse.reset(new MGCoarseKrylov<Operator>(matrix, additional_data));
       break;
@@ -702,6 +660,15 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       AssertThrow(false, ExcMessage("Unknown coarse-grid solver specified."));
     }
   }
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_mg_transfer()
+{
+  this->mg_transfer.template reinit<MultigridNumber>(mg_matrixfree,
+                                                     mg_constraints,
+                                                     mg_constrained_dofs);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -752,7 +719,9 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_chebyshev_
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_chebyshev_smoother_coarse_grid(Operator & matrix, SolverData const & solver_data)
+  initialize_chebyshev_smoother_coarse_grid(Operator &         matrix,
+                                            SolverData const & solver_data,
+                                            bool const         operator_is_singular)
 {
   // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
   typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
@@ -767,7 +736,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   std::pair<double, double> eigenvalues =
-    compute_eigenvalues(matrix, smoother_data.matrix_diagonal_inverse);
+    compute_eigenvalues(matrix, smoother_data.matrix_diagonal_inverse, operator_is_singular);
 #pragma GCC diagnostic pop
 
   double const factor = 1.1;
@@ -837,7 +806,8 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(Operator &         matrix,
-                                                                  SolverData const & solver_data)
+                                                                  SolverData const & solver_data,
+                                                                  bool const operator_is_singular)
 {
   // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
   typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
@@ -852,7 +822,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   std::pair<std::complex<double>, std::complex<double>> eigenvalues =
-    compute_eigenvalues_gmres(matrix, smoother_data.matrix_diagonal_inverse);
+    compute_eigenvalues_gmres(matrix, smoother_data.matrix_diagonal_inverse, operator_is_singular);
 #pragma GCC diagnostic pop
 
   double const factor = 1.1;

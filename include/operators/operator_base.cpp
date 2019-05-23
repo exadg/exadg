@@ -1,5 +1,6 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/multigrid/mg_tools.h>
 
 #include "../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"

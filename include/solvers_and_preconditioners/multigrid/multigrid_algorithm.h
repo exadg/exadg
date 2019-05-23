@@ -9,14 +9,16 @@
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
 #include <deal.II/base/function_lib.h>
+#include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/multigrid/mg_matrix.h>
 #include <deal.II/multigrid/mg_smoother.h>
 #include <deal.II/multigrid/mg_tools.h>
 #include <deal.II/multigrid/multigrid.h>
-#include <deal.II/base/timer.h>
 
 #include "../../functionalities/dynamic_convergence_table.h"
+
+#include "../transfer/mg_transfer_mf.h"
 
 using namespace dealii;
 
@@ -66,19 +68,19 @@ public:
       if(n_cycles > 1)
         defect2[level] = solution[level];
     }
-    
+
 #if ENABLE_TIMING
-    for (unsigned int level = minlevel; level <= maxlevel; ++level)
+    for(unsigned int level = minlevel; level <= maxlevel; ++level)
       this->table.set("dofs-" + std::to_string(level), defect[level].size());
 #endif
   }
-    
+
   virtual ~MultigridPreconditioner()
   {
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
       this->table.print();
   }
-    
+
   template<class OtherVectorType>
   void
   vmult(OtherVectorType & dst, OtherVectorType const & src) const
@@ -148,18 +150,19 @@ public:
   }
 
 private:
-  
 #if ENABLE_TIMING
-  void put_in_table(std::string label, Timer& timer) const
+  void
+  put_in_table(std::string label, Timer & timer) const
   {
     this->table.put(label, timer.wall_time());
   }
 #else
-  void put_in_table(std::string /*label*/, Timer& /*timer*/) const
+  void
+  put_in_table(std::string /*label*/, Timer & /*timer*/) const
   {
   }
 #endif
-  
+
   /**
    * Implements the V-cycle
    */
@@ -179,7 +182,7 @@ private:
     else
     {
       timer_local.restart();
-      
+
       // pre-smoothing
       if(multigrid_is_a_solver)
       {
@@ -220,7 +223,6 @@ private:
       put_in_table("poss-" + std::to_string(level), timer_local);
       put_in_table("level-" + std::to_string(level), timer_global);
     }
-
   }
 
   /**
@@ -275,9 +277,8 @@ private:
   SmartPointer<const MGLevelObject<std::shared_ptr<SmootherType>>> smoother;
 
   const unsigned int n_cycles;
-  
-  DynamicConvergenceTable table;
 
+  DynamicConvergenceTable table;
 };
 
 

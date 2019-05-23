@@ -9,6 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
 
 
+#include "../../operators/multigrid_operator.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../spatial_discretization/momentum_operator.h"
 
@@ -17,28 +18,24 @@
 namespace IncNS
 {
 /*
- * Multigrid preconditioner for velocity (reaction-)convection-diffusion operator of the
- * incompressible Navier-Stokes equations.
+ * Multigrid preconditioner for momentum operator of the incompressible Navier-Stokes equations.
  */
 template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 private:
-  typedef MomentumOperator<dim, Number>          PDEOperator;
-  typedef MomentumOperator<dim, MultigridNumber> MultigridOperator;
+  typedef MomentumOperator<dim, MultigridNumber>               PDEOperator;
+  typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
+  typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
 
-  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
-  typedef typename BASE::Map                                        Map;
+  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> Base;
 
-  typedef typename BASE::VectorType   VectorType;
-  typedef typename BASE::VectorTypeMG VectorTypeMG;
+  typedef typename Base::Map          Map;
+  typedef typename Base::VectorType   VectorType;
+  typedef typename Base::VectorTypeMG VectorTypeMG;
 
 public:
-  MultigridPreconditioner()
-    : MultigridPreconditionerBase<dim, Number, MultigridNumber>(
-        std::shared_ptr<PreconditionableOperator<dim, MultigridNumber>>(new MultigridOperator()))
-  {
-  }
+  virtual ~MultigridPreconditioner(){};
 
   void
   initialize(MultigridData const &                mg_data,
@@ -50,7 +47,7 @@ public:
              std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
                periodic_face_pairs = nullptr)
   {
-    auto operator_data            = operator_data_in;
+    operator_data                 = operator_data_in;
     operator_data.dof_index       = 0;
     operator_data.quad_index_std  = 0;
     operator_data.quad_index_over = 1;
@@ -68,82 +65,117 @@ public:
     // set quad index to 1 since matrix free object only contains two quadrature formulas
     operator_data.convective_operator_data.quad_index = operator_data.quad_index_over;
 
-    BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
+
+    // When solving the reaction-convection-diffusion problem, it might be possible
+    // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
+    // operator (which is symmetric, Chebyshev smoother, etc.) instead of the non-symmetric
+    // reaction-convection-diffusion operator. Accordingly, we have to reset which
+    // operators should be "active" for the multigrid preconditioner, independently of
+    // the actual equation type that is solved.
+    AssertThrow(operator_data.mg_operator_type != MultigridOperatorType::Undefined,
+                ExcMessage("Invalid parameter mg_operator_type."));
+
+    if(operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    {
+      // deactivate convective term for multigrid preconditioner
+      operator_data.convective_problem = false;
+    }
+    else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    {
+      AssertThrow(operator_data.convective_problem == true, ExcMessage("Invalid parameter."));
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+
+    Base::initialize(mg_data,
+                     tria,
+                     fe,
+                     mapping,
+                     false /*operator_is_singular*/,
+                     dirichlet_bc,
+                     periodic_face_pairs);
   }
 
-  virtual ~MultigridPreconditioner(){};
-
-
-  void
-  initialize_matrixfree(std::vector<MGLevelInfo> &                global_levels,
-                        Mapping<dim> const &                      mapping,
-                        PreconditionableOperatorData<dim> const & operator_data_in)
+  std::shared_ptr<MatrixFree<dim, MultigridNumber>>
+  initialize_matrix_free(unsigned int const level, Mapping<dim> const & mapping)
   {
-    const auto & operator_data = static_cast<MomentumOperatorData<dim> const &>(operator_data_in);
+    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
+    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
 
-    this->mg_matrixfree.resize(this->min_level, this->max_level);
+    auto & dof_handler = *this->mg_dofhandler[level];
 
-    for(auto level = this->min_level; level <= this->max_level; ++level)
+    std::vector<DoFHandler<dim> const *> dof_handler_vec;
+    dof_handler_vec.resize(1);
+    dof_handler_vec[0] = &dof_handler;
+
+    // constraint matrix
+    std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
+    constraint_matrix_vec.resize(1);
+    constraint_matrix_vec[0] = &*this->mg_constraints[level];
+
+    // quadratures
+    std::vector<Quadrature<1>> quadrature_vec;
+    quadrature_vec.resize(2);
+    quadrature_vec[operator_data.quad_index_std] = QGauss<1>(dof_handler.get_fe().degree + 1);
+    quadrature_vec[operator_data.quad_index_over] =
+      QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
+
+    // additional data
+    typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+
+    additional_data.mapping_update_flags =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+
+    additional_data.mapping_update_flags_inner_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+
+    additional_data.mapping_update_flags_boundary_faces =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
+
+    additional_data.level_mg_handler = this->global_levels[level].level;
+
+    if(operator_data.use_cell_based_loops)
     {
-      auto data = new MatrixFree<dim, MultigridNumber>;
-
-      auto & dof_handler = *this->mg_dofhandler[level];
-
-      std::vector<DoFHandler<dim> const *> dof_handler_vec;
-      dof_handler_vec.resize(1);
-      dof_handler_vec[0] = &dof_handler;
-
-      // constraint matrix
-      std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
-      constraint_matrix_vec.resize(1);
-      constraint_matrix_vec[0] = &*this->mg_constraints[level];
-
-      // quadratures
-      std::vector<Quadrature<1>> quadrature_vec;
-      quadrature_vec.resize(2);
-      quadrature_vec[operator_data.quad_index_std] = QGauss<1>(dof_handler.get_fe().degree + 1);
-      quadrature_vec[operator_data.quad_index_over] =
-        QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
-
-      // additional data
-      typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
-
-      additional_data.mapping_update_flags =
-        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-         update_values);
-
-      additional_data.mapping_update_flags_inner_faces =
-        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-         update_values);
-
-      additional_data.mapping_update_flags_boundary_faces =
-        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-         update_values);
-
-      additional_data.level_mg_handler = global_levels[level].level;
-
-      if(operator_data.use_cell_based_loops)
-      {
-        auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-          &dof_handler.get_triangulation());
-        Categorization::do_cell_based_loops(*tria, additional_data, global_levels[level].level);
-      }
-
-      // reinit
-      data->reinit(
-        mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
-
-      this->mg_matrixfree[level].reset(data);
+      auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+        &dof_handler.get_triangulation());
+      Categorization::do_cell_based_loops(*tria, additional_data, this->global_levels[level].level);
     }
+
+    matrix_free->reinit(
+      mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
+
+    return matrix_free;
+  }
+
+  std::shared_ptr<MGOperatorBase>
+  initialize_operator(unsigned int const level)
+  {
+    // initialize pde_operator in a first step
+    std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
+    pde_operator->reinit_multigrid(*this->mg_matrixfree[level],
+                                   *this->mg_constraints[level],
+                                   operator_data);
+
+    // initialize MGOperator which is a wrapper around the PDEOperator
+    std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
+
+    return mg_operator;
   }
 
   /*
    * This function updates the multigrid preconditioner.
    */
   virtual void
-  update(LinearOperatorBase const * update_operator)
+  update(LinearOperatorBase const * pde_operator_in)
   {
-    PDEOperator const * pde_operator = dynamic_cast<PDEOperator const *>(update_operator);
+    MomentumOperator<dim, Number> const * pde_operator =
+      dynamic_cast<MomentumOperator<dim, Number> const *>(pde_operator_in);
 
     AssertThrow(
       pde_operator != nullptr,
@@ -186,7 +218,9 @@ public:
     }
 
     update_smoothers();
-    this->update_coarse_solver();
+
+    // singular operators do not occur for this operator
+    this->update_coarse_solver(false /* operator_is_singular */);
   }
 
 private:
@@ -273,12 +307,16 @@ private:
     }
   }
 
-  MomentumOperatorAbstract<dim, MultigridNumber> *
+  std::shared_ptr<PDEOperator>
   get_matrix(unsigned int level)
   {
-    return dynamic_cast<MomentumOperatorAbstract<dim, MultigridNumber> *>(
-      &*this->mg_matrices[level]);
+    std::shared_ptr<MGOperator> mg_operator =
+      std::dynamic_pointer_cast<MGOperator>(this->mg_matrices[level]);
+
+    return mg_operator->get_pde_operator();
   }
+
+  MomentumOperatorData<dim> operator_data;
 };
 
 
