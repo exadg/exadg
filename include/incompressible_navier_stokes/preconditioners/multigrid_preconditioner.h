@@ -65,7 +65,6 @@ public:
     // set quad index to 1 since matrix free object only contains two quadrature formulas
     operator_data.convective_operator_data.quad_index = operator_data.quad_index_over;
 
-
     // When solving the reaction-convection-diffusion problem, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
     // operator (which is symmetric, Chebyshev smoother, etc.) instead of the non-symmetric

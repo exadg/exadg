@@ -11,6 +11,7 @@
 
 // triangulation
 #include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
 
 // timer
