@@ -266,7 +266,7 @@ private:
   void
   set_evaluation_time(double const & evaluation_time)
   {
-    for(unsigned int level = this->fine_level; level >= this->coarse_level; --level)
+    for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
     {
       get_operator(level)->set_evaluation_time(evaluation_time);
     }
@@ -280,7 +280,7 @@ private:
   void
   set_scaling_factor_time_derivative_term(double const & scaling_factor_time_derivative_term)
   {
-    for(unsigned int level = this->fine_level; level >= this->coarse_level; --level)
+    for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
     {
       get_operator(level)->set_scaling_factor_time_derivative_term(
         scaling_factor_time_derivative_term);
