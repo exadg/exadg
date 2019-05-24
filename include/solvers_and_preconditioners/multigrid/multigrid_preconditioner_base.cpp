@@ -287,7 +287,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     constrained_dofs[level] = map_constraints[p_level];
   }
 
-  for(unsigned int level = 0; level < level_info.size(); level++)
+  for(unsigned int level = coarse_level; level <= fine_level; level++)
   {
     auto constraint_own = new AffineConstraints<double>;
 
@@ -310,7 +310,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_fre
 {
   this->matrix_free_objects.resize(0, this->n_levels - 1);
 
-  for(unsigned int level = 0; level < this->n_levels; level++)
+  for(unsigned int level = coarse_level; level <= fine_level; level++)
     this->matrix_free_objects[level] = this->initialize_matrix_free(level, mapping);
 }
 
@@ -338,7 +338,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators(
   this->operators.resize(0, this->n_levels - 1);
 
   // create and setup operator on each level
-  for(unsigned int level = 0; level < this->n_levels; level++)
+  for(unsigned int level = coarse_level; level <= fine_level; level++)
     operators[level] = this->initialize_operator(level);
 }
 
@@ -362,7 +362,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers(
 {
   this->smoothers.resize(0, this->n_levels - 1);
 
-  for(unsigned int level = 1; level < this->n_levels; level++)
+  // skip the coarsest level
+  for(unsigned int level = coarse_level + 1; level <= fine_level; level++)
     this->initialize_smoother(*this->operators[level], level);
 }
 

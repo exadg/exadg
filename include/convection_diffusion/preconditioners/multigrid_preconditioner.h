@@ -297,7 +297,7 @@ private:
     this->get_operator(this->fine_level)->set_velocity(velocity);
 
     // interpolate velocity from fine to coarse level
-    for(auto level = this->fine_level; level > this->coarse_level; --level)
+    for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
     {
       auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
       auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
@@ -315,7 +315,7 @@ private:
   void
   set_evaluation_time(double const & evaluation_time)
   {
-    for(auto level = this->coarse_level; level <= this->fine_level; ++level)
+    for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
       this->get_operator(level)->set_evaluation_time(evaluation_time);
   }
 
@@ -328,7 +328,7 @@ private:
   void
   set_scaling_factor_time_derivative_term(double const & scaling_factor)
   {
-    for(auto level = this->coarse_level; level <= this->fine_level; ++level)
+    for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
       this->get_operator(level)->set_scaling_factor_time_derivative_term(scaling_factor);
   }
 
@@ -341,8 +341,8 @@ private:
   void
   update_smoothers()
   {
-    // Skip coarsest level!
-    for(auto level = this->coarse_level + 1; level <= this->fine_level; ++level)
+    // Skip coarsest level
+    for(unsigned int level = this->coarse_level + 1; level <= this->fine_level; ++level)
       this->update_smoother(level);
   }
 

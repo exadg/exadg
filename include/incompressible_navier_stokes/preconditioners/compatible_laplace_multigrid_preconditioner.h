@@ -166,9 +166,9 @@ public:
     std::vector<MGDoFHandlerIdentifier> p_levels_velocity;
 
     // setup global velocity levels
-    for(auto & i : this->level_info)
+    for(auto & level : this->level_info)
       level_info_velocity.push_back(
-        {i.level, i.degree + operator_data.degree_u - operator_data.degree_p, i.is_dg});
+        {level.level, level.degree + operator_data.degree_u - operator_data.degree_p, level.is_dg});
 
     // setup p velocity levels
     for(auto level : level_info_velocity)
