@@ -94,33 +94,34 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
   }
   else // h-MG, hp-MG, and ph-MG are working on all h-levels
   {
-    for(unsigned int i = 0; i < tria->n_levels(); i++)
-      h_levels.push_back(i);
+    for(unsigned int h = 0; h < tria->n_levels(); h++)
+      h_levels.push_back(h);
   }
 
   // setup p-levels
-  if(mg_type == MultigridType::hMG) // h-MG is only working on high-order
+  if(mg_type == MultigridType::hMG) // h-MG is only working on high-order elements
   {
     p_levels.push_back({degree, is_dg});
   }
-  else // p-MG, hp-MG, and ph-MG are working on high- and low- order elements
+  else // p-MG, hp-MG, and ph-MG involve high- and low-order elements
   {
-    unsigned int temp = degree;
+    unsigned int p = degree;
     do
     {
-      p_levels.push_back({temp, is_dg});
+      p_levels.push_back({p, is_dg});
       switch(data.p_sequence)
       {
           // clang-format off
-        case PSequenceType::GoToOne:       temp = 1;                                                break;
-        case PSequenceType::DecreaseByOne: temp = std::max(temp-1, 1u);                             break;
-        case PSequenceType::Bisect:        temp = std::max(temp/2, 1u);                             break;
-        case PSequenceType::Manual:        temp = (degree==3&&temp==3) ? 2 : std::max(degree/2, 1u);break;
+        case PSequenceType::GoToOne:       p = 1;                                                break;
+        case PSequenceType::DecreaseByOne: p = std::max(p-1, 1u);                                break;
+        case PSequenceType::Bisect:        p = std::max(p/2, 1u);                                break;
+        case PSequenceType::Manual:        p = (degree==3 && p==3) ? 2 : std::max(degree/2, 1u); break;
         default:
           AssertThrow(false, ExcMessage("No valid p-sequence selected!"));
           // clang-format on
       }
-    } while(temp != p_levels.back().degree);
+    } while(p != p_levels.back().degree);
+
     std::reverse(std::begin(p_levels), std::end(p_levels));
   }
 
@@ -131,8 +132,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
 
   if(data.dg_to_cg_transfer == DG_To_CG_Transfer::Fine && is_dg)
   {
-    for(auto & i : p_levels)
-      i.is_dg = false;
+    for(auto & p : p_levels)
+      p.is_dg = false;
     p_levels.push_back({p_levels.back().degree, true});
   }
 
@@ -141,19 +142,21 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
   {
     // top level: p-MG
     if(mg_type == MultigridType::phMG) // low level: h-MG
-      for(unsigned int i = 0; i < h_levels.size() - 1; i++)
-        level_info.push_back({h_levels[i], p_levels.front()});
-    for(auto deg : p_levels)
-      level_info.push_back({h_levels.back(), deg});
+      for(unsigned int h = 0; h < h_levels.size() - 1; h++)
+        level_info.push_back({h_levels[h], p_levels.front()});
+
+    for(auto p : p_levels)
+      level_info.push_back({h_levels.back(), p});
   }
   else if(mg_type == MultigridType::hMG || mg_type == MultigridType::hpMG)
   {
     // top level: h-MG
     if(mg_type == MultigridType::hpMG) // low level: p-MG
-      for(unsigned int i = 0; i < p_levels.size() - 1; i++)
-        level_info.push_back({h_levels.front(), p_levels[i]});
-    for(auto geo : h_levels)
-      level_info.push_back({geo, p_levels.back()});
+      for(unsigned int p = 0; p < p_levels.size() - 1; p++)
+        level_info.push_back({h_levels.front(), p_levels[p]});
+
+    for(auto h : h_levels)
+      level_info.push_back({h, p_levels.back()});
   }
   else
   {
@@ -240,7 +243,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     parallel::Triangulation<dim> const *                        tria,
     Map const &                                                 dirichlet_bc,
     std::vector<MGLevelInfo> &                                  level_info,
-    std::vector<MGDofHandlerIdentifier> &                       p_levels,
+    std::vector<MGDoFHandlerIdentifier> &                       p_levels,
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &     dof_handlers,
     MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         constrained_dofs,
     MGLevelObject<std::shared_ptr<AffineConstraints<double>>> & constraints)
@@ -252,19 +255,19 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   const unsigned int n_components = fe.n_components();
 
   // temporal storage for new DoFHandlers and constraints on each p-level
-  std::map<MGDofHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
-  std::map<MGDofHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constraints;
+  std::map<MGDoFHandlerIdentifier, std::shared_ptr<const DoFHandler<dim>>> map_dofhandlers;
+  std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGConstrainedDoFs>>     map_constraints;
 
   // setup dof-handler and constrained dofs for each p-level
-  for(auto degree : p_levels)
+  for(auto level : p_levels)
   {
     // setup dof_handler: create dof_handler...
     auto dof_handler = new DoFHandler<dim>(*tria);
     // ... create FE and distribute it
-    if(degree.is_dg)
-      dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(degree.degree), n_components));
+    if(level.is_dg)
+      dof_handler->distribute_dofs(FESystem<dim>(FE_DGQ<dim>(level.degree), n_components));
     else
-      dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(degree.degree), n_components));
+      dof_handler->distribute_dofs(FESystem<dim>(FE_Q<dim>(level.degree), n_components));
     dof_handler->distribute_mg_dofs();
     // setup constrained dofs:
     auto constrained_dofs = new MGConstrainedDoFs();
@@ -272,31 +275,31 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     this->initialize_constrained_dofs(*dof_handler, *constrained_dofs, dirichlet_bc);
 
     // put in temporal storage
-    map_dofhandlers[degree] = std::shared_ptr<DoFHandler<dim> const>(dof_handler);
-    map_constraints[degree] = std::shared_ptr<MGConstrainedDoFs>(constrained_dofs);
+    map_dofhandlers[level] = std::shared_ptr<DoFHandler<dim> const>(dof_handler);
+    map_constraints[level] = std::shared_ptr<MGConstrainedDoFs>(constrained_dofs);
   }
 
   // populate dof-handler and constrained dofs to all hp-levels with the same degree
-  for(unsigned int i = 0; i < level_info.size(); i++)
+  for(unsigned int level = 0; level < level_info.size(); level++)
   {
-    auto degree         = level_info[i].id;
-    dof_handlers[i]     = map_dofhandlers[degree];
-    constrained_dofs[i] = map_constraints[degree];
+    auto p_level            = level_info[level].id;
+    dof_handlers[level]     = map_dofhandlers[p_level];
+    constrained_dofs[level] = map_constraints[p_level];
   }
 
-  for(unsigned int i = 0; i < level_info.size(); i++)
+  for(unsigned int level = 0; level < level_info.size(); level++)
   {
     auto constraint_own = new AffineConstraints<double>;
 
-    ConstraintUtil::add_constraints<dim>(level_info[i].is_dg,
+    ConstraintUtil::add_constraints<dim>(level_info[level].is_dg,
                                          is_singular,
-                                         *dof_handlers[i],
+                                         *dof_handlers[level],
                                          *constraint_own,
-                                         *constrained_dofs[i],
+                                         *constrained_dofs[level],
                                          periodic_face_pairs,
-                                         level_info[i].level);
+                                         level_info[level].level);
 
-    constraints[i].reset(constraint_own);
+    constraints[level].reset(constraint_own);
   }
 }
 
@@ -307,8 +310,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_fre
 {
   this->matrix_free_objects.resize(0, this->n_levels - 1);
 
-  for(unsigned int i = 0; i < this->n_levels; i++)
-    this->matrix_free_objects[i] = this->initialize_matrix_free(i, mapping);
+  for(unsigned int level = 0; level < this->n_levels; level++)
+    this->matrix_free_objects[level] = this->initialize_matrix_free(level, mapping);
 }
 
 
@@ -335,8 +338,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_operators(
   this->operators.resize(0, this->n_levels - 1);
 
   // create and setup operator on each level
-  for(unsigned int i = 0; i < this->n_levels; i++)
-    operators[i] = this->initialize_operator(i);
+  for(unsigned int level = 0; level < this->n_levels; level++)
+    operators[level] = this->initialize_operator(level);
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -359,8 +362,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoothers(
 {
   this->smoothers.resize(0, this->n_levels - 1);
 
-  for(unsigned int i = 1; i < this->n_levels; i++)
-    this->initialize_smoother(*this->operators[i], i);
+  for(unsigned int level = 1; level < this->n_levels; level++)
+    this->initialize_smoother(*this->operators[level], level);
 }
 
 template<int dim, typename Number, typename MultigridNumber>

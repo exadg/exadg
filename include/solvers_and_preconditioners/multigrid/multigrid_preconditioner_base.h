@@ -64,8 +64,7 @@ public:
              Mapping<dim> const &                 mapping,
              bool const                           operator_is_singular = false,
              Map const *                          dirichlet_bc         = nullptr,
-             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-               periodic_face_pairs = nullptr);
+             PeriodicFacePairs *                  periodic_face_pairs  = nullptr);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -117,7 +116,7 @@ protected:
     parallel::Triangulation<dim> const *                        tria,
     Map const &                                                 dirichlet_bc,
     std::vector<MGLevelInfo> &                                  level_info,
-    std::vector<MGDofHandlerIdentifier> &                       p_levels,
+    std::vector<MGDoFHandlerIdentifier> &                       p_levels,
     MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &     dofhandlers,
     MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         constrained_dofs,
     MGLevelObject<std::shared_ptr<AffineConstraints<double>>> & constraints);
@@ -136,7 +135,7 @@ protected:
   MGTransferMF_MGLevelObject<dim, VectorTypeMG>                    transfers;
 
   std::vector<unsigned int>           h_levels;
-  std::vector<MGDofHandlerIdentifier> p_levels;
+  std::vector<MGDoFHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            level_info;
   unsigned int                        n_levels;
   unsigned int                        coarse_level;

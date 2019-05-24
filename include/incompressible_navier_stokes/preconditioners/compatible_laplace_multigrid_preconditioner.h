@@ -163,7 +163,7 @@ public:
     // do setup required for derived class
 
     std::vector<MGLevelInfo>            level_info_velocity;
-    std::vector<MGDofHandlerIdentifier> p_levels_velocity;
+    std::vector<MGDoFHandlerIdentifier> p_levels_velocity;
 
     // setup global velocity levels
     for(auto & i : this->level_info)
