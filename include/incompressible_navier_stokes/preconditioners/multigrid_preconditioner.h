@@ -38,7 +38,7 @@ public:
   virtual ~MultigridPreconditioner(){};
 
   void
-  initialize(MultigridData const &                mg_data,
+  initialize(MultigridData const &                data,
              const parallel::Triangulation<dim> * tria,
              const FiniteElement<dim> &           fe,
              Mapping<dim> const &                 mapping,
@@ -89,13 +89,8 @@ public:
     }
 
 
-    Base::initialize(mg_data,
-                     tria,
-                     fe,
-                     mapping,
-                     false /*operator_is_singular*/,
-                     dirichlet_bc,
-                     periodic_face_pairs);
+    Base::initialize(
+      data, tria, fe, mapping, false /*operator_is_singular*/, dirichlet_bc, periodic_face_pairs);
   }
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
@@ -104,7 +99,7 @@ public:
     std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
     matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
 
-    auto & dof_handler = *this->mg_dofhandler[level];
+    auto & dof_handler = *this->dof_handlers[level];
 
     std::vector<DoFHandler<dim> const *> dof_handler_vec;
     dof_handler_vec.resize(1);
@@ -113,7 +108,7 @@ public:
     // constraint matrix
     std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
     constraint_matrix_vec.resize(1);
-    constraint_matrix_vec[0] = &*this->mg_constraints[level];
+    constraint_matrix_vec[0] = &*this->constraints[level];
 
     // quadratures
     std::vector<Quadrature<1>> quadrature_vec;
@@ -137,13 +132,13 @@ public:
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);
 
-    additional_data.level_mg_handler = this->global_levels[level].level;
+    additional_data.level_mg_handler = this->level_info[level].level;
 
     if(operator_data.use_cell_based_loops)
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &dof_handler.get_triangulation());
-      Categorization::do_cell_based_loops(*tria, additional_data, this->global_levels[level].level);
+      Categorization::do_cell_based_loops(*tria, additional_data, this->level_info[level].level);
     }
 
     matrix_free->reinit(
@@ -157,8 +152,8 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit_multigrid(*this->mg_matrixfree[level],
-                                   *this->mg_constraints[level],
+    pde_operator->reinit_multigrid(*this->matrix_free_objects[level],
+                                   *this->constraints[level],
                                    operator_data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
@@ -187,7 +182,7 @@ public:
     {
       VectorType const & vector_linearization = pde_operator->get_solution_linearization();
 
-      // convert Number --> Operator::value_type, e.g., double --> float, but only if necessary
+      // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
       VectorTypeMG         vector_multigrid_type_copy;
       VectorTypeMG const * vector_multigrid_type_ptr;
       if(std::is_same<MultigridNumber, Number>::value)
@@ -200,14 +195,14 @@ public:
         vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
       }
 
-      update_mg_matrices(pde_operator->get_evaluation_time(),
-                         pde_operator->get_scaling_factor_time_derivative_term(),
-                         vector_multigrid_type_ptr);
+      update_operators(pde_operator->get_evaluation_time(),
+                       pde_operator->get_scaling_factor_time_derivative_term(),
+                       vector_multigrid_type_ptr);
     }
     else if(mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
-      update_mg_matrices(pde_operator->get_evaluation_time(),
-                         pde_operator->get_scaling_factor_time_derivative_term());
+      update_operators(pde_operator->get_evaluation_time(),
+                       pde_operator->get_scaling_factor_time_derivative_term());
     }
     else
     {
@@ -224,16 +219,16 @@ public:
 
 private:
   /*
-   * This function updates mg_matrices
+   * This function updates operators
    * To do this, three functions are called:
    *  - set_vector_linearization
    *  - set_evaluation_time
    *  - set_scaling_factor_time_derivative_term
    */
   void
-  update_mg_matrices(double const &       evaluation_time,
-                     double const &       scaling_factor_time_derivative_term,
-                     VectorTypeMG const * vector_linearization = nullptr)
+  update_operators(double const &       evaluation_time,
+                   double const &       scaling_factor_time_derivative_term,
+                   VectorTypeMG const * vector_linearization = nullptr)
   {
     set_evaluation_time(evaluation_time);
     set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
@@ -244,26 +239,26 @@ private:
 
   /*
    * This function updates vector_linearization.
-   * In order to update mg_matrices[level] this function has to be called.
+   * In order to update operators[level] this function has to be called.
    */
   void
   set_vector_linearization(VectorTypeMG const & vector_linearization)
   {
     // copy velocity to finest level
-    this->get_matrix(this->max_level)->set_solution_linearization(vector_linearization);
+    this->get_operator(this->fine_level)->set_solution_linearization(vector_linearization);
 
     // interpolate velocity from fine to coarse level
-    for(auto level = this->max_level; level > this->min_level; --level)
+    for(auto level = this->fine_level; level > this->coarse_level; --level)
     {
-      auto & vector_fine_level   = this->get_matrix(level - 0)->get_solution_linearization();
-      auto   vector_coarse_level = this->get_matrix(level - 1)->get_solution_linearization();
-      this->mg_transfer.interpolate(level, vector_coarse_level, vector_fine_level);
-      this->get_matrix(level - 1)->set_solution_linearization(vector_coarse_level);
+      auto & vector_fine_level   = this->get_operator(level - 0)->get_solution_linearization();
+      auto   vector_coarse_level = this->get_operator(level - 1)->get_solution_linearization();
+      this->transfers.interpolate(level, vector_coarse_level, vector_fine_level);
+      this->get_operator(level - 1)->set_solution_linearization(vector_coarse_level);
     }
   }
 
   /*
-   * This function updates the evaluation time. In order to update mg_matrices[level] this function
+   * This function updates the evaluation time. In order to update operators[level] this function
    * has to be called. (This is due to the fact that the linearized convective term does not only
    * depend on the linearized velocity field but also on Dirichlet boundary data which itself
    * depends on the current time.)
@@ -271,46 +266,46 @@ private:
   void
   set_evaluation_time(double const & evaluation_time)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
+    for(int level = this->n_levels - 1; level >= 0; --level)
     {
-      get_matrix(level)->set_evaluation_time(evaluation_time);
+      get_operator(level)->set_evaluation_time(evaluation_time);
     }
   }
 
   /*
    * This function updates scaling_factor_time_derivative_term. In order to update
-   * mg_matrices[level] this function has to be called. This is necessary if adaptive time stepping
+   * operators[level] this function has to be called. This is necessary if adaptive time stepping
    * is used where the scaling factor of the derivative term is variable.
    */
   void
   set_scaling_factor_time_derivative_term(double const & scaling_factor_time_derivative_term)
   {
-    for(int level = this->n_global_levels - 1; level >= 0; --level)
+    for(int level = this->n_levels - 1; level >= 0; --level)
     {
-      get_matrix(level)->set_scaling_factor_time_derivative_term(
+      get_operator(level)->set_scaling_factor_time_derivative_term(
         scaling_factor_time_derivative_term);
     }
   }
 
   /*
    * This function updates the smoother for all levels of the multigrid algorithm.
-   * The prerequisite to call this function is that mg_matrices[level] have been updated.
+   * The prerequisite to call this function is that operators[level] have been updated.
    */
   void
   update_smoothers()
   {
     // Start with level = 1!
-    for(unsigned int level = 1; level < this->n_global_levels; ++level)
+    for(unsigned int level = 1; level < this->n_levels; ++level)
     {
       this->update_smoother(level);
     }
   }
 
   std::shared_ptr<PDEOperator>
-  get_matrix(unsigned int level)
+  get_operator(unsigned int level)
   {
     std::shared_ptr<MGOperator> mg_operator =
-      std::dynamic_pointer_cast<MGOperator>(this->mg_matrices[level]);
+      std::dynamic_pointer_cast<MGOperator>(this->operators[level]);
 
     return mg_operator->get_pde_operator();
   }
