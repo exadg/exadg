@@ -9,7 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 
 #include "../../functionalities/set_zero_mean_value.h"
-#include "../../operators/operator_preconditionable.h"
+#include "../../operators/linear_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 
@@ -19,7 +19,7 @@
 namespace IncNS
 {
 template<int dim>
-struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
+struct CompatibleLaplaceOperatorData
 {
   CompatibleLaplaceOperatorData()
     : degree_u(1),
@@ -42,7 +42,7 @@ struct CompatibleLaplaceOperatorData : public PreconditionableOperatorData<dim>
 };
 
 template<int dim, typename Number = double>
-class CompatibleLaplaceOperator : public PreconditionableOperator<dim, Number>
+class CompatibleLaplaceOperator : public LinearOperatorBase
 {
 public:
   typedef Number value_type;
@@ -62,100 +62,10 @@ public:
              DivergenceOperator<dim, Number> const &    divergence_operator_in,
              InverseMassMatrixOperator<dim, dim, Number> const & inv_mass_matrix_operator_in);
 
-
-
   void
-  reinit_preconditionable_operator_data(MatrixFree<dim, Number> const &           matrix_free,
-                                        AffineConstraints<double> const &         constraint_matrix,
-                                        PreconditionableOperatorData<dim> const & operator_data_in)
-  {
-    auto operator_data =
-      *static_cast<CompatibleLaplaceOperatorData<dim> const *>(&operator_data_in);
-    this->reinit(matrix_free, constraint_matrix, operator_data);
-  }
-
-
-  void
-  reinit(MatrixFree<dim, Number> const &            data,
-         AffineConstraints<double> const &          constraint_matrix,
-         CompatibleLaplaceOperatorData<dim> const & operator_data);
-
-
-
-  virtual void
-  apply(VectorType & dst, VectorType const & src) const
-  {
-    (void)dst;
-    (void)src;
-
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::apply should be overwritten!"));
-  }
-
-  virtual void
-  apply_add(VectorType & dst, VectorType const & src, Number const time) const
-  {
-    (void)dst;
-    (void)src;
-    (void)time;
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::apply_add should be overwritten!"));
-  }
-
-  virtual void
-  apply_add(VectorType & dst, VectorType const & src) const
-  {
-    (void)dst;
-    (void)src;
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::apply_add should be overwritten!"));
-  }
-
-  virtual void
-  rhs(VectorType & dst) const
-  {
-    (void)dst;
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs should be overwritten!"));
-  }
-
-  virtual void
-  rhs(VectorType & dst, Number const time) const
-  {
-    (void)dst;
-    (void)time;
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs should be overwritten!"));
-  }
-
-  virtual void
-  rhs_add(VectorType & dst) const
-  {
-    (void)dst;
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs_add should be overwritten!"));
-  }
-
-  virtual void
-  rhs_add(VectorType & dst, Number const time) const
-  {
-    (void)dst;
-    (void)time;
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::rhs_add should be overwritten!"));
-  }
-
-  virtual void
-  evaluate(VectorType & dst, VectorType const & src, Number const time) const
-  {
-    (void)dst;
-    (void)src;
-    (void)time;
-    AssertThrow(false, ExcMessage("CompatibleLaplaceOperator::evaluate should be overwritten!"));
-  }
-
-  virtual void
-  evaluate_add(VectorType & dst, VectorType const & src, Number const time) const
-  {
-    (void)dst;
-    (void)src;
-    (void)time;
-    AssertThrow(false,
-                ExcMessage("CompatibleLaplaceOperator::evaluate_add should be overwritten!"));
-  }
+  reinit_multigrid(MatrixFree<dim, Number> const &            data,
+                   AffineConstraints<double> const &          constraint_matrix,
+                   CompatibleLaplaceOperatorData<dim> const & operator_data);
 
   virtual void
   update_block_diagonal_preconditioner() const
@@ -266,9 +176,6 @@ public:
    */
   void
   update_inverse_block_diagonal() const;
-
-  PreconditionableOperator<dim, Number> *
-  get_new(unsigned int deg) const;
 
 private:
   MatrixFree<dim, Number> const * data;

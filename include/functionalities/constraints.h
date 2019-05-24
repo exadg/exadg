@@ -1,6 +1,8 @@
 #ifndef OPERATOR_CONSTRAINTS_H
 #define OPERATOR_CONSTRAINTS_H
 
+#include <deal.II/multigrid/mg_constrained_dofs.h>
+
 namespace ConstraintUtil
 {
 namespace // anonymous namespace

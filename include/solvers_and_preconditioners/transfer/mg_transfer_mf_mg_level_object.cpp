@@ -14,7 +14,7 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
   const unsigned int                                  dof_handler_index)
 {
   std::vector<MGLevelInfo>            global_levels;
-  std::vector<MGDofHandlerIdentifier> p_levels;
+  std::vector<MGDoFHandlerIdentifier> p_levels;
 
   const unsigned int min_level = mg_data.min_level();
   AssertThrow(min_level == 0, ExcMessage("Currently, we expect min_level==0!"));
@@ -46,9 +46,9 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
   // create transfer-operator instances
   mg_level_object.resize(0, global_levels.size() - 1);
 
-  std::map<MGDofHandlerIdentifier, std::shared_ptr<MGTransferMFH<dim, MultigridNumber>>>
+  std::map<MGDoFHandlerIdentifier, std::shared_ptr<MGTransferMFH<dim, MultigridNumber>>>
     mg_tranfers_temp;
-  std::map<MGDofHandlerIdentifier, std::map<unsigned int, unsigned int>>
+  std::map<MGDoFHandlerIdentifier, std::map<unsigned int, unsigned int>>
     map_global_level_to_h_levels;
 
   // initialize maps so that we do not have to check existence later on

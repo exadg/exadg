@@ -51,6 +51,7 @@ public:
     AdditionalData()
       : solver_type(KrylovSolverType::CG),
         solver_data(SolverData(1e4, 1.e-12, 1.e-3, 100)),
+        operator_is_singular(false),
         preconditioner(MultigridCoarseGridPreconditioner::None),
         amg_data(AMGData())
     {
@@ -61,6 +62,11 @@ public:
 
     // Solver data
     SolverData solver_data;
+
+    // in case of singular operators (with constant vectors forming the nullspace) the rhs vector
+    // has to be projected onto the space of vectors with zero mean prior to solving the coarse
+    // grid problem
+    bool operator_is_singular;
 
     // Preconditioner
     MultigridCoarseGridPreconditioner preconditioner;
@@ -129,7 +135,7 @@ public:
   operator()(unsigned int const, VectorType & dst, VectorType const & src) const
   {
     VectorType r(src);
-    if(coarse_matrix.is_singular())
+    if(additional_data.operator_is_singular)
       set_zero_mean_value(r);
 
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)

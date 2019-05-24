@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "../../operators/multigrid_operator.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "compatible_laplace_operator.h"
 
@@ -23,21 +24,17 @@ class CompatibleLaplaceMultigridPreconditioner
   : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
-  typedef PreconditionableOperator<dim, MultigridNumber> MG_OPERATOR_BASE;
+  typedef CompatibleLaplaceOperator<dim, MultigridNumber> PDEOperator;
 
-  typedef CompatibleLaplaceOperator<dim, MultigridNumber> MultigridOperator;
+  typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
+  typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
 
-  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
-  typedef typename BASE::Map                                        Map;
+  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> Base;
 
-  typedef typename BASE::VectorType   VectorType;
-  typedef typename BASE::VectorTypeMG VectorTypeMG;
-
-  CompatibleLaplaceMultigridPreconditioner()
-    : MultigridPreconditionerBase<dim, Number, MultigridNumber>(
-        std::shared_ptr<MG_OPERATOR_BASE>(new MultigridOperator()))
-  {
-  }
+  typedef typename Base::Map               Map;
+  typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
+  typedef typename Base::VectorType        VectorType;
+  typedef typename Base::VectorTypeMG      VectorTypeMG;
 
   void
   initialize(MultigridData const &                      mg_data,
@@ -45,11 +42,10 @@ public:
              const FiniteElement<dim> &                 fe,
              Mapping<dim> const &                       mapping,
              CompatibleLaplaceOperatorData<dim> const & operator_data_in,
-             Map const *                                dirichlet_bc = nullptr,
-             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-               periodic_face_pairs = nullptr)
+             Map const *                                dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                        periodic_face_pairs = nullptr)
   {
-    auto operator_data               = operator_data_in;
+    operator_data                    = operator_data_in;
     operator_data.dof_index_velocity = 1;
     operator_data.dof_index_pressure = 0;
 
@@ -61,144 +57,150 @@ public:
     operator_data.divergence_operator_data.dof_index_pressure = operator_data.dof_index_pressure;
     operator_data.divergence_operator_data.quad_index         = 0;
 
-    BASE::initialize(mg_data, tria, fe, mapping, operator_data, dirichlet_bc, periodic_face_pairs);
+    Base::initialize(mg_data,
+                     tria,
+                     fe,
+                     mapping,
+                     operator_data.operator_is_singular,
+                     dirichlet_bc,
+                     periodic_face_pairs);
   }
 
-  void
-  initialize_additional_mg_dof_handler_and_constraints(
-    bool is_singular,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                                                                         periodic_face_pairs,
-    FiniteElement<dim> const &                                           fe,
-    parallel::Triangulation<dim> const *                                 tria,
-    std::vector<MGLevelInfo> &                                           global_levels,
-    std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
-    PreconditionableOperatorData<dim> const &                            operator_data_in)
+  std::shared_ptr<MatrixFree<dim, MultigridNumber>>
+  initialize_matrix_free(unsigned int const level, Mapping<dim> const & mapping)
   {
-    (void)is_singular;
-    (void)fe;
-    (void)p_levels;
-    (void)dirichlet_bc;
+    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
+    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
 
-    const auto & operator_data =
-      static_cast<CompatibleLaplaceOperatorData<dim> const &>(operator_data_in);
+    auto & dof_handler_p = *this->dof_handlers[level];
+    auto & dof_handler_u = *this->dof_handlers_velocity[level];
 
-    std::vector<MGLevelInfo>            global_levels_vel;
-    std::vector<MGDofHandlerIdentifier> p_levels_vel;
+    // dof_handler
+    std::vector<const DoFHandler<dim> *> dof_handler_vec;
+    // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
+    dof_handler_vec.resize(2);
+    dof_handler_vec[operator_data.dof_index_velocity] = &dof_handler_u;
+    dof_handler_vec[operator_data.dof_index_pressure] = &dof_handler_p;
 
-    // setup global velocity levels
-    for(auto & i : global_levels)
-      global_levels_vel.push_back(
-        {i.level, i.degree + operator_data.degree_u - operator_data.degree_p, i.is_dg});
+    // constraint matrix
+    std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
+    // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
+    constraint_matrix_vec.resize(2);
+    constraint_matrix_vec[operator_data.dof_index_velocity] = &*this->constraints_velocity[level];
+    constraint_matrix_vec[operator_data.dof_index_pressure] = &*this->constraints[level];
 
-    // setup p velocity levels
-    for(auto i : global_levels_vel)
-      p_levels_vel.push_back(i.id);
+    // quadratures
+    // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature
+    // formula that is used for the gradient operator and the divergence operator (and the inverse
+    // velocity mass matrix operator)
+    std::vector<Quadrature<1>> quadrature_vec;
+    quadrature_vec.resize(2);
+    quadrature_vec[0] = QGauss<1>(this->level_info[level].degree + 1 +
+                                  (operator_data.degree_u - operator_data.degree_p));
+    // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature is
+    // needed for p-transfer
+    quadrature_vec[1] = QGauss<1>(this->level_info[level].degree + 1);
 
-    sort(p_levels_vel.begin(), p_levels_vel.end());
-    p_levels_vel.erase(unique(p_levels_vel.begin(), p_levels_vel.end()), p_levels_vel.end());
-    std::reverse(std::begin(p_levels_vel), std::end(p_levels_vel));
+    // additional data
+    typename MatrixFree<dim, MultigridNumber>::AdditionalData addit_data;
 
-    // setup dofhandler and constraint matrices
-    FE_DGQ<dim>   temp(operator_data.degree_u);
-    FESystem<dim> fe_vel(temp, dim);
+    addit_data.mapping_update_flags =
+      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+       update_values);
 
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc_vel;
-    BASE::initialize_mg_dof_handler_and_constraints(false,
-                                                    periodic_face_pairs,
-                                                    fe_vel,
-                                                    tria,
-                                                    global_levels_vel,
-                                                    p_levels_vel,
-                                                    dirichlet_bc_vel,
-                                                    this->mg_dofhandler_vel,
-                                                    this->mg_constrained_dofs_vel,
-                                                    this->mg_constraints_vel);
-  }
-
-
-  void
-  initialize_matrixfree(std::vector<MGLevelInfo> &                global_levels,
-                        Mapping<dim> const &                      mapping,
-                        PreconditionableOperatorData<dim> const & operator_data_in)
-  {
-    const auto & operator_data =
-      static_cast<CompatibleLaplaceOperatorData<dim> const &>(operator_data_in);
-
-    this->mg_matrixfree.resize(this->min_level, this->max_level);
-
-    for(auto level = this->min_level; level <= this->max_level; ++level)
+    if(this->level_info[level].is_dg)
     {
-      auto data = new MatrixFree<dim, MultigridNumber>;
-
-      auto & dof_handler_p = *this->mg_dofhandler[level];
-      auto & dof_handler_u = *this->mg_dofhandler_vel[level];
-
-      // dof_handler
-      std::vector<const DoFHandler<dim> *> dof_handler_vec;
-      // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
-      dof_handler_vec.resize(2);
-      dof_handler_vec[operator_data.dof_index_velocity] = &dof_handler_u;
-      dof_handler_vec[operator_data.dof_index_pressure] = &dof_handler_p;
-
-      // constraint matrix
-      std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
-      // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
-      constraint_matrix_vec.resize(2);
-      constraint_matrix_vec[operator_data.dof_index_velocity] = &*this->mg_constraints_vel[level];
-      constraint_matrix_vec[operator_data.dof_index_pressure] = &*this->mg_constraints[level];
-
-      // quadratures
-      // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature
-      // formula that is used for the gradient operator and the divergence operator (and the inverse
-      // velocity mass matrix operator
-      std::vector<Quadrature<1>> quadrature_vec;
-      quadrature_vec.resize(2);
-      quadrature_vec[0] = QGauss<1>(global_levels[level].degree + 1 +
-                                    (operator_data.degree_u - operator_data.degree_p));
-      // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature is
-      // needed for p-transfer
-      quadrature_vec[1] = QGauss<1>(global_levels[level].degree + 1);
-
-      // additional data
-      typename MatrixFree<dim, MultigridNumber>::AdditionalData addit_data;
-
-      addit_data.mapping_update_flags =
+      addit_data.mapping_update_flags_inner_faces =
         (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
          update_values);
 
-      if(global_levels[level].is_dg)
-      {
-        addit_data.mapping_update_flags_inner_faces =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-           update_values);
-
-        addit_data.mapping_update_flags_boundary_faces =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-           update_values);
-      }
-
-      addit_data.level_mg_handler = global_levels[level].level;
-
-      // if(operator_data.use_cell_based_loops)
-      //{
-      //  auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-      //    &dof_handler_p.get_triangulation());
-      //  Categorization::do_cell_based_loops(*tria, additional_data, global_levels[level].level);
-      //}
-
-      // reinit
-      data->reinit(mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
-
-      this->mg_matrixfree[level].reset(data);
+      addit_data.mapping_update_flags_boundary_faces =
+        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+         update_values);
     }
+
+    addit_data.level_mg_handler = this->level_info[level].level;
+
+    // if(operator_data.use_cell_based_loops)
+    //{
+    //  auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+    //    &dof_handler_p.get_triangulation());
+    //  Categorization::do_cell_based_loops(*tria, additional_data,
+    //  this->level_info[level].level);
+    //}
+
+    matrix_free->reinit(
+      mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
+
+    return matrix_free;
   }
 
+  std::shared_ptr<MGOperatorBase>
+  initialize_operator(unsigned int const level)
+  {
+    // initialize pde_operator in a first step
+    std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
+    pde_operator->reinit_multigrid(*this->matrix_free_objects[level],
+                                   *this->constraints[level],
+                                   operator_data);
 
-  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     mg_dofhandler_vel;
-  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         mg_constrained_dofs_vel;
-  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> mg_constraints_vel;
+    // initialize MGOperator which is a wrapper around the PDEOperator
+    std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
+
+    return mg_operator;
+  }
+
+  void
+  initialize_dof_handler_and_constraints(bool const                           operator_is_singular,
+                                         PeriodicFacePairs *                  periodic_face_pairs,
+                                         FiniteElement<dim> const &           fe,
+                                         parallel::Triangulation<dim> const * tria,
+                                         Map const *                          dirichlet_bc)
+  {
+    Base::initialize_dof_handler_and_constraints(
+      operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
+
+    // do setup required for derived class
+
+    std::vector<MGLevelInfo>            level_info_velocity;
+    std::vector<MGDoFHandlerIdentifier> p_levels_velocity;
+
+    // setup global velocity levels
+    for(auto & level : this->level_info)
+      level_info_velocity.push_back(
+        {level.level, level.degree + operator_data.degree_u - operator_data.degree_p, level.is_dg});
+
+    // setup p velocity levels
+    for(auto level : level_info_velocity)
+      p_levels_velocity.push_back(level.id);
+
+    sort(p_levels_velocity.begin(), p_levels_velocity.end());
+    p_levels_velocity.erase(unique(p_levels_velocity.begin(), p_levels_velocity.end()),
+                            p_levels_velocity.end());
+    std::reverse(std::begin(p_levels_velocity), std::end(p_levels_velocity));
+
+    // setup dofhandler and constraint matrices
+    FE_DGQ<dim>   temp(operator_data.degree_u);
+    FESystem<dim> fe_velocity(temp, dim);
+
+    Map dirichlet_bc_velocity;
+    this->do_initialize_dof_handler_and_constraints(false,
+                                                    *periodic_face_pairs,
+                                                    fe_velocity,
+                                                    tria,
+                                                    dirichlet_bc_velocity,
+                                                    level_info_velocity,
+                                                    p_levels_velocity,
+                                                    this->dof_handlers_velocity,
+                                                    this->constrained_dofs_velocity,
+                                                    this->constraints_velocity);
+  }
+
+  MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     dof_handlers_velocity;
+  MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         constrained_dofs_velocity;
+  MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
+
+  CompatibleLaplaceOperatorData<dim> operator_data;
 };
 
 } // namespace IncNS

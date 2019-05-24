@@ -66,10 +66,6 @@ public:
   bool
   is_singular() const;
 
-
-  PreconditionableOperator<dim, Number> *
-  get_new(unsigned int deg) const;
-
 private:
   inline DEAL_II_ALWAYS_INLINE //
     scalar

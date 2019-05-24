@@ -22,9 +22,9 @@ MomentumOperator<dim, Number>::MomentumOperator()
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   data,
-                                      AffineConstraints<double> const & constraint_matrix,
-                                      MomentumOperatorData<dim> const & operator_data)
+MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const &   data,
+                                                AffineConstraints<double> const & constraint_matrix,
+                                                MomentumOperatorData<dim> const & operator_data)
 {
   (void)constraint_matrix;
 
@@ -542,83 +542,6 @@ MomentumOperator<dim, Number>::cell_loop_apply_block_diagonal(
     integrator.set_dof_values(dst);
   }
 }
-
-// TODO
-template<int dim, typename Number>
-PreconditionableOperator<dim, Number> *
-MomentumOperator<dim, Number>::get_new(unsigned int /*deg*/) const
-{
-  return new MomentumOperator<dim, Number>();
-
-  // TODO
-  //  switch(deg)
-  //  {
-  //#if DEGREE_1
-  //    case 1:
-  //      return new MomentumOperator<dim, 1, Number>();
-  //#endif
-  //#if DEGREE_2
-  //    case 2:
-  //      return new MomentumOperator<dim, 2, Number>();
-  //#endif
-  //#if DEGREE_3
-  //    case 3:
-  //      return new MomentumOperator<dim, 3, Number>();
-  //#endif
-  //#if DEGREE_4
-  //    case 4:
-  //      return new MomentumOperator<dim, 4, Number>();
-  //#endif
-  //#if DEGREE_5
-  //    case 5:
-  //      return new MomentumOperator<dim, 5, Number>();
-  //#endif
-  //#if DEGREE_6
-  //    case 6:
-  //      return new MomentumOperator<dim, 6, Number>();
-  //#endif
-  //#if DEGREE_7
-  //    case 7:
-  //      return new MomentumOperator<dim, 7, Number>();
-  //#endif
-  //#if DEGREE_8
-  //    case 8:
-  //      return new MomentumOperator<dim, 8, Number>();
-  //#endif
-  //#if DEGREE_9
-  //    case 9:
-  //      return new MomentumOperator<dim, 9, Number>();
-  //#endif
-  //#if DEGREE_10
-  //    case 10:
-  //      return new MomentumOperator<dim, 10, Number>();
-  //#endif
-  //#if DEGREE_11
-  //    case 11:
-  //      return new MomentumOperator<dim, 11, Number>();
-  //#endif
-  //#if DEGREE_12
-  //    case 12:
-  //      return new MomentumOperator<dim, 12, Number>();
-  //#endif
-  //#if DEGREE_13
-  //    case 13:
-  //      return new MomentumOperator<dim, 13, Number>();
-  //#endif
-  //#if DEGREE_14
-  //    case 14:
-  //      return new MomentumOperator<dim, 14, Number>();
-  //#endif
-  //#if DEGREE_15
-  //    case 15:
-  //      return new MomentumOperator<dim, 15, Number>();
-  //#endif
-  //    default:
-  //      AssertThrow(false, ExcMessage("MomentumOperator not implemented for this degree!"));
-  //      return nullptr;
-  //  }
-}
-
 
 template class MomentumOperator<2, float>;
 template class MomentumOperator<2, double>;

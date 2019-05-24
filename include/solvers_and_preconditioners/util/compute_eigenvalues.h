@@ -17,6 +17,7 @@ template<typename Operator, typename VectorType>
 std::pair<double, double>
 compute_eigenvalues(Operator const &   op,
                     VectorType const & inverse_diagonal,
+                    bool const         operator_is_singular,
                     unsigned int const eig_n_iter = 10000)
 {
   VectorType solution, rhs;
@@ -26,7 +27,7 @@ compute_eigenvalues(Operator const &   op,
   srand(1);
   for(unsigned int i = 0; i < rhs.local_size(); ++i)
     rhs.local_element(i) = (double)rand() / RAND_MAX;
-  if(op.is_singular())
+  if(operator_is_singular)
     set_zero_mean_value(rhs);
 
   SolverControl control(eig_n_iter, rhs.l2_norm() * 1e-5);
@@ -82,6 +83,7 @@ template<typename Operator, typename VectorType>
 std::pair<std::complex<double>, std::complex<double>>
 compute_eigenvalues_gmres(Operator const &   op,
                           VectorType const & inverse_diagonal,
+                          bool const         operator_is_singular,
                           unsigned int const eig_n_iter = 10000)
 {
   VectorType solution, rhs;
@@ -91,7 +93,7 @@ compute_eigenvalues_gmres(Operator const &   op,
   srand(1);
   for(unsigned int i = 0; i < rhs.local_size(); ++i)
     rhs.local_element(i) = (double)rand() / RAND_MAX;
-  if(op.is_singular())
+  if(operator_is_singular)
     set_zero_mean_value(rhs);
 
   ReductionControl control(eig_n_iter, rhs.l2_norm() * 1.0e-5, 1.0e-5);

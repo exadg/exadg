@@ -3,25 +3,26 @@
 
 #include "mg_transfer_mf.h"
 
-struct MGDofHandlerIdentifier
+struct MGDoFHandlerIdentifier
 {
-  MGDofHandlerIdentifier(unsigned int degree, bool is_dg) : degree(degree), is_dg(is_dg)
+  MGDoFHandlerIdentifier(unsigned int degree, bool is_dg) : degree(degree), is_dg(is_dg)
   {
   }
+
+  bool
+  operator<(const MGDoFHandlerIdentifier & other) const
+  {
+    return !((degree >= other.degree) && (is_dg >= other.is_dg));
+  }
+
+  bool
+  operator==(const MGDoFHandlerIdentifier & other) const
+  {
+    return (degree == other.degree) && (is_dg == other.is_dg);
+  }
+
   unsigned int degree;
   bool         is_dg;
-
-  bool
-  operator<(const MGDofHandlerIdentifier & rhs) const
-  {
-    return !((degree >= rhs.degree) && (is_dg >= rhs.is_dg));
-  }
-
-  bool
-  operator==(const MGDofHandlerIdentifier & rhs) const
-  {
-    return (degree == rhs.degree) && (is_dg == rhs.is_dg);
-  }
 };
 
 struct MGLevelInfo
@@ -30,7 +31,7 @@ struct MGLevelInfo
     : level(level), degree(degree), is_dg(is_dg), id(degree, is_dg)
   {
   }
-  MGLevelInfo(unsigned int level, MGDofHandlerIdentifier p)
+  MGLevelInfo(unsigned int level, MGDoFHandlerIdentifier p)
     : level(level), degree(p.degree), is_dg(p.is_dg), id(p)
   {
   }
@@ -38,7 +39,7 @@ struct MGLevelInfo
   unsigned int           level;
   unsigned int           degree;
   bool                   is_dg;
-  MGDofHandlerIdentifier id;
+  MGDoFHandlerIdentifier id;
 };
 
 template<int dim, typename VectorType>
