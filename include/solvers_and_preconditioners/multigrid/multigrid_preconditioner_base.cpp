@@ -19,32 +19,12 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   FiniteElement<dim> const &           fe,
   Mapping<dim> const &                 mapping,
   bool const                           operator_is_singular,
-  Map const *                          dirichlet_bc_in,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-    periodic_face_pairs_in)
+  Map const *                          dirichlet_bc,
+  PeriodicFacePairs *                  periodic_face_pairs)
 {
   this->data = data;
 
   bool const is_dg = fe.dofs_per_vertex == 0;
-  if((!is_dg || (is_dg && (data.dg_to_cg_transfer != DG_To_CG_Transfer::None)) ||
-      data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
-     ((dirichlet_bc_in == nullptr) || (periodic_face_pairs_in == nullptr)))
-  {
-    AssertThrow(
-      data.coarse_problem.solver != MultigridCoarseGridSolver::AMG,
-      ExcMessage(
-        "You have to provide Dirichlet BCs and periodic face pairs if you want to use CG or AMG!"));
-  }
-
-  // In the case of nullptr, these data structures simply remain empty.
-  Map dirichlet_bc;
-  if(dirichlet_bc_in != nullptr)
-    dirichlet_bc = *dirichlet_bc_in;
-
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
-  if(dirichlet_bc_in != nullptr)
-    periodic_face_pairs = *periodic_face_pairs_in;
 
   this->initialize_levels(tria, fe.degree, is_dg);
 
@@ -212,13 +192,32 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_levels(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_dof_handler_and_constraints(
-  bool const operator_is_singular,
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                                                                       periodic_face_pairs,
-  FiniteElement<dim> const &                                           fe,
-  parallel::Triangulation<dim> const *                                 tria,
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc)
+  bool const                           operator_is_singular,
+  PeriodicFacePairs *                  periodic_face_pairs_in,
+  FiniteElement<dim> const &           fe,
+  parallel::Triangulation<dim> const * tria,
+  Map const *                          dirichlet_bc_in)
 {
+  bool const is_dg = fe.dofs_per_vertex == 0;
+  if((!is_dg || (is_dg && (data.dg_to_cg_transfer != DG_To_CG_Transfer::None)) ||
+      data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
+     ((dirichlet_bc_in == nullptr) || (periodic_face_pairs_in == nullptr)))
+  {
+    AssertThrow(
+      data.coarse_problem.solver != MultigridCoarseGridSolver::AMG,
+      ExcMessage(
+        "You have to provide Dirichlet BCs and periodic face pairs if you want to use CG or AMG!"));
+  }
+
+  // In the case of nullptr, these data structures simply remain empty.
+  Map dirichlet_bc;
+  if(dirichlet_bc_in != nullptr)
+    dirichlet_bc = *dirichlet_bc_in;
+
+  PeriodicFacePairs periodic_face_pairs;
+  if(dirichlet_bc_in != nullptr)
+    periodic_face_pairs = *periodic_face_pairs_in;
+
   this->do_initialize_dof_handler_and_constraints(operator_is_singular,
                                                   periodic_face_pairs,
                                                   fe,
@@ -235,17 +234,16 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   do_initialize_dof_handler_and_constraints(
-    bool is_singular,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                                                                         periodic_face_pairs,
-    FiniteElement<dim> const &                                           fe,
-    parallel::Triangulation<dim> const *                                 tria,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
-    std::vector<MGLevelInfo> &                                           level_info,
-    std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              dof_handlers,
-    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
-    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          constraints)
+    bool                                                        is_singular,
+    PeriodicFacePairs &                                         periodic_face_pairs,
+    FiniteElement<dim> const &                                  fe,
+    parallel::Triangulation<dim> const *                        tria,
+    Map const &                                                 dirichlet_bc,
+    std::vector<MGLevelInfo> &                                  level_info,
+    std::vector<MGDofHandlerIdentifier> &                       p_levels,
+    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &     dof_handlers,
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         constrained_dofs,
+    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> & constraints)
 {
   constrained_dofs.resize(0, this->n_levels - 1);
   dof_handlers.resize(0, this->n_levels - 1);

@@ -46,6 +46,8 @@ private:
 
 protected:
   typedef std::map<types::boundary_id, std::shared_ptr<Function<dim>>> Map;
+  typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    PeriodicFacePairs;
 
   typedef LinearAlgebra::distributed::Vector<Number>          VectorType;
   typedef LinearAlgebra::distributed::Vector<MultigridNumber> VectorTypeMG;
@@ -101,27 +103,24 @@ protected:
    * Dof-handlers and constraints.
    */
   virtual void
-  initialize_dof_handler_and_constraints(
-    bool is_singular,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                                                                         periodic_face_pairs,
-    FiniteElement<dim> const &                                           fe,
-    parallel::Triangulation<dim> const *                                 tria,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc);
+  initialize_dof_handler_and_constraints(bool                                 is_singular,
+                                         PeriodicFacePairs *                  periodic_face_pairs,
+                                         FiniteElement<dim> const &           fe,
+                                         parallel::Triangulation<dim> const * tria,
+                                         Map const *                          dirichlet_bc);
 
   void
   do_initialize_dof_handler_and_constraints(
-    bool is_singular,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                                                                         periodic_face_pairs,
-    FiniteElement<dim> const &                                           fe,
-    parallel::Triangulation<dim> const *                                 tria,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc,
-    std::vector<MGLevelInfo> &                                           level_info,
-    std::vector<MGDofHandlerIdentifier> &                                p_levels,
-    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &              dofhandlers,
-    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &                  constrained_dofs,
-    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> &          constraints);
+    bool                                                        is_singular,
+    PeriodicFacePairs &                                         periodic_face_pairs,
+    FiniteElement<dim> const &                                  fe,
+    parallel::Triangulation<dim> const *                        tria,
+    Map const &                                                 dirichlet_bc,
+    std::vector<MGLevelInfo> &                                  level_info,
+    std::vector<MGDofHandlerIdentifier> &                       p_levels,
+    MGLevelObject<std::shared_ptr<const DoFHandler<dim>>> &     dofhandlers,
+    MGLevelObject<std::shared_ptr<MGConstrainedDoFs>> &         constrained_dofs,
+    MGLevelObject<std::shared_ptr<AffineConstraints<double>>> & constraints);
 
   /*
    * Transfer operators.

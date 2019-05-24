@@ -29,10 +29,11 @@ public:
   typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
-  typedef typename BASE::Map                                        Map;
 
-  typedef typename BASE::VectorType   VectorType;
-  typedef typename BASE::VectorTypeMG VectorTypeMG;
+  typedef typename BASE::Map               Map;
+  typedef typename BASE::PeriodicFacePairs PeriodicFacePairs;
+  typedef typename BASE::VectorType        VectorType;
+  typedef typename BASE::VectorTypeMG      VectorTypeMG;
 
   virtual ~MultigridPreconditioner(){};
 
@@ -42,9 +43,8 @@ public:
              const FiniteElement<dim> &                   fe,
              Mapping<dim> const &                         mapping,
              ConvectionDiffusionOperatorData<dim> const & operator_data_in,
-             Map const *                                  dirichlet_bc = nullptr,
-             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-               periodic_face_pairs = nullptr)
+             Map const *                                  dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                          periodic_face_pairs = nullptr)
   {
     operator_data            = operator_data_in;
     operator_data.dof_index  = 0;
@@ -178,13 +178,11 @@ public:
   }
 
   void
-  initialize_dof_handler_and_constraints(
-    bool const operator_is_singular,
-    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
-                                                                         periodic_face_pairs,
-    FiniteElement<dim> const &                                           fe,
-    parallel::Triangulation<dim> const *                                 tria,
-    std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & dirichlet_bc)
+  initialize_dof_handler_and_constraints(bool const                           operator_is_singular,
+                                         PeriodicFacePairs *                  periodic_face_pairs,
+                                         FiniteElement<dim> const &           fe,
+                                         parallel::Triangulation<dim> const * tria,
+                                         Map const *                          dirichlet_bc)
   {
     BASE::initialize_dof_handler_and_constraints(
       operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
@@ -192,9 +190,9 @@ public:
     if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
     {
       FESystem<dim> fe_velocity(FE_DGQ<dim>(fe.degree), dim);
-      std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc_velocity;
+      Map           dirichlet_bc_velocity;
       this->do_initialize_dof_handler_and_constraints(false,
-                                                      periodic_face_pairs,
+                                                      *periodic_face_pairs,
                                                       fe_velocity,
                                                       tria,
                                                       dirichlet_bc_velocity,

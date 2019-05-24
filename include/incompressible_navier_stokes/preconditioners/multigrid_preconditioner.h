@@ -30,9 +30,10 @@ private:
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> Base;
 
-  typedef typename Base::Map          Map;
-  typedef typename Base::VectorType   VectorType;
-  typedef typename Base::VectorTypeMG VectorTypeMG;
+  typedef typename Base::Map               Map;
+  typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
+  typedef typename Base::VectorType        VectorType;
+  typedef typename Base::VectorTypeMG      VectorTypeMG;
 
 public:
   virtual ~MultigridPreconditioner(){};
@@ -43,9 +44,8 @@ public:
              const FiniteElement<dim> &           fe,
              Mapping<dim> const &                 mapping,
              MomentumOperatorData<dim> const &    operator_data_in,
-             Map const *                          dirichlet_bc = nullptr,
-             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-               periodic_face_pairs = nullptr)
+             Map const *                          dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
     operator_data                 = operator_data_in;
     operator_data.dof_index       = 0;

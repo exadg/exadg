@@ -27,7 +27,9 @@ public:
   typedef MultigridOperator<dim, MultigridNumber, Laplace> MGOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
-  typedef typename BASE::Map                                        Map;
+
+  typedef typename BASE::Map               Map;
+  typedef typename BASE::PeriodicFacePairs PeriodicFacePairs;
 
   void
   initialize(MultigridData const &                mg_data,
@@ -35,9 +37,8 @@ public:
              const FiniteElement<dim> &           fe,
              Mapping<dim> const &                 mapping,
              LaplaceOperatorData<dim> const &     operator_data_in,
-             Map const *                          dirichlet_bc = nullptr,
-             std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> *
-               periodic_face_pairs = nullptr)
+             Map const *                          dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
     operator_data            = operator_data_in;
     operator_data.dof_index  = 0;
