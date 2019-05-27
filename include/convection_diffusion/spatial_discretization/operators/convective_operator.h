@@ -10,11 +10,11 @@
 namespace ConvDiff
 {
 template<int dim>
-struct ConvectiveOperatorData : public OperatorBaseData<dim>
+struct ConvectiveOperatorData : public OperatorBaseData
 {
   ConvectiveOperatorData()
     // clang-format off
-  : OperatorBaseData<dim>(
+  : OperatorBaseData(
               0, // dof_index
               0, // quad_index
               true, false, false, // cell evaluate

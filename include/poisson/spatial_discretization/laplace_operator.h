@@ -10,12 +10,12 @@
 namespace Poisson
 {
 template<int dim>
-struct LaplaceOperatorData : public OperatorBaseData<dim>
+struct LaplaceOperatorData : public OperatorBaseData
 {
 public:
   LaplaceOperatorData()
     // clang-format off
-    : OperatorBaseData<dim>(0, 0,
+    : OperatorBaseData(0, 0,
           false, true, false, false, true, false, // cell
           true,  true,        true,  true         // face
       ),

@@ -21,7 +21,6 @@
 
 using namespace dealii;
 
-template<int dim>
 struct OperatorBaseData
 {
   OperatorBaseData(const unsigned int dof_index,
