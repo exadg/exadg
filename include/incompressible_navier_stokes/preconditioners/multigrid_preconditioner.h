@@ -13,8 +13,6 @@
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../spatial_discretization/momentum_operator.h"
 
-#include "../../solvers_and_preconditioners/util/restrict_vector_to_coarser_level.h"
-
 namespace IncNS
 {
 /*
