@@ -15,9 +15,13 @@ struct LaplaceOperatorData : public OperatorBaseData
 public:
   LaplaceOperatorData()
     // clang-format off
-    : OperatorBaseData(0, 0,
-          false, true, false, false, true, false, // cell
-          true,  true,        true,  true         // face
+    : OperatorBaseData(
+          0, // dof_index
+          0, // quad_index
+          false, true, false, // cell evaluate
+          false, true, false, // cell integrate
+          true,  true,        // face evaluate
+          true,  true         // face integrate
       ),
       // clang-format on
       IP_factor(1.0),
