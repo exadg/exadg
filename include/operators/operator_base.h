@@ -42,11 +42,11 @@ struct OperatorBaseData
       face_evaluate(face_evaluate_values, face_evaluate_gradients),
       face_integrate(face_integrate_values, face_integrate_gradients),
       evaluate_face_integrals(face_evaluate.do_eval() || face_integrate.do_eval()),
-      operator_is_singular(false),
       mapping_update_flags(update_default),
       mapping_update_flags_inner_faces(update_default),
       mapping_update_flags_boundary_faces(update_default),
       use_cell_based_loops(false),
+      operator_is_singular(false),
       implement_block_diagonal_preconditioner_matrix_free(false)
   {
   }
@@ -85,43 +85,6 @@ struct OperatorBaseData
     this->mapping_update_flags_boundary_faces |= other.mapping_update_flags_boundary_faces;
   }
 
-  unsigned int dof_index;
-  unsigned int quad_index;
-
-  Cell cell_evaluate;
-  Cell cell_integrate;
-  Face face_evaluate;
-  Face face_integrate;
-
-  bool evaluate_face_integrals;
-
-  bool operator_is_singular;
-
-  UpdateFlags mapping_update_flags;
-  UpdateFlags mapping_update_flags_inner_faces;
-  UpdateFlags mapping_update_flags_boundary_faces;
-
-  bool use_cell_based_loops;
-  bool implement_block_diagonal_preconditioner_matrix_free;
-
-  bool
-  do_use_cell_based_loops() const
-  {
-    return use_cell_based_loops;
-  }
-
-  void
-  set_dof_index(const int dof_index)
-  {
-    this->dof_index = dof_index;
-  }
-
-  void
-  set_quad_index(const int quad_index)
-  {
-    this->quad_index = quad_index;
-  }
-
   UpdateFlags
   get_mapping_update_flags() const
   {
@@ -139,6 +102,26 @@ struct OperatorBaseData
   {
     return get_mapping_update_flags_inner_faces() | mapping_update_flags_boundary_faces;
   }
+
+  unsigned int dof_index;
+  unsigned int quad_index;
+
+  Cell cell_evaluate;
+  Cell cell_integrate;
+  Face face_evaluate;
+  Face face_integrate;
+
+  bool evaluate_face_integrals;
+
+  UpdateFlags mapping_update_flags;
+  UpdateFlags mapping_update_flags_inner_faces;
+  UpdateFlags mapping_update_flags_boundary_faces;
+
+  bool use_cell_based_loops;
+
+  // Solution of linear systems of equations and preconditioning
+  bool operator_is_singular;
+  bool implement_block_diagonal_preconditioner_matrix_free;
 };
 
 template<int dim, typename Number, typename AdditionalData, int n_components = 1>

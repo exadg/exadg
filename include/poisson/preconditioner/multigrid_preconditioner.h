@@ -72,7 +72,7 @@ public:
         operator_data.get_mapping_update_flags_boundary_faces();
     }
 
-    if(operator_data.do_use_cell_based_loops() && this->level_info[level].is_dg)
+    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg)
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
