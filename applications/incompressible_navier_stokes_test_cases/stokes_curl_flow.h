@@ -152,7 +152,6 @@ void set_input_parameters(InputParameters &param)
 /*                                                                                                          */
 /************************************************************************************************************/
 
-// GridTools::rotate() is only implemented for dim = 2 so we have to provide a dummy function for dim=3
 template<int dim>
 void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,

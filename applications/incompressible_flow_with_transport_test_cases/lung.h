@@ -631,19 +631,6 @@ private:
 /*                                                                                                          */
 /************************************************************************************************************/
 
-void create_grid_and_set_boundary_ids(
-    std::shared_ptr<parallel::Triangulation<2>>     triangulation,
-    unsigned int const                              n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<2>::cell_iterator> >            &periodic_faces)
-{
-  (void)triangulation;
-  (void)n_refine_space;
-  (void)periodic_faces;
-
-  AssertThrow(false, ExcMessage("This test case can only be used for dim==3!"));
-}
-
 template<int dim>
 void create_grid_and_set_boundary_ids(
     std::shared_ptr<parallel::Triangulation<dim>>     triangulation,

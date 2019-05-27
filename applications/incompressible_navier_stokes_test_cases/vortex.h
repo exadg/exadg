@@ -10,6 +10,7 @@
 
 #include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 #include "../grid_tools/deformed_cube_manifold.h"
+#include "../grid_tools/dealii_extensions.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 /************************************************************************************************************/
@@ -130,7 +131,7 @@ void set_input_parameters(InputParameters &param)
   // viscous step
   param.solver_viscous = SolverViscous::CG;
   param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
-  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //Multigrid;
+  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   param.update_preconditioner_viscous = false;
 
 
@@ -178,11 +179,12 @@ void set_input_parameters(InputParameters &param)
 
   // preconditioner linear solver
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
-  param.update_preconditioner_coupled = false; //true;
+  param.update_preconditioner_coupled = true;
 
   // preconditioner momentum block
   param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid; // InverseMassMatrix;
   param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+  param.multigrid_data_velocity_block.type = MultigridType::phMG;
   param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
   param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
   param.multigrid_data_velocity_block.smoother_data.iterations = 5;
@@ -202,21 +204,6 @@ void set_input_parameters(InputParameters &param)
 /*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
 /*                                                                                                          */
 /************************************************************************************************************/
-
-// GridTools::rotate() is only implemented for dim = 2 so we have to provide a dummy function for dim=3
-void
-create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<3>> triangulation,
-                                 unsigned int const                          n_refine_space,
-                                 std::vector<GridTools::PeriodicFacePair<typename
-                                   Triangulation<3>::cell_iterator> >        &periodic_faces)
-{
-  // to avoid warnings (unused variable) use ...
-  (void)triangulation;
-  (void)n_refine_space;
-  (void)periodic_faces;
-
-  AssertThrow(false, ExcMessage("This test case is only implemented for dim=2."));
-}
 
 template<int dim>
 void

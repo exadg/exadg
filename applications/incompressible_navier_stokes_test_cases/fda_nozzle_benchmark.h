@@ -13,6 +13,8 @@
 #include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 #include "../../include/functionalities/linear_interpolation.h"
+#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+#include "../grid_tools/dealii_extensions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -475,8 +477,6 @@ void set_input_parameters(InputParameters & param)
 /*                                                                                                          */
 /************************************************************************************************************/
 
-#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
-
 /*
  *  Create grid for precursor domain (DOMAIN 1)
  */
@@ -573,19 +573,6 @@ void create_grid_and_set_boundary_ids_1(
 
   // perform global refinements
   triangulation->refine_global(n_refine_space);
-}
-
-void create_grid_and_set_boundary_ids_1(
-    std::shared_ptr<parallel::Triangulation<2>>     triangulation,
-    unsigned int const                              n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<2>::cell_iterator> >            &periodic_faces)
-{
-  (void)triangulation;
-  (void)n_refine_space;
-  (void)periodic_faces;
-
-  AssertThrow(false, ExcMessage("This test case is only implemented for dim=3."));
 }
 
 /*
@@ -893,19 +880,6 @@ void create_grid_and_set_boundary_ids_2(
 
   // perform global refinements
   triangulation->refine_global(n_refine_space);
-}
-
-void create_grid_and_set_boundary_ids_2(
-    std::shared_ptr<parallel::Triangulation<2>>     triangulation,
-    unsigned int const                              n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename
-      Triangulation<2>::cell_iterator> >            &periodic_faces)
-{
-  (void)triangulation;
-  (void)n_refine_space;
-  (void)periodic_faces;
-
-  AssertThrow(false, ExcMessage("This test case is only implemented for dim=3."));
 }
 
 template<int dim>
