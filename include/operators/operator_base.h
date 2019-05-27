@@ -110,6 +110,7 @@ struct OperatorBaseData
   {
     return use_cell_based_loops;
   }
+
   void
   set_dof_index(const int dof_index)
   {
@@ -121,7 +122,6 @@ struct OperatorBaseData
   {
     this->quad_index = quad_index;
   }
-
 
   UpdateFlags
   get_mapping_update_flags() const
@@ -173,15 +173,6 @@ public:
   {
   }
 
-  void
-  reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
-                   AffineConstraints<double> const & constraint_matrix,
-                   OperatorBaseData<dim> const &     operator_data_in)
-  {
-    auto operator_data = *static_cast<AdditionalData const *>(&operator_data_in);
-    this->reinit(matrix_free, constraint_matrix, operator_data);
-  }
-
   virtual void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
@@ -225,8 +216,6 @@ public:
 
     return data.get_vector_partitioner(dof_index)->size();
   }
-
-
 
   Number
   el(const unsigned int, const unsigned int) const
