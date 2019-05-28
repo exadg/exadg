@@ -124,29 +124,10 @@ OperatorBase<dim, Number, AdditionalData, n_components>::apply_add(VectorType & 
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::apply_add(VectorType &       dst,
-                                                                   VectorType const & src,
-                                                                   Number const       time) const
-{
-  this->set_evaluation_time(time);
-  this->apply_add(dst, src);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
 OperatorBase<dim, Number, AdditionalData, n_components>::rhs(VectorType & dst) const
 {
   dst = 0;
   this->rhs_add(dst);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::rhs(VectorType & dst,
-                                                             Number const time) const
-{
-  this->set_evaluation_time(time);
-  this->rhs(dst);
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -172,31 +153,18 @@ OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & ds
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & dst,
-                                                                 Number const time) const
-{
-  this->set_evaluation_time(time);
-  this->rhs_add(dst);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
 OperatorBase<dim, Number, AdditionalData, n_components>::evaluate(VectorType &       dst,
-                                                                  VectorType const & src,
-                                                                  Number const       time) const
+                                                                  VectorType const & src) const
 {
   dst = 0;
-  evaluate_add(dst, src, time);
+  evaluate_add(dst, src);
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, Number, AdditionalData, n_components>::evaluate_add(VectorType &       dst,
-                                                                      VectorType const & src,
-                                                                      Number const       time) const
+                                                                      VectorType const & src) const
 {
-  this->eval_time = time;
-
   data->loop(
     &This::cell_loop, &This::face_loop, &This::boundary_face_loop_full_operator, this, dst, src);
 }
@@ -250,15 +218,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::add_diagonal(VectorType
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::add_diagonal(VectorType & diagonal,
-                                                                      Number const time) const
-{
-  this->set_evaluation_time(time);
-  this->add_diagonal(diagonal);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
 OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_diagonal_matrix_based(
   VectorType &       dst,
   VectorType const & src) const
@@ -268,19 +227,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_dia
               ExcMessage("Block Jacobi matrices have not been initialized!"));
 
   data->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based, this, dst, src);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
-  unsigned int const                    cell,
-  VectorizedArray<Number> * const       dst,
-  VectorizedArray<Number> const * const src,
-  Number const                          evaluation_time) const
-{
-  this->set_evaluation_time(evaluation_time);
-
-  apply_add_block_diagonal_elementwise(cell, dst, src);
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -456,16 +402,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matr
   {
     data->cell_loop(&This::cell_loop_block_diagonal, this, matrices, matrices);
   }
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
-  BlockMatrix & matrices,
-  Number const  time) const
-{
-  this->set_evaluation_time(time);
-  this->add_block_diagonal_matrices(matrices);
 }
 
 #ifdef DEAL_II_WITH_TRILINOS

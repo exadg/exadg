@@ -476,7 +476,8 @@ DGOperator<dim, Number>::evaluate(VectorType &       dst,
     if(param.equation_type == EquationType::Diffusion ||
        param.equation_type == EquationType::ConvectionDiffusion)
     {
-      diffusive_operator.evaluate_add(dst, src, evaluation_time);
+      diffusive_operator.set_evaluation_time(evaluation_time);
+      diffusive_operator.evaluate_add(dst, src);
     }
 
     // convective operator
@@ -490,7 +491,9 @@ DGOperator<dim, Number>::evaluate(VectorType &       dst,
         interpolate(velocity, evaluation_time, velocities, times);
         convective_operator.set_velocity(velocity);
       }
-      convective_operator.evaluate_add(dst, src, evaluation_time);
+
+      convective_operator.set_evaluation_time(evaluation_time);
+      convective_operator.evaluate_add(dst, src);
     }
 
     // shift diffusive and convective term to the rhs of the equation
@@ -516,7 +519,8 @@ DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
                                                   VectorType const & src,
                                                   double const       evaluation_time) const
 {
-  convective_operator.evaluate(dst, src, evaluation_time);
+  convective_operator.set_evaluation_time(evaluation_time);
+  convective_operator.evaluate(dst, src);
 }
 
 template<int dim, typename Number>
@@ -533,7 +537,9 @@ DGOperator<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mas
     interpolate(velocity, evaluation_time, velocities, times);
     convective_operator.set_velocity(velocity);
   }
-  convective_operator.evaluate(dst, src, evaluation_time);
+
+  convective_operator.set_evaluation_time(evaluation_time);
+  convective_operator.evaluate(dst, src);
 
   // shift convective term to the rhs of the equation
   dst *= -1.0;
@@ -552,7 +558,8 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) con
   if(param.equation_type == EquationType::Diffusion ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    diffusive_operator.rhs_add(dst, evaluation_time);
+    diffusive_operator.set_evaluation_time(evaluation_time);
+    diffusive_operator.rhs_add(dst);
   }
 
   // convective operator
@@ -563,7 +570,8 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) con
        (param.problem_type == ProblemType::Unsteady &&
         param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
     {
-      convective_operator.rhs_add(dst, evaluation_time);
+      convective_operator.set_evaluation_time(evaluation_time);
+      convective_operator.rhs_add(dst);
     }
   }
 

@@ -131,17 +131,9 @@ ConvectionDiffusionOperator<dim, Number>::apply(VectorType & dst, VectorType con
 
   if(this->operator_data.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src, this->eval_time);
+    convective_operator->set_evaluation_time(this->eval_time);
+    convective_operator->apply_add(dst, src);
   }
-}
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::apply_add(VectorType &       dst,
-                                                    VectorType const & src,
-                                                    Number const       time) const
-{
-  Base::apply_add(dst, src, time);
 }
 
 template<int dim, typename Number>
@@ -167,20 +159,12 @@ ConvectionDiffusionOperator<dim, Number>::apply_add(VectorType & dst, VectorType
 
   if(this->operator_data.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src, this->eval_time);
+    convective_operator->set_evaluation_time(this->eval_time);
+    convective_operator->apply_add(dst, src);
   }
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::calculate_system_matrix(SparseMatrix & system_matrix,
-                                                                  Number const   time) const
-{
-  this->eval_time = time;
-  calculate_system_matrix(system_matrix);
-}
-
 template<int dim, typename Number>
 void
 ConvectionDiffusionOperator<dim, Number>::calculate_system_matrix(
@@ -199,10 +183,6 @@ ConvectionDiffusionOperator<dim, Number>::calculate_system_matrix(
     mass_matrix_operator->calculate_system_matrix(system_matrix);
     system_matrix *= scaling_factor_time_derivative_term;
   }
-  else
-  {
-    // nothing to do since matrix is already explicitly set to zero
-  }
 
   if(this->operator_data.diffusive_problem == true)
   {
@@ -211,7 +191,8 @@ ConvectionDiffusionOperator<dim, Number>::calculate_system_matrix(
 
   if(this->operator_data.convective_problem == true)
   {
-    convective_operator->calculate_system_matrix(system_matrix, this->eval_time);
+    convective_operator->set_evaluation_time(this->eval_time);
+    convective_operator->calculate_system_matrix(system_matrix);
   }
 }
 #endif
@@ -242,7 +223,8 @@ ConvectionDiffusionOperator<dim, Number>::calculate_diagonal(VectorType & diagon
 
   if(this->operator_data.convective_problem == true)
   {
-    convective_operator->add_diagonal(diagonal, this->eval_time);
+    convective_operator->set_evaluation_time(this->eval_time);
+    convective_operator->add_diagonal(diagonal);
   }
 }
 
@@ -331,17 +313,9 @@ ConvectionDiffusionOperator<dim, Number>::apply_add_block_diagonal_elementwise(
   {
     Number const time = this->get_evaluation_time();
 
-    convective_operator->apply_add_block_diagonal_elementwise(cell, dst, src, time);
+    convective_operator->set_evaluation_time(time);
+    convective_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
   }
-}
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::add_block_diagonal_matrices(BlockMatrix & /* matrices */,
-                                                                      Number const /* time */) const
-{
-  // We have to override this function but do not need it for this operator.
-  AssertThrow(false, ExcMessage("Should not arrive here."));
 }
 
 template<int dim, typename Number>
@@ -373,7 +347,8 @@ ConvectionDiffusionOperator<dim, Number>::add_block_diagonal_matrices(BlockMatri
   {
     Number const time = this->get_evaluation_time();
 
-    convective_operator->add_block_diagonal_matrices(matrices, time);
+    convective_operator->set_evaluation_time(time);
+    convective_operator->add_block_diagonal_matrices(matrices);
   }
 }
 

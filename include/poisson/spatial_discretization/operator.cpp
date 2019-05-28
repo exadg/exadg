@@ -164,7 +164,8 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) con
 {
   dst = 0;
 
-  laplace_operator.rhs_add(dst, evaluation_time);
+  laplace_operator.set_evaluation_time(evaluation_time);
+  laplace_operator.rhs_add(dst);
 
   if(param.right_hand_side == true)
     rhs_operator.evaluate_add(dst, evaluation_time);

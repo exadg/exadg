@@ -124,20 +124,11 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const;
 
-  // has to be implemented by derived class since apply_add(dst, src) is overwritten
-  // by derived class and apply_add(dst, src, time) has the same name
-  // (and differs only in the parameters passed to the function).
-  void
-  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
-
   // overwrite function of base class since this is a combined operator
   void
   apply_add(VectorType & dst, VectorType const & src) const;
 
 #ifdef DEAL_II_WITH_TRILINOS
-  void
-  calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
-
   void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
@@ -170,9 +161,6 @@ private:
    */
   void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
-
-  void
-  add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
   void
   initialize_block_diagonal_preconditioner_matrix_free() const;

@@ -240,10 +240,9 @@ public:
   types::global_dof_index
   n() const
   {
-    MatrixFree<dim, Number> const & data      = get_data();
-    unsigned int                    dof_index = get_dof_index();
+    unsigned int dof_index = get_dof_index();
 
-    return data.get_vector_partitioner(dof_index)->size();
+    return this->data->get_vector_partitioner(dof_index)->size();
   }
 
   Number
@@ -256,8 +255,7 @@ public:
   bool
   is_empty_locally() const
   {
-    MatrixFree<dim, Number> const & data = get_data();
-    return (data.n_macro_cells() == 0);
+    return (this->data->n_macro_cells() == 0);
   }
 
   void
@@ -290,10 +288,9 @@ public:
   void
   initialize_dof_vector(VectorType & vector) const
   {
-    MatrixFree<dim, Number> const & data      = get_data();
-    unsigned int                    dof_index = get_dof_index();
+    unsigned int dof_index = get_dof_index();
 
-    data.initialize_dof_vector(vector, dof_index);
+    this->data->initialize_dof_vector(vector, dof_index);
   }
 
   /*
@@ -301,17 +298,10 @@ public:
    */
 #ifdef DEAL_II_WITH_TRILINOS
   virtual void
-  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+  init_system_matrix(SparseMatrix & system_matrix) const;
 
   virtual void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix, Number const time) const
-  {
-    this->eval_time = time;
-    this->calculate_system_matrix(system_matrix);
-  }
-
-  virtual void
-  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+  calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
   /*
@@ -322,9 +312,6 @@ public:
    */
   virtual void
   apply(VectorType & dst, VectorType const & src) const;
-
-  virtual void
-  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
 
   virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
@@ -338,13 +325,7 @@ public:
   rhs(VectorType & dst) const;
 
   void
-  rhs(VectorType & dst, Number const time) const;
-
-  void
   rhs_add(VectorType & dst) const;
-
-  void
-  rhs_add(VectorType & dst, Number const time) const;
 
   /*
    * Evaluate the operator including homogeneous and inhomogeneous contributions. The typical use
@@ -352,10 +333,10 @@ public:
    * splitting into homogeneous and inhomogeneous contributions in not required or not possible.
    */
   void
-  evaluate(VectorType & dst, VectorType const & src, Number const time) const;
+  evaluate(VectorType & dst, VectorType const & src) const;
 
   void
-  evaluate_add(VectorType & dst, VectorType const & src, Number const time) const;
+  evaluate_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * point Jacobi preconditioner (diagonal)
@@ -365,9 +346,6 @@ public:
 
   virtual void
   add_diagonal(VectorType & diagonal) const;
-
-  virtual void
-  add_diagonal(VectorType & diagonal, Number const time) const;
 
   /*
    * block Jacobi preconditioner (block-diagonal)
@@ -380,13 +358,6 @@ public:
   apply_add_block_diagonal_elementwise(unsigned int const                    cell,
                                        VectorizedArray<Number> * const       dst,
                                        VectorizedArray<Number> const * const src) const;
-
-  // apply block diagonal elementwise: matrix-free implementation
-  void
-  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src,
-                                       Number const                          evaluation_time) const;
 
   // apply block diagonal: matrix-based implementation
   void
@@ -408,9 +379,6 @@ public:
 
   virtual void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
-
-  virtual void
-  add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
 protected:
   /*
@@ -664,7 +632,6 @@ private:
                                  BlockMatrix &                   matrices,
                                  BlockMatrix const &             src,
                                  Range const &                   range) const;
-
 
   /*
    * Apply block diagonal.
