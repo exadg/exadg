@@ -84,6 +84,158 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
+AdditionalData const &
+OperatorBase<dim, Number, AdditionalData, n_components>::get_operator_data() const
+{
+  return operator_data;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::set_evaluation_time(
+  double const time) const
+{
+  eval_time = time;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+double
+OperatorBase<dim, Number, AdditionalData, n_components>::get_evaluation_time() const
+{
+  return eval_time;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+unsigned int
+OperatorBase<dim, Number, AdditionalData, n_components>::get_level() const
+{
+  return level_mg_handler;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+AffineConstraints<double> const &
+OperatorBase<dim, Number, AdditionalData, n_components>::get_constraint_matrix() const
+{
+  return *constraint;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+MatrixFree<dim, Number> const &
+OperatorBase<dim, Number, AdditionalData, n_components>::get_data() const
+{
+  return *this->data;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+unsigned int
+OperatorBase<dim, Number, AdditionalData, n_components>::get_dof_index() const
+{
+  return this->operator_data.dof_index;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+unsigned int
+OperatorBase<dim, Number, AdditionalData, n_components>::get_quad_index() const
+{
+  return this->operator_data.quad_index;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+bool
+OperatorBase<dim, Number, AdditionalData, n_components>::operator_is_singular() const
+{
+  return this->operator_data.operator_is_singular;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::vmult(VectorType &       dst,
+                                                               VectorType const & src) const
+{
+  this->apply(dst, src);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::vmult_add(VectorType &       dst,
+                                                                   VectorType const & src) const
+{
+  this->apply_add(dst, src);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::vmult_interface_down(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  vmult(dst, src);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::vmult_add_interface_up(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  vmult_add(dst, src);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+types::global_dof_index
+OperatorBase<dim, Number, AdditionalData, n_components>::m() const
+{
+  return n();
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+types::global_dof_index
+OperatorBase<dim, Number, AdditionalData, n_components>::n() const
+{
+  unsigned int dof_index = get_dof_index();
+
+  return this->data->get_vector_partitioner(dof_index)->size();
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+Number
+OperatorBase<dim, Number, AdditionalData, n_components>::el(const unsigned int,
+                                                            const unsigned int) const
+{
+  AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
+  return Number();
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+bool
+OperatorBase<dim, Number, AdditionalData, n_components>::is_empty_locally() const
+{
+  return (this->data->n_macro_cells() == 0);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::initialize_dof_vector(
+  VectorType & vector) const
+{
+  unsigned int dof_index = get_dof_index();
+
+  this->data->initialize_dof_vector(vector, dof_index);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::calculate_inverse_diagonal(
+  VectorType & diagonal) const
+{
+  this->calculate_diagonal(diagonal);
+
+  //   verify_calculation_of_diagonal(*this,diagonal);
+
+  invert_diagonal(diagonal);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, Number, AdditionalData, n_components>::apply(VectorType &       dst,
                                                                VectorType const & src) const
@@ -218,6 +370,93 @@ OperatorBase<dim, Number, AdditionalData, n_components>::add_diagonal(VectorType
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
+OperatorBase<dim, Number, AdditionalData, n_components>::calculate_block_diagonal_matrices() const
+{
+  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+
+  // allocate memory only the first time
+  if(!block_diagonal_preconditioner_is_initialized ||
+     data->n_macro_cells() * vectorization_length != matrices.size())
+  {
+    auto dofs =
+      data->get_shape_info(this->operator_data.dof_index).dofs_per_component_on_cell * n_components;
+
+    matrices.resize(data->n_macro_cells() * vectorization_length,
+                    LAPACKFullMatrix<Number>(dofs, dofs));
+
+    block_diagonal_preconditioner_is_initialized = true;
+  }
+  // else: reuse old memory
+
+  // clear matrices
+  initialize_block_jacobi_matrices_with_zero(matrices);
+
+  // compute block matrices
+  add_block_diagonal_matrices(matrices);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
+  BlockMatrix & matrices) const
+{
+  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+
+  if(do_eval_faces)
+  {
+    if(operator_data.use_cell_based_loops)
+    {
+      data->cell_loop(&This::cell_based_loop_block_diagonal, this, matrices, matrices);
+    }
+    else
+    {
+      AssertThrow(
+        n_mpi_processes == 1,
+        ExcMessage(
+          "Block diagonal calculation with separate loops over cells and faces only works in serial. "
+          "Use cell based loops for parallel computations."));
+
+      data->loop(&This::cell_loop_block_diagonal,
+                 &This::face_loop_block_diagonal,
+                 &This::boundary_face_loop_block_diagonal,
+                 this,
+                 matrices,
+                 matrices);
+    }
+  }
+  else
+  {
+    data->cell_loop(&This::cell_loop_block_diagonal, this, matrices, matrices);
+  }
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_block_diagonal_matrix_based(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
+  AssertThrow(block_diagonal_preconditioner_is_initialized,
+              ExcMessage("Block Jacobi matrices have not been initialized!"));
+
+  data->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_diagonal(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
+              ExcMessage("Not implemented."));
+
+  this->apply_inverse_block_diagonal_matrix_based(dst, src);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
 OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_diagonal_matrix_based(
   VectorType &       dst,
   VectorType const & src) const
@@ -227,6 +466,15 @@ OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_dia
               ExcMessage("Block Jacobi matrices have not been initialized!"));
 
   data->cell_loop(&This::cell_loop_apply_inverse_block_diagonal_matrix_based, this, dst, src);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::
+  initialize_block_diagonal_preconditioner_matrix_free() const
+{
+  AssertThrow(
+    false, ExcMessage("Not implemented. This function has to be implemented by derived classes."));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -291,19 +539,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::apply_add_block_diagona
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::apply_block_diagonal_matrix_based(
-  VectorType &       dst,
-  VectorType const & src) const
-{
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-  AssertThrow(block_diagonal_preconditioner_is_initialized,
-              ExcMessage("Block Jacobi matrices have not been initialized!"));
-
-  data->cell_loop(&This::cell_loop_apply_block_diagonal_matrix_based, this, dst, src);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
 OperatorBase<dim, Number, AdditionalData, n_components>::update_block_diagonal_preconditioner()
   const
 {
@@ -342,65 +577,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::update_block_diagonal_p
     add_block_diagonal_matrices(matrices);
 
     calculate_lu_factorization_block_jacobi(matrices);
-  }
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::calculate_block_diagonal_matrices() const
-{
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-
-  // allocate memory only the first time
-  if(!block_diagonal_preconditioner_is_initialized ||
-     data->n_macro_cells() * vectorization_length != matrices.size())
-  {
-    auto dofs =
-      data->get_shape_info(this->operator_data.dof_index).dofs_per_component_on_cell * n_components;
-    matrices.resize(data->n_macro_cells() * vectorization_length,
-                    LAPACKFullMatrix<Number>(dofs, dofs));
-    block_diagonal_preconditioner_is_initialized = true;
-  } // else: reuse old memory
-
-  // clear matrices
-  initialize_block_jacobi_matrices_with_zero(matrices);
-
-  // compute block matrices
-  add_block_diagonal_matrices(matrices);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matrices(
-  BlockMatrix & matrices) const
-{
-  AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
-
-  if(do_eval_faces)
-  {
-    if(operator_data.use_cell_based_loops)
-    {
-      data->cell_loop(&This::cell_based_loop_block_diagonal, this, matrices, matrices);
-    }
-    else
-    {
-      AssertThrow(
-        n_mpi_processes == 1,
-        ExcMessage(
-          "Block diagonal calculation with separate loops over cells and faces only works in serial. "
-          "Use cell based loops for parallel computations."));
-
-      data->loop(&This::cell_loop_block_diagonal,
-                 &This::face_loop_block_diagonal,
-                 &This::boundary_face_loop_block_diagonal,
-                 this,
-                 matrices,
-                 matrices);
-    }
-  }
-  else
-  {
-    data->cell_loop(&This::cell_loop_block_diagonal, this, matrices, matrices);
   }
 }
 
@@ -478,39 +654,112 @@ OperatorBase<dim, Number, AdditionalData, n_components>::calculate_system_matrix
 #endif
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
-AdditionalData const &
-OperatorBase<dim, Number, AdditionalData, n_components>::get_operator_data() const
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_cell_integral(
+  FEEvalCell &       fe_eval,
+  unsigned int const cell) const
 {
-  return operator_data;
+  (void)fe_eval;
+  (void)cell;
+
+  AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::set_evaluation_time(
-  double const time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::do_face_integral(
+  FEEvalFace &       fe_eval_m,
+  FEEvalFace &       fe_eval_p,
+  unsigned int const face) const
 {
-  eval_time = time;
+  (void)fe_eval_m;
+  (void)fe_eval_p;
+  (void)face;
+
+  AssertThrow(false, ExcMessage("OperatorBase::do_face_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
-double
-OperatorBase<dim, Number, AdditionalData, n_components>::get_evaluation_time() const
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_boundary_integral(
+  FEEvalFace &               fe_eval,
+  OperatorType const &       operator_type,
+  types::boundary_id const & boundary_id,
+  unsigned int const         face) const
 {
-  return eval_time;
+  (void)fe_eval;
+  (void)operator_type;
+  (void)boundary_id;
+  (void)face;
+
+  AssertThrow(false, ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
-unsigned int
-OperatorBase<dim, Number, AdditionalData, n_components>::get_level() const
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_face_int_integral(
+  FEEvalFace &       fe_eval_m,
+  FEEvalFace &       fe_eval_p,
+  unsigned int const face) const
 {
-  return level_mg_handler;
+  (void)fe_eval_m;
+  (void)fe_eval_p;
+  (void)face;
+
+  AssertThrow(false, ExcMessage("OperatorBase::do_face_int_integral() has not been implemented!"));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
-bool
-OperatorBase<dim, Number, AdditionalData, n_components>::operator_is_singular() const
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_face_ext_integral(
+  FEEvalFace &       fe_eval_m,
+  FEEvalFace &       fe_eval_p,
+  unsigned int const face) const
 {
-  return this->operator_data.operator_is_singular;
+  (void)fe_eval_m;
+  (void)fe_eval_p;
+  (void)face;
+
+  AssertThrow(false, ExcMessage("OperatorBase::do_face_ext_integral() has not been implemented!"));
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_block_diagonal_cell_based() const
+{
+  AssertThrow(false,
+              ExcMessage("OperatorBase::do_block_diagonal_cell_based() has not been implemented!"));
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_face_int_integral_cell_based(
+  FEEvalFace &       fe_eval_m,
+  FEEvalFace &       fe_eval_p,
+  unsigned int const cell,
+  unsigned int const face) const
+{
+  (void)cell;
+  (void)face;
+
+  unsigned int const dummy = 1;
+  do_face_int_integral(fe_eval_m, fe_eval_p, dummy);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_boundary_integral_cell_based(
+  FEEvalFace &               fe_eval,
+  OperatorType const &       operator_type,
+  types::boundary_id const & boundary_id,
+  unsigned int const         cell,
+  unsigned int const         face) const
+{
+  (void)cell;
+  (void)face;
+
+  unsigned int const dummy = 1;
+  do_boundary_integral(fe_eval, operator_type, boundary_id, dummy);
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -647,9 +896,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_inhom_operator(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
-  VectorType const & /*src*/,
-  Range const & range) const
+  VectorType const &              src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalFace fe_eval(data, true, operator_data.dof_index, operator_data.quad_index);
 
   for(unsigned int face = range.first; face < range.second; face++)
@@ -695,12 +946,46 @@ OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_full
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_empty(
+  MatrixFree<dim, Number> const & data,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   range) const
+{
+  (void)data;
+  (void)dst;
+  (void)src;
+  (void)range;
+
+  // do nothing
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_empty(
+  MatrixFree<dim, Number> const & data,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   range) const
+{
+  (void)data;
+  (void)dst;
+  (void)src;
+  (void)range;
+
+  // do nothing
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
 OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
-  VectorType const & /*src*/,
-  Range const & range) const
+  VectorType const &              src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
 
   // create temporal array for local diagonal
@@ -742,9 +1027,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
-  VectorType const & /*src*/,
-  Range const & range) const
+  VectorType const &              src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_data.dof_index, operator_data.quad_index);
 
@@ -806,9 +1093,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
-  VectorType const & /*src*/,
-  Range const & range) const
+  VectorType const &              src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalFace fe_eval(data, true, operator_data.dof_index, operator_data.quad_index);
 
   // create temporal array for local diagonal
@@ -849,9 +1138,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::cell_based_loop_diagonal(
   MatrixFree<dim, Number> const & data,
   VectorType &                    dst,
-  VectorType const & /*src*/,
-  Range const & range) const
+  VectorType const &              src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_data.dof_index, operator_data.quad_index);
@@ -1205,9 +1496,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
-  SparseMatrix const & /*src*/,
-  Range const & range) const
+  SparseMatrix const &            src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalCell fe_eval(data, operator_data.dof_index, operator_data.quad_index);
 
   for(auto cell = range.first; cell < range.second; ++cell)
@@ -1276,9 +1569,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
-  SparseMatrix const & /*src*/,
-  Range const & range) const
+  SparseMatrix const &            src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalFace fe_eval_m(data, true, operator_data.dof_index, operator_data.quad_index);
   FEEvalFace fe_eval_p(data, false, operator_data.dof_index, operator_data.quad_index);
 
@@ -1445,9 +1740,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_calculate_system_matrix(
   MatrixFree<dim, Number> const & data,
   SparseMatrix &                  dst,
-  SparseMatrix const & /*src*/,
-  Range const & range) const
+  SparseMatrix const &            src,
+  Range const &                   range) const
 {
+  (void)src;
+
   FEEvalFace fe_eval(data, true, operator_data.dof_index, operator_data.quad_index);
 
   for(auto face = range.first; face < range.second; ++face)
@@ -1548,4 +1845,21 @@ OperatorBase<dim, Number, AdditionalData, n_components>::verify_boundary_conditi
       }
     }
   }
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_verify_boundary_conditions(
+  types::boundary_id const             boundary_id,
+  AdditionalData const &               operator_data,
+  std::set<types::boundary_id> const & periodic_boundary_ids) const
+{
+  (void)boundary_id;
+  (void)operator_data;
+  (void)periodic_boundary_ids;
+
+  AssertThrow(
+    false,
+    ExcMessage(
+      "OperatorBase::do_verify_boundary_conditions() has to be implemented by derived classes."));
 }

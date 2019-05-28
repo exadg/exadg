@@ -177,28 +177,16 @@ public:
   get_level() const;
 
   AffineConstraints<double> const &
-  get_constraint_matrix() const
-  {
-    return *constraint;
-  }
+  get_constraint_matrix() const;
 
   MatrixFree<dim, Number> const &
-  get_data() const
-  {
-    return *this->data;
-  }
+  get_data() const;
 
   unsigned int
-  get_dof_index() const
-  {
-    return this->operator_data.dof_index;
-  }
+  get_dof_index() const;
 
   unsigned int
-  get_quad_index() const
-  {
-    return this->operator_data.quad_index;
-  }
+  get_quad_index() const;
 
   /*
    * Returns whether the operator is singular, e.g., the Laplace operator with pure Neumann boundary
@@ -208,74 +196,34 @@ public:
   operator_is_singular() const;
 
   void
-  vmult(VectorType & dst, VectorType const & src) const
-  {
-    this->apply(dst, src);
-  }
+  vmult(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_add(VectorType & dst, VectorType const & src) const
-  {
-    this->apply_add(dst, src);
-  }
+  vmult_add(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_interface_down(VectorType & dst, VectorType const & src) const
-  {
-    vmult(dst, src);
-  }
+  vmult_interface_down(VectorType & dst, VectorType const & src) const;
 
   void
-  vmult_add_interface_up(VectorType & dst, VectorType const & src) const
-  {
-    vmult_add(dst, src);
-  }
+  vmult_add_interface_up(VectorType & dst, VectorType const & src) const;
 
   types::global_dof_index
-  m() const
-  {
-    return n();
-  }
+  m() const;
 
   types::global_dof_index
-  n() const
-  {
-    unsigned int dof_index = get_dof_index();
-
-    return this->data->get_vector_partitioner(dof_index)->size();
-  }
+  n() const;
 
   Number
-  el(const unsigned int, const unsigned int) const
-  {
-    AssertThrow(false, ExcMessage("Matrix-free does not allow for entry access"));
-    return Number();
-  }
+  el(const unsigned int, const unsigned int) const;
 
   bool
-  is_empty_locally() const
-  {
-    return (this->data->n_macro_cells() == 0);
-  }
+  is_empty_locally() const;
 
   void
-  calculate_inverse_diagonal(VectorType & diagonal) const
-  {
-    this->calculate_diagonal(diagonal);
+  initialize_dof_vector(VectorType & vector) const;
 
-    //   verify_calculation_of_diagonal(*this,diagonal);
-
-    invert_diagonal(diagonal);
-  }
-
-  virtual void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
-  {
-    AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
-                ExcMessage("Not implemented."));
-
-    this->apply_inverse_block_diagonal_matrix_based(dst, src);
-  }
+  void
+  calculate_inverse_diagonal(VectorType & diagonal) const;
 
   /*
    * Update block diagonal preconditioner: initialize everything related to block diagonal
@@ -285,13 +233,8 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
-  void
-  initialize_dof_vector(VectorType & vector) const
-  {
-    unsigned int dof_index = get_dof_index();
-
-    this->data->initialize_dof_vector(vector, dof_index);
-  }
+  virtual void
+  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
   /*
    * Algebraic multigrid (AMG): sparse matrix (Trilinos) methods
@@ -350,95 +293,76 @@ public:
   /*
    * block Jacobi preconditioner (block-diagonal)
    */
-  virtual void
-  apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
 
-  // apply block diagonal elementwise: matrix-free implementation
+  // matrix-based implementation
   void
-  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
-                                       VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src) const;
+  calculate_block_diagonal_matrices() const;
 
-  // apply block diagonal: matrix-based implementation
+  virtual void
+  add_block_diagonal_matrices(BlockMatrix & matrices) const;
+
   void
   apply_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
 
   void
-  calculate_block_diagonal_matrices() const;
+  apply_inverse_block_diagonal_matrix_based(VectorType & dst, VectorType const & src) const;
+
+  // matrix-free implementation
 
   // This function has to initialize everything related to the block diagonal preconditioner when
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
   virtual void
-  initialize_block_diagonal_preconditioner_matrix_free() const
-  {
-    AssertThrow(false,
-                ExcMessage(
-                  "Not implemented. This function has to be implemented by derived classes."));
-  }
+  initialize_block_diagonal_preconditioner_matrix_free() const;
 
-  virtual void
-  add_block_diagonal_matrices(BlockMatrix & matrices) const;
+  void
+  apply_add_block_diagonal_elementwise(unsigned int const                    cell,
+                                       VectorizedArray<Number> * const       dst,
+                                       VectorizedArray<Number> const * const src) const;
 
 protected:
   /*
    * These methods have to be overwritten by derived classes because these functions are
    * operator-specific and define how the operator looks like.
    */
+
+  // standard integration procedure with separate loops for cell and face integrals
   virtual void
-  do_cell_integral(FEEvalCell & /*fe_eval*/, unsigned int const /*cell*/) const
-  {
-    AssertThrow(false, ExcMessage("OperatorBase::do_cell_integral() has not been implemented!"));
-  }
+  do_cell_integral(FEEvalCell & fe_eval, unsigned int const cell) const;
 
   virtual void
-  do_face_integral(FEEvalFace & /*fe_eval_m*/,
-                   FEEvalFace & /*fe_eval_p*/,
-                   unsigned int const /*face*/) const
-  {
-    AssertThrow(false, ExcMessage("OperatorBase::do_face_integral() has not been implemented!"));
-  }
+  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p, unsigned int const face) const;
 
   virtual void
-  do_face_int_integral(FEEvalFace & /*fe_eval_m*/,
-                       FEEvalFace & /*fe_eval_p*/,
-                       unsigned int const /*face*/) const
-  {
-    AssertThrow(false,
-                ExcMessage("OperatorBase::do_face_int_integral() has not been implemented!"));
-  }
+  do_boundary_integral(FEEvalFace &               fe_eval,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id,
+                       unsigned int const         face) const;
+
+  // The computation of the diagonal and block-diagonal requires face integrals of type
+  // interior (int) and exterior (ext)
+  virtual void
+  do_face_int_integral(FEEvalFace &       fe_eval_m,
+                       FEEvalFace &       fe_eval_p,
+                       unsigned int const face) const;
+
+  virtual void
+  do_face_ext_integral(FEEvalFace &       fe_eval_m,
+                       FEEvalFace &       fe_eval_p,
+                       unsigned int const face) const;
+
+  // cell-based computation of both cell and face integrals
+  virtual void
+  do_block_diagonal_cell_based() const;
 
   // This function has to be overwritten by derived class in case that the indices cell and face are
-  // relevant for a specific operator. We implement this function here to avoid the need that
+  // required to a specific operator. We implement this function here to avoid the need that
   // every derived class has to implement this function.
   virtual void
-  do_face_int_integral_cell_based(FEEvalFace & fe_eval_m,
-                                  FEEvalFace & fe_eval_p,
-                                  unsigned int const /*cell*/,
-                                  unsigned int const /*face*/) const
-  {
-    unsigned int const dummy = 1;
-    do_face_int_integral(fe_eval_m, fe_eval_p, dummy);
-  }
-
-  virtual void
-  do_face_ext_integral(FEEvalFace & /*fe_eval_m*/,
-                       FEEvalFace & /*fe_eval_p*/,
-                       unsigned int const /*face*/) const
-  {
-    AssertThrow(false,
-                ExcMessage("OperatorBase::do_face_ext_integral() has not been implemented!"));
-  }
-
-  virtual void
-  do_boundary_integral(FEEvalFace & /*fe_eval*/,
-                       OperatorType const & /*operator_type*/,
-                       types::boundary_id const & /*boundary_id*/,
-                       unsigned int const /*face*/) const
-  {
-    AssertThrow(false,
-                ExcMessage("OperatorBase::do_boundary_integral() has not been implemented!"));
-  }
+  do_face_int_integral_cell_based(FEEvalFace &       fe_eval_m,
+                                  FEEvalFace &       fe_eval_p,
+                                  unsigned int const cell,
+                                  unsigned int const face) const;
 
   // This function has to be overwritten by derived class in case that the indices cell and face are
   // relevant for a specific operator.
@@ -447,21 +371,7 @@ protected:
                                   OperatorType const &       operator_type,
                                   types::boundary_id const & boundary_id,
                                   unsigned int const         cell,
-                                  unsigned int const         face) const
-  {
-    (void)cell;
-    (void)face;
-
-    unsigned int const dummy = 1;
-    do_boundary_integral(fe_eval, operator_type, boundary_id, dummy);
-  }
-
-  virtual void
-  do_block_diagonal_cell_based() const
-  {
-    AssertThrow(
-      false, ExcMessage("OperatorBase::do_block_diagonal_cell_based() has not been implemented!"));
-  }
+                                  unsigned int const         face) const;
 
   /*
    * Data structure containing all operator-specific data.
@@ -554,29 +464,13 @@ private:
   cell_loop_empty(MatrixFree<dim, Number> const & data,
                   VectorType &                    dst,
                   VectorType const &              src,
-                  Range const &                   range) const
-  {
-    (void)data;
-    (void)dst;
-    (void)src;
-    (void)range;
-
-    // nothing to do
-  }
+                  Range const &                   range) const;
 
   void
   face_loop_empty(MatrixFree<dim, Number> const & data,
                   VectorType &                    dst,
                   VectorType const &              src,
-                  Range const &                   range) const
-  {
-    (void)data;
-    (void)dst;
-    (void)src;
-    (void)range;
-
-    // nothing to do
-  }
+                  Range const &                   range) const;
 
   /*
    * Calculate diagonal.
@@ -659,22 +553,22 @@ private:
    * Calculate sparse matrix.
    */
   void
-  cell_loop_calculate_system_matrix(MatrixFree<dim, Number> const & /*data*/,
-                                    SparseMatrix & dst,
-                                    SparseMatrix const & /*src*/,
-                                    Range const & range) const;
+  cell_loop_calculate_system_matrix(MatrixFree<dim, Number> const & data,
+                                    SparseMatrix &                  dst,
+                                    SparseMatrix const &            src,
+                                    Range const &                   range) const;
 
   void
-  face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & /*data*/,
-                                    SparseMatrix & dst,
-                                    SparseMatrix const & /*src*/,
-                                    Range const & range) const;
+  face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & data,
+                                    SparseMatrix &                  dst,
+                                    SparseMatrix const &            src,
+                                    Range const &                   range) const;
 
   void
-  boundary_face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & /*data*/,
-                                             SparseMatrix & /*dst*/,
-                                             SparseMatrix const & /*src*/,
-                                             Range const & /*range*/) const;
+  boundary_face_loop_calculate_system_matrix(MatrixFree<dim, Number> const & data,
+                                             SparseMatrix &                  dst,
+                                             SparseMatrix const &            src,
+                                             Range const &                   range) const;
 #endif
 
   /*
@@ -698,17 +592,7 @@ private:
   virtual void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
                                 AdditionalData const &               operator_data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const
-  {
-    (void)boundary_id;
-    (void)operator_data;
-    (void)periodic_boundary_ids;
-
-    AssertThrow(
-      false,
-      ExcMessage(
-        "OperatorBase::do_verify_boundary_conditions() has to be implemented by derived classes."));
-  }
+                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators
