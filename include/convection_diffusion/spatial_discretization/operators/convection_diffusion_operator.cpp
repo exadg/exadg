@@ -87,34 +87,6 @@ ConvectionDiffusionOperator<dim, Number>::get_scaling_factor_time_derivative_ter
 }
 
 template<int dim, typename Number>
-AffineConstraints<double> const &
-ConvectionDiffusionOperator<dim, Number>::get_constraint_matrix() const
-{
-  return this->do_get_constraint_matrix();
-}
-
-template<int dim, typename Number>
-MatrixFree<dim, Number> const &
-ConvectionDiffusionOperator<dim, Number>::get_data() const
-{
-  return *this->data;
-}
-
-template<int dim, typename Number>
-unsigned int
-ConvectionDiffusionOperator<dim, Number>::get_dof_index() const
-{
-  return this->operator_data.dof_index;
-}
-
-template<int dim, typename Number>
-unsigned int
-ConvectionDiffusionOperator<dim, Number>::get_quad_index() const
-{
-  return this->operator_data.quad_index;
-}
-
-template<int dim, typename Number>
 std::shared_ptr<BoundaryDescriptor<dim>>
 ConvectionDiffusionOperator<dim, Number>::get_boundary_descriptor() const
 {
@@ -133,20 +105,6 @@ void
 ConvectionDiffusionOperator<dim, Number>::set_velocity(VectorType const & velocity) const
 {
   convective_operator->set_velocity(velocity);
-}
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
-{
-  this->apply(dst, src);
-}
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::vmult_add(VectorType & dst, VectorType const & src) const
-{
-  this->apply_add(dst, src);
 }
 
 template<int dim, typename Number>
@@ -216,13 +174,6 @@ ConvectionDiffusionOperator<dim, Number>::apply_add(VectorType & dst, VectorType
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperator<dim, Number>::init_system_matrix(SparseMatrix & system_matrix) const
-{
-  this->do_init_system_matrix(system_matrix);
-}
-
-template<int dim, typename Number>
-void
 ConvectionDiffusionOperator<dim, Number>::calculate_system_matrix(SparseMatrix & system_matrix,
                                                                   Number const   time) const
 {
@@ -235,23 +186,6 @@ void
 ConvectionDiffusionOperator<dim, Number>::calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
-  this->do_calculate_system_matrix(system_matrix);
-}
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::do_calculate_system_matrix(SparseMatrix & system_matrix,
-                                                                     Number const   time) const
-{
-  this->eval_time = time;
-  do_calculate_system_matrix(system_matrix);
-}
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::do_calculate_system_matrix(
-  SparseMatrix & system_matrix) const
-{
   // clear content of matrix since the next calculate_system_matrix-commands add their result
   system_matrix *= 0.0;
 
@@ -262,7 +196,7 @@ ConvectionDiffusionOperator<dim, Number>::do_calculate_system_matrix(
       ExcMessage(
         "Scaling factor of time derivative term has not been initialized for convection-diffusion operator!"));
 
-    mass_matrix_operator->do_calculate_system_matrix(system_matrix);
+    mass_matrix_operator->calculate_system_matrix(system_matrix);
     system_matrix *= scaling_factor_time_derivative_term;
   }
   else
@@ -272,27 +206,15 @@ ConvectionDiffusionOperator<dim, Number>::do_calculate_system_matrix(
 
   if(this->operator_data.diffusive_problem == true)
   {
-    diffusive_operator->do_calculate_system_matrix(system_matrix);
+    diffusive_operator->calculate_system_matrix(system_matrix);
   }
 
   if(this->operator_data.convective_problem == true)
   {
-    convective_operator->do_calculate_system_matrix(system_matrix, this->eval_time);
+    convective_operator->calculate_system_matrix(system_matrix, this->eval_time);
   }
 }
 #endif
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::calculate_inverse_diagonal(
-  VectorType & inverse_diagonal) const
-{
-  calculate_diagonal(inverse_diagonal);
-
-  //   verify_calculation_of_diagonal(*this,inverse_diagonal);
-
-  invert_diagonal(inverse_diagonal);
-}
 
 template<int dim, typename Number>
 void
@@ -337,7 +259,7 @@ ConvectionDiffusionOperator<dim, Number>::apply_inverse_block_diagonal(VectorTyp
     bool variable_not_needed = false;
     elementwise_solver->solve(dst, src, variable_not_needed);
   }
-  else // matrix based
+  else // matrix-based
   {
     // Simply apply inverse of block matrices (using the LU factorization that has been computed
     // before).
@@ -379,13 +301,6 @@ ConvectionDiffusionOperator<dim, Number>::initialize_block_diagonal_precondition
     *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
     *std::dynamic_pointer_cast<PRECONDITIONER_BASE>(elementwise_preconditioner),
     iterative_solver_data));
-}
-
-template<int dim, typename Number>
-void
-ConvectionDiffusionOperator<dim, Number>::update_block_diagonal_preconditioner() const
-{
-  this->do_update_block_diagonal_preconditioner();
 }
 
 template<int dim, typename Number>

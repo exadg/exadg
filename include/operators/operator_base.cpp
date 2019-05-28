@@ -358,7 +358,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::apply_block_diagonal_ma
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_update_block_diagonal_preconditioner()
+OperatorBase<dim, Number, AdditionalData, n_components>::update_block_diagonal_preconditioner()
   const
 {
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
@@ -471,7 +471,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matr
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_init_system_matrix(
+OperatorBase<dim, Number, AdditionalData, n_components>::init_system_matrix(
   SparseMatrix & system_matrix) const
 {
   DoFHandler<dim> const & dof_handler = this->data->get_dof_handler();
@@ -509,7 +509,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::do_init_system_matrix(
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_calculate_system_matrix(
+OperatorBase<dim, Number, AdditionalData, n_components>::calculate_system_matrix(
   SparseMatrix & system_matrix) const
 {
   // assemble matrix locally on each process
@@ -538,16 +538,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::do_calculate_system_mat
       if(system_matrix(i, i) == 0.0 && constraint->is_constrained(i))
         system_matrix.add(i, i, 1);
   } // nothing to do for dg
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_calculate_system_matrix(
-  SparseMatrix & system_matrix,
-  Number const   time) const
-{
-  this->eval_time = time;
-  do_calculate_system_matrix(system_matrix);
 }
 #endif
 
@@ -578,28 +568,6 @@ unsigned int
 OperatorBase<dim, Number, AdditionalData, n_components>::get_level() const
 {
   return level_mg_handler;
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-AffineConstraints<double> const &
-OperatorBase<dim, Number, AdditionalData, n_components>::do_get_constraint_matrix() const
-{
-  return *constraint;
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-MatrixFree<dim, Number> const &
-OperatorBase<dim, Number, AdditionalData, n_components>::do_get_data() const
-{
-  return *data;
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_initialize_dof_vector(
-  VectorType & vector) const
-{
-  data->initialize_dof_vector(vector, operator_data.dof_index);
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
