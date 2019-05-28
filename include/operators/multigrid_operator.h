@@ -41,9 +41,9 @@ public:
   }
 
   virtual const MatrixFree<dim, Number> &
-  get_data() const
+  get_matrix_free() const
   {
-    return pde_operator->get_data();
+    return pde_operator->get_matrix_free();
   }
 
   virtual unsigned int

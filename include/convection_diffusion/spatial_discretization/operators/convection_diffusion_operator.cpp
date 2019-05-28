@@ -268,7 +268,7 @@ ConvectionDiffusionOperator<dim, Number>::initialize_block_diagonal_precondition
       INVERSE_MASS;
 
     elementwise_preconditioner.reset(
-      new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+      new INVERSE_MASS(this->get_matrix_free(), this->get_dof_index(), this->get_quad_index()));
   }
   else
   {

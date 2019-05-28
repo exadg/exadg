@@ -73,9 +73,6 @@ public:
   unsigned int
   solve(VectorType & sol, VectorType const & rhs) const;
 
-  MatrixFree<dim, Number> const &
-  get_data() const;
-
   Mapping<dim> const &
   get_mapping() const;
 

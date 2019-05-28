@@ -40,7 +40,7 @@ public:
   {
     dst = 0;
 
-    op.get_data().cell_loop(&THIS::local_solve, this, dst, src);
+    op.get_matrix_free().cell_loop(&THIS::local_solve, this, dst, src);
 
     return 0;
   }

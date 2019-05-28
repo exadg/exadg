@@ -181,13 +181,6 @@ DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
 }
 
 template<int dim, typename Number>
-MatrixFree<dim, Number> const &
-DGOperator<dim, Number>::get_data() const
-{
-  return matrix_free;
-}
-
-template<int dim, typename Number>
 Mapping<dim> const &
 DGOperator<dim, Number>::get_mapping() const
 {

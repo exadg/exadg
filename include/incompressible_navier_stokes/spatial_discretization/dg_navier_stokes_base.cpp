@@ -393,7 +393,7 @@ DGNavierStokesBase<dim, Number>::initialize_postprocessor()
 
 template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-DGNavierStokesBase<dim, Number>::get_data() const
+DGNavierStokesBase<dim, Number>::get_matrix_free() const
 {
   return matrix_free;
 }
@@ -1011,7 +1011,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
         typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
 
         elementwise_preconditioner_projection.reset(
-          new INVERSE_MASS(projection_operator->get_data(),
+          new INVERSE_MASS(projection_operator->get_matrix_free(),
                            projection_operator->get_dof_index(),
                            projection_operator->get_quad_index()));
       }

@@ -79,7 +79,7 @@ public:
   bool
   is_empty_locally() const
   {
-    MatrixFree<dim, Number> const & data = get_data();
+    MatrixFree<dim, Number> const & data = get_matrix_free();
     return (data.n_macro_cells() == 0);
   }
 
@@ -148,7 +148,7 @@ public:
   el(const unsigned int, const unsigned int) const;
 
   MatrixFree<dim, Number> const &
-  get_data() const;
+  get_matrix_free() const;
 
   void
   calculate_diagonal(VectorType & diagonal) const;

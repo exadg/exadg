@@ -125,7 +125,7 @@ public:
   types::global_dof_index
   n() const
   {
-    MatrixFree<dim, Number> const & data      = get_data();
+    MatrixFree<dim, Number> const & data      = get_matrix_free();
     unsigned int                    dof_index = get_dof_index();
 
     return data.get_vector_partitioner(dof_index)->size();
@@ -141,14 +141,14 @@ public:
   bool
   is_empty_locally() const
   {
-    MatrixFree<dim, Number> const & data = get_data();
+    MatrixFree<dim, Number> const & data = get_matrix_free();
     return (data.n_macro_cells() == 0);
   }
 
   void
   initialize_dof_vector(VectorType & vector) const
   {
-    MatrixFree<dim, Number> const & data      = get_data();
+    MatrixFree<dim, Number> const & data      = get_matrix_free();
     unsigned int                    dof_index = get_dof_index();
 
     data.initialize_dof_vector(vector, dof_index);
@@ -190,7 +190,7 @@ public:
    */
 
   MatrixFree<dim, Number> const &
-  get_data() const;
+  get_matrix_free() const;
 
   unsigned int
   get_dof_index() const;
@@ -339,7 +339,7 @@ private:
 
   MomentumOperatorData<dim> operator_data;
 
-  MatrixFree<dim, Number> const * data;
+  MatrixFree<dim, Number> const * matrix_free;
 
   MassMatrixOperator<dim, Number> const * mass_matrix_operator;
 

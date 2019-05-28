@@ -152,7 +152,7 @@ public:
    * Getters and setters.
    */
   MatrixFree<dim, Number> const &
-  get_data() const;
+  get_matrix_free() const;
 
   unsigned int
   get_dof_index_velocity() const;

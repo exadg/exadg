@@ -655,13 +655,6 @@ DGOperator<dim, Number>::calculate_minimum_element_length() const
 }
 
 template<int dim, typename Number>
-MatrixFree<dim, Number> const &
-DGOperator<dim, Number>::get_data() const
-{
-  return matrix_free;
-}
-
-template<int dim, typename Number>
 Mapping<dim> const &
 DGOperator<dim, Number>::get_mapping() const
 {

@@ -10,7 +10,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 MomentumOperator<dim, Number>::MomentumOperator()
-  : data(nullptr),
+  : matrix_free(nullptr),
     mass_matrix_operator(nullptr),
     viscous_operator(nullptr),
     convective_operator(nullptr),
@@ -22,22 +22,24 @@ MomentumOperator<dim, Number>::MomentumOperator()
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const &   data,
+MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
                                                 AffineConstraints<double> const & constraint_matrix,
                                                 MomentumOperatorData<dim> const & operator_data)
 {
   (void)constraint_matrix;
 
   // setup own mass matrix operator
-  own_mass_matrix_operator_storage.initialize(data, operator_data.mass_matrix_operator_data);
+  own_mass_matrix_operator_storage.initialize(matrix_free, operator_data.mass_matrix_operator_data);
 
   // TODO: refactor viscous operator, s.t. it does not need mapping
   unsigned int const   degree = operator_data.viscous_operator_data.degree;
   MappingQGeneric<dim> mapping(degree);
-  own_viscous_operator_storage.initialize(mapping, data, operator_data.viscous_operator_data);
-  own_convective_operator_storage.initialize(data, operator_data.convective_operator_data);
+  own_viscous_operator_storage.initialize(mapping,
+                                          matrix_free,
+                                          operator_data.viscous_operator_data);
+  own_convective_operator_storage.initialize(matrix_free, operator_data.convective_operator_data);
 
-  this->reinit(data,
+  this->reinit(matrix_free,
                operator_data,
                own_mass_matrix_operator_storage,
                own_viscous_operator_storage,
@@ -51,14 +53,14 @@ MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const & 
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &         data,
+MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &         matrix_free,
                                       MomentumOperatorData<dim> const &       operator_data,
                                       MassMatrixOperator<dim, Number> const & mass_matrix_operator,
                                       ViscousOperator<dim, Number> const &    viscous_operator,
                                       ConvectiveOperator<dim, Number> const & convective_operator)
 {
   // copy parameters into element variables
-  this->data                 = &data;
+  this->matrix_free          = &matrix_free;
   this->operator_data        = operator_data;
   this->mass_matrix_operator = &mass_matrix_operator;
   this->viscous_operator     = &viscous_operator;
@@ -148,9 +150,9 @@ MomentumOperator<dim, Number>::get_viscous_operator_data() const
 
 template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-MomentumOperator<dim, Number>::get_data() const
+MomentumOperator<dim, Number>::get_matrix_free() const
 {
-  return *data;
+  return *matrix_free;
 }
 
 template<int dim, typename Number>
@@ -295,7 +297,7 @@ MomentumOperator<dim, Number>::initialize_block_diagonal_preconditioner_matrix_f
     typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
 
     elementwise_preconditioner.reset(
-      new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+      new INVERSE_MASS(this->get_matrix_free(), this->get_dof_index(), this->get_quad_index()));
   }
   else
   {
@@ -331,9 +333,9 @@ MomentumOperator<dim, Number>::update_block_diagonal_preconditioner() const
     else // matrix-based variant
     {
       // Note that the velocity has dim components.
-      unsigned int dofs_per_cell = data->get_shape_info().dofs_per_component_on_cell * dim;
+      unsigned int dofs_per_cell = matrix_free->get_shape_info().dofs_per_component_on_cell * dim;
 
-      matrices.resize(data->n_macro_cells() * VectorizedArray<value_type>::n_array_elements,
+      matrices.resize(matrix_free->n_macro_cells() * VectorizedArray<value_type>::n_array_elements,
                       LAPACKFullMatrix<value_type>(dofs_per_cell, dofs_per_cell));
     }
 
@@ -375,7 +377,7 @@ MomentumOperator<dim, Number>::apply_inverse_block_diagonal(VectorType &       d
   {
     // Simply apply inverse of block matrices (using the LU factorization that has been computed
     // before).
-    data->cell_loop(&This::cell_loop_apply_inverse_block_diagonal, this, dst, src);
+    matrix_free->cell_loop(&This::cell_loop_apply_inverse_block_diagonal, this, dst, src);
   }
 }
 
@@ -438,12 +440,12 @@ MomentumOperator<dim, Number>::apply_add_block_diagonal_elementwise(
 template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::cell_loop_apply_inverse_block_diagonal(
-  MatrixFree<dim, Number> const &               data,
+  MatrixFree<dim, Number> const &               matrix_free,
   VectorType &                                  dst,
   VectorType const &                            src,
   std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  Integrator integrator(data, operator_data.dof_index, operator_data.quad_index_std);
+  Integrator integrator(matrix_free, operator_data.dof_index, operator_data.quad_index_std);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
@@ -493,7 +495,7 @@ MomentumOperator<dim, Number>::check_block_jacobi_matrices() const
   vmult_block_jacobi(tmp1, src);
 
   // variant 2 (matrix-based)
-  data->cell_loop(&This::cell_loop_apply_block_diagonal, this, tmp2, src);
+  matrix_free->cell_loop(&This::cell_loop_apply_block_diagonal, this, tmp2, src);
 
   diff = tmp2;
   diff.add(-1.0, tmp1);
@@ -507,12 +509,12 @@ MomentumOperator<dim, Number>::check_block_jacobi_matrices() const
 template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::cell_loop_apply_block_diagonal(
-  MatrixFree<dim, Number> const &               data,
+  MatrixFree<dim, Number> const &               matrix_free,
   VectorType &                                  dst,
   VectorType const &                            src,
   std::pair<unsigned int, unsigned int> const & cell_range) const
 {
-  Integrator integrator(data, operator_data.dof_index, operator_data.quad_index_std);
+  Integrator integrator(matrix_free, operator_data.dof_index, operator_data.quad_index_std);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {

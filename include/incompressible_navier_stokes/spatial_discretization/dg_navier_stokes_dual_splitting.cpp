@@ -122,7 +122,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_operator(
   momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
   momentum_operator_data.convective_operator_data  = this->convective_operator_data;
 
-  helmholtz_operator.reinit(this->get_data(),
+  helmholtz_operator.reinit(this->get_matrix_free(),
                             momentum_operator_data,
                             this->mass_matrix_operator,
                             this->viscous_operator,

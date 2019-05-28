@@ -20,7 +20,7 @@ public:
   get_constraint_matrix() const = 0;
 
   virtual const MatrixFree<dim, Number> &
-  get_data() const = 0;
+  get_matrix_free() const = 0;
 
   virtual unsigned int
   get_dof_index() const = 0;

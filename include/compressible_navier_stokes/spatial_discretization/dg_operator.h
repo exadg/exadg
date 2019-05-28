@@ -142,7 +142,7 @@ public:
 
   // getters
   MatrixFree<dim, Number> const &
-  get_data() const;
+  get_matrix_free() const;
 
   Mapping<dim> const &
   get_mapping() const;
@@ -236,7 +236,7 @@ private:
   DoFHandler<dim> dof_handler_vector; // e.g. velocity
   DoFHandler<dim> dof_handler_scalar; // scalar quantity, e.g, pressure
 
-  MatrixFree<dim, Number> data;
+  MatrixFree<dim, Number> matrix_free;
 
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
