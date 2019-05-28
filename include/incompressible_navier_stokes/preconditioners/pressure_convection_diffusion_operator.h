@@ -26,7 +26,7 @@ struct PressureConvectionDiffusionOperatorData
   bool unsteady_problem;
   bool convective_problem;
 
-  ConvDiff::MassMatrixOperatorData<dim> mass_matrix_operator_data;
+  ConvDiff::MassMatrixOperatorData      mass_matrix_operator_data;
   ConvDiff::DiffusiveOperatorData<dim>  diffusive_operator_data;
   ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
 };

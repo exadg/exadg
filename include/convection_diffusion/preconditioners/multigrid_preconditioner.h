@@ -93,9 +93,9 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit_multigrid(*this->matrix_free_objects[level],
-                                   *this->constraints[level],
-                                   operator_data);
+    pde_operator->reinit(*this->matrix_free_objects[level],
+                         *this->constraints[level],
+                         operator_data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));

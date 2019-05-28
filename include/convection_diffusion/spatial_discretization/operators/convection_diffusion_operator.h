@@ -16,10 +16,10 @@
 namespace ConvDiff
 {
 template<int dim>
-struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
+struct ConvectionDiffusionOperatorData : public OperatorBaseData
 {
   ConvectionDiffusionOperatorData()
-    : OperatorBaseData<dim>(0, 0),
+    : OperatorBaseData(0, 0),
       unsteady_problem(true),
       convective_problem(true),
       diffusive_problem(true),
@@ -53,7 +53,7 @@ struct ConvectionDiffusionOperatorData : public OperatorBaseData<dim>
 
   double scaling_factor_time_derivative_term;
 
-  MassMatrixOperatorData<dim> mass_matrix_operator_data;
+  MassMatrixOperatorData      mass_matrix_operator_data;
   ConvectiveOperatorData<dim> convective_operator_data;
   DiffusiveOperatorData<dim>  diffusive_operator_data;
 

@@ -8,11 +8,11 @@
 namespace ConvDiff
 {
 template<int dim>
-struct DiffusiveOperatorData : public OperatorBaseData<dim>
+struct DiffusiveOperatorData : public OperatorBaseData
 {
   DiffusiveOperatorData()
     // clang-format off
-    : OperatorBaseData<dim>(
+    : OperatorBaseData(
           0, // dof_index
           0, // quad_index
           false, true, false, // cell evaluate

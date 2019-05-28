@@ -72,7 +72,7 @@ public:
         operator_data.get_mapping_update_flags_boundary_faces();
     }
 
-    if(operator_data.do_use_cell_based_loops() && this->level_info[level].is_dg)
+    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg)
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
@@ -91,9 +91,9 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<Laplace> pde_operator(new Laplace());
-    pde_operator->reinit_multigrid(*this->matrix_free_objects[level],
-                                   *this->constraints[level],
-                                   operator_data);
+    pde_operator->reinit(*this->matrix_free_objects[level],
+                         *this->constraints[level],
+                         operator_data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));

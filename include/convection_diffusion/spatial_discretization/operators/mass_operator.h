@@ -5,13 +5,15 @@
 
 namespace ConvDiff
 {
-template<int dim>
-struct MassMatrixOperatorData : public OperatorBaseData<dim>
+struct MassMatrixOperatorData : public OperatorBaseData
 {
   MassMatrixOperatorData()
     // clang-format off
-    : OperatorBaseData<dim>(0, 0,
-          true, false, false, true, false, false) // cell
+    : OperatorBaseData(
+          0, // dof_index
+          0, // quad_index
+          true, false, false, // cell evaluate
+          true, false, false) // cell integrate
   // clang-format on
   {
     this->mapping_update_flags = update_values | update_quadrature_points;
@@ -19,10 +21,10 @@ struct MassMatrixOperatorData : public OperatorBaseData<dim>
 };
 
 template<int dim, typename Number>
-class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData<dim>>
+class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData>
 {
 public:
-  typedef OperatorBase<dim, Number, MassMatrixOperatorData<dim>> Base;
+  typedef OperatorBase<dim, Number, MassMatrixOperatorData> Base;
 
   typedef typename Base::VectorType VectorType;
 

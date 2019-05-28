@@ -164,7 +164,7 @@ void
 DGOperator<dim, Number>::setup_operators()
 {
   // mass matrix operator
-  MassMatrixOperatorData<dim> mass_matrix_operator_data;
+  MassMatrixOperatorData mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index            = 0;
   mass_matrix_operator_data.quad_index           = 0;
   mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
