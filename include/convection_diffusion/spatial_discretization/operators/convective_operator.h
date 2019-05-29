@@ -116,24 +116,22 @@ private:
 
   /*
    * This function calculates the numerical flux where the type of the numerical flux depends on the
-   * specified input parameter.
+   * specified input parameter. This function handles both analytical and numerical velocity fields.
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
     calculate_flux(unsigned int const q,
                    FEEvalFace &       fe_eval_m,
                    scalar const &     value_m,
-                   scalar const &     value_p) const;
+                   scalar const &     value_p,
+                   bool const         exterior_velocity_available) const;
 
   /*
-   * The same as above, but with discontinuous velocity field.
+   * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_flux(scalar const & value_m,
-                   scalar const & value_p,
-                   scalar const & normal_velocity_m,
-                   scalar const & normal_velocity_p) const;
+    vector
+    get_volume_flux(FEEvalCell & fe_eval, unsigned int const q) const;
 
   /*
    * Calculation of interior and exterior values on domain boundaries.
@@ -154,51 +152,40 @@ private:
                              types::boundary_id const boundary_id = types::boundary_id()) const;
 
   void
-  do_cell_integral(FEEvalCell & fe_eval, unsigned int const /*cell*/) const;
+  reinit_cell(unsigned int const cell) const;
 
   void
-  do_face_integral(FEEvalFace & fe_eval_m,
-                   FEEvalFace & fe_eval_p,
-                   unsigned int const /*face*/) const;
+  reinit_face(unsigned int const face) const;
 
   void
-  do_face_int_integral(FEEvalFace & fe_eval_m,
-                       FEEvalFace & /*fe_eval_p*/,
-                       unsigned int const /*face*/) const;
+  reinit_boundary_face(unsigned int const face) const;
 
   void
-  do_face_int_integral_cell_based(FEEvalFace &       fe_eval_m,
-                                  FEEvalFace &       fe_eval_p,
-                                  unsigned int const cell,
-                                  unsigned int const face) const;
+  reinit_face_cell_based(unsigned int const       cell,
+                         unsigned int const       face,
+                         types::boundary_id const boundary_id) const;
 
   void
-  do_face_int_integral(FEEvalFace &         fe_eval_m,
-                       FEEvalFaceVelocity & fe_eval_velocity_m,
-                       FEEvalFaceVelocity & fe_eval_velocity_p) const;
+  do_cell_integral(FEEvalCell & fe_eval) const;
 
   void
-  do_face_ext_integral(FEEvalFace & /*fe_eval_m*/,
-                       FEEvalFace & fe_eval_p,
-                       unsigned int const /*face*/) const;
+  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+
+  void
+  do_face_int_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+
+  void
+  do_face_ext_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
 
   void
   do_boundary_integral(FEEvalFace &               fe_eval_m,
                        OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id,
-                       unsigned int const /*face*/) const;
-
-  void
-  do_boundary_integral_cell_based(FEEvalFace &               fe_eval,
-                                  OperatorType const &       operator_type,
-                                  types::boundary_id const & boundary_id,
-                                  unsigned int const         cell,
-                                  unsigned int const         face) const;
-
-  void
-  do_boundary_integral(FEEvalFace &               fe_eval,
-                       OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  // TODO can be removed later once matrix-free evaluation allows accessing neighboring data for
+  // cell-based face loops
+  void
+  do_face_int_integral_cell_based(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,

@@ -1488,7 +1488,7 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
 
       bool singular = false;
       if(type_laplacian == DiscretizationOfLaplacian::Classical)
-        singular = laplace_operator_classical->is_singular();
+        singular = laplace_operator_classical->operator_is_singular();
       else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
         singular = laplace_operator_compatible->is_singular();
       else

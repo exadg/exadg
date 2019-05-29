@@ -19,7 +19,7 @@ public:
   virtual AffineConstraints<double> const &
   get_constraint_matrix() const = 0;
 
-  virtual const MatrixFree<dim, Number> &
+  virtual MatrixFree<dim, Number> const &
   get_matrix_free() const = 0;
 
   virtual unsigned int

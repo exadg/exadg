@@ -108,37 +108,60 @@ inline DEAL_II_ALWAYS_INLINE //
          0.5 * lambda * jump_value;
 }
 
-/*
- * This function calculates the numerical flux where the type of the numerical flux depends on the
- * specified input parameter.
- */
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   ConvectiveOperator<dim, Number>::calculate_flux(unsigned int const q,
                                                   FEEvalFace &       fe_eval,
                                                   scalar const &     value_m,
-                                                  scalar const &     value_p) const
+                                                  scalar const &     value_p,
+                                                  bool const exterior_velocity_available) const
 {
-  scalar flux = make_vectorized_array<Number>(0.0);
-
-  Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-
-  vector velocity =
-    evaluate_vectorial_function(this->operator_data.velocity, q_points, this->eval_time);
-
   vector normal = fe_eval.get_normal_vector(q);
+  scalar flux   = make_vectorized_array<Number>(0.0);
 
-  scalar normal_velocity = velocity * normal;
-
-  if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
   {
-    flux = calculate_central_flux(value_m, value_p, normal_velocity);
+    Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
+
+    vector velocity =
+      evaluate_vectorial_function(this->operator_data.velocity, q_points, this->eval_time);
+
+    scalar normal_velocity = velocity * normal;
+
+    if(this->operator_data.numerical_flux_formulation ==
+       NumericalFluxConvectiveOperator::CentralFlux)
+    {
+      flux = calculate_central_flux(value_m, value_p, normal_velocity);
+    }
+    else if(this->operator_data.numerical_flux_formulation ==
+            NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+    {
+      flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity);
+    }
   }
-  else if(this->operator_data.numerical_flux_formulation ==
-          NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
   {
-    flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity);
+    vector velocity_m = fe_eval_velocity_m->get_value(q);
+    vector velocity_p = exterior_velocity_available ? fe_eval_velocity_p->get_value(q) : velocity_m;
+
+    scalar normal_velocity_m = velocity_m * normal;
+    scalar normal_velocity_p = velocity_p * normal;
+
+    if(this->operator_data.numerical_flux_formulation ==
+       NumericalFluxConvectiveOperator::CentralFlux)
+    {
+      flux = calculate_central_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+    }
+    else if(this->operator_data.numerical_flux_formulation ==
+            NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+    {
+      flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+    }
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
   return flux;
@@ -146,25 +169,27 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  ConvectiveOperator<dim, Number>::calculate_flux(scalar const & value_m,
-                                                  scalar const & value_p,
-                                                  scalar const & normal_velocity_m,
-                                                  scalar const & normal_velocity_p) const
+  Tensor<1, dim, VectorizedArray<Number>>
+  ConvectiveOperator<dim, Number>::get_volume_flux(FEEvalCell & fe_eval, unsigned int const q) const
 {
-  scalar flux = make_vectorized_array<Number>(0.0);
+  vector velocity;
 
-  if(this->operator_data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
   {
-    flux = calculate_central_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+    velocity = evaluate_vectorial_function(this->operator_data.velocity,
+                                           fe_eval.quadrature_point(q),
+                                           this->eval_time);
   }
-  else if(this->operator_data.numerical_flux_formulation ==
-          NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
   {
-    flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+    velocity = fe_eval_velocity->get_value(q);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  return flux;
+  return (-fe_eval.get_value(q) * velocity);
 }
 
 /*
@@ -248,177 +273,138 @@ inline DEAL_II_ALWAYS_INLINE //
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::do_cell_integral(FEEvalCell &       fe_eval,
-                                                  unsigned int const cell) const
+ConvectiveOperator<dim, Number>::reinit_cell(unsigned int const cell) const
 {
-  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
-  {
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-    {
-      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
+  Base::reinit_cell(cell);
 
-      vector velocity =
-        evaluate_vectorial_function(this->operator_data.velocity, q_points, this->eval_time);
-
-      fe_eval.submit_gradient(-fe_eval.get_value(q) * velocity, q);
-    }
-  }
-  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
   {
     fe_eval_velocity->reinit(cell);
     fe_eval_velocity->gather_evaluate(velocity, true, false, false);
-
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-    {
-      fe_eval.submit_gradient(-fe_eval.get_value(q) * fe_eval_velocity->get_value(q), q);
-    }
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
   }
 }
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::do_face_integral(FEEvalFace &       fe_eval,
-                                                  FEEvalFace &       fe_eval_neighbor,
-                                                  unsigned int const face) const
+ConvectiveOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
-  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
-  {
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-    {
-      scalar value_m = fe_eval.get_value(q);
-      scalar value_p = fe_eval_neighbor.get_value(q);
+  Base::reinit_face(face);
 
-      scalar numerical_flux = calculate_flux(q, fe_eval, value_m, value_p);
-
-      fe_eval.submit_value(numerical_flux, q);
-      fe_eval_neighbor.submit_value(-numerical_flux, q);
-    }
-  }
-  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
   {
     fe_eval_velocity_m->reinit(face);
     fe_eval_velocity_m->gather_evaluate(velocity, true, false);
 
     fe_eval_velocity_p->reinit(face);
     fe_eval_velocity_p->gather_evaluate(velocity, true, false);
+  }
+}
 
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
+{
+  Base::reinit_boundary_face(face);
+
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    fe_eval_velocity_m->reinit(face);
+    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
+  }
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
+                                                        unsigned int const       face,
+                                                        types::boundary_id const boundary_id) const
+{
+  Base::reinit_face_cell_based(cell, face, boundary_id);
+
+  if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    fe_eval_velocity_m->reinit(cell, face);
+    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
+
+    if(boundary_id == numbers::internal_face_boundary_id) // internal face
     {
-      scalar value_m = fe_eval.get_value(q);
-      scalar value_p = fe_eval_neighbor.get_value(q);
-
-      vector velocity_m = fe_eval_velocity_m->get_value(q);
-      vector velocity_p = fe_eval_velocity_p->get_value(q);
-
-      vector normal = fe_eval.get_normal_vector(q);
-
-      scalar normal_velocity_m = velocity_m * normal;
-      scalar normal_velocity_p = velocity_p * normal;
-
-      scalar flux = calculate_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
-
-      fe_eval.submit_value(flux, q);
-      fe_eval_neighbor.submit_value(-flux, q);
+      // TODO: Matrix-free implementation in deal.II does currently not allow to access data of the
+      // neighboring element in case of cell-based face loops.
+      //      fe_eval_velocity_p->reinit(cell, face);
+      //      fe_eval_velocity_p->gather_evaluate(velocity, true, false);
     }
   }
-  else
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::do_cell_integral(FEEvalCell & fe_eval) const
+{
+  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    fe_eval.submit_gradient(get_volume_flux(fe_eval, q), q);
+  }
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::do_face_integral(FEEvalFace & fe_eval_m,
+                                                  FEEvalFace & fe_eval_p) const
+{
+  for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
+  {
+    scalar value_m = fe_eval_m.get_value(q);
+    scalar value_p = fe_eval_p.get_value(q);
+
+    scalar flux = calculate_flux(q, fe_eval_m, value_m, value_p, true);
+
+    fe_eval_m.submit_value(flux, q);
+    fe_eval_p.submit_value(-flux, q);
   }
 }
 
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::do_face_int_integral(FEEvalFace & fe_eval_m,
-                                                      FEEvalFace & /*fe_eval_p*/,
-                                                      unsigned int const face) const
+                                                      FEEvalFace & fe_eval_p) const
 {
-  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
-  {
-    for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
-    {
-      scalar value_m = fe_eval_m.get_value(q);
-      // set value_p to zero
-      scalar value_p = make_vectorized_array<Number>(0.0);
+  (void)fe_eval_p;
 
-      scalar numerical_flux = calculate_flux(q, fe_eval_m, value_m, value_p);
-
-      fe_eval_m.submit_value(numerical_flux, q);
-    }
-  }
-  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    fe_eval_velocity_m->reinit(face);
-    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
-
-    fe_eval_velocity_p->reinit(face);
-    fe_eval_velocity_p->gather_evaluate(velocity, true, false);
-
-    do_face_int_integral(fe_eval_m, *fe_eval_velocity_m, *fe_eval_velocity_p);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(FEEvalFace &       fe_eval_m,
-                                                                 FEEvalFace &       fe_eval_p,
-                                                                 unsigned int const cell,
-                                                                 unsigned int const face) const
-{
-  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
-  {
-    this->do_face_int_integral(fe_eval_m, fe_eval_p, face);
-  }
-  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    fe_eval_velocity_m->reinit(cell, face);
-    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
-
-    // TODO: Matrix-free implementation in deal.II does currently not allow to access data of the
-    // neighboring element.
-    //  fe_eval_velocity_p->reinit(cell, face);
-    //  fe_eval_velocity_p->gather_evaluate(velocity, true, false);
-
-    //  do_face_int_integral(fe_eval_m, *fe_eval_velocity_m, *fe_eval_velocity_p);
-
-    // TODO: we have to use fe_eval_velocity_m twice to avoid the above problem
-    do_face_int_integral(fe_eval_m, *fe_eval_velocity_m, *fe_eval_velocity_m);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::do_face_int_integral(FEEvalFace &         fe_eval_m,
-                                                      FEEvalFaceVelocity & fe_eval_velocity_m,
-                                                      FEEvalFaceVelocity & fe_eval_velocity_p) const
-{
   for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
   {
-    scalar value_m = fe_eval_m.get_value(q);
     // set value_p to zero
     scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_m = fe_eval_m.get_value(q);
 
-    vector velocity_m = fe_eval_velocity_m.get_value(q);
-    vector velocity_p = fe_eval_velocity_p.get_value(q);
+    scalar flux = calculate_flux(q, fe_eval_m, value_m, value_p, true);
 
-    vector normal = fe_eval_m.get_normal_vector(q);
+    fe_eval_m.submit_value(flux, q);
+  }
+}
 
-    scalar normal_velocity_m = velocity_m * normal;
-    scalar normal_velocity_p = velocity_p * normal;
+// TODO can be removed later once matrix-free evaluation allows accessing neighboring data for
+// cell-based face loops
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(FEEvalFace & fe_eval_m,
+                                                                 FEEvalFace & fe_eval_p) const
+{
+  (void)fe_eval_p;
 
-    scalar flux = calculate_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+  for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
+  {
+    // set value_p to zero
+    scalar value_p = make_vectorized_array<Number>(0.0);
+    scalar value_m = fe_eval_m.get_value(q);
+
+    // TODO
+    // The matrix-free implementation in deal.II does currently not allow to access neighboring data
+    // in case of cell-based face loops. We therefore have to use fe_eval_velocity_m twice to avoid
+    // the problem of accessing data of the neighboring element. Note that this variant calculates
+    // the diagonal and block-diagonal only approximately. The theoretically correct version using
+    // fe_eval_velocity_p is currently not implemented in deal.II.
+    bool exterior_velocity_available = false; // TODO -> set to true once functionality is available
+    scalar flux = calculate_flux(q, fe_eval_m, value_m, value_p, exterior_velocity_available);
 
     fe_eval_m.submit_value(flux, q);
   }
@@ -426,146 +412,44 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(FEEvalFace &         fe_ev
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::do_face_ext_integral(FEEvalFace & /*fe_eval_m*/,
-                                                      FEEvalFace &       fe_eval_p,
-                                                      unsigned int const face) const
+ConvectiveOperator<dim, Number>::do_face_ext_integral(FEEvalFace & fe_eval_m,
+                                                      FEEvalFace & fe_eval_p) const
 {
-  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
+  (void)fe_eval_m;
+
+  for(unsigned int q = 0; q < fe_eval_p.n_q_points; ++q)
   {
-    for(unsigned int q = 0; q < fe_eval_p.n_q_points; ++q)
-    {
-      // set value_m to zero
-      scalar value_m        = make_vectorized_array<Number>(0.0);
-      scalar value_p        = fe_eval_p.get_value(q);
-      scalar numerical_flux = calculate_flux(q, fe_eval_p, value_m, value_p);
+    // set value_m to zero
+    scalar value_m = make_vectorized_array<Number>(0.0);
+    scalar value_p = fe_eval_p.get_value(q);
 
-      // hack (minus sign) since n⁺ = -n⁻
-      fe_eval_p.submit_value(-numerical_flux, q);
-    }
-  }
-  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    fe_eval_velocity_m->reinit(face);
-    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
+    scalar flux = calculate_flux(q, fe_eval_p, value_m, value_p, true);
 
-    fe_eval_velocity_p->reinit(face);
-    fe_eval_velocity_p->gather_evaluate(velocity, true, false);
-
-    for(unsigned int q = 0; q < fe_eval_p.n_q_points; ++q)
-    {
-      // set value_m to zero
-      scalar value_m = make_vectorized_array<Number>(0.0);
-      scalar value_p = fe_eval_p.get_value(q);
-
-      vector velocity_m = fe_eval_velocity_m->get_value(q);
-      vector velocity_p = fe_eval_velocity_p->get_value(q);
-
-      vector normal = fe_eval_p.get_normal_vector(q);
-
-      scalar normal_velocity_m = velocity_m * normal;
-      scalar normal_velocity_p = velocity_p * normal;
-
-      scalar flux = calculate_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
-
-      // minus sign since n⁺ = -n⁻
-      fe_eval_p.submit_value(-flux, q);
-    }
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    // minus sign since n⁺ = -n⁻
+    fe_eval_p.submit_value(-flux, q);
   }
 }
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
-                                                      OperatorType const &       operator_type,
-                                                      types::boundary_id const & boundary_id,
-                                                      unsigned int const         face) const
-{
-  if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
-  {
-    BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
-    for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-    {
-      scalar value_m = calculate_interior_value(q, fe_eval, operator_type);
-      scalar value_p =
-        calculate_exterior_value(value_m, q, fe_eval, operator_type, boundary_type, boundary_id);
-      scalar numerical_flux = calculate_flux(q, fe_eval, value_m, value_p);
-
-      fe_eval.submit_value(numerical_flux, q);
-    }
-  }
-  else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    fe_eval_velocity_m->reinit(face);
-    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
-
-    do_boundary_integral(fe_eval, operator_type, boundary_id);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::do_boundary_integral_cell_based(
-  FEEvalFace &               fe_eval,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id,
-  unsigned int const         cell,
-  unsigned int const         face) const
-{
-  if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    fe_eval_velocity_m->reinit(cell, face);
-    fe_eval_velocity_m->gather_evaluate(velocity, true, false);
-  }
-
-  do_boundary_integral(fe_eval, operator_type, boundary_id);
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
+ConvectiveOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval_m,
                                                       OperatorType const &       operator_type,
                                                       types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+  for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value(q, fe_eval, operator_type);
+    scalar value_m = calculate_interior_value(q, fe_eval_m, operator_type);
     scalar value_p =
-      calculate_exterior_value(value_m, q, fe_eval, operator_type, boundary_type, boundary_id);
+      calculate_exterior_value(value_m, q, fe_eval_m, operator_type, boundary_type, boundary_id);
 
-    vector velocity_m;
+    // In case of numerical velocity field:
+    // Simply use velocity_p = velocity_m for boundary integrals -> exterior_velocity_available =
+    // false.
+    scalar flux = calculate_flux(q, fe_eval_m, value_m, value_p, false);
 
-    if(this->operator_data.type_velocity_field == TypeVelocityField::Analytical)
-    {
-      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-      velocity_m =
-        evaluate_vectorial_function(this->operator_data.velocity, q_points, this->eval_time);
-    }
-    else if(this->operator_data.type_velocity_field == TypeVelocityField::Numerical)
-    {
-      velocity_m = fe_eval_velocity_m->get_value(q);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-
-    vector normal = fe_eval.get_normal_vector(q);
-
-    scalar normal_velocity_m = velocity_m * normal;
-
-    scalar flux = calculate_flux(value_m, value_p, normal_velocity_m, normal_velocity_m);
-
-    fe_eval.submit_value(flux, q);
+    fe_eval_m.submit_value(flux, q);
   }
 }
 

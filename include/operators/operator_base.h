@@ -326,52 +326,53 @@ protected:
    * operator-specific and define how the operator looks like.
    */
 
-  // standard integration procedure with separate loops for cell and face integrals
   virtual void
-  do_cell_integral(FEEvalCell & fe_eval, unsigned int const cell) const;
+  reinit_cell(unsigned int const cell) const;
 
   virtual void
-  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p, unsigned int const face) const;
+  reinit_face(unsigned int const face) const;
+
+  virtual void
+  reinit_boundary_face(unsigned int const face) const;
+
+  // standard integration procedure with separate loops for cell and face integrals
+  virtual void
+  do_cell_integral(FEEvalCell & fe_eval) const;
+
+  virtual void
+  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
 
   virtual void
   do_boundary_integral(FEEvalFace &               fe_eval,
                        OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id,
-                       unsigned int const         face) const;
+                       types::boundary_id const & boundary_id) const;
 
   // The computation of the diagonal and block-diagonal requires face integrals of type
   // interior (int) and exterior (ext)
   virtual void
-  do_face_int_integral(FEEvalFace &       fe_eval_m,
-                       FEEvalFace &       fe_eval_p,
-                       unsigned int const face) const;
+  do_face_int_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
 
   virtual void
-  do_face_ext_integral(FEEvalFace &       fe_eval_m,
-                       FEEvalFace &       fe_eval_p,
-                       unsigned int const face) const;
+  do_face_ext_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
 
   // cell-based computation of both cell and face integrals
   virtual void
+  reinit_face_cell_based(unsigned int const       cell,
+                         unsigned int const       face,
+                         types::boundary_id const boundary_id) const;
+
+  // This function is currently only needed due to limitations of deal.II which do
+  // currently not allow to access neighboring data in case of cell-based face loops.
+  // Once this functionality is available, this function should be removed again.
+  // Since only special operators need to evaluate neighboring data, this function
+  // simply redirects to do_face_int_integral() unless specified otherwise, i.e.,
+  // if this function is not overwritten by a derived class (such as convective terms
+  // that require an additional evaluation of velocity fields for example).
+  virtual void
+  do_face_int_integral_cell_based(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+
+  virtual void
   do_block_diagonal_cell_based() const;
-
-  // This function has to be overwritten by derived class in case that the indices cell and face are
-  // required to a specific operator. We implement this function here to avoid the need that
-  // every derived class has to implement this function.
-  virtual void
-  do_face_int_integral_cell_based(FEEvalFace &       fe_eval_m,
-                                  FEEvalFace &       fe_eval_p,
-                                  unsigned int const cell,
-                                  unsigned int const face) const;
-
-  // This function has to be overwritten by derived class in case that the indices cell and face are
-  // relevant for a specific operator.
-  virtual void
-  do_boundary_integral_cell_based(FEEvalFace &               fe_eval,
-                                  OperatorType const &       operator_type,
-                                  types::boundary_id const & boundary_id,
-                                  unsigned int const         cell,
-                                  unsigned int const         face) const;
 
   /*
    * Data structure containing all operator-specific data.
@@ -392,6 +393,13 @@ protected:
    * Constraint matrix.
    */
   mutable lazy_ptr<AffineConstraints<double>> constraint;
+
+  /*
+   * Cell and face integrators.
+   */
+  mutable std::shared_ptr<FEEvalCell> fe_eval;
+  mutable std::shared_ptr<FEEvalFace> fe_eval_m;
+  mutable std::shared_ptr<FEEvalFace> fe_eval_p;
 
 private:
   /*
@@ -629,13 +637,6 @@ private:
   mutable bool block_diagonal_preconditioner_is_initialized;
 
   unsigned int n_mpi_processes;
-
-  /*
-   * FEEvaluation objects required for elementwise application of block Jacobi operation
-   */
-  mutable std::shared_ptr<FEEvalCell> fe_eval;
-  mutable std::shared_ptr<FEEvalFace> fe_eval_m;
-  mutable std::shared_ptr<FEEvalFace> fe_eval_p;
 
   /*
    * for CG

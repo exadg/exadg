@@ -51,7 +51,8 @@ private:
   typedef typename Base::FEEvalCell FEEvalCell;
   typedef typename Base::FEEvalFace FEEvalFace;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
 public:
   typedef Number                    value_type;
@@ -64,16 +65,10 @@ public:
          AffineConstraints<double> const & constraint_matrix,
          LaplaceOperatorData<dim> const &  operator_data) const;
 
-  /*
-   * Returns whether the operator is singular, e.g., in case of pure Neumann boundary conditions.
-   */
-  bool
-  is_singular() const;
-
 private:
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_value_flux(scalar const & jump_value) const;
+    calculate_value_flux(scalar const & value_m, scalar const & value_p) const;
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar
@@ -94,7 +89,8 @@ private:
     scalar
     calculate_gradient_flux(scalar const & normal_gradient_m,
                             scalar const & normal_gradient_p,
-                            scalar const & jump_value,
+                            scalar const & value_m,
+                            scalar const & value_p,
                             scalar const & penalty_parameter) const;
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -112,29 +108,40 @@ private:
                                        BoundaryType const &     boundary_type,
                                        types::boundary_id const boundary_id) const;
 
-  void
-  do_cell_integral(FEEvalCell & fe_eval, unsigned int const /*cell*/) const;
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    get_volume_flux(FEEvalCell & fe_eval, unsigned int const q) const;
 
   void
-  do_face_integral(FEEvalFace & fe_eval,
-                   FEEvalFace & fe_eval_neighbor,
-                   unsigned int const /*face*/) const;
+  reinit_face(unsigned int const face) const;
 
   void
-  do_face_int_integral(FEEvalFace & fe_eval,
-                       FEEvalFace & fe_eval_neighbor,
-                       unsigned int const /*face*/) const;
+  reinit_boundary_face(unsigned int const face) const;
 
   void
-  do_face_ext_integral(FEEvalFace & fe_eval,
-                       FEEvalFace & fe_eval_neighbor,
-                       unsigned int const /*face*/) const;
+  reinit_face_cell_based(unsigned int const       cell,
+                         unsigned int const       face,
+                         types::boundary_id const boundary_id) const;
 
   void
-  do_boundary_integral(FEEvalFace &               fe_eval,
+  do_cell_integral(FEEvalCell & fe_eval) const;
+
+  void
+  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+
+  void
+  do_face_int_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+
+  void
+  do_face_ext_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+
+  void
+  do_boundary_integral(FEEvalFace &               fe_eval_m,
                        OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id,
-                       unsigned int const /*face*/) const;
+                       types::boundary_id const & boundary_id) const;
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
@@ -143,6 +150,8 @@ private:
 
   // stores the penalty parameter of the interior penalty method for each cell
   mutable AlignedVector<scalar> array_penalty_parameter;
+
+  mutable scalar tau;
 };
 
 } // namespace Poisson

@@ -5,8 +5,7 @@
 namespace Poisson
 {
 template<int dim, typename Number>
-LaplaceOperator<dim, Number>::LaplaceOperator()
-  : OperatorBase<dim, Number, LaplaceOperatorData<dim>>()
+LaplaceOperator<dim, Number>::LaplaceOperator() : tau(make_vectorized_array<Number>(0.0))
 {
 }
 
@@ -27,18 +26,12 @@ LaplaceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
 }
 
 template<int dim, typename Number>
-bool
-LaplaceOperator<dim, Number>::is_singular() const
-{
-  return this->operator_is_singular();
-}
-
-template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
-  LaplaceOperator<dim, Number>::calculate_value_flux(scalar const & jump_value) const
+  LaplaceOperator<dim, Number>::calculate_value_flux(scalar const & value_m,
+                                                     scalar const & value_p) const
 {
-  return -0.5 * jump_value;
+  return -0.5 * (value_m - value_p);
 }
 
 template<int dim, typename Number>
@@ -116,10 +109,11 @@ inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   LaplaceOperator<dim, Number>::calculate_gradient_flux(scalar const & normal_gradient_m,
                                                         scalar const & normal_gradient_p,
-                                                        scalar const & jump_value,
+                                                        scalar const & value_m,
+                                                        scalar const & value_p,
                                                         scalar const & penalty_parameter) const
 {
-  return 0.5 * (normal_gradient_m + normal_gradient_p) - penalty_parameter * jump_value;
+  return 0.5 * (normal_gradient_m + normal_gradient_p) - penalty_parameter * (value_m - value_p);
 }
 
 template<int dim, typename Number>
@@ -195,130 +189,171 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 template<int dim, typename Number>
-void
-LaplaceOperator<dim, Number>::do_cell_integral(FEEvalCell & fe_eval,
-                                               unsigned int const /*cell*/) const
+inline DEAL_II_ALWAYS_INLINE //
+  Tensor<1, dim, VectorizedArray<Number>>
+  LaplaceOperator<dim, Number>::get_volume_flux(FEEvalCell & fe_eval, unsigned int const q) const
 {
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-    fe_eval.submit_gradient(fe_eval.get_gradient(q), q);
+  return fe_eval.get_gradient(q);
+}
+
+
+template<int dim, typename Number>
+void
+LaplaceOperator<dim, Number>::reinit_face(unsigned int const face) const
+{
+  Base::reinit_face(face);
+
+  tau = std::max(this->fe_eval_m->read_cell_data(array_penalty_parameter),
+                 this->fe_eval_p->read_cell_data(array_penalty_parameter)) *
+        IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_face_integral(FEEvalFace & fe_eval,
-                                               FEEvalFace & fe_eval_neighbor,
-                                               unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
 {
-  scalar tau_IP =
-    std::max(fe_eval.read_cell_data(array_penalty_parameter),
-             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
+  Base::reinit_boundary_face(face);
 
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+  tau = this->fe_eval_m->read_cell_data(array_penalty_parameter) *
+        IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
+}
+
+template<int dim, typename Number>
+void
+LaplaceOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
+                                                     unsigned int const       face,
+                                                     types::boundary_id const boundary_id) const
+{
+  Base::reinit_face_cell_based(cell, face, boundary_id);
+
+  if(boundary_id == numbers::internal_face_boundary_id) // internal face
   {
-    scalar jump_value = fe_eval.get_value(q) - fe_eval_neighbor.get_value(q);
-    scalar value_flux = calculate_value_flux(jump_value);
-
-    scalar normal_gradient_m = fe_eval.get_normal_derivative(q);
-    scalar normal_gradient_p = fe_eval_neighbor.get_normal_derivative(q);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
-
-    fe_eval.submit_normal_derivative(value_flux, q);
-    fe_eval_neighbor.submit_normal_derivative(value_flux, q);
-
-    fe_eval.submit_value(-gradient_flux, q);
-    fe_eval_neighbor.submit_value(gradient_flux, q); // + sign since n⁺ = -n⁻
+    tau = std::max(this->fe_eval_m->read_cell_data(array_penalty_parameter),
+                   this->fe_eval_p->read_cell_data(array_penalty_parameter)) *
+          IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
+  }
+  else // boundary face
+  {
+    tau = this->fe_eval_m->read_cell_data(array_penalty_parameter) *
+          IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
   }
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                   FEEvalFace & fe_eval_neighbor,
-                                                   unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_cell_integral(FEEvalCell & fe_eval) const
 {
-  scalar tau_IP =
-    std::max(fe_eval.read_cell_data(array_penalty_parameter),
-             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
-
   for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
   {
+    fe_eval.submit_gradient(get_volume_flux(fe_eval, q), q);
+  }
+}
+
+template<int dim, typename Number>
+void
+LaplaceOperator<dim, Number>::do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const
+{
+  for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
+  {
+    scalar value_m = fe_eval_m.get_value(q);
+    scalar value_p = fe_eval_p.get_value(q);
+
+    scalar value_flux = calculate_value_flux(value_m, value_p);
+
+    scalar normal_gradient_m = fe_eval_m.get_normal_derivative(q);
+    scalar normal_gradient_p = fe_eval_p.get_normal_derivative(q);
+
+    scalar gradient_flux =
+      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, value_m, value_p, tau);
+
+    fe_eval_m.submit_normal_derivative(value_flux, q);
+    fe_eval_p.submit_normal_derivative(value_flux, q);
+
+    fe_eval_m.submit_value(-gradient_flux, q);
+    fe_eval_p.submit_value(gradient_flux, q); // + sign since n⁺ = -n⁻
+  }
+}
+
+template<int dim, typename Number>
+void
+LaplaceOperator<dim, Number>::do_face_int_integral(FEEvalFace & fe_eval_m,
+                                                   FEEvalFace & fe_eval_p) const
+{
+  (void)fe_eval_p;
+
+  for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
+  {
     // set exterior value to zero
-    scalar jump_value = fe_eval.get_value(q);
-    scalar value_flux = calculate_value_flux(jump_value);
+    scalar value_m = fe_eval_m.get_value(q);
+    scalar value_p = make_vectorized_array<Number>(0.0);
+
+    scalar value_flux = calculate_value_flux(value_m, value_p);
 
     // set exterior value to zero
-    scalar normal_gradient_m = fe_eval.get_normal_derivative(q);
+    scalar normal_gradient_m = fe_eval_m.get_normal_derivative(q);
     scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
-    fe_eval.submit_normal_derivative(value_flux, q);
-    fe_eval.submit_value(-gradient_flux, q);
+    scalar gradient_flux =
+      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, value_m, value_p, tau);
+
+    fe_eval_m.submit_normal_derivative(value_flux, q);
+    fe_eval_m.submit_value(-gradient_flux, q);
   }
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
-                                                   FEEvalFace & fe_eval_neighbor,
-                                                   unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_face_ext_integral(FEEvalFace & fe_eval_m,
+                                                   FEEvalFace & fe_eval_p) const
 {
-  scalar tau_IP =
-    std::max(fe_eval.read_cell_data(array_penalty_parameter),
-             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
+  (void)fe_eval_m;
 
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+  for(unsigned int q = 0; q < fe_eval_p.n_q_points; ++q)
   {
     // set value_m to zero
-    scalar jump_value = fe_eval_neighbor.get_value(q);
-    scalar value_flux = calculate_value_flux(jump_value);
+    scalar value_p = fe_eval_p.get_value(q);
+    scalar value_m = make_vectorized_array<Number>(0.0);
+
+    scalar value_flux = calculate_value_flux(value_p, value_m);
 
     // set gradient_m to zero
     scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
     // minus sign to get the correct normal vector n⁺ = -n⁻
-    scalar normal_gradient_p = -fe_eval_neighbor.get_normal_derivative(q);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
+    scalar normal_gradient_p = -fe_eval_p.get_normal_derivative(q);
 
-    // minus sign since n⁺ = -n⁻
-    fe_eval_neighbor.submit_normal_derivative(-value_flux, q);
-    fe_eval_neighbor.submit_value(-gradient_flux, q);
+    scalar gradient_flux =
+      calculate_gradient_flux(normal_gradient_p, normal_gradient_m, value_p, value_m, tau);
+
+    fe_eval_p.submit_normal_derivative(-value_flux, q); // opposite sign since n⁺ = -n⁻
+    fe_eval_p.submit_value(-gradient_flux, q);
   }
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
+LaplaceOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval_m,
                                                    OperatorType const &       operator_type,
-                                                   types::boundary_id const & boundary_id,
-                                                   unsigned int const /*face*/) const
+                                                   types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-  scalar tau_IP =
-    fe_eval.read_cell_data(array_penalty_parameter) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
-
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+  for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value(q, fe_eval, operator_type);
+    scalar value_m = calculate_interior_value(q, fe_eval_m, operator_type);
     scalar value_p =
-      calculate_exterior_value(value_m, q, fe_eval, operator_type, boundary_type, boundary_id);
-    scalar jump_value = value_m - value_p;
-    scalar value_flux = calculate_value_flux(jump_value);
+      calculate_exterior_value(value_m, q, fe_eval_m, operator_type, boundary_type, boundary_id);
 
-    scalar normal_gradient_m = calculate_interior_normal_gradient(q, fe_eval, operator_type);
+    scalar value_flux = calculate_value_flux(value_m, value_p);
+
+    scalar normal_gradient_m = calculate_interior_normal_gradient(q, fe_eval_m, operator_type);
     scalar normal_gradient_p = calculate_exterior_normal_gradient(
-      normal_gradient_m, q, fe_eval, operator_type, boundary_type, boundary_id);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
+      normal_gradient_m, q, fe_eval_m, operator_type, boundary_type, boundary_id);
 
-    fe_eval.submit_normal_derivative(value_flux, q);
-    fe_eval.submit_value(-gradient_flux, q);
+    scalar gradient_flux =
+      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, value_m, value_p, tau);
+
+    fe_eval_m.submit_normal_derivative(value_flux, q);
+    fe_eval_m.submit_value(-gradient_flux, q);
   }
 }
 
