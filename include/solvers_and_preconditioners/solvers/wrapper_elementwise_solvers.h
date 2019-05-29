@@ -62,7 +62,7 @@ public:
   {
     dst = 0;
 
-    op.get_data().cell_loop(&THIS::solve_elementwise, this, dst, src);
+    op.get_matrix_free().cell_loop(&THIS::solve_elementwise, this, dst, src);
 
     return 0;
   }

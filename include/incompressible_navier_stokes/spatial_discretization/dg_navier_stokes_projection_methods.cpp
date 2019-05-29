@@ -207,7 +207,8 @@ DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(
   VectorType &   dst,
   double const & evaluation_time) const
 {
-  this->laplace_operator.rhs_add(dst, evaluation_time);
+  this->laplace_operator.set_evaluation_time(evaluation_time);
+  this->laplace_operator.rhs_add(dst);
 }
 
 template<int dim, typename Number>

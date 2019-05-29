@@ -146,7 +146,7 @@ CompatibleLaplaceOperator<dim, Number>::el(const unsigned int, const unsigned in
 
 template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-CompatibleLaplaceOperator<dim, Number>::get_data() const
+CompatibleLaplaceOperator<dim, Number>::get_matrix_free() const
 {
   return *data;
 }

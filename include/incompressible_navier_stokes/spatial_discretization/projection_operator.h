@@ -167,20 +167,21 @@ public:
       array_conti_penalty_parameter.resize(n_cells);
 
     if(operator_data.use_divergence_penalty)
-      integrator.reset(
-        new CellIntegratorU(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+      integrator.reset(new CellIntegratorU(this->get_matrix_free(),
+                                           this->get_dof_index(),
+                                           this->get_quad_index()));
 
     if(operator_data.use_continuity_penalty)
     {
-      integrator_m.reset(
-        new FaceIntegratorU(this->get_data(), true, this->get_dof_index(), this->get_quad_index()));
+      integrator_m.reset(new FaceIntegratorU(
+        this->get_matrix_free(), true, this->get_dof_index(), this->get_quad_index()));
       integrator_p.reset(new FaceIntegratorU(
-        this->get_data(), false, this->get_dof_index(), this->get_quad_index()));
+        this->get_matrix_free(), false, this->get_dof_index(), this->get_quad_index()));
     }
   }
 
   MatrixFree<dim, Number> const &
-  get_data() const
+  get_matrix_free() const
   {
     return matrix_free;
   }
@@ -970,7 +971,7 @@ private:
       typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
 
       elementwise_preconditioner.reset(
-        new INVERSE_MASS(this->get_data(), this->get_dof_index(), this->get_quad_index()));
+        new INVERSE_MASS(this->get_matrix_free(), this->get_dof_index(), this->get_quad_index()));
     }
     else
     {

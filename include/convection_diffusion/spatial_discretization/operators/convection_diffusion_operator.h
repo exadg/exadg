@@ -111,18 +111,6 @@ public:
   double
   get_scaling_factor_time_derivative_term() const;
 
-  AffineConstraints<double> const &
-  get_constraint_matrix() const;
-
-  MatrixFree<dim, Number> const &
-  get_data() const;
-
-  unsigned int
-  get_dof_index() const;
-
-  unsigned int
-  get_quad_index() const;
-
   std::shared_ptr<BoundaryDescriptor<dim>>
   get_boundary_descriptor() const;
 
@@ -132,53 +120,22 @@ public:
   void
   set_velocity(VectorType const & velocity) const;
 
-  // Apply matrix-vector multiplication.
-  void
-  vmult(VectorType & dst, VectorType const & src) const;
-
-  void
-  vmult_add(VectorType & dst, VectorType const & src) const;
-
+  // overwrite function of base class since this is a combined operator
   void
   apply(VectorType & dst, VectorType const & src) const;
 
-  void
-  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
-
+  // overwrite function of base class since this is a combined operator
   void
   apply_add(VectorType & dst, VectorType const & src) const;
 
-
-  void
-  set_evaluation_time(double const evaluation_time_in) const
-  {
-    Base::set_evaluation_time(evaluation_time_in);
-  }
-
-
 #ifdef DEAL_II_WITH_TRILINOS
   void
-  init_system_matrix(SparseMatrix & system_matrix) const;
-
-  void
-  calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
-
-  void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
-
-  void
-  do_calculate_system_matrix(SparseMatrix & system_matrix, Number const time) const;
-
-  void
-  do_calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
   /*
    * Diagonal preconditioner.
    */
-
-  void
-  calculate_inverse_diagonal(VectorType & inverse_diagonal) const;
 
   void
   calculate_diagonal(VectorType & diagonal) const;
@@ -197,9 +154,6 @@ public:
                                        VectorizedArray<Number> const * const src,
                                        unsigned int const problem_size = 1) const;
 
-  void
-  update_block_diagonal_preconditioner() const;
-
 private:
   /*
    * This function calculates the block Jacobi matrices and adds the result to matrices. This is
@@ -207,9 +161,6 @@ private:
    */
   void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
-
-  void
-  add_block_diagonal_matrices(BlockMatrix & matrices, Number const time) const;
 
   void
   initialize_block_diagonal_preconditioner_matrix_free() const;

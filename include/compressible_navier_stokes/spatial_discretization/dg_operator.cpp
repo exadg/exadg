@@ -103,21 +103,21 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
-  data.initialize_dof_vector(src, dof_index_all);
+  matrix_free.initialize_dof_vector(src, dof_index_all);
 }
 
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_dof_vector_scalar(VectorType & src) const
 {
-  data.initialize_dof_vector(src, dof_index_scalar);
+  matrix_free.initialize_dof_vector(src, dof_index_scalar);
 }
 
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_dof_vector_dim_components(VectorType & src) const
 {
-  data.initialize_dof_vector(src, dof_index_vector);
+  matrix_free.initialize_dof_vector(src, dof_index_vector);
 }
 
 template<int dim, typename Number>
@@ -230,9 +230,9 @@ DGOperator<dim, Number>::apply_inverse_mass(VectorType & dst, VectorType const &
 
 template<int dim, typename Number>
 MatrixFree<dim, Number> const &
-DGOperator<dim, Number>::get_data() const
+DGOperator<dim, Number>::get_matrix_free() const
 {
-  return data;
+  return matrix_free;
 }
 
 template<int dim, typename Number>
@@ -430,7 +430,8 @@ DGOperator<dim, Number>::initialize_matrix_free()
   constraint_matrix_vec[dof_index_vector] = &constraint;
   constraint_matrix_vec[dof_index_scalar] = &constraint;
 
-  data.reinit(*mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+  matrix_free.reinit(
+    *mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
 template<int dim, typename Number>
@@ -441,12 +442,12 @@ DGOperator<dim, Number>::setup_operators()
   MassMatrixOperatorData mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index  = dof_index_all;
   mass_matrix_operator_data.quad_index = quad_index_standard;
-  mass_matrix_operator.initialize(data, mass_matrix_operator_data);
+  mass_matrix_operator.initialize(matrix_free, mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_all.initialize(data, param.degree, dof_index_all, quad_index_standard);
-  inverse_mass_vector.initialize(data, param.degree, dof_index_vector, quad_index_standard);
-  inverse_mass_scalar.initialize(data, param.degree, dof_index_scalar, quad_index_standard);
+  inverse_mass_all.initialize(matrix_free, param.degree, dof_index_all, quad_index_standard);
+  inverse_mass_vector.initialize(matrix_free, param.degree, dof_index_vector, quad_index_standard);
+  inverse_mass_scalar.initialize(matrix_free, param.degree, dof_index_scalar, quad_index_standard);
 
   // body force operator
   BodyForceOperatorData<dim> body_force_operator_data;
@@ -455,7 +456,7 @@ DGOperator<dim, Number>::setup_operators()
   body_force_operator_data.rhs_rho    = field_functions->right_hand_side_density;
   body_force_operator_data.rhs_u      = field_functions->right_hand_side_velocity;
   body_force_operator_data.rhs_E      = field_functions->right_hand_side_energy;
-  body_force_operator.initialize(data, body_force_operator_data);
+  body_force_operator.initialize(matrix_free, body_force_operator_data);
 
   // convective operator
   ConvectiveOperatorData<dim> convective_operator_data;
@@ -467,7 +468,7 @@ DGOperator<dim, Number>::setup_operators()
   convective_operator_data.bc_E                  = boundary_descriptor_energy;
   convective_operator_data.heat_capacity_ratio   = param.heat_capacity_ratio;
   convective_operator_data.specific_gas_constant = param.specific_gas_constant;
-  convective_operator.initialize(data, convective_operator_data);
+  convective_operator.initialize(matrix_free, convective_operator_data);
 
   // viscous operator
   ViscousOperatorData<dim> viscous_operator_data;
@@ -483,7 +484,7 @@ DGOperator<dim, Number>::setup_operators()
   viscous_operator_data.bc_rho                = boundary_descriptor_density;
   viscous_operator_data.bc_u                  = boundary_descriptor_velocity;
   viscous_operator_data.bc_E                  = boundary_descriptor_energy;
-  viscous_operator.initialize(*mapping, data, viscous_operator_data);
+  viscous_operator.initialize(*mapping, matrix_free, viscous_operator_data);
 
   if(param.use_combined_operator == true)
   {
@@ -499,22 +500,25 @@ DGOperator<dim, Number>::setup_operators()
     combined_operator_data.bc_p       = boundary_descriptor_pressure;
     combined_operator_data.bc_E       = boundary_descriptor_energy;
 
-    combined_operator.initialize(data,
+    combined_operator.initialize(matrix_free,
                                  combined_operator_data,
                                  convective_operator,
                                  viscous_operator);
   }
 
   // calculators
-  p_u_T_calculator.initialize(data,
+  p_u_T_calculator.initialize(matrix_free,
                               dof_index_all,
                               dof_index_vector,
                               dof_index_scalar,
                               quad_index_l2_projections,
                               param.heat_capacity_ratio,
                               param.specific_gas_constant);
-  vorticity_calculator.initialize(data, dof_index_vector, quad_index_standard);
-  divergence_calculator.initialize(data, dof_index_vector, dof_index_scalar, quad_index_standard);
+  vorticity_calculator.initialize(matrix_free, dof_index_vector, quad_index_standard);
+  divergence_calculator.initialize(matrix_free,
+                                   dof_index_vector,
+                                   dof_index_scalar,
+                                   quad_index_standard);
 }
 
 template<int dim, typename Number>

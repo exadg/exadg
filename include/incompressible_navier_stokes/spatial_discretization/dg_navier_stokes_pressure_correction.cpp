@@ -92,7 +92,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_operator(
     this->param.implement_block_diagonal_preconditioner_matrix_free;
   momentum_operator_data.mg_operator_type = this->param.multigrid_operator_type_momentum;
 
-  momentum_operator.reinit(this->get_data(),
+  momentum_operator.reinit(this->get_matrix_free(),
                            momentum_operator_data,
                            this->mass_matrix_operator,
                            this->viscous_operator,

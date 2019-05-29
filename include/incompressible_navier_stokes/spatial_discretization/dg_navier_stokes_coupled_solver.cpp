@@ -102,7 +102,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_momentum_operator(
     this->param.implement_block_diagonal_preconditioner_matrix_free;
   momentum_operator_data.mg_operator_type = this->param.multigrid_operator_type_velocity_block;
 
-  momentum_operator.reinit(this->get_data(),
+  momentum_operator.reinit(this->get_matrix_free(),
                            momentum_operator_data,
                            this->mass_matrix_operator,
                            this->viscous_operator,
@@ -571,7 +571,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   {
     // inverse mass matrix
     preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
-      this->get_data(),
+      this->get_matrix_free(),
       this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
@@ -644,7 +644,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   if(type == SchurComplementPreconditioner::InverseMassMatrix)
   {
     inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_data(),
+      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
                                                           this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
@@ -674,7 +674,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // inverse mass matrix to also include the part of the preconditioner that is beneficial when
     // using large time steps and large viscosities.
     inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_data(),
+      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
                                                           this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
@@ -697,7 +697,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
       // --> inverse velocity mass matrix needed for inner factor
       inv_mass_matrix_preconditioner_schur_complement.reset(
         new InverseMassMatrixPreconditioner<dim, dim, Number>(
-          this->get_data(),
+          this->get_matrix_free(),
           this->param.degree_u,
           this->get_dof_index_velocity(),
           this->get_quad_index_velocity_linear()));
@@ -725,7 +725,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
 
     // III. inverse pressure mass matrix
     inv_mass_matrix_preconditioner_schur_complement.reset(
-      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_data(),
+      new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
                                                           this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
@@ -858,7 +858,9 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
     laplace_operator_data.bc             = this->boundary_descriptor_laplace;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
-    laplace_operator_classical->reinit(this->get_data(), this->constraint_p, laplace_operator_data);
+    laplace_operator_classical->reinit(this->get_matrix_free(),
+                                       this->constraint_p,
+                                       laplace_operator_data);
 
     solver_pressure_block.reset(
       new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
@@ -871,7 +873,7 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
 
     laplace_operator_compatible.reset(new CompatibleLaplaceOperator<dim, Number>());
 
-    laplace_operator_compatible->initialize(this->get_data(),
+    laplace_operator_compatible->initialize(this->get_matrix_free(),
                                             compatible_laplace_operator_data,
                                             this->gradient_operator,
                                             this->divergence_operator,
@@ -969,7 +971,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
 
   pressure_convection_diffusion_operator.reset(new PressureConvectionDiffusionOperator<dim, Number>(
     *this->mapping,
-    this->get_data(),
+    this->get_matrix_free(),
     pressure_convection_diffusion_operator_data,
     this->constraint_p));
 

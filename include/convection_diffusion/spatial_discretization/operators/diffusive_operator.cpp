@@ -22,7 +22,7 @@ DiffusiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    mf_dat
 
   MappingQGeneric<dim> mapping(operator_data.degree_mapping);
   IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
-                                               *this->data,
+                                               *this->matrix_free,
                                                mapping,
                                                this->operator_data.degree,
                                                this->operator_data.dof_index);

@@ -21,9 +21,9 @@ public:
   }
 
   MatrixFree<dim, Number> const &
-  get_data() const
+  get_matrix_free() const
   {
-    return op.get_data();
+    return op.get_matrix_free();
   }
 
   unsigned int

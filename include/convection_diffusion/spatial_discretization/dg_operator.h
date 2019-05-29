@@ -123,8 +123,8 @@ public:
 
   /*
    * This function calculates the inhomogeneous parts of all operators arising e.g. from
-   * inhomogeneous boundary conditions or the solution at previous instants of time occuring in the
-   * discrete time derivate term.
+   * inhomogeneous boundary conditions or the solution at previous instants of time occurring in the
+   * discrete time derivative term.
    *
    * Note that the convective operator only has a contribution to the right-hand side if it is
    * formulated implicitly in time. In case of an explicit treatment the whole convective operator
@@ -177,9 +177,6 @@ public:
   /*
    * Setters and getters.
    */
-  MatrixFree<dim, Number> const &
-  get_data() const;
-
   Mapping<dim> const &
   get_mapping() const;
 

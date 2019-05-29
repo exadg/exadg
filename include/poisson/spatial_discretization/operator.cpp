@@ -164,7 +164,8 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) con
 {
   dst = 0;
 
-  laplace_operator.rhs_add(dst, evaluation_time);
+  laplace_operator.set_evaluation_time(evaluation_time);
+  laplace_operator.rhs_add(dst);
 
   if(param.right_hand_side == true)
     rhs_operator.evaluate_add(dst, evaluation_time);
@@ -177,13 +178,6 @@ DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
   unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
 
   return iterations;
-}
-
-template<int dim, typename Number>
-MatrixFree<dim, Number> const &
-DGOperator<dim, Number>::get_data() const
-{
-  return matrix_free;
 }
 
 template<int dim, typename Number>
