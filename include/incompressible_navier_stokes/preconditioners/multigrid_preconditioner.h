@@ -130,13 +130,15 @@ public:
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);
 
-    additional_data.level_mg_handler = this->level_info[level].level;
+    additional_data.level_mg_handler = this->level_info[level].h_level();
 
     if(operator_data.use_cell_based_loops)
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &dof_handler.get_triangulation());
-      Categorization::do_cell_based_loops(*tria, additional_data, this->level_info[level].level);
+      Categorization::do_cell_based_loops(*tria,
+                                          additional_data,
+                                          this->level_info[level].h_level());
     }
 
     matrix_free->reinit(

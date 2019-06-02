@@ -186,9 +186,10 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_levels(
     auto fine   = level_info[l];
     auto coarse = level_info[l - 1];
 
-    AssertThrow(
-      (fine.level != coarse.level) ^ (fine.degree != coarse.degree) ^ (fine.is_dg != coarse.is_dg),
-      ExcMessage("Between levels there is only ONE change allowed: either in h- or p-level!"));
+    AssertThrow((fine.h_level() != coarse.h_level()) ^ (fine.degree() != coarse.degree()) ^
+                  (fine.is_dg() != coarse.is_dg()),
+                ExcMessage(
+                  "Between levels there is only ONE change allowed: either in h- or p-level!"));
   }
 }
 
@@ -282,7 +283,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   // populate dof-handler and constrained dofs to all hp-levels with the same degree
   for(unsigned int level = 0; level < level_info.size(); level++)
   {
-    auto p_level            = level_info[level].id;
+    auto p_level            = level_info[level].dof_handler_id();
     dof_handlers[level]     = map_dofhandlers[p_level];
     constrained_dofs[level] = map_constraints[p_level];
   }
@@ -291,13 +292,13 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   {
     auto constraint_own = new AffineConstraints<double>;
 
-    ConstraintUtil::add_constraints<dim>(level_info[level].is_dg,
+    ConstraintUtil::add_constraints<dim>(level_info[level].is_dg(),
                                          is_singular,
                                          *dof_handlers[level],
                                          *constraint_own,
                                          *constrained_dofs[level],
                                          periodic_face_pairs,
-                                         level_info[level].level);
+                                         level_info[level].h_level());
 
     constraints[level].reset(constraint_own);
   }

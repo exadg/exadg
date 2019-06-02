@@ -95,11 +95,11 @@ public:
     // velocity mass matrix operator)
     std::vector<Quadrature<1>> quadrature_vec;
     quadrature_vec.resize(2);
-    quadrature_vec[0] = QGauss<1>(this->level_info[level].degree + 1 +
+    quadrature_vec[0] = QGauss<1>(this->level_info[level].degree() + 1 +
                                   (operator_data.degree_u - operator_data.degree_p));
     // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature is
     // needed for p-transfer
-    quadrature_vec[1] = QGauss<1>(this->level_info[level].degree + 1);
+    quadrature_vec[1] = QGauss<1>(this->level_info[level].degree() + 1);
 
     // additional data
     typename MatrixFree<dim, MultigridNumber>::AdditionalData addit_data;
@@ -108,7 +108,7 @@ public:
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);
 
-    if(this->level_info[level].is_dg)
+    if(this->level_info[level].is_dg())
     {
       addit_data.mapping_update_flags_inner_faces =
         (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
@@ -119,7 +119,7 @@ public:
          update_values);
     }
 
-    addit_data.level_mg_handler = this->level_info[level].level;
+    addit_data.level_mg_handler = this->level_info[level].h_level();
 
     // if(operator_data.use_cell_based_loops)
     //{
@@ -168,11 +168,13 @@ public:
     // setup global velocity levels
     for(auto & level : this->level_info)
       level_info_velocity.push_back(
-        {level.level, level.degree + operator_data.degree_u - operator_data.degree_p, level.is_dg});
+        {level.h_level(),
+         level.degree() + operator_data.degree_u - operator_data.degree_p,
+         level.is_dg()});
 
     // setup p velocity levels
     for(auto level : level_info_velocity)
-      p_levels_velocity.push_back(level.id);
+      p_levels_velocity.push_back(level.dof_handler_id());
 
     sort(p_levels_velocity.begin(), p_levels_velocity.end());
     p_levels_velocity.erase(unique(p_levels_velocity.begin(), p_levels_velocity.end()),
