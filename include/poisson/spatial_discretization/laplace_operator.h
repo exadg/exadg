@@ -72,41 +72,11 @@ private:
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_interior_value(unsigned int const   q,
-                             FEEvalFace const &   fe_eval,
-                             OperatorType const & operator_type) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_exterior_value(scalar const &           value_m,
-                             unsigned int const       q,
-                             FEEvalFace const &       fe_eval,
-                             OperatorType const &     operator_type,
-                             BoundaryType const &     boundary_type,
-                             types::boundary_id const boundary_id) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
     calculate_gradient_flux(scalar const & normal_gradient_m,
                             scalar const & normal_gradient_p,
                             scalar const & value_m,
                             scalar const & value_p,
                             scalar const & penalty_parameter) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_interior_normal_gradient(unsigned int const   q,
-                                       FEEvalFace const &   fe_eval,
-                                       OperatorType const & operator_type) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_exterior_normal_gradient(scalar const &           normal_gradient_m,
-                                       unsigned int const       q,
-                                       FEEvalFace const &       fe_eval,
-                                       OperatorType const &     operator_type,
-                                       BoundaryType const &     boundary_type,
-                                       types::boundary_id const boundary_id) const;
 
   /*
    * Volume flux, i.e., the term occurring in the volume integral

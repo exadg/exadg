@@ -65,7 +65,7 @@ private:
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &     data,
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
          AffineConstraints<double> const &   constraint_matrix,
          ConvectiveOperatorData<dim> const & operator_data) const;
 
@@ -132,24 +132,6 @@ private:
   inline DEAL_II_ALWAYS_INLINE //
     vector
     get_volume_flux(FEEvalCell & fe_eval, unsigned int const q) const;
-
-  /*
-   * Calculation of interior and exterior values on domain boundaries.
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_interior_value(unsigned int const   q,
-                             FEEvalFace const &   fe_eval_m,
-                             OperatorType const & operator_type) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_exterior_value(scalar const &           value_m,
-                             unsigned int const       q,
-                             FEEvalFace const &       fe_eval_m,
-                             OperatorType const &     operator_type,
-                             BoundaryType const &     boundary_type,
-                             types::boundary_id const boundary_id = types::boundary_id()) const;
 
   void
   reinit_cell(unsigned int const cell) const;

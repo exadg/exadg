@@ -58,47 +58,11 @@ public:
   DiffusiveOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &    mf_data,
+  reinit(MatrixFree<dim, Number> const &    matrix_free,
          AffineConstraints<double> const &  constraint_matrix,
          DiffusiveOperatorData<dim> const & operator_data) const;
 
-  void
-  apply_add(VectorType & dst, VectorType const & src, Number const time) const;
-
-  void
-  apply_add(VectorType & dst, VectorType const & src) const;
-
 private:
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_interior_value(unsigned int const   q,
-                             FEEvalFace const &   fe_eval,
-                             OperatorType const & operator_type) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_exterior_value(scalar const &           value_m,
-                             unsigned int const       q,
-                             FEEvalFace const &       fe_eval,
-                             OperatorType const &     operator_type,
-                             BoundaryType const &     boundary_type,
-                             types::boundary_id const boundary_id) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_interior_normal_gradient(unsigned int const   q,
-                                       FEEvalFace const &   fe_eval,
-                                       OperatorType const & operator_type) const;
-
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_exterior_normal_gradient(scalar const &           normal_gradient_m,
-                                       unsigned int const       q,
-                                       FEEvalFace const &       fe_eval,
-                                       OperatorType const &     operator_type,
-                                       BoundaryType const &     boundary_type,
-                                       types::boundary_id const boundary_id) const;
-
   /*
    *  Calculation of "value_flux".
    */

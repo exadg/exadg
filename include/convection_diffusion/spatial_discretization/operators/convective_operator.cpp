@@ -1,31 +1,31 @@
 #include "convective_operator.h"
 
 #include "verify_boundary_conditions.h"
-
-#include "../../../functionalities/evaluate_functions.h"
+#include "weak_boundary_conditions.h"
 
 namespace ConvDiff
 {
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     data,
+ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
                                         AffineConstraints<double> const &   constraint_matrix,
                                         ConvectiveOperatorData<dim> const & operator_data) const
 {
-  Base::reinit(data, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, operator_data);
 
   if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
   {
-    data.initialize_dof_vector(velocity, operator_data.dof_index_velocity);
+    matrix_free.initialize_dof_vector(velocity, operator_data.dof_index_velocity);
 
-    fe_eval_velocity.reset(
-      new FEEvalCellVelocity(data, operator_data.dof_index_velocity, operator_data.quad_index));
+    fe_eval_velocity.reset(new FEEvalCellVelocity(matrix_free,
+                                                  operator_data.dof_index_velocity,
+                                                  operator_data.quad_index));
 
     fe_eval_velocity_m.reset(new FEEvalFaceVelocity(
-      data, true, operator_data.dof_index_velocity, operator_data.quad_index));
+      matrix_free, true, operator_data.dof_index_velocity, operator_data.quad_index));
 
     fe_eval_velocity_p.reset(new FEEvalFaceVelocity(
-      data, false, operator_data.dof_index_velocity, operator_data.quad_index));
+      matrix_free, false, operator_data.dof_index_velocity, operator_data.quad_index));
   }
 }
 
@@ -190,85 +190,6 @@ inline DEAL_II_ALWAYS_INLINE //
   }
 
   return (-fe_eval.get_value(q) * velocity);
-}
-
-/*
- *  The following two functions calculate the interior_value/exterior_value
- *  depending on the operator type, the type of the boundary face
- *  and the given boundary conditions.
- *
- *                            +----------------------+--------------------+
- *                            | Dirichlet boundaries | Neumann boundaries |
- *  +-------------------------+----------------------+--------------------+
- *  | full operator           | phi⁺ = -phi⁻ + 2g    | phi⁺ = phi⁻        |
- *  +-------------------------+----------------------+--------------------+
- *  | homogeneous operator    | phi⁺ = -phi⁻         | phi⁺ = phi⁻        |
- *  +-------------------------+----------------------+--------------------+
- *  | inhomogeneous operator  | phi⁻ = 0, phi⁺ = 2g  | phi⁻ = 0, phi⁺ = 0 |
- *  +-------------------------+----------------------+--------------------+
- */
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  ConvectiveOperator<dim, Number>::calculate_interior_value(
-    unsigned int const   q,
-    FEEvalFace const &   fe_eval,
-    OperatorType const & operator_type) const
-{
-  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
-    return fe_eval.get_value(q);
-  else if(operator_type == OperatorType::inhomogeneous)
-    return make_vectorized_array<Number>(0.0);
-  else
-    AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-
-  return make_vectorized_array<Number>(0.0);
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  ConvectiveOperator<dim, Number>::calculate_exterior_value(
-    scalar const &           value_m,
-    unsigned int const       q,
-    FEEvalFace const &       fe_eval,
-    OperatorType const &     operator_type,
-    BoundaryType const &     boundary_type,
-    types::boundary_id const boundary_id) const
-{
-  scalar value_p = make_vectorized_array<Number>(0.0);
-
-  if(boundary_type == BoundaryType::dirichlet)
-  {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
-    {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        this->operator_data.bc->dirichlet_bc.find(boundary_id);
-      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-
-      scalar g = evaluate_scalar_function(it->second, q_points, this->eval_time);
-
-      value_p = -value_m + 2.0 * g;
-    }
-    else if(operator_type == OperatorType::homogeneous)
-    {
-      value_p = -value_m;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-    }
-  }
-  else if(boundary_type == BoundaryType::neumann)
-  {
-    value_p = value_m;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-  }
-
-  return value_p;
 }
 
 template<int dim, typename Number>
@@ -441,8 +362,15 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(FEEvalFace &              
   for(unsigned int q = 0; q < fe_eval_m.n_q_points; ++q)
   {
     scalar value_m = calculate_interior_value(q, fe_eval_m, operator_type);
-    scalar value_p =
-      calculate_exterior_value(value_m, q, fe_eval_m, operator_type, boundary_type, boundary_id);
+
+    scalar value_p = calculate_exterior_value(value_m,
+                                              q,
+                                              fe_eval_m,
+                                              operator_type,
+                                              boundary_type,
+                                              boundary_id,
+                                              this->operator_data.bc,
+                                              this->eval_time);
 
     // In case of numerical velocity field:
     // Simply use velocity_p = velocity_m for boundary integrals -> exterior_velocity_available =
@@ -460,7 +388,7 @@ ConvectiveOperator<dim, Number>::do_verify_boundary_conditions(
   ConvectiveOperatorData<dim> const &  operator_data,
   std::set<types::boundary_id> const & periodic_boundary_ids) const
 {
-  ConvDiff::do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
+  do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
 }
 
 template class ConvectiveOperator<2, float>;
