@@ -788,12 +788,12 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
   {
     // multigrid V-cycle for negative Laplace operator
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index            = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index           = this->get_quad_index_pressure();
-    laplace_operator_data.IP_factor            = 1.0;
-    laplace_operator_data.degree               = this->param.get_degree_p();
-    laplace_operator_data.degree_mapping       = this->mapping_degree;
-    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
+    laplace_operator_data.dof_index                  = this->get_dof_index_pressure();
+    laplace_operator_data.quad_index                 = this->get_quad_index_pressure();
+    laplace_operator_data.operator_is_singular       = this->param.pure_dirichlet_bc;
+    laplace_operator_data.kernel_data.IP_factor      = 1.0;
+    laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
+    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
 
     laplace_operator_data.bc = this->boundary_descriptor_laplace;
 
@@ -850,12 +850,12 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index      = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index     = this->get_quad_index_pressure();
-    laplace_operator_data.IP_factor      = 1.0;
-    laplace_operator_data.degree         = this->param.get_degree_p();
-    laplace_operator_data.degree_mapping = this->mapping_degree;
-    laplace_operator_data.bc             = this->boundary_descriptor_laplace;
+    laplace_operator_data.dof_index                  = this->get_dof_index_pressure();
+    laplace_operator_data.quad_index                 = this->get_quad_index_pressure();
+    laplace_operator_data.bc                         = this->boundary_descriptor_laplace;
+    laplace_operator_data.kernel_data.IP_factor      = 1.0;
+    laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
+    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
     laplace_operator_classical->reinit(this->get_matrix_free(),
@@ -936,27 +936,27 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
 
   // b) diffusive operator
   ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
-  diffusive_operator_data.dof_index      = this->get_dof_index_pressure();
-  diffusive_operator_data.quad_index     = this->get_quad_index_pressure();
-  diffusive_operator_data.IP_factor      = this->param.IP_factor_viscous;
-  diffusive_operator_data.degree         = this->param.get_degree_p();
-  diffusive_operator_data.degree_mapping = this->mapping_degree;
-  diffusive_operator_data.bc             = boundary_descriptor;
+  diffusive_operator_data.dof_index                  = this->get_dof_index_pressure();
+  diffusive_operator_data.quad_index                 = this->get_quad_index_pressure();
+  diffusive_operator_data.bc                         = boundary_descriptor;
+  diffusive_operator_data.kernel_data.IP_factor      = this->param.IP_factor_viscous;
+  diffusive_operator_data.kernel_data.degree         = this->param.get_degree_p();
+  diffusive_operator_data.kernel_data.degree_mapping = this->mapping_degree;
   // TODO: the pressure convection-diffusion operator is initialized with constant viscosity, in
   // case of varying viscosities the pressure convection-diffusion operator (the diffusive
   // operator of the pressure convection-diffusion operator) has to be updated before applying
   // this preconditioner
-  diffusive_operator_data.diffusivity = this->get_viscosity();
+  diffusive_operator_data.kernel_data.diffusivity = this->get_viscosity();
 
   // c) convective operator
   ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.dof_index           = this->get_dof_index_pressure();
-  convective_operator_data.dof_index_velocity  = this->get_dof_index_velocity();
-  convective_operator_data.quad_index          = this->get_quad_index_velocity_linear();
-  convective_operator_data.type_velocity_field = ConvDiff::TypeVelocityField::Numerical;
-  convective_operator_data.numerical_flux_formulation =
+  convective_operator_data.dof_index                       = this->get_dof_index_pressure();
+  convective_operator_data.quad_index                      = this->get_quad_index_velocity_linear();
+  convective_operator_data.bc                              = boundary_descriptor;
+  convective_operator_data.kernel_data.dof_index_velocity  = this->get_dof_index_velocity();
+  convective_operator_data.kernel_data.type_velocity_field = ConvDiff::TypeVelocityField::Numerical;
+  convective_operator_data.kernel_data.numerical_flux_formulation =
     ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
-  convective_operator_data.bc = boundary_descriptor;
 
   PressureConvectionDiffusionOperatorData<dim> pressure_convection_diffusion_operator_data;
   pressure_convection_diffusion_operator_data.mass_matrix_operator_data = mass_matrix_operator_data;

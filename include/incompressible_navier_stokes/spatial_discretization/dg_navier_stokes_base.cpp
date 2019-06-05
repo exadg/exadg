@@ -744,7 +744,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.dof_index  = get_dof_index_velocity_scalar();
   laplace_operator_data.quad_index = get_quad_index_velocity_linear();
-  laplace_operator_data.degree     = param.degree_u;
+
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_streamfunction;
   boundary_descriptor_streamfunction.reset(new Poisson::BoundaryDescriptor<dim>());
 
@@ -759,6 +759,10 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                          "not implemented for this type of boundary conditions."));
 
   laplace_operator_data.bc = boundary_descriptor_streamfunction;
+
+  laplace_operator_data.kernel_data.IP_factor      = 1.0;
+  laplace_operator_data.kernel_data.degree         = this->param.degree_u;
+  laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
 
   typedef Poisson::LaplaceOperator<dim, Number> Laplace;
   Laplace                                       laplace_operator;

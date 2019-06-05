@@ -178,37 +178,48 @@ DGOperator<dim, Number>::setup_operators()
 
   // convective operator
   ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.dof_index                  = 0;
-  convective_operator_data.quad_index                 = 0;
-  convective_operator_data.type_velocity_field        = param.type_velocity_field;
-  convective_operator_data.dof_index_velocity         = 1;
-  convective_operator_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
-  convective_operator_data.bc                         = boundary_descriptor;
-  convective_operator_data.velocity                   = field_functions->velocity;
-  convective_operator_data.use_cell_based_loops       = param.use_cell_based_face_loops;
+  convective_operator_data.dof_index            = 0;
+  convective_operator_data.quad_index           = 0;
+  convective_operator_data.bc                   = boundary_descriptor;
+  convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
+  convective_operator_data.kernel_data.type_velocity_field = param.type_velocity_field;
+  convective_operator_data.kernel_data.dof_index_velocity  = 1;
+  convective_operator_data.kernel_data.numerical_flux_formulation =
+    param.numerical_flux_convective_operator;
+  convective_operator_data.kernel_data.velocity = field_functions->velocity;
 
-  convective_operator.reinit(matrix_free, constraint_matrix, convective_operator_data);
+  if(this->param.equation_type == EquationType::Convection ||
+     this->param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    convective_operator.reinit(matrix_free, constraint_matrix, convective_operator_data);
+  }
 
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
-    matrix_free.initialize_dof_vector(velocity, convective_operator_data.dof_index_velocity);
+    matrix_free.initialize_dof_vector(velocity,
+                                      convective_operator_data.kernel_data.dof_index_velocity);
   }
 
   // diffusive operator
   DiffusiveOperatorData<dim> diffusive_operator_data;
   diffusive_operator_data.dof_index            = 0;
   diffusive_operator_data.quad_index           = 0;
-  diffusive_operator_data.IP_factor            = param.IP_factor;
-  diffusive_operator_data.diffusivity          = param.diffusivity;
-  diffusive_operator_data.degree               = param.degree;
-  diffusive_operator_data.degree_mapping       = mapping_degree;
   diffusive_operator_data.bc                   = boundary_descriptor;
   diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  diffusive_operator.reinit(matrix_free, constraint_matrix, diffusive_operator_data);
+  diffusive_operator_data.kernel_data.IP_factor      = param.IP_factor;
+  diffusive_operator_data.kernel_data.diffusivity    = param.diffusivity;
+  diffusive_operator_data.kernel_data.degree         = param.degree;
+  diffusive_operator_data.kernel_data.degree_mapping = mapping_degree;
+
+  if(this->param.equation_type == EquationType::Diffusion ||
+     this->param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    diffusive_operator.reinit(matrix_free, constraint_matrix, diffusive_operator_data);
+  }
 
   // rhs operator
   RHSOperatorData<dim> rhs_operator_data;

@@ -23,25 +23,9 @@ using namespace dealii;
 
 struct OperatorBaseData
 {
-  OperatorBaseData(const unsigned int dof_index,
-                   const unsigned int quad_index,
-                   const bool         cell_evaluate_values     = false,
-                   const bool         cell_evaluate_gradients  = false,
-                   const bool         cell_evaluate_hessians   = false,
-                   const bool         cell_integrate_values    = false,
-                   const bool         cell_integrate_gradients = false,
-                   const bool         cell_integrate_hessians  = false,
-                   const bool         face_evaluate_values     = false,
-                   const bool         face_evaluate_gradients  = false,
-                   const bool         face_integrate_values    = false,
-                   const bool         face_integrate_gradients = false)
+  OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index)
     : dof_index(dof_index),
       quad_index(quad_index),
-      cell_evaluate(cell_evaluate_values, cell_evaluate_gradients, cell_evaluate_hessians),
-      cell_integrate(cell_integrate_values, cell_integrate_gradients, cell_integrate_hessians),
-      face_evaluate(face_evaluate_values, face_evaluate_gradients),
-      face_integrate(face_integrate_values, face_integrate_gradients),
-      evaluate_face_integrals(face_evaluate.do_eval() || face_integrate.do_eval()),
       mapping_update_flags(update_default),
       mapping_update_flags_inner_faces(update_default),
       mapping_update_flags_boundary_faces(update_default),
@@ -94,13 +78,13 @@ struct OperatorBaseData
   UpdateFlags
   get_mapping_update_flags_inner_faces() const
   {
-    return get_mapping_update_flags() | mapping_update_flags_inner_faces;
+    return mapping_update_flags_inner_faces;
   }
 
   UpdateFlags
   get_mapping_update_flags_boundary_faces() const
   {
-    return get_mapping_update_flags_inner_faces() | mapping_update_flags_boundary_faces;
+    return mapping_update_flags_boundary_faces;
   }
 
   unsigned int dof_index;
@@ -110,8 +94,6 @@ struct OperatorBaseData
   Cell cell_integrate;
   Face face_evaluate;
   Face face_integrate;
-
-  bool evaluate_face_integrals;
 
   UpdateFlags mapping_update_flags;
   UpdateFlags mapping_update_flags_inner_faces;
@@ -604,9 +586,13 @@ private:
 
   /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators
-   * such as the mass matrix operator only involve cell integrals (do_eval_faces = false).
+   * such as the mass matrix operator only involve cell integrals.
    */
-  const bool do_eval_faces;
+  bool
+  evaluate_face_integrals() const
+  {
+    return operator_data.face_evaluate.do_eval() || operator_data.face_integrate.do_eval();
+  }
 
   /*
    * Is the discretization based on discontinuous Galerkin method?

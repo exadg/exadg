@@ -9,30 +9,19 @@
 
 namespace ConvDiff
 {
-template<int dim>
-struct ConvectiveOperatorData : public OperatorBaseData
+namespace Operators
 {
-  ConvectiveOperatorData()
-    // clang-format off
-  : OperatorBaseData(
-              0, // dof_index
-              0, // quad_index
-              true, false, false, // cell evaluate
-              false, true, false, // cell integrate
-              true, false,        // face evaluate
-              true, false         // face integrate
-          ),
-      type_velocity_field(TypeVelocityField::Analytical),
+template<int dim>
+struct ConvectiveKernelData
+{
+  ConvectiveKernelData()
+    : type_velocity_field(TypeVelocityField::Analytical),
       dof_index_velocity(1),
       numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
-  // clang-format on
   {
-    this->mapping_update_flags = update_gradients | update_JxW_values | update_quadrature_points;
-    this->mapping_update_flags_inner_faces =
-      this->mapping_update_flags | update_values | update_normal_vectors;
-    this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
 
+  // analytical vs. numerical velocity field
   TypeVelocityField type_velocity_field;
 
   // TypeVelocityField::Numerical
@@ -41,33 +30,30 @@ struct ConvectiveOperatorData : public OperatorBaseData
   // TypeVelocityField::Analytical
   std::shared_ptr<Function<dim>> velocity;
 
+  // numerical flux (e.g., central flux vs. Lax-Friedrichs flux)
   NumericalFluxConvectiveOperator numerical_flux_formulation;
-
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, typename Number>
-class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorData<dim>>
+class ConvectiveKernel
 {
 private:
-  typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>> Base;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef typename Base::FEEvalCell FEEvalCell;
-  typedef typename Base::FEEvalFace FEEvalFace;
-
-  typedef typename Base::VectorType VectorType;
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorVelocity;
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorVelocity;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
-  typedef CellIntegrator<dim, dim, Number> FEEvalCellVelocity;
-  typedef FaceIntegrator<dim, dim, Number> FEEvalFaceVelocity;
+  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
+  typedef FaceIntegrator<dim, 1, Number> IntegratorFace;
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &     matrix_free,
-         AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & operator_data) const;
+  reinit(MatrixFree<dim, Number> const &   matrix_free,
+         ConvectiveKernelData<dim> const & data_in,
+         unsigned int const                quad_index) const;
 
   LinearAlgebra::distributed::Vector<Number> &
   get_velocity() const;
@@ -75,7 +61,20 @@ public:
   void
   set_velocity(VectorType const & velocity) const;
 
-private:
+  void
+  reinit_cell(unsigned int const cell) const;
+
+  void
+  reinit_face(unsigned int const face) const;
+
+  void
+  reinit_boundary_face(unsigned int const face) const;
+
+  void
+  reinit_face_cell_based(unsigned int const       cell,
+                         unsigned int const       face,
+                         types::boundary_id const boundary_id) const;
+
   /*
    * This function calculates the numerical flux using the central flux.
    */
@@ -121,9 +120,10 @@ private:
   inline DEAL_II_ALWAYS_INLINE //
     scalar
     calculate_flux(unsigned int const q,
-                   FEEvalFace &       fe_eval_m,
+                   IntegratorFace &   integrator_m,
                    scalar const &     value_m,
                    scalar const &     value_p,
+                   Number const &     time,
                    bool const         exterior_velocity_available) const;
 
   /*
@@ -131,8 +131,69 @@ private:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux(FEEvalCell & fe_eval, unsigned int const q) const;
+    get_volume_flux(IntegratorCell & integrator, unsigned int const q, Number const & time) const;
 
+private:
+  mutable ConvectiveKernelData<dim> data;
+
+  mutable VectorType velocity;
+
+  mutable std::shared_ptr<CellIntegratorVelocity> integrator_velocity;
+  mutable std::shared_ptr<FaceIntegratorVelocity> integrator_velocity_m;
+  mutable std::shared_ptr<FaceIntegratorVelocity> integrator_velocity_p;
+};
+
+} // namespace Operators
+
+
+template<int dim>
+struct ConvectiveOperatorData : public OperatorBaseData
+{
+  ConvectiveOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  {
+    this->cell_evaluate  = Cell(true, false, false);
+    this->cell_integrate = Cell(false, true, false);
+    this->face_evaluate  = Face(true, false);
+    this->face_integrate = Face(true, false);
+
+    this->mapping_update_flags = update_gradients | update_JxW_values | update_quadrature_points;
+    this->mapping_update_flags_inner_faces =
+      this->mapping_update_flags | update_values | update_normal_vectors;
+    this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
+  }
+
+  Operators::ConvectiveKernelData<dim> kernel_data;
+
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
+};
+
+template<int dim, typename Number>
+class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorData<dim>>
+{
+private:
+  typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>> Base;
+
+  typedef typename Base::FEEvalCell IntegratorCell;
+  typedef typename Base::FEEvalFace IntegratorFace;
+
+  typedef typename Base::VectorType VectorType;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+
+public:
+  void
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         AffineConstraints<double> const &   constraint_matrix,
+         ConvectiveOperatorData<dim> const & operator_data) const;
+
+  LinearAlgebra::distributed::Vector<Number> &
+  get_velocity() const;
+
+  void
+  set_velocity(VectorType const & velocity) const;
+
+private:
   void
   reinit_cell(unsigned int const cell) const;
 
@@ -148,37 +209,34 @@ private:
                          types::boundary_id const boundary_id) const;
 
   void
-  do_cell_integral(FEEvalCell & fe_eval) const;
+  do_cell_integral(IntegratorCell & integrator) const;
 
   void
-  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_face_int_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_face_ext_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   void
-  do_boundary_integral(FEEvalFace &               fe_eval_m,
+  do_boundary_integral(IntegratorFace &           integrator_m,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
   // TODO can be removed later once matrix-free evaluation allows accessing neighboring data for
   // cell-based face loops
   void
-  do_face_int_integral_cell_based(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_int_integral_cell_based(IntegratorFace & integrator_m,
+                                  IntegratorFace & integrator_p) const;
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
                                 ConvectiveOperatorData<dim> const &  operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  mutable VectorType velocity;
-
-  mutable std::shared_ptr<FEEvalCellVelocity> fe_eval_velocity;
-  mutable std::shared_ptr<FEEvalFaceVelocity> fe_eval_velocity_m;
-  mutable std::shared_ptr<FEEvalFaceVelocity> fe_eval_velocity_p;
+  Operators::ConvectiveKernel<dim, Number> kernel;
 };
 } // namespace ConvDiff
 

@@ -80,10 +80,10 @@ public:
     IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
                                                  *this->data,
                                                  mapping,
-                                                 operator_data.diff_data.degree,
+                                                 operator_data.diff_data.kernel_data.degree,
                                                  operator_data.diff_data.dof_index);
 
-    diffusivity = operator_data.diff_data.diffusivity;
+    diffusivity = operator_data.diff_data.kernel_data.diffusivity;
   }
 
   // Note: for this operator only the evaluate functions are implemented (no apply functions, no rhs
@@ -119,7 +119,7 @@ private:
     CellInt fe_eval(data, operator_data.diff_data.dof_index, operator_data.diff_data.quad_index);
 
     // set the correct time for the evaluation of the velocity field
-    operator_data.conv_data.velocity->set_time(eval_time);
+    operator_data.conv_data.kernel_data.velocity->set_time(eval_time);
     operator_data.rhs_data.rhs->set_time(eval_time);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -142,7 +142,7 @@ private:
             Point<dim> q_point;
             for(unsigned int d = 0; d < dim; ++d)
               q_point[d] = q_points[d][n];
-            array[n] = operator_data.conv_data.velocity->value(q_point, d);
+            array[n] = operator_data.conv_data.kernel_data.velocity->value(q_point, d);
           }
           velocity[d].load(&array[0]);
         }
@@ -188,7 +188,7 @@ private:
                              operator_data.diff_data.quad_index);
 
     // set the correct time for the evaluation of the velocity field
-    operator_data.conv_data.velocity->set_time(eval_time);
+    operator_data.conv_data.kernel_data.velocity->set_time(eval_time);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -203,8 +203,8 @@ private:
       VectorizedArray<Number> tau_IP =
         std::max(fe_eval.read_cell_data(array_penalty_parameter),
                  fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-        IP::get_penalty_factor<Number>(operator_data.diff_data.degree,
-                                       operator_data.diff_data.IP_factor);
+        IP::get_penalty_factor<Number>(operator_data.diff_data.kernel_data.degree,
+                                       operator_data.diff_data.kernel_data.IP_factor);
 
       for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
       {
@@ -219,7 +219,7 @@ private:
             Point<dim> q_point;
             for(unsigned int d = 0; d < dim; ++d)
               q_point[d] = q_points[d][n];
-            array[n] = operator_data.conv_data.velocity->value(q_point, d);
+            array[n] = operator_data.conv_data.kernel_data.velocity->value(q_point, d);
           }
           velocity[d].load(&array[0]);
         }
@@ -233,12 +233,12 @@ private:
         VectorizedArray<Number> lambda        = std::abs(u_n);
         VectorizedArray<Number> lf_flux       = make_vectorized_array<Number>(0.0);
 
-        if(this->operator_data.conv_data.numerical_flux_formulation ==
+        if(this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
            NumericalFluxConvectiveOperator::CentralFlux)
         {
           lf_flux = u_n * average_value;
         }
-        else if(this->operator_data.conv_data.numerical_flux_formulation ==
+        else if(this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                 NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
         {
           lf_flux = u_n * average_value + 0.5 * lambda * jump_value;
@@ -246,9 +246,9 @@ private:
         else
         {
           AssertThrow(
-            this->operator_data.conv_data.numerical_flux_formulation ==
+            this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                 NumericalFluxConvectiveOperator::CentralFlux ||
-              this->operator_data.conv_data.numerical_flux_formulation ==
+              this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                 NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
             ExcMessage(
               "Specified numerical flux function for convective operator is not implemented!"));
@@ -283,7 +283,7 @@ private:
                     operator_data.diff_data.quad_index);
 
     // set the correct time for the evaluation of the velocity field
-    operator_data.conv_data.velocity->set_time(eval_time);
+    operator_data.conv_data.kernel_data.velocity->set_time(eval_time);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -294,8 +294,8 @@ private:
 
       VectorizedArray<Number> tau_IP =
         fe_eval.read_cell_data(array_penalty_parameter) *
-        IP::get_penalty_factor<Number>(operator_data.diff_data.degree,
-                                       operator_data.diff_data.IP_factor);
+        IP::get_penalty_factor<Number>(operator_data.diff_data.kernel_data.degree,
+                                       operator_data.diff_data.kernel_data.IP_factor);
 
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
       types::boundary_id boundary_id = data.get_boundary_id(face);
@@ -324,7 +324,7 @@ private:
               Point<dim> q_point;
               for(unsigned int d = 0; d < dim; ++d)
                 q_point[d] = q_points[d][n];
-              array[n] = operator_data.conv_data.velocity->value(q_point, d);
+              array[n] = operator_data.conv_data.kernel_data.velocity->value(q_point, d);
             }
             velocity[d].load(&array[0]);
           }
@@ -352,12 +352,12 @@ private:
           VectorizedArray<Number> lambda        = std::abs(u_n);
           VectorizedArray<Number> lf_flux       = make_vectorized_array<Number>(0.0);
 
-          if(this->operator_data.conv_data.numerical_flux_formulation ==
+          if(this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
              NumericalFluxConvectiveOperator::CentralFlux)
           {
             lf_flux = u_n * average_value;
           }
-          else if(this->operator_data.conv_data.numerical_flux_formulation ==
+          else if(this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
           {
             lf_flux = u_n * average_value + 0.5 * lambda * jump_value;
@@ -365,9 +365,9 @@ private:
           else
           {
             AssertThrow(
-              this->operator_data.conv_data.numerical_flux_formulation ==
+              this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::CentralFlux ||
-                this->operator_data.conv_data.numerical_flux_formulation ==
+                this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
               ExcMessage(
                 "Specified numerical flux function for convective operator is not implemented!"));
@@ -402,7 +402,7 @@ private:
               Point<dim> q_point;
               for(unsigned int d = 0; d < dim; ++d)
                 q_point[d] = q_points[d][n];
-              array[n] = operator_data.conv_data.velocity->value(q_point, d);
+              array[n] = operator_data.conv_data.kernel_data.velocity->value(q_point, d);
             }
             velocity[d].load(&array[0]);
           }
@@ -416,12 +416,12 @@ private:
           VectorizedArray<Number> lambda        = std::abs(u_n);
           VectorizedArray<Number> lf_flux       = make_vectorized_array<Number>(0.0);
 
-          if(this->operator_data.conv_data.numerical_flux_formulation ==
+          if(this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
              NumericalFluxConvectiveOperator::CentralFlux)
           {
             lf_flux = u_n * average_value;
           }
-          else if(this->operator_data.conv_data.numerical_flux_formulation ==
+          else if(this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
           {
             lf_flux = u_n * average_value + 0.5 * lambda * jump_value;
@@ -429,9 +429,9 @@ private:
           else
           {
             AssertThrow(
-              this->operator_data.conv_data.numerical_flux_formulation ==
+              this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::CentralFlux ||
-                this->operator_data.conv_data.numerical_flux_formulation ==
+                this->operator_data.conv_data.kernel_data.numerical_flux_formulation ==
                   NumericalFluxConvectiveOperator::LaxFriedrichsFlux,
               ExcMessage(
                 "Specified numerical flux function for convective operator is not implemented!"));
