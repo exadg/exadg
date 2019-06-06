@@ -31,6 +31,36 @@ ConvectiveKernel<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_f
 }
 
 template<int dim, typename Number>
+IntegratorFlags
+ConvectiveKernel<dim, Number>::get_integrator_flags() const
+{
+  IntegratorFlags flags;
+
+  flags.cell_evaluate  = CellFlags(true, false, false);
+  flags.cell_integrate = CellFlags(false, true, false);
+
+  flags.face_evaluate  = FaceFlags(true, false);
+  flags.face_integrate = FaceFlags(true, false);
+
+  return flags;
+}
+
+template<int dim, typename Number>
+MappingFlags
+ConvectiveKernel<dim, Number>::get_mapping_flags()
+{
+  MappingFlags flags;
+
+  flags.cells = update_gradients | update_JxW_values |
+                update_quadrature_points; // q-points due to analytical velocity field
+  flags.inner_faces = update_JxW_values | update_quadrature_points |
+                      update_normal_vectors; // q-points due to analytical velocity field
+  flags.boundary_faces = update_JxW_values | update_quadrature_points | update_normal_vectors;
+
+  return flags;
+}
+
+template<int dim, typename Number>
 void
 ConvectiveKernel<dim, Number>::set_velocity(VectorType const & velocity_in) const
 {
@@ -264,6 +294,8 @@ ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matr
   Base::reinit(matrix_free, constraint_matrix, operator_data);
 
   kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.quad_index);
+
+  this->integrator_flags = kernel.get_integrator_flags();
 }
 
 template<int dim, typename Number>

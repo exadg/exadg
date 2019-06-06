@@ -21,83 +21,113 @@
 
 using namespace dealii;
 
+struct CellFlags
+{
+  CellFlags(const bool value = false, const bool gradient = false, const bool hessian = false)
+    : value(value), gradient(gradient), hessian(hessian){};
+
+  CellFlags
+  operator||(CellFlags const & other)
+  {
+    CellFlags cell_flags_combined;
+
+    cell_flags_combined.value    = this->value || other.value;
+    cell_flags_combined.gradient = this->value || other.gradient;
+    cell_flags_combined.hessian  = this->value || other.hessian;
+
+    return cell_flags_combined;
+  }
+
+  bool value;
+  bool gradient;
+  bool hessian;
+};
+
+struct FaceFlags
+{
+  FaceFlags(const bool value = false, const bool gradient = false)
+    : value(value), gradient(gradient){};
+
+  FaceFlags
+  operator||(FaceFlags const & other)
+  {
+    FaceFlags face_flags_combined;
+
+    face_flags_combined.value    = this->value || other.value;
+    face_flags_combined.gradient = this->value || other.gradient;
+
+    return face_flags_combined;
+  }
+
+  bool
+  do_eval() const
+  {
+    return value || gradient;
+  }
+
+  bool value;
+  bool gradient;
+};
+
+struct IntegratorFlags
+{
+  IntegratorFlags()
+  {
+  }
+
+  IntegratorFlags
+  operator||(IntegratorFlags const & other)
+  {
+    IntegratorFlags flags_combined;
+
+    flags_combined.cell_evaluate  = this->cell_evaluate || other.cell_evaluate;
+    flags_combined.cell_integrate = this->cell_integrate || other.cell_integrate;
+
+    flags_combined.face_evaluate  = this->face_evaluate || other.face_evaluate;
+    flags_combined.face_integrate = this->face_integrate || other.face_integrate;
+
+    return flags_combined;
+  }
+
+  CellFlags cell_evaluate;
+  CellFlags cell_integrate;
+
+  FaceFlags face_evaluate;
+  FaceFlags face_integrate;
+};
+
+struct MappingFlags
+{
+  MappingFlags
+  operator||(MappingFlags const & other)
+  {
+    MappingFlags flags_combined;
+
+    flags_combined.cells          = this->cells | other.cells;
+    flags_combined.inner_faces    = this->inner_faces | other.inner_faces;
+    flags_combined.boundary_faces = this->boundary_faces | other.boundary_faces;
+
+    return flags_combined;
+  }
+
+  UpdateFlags cells;
+  UpdateFlags inner_faces;
+  UpdateFlags boundary_faces;
+};
+
 struct OperatorBaseData
 {
   OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index)
     : dof_index(dof_index),
       quad_index(quad_index),
-      mapping_update_flags(update_default),
-      mapping_update_flags_inner_faces(update_default),
-      mapping_update_flags_boundary_faces(update_default),
       use_cell_based_loops(false),
       operator_is_singular(false),
       implement_block_diagonal_preconditioner_matrix_free(false)
   {
   }
 
-  struct Cell
-  {
-    Cell(const bool value = false, const bool gradient = false, const bool hessians = false)
-      : value(value), gradient(gradient), hessians(hessians){};
-
-    bool value;
-    bool gradient;
-    bool hessians;
-  };
-
-  struct Face
-  {
-    Face(const bool value = false, const bool gradient = false)
-      : value(value), gradient(gradient){};
-
-    bool
-    do_eval() const
-    {
-      return value || gradient;
-    }
-
-    bool value;
-    bool gradient;
-  };
-
-  template<typename Data>
-  void
-  append_mapping_update_flags(Data & other)
-  {
-    this->mapping_update_flags |= other.mapping_update_flags;
-    this->mapping_update_flags_inner_faces |= other.mapping_update_flags_inner_faces;
-    this->mapping_update_flags_boundary_faces |= other.mapping_update_flags_boundary_faces;
-  }
-
-  UpdateFlags
-  get_mapping_update_flags() const
-  {
-    return mapping_update_flags;
-  }
-
-  UpdateFlags
-  get_mapping_update_flags_inner_faces() const
-  {
-    return mapping_update_flags_inner_faces;
-  }
-
-  UpdateFlags
-  get_mapping_update_flags_boundary_faces() const
-  {
-    return mapping_update_flags_boundary_faces;
-  }
-
   unsigned int dof_index;
   unsigned int quad_index;
-
-  Cell cell_evaluate;
-  Cell cell_integrate;
-  Face face_evaluate;
-  Face face_integrate;
-
-  UpdateFlags mapping_update_flags;
-  UpdateFlags mapping_update_flags_inner_faces;
-  UpdateFlags mapping_update_flags_boundary_faces;
 
   bool use_cell_based_loops;
 
@@ -380,6 +410,8 @@ protected:
   /*
    * Cell and face integrators.
    */
+  mutable IntegratorFlags integrator_flags;
+
   mutable std::shared_ptr<IntegratorCell> integrator;
   mutable std::shared_ptr<IntegratorFace> integrator_m;
   mutable std::shared_ptr<IntegratorFace> integrator_p;
@@ -592,10 +624,7 @@ private:
    * such as the mass matrix operator only involve cell integrals.
    */
   bool
-  evaluate_face_integrals() const
-  {
-    return operator_data.face_evaluate.do_eval() || operator_data.face_integrate.do_eval();
-  }
+  evaluate_face_integrals() const;
 
   /*
    * Is the discretization based on discontinuous Galerkin method?

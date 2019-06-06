@@ -29,7 +29,7 @@ ConvectionDiffusionOperator<dim, Number>::reinit(
   this->convective_operator.reset();
   this->diffusive_operator.reset();
 
-  // reinit mass-, convection- and diffusive-opertor
+  // reinit mass, convective and diffusive operators
   this->mass_matrix_operator->reinit(mf_data,
                                      constraint_matrix,
                                      operator_data.mass_matrix_operator_data);

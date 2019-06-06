@@ -30,6 +30,29 @@ public:
     data = data_in;
   }
 
+  IntegratorFlags
+  get_integrator_flags() const
+  {
+    IntegratorFlags flags;
+
+    flags.cell_evaluate  = CellFlags(true, false, false);
+    flags.cell_integrate = CellFlags(true, false, false);
+
+    return flags;
+  }
+
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells = update_JxW_values;
+
+    // no face integrals
+
+    return flags;
+  }
+
   /*
    * Volume flux, i.e., the term occurring in the volume integral
    */
@@ -51,10 +74,6 @@ struct MassMatrixOperatorData : public OperatorBaseData
 {
   MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
-    this->cell_evaluate  = Cell(true, false, false);
-    this->cell_integrate = Cell(true, false, false);
-
-    this->mapping_update_flags = update_values | update_quadrature_points;
   }
 
   Operators::MassMatrixKernelData kernel_data;
@@ -81,6 +100,8 @@ public:
     Base::reinit(matrix_free, constraint_matrix, operator_data);
 
     kernel.reinit(operator_data.kernel_data);
+
+    this->integrator_flags = kernel.get_integrator_flags();
   }
 
 private:

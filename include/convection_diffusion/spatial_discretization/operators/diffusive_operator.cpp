@@ -30,6 +30,35 @@ DiffusiveKernel<dim, Number>::reinit(MatrixFree<dim, Number> const & matrix_free
 }
 
 template<int dim, typename Number>
+IntegratorFlags
+DiffusiveKernel<dim, Number>::get_integrator_flags() const
+{
+  IntegratorFlags flags;
+
+  flags.cell_evaluate  = CellFlags(false, true, false);
+  flags.cell_integrate = CellFlags(false, true, false);
+
+  flags.face_evaluate  = FaceFlags(true, true);
+  flags.face_integrate = FaceFlags(true, true);
+
+  return flags;
+}
+
+template<int dim, typename Number>
+MappingFlags
+DiffusiveKernel<dim, Number>::get_mapping_flags()
+{
+  MappingFlags flags;
+
+  flags.cells       = update_gradients | update_JxW_values;
+  flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+  flags.boundary_faces =
+    update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+
+  return flags;
+}
+
+template<int dim, typename Number>
 void
 DiffusiveKernel<dim, Number>::reinit_face(IntegratorFace & integrator_m,
                                           IntegratorFace & integrator_p) const
@@ -119,6 +148,8 @@ DiffusiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    matrix
   Base::reinit(matrix_free, constraint_matrix, operator_data);
 
   kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.dof_index);
+
+  this->integrator_flags = kernel.get_integrator_flags();
 }
 
 template<int dim, typename Number>

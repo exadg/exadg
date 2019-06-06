@@ -113,6 +113,7 @@ public:
 
     additional_data.level_mg_handler      = this->level_info[level].level;
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
+
     additional_data.mapping_update_flags =
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);

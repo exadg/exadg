@@ -42,6 +42,12 @@ public:
          LaplaceKernelData const &       data_in,
          unsigned int const              dof_index) const;
 
+  IntegratorFlags
+  get_integrator_flags() const;
+
+  static MappingFlags
+  get_mapping_flags();
+
   void
   reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
@@ -85,16 +91,6 @@ struct LaplaceOperatorData : public OperatorBaseData
 {
   LaplaceOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
-    this->cell_evaluate  = Cell(false, true, false);
-    this->cell_integrate = Cell(false, true, false);
-    this->face_evaluate  = Face(true, true);
-    this->face_integrate = Face(true, true);
-
-    this->mapping_update_flags = update_gradients | update_JxW_values;
-    this->mapping_update_flags_inner_faces =
-      this->mapping_update_flags | update_values | update_normal_vectors;
-    this->mapping_update_flags_boundary_faces =
-      this->mapping_update_flags_inner_faces | update_quadrature_points;
   }
 
   Operators::LaplaceKernelData kernel_data;

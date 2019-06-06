@@ -55,6 +55,12 @@ public:
          ConvectiveKernelData<dim> const & data_in,
          unsigned int const                quad_index) const;
 
+  IntegratorFlags
+  get_integrator_flags() const;
+
+  static MappingFlags
+  get_mapping_flags();
+
   LinearAlgebra::distributed::Vector<Number> &
   get_velocity() const;
 
@@ -151,15 +157,6 @@ struct ConvectiveOperatorData : public OperatorBaseData
 {
   ConvectiveOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
-    this->cell_evaluate  = Cell(true, false, false);
-    this->cell_integrate = Cell(false, true, false);
-    this->face_evaluate  = Face(true, false);
-    this->face_integrate = Face(true, false);
-
-    this->mapping_update_flags = update_gradients | update_JxW_values | update_quadrature_points;
-    this->mapping_update_flags_inner_faces =
-      this->mapping_update_flags | update_values | update_normal_vectors;
-    this->mapping_update_flags_boundary_faces = this->mapping_update_flags_inner_faces;
   }
 
   Operators::ConvectiveKernelData<dim> kernel_data;

@@ -61,15 +61,16 @@ public:
 
     // setup MatrixFree::AdditionalData
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
-    additional_data.level_mg_handler     = this->level_info[level].level;
-    additional_data.mapping_update_flags = operator_data.get_mapping_update_flags();
+    additional_data.level_mg_handler = this->level_info[level].level;
+
+    MappingFlags flags = Operators::LaplaceKernel<dim, Number>::get_mapping_flags();
+
+    additional_data.mapping_update_flags = flags.cells;
 
     if(this->level_info[level].is_dg)
     {
-      additional_data.mapping_update_flags_inner_faces =
-        operator_data.get_mapping_update_flags_inner_faces();
-      additional_data.mapping_update_flags_boundary_faces =
-        operator_data.get_mapping_update_flags_boundary_faces();
+      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
+      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
     }
 
     if(operator_data.use_cell_based_loops && this->level_info[level].is_dg)

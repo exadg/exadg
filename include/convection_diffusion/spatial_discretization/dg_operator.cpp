@@ -302,8 +302,6 @@ DGOperator<dim, Number>::initialize_convection_diffusion_operator(
     conv_diff_operator_data.convective_problem = false;
   }
 
-  conv_diff_operator_data.update_mapping_update_flags();
-
   conv_diff_operator_data.dof_index           = 0;
   conv_diff_operator_data.dof_index_velocity  = 1;
   conv_diff_operator_data.type_velocity_field = param.type_velocity_field;
