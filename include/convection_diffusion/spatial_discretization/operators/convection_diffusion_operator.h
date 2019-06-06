@@ -75,9 +75,6 @@ private:
   typedef OperatorBase<dim, value_type, ConvectionDiffusionOperatorData<dim>> Base;
   typedef ConvectionDiffusionOperator<dim, Number>                            This;
 
-  typedef typename Base::FEEvalCell FEEvalCell;
-  typedef typename Base::FEEvalFace FEEvalFace;
-
   typedef typename Base::BlockMatrix BlockMatrix;
 
   typedef typename Base::VectorType VectorType;

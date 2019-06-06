@@ -66,7 +66,7 @@ class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorDa
 private:
   typedef OperatorBase<dim, Number, MassMatrixOperatorData> Base;
 
-  typedef typename Base::FEEvalCell IntegratorCell;
+  typedef typename Base::IntegratorCell IntegratorCell;
 
 public:
   MassMatrixOperator()

@@ -173,8 +173,8 @@ class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorDa
 private:
   typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>> Base;
 
-  typedef typename Base::FEEvalCell IntegratorCell;
-  typedef typename Base::FEEvalFace IntegratorFace;
+  typedef typename Base::IntegratorCell IntegratorCell;
+  typedef typename Base::IntegratorFace IntegratorFace;
 
   typedef typename Base::VectorType VectorType;
 

@@ -114,8 +114,8 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
   typedef std::pair<unsigned int, unsigned int>      Range;
-  typedef CellIntegrator<dim, n_components, Number>  FEEvalCell;
-  typedef FaceIntegrator<dim, n_components, Number>  FEEvalFace;
+  typedef CellIntegrator<dim, n_components, Number>  IntegratorCell;
+  typedef FaceIntegrator<dim, n_components, Number>  IntegratorFace;
 
   /*
    * Solution of linear systems of equations and preconditioning
@@ -319,23 +319,23 @@ protected:
 
   // standard integration procedure with separate loops for cell and face integrals
   virtual void
-  do_cell_integral(FEEvalCell & fe_eval) const;
+  do_cell_integral(IntegratorCell & integrator) const;
 
   virtual void
-  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   virtual void
-  do_boundary_integral(FEEvalFace &               fe_eval,
+  do_boundary_integral(IntegratorFace &           integrator,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
   // The computation of the diagonal and block-diagonal requires face integrals of type
   // interior (int) and exterior (ext)
   virtual void
-  do_face_int_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   virtual void
-  do_face_ext_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   // cell-based computation of both cell and face integrals
   virtual void
@@ -351,7 +351,8 @@ protected:
   // if this function is not overwritten by a derived class (such as convective terms
   // that require an additional evaluation of velocity fields for example).
   virtual void
-  do_face_int_integral_cell_based(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p) const;
+  do_face_int_integral_cell_based(IntegratorFace & integrator_m,
+                                  IntegratorFace & integrator_p) const;
 
   virtual void
   do_block_diagonal_cell_based() const;
@@ -379,9 +380,9 @@ protected:
   /*
    * Cell and face integrators.
    */
-  mutable std::shared_ptr<FEEvalCell> fe_eval;
-  mutable std::shared_ptr<FEEvalFace> fe_eval_m;
-  mutable std::shared_ptr<FEEvalFace> fe_eval_p;
+  mutable std::shared_ptr<IntegratorCell> integrator;
+  mutable std::shared_ptr<IntegratorFace> integrator_m;
+  mutable std::shared_ptr<IntegratorFace> integrator_p;
 
 private:
   /*
@@ -392,13 +393,15 @@ private:
    * operator for a unit vector which takes a value of 1 in row i and is 0 for all other entries.
    */
   void
-  create_standard_basis(unsigned int j, FEEvalCell & fe_eval) const;
+  create_standard_basis(unsigned int j, IntegratorCell & integrator) const;
 
   void
-  create_standard_basis(unsigned int j, FEEvalFace & fe_eval) const;
+  create_standard_basis(unsigned int j, IntegratorFace & integrator) const;
 
   void
-  create_standard_basis(unsigned int j, FEEvalFace & fe_eval_1, FEEvalFace & fe_eval_2) const;
+  create_standard_basis(unsigned int     j,
+                        IntegratorFace & integrator_1,
+                        IntegratorFace & integrator_2) const;
 
   /*
    * This function loops over all cells and calculates cell integrals.

@@ -108,8 +108,8 @@ class DiffusiveOperator : public OperatorBase<dim, Number, DiffusiveOperatorData
 private:
   typedef OperatorBase<dim, Number, DiffusiveOperatorData<dim>> Base;
 
-  typedef typename Base::FEEvalCell IntegratorCell;
-  typedef typename Base::FEEvalFace IntegratorFace;
+  typedef typename Base::IntegratorCell IntegratorCell;
+  typedef typename Base::IntegratorFace IntegratorFace;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;

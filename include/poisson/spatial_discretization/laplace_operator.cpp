@@ -115,7 +115,7 @@ LaplaceOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
-  kernel.reinit_face(*this->fe_eval_m, *this->fe_eval_p);
+  kernel.reinit_face(*this->integrator_m, *this->integrator_p);
 }
 
 template<int dim, typename Number>
@@ -124,7 +124,7 @@ LaplaceOperator<dim, Number>::reinit_boundary_face(unsigned int const face) cons
 {
   Base::reinit_boundary_face(face);
 
-  kernel.reinit_boundary_face(*this->fe_eval_m);
+  kernel.reinit_boundary_face(*this->integrator_m);
 }
 
 template<int dim, typename Number>
@@ -135,7 +135,7 @@ LaplaceOperator<dim, Number>::reinit_face_cell_based(unsigned int const       ce
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
-  kernel.reinit_face_cell_based(boundary_id, *this->fe_eval_m, *this->fe_eval_p);
+  kernel.reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
 }
 
 template<int dim, typename Number>
