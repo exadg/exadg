@@ -255,12 +255,10 @@ public:
 
         scalar volume      = make_vectorized_array<Number>(0.0);
         scalar norm_U_mean = make_vectorized_array<Number>(0.0);
-        JxW_values.resize(integrator.n_q_points);
-        integrator.fill_JxW_values(JxW_values);
         for(unsigned int q = 0; q < integrator.n_q_points; ++q)
         {
-          volume += JxW_values[q];
-          norm_U_mean += JxW_values[q] * integrator.get_value(q).norm();
+          volume += integrator.JxW(q);
+          norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
         }
         norm_U_mean /= volume;
 
@@ -302,12 +300,10 @@ public:
       integrator.evaluate(true, false);
       scalar volume      = make_vectorized_array<Number>(0.0);
       scalar norm_U_mean = make_vectorized_array<Number>(0.0);
-      JxW_values.resize(integrator.n_q_points);
-      integrator.fill_JxW_values(JxW_values);
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        volume += JxW_values[q];
-        norm_U_mean += JxW_values[q] * integrator.get_value(q).norm();
+        volume += integrator.JxW(q);
+        norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
       }
       norm_U_mean /= volume;
 
