@@ -72,7 +72,7 @@ InputParameters::InputParameters()
 
     // NUMERICAL PARAMETERS
     use_cell_based_face_loops(false),
-    runtime_optimization(false)
+    use_combined_operator(true)
 {
 }
 
@@ -186,7 +186,7 @@ InputParameters::check_input_parameters()
   AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
 
   if(equation_type == EquationType::Convection ||
-     equation_type == EquationType::ConvectionDiffusion || runtime_optimization == true)
+     equation_type == EquationType::ConvectionDiffusion || use_combined_operator == true)
   {
     AssertThrow(numerical_flux_convective_operator != NumericalFluxConvectiveOperator::Undefined,
                 ExcMessage("parameter must be defined"));
@@ -424,7 +424,9 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
   print_parameter(pcout,
                   "Block Jacobi implemented matrix-free",
                   implement_block_diagonal_preconditioner_matrix_free);
-  print_parameter(pcout, "Runtime optimization", runtime_optimization);
+
+  if(temporal_discretization == TemporalDiscretization::ExplRK)
+    print_parameter(pcout, "Use combined operator", use_combined_operator);
 }
 
 } // namespace ConvDiff

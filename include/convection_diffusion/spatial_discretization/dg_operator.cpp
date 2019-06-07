@@ -257,20 +257,41 @@ DGOperator<dim, Number>::setup_operators()
   merged_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
 
-  // TODO: merged operator can not only be used for implicit problems and the solution of
-  // linear systems of equations, but also for explicit time integration (in this case
-  // the initializations shown below have to be adapted)
-  if(this->param.problem_type == ProblemType::Unsteady)
-    merged_operator_data.unsteady_problem = true;
+  // linear system of equations has to be solved: the problem is either steady or
+  // an unsteady problem is solved with BDF time integration (semi-implicit or fully implicit
+  // formulation of convective and diffusive terms)
+  if(this->param.problem_type == ProblemType::Steady ||
+     this->param.temporal_discretization == TemporalDiscretization::BDF)
+  {
+    if(this->param.problem_type == ProblemType::Unsteady)
+      merged_operator_data.unsteady_problem = true;
 
-  if((this->param.equation_type == EquationType::Convection ||
-      this->param.equation_type == EquationType::ConvectionDiffusion) &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-    merged_operator_data.convective_problem = true;
+    if((this->param.equation_type == EquationType::Convection ||
+        this->param.equation_type == EquationType::ConvectionDiffusion) &&
+       this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      merged_operator_data.convective_problem = true;
 
-  if(this->param.equation_type == EquationType::Diffusion ||
-     this->param.equation_type == EquationType::ConvectionDiffusion)
-    merged_operator_data.diffusive_problem = true;
+    if(this->param.equation_type == EquationType::Diffusion ||
+       this->param.equation_type == EquationType::ConvectionDiffusion)
+      merged_operator_data.diffusive_problem = true;
+  }
+  else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK)
+  {
+    // always false
+    merged_operator_data.unsteady_problem = false;
+
+    if(this->param.equation_type == EquationType::Convection ||
+       this->param.equation_type == EquationType::ConvectionDiffusion)
+      merged_operator_data.convective_problem = true;
+
+    if(this->param.equation_type == EquationType::Diffusion ||
+       this->param.equation_type == EquationType::ConvectionDiffusion)
+      merged_operator_data.diffusive_problem = true;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 
   merged_operator_data.convective_kernel_data = convective_kernel_data;
   merged_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
@@ -515,7 +536,7 @@ DGOperator<dim, Number>::evaluate(VectorType &       dst,
                                   double const       evaluation_time) const
 {
   // apply volume and surface integrals for each operator separately
-  if(param.runtime_optimization == false)
+  if(param.use_combined_operator == false)
   {
     // set dst to zero
     dst = 0.0;
@@ -554,7 +575,36 @@ DGOperator<dim, Number>::evaluate(VectorType &       dst,
   }
   else // param.runtime_optimization == true
   {
-    convection_diffusion_operator_efficiency.evaluate(dst, src, evaluation_time);
+    // TODO
+    if(false)
+    {
+      convection_diffusion_operator_efficiency.evaluate(dst, src, evaluation_time);
+    }
+    else
+    {
+      if(param.equation_type == EquationType::Convection ||
+         param.equation_type == EquationType::ConvectionDiffusion)
+      {
+        if(param.type_velocity_field == TypeVelocityField::Numerical)
+        {
+          // We first have to interpolate the velocity field so that it is evaluated at the correct
+          // time.
+          interpolate(velocity, evaluation_time, velocities, times);
+          convective_operator.set_velocity(velocity);
+        }
+      }
+
+      convection_diffusion_operator_merged.set_evaluation_time(evaluation_time);
+      convection_diffusion_operator_merged.evaluate(dst, src);
+
+      // shift diffusive and convective term to the rhs of the equation
+      dst *= -1.0;
+
+      if(param.right_hand_side == true)
+      {
+        rhs_operator.evaluate_add(dst, evaluation_time);
+      }
+    }
   }
 
   // apply inverse mass matrix

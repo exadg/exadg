@@ -269,18 +269,10 @@ public:
   // can be changed to such an algorithm (cell_based_face_loops).
   bool use_cell_based_face_loops;
 
-  // Runtime optimization: Evaluate volume and surface integrals of convective term,
-  // diffusive term and rhs term in one function (local_apply, local_apply_face,
-  // local_apply_boundary_face) instead of implementing each operator seperately and
-  // subsequently looping over all operators.
-  // Note: if runtime_optimization == false:
-  //   If an operator is not used (e.g. purely diffusive problem) the volume and
-  //   surface integrals of this operator are simply not evaluated
-  // Note: if runtime_optimization == true:
-  //  ensure that the rhs-function, velocity-field and that the diffusivity is zero
-  //  if the rhs operator, convective operator or diffusive operator is "inactive"
-  //  because the volume and surface integrals of these operators will always be evaluated
-  bool runtime_optimization;
+  // Evaluate convective term and diffusive term at once instead of implementing each
+  // operator separately and subsequently looping over all operators. This parameter is
+  // only relevant in case of fully explicit time integration.
+  bool use_combined_operator;
 };
 
 } // namespace ConvDiff
