@@ -3,6 +3,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
+#include "../../../functionalities/evaluate_functions.h"
 #include "../../../operators/operator_base.h"
 #include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
@@ -53,33 +54,122 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          ConvectiveKernelData<dim> const & data_in,
-         unsigned int const                quad_index) const;
+         unsigned int const                quad_index) const
+  {
+    data = data_in;
+
+    if(data_in.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      matrix_free.initialize_dof_vector(velocity, data_in.dof_index_velocity);
+
+      integrator_velocity.reset(
+        new CellIntegratorVelocity(matrix_free, data_in.dof_index_velocity, quad_index));
+
+      integrator_velocity_m.reset(
+        new FaceIntegratorVelocity(matrix_free, true, data_in.dof_index_velocity, quad_index));
+
+      integrator_velocity_p.reset(
+        new FaceIntegratorVelocity(matrix_free, false, data_in.dof_index_velocity, quad_index));
+    }
+  }
 
   IntegratorFlags
-  get_integrator_flags() const;
+  get_integrator_flags() const
+  {
+    IntegratorFlags flags;
+
+    flags.cell_evaluate  = CellFlags(true, false, false);
+    flags.cell_integrate = CellFlags(false, true, false);
+
+    flags.face_evaluate  = FaceFlags(true, false);
+    flags.face_integrate = FaceFlags(true, false);
+
+    return flags;
+  }
 
   static MappingFlags
-  get_mapping_flags();
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells = update_gradients | update_JxW_values |
+                  update_quadrature_points; // q-points due to analytical velocity field
+    flags.inner_faces = update_JxW_values | update_quadrature_points |
+                        update_normal_vectors; // q-points due to analytical velocity field
+    flags.boundary_faces = update_JxW_values | update_quadrature_points | update_normal_vectors;
+
+    return flags;
+  }
 
   LinearAlgebra::distributed::Vector<Number> &
-  get_velocity() const;
+  get_velocity() const
+  {
+    return velocity;
+  }
 
   void
-  set_velocity(VectorType const & velocity) const;
+  set_velocity(VectorType const & velocity_in) const
+  {
+    AssertThrow(data.type_velocity_field == TypeVelocityField::Numerical,
+                ExcMessage("Invalid parameter type_velocity_field."));
+
+    velocity = velocity_in;
+
+    velocity.update_ghost_values();
+  }
 
   void
-  reinit_cell(unsigned int const cell) const;
+  reinit_cell(unsigned int const cell) const
+  {
+    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      integrator_velocity->reinit(cell);
+      integrator_velocity->gather_evaluate(velocity, true, false, false);
+    }
+  }
 
   void
-  reinit_face(unsigned int const face) const;
+  reinit_face(unsigned int const face) const
+  {
+    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      integrator_velocity_m->reinit(face);
+      integrator_velocity_m->gather_evaluate(velocity, true, false);
+
+      integrator_velocity_p->reinit(face);
+      integrator_velocity_p->gather_evaluate(velocity, true, false);
+    }
+  }
 
   void
-  reinit_boundary_face(unsigned int const face) const;
+  reinit_boundary_face(unsigned int const face) const
+  {
+    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      integrator_velocity_m->reinit(face);
+      integrator_velocity_m->gather_evaluate(velocity, true, false);
+    }
+  }
 
   void
   reinit_face_cell_based(unsigned int const       cell,
                          unsigned int const       face,
-                         types::boundary_id const boundary_id) const;
+                         types::boundary_id const boundary_id) const
+  {
+    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      integrator_velocity_m->reinit(cell, face);
+      integrator_velocity_m->gather_evaluate(velocity, true, false);
+
+      if(boundary_id == numbers::internal_face_boundary_id) // internal face
+      {
+        // TODO: Matrix-free implementation in deal.II does currently not allow to access data of
+        // the neighboring element in case of cell-based face loops.
+        //      integrator_velocity_p->reinit(cell, face);
+        //      integrator_velocity_p->gather_evaluate(velocity, true, false);
+      }
+    }
+  }
 
   /*
    * This function calculates the numerical flux using the central flux.
@@ -88,7 +178,12 @@ public:
     scalar
     calculate_central_flux(scalar const & value_m,
                            scalar const & value_p,
-                           scalar const & normal_velocity) const;
+                           scalar const & normal_velocity) const
+  {
+    scalar average_value = 0.5 * (value_m + value_p);
+
+    return normal_velocity * average_value;
+  }
 
   /*
    * The same as above, but with discontinuous velocity field.
@@ -98,7 +193,10 @@ public:
     calculate_central_flux(scalar const & value_m,
                            scalar const & value_p,
                            scalar const & normal_velocity_m,
-                           scalar const & normal_velocity_p) const;
+                           scalar const & normal_velocity_p) const
+  {
+    return 0.5 * (normal_velocity_m * value_m + normal_velocity_p * value_p);
+  }
 
   /*
    * This function calculates the numerical flux using the Lax-Friedrichs flux.
@@ -107,7 +205,14 @@ public:
     scalar
     calculate_lax_friedrichs_flux(scalar const & value_m,
                                   scalar const & value_p,
-                                  scalar const & normal_velocity) const;
+                                  scalar const & normal_velocity) const
+  {
+    scalar average_value = 0.5 * (value_m + value_p);
+    scalar jump_value    = value_m - value_p;
+    scalar lambda        = std::abs(normal_velocity);
+
+    return normal_velocity * average_value + 0.5 * lambda * jump_value;
+  }
 
   /*
    * The same as above, but with discontinuous velocity field.
@@ -117,7 +222,14 @@ public:
     calculate_lax_friedrichs_flux(scalar const & value_m,
                                   scalar const & value_p,
                                   scalar const & normal_velocity_m,
-                                  scalar const & normal_velocity_p) const;
+                                  scalar const & normal_velocity_p) const
+  {
+    scalar jump_value = value_m - value_p;
+    scalar lambda     = std::max(std::abs(normal_velocity_m), std::abs(normal_velocity_p));
+
+    return 0.5 * (normal_velocity_m * value_m + normal_velocity_p * value_p) +
+           0.5 * lambda * jump_value;
+  }
 
   /*
    * This function calculates the numerical flux where the type of the numerical flux depends on the
@@ -126,18 +238,86 @@ public:
   inline DEAL_II_ALWAYS_INLINE //
     scalar
     calculate_flux(unsigned int const q,
-                   IntegratorFace &   integrator_m,
+                   IntegratorFace &   integrator,
                    scalar const &     value_m,
                    scalar const &     value_p,
                    Number const &     time,
-                   bool const         exterior_velocity_available) const;
+                   bool const         exterior_velocity_available) const
+  {
+    vector normal = integrator.get_normal_vector(q);
+    scalar flux   = make_vectorized_array<Number>(0.0);
+
+    if(data.type_velocity_field == TypeVelocityField::Analytical)
+    {
+      Point<dim, scalar> q_points = integrator.quadrature_point(q);
+
+      vector velocity = evaluate_vectorial_function(data.velocity, q_points, time);
+
+      scalar normal_velocity = velocity * normal;
+
+      if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+      {
+        flux = calculate_central_flux(value_m, value_p, normal_velocity);
+      }
+      else if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+      {
+        flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity);
+      }
+    }
+    else if(data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      vector velocity_m = integrator_velocity_m->get_value(q);
+      vector velocity_p =
+        exterior_velocity_available ? integrator_velocity_p->get_value(q) : velocity_m;
+
+      scalar normal_velocity_m = velocity_m * normal;
+      scalar normal_velocity_p = velocity_p * normal;
+
+      if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+      {
+        flux = calculate_central_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+      }
+      else if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+      {
+        flux =
+          calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    return flux;
+  }
 
   /*
    * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux(IntegratorCell & integrator, unsigned int const q, Number const & time) const;
+    get_volume_flux(scalar const &     value,
+                    IntegratorCell &   integrator,
+                    unsigned int const q,
+                    Number const &     time) const
+  {
+    vector velocity;
+
+    if(data.type_velocity_field == TypeVelocityField::Analytical)
+    {
+      velocity = evaluate_vectorial_function(data.velocity, integrator.quadrature_point(q), time);
+    }
+    else if(data.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      velocity = integrator_velocity->get_value(q);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    return (-value * velocity);
+  }
 
 private:
   mutable ConvectiveKernelData<dim> data;

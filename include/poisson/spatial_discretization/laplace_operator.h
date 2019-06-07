@@ -35,47 +35,108 @@ private:
   typedef FaceIntegrator<dim, 1, Number> IntegratorFace;
 
 public:
-  LaplaceKernel();
+  LaplaceKernel() : tau(make_vectorized_array<Number>(0.0))
+  {
+  }
 
   void
   reinit(MatrixFree<dim, Number> const & matrix_free,
          LaplaceKernelData const &       data_in,
-         unsigned int const              dof_index) const;
+         unsigned int const              dof_index) const
+  {
+    data = data_in;
+
+    MappingQGeneric<dim> mapping(data_in.degree_mapping);
+    IP::calculate_penalty_parameter<dim, Number>(
+      array_penalty_parameter, matrix_free, mapping, data_in.degree, dof_index);
+  }
 
   IntegratorFlags
-  get_integrator_flags() const;
+  get_integrator_flags() const
+  {
+    IntegratorFlags flags;
+
+    flags.cell_evaluate  = CellFlags(false, true, false);
+    flags.cell_integrate = CellFlags(false, true, false);
+
+    flags.face_evaluate  = FaceFlags(true, true);
+    flags.face_integrate = FaceFlags(true, true);
+
+    return flags;
+  }
 
   static MappingFlags
-  get_mapping_flags();
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells       = update_gradients | update_JxW_values;
+    flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+    flags.boundary_faces =
+      update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+
+    return flags;
+  }
 
   void
-  reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
+  reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
+  {
+    tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
+                   integrator_p.read_cell_data(array_penalty_parameter)) *
+          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+  }
 
   void
-  reinit_boundary_face(IntegratorFace & integrator_m) const;
+  reinit_boundary_face(IntegratorFace & integrator_m) const
+  {
+    tau = integrator_m.read_cell_data(array_penalty_parameter) *
+          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+  }
 
   void
   reinit_face_cell_based(types::boundary_id const boundary_id,
                          IntegratorFace &         integrator_m,
-                         IntegratorFace &         integrator_p) const;
+                         IntegratorFace &         integrator_p) const
+  {
+    if(boundary_id == numbers::internal_face_boundary_id) // internal face
+    {
+      tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
+                     integrator_p.read_cell_data(array_penalty_parameter)) *
+            IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+    }
+    else // boundary face
+    {
+      tau = integrator_m.read_cell_data(array_penalty_parameter) *
+            IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+    }
+  }
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_value_flux(scalar const & value_m, scalar const & value_p) const;
+    calculate_gradient_flux(scalar const & value_m, scalar const & value_p) const
+  {
+    return -0.5 * (value_m - value_p);
+  }
 
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_gradient_flux(scalar const & normal_gradient_m,
-                            scalar const & normal_gradient_p,
-                            scalar const & value_m,
-                            scalar const & value_p) const;
+    calculate_value_flux(scalar const & normal_gradient_m,
+                         scalar const & normal_gradient_p,
+                         scalar const & value_m,
+                         scalar const & value_p) const
+  {
+    return 0.5 * (normal_gradient_m + normal_gradient_p) - tau * (value_m - value_p);
+  }
 
   /*
    * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux(IntegratorCell & integrator, unsigned int const q) const;
+    get_volume_flux(IntegratorCell & integrator, unsigned int const q) const
+  {
+    return integrator.get_gradient(q);
+  }
 
 private:
   mutable LaplaceKernelData data;

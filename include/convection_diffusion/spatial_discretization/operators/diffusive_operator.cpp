@@ -3,142 +3,8 @@
 #include "verify_boundary_conditions.h"
 #include "weak_boundary_conditions.h"
 
-#include "../../../operators/interior_penalty_parameter.h"
-
 namespace ConvDiff
 {
-namespace Operators
-{
-template<int dim, typename Number>
-DiffusiveKernel<dim, Number>::DiffusiveKernel() : tau(make_vectorized_array<Number>(0.0))
-{
-}
-
-template<int dim, typename Number>
-void
-DiffusiveKernel<dim, Number>::reinit(MatrixFree<dim, Number> const & matrix_free,
-                                     DiffusiveKernelData const &     data_in,
-                                     unsigned int const              dof_index) const
-{
-  data = data_in;
-
-  MappingQGeneric<dim> mapping(data_in.degree_mapping);
-  IP::calculate_penalty_parameter<dim, Number>(
-    array_penalty_parameter, matrix_free, mapping, data_in.degree, dof_index);
-
-  AssertThrow(data.diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
-}
-
-template<int dim, typename Number>
-IntegratorFlags
-DiffusiveKernel<dim, Number>::get_integrator_flags() const
-{
-  IntegratorFlags flags;
-
-  flags.cell_evaluate  = CellFlags(false, true, false);
-  flags.cell_integrate = CellFlags(false, true, false);
-
-  flags.face_evaluate  = FaceFlags(true, true);
-  flags.face_integrate = FaceFlags(true, true);
-
-  return flags;
-}
-
-template<int dim, typename Number>
-MappingFlags
-DiffusiveKernel<dim, Number>::get_mapping_flags()
-{
-  MappingFlags flags;
-
-  flags.cells       = update_gradients | update_JxW_values;
-  flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
-  flags.boundary_faces =
-    update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
-
-  return flags;
-}
-
-template<int dim, typename Number>
-void
-DiffusiveKernel<dim, Number>::reinit_face(IntegratorFace & integrator_m,
-                                          IntegratorFace & integrator_p) const
-{
-  tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
-                 integrator_p.read_cell_data(array_penalty_parameter)) *
-        IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
-}
-
-template<int dim, typename Number>
-void
-DiffusiveKernel<dim, Number>::reinit_boundary_face(IntegratorFace & integrator_m) const
-{
-  tau = integrator_m.read_cell_data(array_penalty_parameter) *
-        IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
-}
-
-template<int dim, typename Number>
-void
-DiffusiveKernel<dim, Number>::reinit_face_cell_based(types::boundary_id const boundary_id,
-                                                     IntegratorFace &         integrator_m,
-                                                     IntegratorFace &         integrator_p) const
-{
-  if(boundary_id == numbers::internal_face_boundary_id) // internal face
-  {
-    tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
-                   integrator_p.read_cell_data(array_penalty_parameter)) *
-          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
-  }
-  else // boundary face
-  {
-    tau = integrator_m.read_cell_data(array_penalty_parameter) *
-          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
-  }
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  DiffusiveKernel<dim, Number>::calculate_value_flux(scalar const & value_m,
-                                                     scalar const & value_p) const
-{
-  return -0.5 * data.diffusivity * (value_m - value_p);
-}
-
-
-/*
- * Calculation of gradient flux. Strictly speaking, this value is not a numerical flux since the
- * flux is multiplied by the normal vector, i.e., "gradient_flux" = numerical_flux * normal, where
- * normal denotes the normal vector of element e⁻.
- */
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  DiffusiveKernel<dim, Number>::calculate_gradient_flux(scalar const & normal_gradient_m,
-                                                        scalar const & normal_gradient_p,
-                                                        scalar const & value_m,
-                                                        scalar const & value_p) const
-{
-  return data.diffusivity *
-         (0.5 * (normal_gradient_m + normal_gradient_p) - tau * (value_m - value_p));
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  Tensor<1, dim, VectorizedArray<Number>>
-  DiffusiveKernel<dim, Number>::get_volume_flux(IntegratorCell &   integrator,
-                                                unsigned int const q) const
-{
-  return integrator.get_gradient(q) * data.diffusivity;
-}
-
-template class DiffusiveKernel<2, float>;
-template class DiffusiveKernel<2, double>;
-
-template class DiffusiveKernel<3, float>;
-template class DiffusiveKernel<3, double>;
-
-} // namespace Operators
-
 template<int dim, typename Number>
 void
 DiffusiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    matrix_free,
@@ -201,19 +67,19 @@ DiffusiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar value_m = integrator_m.get_value(q);
     scalar value_p = integrator_p.get_value(q);
 
-    scalar value_flux = kernel.calculate_value_flux(value_m, value_p);
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
     scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
     scalar normal_gradient_p = integrator_p.get_normal_derivative(q);
 
-    scalar gradient_flux =
-      kernel.calculate_gradient_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
 
-    integrator_m.submit_normal_derivative(value_flux, q);
-    integrator_p.submit_normal_derivative(value_flux, q);
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+    integrator_p.submit_normal_derivative(gradient_flux, q);
 
-    integrator_m.submit_value(-gradient_flux, q);
-    integrator_p.submit_value(gradient_flux, q); // opposite sign since n⁺ = -n⁻
+    integrator_m.submit_value(-value_flux, q);
+    integrator_p.submit_value(value_flux, q); // opposite sign since n⁺ = -n⁻
   }
 }
 
@@ -230,17 +96,17 @@ DiffusiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator
     scalar value_m = integrator_m.get_value(q);
     scalar value_p = make_vectorized_array<Number>(0.0);
 
-    scalar value_flux = kernel.calculate_value_flux(value_m, value_p);
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
     // set exterior value to zero
     scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
     scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
 
-    scalar gradient_flux =
-      kernel.calculate_gradient_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
 
-    integrator_m.submit_normal_derivative(value_flux, q);
-    integrator_m.submit_value(-gradient_flux, q);
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+    integrator_m.submit_value(-value_flux, q);
   }
 }
 
@@ -257,18 +123,18 @@ DiffusiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator
     scalar value_m = make_vectorized_array<Number>(0.0);
     scalar value_p = integrator_p.get_value(q);
 
-    scalar value_flux = kernel.calculate_value_flux(value_p, value_m);
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_p, value_m);
 
     // set gradient_m to zero
     scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
     // minus sign to get the correct normal vector n⁺ = -n⁻
     scalar normal_gradient_p = -integrator_p.get_normal_derivative(q);
 
-    scalar gradient_flux =
-      kernel.calculate_gradient_flux(normal_gradient_p, normal_gradient_m, value_p, value_m);
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_p, normal_gradient_m, value_p, value_m);
 
-    integrator_p.submit_normal_derivative(-value_flux, q); // opposite sign since n⁺ = -n⁻
-    integrator_p.submit_value(-gradient_flux, q);
+    integrator_p.submit_normal_derivative(-gradient_flux, q); // opposite sign since n⁺ = -n⁻
+    integrator_p.submit_value(-value_flux, q);
   }
 }
 
@@ -293,7 +159,7 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                               this->operator_data.bc,
                                               this->eval_time);
 
-    scalar value_flux = kernel.calculate_value_flux(value_m, value_p);
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
     scalar normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
 
@@ -306,11 +172,11 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                                                   this->operator_data.bc,
                                                                   this->eval_time);
 
-    scalar gradient_flux =
-      kernel.calculate_gradient_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
 
-    integrator_m.submit_normal_derivative(value_flux, q);
-    integrator_m.submit_value(-gradient_flux, q);
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+    integrator_m.submit_value(-value_flux, q);
   }
 }
 

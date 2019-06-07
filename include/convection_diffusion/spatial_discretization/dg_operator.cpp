@@ -163,6 +163,19 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup_operators()
 {
+  Operators::ConvectiveKernelData<dim> convective_kernel_data;
+  convective_kernel_data.type_velocity_field        = param.type_velocity_field;
+  convective_kernel_data.dof_index_velocity         = 1;
+  convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
+  convective_kernel_data.velocity                   = field_functions->velocity;
+
+  Operators::DiffusiveKernelData diffusive_kernel_data;
+  diffusive_kernel_data.IP_factor      = param.IP_factor;
+  diffusive_kernel_data.diffusivity    = param.diffusivity;
+  diffusive_kernel_data.degree         = param.degree;
+  diffusive_kernel_data.degree_mapping = mapping_degree;
+
+
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index            = 0;
@@ -170,6 +183,7 @@ DGOperator<dim, Number>::setup_operators()
   mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
+
   mass_matrix_operator.reinit(matrix_free, constraint_matrix, mass_matrix_operator_data);
 
   // inverse mass matrix operator
@@ -184,11 +198,7 @@ DGOperator<dim, Number>::setup_operators()
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  convective_operator_data.kernel_data.type_velocity_field = param.type_velocity_field;
-  convective_operator_data.kernel_data.dof_index_velocity  = 1;
-  convective_operator_data.kernel_data.numerical_flux_formulation =
-    param.numerical_flux_convective_operator;
-  convective_operator_data.kernel_data.velocity = field_functions->velocity;
+  convective_operator_data.kernel_data = convective_kernel_data;
 
   if(this->param.equation_type == EquationType::Convection ||
      this->param.equation_type == EquationType::ConvectionDiffusion)
@@ -210,10 +220,7 @@ DGOperator<dim, Number>::setup_operators()
   diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-  diffusive_operator_data.kernel_data.IP_factor      = param.IP_factor;
-  diffusive_operator_data.kernel_data.diffusivity    = param.diffusivity;
-  diffusive_operator_data.kernel_data.degree         = param.degree;
-  diffusive_operator_data.kernel_data.degree_mapping = mapping_degree;
+  diffusive_operator_data.kernel_data = diffusive_kernel_data;
 
   if(this->param.equation_type == EquationType::Diffusion ||
      this->param.equation_type == EquationType::ConvectionDiffusion)
@@ -228,6 +235,7 @@ DGOperator<dim, Number>::setup_operators()
   rhs_operator_data.rhs        = field_functions->right_hand_side;
   rhs_operator.reinit(matrix_free, rhs_operator_data);
 
+  // TODO
   // convection-diffusion operator (efficient implementation, only for explicit time integration,
   // includes also rhs operator)
   ConvectionDiffusionOperatorDataEfficiency<dim, Number> conv_diff_operator_data_eff;
@@ -237,6 +245,37 @@ DGOperator<dim, Number>::setup_operators()
   convection_diffusion_operator_efficiency.initialize(*mapping,
                                                       matrix_free,
                                                       conv_diff_operator_data_eff);
+
+
+  // TODO
+  // merged operator
+  ConvectionDiffusionOperatorMergedData<dim> merged_operator_data;
+  merged_operator_data.dof_index            = 0;
+  merged_operator_data.quad_index           = 0;
+  merged_operator_data.bc                   = boundary_descriptor;
+  merged_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+  merged_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+    param.implement_block_diagonal_preconditioner_matrix_free;
+
+  // TODO: merged operator can not only be used for implicit problems and the solution of
+  // linear systems of equations, but also for explicit time integration (in this case
+  // the initializations shown below have to be adapted)
+  if(this->param.problem_type == ProblemType::Unsteady)
+    merged_operator_data.unsteady_problem = true;
+
+  if((this->param.equation_type == EquationType::Convection ||
+      this->param.equation_type == EquationType::ConvectionDiffusion) &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    merged_operator_data.convective_problem = true;
+
+  if(this->param.equation_type == EquationType::Diffusion ||
+     this->param.equation_type == EquationType::ConvectionDiffusion)
+    merged_operator_data.diffusive_problem = true;
+
+  merged_operator_data.convective_kernel_data = convective_kernel_data;
+  merged_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
+
+  convection_diffusion_operator_merged.reinit(matrix_free, constraint_matrix, merged_operator_data);
 }
 
 template<int dim, typename Number>

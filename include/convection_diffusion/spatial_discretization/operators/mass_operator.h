@@ -7,15 +7,6 @@ namespace ConvDiff
 {
 namespace Operators
 {
-struct MassMatrixKernelData
-{
-  MassMatrixKernelData() : scaling_factor(1.0)
-  {
-  }
-
-  double scaling_factor;
-};
-
 template<int dim, typename Number>
 class MassMatrixKernel
 {
@@ -24,10 +15,8 @@ public:
 
   typedef CellIntegrator<dim, 1, Number> IntegratorCell;
 
-  void
-  reinit(MassMatrixKernelData const & data_in) const
+  MassMatrixKernel() : scaling_factor(1.0)
   {
-    data = data_in;
   }
 
   IntegratorFlags
@@ -53,18 +42,24 @@ public:
     return flags;
   }
 
+  void
+  set_scaling_factor(Number const & number)
+  {
+    scaling_factor = number;
+  }
+
   /*
    * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    get_volume_flux(IntegratorCell & integrator, unsigned int const q) const
+    get_volume_flux(scalar const & value) const
   {
-    return data.scaling_factor * integrator.get_value(q);
+    return scaling_factor * value;
   }
 
 private:
-  mutable MassMatrixKernelData data;
+  mutable Number scaling_factor;
 };
 
 } // namespace Operators
@@ -75,8 +70,6 @@ struct MassMatrixOperatorData : public OperatorBaseData
   MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
   }
-
-  Operators::MassMatrixKernelData kernel_data;
 };
 
 template<int dim, typename Number>
@@ -99,9 +92,13 @@ public:
   {
     Base::reinit(matrix_free, constraint_matrix, operator_data);
 
-    kernel.reinit(operator_data.kernel_data);
-
     this->integrator_flags = kernel.get_integrator_flags();
+  }
+
+  void
+  set_scaling_factor(Number const & number)
+  {
+    kernel.set_scaling_factor(number);
   }
 
 private:
@@ -109,7 +106,9 @@ private:
   do_cell_integral(IntegratorCell & integrator) const
   {
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      integrator.submit_value(kernel.get_volume_flux(integrator, q), q);
+    {
+      integrator.submit_value(kernel.get_volume_flux(integrator.get_value(q)), q);
+    }
   }
 
   Operators::MassMatrixKernel<dim, Number> kernel;

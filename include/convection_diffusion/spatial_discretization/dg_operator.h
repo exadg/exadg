@@ -25,6 +25,7 @@
 #include "../../operators/inverse_mass_matrix.h"
 #include "operators/convection_diffusion_operator.h"
 #include "operators/convection_diffusion_operator_efficiency.h"
+#include "operators/convection_diffusion_operator_merged.h"
 
 // solvers and preconditioners
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
@@ -319,6 +320,11 @@ private:
    * rhs-operator). This operator can only be used for explicit time integration.
    */
   ConvectionDiffusionOperatorEfficiency<dim, Number> convection_diffusion_operator_efficiency;
+
+  /*
+   * Merged operators
+   */
+  ConvectionDiffusionOperatorMerged<dim, Number> convection_diffusion_operator_merged;
 
   /*
    * Postprocessor.
