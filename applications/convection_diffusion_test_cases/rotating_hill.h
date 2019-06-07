@@ -20,8 +20,8 @@
 unsigned int const DEGREE_MIN = 5;
 unsigned int const DEGREE_MAX = 5;
 
-unsigned int const REFINE_SPACE_MIN = 2;
-unsigned int const REFINE_SPACE_MAX = 2;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -47,7 +47,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  param.temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
+  param.temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
 
   // Explicit RK
   param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -123,7 +123,6 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // NUMERICAL PARAMETERS
   param.use_cell_based_face_loops = true;
-  param.runtime_optimization = false;
 }
 }
 

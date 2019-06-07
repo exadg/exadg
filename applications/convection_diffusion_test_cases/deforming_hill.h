@@ -17,8 +17,8 @@
 /**************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 2;
-unsigned int const DEGREE_MAX = 2;
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
 unsigned int const REFINE_SPACE_MIN = 4;
 unsigned int const REFINE_SPACE_MAX = 4;
@@ -85,7 +85,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = (END_TIME-START_TIME)/20;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+
 }
 }
 
@@ -201,7 +201,7 @@ std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(ConvDiff::InputParameters const &param)
 {
   PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = "output_conv_diff/deforming_hill/";
   pp_data.output_data.output_name = "deforming_hill";
   pp_data.output_data.output_start_time = param.start_time;

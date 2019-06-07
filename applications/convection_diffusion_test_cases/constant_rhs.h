@@ -87,7 +87,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = (param.end_time-param.start_time)/20;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+
 }
 }
 

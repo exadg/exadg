@@ -50,9 +50,10 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  param.temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
+  param.temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
+  param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF; //Explicit;
-  param.order_time_integrator = 3;
+  param.order_time_integrator = 4;
   param.start_with_low_order = false;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.time_step_size = 1.0e-1;
@@ -90,7 +91,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = (END_TIME-START_TIME)/20;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+  param.use_combined_operator = true;
 }
 }
 

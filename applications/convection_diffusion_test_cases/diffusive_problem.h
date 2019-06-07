@@ -38,7 +38,7 @@ enum class BoundaryConditionType{
   HomogeneousNBCWithRHS
 };
 
-const BoundaryConditionType BOUNDARY_TYPE = BoundaryConditionType::HomogeneousNBCWithRHS;
+const BoundaryConditionType BOUNDARY_TYPE = BoundaryConditionType::HomogeneousDBC;
 
 const bool RIGHT_HAND_SIDE = (BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS) ? true : false;
 
@@ -60,13 +60,14 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.temporal_discretization = TemporalDiscretization::BDF;
+  param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  param.order_time_integrator = 2;
+  param.order_time_integrator = 3;
   param.start_with_low_order = false;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  param.time_step_size = 1.0e-2;
+  param.time_step_size = 1.0e-3;
   param.cfl = 0.1;
-  param.diffusion_number = 0.01;
+  param.diffusion_number = 0.04; //0.01;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // SPATIAL DISCRETIZATION
@@ -90,7 +91,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   // SOLVER
   param.solver = Solver::CG;
   param.solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
-  param.preconditioner = Preconditioner::Multigrid; //BlockJacobi;
+  param.preconditioner = Preconditioner::PointJacobi; //Multigrid; //BlockJacobi;
   param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
   param.update_preconditioner = false;
@@ -100,7 +101,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = END_TIME-START_TIME;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+  param.use_combined_operator = true;
 }
 }
 

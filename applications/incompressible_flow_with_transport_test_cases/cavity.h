@@ -267,7 +267,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.use_cell_based_face_loops = true;
   param.update_preconditioner = true;
 
-  param.multigrid_data.type = MultigridType::hMG;
+  param.multigrid_data.type = MultigridType::phMG;
   param.mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
@@ -283,7 +283,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+  param.use_combined_operator = false;
 }
 }
 

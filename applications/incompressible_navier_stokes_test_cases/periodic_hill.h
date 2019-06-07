@@ -420,7 +420,7 @@ public:
 
     // calculation of mean velocity
     mean_velocity_calculator.reset(new MeanVelocityCalculator<dim,Number>(
-        pde_operator.get_data(),
+        pde_operator.get_matrix_free(),
         pde_operator.get_dof_index_velocity(),
         pde_operator.get_quad_index_velocity_linear(),
         pp_data_periodic_hill.mean_velocity_data));

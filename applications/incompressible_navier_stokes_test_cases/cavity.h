@@ -50,13 +50,13 @@ void set_input_parameters(InputParameters &param)
   // PHYSICAL QUANTITIES
   param.start_time = 0.0;
   param.end_time = 10.0;
-  param.viscosity = 1.0e-1;
+  param.viscosity = 1.0e-2;
 
 
   // TEMPORAL DISCRETIZATION
-  param.solver_type = SolverType::Unsteady;
+  param.solver_type = SolverType::Steady;
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   param.adaptive_time_stepping = false;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -164,7 +164,7 @@ void set_input_parameters(InputParameters &param)
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  param.newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-10);
+  param.newton_solver_data_coupled = NewtonSolverData(100,1.e-12,1.e-8);
 
   // linear solver
   param.solver_coupled = SolverCoupled::FGMRES; //FGMRES;
@@ -178,7 +178,7 @@ void set_input_parameters(InputParameters &param)
   param.update_preconditioner_coupled = true;
 
   // preconditioner velocity/momentum block
-  param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix; //Multigrid;
+  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
   param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionConvectionDiffusion;
   param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::GMRES;
   param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;

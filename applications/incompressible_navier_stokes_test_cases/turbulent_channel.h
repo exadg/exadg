@@ -36,7 +36,7 @@ unsigned int const REFINE_STEPS_TIME_MAX = REFINE_STEPS_TIME_MIN;
 
 std::string OUTPUT_FOLDER = "output_comp_ns/turbulent_channel/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "Re180_l3_k3";
+std::string OUTPUT_NAME = "Re395_l3_k3";
 
 // set problem specific parameters like physical dimensions, etc.
 double const DIMENSIONS_X1 = 2.0*numbers::PI;
@@ -47,7 +47,7 @@ double const DIMENSIONS_X3 = numbers::PI;
 // nu = 1/395
 // nu = 1/590
 // nu = 1/950
-double const VISCOSITY = 1./180.; // critical value: 1./50. - 1./75.
+double const VISCOSITY = 1./395.; // critical value: 1./50. - 1./75.
 
 //18.3 for Re_tau = 180
 //20.1 for Re_tau = 395
@@ -68,7 +68,7 @@ double const SAMPLE_END_TIME = END_TIME;
 const double GRID_STRETCH_FAC = 1.8;
 
 enum class GridStretchType{ TransformGridCells, VolumeManifold };
-GridStretchType GRID_STRETCH_TYPE = GridStretchType::TransformGridCells; //VolumeManifold;
+GridStretchType GRID_STRETCH_TYPE = GridStretchType::VolumeManifold;
 
 namespace IncNS
 {
@@ -78,7 +78,7 @@ void set_input_parameters(InputParameters &param)
   param.dim = 3;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
-  param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation; //LaplaceFormulation; //DivergenceFormulation;
+  param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   param.right_hand_side = true;
 
 
@@ -93,8 +93,9 @@ void set_input_parameters(InputParameters &param)
   param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = true;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl = 1.7;
+  param.cfl = 0.4;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-1;
   param.order_time_integrator = 2; // 1; // 2; // 3;
@@ -114,6 +115,7 @@ void set_input_parameters(InputParameters &param)
   param.h_refinements = REFINE_SPACE_MIN;
 
   // convective term
+  param.upwind_factor = 0.5;
 
   // viscous term
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -338,17 +340,11 @@ public:
 
     AssertThrow(dim==3, ExcMessage("Dimension has to be dim==3."));
 
-    // TODO
+    // use turbulent-like profile with superimposed vorticese and random noise to initiate a turbulent flow
     if(component == 0)
       result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-1.0)*0.5-2./MAX_VELOCITY*std::sin(p[2]*8.));
     else if(component == 2)
       result = (pow(p[1],6.0)-1.0)*std::sin(p[0]*8.)*2.;
-
-  //  if(component == 0)
-  //  {
-  //    double factor = 1.0;
-  //    result = -MAX_VELOCITY*(pow(p[1],6.0)-1.0)*(1.0+((double)rand()/RAND_MAX-0.5)*factor);
-  //  }
 
     return result;
   }

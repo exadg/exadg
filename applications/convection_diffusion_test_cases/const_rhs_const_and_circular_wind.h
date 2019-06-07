@@ -57,6 +57,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.temporal_discretization = TemporalDiscretization::BDF;
+  param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   param.order_time_integrator = 2;
   param.start_with_low_order = true;
@@ -107,7 +108,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
 //  param.multigrid_data.smoother_data.relaxation_factor = 0.8;
 
   // MG coarse grid solver
-  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::AMG; //GMRES;
 
   param.update_preconditioner = false;
 
@@ -116,7 +117,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = (param.end_time-param.start_time)/10;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+  param.use_combined_operator = true;
 }
 }
 
@@ -271,7 +272,7 @@ std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(ConvDiff::InputParameters const &param)
 {
   PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = false; //true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = "output_conv_diff/";
   pp_data.output_data.output_name = "const_wind_const_rhs";
   pp_data.output_data.output_start_time = param.start_time;
