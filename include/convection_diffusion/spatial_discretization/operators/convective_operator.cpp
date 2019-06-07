@@ -26,7 +26,7 @@ ConvectiveOperator<dim, Number>::set_velocity(VectorType const & velocity_in) co
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> &
+LinearAlgebra::distributed::Vector<Number> const &
 ConvectiveOperator<dim, Number>::get_velocity() const
 {
   return kernel.get_velocity();

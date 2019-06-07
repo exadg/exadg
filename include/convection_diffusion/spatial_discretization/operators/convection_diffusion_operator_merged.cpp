@@ -55,7 +55,7 @@ ConvectionDiffusionOperatorMerged<dim, Number>::set_scaling_factor_mass_matrix(
 }
 
 template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> &
+LinearAlgebra::distributed::Vector<Number> const &
 ConvectionDiffusionOperatorMerged<dim, Number>::get_velocity() const
 {
   return convective_kernel.get_velocity();

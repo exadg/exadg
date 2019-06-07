@@ -101,7 +101,7 @@ public:
     return flags;
   }
 
-  LinearAlgebra::distributed::Vector<Number> &
+  LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const
   {
     return velocity;
@@ -364,7 +364,7 @@ public:
          AffineConstraints<double> const &   constraint_matrix,
          ConvectiveOperatorData<dim> const & operator_data) const;
 
-  LinearAlgebra::distributed::Vector<Number> &
+  LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
   void

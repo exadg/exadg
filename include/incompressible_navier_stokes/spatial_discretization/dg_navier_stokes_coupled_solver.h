@@ -11,6 +11,7 @@
 #include "dg_navier_stokes_base.h"
 #include "interface.h"
 
+#include "../../convection_diffusion/spatial_discretization/operators/convection_diffusion_operator_merged.h"
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
@@ -18,7 +19,6 @@
 #include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/compatible_laplace_operator.h"
 #include "../preconditioners/multigrid_preconditioner.h"
-#include "../preconditioners/pressure_convection_diffusion_operator.h"
 #include "momentum_operator.h"
 
 namespace IncNS
@@ -350,8 +350,8 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> multigrid_preconditioner_schur_complement;
   std::shared_ptr<PreconditionerBase<Number>> inv_mass_matrix_preconditioner_schur_complement;
 
-  std::shared_ptr<PressureConvectionDiffusionOperator<dim, Number>>
-    pressure_convection_diffusion_operator;
+  std::shared_ptr<ConvDiff::ConvectionDiffusionOperatorMerged<dim, Number>>
+    pressure_conv_diff_operator;
 
   std::shared_ptr<Poisson::LaplaceOperator<dim, Number>> laplace_operator_classical;
 
