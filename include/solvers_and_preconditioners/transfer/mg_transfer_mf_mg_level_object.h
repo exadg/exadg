@@ -27,19 +27,42 @@ struct MGDoFHandlerIdentifier
 
 struct MGLevelInfo
 {
-  MGLevelInfo(unsigned int level, unsigned int degree, bool is_dg)
-    : level(level), degree(degree), is_dg(is_dg), id(degree, is_dg)
+  MGLevelInfo(unsigned int h_level, unsigned int degree, bool is_dg)
+    : _h_level(h_level), _dof_handler_id(degree, is_dg)
   {
   }
-  MGLevelInfo(unsigned int level, MGDoFHandlerIdentifier p)
-    : level(level), degree(p.degree), is_dg(p.is_dg), id(p)
+  MGLevelInfo(unsigned int h_level, MGDoFHandlerIdentifier dof_handler_id)
+    : _h_level(h_level), _dof_handler_id(dof_handler_id)
   {
   }
 
-  unsigned int           level;
-  unsigned int           degree;
-  bool                   is_dg;
-  MGDoFHandlerIdentifier id;
+  unsigned int
+  h_level() const
+  {
+    return _h_level;
+  }
+
+  unsigned int
+  degree() const
+  {
+    return _dof_handler_id.degree;
+  }
+
+  bool
+  is_dg() const
+  {
+    return _dof_handler_id.is_dg;
+  }
+
+  MGDoFHandlerIdentifier
+  dof_handler_id() const
+  {
+    return _dof_handler_id;
+  }
+
+private:
+  unsigned int           _h_level;
+  MGDoFHandlerIdentifier _dof_handler_id;
 };
 
 template<int dim, typename VectorType>
