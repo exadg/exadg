@@ -43,7 +43,7 @@ public:
   }
 
   void
-  set_scaling_factor(Number const & number)
+  set_scaling_factor(Number const & number) const
   {
     scaling_factor = number;
   }

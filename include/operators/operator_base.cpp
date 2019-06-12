@@ -16,8 +16,8 @@ OperatorBase<dim, Number, AdditionalData, n_components>::OperatorBase()
   : operator_data(AdditionalData()),
     matrix_free(),
     eval_time(0.0),
-    is_dg(true),
     is_mg(false),
+    is_dg(true),
     level_mg_handler(numbers::invalid_unsigned_int),
     block_diagonal_preconditioner_is_initialized(false),
     n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
@@ -32,8 +32,8 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   AdditionalData const &            operator_data) const
 {
   // reinit data structures
-  this->matrix_free.reinit(matrix_free);
-  this->constraint.reinit(constraint_matrix);
+  this->matrix_free.reset(matrix_free);
+  this->constraint.reset(constraint_matrix);
   this->operator_data = operator_data;
 
   // TODO: do it somewhere else where we have access to periodic_face_pairs

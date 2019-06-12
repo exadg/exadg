@@ -6,7 +6,7 @@
  */
 
 #include "dg_operator.h"
-#include "time_integration/interpolate.h"
+
 #include "time_integration/time_step_calculation.h"
 
 namespace ConvDiff
@@ -160,12 +160,19 @@ DGOperator<dim, Number>::initialize_matrix_free()
 }
 
 template<int dim, typename Number>
+int
+DGOperator<dim, Number>::get_dof_index_velocity() const
+{
+  return 1;
+}
+
+template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup_operators()
 {
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
   convective_kernel_data.type_velocity_field        = param.type_velocity_field;
-  convective_kernel_data.dof_index_velocity         = 1;
+  convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
   convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
   convective_kernel_data.velocity                   = field_functions->velocity;
 
@@ -206,12 +213,6 @@ DGOperator<dim, Number>::setup_operators()
     convective_operator.reinit(matrix_free, constraint_matrix, convective_operator_data);
   }
 
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    matrix_free.initialize_dof_vector(velocity,
-                                      convective_operator_data.kernel_data.dof_index_velocity);
-  }
-
   // diffusive operator
   DiffusiveOperatorData<dim> diffusive_operator_data;
   diffusive_operator_data.dof_index            = 0;
@@ -238,13 +239,13 @@ DGOperator<dim, Number>::setup_operators()
   // TODO
   // convection-diffusion operator (efficient implementation, only for explicit time integration,
   // includes also rhs operator)
-  ConvectionDiffusionOperatorDataEfficiency<dim, Number> conv_diff_operator_data_eff;
-  conv_diff_operator_data_eff.conv_data = convective_operator_data;
-  conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
-  conv_diff_operator_data_eff.rhs_data  = rhs_operator_data;
-  convection_diffusion_operator_efficiency.initialize(*mapping,
-                                                      matrix_free,
-                                                      conv_diff_operator_data_eff);
+  //  ConvectionDiffusionOperatorDataEfficiency<dim, Number> conv_diff_operator_data_eff;
+  //  conv_diff_operator_data_eff.conv_data = convective_operator_data;
+  //  conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
+  //  conv_diff_operator_data_eff.rhs_data  = rhs_operator_data;
+  //  convection_diffusion_operator_efficiency.initialize(*mapping,
+  //                                                      matrix_free,
+  //                                                      conv_diff_operator_data_eff);
 
 
   // TODO
@@ -513,6 +514,13 @@ DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
 
 template<int dim, typename Number>
 void
+DGOperator<dim, Number>::initialize_dof_vector_velocity(VectorType & velocity) const
+{
+  matrix_free.initialize_dof_vector(velocity, get_dof_index_velocity());
+}
+
+template<int dim, typename Number>
+void
 DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src,
                                                       double const evaluation_time) const
 {
@@ -531,11 +539,12 @@ DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate(VectorType &       dst,
-                                  VectorType const & src,
-                                  double const       evaluation_time) const
+DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
+                                                    VectorType const & src,
+                                                    double const       evaluation_time,
+                                                    VectorType const * velocity) const
 {
-  // apply volume and surface integrals for each operator separately
+  // evaluate each operator separately
   if(param.use_combined_operator == false)
   {
     // set dst to zero
@@ -555,10 +564,9 @@ DGOperator<dim, Number>::evaluate(VectorType &       dst,
     {
       if(param.type_velocity_field == TypeVelocityField::Numerical)
       {
-        // We first have to interpolate the velocity field so that it is evaluated at the correct
-        // time.
-        interpolate(velocity, evaluation_time, velocities, times);
-        convective_operator.set_velocity(velocity);
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+        convective_operator.set_velocity_ptr(*velocity);
       }
 
       convective_operator.set_evaluation_time(evaluation_time);
@@ -573,37 +581,31 @@ DGOperator<dim, Number>::evaluate(VectorType &       dst,
       rhs_operator.evaluate_add(dst, evaluation_time);
     }
   }
-  else // param.runtime_optimization == true
+  else // param.use_combined_operator == true
   {
-    // TODO
-    if(false)
+    // no need to set scaling_factor_mass_matrix because the mass matrix is not evaluated
+    // in case of explicit time integration
+
+    if(param.equation_type == EquationType::Convection ||
+       param.equation_type == EquationType::ConvectionDiffusion)
     {
-      convection_diffusion_operator_efficiency.evaluate(dst, src, evaluation_time);
+      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      {
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+        convection_diffusion_operator_merged.set_velocity_ptr(*velocity);
+      }
     }
-    else
+
+    convection_diffusion_operator_merged.set_evaluation_time(evaluation_time);
+    convection_diffusion_operator_merged.evaluate(dst, src);
+
+    // shift diffusive and convective term to the rhs of the equation
+    dst *= -1.0;
+
+    if(param.right_hand_side == true)
     {
-      if(param.equation_type == EquationType::Convection ||
-         param.equation_type == EquationType::ConvectionDiffusion)
-      {
-        if(param.type_velocity_field == TypeVelocityField::Numerical)
-        {
-          // We first have to interpolate the velocity field so that it is evaluated at the correct
-          // time.
-          interpolate(velocity, evaluation_time, velocities, times);
-          convective_operator.set_velocity(velocity);
-        }
-      }
-
-      convection_diffusion_operator_merged.set_evaluation_time(evaluation_time);
-      convection_diffusion_operator_merged.evaluate(dst, src);
-
-      // shift diffusive and convective term to the rhs of the equation
-      dst *= -1.0;
-
-      if(param.right_hand_side == true)
-      {
-        rhs_operator.evaluate_add(dst, evaluation_time);
-      }
+      rhs_operator.evaluate_add(dst, evaluation_time);
     }
   }
 
@@ -615,25 +617,32 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
                                                   VectorType const & src,
-                                                  double const       evaluation_time) const
+                                                  double const       evaluation_time,
+                                                  VectorType const * velocity) const
 {
+  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+    convective_operator.set_velocity_ptr(*velocity);
+  }
+
   convective_operator.set_evaluation_time(evaluation_time);
   convective_operator.evaluate(dst, src);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-  VectorType &       dst,
-  VectorType const & src,
-  double const       evaluation_time) const
+DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
+                                      VectorType const & src,
+                                      double const       evaluation_time,
+                                      VectorType const * velocity) const
 {
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
-    // We first have to interpolate the velocity field so that it is evaluated at the correct
-    // time.
-    interpolate(velocity, evaluation_time, velocities, times);
-    convective_operator.set_velocity(velocity);
+    AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+    convective_operator.set_velocity_ptr(*velocity);
   }
 
   convective_operator.set_evaluation_time(evaluation_time);
@@ -647,30 +656,67 @@ DGOperator<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mas
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) const
+DGOperator<dim, Number>::rhs(VectorType &       dst,
+                             double const       evaluation_time,
+                             VectorType const * velocity) const
 {
-  // set dst to zero since we call functions of type ..._add()
-  dst = 0;
-
-  // diffusive operator
-  if(param.equation_type == EquationType::Diffusion ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  // evaluate each operator separately
+  if(param.use_combined_operator == false)
   {
-    diffusive_operator.set_evaluation_time(evaluation_time);
-    diffusive_operator.rhs_add(dst);
-  }
+    // set dst to zero since we call functions of type ..._add()
+    dst = 0;
 
-  // convective operator
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
-  {
-    if(param.problem_type == ProblemType::Steady ||
-       (param.problem_type == ProblemType::Unsteady &&
-        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+    // diffusive operator
+    if(param.equation_type == EquationType::Diffusion ||
+       param.equation_type == EquationType::ConvectionDiffusion)
     {
-      convective_operator.set_evaluation_time(evaluation_time);
-      convective_operator.rhs_add(dst);
+      diffusive_operator.set_evaluation_time(evaluation_time);
+      diffusive_operator.rhs_add(dst);
     }
+
+    // convective operator
+    if(param.equation_type == EquationType::Convection ||
+       param.equation_type == EquationType::ConvectionDiffusion)
+    {
+      if(param.problem_type == ProblemType::Steady ||
+         (param.problem_type == ProblemType::Unsteady &&
+          param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+      {
+        if(param.type_velocity_field == TypeVelocityField::Numerical)
+        {
+          AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+          convective_operator.set_velocity_ptr(*velocity);
+        }
+
+        convective_operator.set_evaluation_time(evaluation_time);
+        convective_operator.rhs_add(dst);
+      }
+    }
+  }
+  else // param.use_combined_operator == true
+  {
+    // no need to set scaling_factor_mass_matrix because the mass matrix does not contribute to the
+    // rhs
+
+    if(param.equation_type == EquationType::Convection ||
+       param.equation_type == EquationType::ConvectionDiffusion)
+    {
+      if(param.problem_type == ProblemType::Steady ||
+         (param.problem_type == ProblemType::Unsteady &&
+          param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+      {
+        if(param.type_velocity_field == TypeVelocityField::Numerical)
+        {
+          AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+          convection_diffusion_operator_merged.set_velocity_ptr(*velocity);
+        }
+      }
+    }
+
+    convection_diffusion_operator_merged.set_evaluation_time(evaluation_time);
+    convection_diffusion_operator_merged.rhs(dst);
   }
 
   // rhs operator f(t)
@@ -682,10 +728,96 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) con
 
 template<int dim, typename Number>
 void
+DGOperator<dim, Number>::apply_mass_matrix(VectorType & dst, VectorType const & src) const
+{
+  mass_matrix_operator.apply(dst, src);
+}
+
+template<int dim, typename Number>
+void
 DGOperator<dim, Number>::apply_mass_matrix_add(VectorType & dst, VectorType const & src) const
 {
   mass_matrix_operator.apply_add(dst, src);
 }
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::apply_convective_term(VectorType &       dst,
+                                               VectorType const & src,
+                                               double const       evaluation_time,
+                                               VectorType const * velocity) const
+{
+  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+    convective_operator.set_velocity_ptr(*velocity);
+  }
+
+  convective_operator.set_evaluation_time(evaluation_time);
+  convective_operator.apply(dst, src);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::apply_diffusive_term(VectorType & dst, VectorType const & src) const
+{
+  diffusive_operator.apply(dst, src);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::apply(VectorType &       dst,
+                               VectorType const & src,
+                               double const       evaluation_time,
+                               double const       scaling_factor,
+                               VectorType const * velocity) const
+{
+  // TODO remove this later (and use only new implementation with merged operators)
+
+  //  conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
+  //  conv_diff_operator.set_evaluation_time(evaluation_time);
+  //
+  //  if(param.equation_type == EquationType::Convection ||
+  //     param.equation_type == EquationType::ConvectionDiffusion)
+  //  {
+  //    if(param.problem_type == ProblemType::Steady ||
+  //       (param.problem_type == ProblemType::Unsteady &&
+  //        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+  //    {
+  //      if(param.type_velocity_field == TypeVelocityField::Numerical)
+  //      {
+  //        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+  //
+  //        conv_diff_operator.set_velocity_ptr(*velocity);
+  //      }
+  //    }
+  //  }
+  //
+  //  conv_diff_operator.apply(dst, src);
+
+  convection_diffusion_operator_merged.set_scaling_factor_mass_matrix(scaling_factor);
+  convection_diffusion_operator_merged.set_evaluation_time(evaluation_time);
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(param.problem_type == ProblemType::Steady ||
+       (param.problem_type == ProblemType::Unsteady &&
+        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+    {
+      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      {
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+        convection_diffusion_operator_merged.set_velocity_ptr(*velocity);
+      }
+    }
+  }
+
+  convection_diffusion_operator_merged.apply(dst, src);
+}
+
 
 template<int dim, typename Number>
 unsigned int
@@ -693,10 +825,47 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
                                VectorType const & rhs,
                                bool const         update_preconditioner,
                                double const       scaling_factor,
-                               double const       time)
+                               double const       time,
+                               VectorType const * velocity)
 {
+  // TODO remove this later
   conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
   conv_diff_operator.set_evaluation_time(time);
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(param.problem_type == ProblemType::Steady ||
+       (param.problem_type == ProblemType::Unsteady &&
+        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+    {
+      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      {
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+        conv_diff_operator.set_velocity_ptr(*velocity);
+      }
+    }
+  }
+
+  convection_diffusion_operator_merged.set_scaling_factor_mass_matrix(scaling_factor);
+  convection_diffusion_operator_merged.set_evaluation_time(time);
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(param.problem_type == ProblemType::Steady ||
+       (param.problem_type == ProblemType::Unsteady &&
+        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+    {
+      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      {
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+        convection_diffusion_operator_merged.set_velocity_ptr(*velocity);
+      }
+    }
+  }
 
   unsigned int const iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
 
@@ -707,13 +876,14 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
 template<int dim, typename Number>
 double
 DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
-  double const cfl,
-  double const exponent_degree) const
+  VectorType const & velocity,
+  double const       cfl,
+  double const       exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, Number>(matrix_free,
                                                     /*dof_index_velocity = */ 1,
                                                     /*quad_index = */ 0,
-                                                    convective_operator.get_velocity(),
+                                                    velocity,
                                                     cfl,
                                                     param.degree,
                                                     exponent_degree,
@@ -778,25 +948,6 @@ types::global_dof_index
 DGOperator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
-}
-
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::set_velocity(VectorType const & velocity) const
-{
-  AssertThrow(param.type_velocity_field == TypeVelocityField::Numerical,
-              ExcMessage("Invalid parameter type_velocity_field."));
-
-  convective_operator.set_velocity(velocity);
-}
-
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::set_velocities_and_times(std::vector<VectorType const *> & velocities_in,
-                                                  std::vector<double> &             times_in) const
-{
-  velocities = velocities_in;
-  times      = times_in;
 }
 
 template<int dim, typename Number>

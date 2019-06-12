@@ -11,9 +11,8 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
-#include "time_integration/time_int_explicit_runge_kutta_base.h"
-
 #include "time_integration/explicit_runge_kutta.h"
+#include "time_integration/time_int_explicit_runge_kutta_base.h"
 
 using namespace dealii;
 
@@ -26,7 +25,10 @@ namespace Interface
 {
 template<typename Number>
 class Operator;
-}
+
+template<typename Number>
+class OperatorExplRK;
+} // namespace Interface
 
 template<typename Number>
 class TimeIntExplRK : public TimeIntExplRKBase<Number>
@@ -34,12 +36,17 @@ class TimeIntExplRK : public TimeIntExplRKBase<Number>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef Interface::Operator<Number> Operator;
+  typedef Interface::Operator<Number>       Operator;
+  typedef Interface::OperatorExplRK<Number> ExplRKOperator;
 
   TimeIntExplRK(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
+  void
+  set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
+                           std::vector<double> const &             times_in);
 
 private:
   void
@@ -68,9 +75,14 @@ private:
 
   std::shared_ptr<Operator> pde_operator;
 
-  std::shared_ptr<ExplicitTimeIntegrator<Operator, VectorType>> rk_time_integrator;
+  std::shared_ptr<ExplRKOperator> expl_rk_operator;
+
+  std::shared_ptr<ExplicitTimeIntegrator<ExplRKOperator, VectorType>> rk_time_integrator;
 
   InputParameters const & param;
+
+  std::vector<VectorType const *> velocities;
+  std::vector<double>             times;
 
   // store time step size according to diffusion condition so that it does not have to be
   // recomputed in case of adaptive time stepping

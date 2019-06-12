@@ -46,6 +46,16 @@ TimeIntExplRK<Number>::get_wall_times(std::vector<std::string> & name,
 
 template<typename Number>
 void
+TimeIntExplRK<Number>::set_velocities_and_times(
+  std::vector<VectorType const *> const & velocities_in,
+  std::vector<double> const &             times_in)
+{
+  velocities = velocities_in;
+  times      = times_in;
+}
+
+template<typename Number>
+void
 TimeIntExplRK<Number>::initialize_vectors()
 {
   pde_operator->initialize_dof_vector(this->solution_n);
@@ -115,8 +125,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
       }
       else if(param.type_velocity_field == TypeVelocityField::Numerical)
       {
-        time_step_adap = pde_operator->calculate_time_step_cfl_numerical_velocity(
-          cfl, param.exponent_fe_degree_convection);
+        // do nothing (the numerical velocity field is not known at this point)
       }
       else
       {
@@ -229,8 +238,11 @@ TimeIntExplRK<Number>::recalculate_time_step_size() const
   }
   else if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
+    AssertThrow(velocities[0] != nullptr, ExcMessage("Pointer velocities[0] is not initialized."));
+
     new_time_step_size =
-      pde_operator->calculate_time_step_cfl_numerical_velocity(cfl,
+      pde_operator->calculate_time_step_cfl_numerical_velocity(*velocities[0],
+                                                               cfl,
                                                                param.exponent_fe_degree_convection);
   }
   else
@@ -260,49 +272,66 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::initialize_time_integrator()
 {
+  bool numerical_velocity_field = false;
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(this->param.type_velocity_field == TypeVelocityField::Numerical)
+      numerical_velocity_field = true;
+  }
+
+  expl_rk_operator.reset(new ExplRKOperator(pde_operator, numerical_velocity_field));
+
   if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK1Stage1)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<Operator, VectorType>(1, pde_operator));
+      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(1, expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK2Stage2)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<Operator, VectorType>(2, pde_operator));
+      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(2, expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage3)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<Operator, VectorType>(3, pde_operator));
+      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(3, expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage4)
   {
     rk_time_integrator.reset(
-      new ExplicitRungeKuttaTimeIntegrator<Operator, VectorType>(4, pde_operator));
+      new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(4, expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage4Reg2C)
   {
-    rk_time_integrator.reset(new LowStorageRK3Stage4Reg2C<Operator, VectorType>(pde_operator));
+    rk_time_integrator.reset(
+      new LowStorageRK3Stage4Reg2C<ExplRKOperator, VectorType>(expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg2C)
   {
-    rk_time_integrator.reset(new LowStorageRK4Stage5Reg2C<Operator, VectorType>(pde_operator));
+    rk_time_integrator.reset(
+      new LowStorageRK4Stage5Reg2C<ExplRKOperator, VectorType>(expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg3C)
   {
-    rk_time_integrator.reset(new LowStorageRK4Stage5Reg3C<Operator, VectorType>(pde_operator));
+    rk_time_integrator.reset(
+      new LowStorageRK4Stage5Reg3C<ExplRKOperator, VectorType>(expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK5Stage9Reg2S)
   {
-    rk_time_integrator.reset(new LowStorageRK5Stage9Reg2S<Operator, VectorType>(pde_operator));
+    rk_time_integrator.reset(
+      new LowStorageRK5Stage9Reg2S<ExplRKOperator, VectorType>(expl_rk_operator));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage7Reg2)
   {
-    rk_time_integrator.reset(new LowStorageRKTD<Operator, VectorType>(pde_operator, 3, 7));
+    rk_time_integrator.reset(
+      new LowStorageRKTD<ExplRKOperator, VectorType>(expl_rk_operator, 3, 7));
   }
   else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage8Reg2)
   {
-    rk_time_integrator.reset(new LowStorageRKTD<Operator, VectorType>(pde_operator, 4, 8));
+    rk_time_integrator.reset(
+      new LowStorageRKTD<ExplRKOperator, VectorType>(expl_rk_operator, 4, 8));
   }
   else
   {
@@ -325,6 +354,15 @@ TimeIntExplRK<Number>::solve_timestep()
 {
   Timer timer;
   timer.restart();
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(param.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      expl_rk_operator->set_velocities_and_times(velocities, times);
+    }
+  }
 
   rk_time_integrator->solve_timestep(this->solution_np,
                                      this->solution_n,

@@ -54,14 +54,13 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          ConvectiveKernelData<dim> const & data_in,
-         unsigned int const                quad_index) const
+         unsigned int const                quad_index,
+         bool const                        is_mg) const
   {
     data = data_in;
 
     if(data_in.type_velocity_field == TypeVelocityField::Numerical)
     {
-      matrix_free.initialize_dof_vector(velocity, data_in.dof_index_velocity);
-
       integrator_velocity.reset(
         new CellIntegratorVelocity(matrix_free, data_in.dof_index_velocity, quad_index));
 
@@ -70,6 +69,13 @@ public:
 
       integrator_velocity_p.reset(
         new FaceIntegratorVelocity(matrix_free, false, data_in.dof_index_velocity, quad_index));
+
+      // use own storage of velocity vector only in case of multigrid
+      if(is_mg)
+      {
+        velocity.reset();
+        matrix_free.initialize_dof_vector(velocity.own(), data_in.dof_index_velocity);
+      }
     }
   }
 
@@ -104,18 +110,29 @@ public:
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const
   {
-    return velocity;
+    return *velocity;
   }
 
   void
-  set_velocity(VectorType const & velocity_in) const
+  set_velocity_copy(VectorType const & velocity_in) const
   {
     AssertThrow(data.type_velocity_field == TypeVelocityField::Numerical,
                 ExcMessage("Invalid parameter type_velocity_field."));
 
-    velocity = velocity_in;
+    velocity.own() = velocity_in;
 
-    velocity.update_ghost_values();
+    velocity->update_ghost_values();
+  }
+
+  void
+  set_velocity_ptr(VectorType const & velocity_in) const
+  {
+    AssertThrow(data.type_velocity_field == TypeVelocityField::Numerical,
+                ExcMessage("Invalid parameter type_velocity_field."));
+
+    velocity.reset(velocity_in);
+
+    velocity->update_ghost_values();
   }
 
   void
@@ -124,7 +141,7 @@ public:
     if(data.type_velocity_field == TypeVelocityField::Numerical)
     {
       integrator_velocity->reinit(cell);
-      integrator_velocity->gather_evaluate(velocity, true, false, false);
+      integrator_velocity->gather_evaluate(*velocity, true, false, false);
     }
   }
 
@@ -134,10 +151,10 @@ public:
     if(data.type_velocity_field == TypeVelocityField::Numerical)
     {
       integrator_velocity_m->reinit(face);
-      integrator_velocity_m->gather_evaluate(velocity, true, false);
+      integrator_velocity_m->gather_evaluate(*velocity, true, false);
 
       integrator_velocity_p->reinit(face);
-      integrator_velocity_p->gather_evaluate(velocity, true, false);
+      integrator_velocity_p->gather_evaluate(*velocity, true, false);
     }
   }
 
@@ -147,7 +164,7 @@ public:
     if(data.type_velocity_field == TypeVelocityField::Numerical)
     {
       integrator_velocity_m->reinit(face);
-      integrator_velocity_m->gather_evaluate(velocity, true, false);
+      integrator_velocity_m->gather_evaluate(*velocity, true, false);
     }
   }
 
@@ -159,14 +176,14 @@ public:
     if(data.type_velocity_field == TypeVelocityField::Numerical)
     {
       integrator_velocity_m->reinit(cell, face);
-      integrator_velocity_m->gather_evaluate(velocity, true, false);
+      integrator_velocity_m->gather_evaluate(*velocity, true, false);
 
       if(boundary_id == numbers::internal_face_boundary_id) // internal face
       {
         // TODO: Matrix-free implementation in deal.II does currently not allow to access data of
         // the neighboring element in case of cell-based face loops.
         //      integrator_velocity_p->reinit(cell, face);
-        //      integrator_velocity_p->gather_evaluate(velocity, true, false);
+        //      integrator_velocity_p->gather_evaluate(*velocity, true, false);
       }
     }
   }
@@ -322,7 +339,7 @@ public:
 private:
   mutable ConvectiveKernelData<dim> data;
 
-  mutable VectorType velocity;
+  mutable lazy_ptr<VectorType> velocity;
 
   mutable std::shared_ptr<CellIntegratorVelocity> integrator_velocity;
   mutable std::shared_ptr<FaceIntegratorVelocity> integrator_velocity_m;
@@ -368,7 +385,10 @@ public:
   get_velocity() const;
 
   void
-  set_velocity(VectorType const & velocity) const;
+  set_velocity_copy(VectorType const & velocity) const;
+
+  void
+  set_velocity_ptr(VectorType const & velocity) const;
 
 private:
   void

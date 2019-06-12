@@ -412,6 +412,11 @@ protected:
    */
   mutable IntegratorFlags integrator_flags;
 
+  /*
+   * Is the operator used as a multigrid level operator?
+   */
+  mutable bool is_mg;
+
   mutable std::shared_ptr<IntegratorCell> integrator;
   mutable std::shared_ptr<IntegratorFace> integrator_m;
   mutable std::shared_ptr<IntegratorFace> integrator_p;
@@ -630,11 +635,6 @@ private:
    * Is the discretization based on discontinuous Galerkin method?
    */
   mutable bool is_dg;
-
-  /*
-   * Is the operator used as a multigrid level operator?
-   */
-  mutable bool is_mg;
 
   /*
    * Multigrid level: 0 <= level_mg_handler <= max_level. If the operator is not used as a multigrid

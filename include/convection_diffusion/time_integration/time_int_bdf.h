@@ -24,6 +24,7 @@ namespace Interface
 {
 template<typename Number>
 class Operator;
+
 template<typename Number>
 class OperatorOIF;
 } // namespace Interface
@@ -43,6 +44,10 @@ public:
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
+  void
+  set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
+                           std::vector<double> const &             times_in);
 
 private:
   void
@@ -74,6 +79,9 @@ private:
 
   void
   setup_derived();
+
+  void
+  calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
 
   void
   initialize_solution_oif_substepping(unsigned int i);
@@ -110,6 +118,10 @@ private:
 
   VectorType sum_alphai_ui;
   VectorType rhs_vector;
+
+  // numerical velocity field
+  std::vector<VectorType const *> velocities;
+  std::vector<double>             times;
 
   // iteration counts and solver time
   double iterations;

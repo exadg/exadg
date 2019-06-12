@@ -92,7 +92,7 @@ public:
    *  Scaling factor of time derivative term (mass matrix term)
    */
   void
-  set_scaling_factor_time_derivative_term(double const & factor);
+  set_scaling_factor_time_derivative_term(double const & factor) const;
 
   double
   get_scaling_factor_time_derivative_term() const;
@@ -104,7 +104,10 @@ public:
   get_velocity() const;
 
   void
-  set_velocity(VectorType const & velocity) const;
+  set_velocity_copy(VectorType const & velocity) const;
+
+  void
+  set_velocity_ptr(VectorType const & velocity) const;
 
   // overwrite function of base class since this is a combined operator
   void

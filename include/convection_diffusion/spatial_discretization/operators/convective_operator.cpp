@@ -13,16 +13,23 @@ ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matr
 {
   Base::reinit(matrix_free, constraint_matrix, operator_data);
 
-  kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.quad_index);
+  kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.quad_index, this->is_mg);
 
   this->integrator_flags = kernel.get_integrator_flags();
 }
 
 template<int dim, typename Number>
 void
-ConvectiveOperator<dim, Number>::set_velocity(VectorType const & velocity_in) const
+ConvectiveOperator<dim, Number>::set_velocity_copy(VectorType const & velocity_in) const
 {
-  kernel.set_velocity(velocity_in);
+  kernel.set_velocity_copy(velocity_in);
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity_in) const
+{
+  kernel.set_velocity_ptr(velocity_in);
 }
 
 template<int dim, typename Number>

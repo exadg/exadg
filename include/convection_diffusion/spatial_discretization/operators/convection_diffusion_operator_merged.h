@@ -60,10 +60,13 @@ public:
   get_velocity() const;
 
   void
-  set_velocity(VectorType const & velocity) const;
+  set_velocity_copy(VectorType const & velocity) const;
 
   void
-  set_scaling_factor_mass_matrix(Number const & number);
+  set_velocity_ptr(VectorType const & velocity) const;
+
+  void
+  set_scaling_factor_mass_matrix(Number const & number) const;
 
 private:
   void

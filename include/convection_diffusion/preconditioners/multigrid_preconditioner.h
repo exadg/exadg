@@ -286,14 +286,14 @@ private:
   }
 
   /*
-   * This function updates velocity.
+   * This function updates the velocity field for all levels.
    * In order to update mg_matrices[level] this function has to be called.
    */
   void
   set_velocity(VectorTypeMG const & velocity)
   {
     // copy velocity to finest level
-    this->get_operator(this->fine_level)->set_velocity(velocity);
+    this->get_operator(this->fine_level)->set_velocity_copy(velocity);
 
     // interpolate velocity from fine to coarse level
     for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
@@ -301,7 +301,7 @@ private:
       auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
       auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
       transfers_velocity.interpolate(level, vector_coarse_level, vector_fine_level);
-      this->get_operator(level - 1)->set_velocity(vector_coarse_level);
+      this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
     }
   }
 

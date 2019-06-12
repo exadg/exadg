@@ -1423,7 +1423,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
         momentum_operator.get_scaling_factor_time_derivative_term());
 
     if(nonlinear_problem_has_to_be_solved())
-      pressure_conv_diff_operator->set_velocity(get_velocity_linearization());
+      pressure_conv_diff_operator->set_velocity_ptr(get_velocity_linearization());
 
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 

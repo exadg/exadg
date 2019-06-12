@@ -33,6 +33,7 @@ public:
   typedef Interface::Operator<Number> Operator;
 
   DriverSteadyProblems(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
+
   void
   setup();
 

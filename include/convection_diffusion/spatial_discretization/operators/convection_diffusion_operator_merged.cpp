@@ -25,7 +25,9 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit(
   if(this->operator_data.convective_problem)
     convective_kernel.reinit(matrix_free,
                              operator_data.convective_kernel_data,
-                             operator_data.quad_index);
+                             operator_data.quad_index,
+                             this->is_mg);
+
   if(this->operator_data.diffusive_problem)
     diffusive_kernel.reinit(matrix_free,
                             operator_data.diffusive_kernel_data,
@@ -41,15 +43,24 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::set_velocity(VectorType const & velocity_in) const
+ConvectionDiffusionOperatorMerged<dim, Number>::set_velocity_copy(
+  VectorType const & velocity_in) const
 {
-  convective_kernel.set_velocity(velocity_in);
+  convective_kernel.set_velocity_copy(velocity_in);
+}
+
+template<int dim, typename Number>
+void
+ConvectionDiffusionOperatorMerged<dim, Number>::set_velocity_ptr(
+  VectorType const & velocity_in) const
+{
+  convective_kernel.set_velocity_ptr(velocity_in);
 }
 
 template<int dim, typename Number>
 void
 ConvectionDiffusionOperatorMerged<dim, Number>::set_scaling_factor_mass_matrix(
-  Number const & number)
+  Number const & number) const
 {
   mass_kernel.set_scaling_factor(number);
 }

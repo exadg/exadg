@@ -57,9 +57,9 @@ ConvectionDiffusionOperator<dim, Number>::reinit(
   DiffusiveOperator<dim, Number> const &       diffusive_operator) const
 {
   Base::reinit(mf_data, constraint_matrix, operator_data);
-  this->mass_matrix_operator.reinit(mass_matrix_operator);
-  this->convective_operator.reinit(convective_operator);
-  this->diffusive_operator.reinit(diffusive_operator);
+  this->mass_matrix_operator.reset(mass_matrix_operator);
+  this->convective_operator.reset(convective_operator);
+  this->diffusive_operator.reset(diffusive_operator);
 
   // mass matrix term: set scaling factor time derivative term
   this->scaling_factor_time_derivative_term =
@@ -74,7 +74,7 @@ ConvectionDiffusionOperator<dim, Number>::reinit(
 template<int dim, typename Number>
 void
 ConvectionDiffusionOperator<dim, Number>::set_scaling_factor_time_derivative_term(
-  double const & factor)
+  double const & factor) const
 {
   this->scaling_factor_time_derivative_term = factor;
 }
@@ -102,9 +102,16 @@ ConvectionDiffusionOperator<dim, Number>::get_velocity() const
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperator<dim, Number>::set_velocity(VectorType const & velocity) const
+ConvectionDiffusionOperator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
-  convective_operator->set_velocity(velocity);
+  convective_operator->set_velocity_copy(velocity);
+}
+
+template<int dim, typename Number>
+void
+ConvectionDiffusionOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
+{
+  convective_operator->set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>
