@@ -18,6 +18,7 @@
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
 #include "linear_operator_base.h"
+#include "mapping_flags.h"
 
 using namespace dealii;
 
@@ -94,25 +95,6 @@ struct IntegratorFlags
 
   FaceFlags face_evaluate;
   FaceFlags face_integrate;
-};
-
-struct MappingFlags
-{
-  MappingFlags
-  operator||(MappingFlags const & other)
-  {
-    MappingFlags flags_combined;
-
-    flags_combined.cells          = this->cells | other.cells;
-    flags_combined.inner_faces    = this->inner_faces | other.inner_faces;
-    flags_combined.boundary_faces = this->boundary_faces | other.boundary_faces;
-
-    return flags_combined;
-  }
-
-  UpdateFlags cells;
-  UpdateFlags inner_faces;
-  UpdateFlags boundary_faces;
 };
 
 struct OperatorBaseData

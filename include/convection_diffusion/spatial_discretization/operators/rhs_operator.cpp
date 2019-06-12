@@ -7,24 +7,22 @@
 
 #include "rhs_operator.h"
 
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
-
-#include "../../../../include/functionalities/evaluate_functions.h"
-
 namespace ConvDiff
 {
 template<int dim, typename Number>
-RHSOperator<dim, Number>::RHSOperator() : matrix_free(nullptr), eval_time(0.0)
+RHSOperator<dim, Number>::RHSOperator() : matrix_free(nullptr), time(0.0)
 {
 }
 
 template<int dim, typename Number>
 void
 RHSOperator<dim, Number>::reinit(MatrixFree<dim, Number> const & matrix_free_in,
-                                 RHSOperatorData<dim> const &    operator_data_in)
+                                 RHSOperatorData<dim> const &    data_in)
 {
-  this->matrix_free   = &matrix_free_in;
-  this->operator_data = operator_data_in;
+  this->matrix_free = &matrix_free_in;
+  this->data        = data_in;
+
+  kernel.reinit(data.kernel_data);
 }
 
 template<int dim, typename Number>
@@ -39,24 +37,19 @@ template<int dim, typename Number>
 void
 RHSOperator<dim, Number>::evaluate_add(VectorType & dst, double const evaluation_time) const
 {
-  this->eval_time = evaluation_time;
+  this->time = evaluation_time;
 
   VectorType src;
   matrix_free->cell_loop(&This::cell_loop, this, dst, src);
 }
 
 template<int dim, typename Number>
-template<typename Integrator>
 void
-RHSOperator<dim, Number>::do_cell_integral(Integrator & integrator) const
+RHSOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    Point<dim, scalar> q_points = integrator.quadrature_point(q);
-
-    scalar rhs = evaluate_scalar_function(operator_data.rhs, q_points, eval_time);
-
-    integrator.submit_value(rhs, q);
+    integrator.submit_value(kernel.get_volume_flux(integrator, q, time), q);
   }
   integrator.integrate(true, false);
 }
@@ -65,12 +58,12 @@ template<int dim, typename Number>
 void
 RHSOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
                                     VectorType &                    dst,
-                                    VectorType const & /*src*/,
-                                    Range const & cell_range) const
+                                    VectorType const &              src,
+                                    Range const &                   cell_range) const
 {
-  CellIntegrator<dim, 1, Number> integrator(matrix_free,
-                                            operator_data.dof_index,
-                                            operator_data.quad_index);
+  (void)src;
+
+  IntegratorCell integrator(matrix_free, data.dof_index, data.quad_index);
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {

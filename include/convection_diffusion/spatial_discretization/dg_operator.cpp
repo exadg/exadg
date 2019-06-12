@@ -103,17 +103,34 @@ DGOperator<dim, Number>::initialize_matrix_free()
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
   additional_data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
 
-  additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+  MappingFlags mapping_flags;
 
-  additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+  if(param.problem_type == ProblemType::Unsteady)
+  {
+    mapping_flags = mapping_flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+  }
+
+  if(param.right_hand_side)
+  {
+    mapping_flags = mapping_flags || Operators::RHSKernel<dim, Number>::get_mapping_flags();
+  }
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    mapping_flags = mapping_flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+  }
+
+  if(param.equation_type == EquationType::Diffusion ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    mapping_flags = mapping_flags || Operators::DiffusiveKernel<dim, Number>::get_mapping_flags();
+  }
+
+  additional_data.mapping_update_flags                = mapping_flags.cells;
+  additional_data.mapping_update_flags_inner_faces    = mapping_flags.inner_faces;
+  additional_data.mapping_update_flags_boundary_faces = mapping_flags.boundary_faces;
 
   if(param.use_cell_based_face_loops)
   {
@@ -231,9 +248,9 @@ DGOperator<dim, Number>::setup_operators()
 
   // rhs operator
   RHSOperatorData<dim> rhs_operator_data;
-  rhs_operator_data.dof_index  = 0;
-  rhs_operator_data.quad_index = 0;
-  rhs_operator_data.rhs        = field_functions->right_hand_side;
+  rhs_operator_data.dof_index     = 0;
+  rhs_operator_data.quad_index    = 0;
+  rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
   rhs_operator.reinit(matrix_free, rhs_operator_data);
 
 
@@ -731,10 +748,15 @@ DGOperator<dim, Number>::apply_mass_matrix_add(VectorType & dst, VectorType cons
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply_convective_term(VectorType &       dst,
-                                               VectorType const & src,
-                                               double const       evaluation_time,
-                                               VectorType const * velocity) const
+DGOperator<dim, Number>::apply_convective_term(VectorType & dst, VectorType const & src) const
+{
+  convective_operator.apply(dst, src);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::update_convective_term(double const       evaluation_time,
+                                                VectorType const * velocity) const
 {
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {
@@ -744,7 +766,6 @@ DGOperator<dim, Number>::apply_convective_term(VectorType &       dst,
   }
 
   convective_operator.set_evaluation_time(evaluation_time);
-  convective_operator.apply(dst, src);
 }
 
 template<int dim, typename Number>
@@ -756,11 +777,20 @@ DGOperator<dim, Number>::apply_diffusive_term(VectorType & dst, VectorType const
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::apply(VectorType &       dst,
-                               VectorType const & src,
-                               double const       evaluation_time,
-                               double const       scaling_factor,
-                               VectorType const * velocity) const
+DGOperator<dim, Number>::apply_conv_diff_operator(VectorType & dst, VectorType const & src) const
+{
+  // TODO remove this later (and use only new implementation with merged operators)
+
+  //  conv_diff_operator.apply(dst, src);
+
+  convection_diffusion_operator_merged.apply(dst, src);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::update_conv_diff_operator(double const       evaluation_time,
+                                                   double const       scaling_factor,
+                                                   VectorType const * velocity) const
 {
   // TODO remove this later (and use only new implementation with merged operators)
 
@@ -782,8 +812,6 @@ DGOperator<dim, Number>::apply(VectorType &       dst,
   //      }
   //    }
   //  }
-  //
-  //  conv_diff_operator.apply(dst, src);
 
   convection_diffusion_operator_merged.set_scaling_factor_mass_matrix(scaling_factor);
   convection_diffusion_operator_merged.set_evaluation_time(evaluation_time);
@@ -803,8 +831,6 @@ DGOperator<dim, Number>::apply(VectorType &       dst,
       }
     }
   }
-
-  convection_diffusion_operator_merged.apply(dst, src);
 }
 
 

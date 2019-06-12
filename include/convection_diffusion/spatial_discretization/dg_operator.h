@@ -164,10 +164,10 @@ public:
    * dst-vector. It is needed for throughput measurements of the matrix-free implementation.
    */
   void
-  apply_convective_term(VectorType &       dst,
-                        VectorType const & src,
-                        double const       evaluation_time,
-                        VectorType const * velocity = nullptr) const;
+  apply_convective_term(VectorType & dst, VectorType const & src) const;
+
+  void
+  update_convective_term(double const evaluation_time, VectorType const * velocity = nullptr) const;
 
   /*
    * This function applies the diffusive operator to the src-vector and writes the result to the
@@ -182,11 +182,12 @@ public:
    * matrix-free implementation.
    */
   void
-  apply(VectorType &       dst,
-        VectorType const & src,
-        double const       evaluation_time,
-        double const       scaling_factor,
-        VectorType const * velocity = nullptr) const;
+  apply_conv_diff_operator(VectorType & dst, VectorType const & src) const;
+
+  void
+  update_conv_diff_operator(double const       evaluation_time,
+                            double const       scaling_factor,
+                            VectorType const * velocity = nullptr) const;
 
   /*
    * This function solves the linear system of equations in case of implicit time integration or

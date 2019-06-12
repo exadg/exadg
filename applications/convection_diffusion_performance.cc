@@ -226,15 +226,33 @@ Problem<dim, Number>::apply_operator()
   LinearAlgebra::distributed::Vector<Number> dst, src, velocity;
 
   conv_diff_operator->initialize_dof_vector(src);
+  src = 1.0;
   conv_diff_operator->initialize_dof_vector(dst);
 
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
     if(param.type_velocity_field == TypeVelocityField::Numerical)
+    {
       conv_diff_operator->initialize_dof_vector_velocity(velocity);
+      velocity = 1.0;
 
-    velocity = 1.0;
+      if(OPERATOR == Operator::ConvectiveOperator)
+        conv_diff_operator->update_convective_term(1.0 /* time */, &velocity);
+      else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
+        conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
+                                                      1.0 /* scaling_factor_mass_matrix */,
+                                                      &velocity);
+    }
+    else
+    {
+      if(OPERATOR == Operator::ConvectiveOperator)
+        conv_diff_operator->update_convective_term(1.0 /* time */, nullptr);
+      else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
+        conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
+                                                      1.0 /* scaling_factor_mass_matrix */,
+                                                      nullptr);
+    }
   }
 
   // Timer and wall times
@@ -253,12 +271,11 @@ Problem<dim, Number>::apply_operator()
       if(OPERATOR == Operator::MassOperator)
         conv_diff_operator->apply_mass_matrix(dst, src);
       else if(OPERATOR == Operator::ConvectiveOperator)
-        conv_diff_operator->apply_convective_term(dst, src, 1.0 /* time */, &velocity);
+        conv_diff_operator->apply_convective_term(dst, src);
       else if(OPERATOR == Operator::DiffusiveOperator)
         conv_diff_operator->apply_diffusive_term(dst, src);
       else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
-        conv_diff_operator->apply(
-          dst, src, 1.0 /* time */, 1.0 /* scaling_factor_mass_matrix */, &velocity);
+        conv_diff_operator->apply_conv_diff_operator(dst, src);
 
       current_wall_time += timer.wall_time();
     }

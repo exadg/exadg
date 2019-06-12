@@ -292,9 +292,9 @@ DGOperator<dim, Number>::setup_operators()
 
   // rhs operator
   ConvDiff::RHSOperatorData<dim> rhs_operator_data;
-  rhs_operator_data.dof_index  = 0;
-  rhs_operator_data.quad_index = 0;
-  rhs_operator_data.rhs        = field_functions->right_hand_side;
+  rhs_operator_data.dof_index     = 0;
+  rhs_operator_data.quad_index    = 0;
+  rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
   rhs_operator.reinit(matrix_free, rhs_operator_data);
 }
 
