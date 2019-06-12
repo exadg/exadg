@@ -236,17 +236,6 @@ DGOperator<dim, Number>::setup_operators()
   rhs_operator_data.rhs        = field_functions->right_hand_side;
   rhs_operator.reinit(matrix_free, rhs_operator_data);
 
-  // TODO
-  // convection-diffusion operator (efficient implementation, only for explicit time integration,
-  // includes also rhs operator)
-  //  ConvectionDiffusionOperatorDataEfficiency<dim, Number> conv_diff_operator_data_eff;
-  //  conv_diff_operator_data_eff.conv_data = convective_operator_data;
-  //  conv_diff_operator_data_eff.diff_data = diffusive_operator_data;
-  //  conv_diff_operator_data_eff.rhs_data  = rhs_operator_data;
-  //  convection_diffusion_operator_efficiency.initialize(*mapping,
-  //                                                      matrix_free,
-  //                                                      conv_diff_operator_data_eff);
-
 
   // TODO
   // merged operator
