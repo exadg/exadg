@@ -9,6 +9,8 @@
 
 #include "time_integration/time_step_calculation.h"
 
+#define USE_MERGED_CONV_DIFF_OPERATOR
+
 namespace ConvDiff
 {
 template<int dim, typename Number>
@@ -53,7 +55,7 @@ DGOperator<dim, Number>::setup(
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in)
 {
-  pcout << std::endl << "Setup convection-diffusion operation ..." << std::endl;
+  pcout << std::endl << "Setup spatial discretization (DoFs, MatrixFree) ..." << std::endl;
 
   periodic_face_pairs = periodic_face_pairs_in;
   boundary_descriptor = boundary_descriptor_in;
@@ -62,8 +64,6 @@ DGOperator<dim, Number>::setup(
   create_dofs();
 
   initialize_matrix_free();
-
-  setup_operators();
 
   setup_postprocessor();
 
@@ -185,21 +185,9 @@ DGOperator<dim, Number>::get_dof_index_velocity() const
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_operators()
+DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_matrix,
+                                         VectorType const * velocity)
 {
-  Operators::ConvectiveKernelData<dim> convective_kernel_data;
-  convective_kernel_data.type_velocity_field        = param.type_velocity_field;
-  convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
-  convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
-  convective_kernel_data.velocity                   = field_functions->velocity;
-
-  Operators::DiffusiveKernelData diffusive_kernel_data;
-  diffusive_kernel_data.IP_factor      = param.IP_factor;
-  diffusive_kernel_data.diffusivity    = param.diffusivity;
-  diffusive_kernel_data.degree         = param.degree;
-  diffusive_kernel_data.degree_mapping = mapping_degree;
-
-
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index            = 0;
@@ -215,6 +203,12 @@ DGOperator<dim, Number>::setup_operators()
   inverse_mass_matrix_operator.initialize(matrix_free, param.degree, 0, 0);
 
   // convective operator
+  Operators::ConvectiveKernelData<dim> convective_kernel_data;
+  convective_kernel_data.type_velocity_field        = param.type_velocity_field;
+  convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
+  convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
+  convective_kernel_data.velocity                   = field_functions->velocity;
+
   ConvectiveOperatorData<dim> convective_operator_data;
   convective_operator_data.dof_index            = 0;
   convective_operator_data.quad_index           = 0;
@@ -231,6 +225,12 @@ DGOperator<dim, Number>::setup_operators()
   }
 
   // diffusive operator
+  Operators::DiffusiveKernelData diffusive_kernel_data;
+  diffusive_kernel_data.IP_factor      = param.IP_factor;
+  diffusive_kernel_data.diffusivity    = param.diffusivity;
+  diffusive_kernel_data.degree         = param.degree;
+  diffusive_kernel_data.degree_mapping = mapping_degree;
+
   DiffusiveOperatorData<dim> diffusive_operator_data;
   diffusive_operator_data.dof_index            = 0;
   diffusive_operator_data.quad_index           = 0;
@@ -253,8 +253,6 @@ DGOperator<dim, Number>::setup_operators()
   rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
   rhs_operator.reinit(matrix_free, rhs_operator_data);
 
-
-  // TODO
   // merged operator
   ConvectionDiffusionOperatorMergedData<dim> merged_operator_data;
   merged_operator_data.dof_index            = 0;
@@ -300,19 +298,40 @@ DGOperator<dim, Number>::setup_operators()
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  merged_operator_data.scaling_factor_mass_matrix = scaling_factor_mass_matrix;
+
   merged_operator_data.convective_kernel_data = convective_kernel_data;
   merged_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
+  merged_operator_data.preconditioner_block_jacobi = param.preconditioner_block_diagonal;
+  merged_operator_data.block_jacobi_solver_data    = param.block_jacobi_solver_data;
+
+  merged_operator_data.mg_operator_type = param.mg_operator_type;
+
   convection_diffusion_operator_merged.reinit(matrix_free, constraint_matrix, merged_operator_data);
+
+  // the velocity vector needs to be set in case of numerical velocity field. Otherwise, certain
+  // preconditioners requiring the velocity field during initialization can not be initialized.
+  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    AssertThrow(velocity != nullptr,
+                ExcMessage(
+                  "In case of a numerical velocity field, a velocity vector has to be provided."));
+
+    convection_diffusion_operator_merged.set_velocity_ptr(*velocity);
+  }
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_solver(double const scaling_factor_time_derivative_term_in)
+DGOperator<dim, Number>::setup_operators_and_solver(double const       scaling_factor_mass_matrix,
+                                                    VectorType const * velocity)
 {
-  pcout << std::endl << "Setup solver ..." << std::endl;
+  pcout << std::endl << "Setup operators and solver ..." << std::endl;
 
-  initialize_convection_diffusion_operator(scaling_factor_time_derivative_term_in);
+  setup_operators(scaling_factor_mass_matrix, velocity);
+
+  initialize_convection_diffusion_operator(scaling_factor_mass_matrix, velocity);
 
   initialize_preconditioner();
 
@@ -324,8 +343,14 @@ DGOperator<dim, Number>::setup_solver(double const scaling_factor_time_derivativ
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_convection_diffusion_operator(
-  double const scaling_factor_time_derivative_term_in)
+  double const       scaling_factor_time_derivative_term_in,
+  VectorType const * velocity)
 {
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
+  (void)scaling_factor_time_derivative_term_in;
+  (void)velocity;
+  // do nothing
+#else
   // convection-diffusion operator
   ConvectionDiffusionOperatorData<dim> conv_diff_operator_data;
   conv_diff_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
@@ -380,6 +405,16 @@ DGOperator<dim, Number>::initialize_convection_diffusion_operator(
                             mass_matrix_operator,
                             convective_operator,
                             diffusive_operator);
+
+  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  {
+    AssertThrow(velocity != nullptr,
+                ExcMessage(
+                  "In case of a numerical velocity field, a velocity vector has to be provided."));
+
+    conv_diff_operator.set_velocity_ptr(*velocity);
+  }
+#endif
 }
 
 template<int dim, typename Number>
@@ -393,13 +428,24 @@ DGOperator<dim, Number>::initialize_preconditioner()
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
+    typedef ConvectionDiffusionOperatorMerged<dim, Number> Operator;
+    preconditioner.reset(new JacobiPreconditioner<Operator>(convection_diffusion_operator_merged));
+#else
     typedef ConvectionDiffusionOperator<dim, Number> Operator;
     preconditioner.reset(new JacobiPreconditioner<Operator>(conv_diff_operator));
+#endif
   }
   else if(param.preconditioner == Preconditioner::BlockJacobi)
   {
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
+    typedef ConvectionDiffusionOperatorMerged<dim, Number> Operator;
+    preconditioner.reset(
+      new BlockJacobiPreconditioner<Operator>(convection_diffusion_operator_merged));
+#else
     typedef ConvectionDiffusionOperator<dim, Number> Operator;
     preconditioner.reset(new BlockJacobiPreconditioner<Operator>(conv_diff_operator));
+#endif
   }
   else if(param.preconditioner == Preconditioner::Multigrid)
   {
@@ -420,6 +466,27 @@ DGOperator<dim, Number>::initialize_preconditioner()
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
+    typedef MultigridPreconditionerMerged<dim, Number, MultigridNumber> MULTIGRID;
+
+    preconditioner.reset(new MULTIGRID());
+    std::shared_ptr<MULTIGRID> mg_preconditioner =
+      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+
+    parallel::Triangulation<dim> const * tria =
+      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    const FiniteElement<dim> &                         fe = dof_handler.get_fe();
+    ConvectionDiffusionOperatorMergedData<dim> const & operator_data =
+      convection_diffusion_operator_merged.get_operator_data();
+
+    mg_preconditioner->initialize(mg_data,
+                                  tria,
+                                  fe,
+                                  *mapping,
+                                  operator_data,
+                                  &operator_data.bc->dirichlet_bc,
+                                  &this->periodic_face_pairs);
+#else
     typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     preconditioner.reset(new MULTIGRID());
@@ -436,6 +503,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
                                   conv_diff_operator.get_operator_data(),
                                   &conv_diff_operator.get_boundary_descriptor()->dirichlet_bc,
                                   &this->periodic_face_pairs);
+#endif
   }
   else
   {
@@ -463,11 +531,19 @@ DGOperator<dim, Number>::initialize_solver()
     if(param.preconditioner != Preconditioner::None)
       solver_data.use_preconditioner = true;
 
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
+    // initialize solver
+    iterative_solver.reset(
+      new CGSolver<ConvectionDiffusionOperatorMerged<dim, Number>,
+                   PreconditionerBase<Number>,
+                   VectorType>(convection_diffusion_operator_merged, *preconditioner, solver_data));
+#else
     // initialize solver
     iterative_solver.reset(
       new CGSolver<ConvectionDiffusionOperator<dim, Number>,
                    PreconditionerBase<Number>,
                    VectorType>(conv_diff_operator, *preconditioner, solver_data));
+#endif
   }
   else if(param.solver == Solver::GMRES)
   {
@@ -481,11 +557,20 @@ DGOperator<dim, Number>::initialize_solver()
     if(param.preconditioner != Preconditioner::None)
       solver_data.use_preconditioner = true;
 
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
+    // initialize solver
+    iterative_solver.reset(new GMRESSolver<ConvectionDiffusionOperatorMerged<dim, Number>,
+                                           PreconditionerBase<Number>,
+                                           VectorType>(convection_diffusion_operator_merged,
+                                                       *preconditioner,
+                                                       solver_data));
+#else
     // initialize solver
     iterative_solver.reset(
       new GMRESSolver<ConvectionDiffusionOperator<dim, Number>,
                       PreconditionerBase<Number>,
                       VectorType>(conv_diff_operator, *preconditioner, solver_data));
+#endif
   }
   else if(param.solver == Solver::FGMRES)
   {
@@ -499,11 +584,20 @@ DGOperator<dim, Number>::initialize_solver()
     if(param.preconditioner != Preconditioner::None)
       solver_data.use_preconditioner = true;
 
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
+    // initialize solver
+    iterative_solver.reset(new FGMRESSolver<ConvectionDiffusionOperatorMerged<dim, Number>,
+                                            PreconditionerBase<Number>,
+                                            VectorType>(convection_diffusion_operator_merged,
+                                                        *preconditioner,
+                                                        solver_data));
+#else
     // initialize solver
     iterative_solver.reset(
       new FGMRESSolver<ConvectionDiffusionOperator<dim, Number>,
                        PreconditionerBase<Number>,
                        VectorType>(conv_diff_operator, *preconditioner, solver_data));
+#endif
   }
   else
   {
@@ -779,11 +873,11 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::apply_conv_diff_operator(VectorType & dst, VectorType const & src) const
 {
-  // TODO remove this later (and use only new implementation with merged operators)
-
-  //  conv_diff_operator.apply(dst, src);
-
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
   convection_diffusion_operator_merged.apply(dst, src);
+#else
+  conv_diff_operator.apply(dst, src);
+#endif
 }
 
 template<int dim, typename Number>
@@ -792,27 +886,7 @@ DGOperator<dim, Number>::update_conv_diff_operator(double const       evaluation
                                                    double const       scaling_factor,
                                                    VectorType const * velocity) const
 {
-  // TODO remove this later (and use only new implementation with merged operators)
-
-  //  conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
-  //  conv_diff_operator.set_evaluation_time(evaluation_time);
-  //
-  //  if(param.equation_type == EquationType::Convection ||
-  //     param.equation_type == EquationType::ConvectionDiffusion)
-  //  {
-  //    if(param.problem_type == ProblemType::Steady ||
-  //       (param.problem_type == ProblemType::Unsteady &&
-  //        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
-  //    {
-  //      if(param.type_velocity_field == TypeVelocityField::Numerical)
-  //      {
-  //        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
-  //
-  //        conv_diff_operator.set_velocity_ptr(*velocity);
-  //      }
-  //    }
-  //  }
-
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
   convection_diffusion_operator_merged.set_scaling_factor_mass_matrix(scaling_factor);
   convection_diffusion_operator_merged.set_evaluation_time(evaluation_time);
 
@@ -831,21 +905,9 @@ DGOperator<dim, Number>::update_conv_diff_operator(double const       evaluation
       }
     }
   }
-}
-
-
-template<int dim, typename Number>
-unsigned int
-DGOperator<dim, Number>::solve(VectorType &       sol,
-                               VectorType const & rhs,
-                               bool const         update_preconditioner,
-                               double const       scaling_factor,
-                               double const       time,
-                               VectorType const * velocity)
-{
-  // TODO remove this later
+#else
   conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
-  conv_diff_operator.set_evaluation_time(time);
+  conv_diff_operator.set_evaluation_time(evaluation_time);
 
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
@@ -862,7 +924,20 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
       }
     }
   }
+#endif
+}
 
+
+template<int dim, typename Number>
+unsigned int
+DGOperator<dim, Number>::solve(VectorType &       sol,
+                               VectorType const & rhs,
+                               bool const         update_preconditioner,
+                               double const       scaling_factor,
+                               double const       time,
+                               VectorType const * velocity)
+{
+#ifdef USE_MERGED_CONV_DIFF_OPERATOR
   convection_diffusion_operator_merged.set_scaling_factor_mass_matrix(scaling_factor);
   convection_diffusion_operator_merged.set_evaluation_time(time);
 
@@ -881,6 +956,26 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
       }
     }
   }
+#else
+  conv_diff_operator.set_scaling_factor_time_derivative_term(scaling_factor);
+  conv_diff_operator.set_evaluation_time(time);
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(param.problem_type == ProblemType::Steady ||
+       (param.problem_type == ProblemType::Unsteady &&
+        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+    {
+      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      {
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+
+        conv_diff_operator.set_velocity_ptr(*velocity);
+      }
+    }
+  }
+#endif
 
   unsigned int const iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
 

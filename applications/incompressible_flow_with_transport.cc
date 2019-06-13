@@ -431,9 +431,19 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     {
       std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
         std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+      double const scaling_factor =
+        scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term();
 
-      conv_diff_operator[i]->setup_solver(
-        scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term());
+      // To initialize solvers and preconditioners for the convection-diffusion problem,
+      // a numerical velocity field has to be provided.
+      std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
+      std::vector<double>                                             times;
+      fluid_time_integrator->get_velocities_and_times(velocities, times);
+
+      AssertThrow(times[0] == fluid_time_integrator->get_time(), ExcMessage("Logical error."));
+      LinearAlgebra::distributed::Vector<Number> const * velocity = velocities[0];
+
+      conv_diff_operator[i]->setup_operators_and_solver(scaling_factor, velocity);
     }
   }
 

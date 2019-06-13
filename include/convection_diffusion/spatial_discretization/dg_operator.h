@@ -77,7 +77,8 @@ public:
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_solver(double const scaling_factor_time_derivative_term_in = -1.0);
+  setup_operators_and_solver(double const       scaling_factor_mass_matrix = -1.0,
+                             VectorType const * velocity                   = nullptr);
 
   /*
    * Initialization of dof-vector.
@@ -272,7 +273,7 @@ private:
    * Initializes individual operators (mass, convective, viscous terms, rhs).
    */
   void
-  setup_operators();
+  setup_operators(double const scaling_factor_mass_matrix, VectorType const * velocity = nullptr);
 
   /*
    * Initializes convection-diffusion operator which is the operator required for the solution of
@@ -280,7 +281,8 @@ private:
    */
   void
   initialize_convection_diffusion_operator(
-    double const scaling_factor_time_derivative_term_in = -1.0);
+    double const       scaling_factor_time_derivative_term_in = -1.0,
+    VectorType const * velocity                               = nullptr);
 
   /*
    * Initializes the preconditioner.

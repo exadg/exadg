@@ -145,6 +145,9 @@ private:
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
+
+  // velocity vector needed in case of numerical velocity field
+  LinearAlgebra::distributed::Vector<Number> velocity;
 };
 
 template<int dim, typename Number>
@@ -214,20 +217,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   // initialize convection diffusion operation
   conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
   conv_diff_operator->setup(periodic_faces, boundary_descriptor, field_functions);
-  conv_diff_operator->setup_solver(1.0 /* use a default value of 1.0 */);
-}
-
-template<int dim, typename Number>
-void
-Problem<dim, Number>::apply_operator()
-{
-  pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
-
-  LinearAlgebra::distributed::Vector<Number> dst, src, velocity;
-
-  conv_diff_operator->initialize_dof_vector(src);
-  src = 1.0;
-  conv_diff_operator->initialize_dof_vector(dst);
 
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
@@ -236,24 +225,41 @@ Problem<dim, Number>::apply_operator()
     {
       conv_diff_operator->initialize_dof_vector_velocity(velocity);
       velocity = 1.0;
-
-      if(OPERATOR == Operator::ConvectiveOperator)
-        conv_diff_operator->update_convective_term(1.0 /* time */, &velocity);
-      else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
-        conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
-                                                      1.0 /* scaling_factor_mass_matrix */,
-                                                      &velocity);
-    }
-    else
-    {
-      if(OPERATOR == Operator::ConvectiveOperator)
-        conv_diff_operator->update_convective_term(1.0 /* time */, nullptr);
-      else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
-        conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
-                                                      1.0 /* scaling_factor_mass_matrix */,
-                                                      nullptr);
     }
   }
+
+  conv_diff_operator->setup_operators_and_solver(1.0 /* use a default value of 1.0 */, &velocity);
+}
+
+template<int dim, typename Number>
+void
+Problem<dim, Number>::apply_operator()
+{
+  pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
+
+  LinearAlgebra::distributed::Vector<Number> dst, src;
+
+  conv_diff_operator->initialize_dof_vector(src);
+  src = 1.0;
+  conv_diff_operator->initialize_dof_vector(dst);
+
+  LinearAlgebra::distributed::Vector<Number> const * velocity_ptr = nullptr;
+
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(param.type_velocity_field == TypeVelocityField::Numerical)
+    {
+      velocity_ptr = &velocity;
+    }
+  }
+
+  if(OPERATOR == Operator::ConvectiveOperator)
+    conv_diff_operator->update_convective_term(1.0 /* time */, velocity_ptr);
+  else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
+    conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
+                                                  1.0 /* scaling_factor_mass_matrix */,
+                                                  velocity_ptr);
 
   // Timer and wall times
   Timer  timer;

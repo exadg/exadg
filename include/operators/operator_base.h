@@ -312,7 +312,8 @@ public:
   void
   apply_add_block_diagonal_elementwise(unsigned int const                    cell,
                                        VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src) const;
+                                       VectorizedArray<Number> const * const src,
+                                       unsigned int const                    problem_size) const;
 
 protected:
   /*

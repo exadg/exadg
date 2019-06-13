@@ -245,8 +245,8 @@ ConvectionDiffusionOperator<dim, Number>::apply_inverse_block_diagonal(VectorTyp
   {
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
-    bool variable_not_needed = false;
-    elementwise_solver->solve(dst, src, variable_not_needed);
+    bool update_preconditioner = false;
+    elementwise_solver->solve(dst, src, update_preconditioner);
   }
   else // matrix-based
   {
@@ -306,14 +306,14 @@ ConvectionDiffusionOperator<dim, Number>::apply_add_block_diagonal_elementwise(
     AssertThrow(scaling_factor_time_derivative_term > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been initialized!"));
 
-    mass_matrix_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
+    mass_matrix_operator->apply_add_block_diagonal_elementwise(cell, dst, src, problem_size);
 
     Elementwise::scale(dst, scaling_factor_time_derivative_term, problem_size);
   }
 
   if(this->operator_data.diffusive_problem == true)
   {
-    diffusive_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
+    diffusive_operator->apply_add_block_diagonal_elementwise(cell, dst, src, problem_size);
   }
 
   if(this->operator_data.convective_problem == true)
@@ -321,7 +321,7 @@ ConvectionDiffusionOperator<dim, Number>::apply_add_block_diagonal_elementwise(
     Number const time = this->get_evaluation_time();
 
     convective_operator->set_evaluation_time(time);
-    convective_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
+    convective_operator->apply_add_block_diagonal_elementwise(cell, dst, src, problem_size);
   }
 }
 

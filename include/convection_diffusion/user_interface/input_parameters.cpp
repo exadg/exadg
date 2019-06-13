@@ -206,12 +206,30 @@ InputParameters::check_input_parameters()
       AssertThrow(mg_operator_type != MultigridOperatorType::Undefined,
                   ExcMessage("parameter must be defined"));
 
-      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+         treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
       {
         AssertThrow(mg_operator_type != MultigridOperatorType::ReactionConvection &&
                       mg_operator_type != MultigridOperatorType::ReactionConvectionDiffusion,
                     ExcMessage(
                       "Invalid solver parameters. The convective term is treated explicitly."));
+      }
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      {
+        if(equation_type == EquationType::Convection)
+        {
+          AssertThrow(mg_operator_type == MultigridOperatorType::ReactionConvection,
+                      ExcMessage(
+                        "Invalid solver parameters. A purely diffusive problem is considered."));
+        }
+      }
+
+      if(equation_type == EquationType::Diffusion)
+      {
+        AssertThrow(mg_operator_type == MultigridOperatorType::ReactionDiffusion,
+                    ExcMessage(
+                      "Invalid solver parameters. A purely diffusive problem is considered."));
       }
     }
   }

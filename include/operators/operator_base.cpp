@@ -487,8 +487,11 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::apply_add_block_diagonal_elementwise(
   unsigned int const                    cell,
   VectorizedArray<Number> * const       dst,
-  VectorizedArray<Number> const * const src) const
+  VectorizedArray<Number> const * const src,
+  unsigned int const                    problem_size) const
 {
+  (void)problem_size;
+
   AssertThrow(is_dg, ExcMessage("Block Jacobi only implemented for DG!"));
 
   this->reinit_cell(cell);

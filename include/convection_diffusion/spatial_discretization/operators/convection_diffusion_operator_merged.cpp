@@ -21,7 +21,9 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit(
 {
   Base::reinit(matrix_free, constraint_matrix, operator_data);
 
-  // currently no reinit for mass kernel
+  if(this->operator_data.unsteady_problem)
+    mass_kernel.reinit(operator_data.scaling_factor_mass_matrix);
+
   if(this->operator_data.convective_problem)
     convective_kernel.reinit(matrix_free,
                              operator_data.convective_kernel_data,
@@ -55,6 +57,13 @@ ConvectionDiffusionOperatorMerged<dim, Number>::set_velocity_ptr(
   VectorType const & velocity_in) const
 {
   convective_kernel.set_velocity_ptr(velocity_in);
+}
+
+template<int dim, typename Number>
+Number
+ConvectionDiffusionOperatorMerged<dim, Number>::get_scaling_factor_mass_matrix() const
+{
+  return mass_kernel.get_scaling_factor();
 }
 
 template<int dim, typename Number>
@@ -395,6 +404,65 @@ ConvectionDiffusionOperatorMerged<dim, Number>::do_verify_boundary_conditions(
   std::set<types::boundary_id> const &               periodic_boundary_ids) const
 {
   do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
+}
+
+template<int dim, typename Number>
+void
+ConvectionDiffusionOperatorMerged<dim, Number>::apply_inverse_block_diagonal(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  // matrix-free
+  if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
+  {
+    // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
+    // over several elements.
+    bool update_preconditioner = false;
+    elementwise_solver->solve(dst, src, update_preconditioner);
+  }
+  else // matrix-based
+  {
+    // Simply apply inverse of block matrices (using the LU factorization that has been computed
+    // before).
+    Base::apply_inverse_block_diagonal_matrix_based(dst, src);
+  }
+}
+
+template<int dim, typename Number>
+void
+ConvectionDiffusionOperatorMerged<dim,
+                                  Number>::initialize_block_diagonal_preconditioner_matrix_free()
+  const
+{
+  elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
+
+  if(this->operator_data.preconditioner_block_jacobi == PreconditionerBlockDiagonal::None)
+  {
+    typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
+    elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
+  }
+  else if(this->operator_data.preconditioner_block_jacobi ==
+          PreconditionerBlockDiagonal::InverseMassMatrix)
+  {
+    typedef Elementwise::InverseMassMatrixPreconditioner<dim, 1 /*scalar equation*/, Number>
+      INVERSE_MASS;
+
+    elementwise_preconditioner.reset(
+      new INVERSE_MASS(this->get_matrix_free(), this->get_dof_index(), this->get_quad_index()));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  Elementwise::IterativeSolverData iterative_solver_data;
+  iterative_solver_data.solver_type = Elementwise::SolverType::GMRES;
+  iterative_solver_data.solver_data = this->operator_data.block_jacobi_solver_data;
+
+  elementwise_solver.reset(new ELEMENTWISE_SOLVER(
+    *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
+    *std::dynamic_pointer_cast<ELEMENTWISE_PRECONDITIONER>(elementwise_preconditioner),
+    iterative_solver_data));
 }
 
 template class ConvectionDiffusionOperatorMerged<2, float>;

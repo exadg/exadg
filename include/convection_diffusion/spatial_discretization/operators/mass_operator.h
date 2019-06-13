@@ -19,6 +19,12 @@ public:
   {
   }
 
+  void
+  reinit(double const & factor) const
+  {
+    set_scaling_factor(factor);
+  }
+
   IntegratorFlags
   get_integrator_flags() const
   {
@@ -40,6 +46,12 @@ public:
     // no face integrals
 
     return flags;
+  }
+
+  Number
+  get_scaling_factor() const
+  {
+    return scaling_factor;
   }
 
   void

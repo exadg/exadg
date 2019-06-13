@@ -36,7 +36,7 @@
 // specify the test case that has to be solved
 
 // template
-#include "convection_diffusion_test_cases/template.h"
+//#include "convection_diffusion_test_cases/template.h"
 
 // convection problems
 
@@ -46,7 +46,7 @@
 
 // diffusion problems
 
-//#include "convection_diffusion_test_cases/diffusive_problem.h"
+#include "convection_diffusion_test_cases/diffusive_problem.h"
 
 // convection-diffusion problems
 
@@ -188,7 +188,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);
 
-  // initialize convection diffusion operation
+  // initialize convection-diffusion operator
   conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
   conv_diff_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 
@@ -226,18 +226,30 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   // setup solvers in case of BDF time integration or steady problems
   if(param.problem_type == ProblemType::Unsteady)
   {
-    if(param.temporal_discretization == TemporalDiscretization::BDF)
+    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      conv_diff_operator->setup_operators_and_solver(
+        /* no parameter since it is not used for ExplRK */);
+    }
+    else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
       std::shared_ptr<TimeIntBDF<Number>> time_integrator_bdf =
         std::dynamic_pointer_cast<TimeIntBDF<Number>>(time_integrator);
 
-      conv_diff_operator->setup_solver(
+      conv_diff_operator->setup_operators_and_solver(
         time_integrator_bdf->get_scaling_factor_time_derivative_term());
+    }
+    else
+    {
+      AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
+                    param.temporal_discretization == TemporalDiscretization::BDF,
+                  ExcMessage("Specified time integration scheme is not implemented!"));
     }
   }
   else if(param.problem_type == ProblemType::Steady)
   {
-    conv_diff_operator->setup_solver(/*no parameter since this is a steady problem*/);
+    conv_diff_operator->setup_operators_and_solver(
+      /* no parameter since this is a steady problem */);
   }
   else
   {
