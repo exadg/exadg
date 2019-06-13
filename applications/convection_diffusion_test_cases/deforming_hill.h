@@ -39,6 +39,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::Convection;
+  param.type_velocity_field = TypeVelocityField::Analytical;
   param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -85,6 +86,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = (END_TIME-START_TIME)/20;
 
   // NUMERICAL PARAMETERS
+  param.use_combined_operator = true;
 
 }
 }

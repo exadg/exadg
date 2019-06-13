@@ -27,7 +27,7 @@ unsigned int const REFINE_TIME_MAX = 0;
 // problem specific parameters
 
 enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear;
+const MeshType MESH_TYPE = MeshType::Cartesian;
 
 // only relevant for Cartesian mesh
 unsigned int const N_CELLS_1D_COARSE_GRID = 1;
@@ -42,7 +42,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::ConvectionDiffusion;
   param.right_hand_side = false;
-  param.type_velocity_field = TypeVelocityField::Numerical; // Analytical; // Numerical;
+  param.type_velocity_field = TypeVelocityField::Numerical;
 
   // PHYSICAL QUANTITIES
   param.start_time = 0.0;

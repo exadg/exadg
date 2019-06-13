@@ -89,11 +89,16 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.IP_factor = 1.0;
 
   // SOLVER
-  param.solver = Solver::CG;
+  param.solver = Solver::CG; // use FGMRES for elementwise iterative block Jacobi type preconditioners
   param.solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
-  param.preconditioner = Preconditioner::PointJacobi; //Multigrid; //BlockJacobi;
+  param.preconditioner = Preconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
   param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
+  param.implement_block_diagonal_preconditioner_matrix_free = true;
+  param.solver_block_diagonal = Elementwise::Solver::CG;
+  param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
+  param.solver_data_block_diagonal = SolverData(1000, 1.e-12, 1.e-2, 1000);
+  param.use_cell_based_face_loops = true;
   param.update_preconditioner = false;
 
   // output of solver information

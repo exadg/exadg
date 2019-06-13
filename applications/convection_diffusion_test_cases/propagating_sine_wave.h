@@ -53,7 +53,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
   param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF; //Explicit;
-  param.order_time_integrator = 4;
+  param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.time_step_size = 1.0e-1;

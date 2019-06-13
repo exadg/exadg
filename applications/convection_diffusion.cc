@@ -36,7 +36,7 @@
 // specify the test case that has to be solved
 
 // template
-//#include "convection_diffusion_test_cases/template.h"
+#include "convection_diffusion_test_cases/template.h"
 
 // convection problems
 
@@ -46,7 +46,7 @@
 
 // diffusion problems
 
-#include "convection_diffusion_test_cases/diffusive_problem.h"
+//#include "convection_diffusion_test_cases/diffusive_problem.h"
 
 // convection-diffusion problems
 

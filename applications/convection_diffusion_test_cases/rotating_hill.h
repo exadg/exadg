@@ -101,8 +101,9 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
   param.implement_block_diagonal_preconditioner_matrix_free = true;
-  param.preconditioner_block_diagonal = PreconditionerBlockDiagonal::InverseMassMatrix;
-  param.block_jacobi_solver_data = SolverData(1000,1.e-12,1.e-2,1000);
+  param.solver_block_diagonal = Elementwise::Solver::GMRES;
+  param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
+  param.solver_data_block_diagonal = SolverData(1000,1.e-12,1.e-2,1000);
 
   // Multigrid
   param.mg_operator_type = MultigridOperatorType::ReactionConvection;

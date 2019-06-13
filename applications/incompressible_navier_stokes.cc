@@ -73,7 +73,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/periodic_hill.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
-// incompressible flow with scalar transport (but can be used for pure fluid simulations also)
+// incompressible flow with scalar transport (but can also be used for pure fluid simulations)
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 template<typename Number>
