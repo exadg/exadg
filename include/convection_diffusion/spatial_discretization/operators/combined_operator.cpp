@@ -5,8 +5,7 @@
  *      Author: fehn
  */
 
-#include "convection_diffusion_operator_merged.h"
-
+#include "combined_operator.h"
 #include "verify_boundary_conditions.h"
 #include "weak_boundary_conditions.h"
 
@@ -14,10 +13,9 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::reinit(
-  MatrixFree<dim, Number> const &                    matrix_free,
-  AffineConstraints<double> const &                  constraint_matrix,
-  ConvectionDiffusionOperatorMergedData<dim> const & operator_data) const
+Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
+                              AffineConstraints<double> const & constraint_matrix,
+                              OperatorData<dim> const &         operator_data) const
 {
   Base::reinit(matrix_free, constraint_matrix, operator_data);
 
@@ -45,45 +43,42 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::set_velocity_copy(
-  VectorType const & velocity_in) const
+Operator<dim, Number>::set_velocity_copy(VectorType const & velocity_in) const
 {
   convective_kernel.set_velocity_copy(velocity_in);
 }
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::set_velocity_ptr(
-  VectorType const & velocity_in) const
+Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity_in) const
 {
   convective_kernel.set_velocity_ptr(velocity_in);
 }
 
 template<int dim, typename Number>
 Number
-ConvectionDiffusionOperatorMerged<dim, Number>::get_scaling_factor_mass_matrix() const
+Operator<dim, Number>::get_scaling_factor_mass_matrix() const
 {
   return mass_kernel.get_scaling_factor();
 }
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::set_scaling_factor_mass_matrix(
-  Number const & number) const
+Operator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number) const
 {
   mass_kernel.set_scaling_factor(number);
 }
 
 template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-ConvectionDiffusionOperatorMerged<dim, Number>::get_velocity() const
+Operator<dim, Number>::get_velocity() const
 {
   return convective_kernel.get_velocity();
 }
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::reinit_cell(unsigned int const cell) const
+Operator<dim, Number>::reinit_cell(unsigned int const cell) const
 {
   Base::reinit_cell(cell);
 
@@ -93,7 +88,7 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit_cell(unsigned int const c
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::reinit_face(unsigned int const face) const
+Operator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
@@ -105,7 +100,7 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit_face(unsigned int const f
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::reinit_boundary_face(unsigned int const face) const
+Operator<dim, Number>::reinit_boundary_face(unsigned int const face) const
 {
   Base::reinit_boundary_face(face);
 
@@ -117,10 +112,9 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit_boundary_face(unsigned in
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::reinit_face_cell_based(
-  unsigned int const       cell,
-  unsigned int const       face,
-  types::boundary_id const boundary_id) const
+Operator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
+                                              unsigned int const       face,
+                                              types::boundary_id const boundary_id) const
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
@@ -132,7 +126,7 @@ ConvectionDiffusionOperatorMerged<dim, Number>::reinit_face_cell_based(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
+Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -155,9 +149,8 @@ ConvectionDiffusionOperatorMerged<dim, Number>::do_cell_integral(IntegratorCell 
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::do_face_integral(
-  IntegratorFace & integrator_m,
-  IntegratorFace & integrator_p) const
+Operator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
+                                        IntegratorFace & integrator_p) const
 {
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -195,9 +188,8 @@ ConvectionDiffusionOperatorMerged<dim, Number>::do_face_integral(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::do_face_int_integral(
-  IntegratorFace & integrator_m,
-  IntegratorFace & integrator_p) const
+Operator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m,
+                                            IntegratorFace & integrator_p) const
 {
   (void)integrator_p;
 
@@ -239,9 +231,8 @@ ConvectionDiffusionOperatorMerged<dim, Number>::do_face_int_integral(
 // cell-based face loops
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::do_face_int_integral_cell_based(
-  IntegratorFace & integrator_m,
-  IntegratorFace & integrator_p) const
+Operator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & integrator_m,
+                                                       IntegratorFace & integrator_p) const
 {
   (void)integrator_p;
 
@@ -291,9 +282,8 @@ ConvectionDiffusionOperatorMerged<dim, Number>::do_face_int_integral_cell_based(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::do_face_ext_integral(
-  IntegratorFace & integrator_m,
-  IntegratorFace & integrator_p) const
+Operator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
+                                            IntegratorFace & integrator_p) const
 {
   (void)integrator_m;
 
@@ -338,10 +328,9 @@ ConvectionDiffusionOperatorMerged<dim, Number>::do_face_ext_integral(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::do_boundary_integral(
-  IntegratorFace &           integrator_m,
-  OperatorType const &       operator_type,
-  types::boundary_id const & boundary_id) const
+Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
+                                            OperatorType const &       operator_type,
+                                            types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
@@ -398,19 +387,17 @@ ConvectionDiffusionOperatorMerged<dim, Number>::do_boundary_integral(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::do_verify_boundary_conditions(
-  types::boundary_id const                           boundary_id,
-  ConvectionDiffusionOperatorMergedData<dim> const & operator_data,
-  std::set<types::boundary_id> const &               periodic_boundary_ids) const
+Operator<dim, Number>::do_verify_boundary_conditions(
+  types::boundary_id const             boundary_id,
+  OperatorData<dim> const &            operator_data,
+  std::set<types::boundary_id> const & periodic_boundary_ids) const
 {
   do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
 }
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim, Number>::apply_inverse_block_diagonal(
-  VectorType &       dst,
-  VectorType const & src) const
+Operator<dim, Number>::apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const
 {
   // matrix-free
   if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
@@ -430,9 +417,7 @@ ConvectionDiffusionOperatorMerged<dim, Number>::apply_inverse_block_diagonal(
 
 template<int dim, typename Number>
 void
-ConvectionDiffusionOperatorMerged<dim,
-                                  Number>::initialize_block_diagonal_preconditioner_matrix_free()
-  const
+Operator<dim, Number>::initialize_block_diagonal_preconditioner_matrix_free() const
 {
   elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
 
@@ -465,10 +450,10 @@ ConvectionDiffusionOperatorMerged<dim,
     iterative_solver_data));
 }
 
-template class ConvectionDiffusionOperatorMerged<2, float>;
-template class ConvectionDiffusionOperatorMerged<2, double>;
+template class Operator<2, float>;
+template class Operator<2, double>;
 
-template class ConvectionDiffusionOperatorMerged<3, float>;
-template class ConvectionDiffusionOperatorMerged<3, double>;
+template class Operator<3, float>;
+template class Operator<3, double>;
 
 } // namespace ConvDiff

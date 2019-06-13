@@ -58,7 +58,7 @@ std::vector<int> REFINE_LEVELS = {
 
 // Select the operator to be applied
 
-enum class Operator
+enum class Operatortype
 {
   MassOperator,
   ConvectiveOperator,
@@ -66,20 +66,20 @@ enum class Operator
   MassConvectionDiffusionOperator
 };
 
-Operator OPERATOR = Operator::MassConvectionDiffusionOperator;
+Operatortype OPERATOR = Operatortype::MassConvectionDiffusionOperator;
 
 std::string
-enum_to_string(Operator const enum_type)
+enum_to_string(Operatortype const enum_type)
 {
   std::string string_type;
 
   switch(enum_type)
   {
     // clang-format off
-    case Operator::MassOperator:                    string_type = "MassOperator";                    break;
-    case Operator::ConvectiveOperator:              string_type = "ConvectiveOperator";              break;
-    case Operator::DiffusiveOperator:               string_type = "DiffusiveOperator";               break;
-    case Operator::MassConvectionDiffusionOperator: string_type = "MassConvectionDiffusionOperator"; break;
+    case Operatortype::MassOperator:                    string_type = "MassOperator";                    break;
+    case Operatortype::ConvectiveOperator:              string_type = "ConvectiveOperator";              break;
+    case Operatortype::DiffusiveOperator:               string_type = "DiffusiveOperator";               break;
+    case Operatortype::MassConvectionDiffusionOperator: string_type = "MassConvectionDiffusionOperator"; break;
 
     default:AssertThrow(false, ExcMessage("Not implemented.")); break;
       // clang-format on
@@ -254,9 +254,9 @@ Problem<dim, Number>::apply_operator()
     }
   }
 
-  if(OPERATOR == Operator::ConvectiveOperator)
+  if(OPERATOR == Operatortype::ConvectiveOperator)
     conv_diff_operator->update_convective_term(1.0 /* time */, velocity_ptr);
-  else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
+  else if(OPERATOR == Operatortype::MassConvectionDiffusionOperator)
     conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
                                                   1.0 /* scaling_factor_mass_matrix */,
                                                   velocity_ptr);
@@ -274,13 +274,13 @@ Problem<dim, Number>::apply_operator()
     {
       timer.restart();
 
-      if(OPERATOR == Operator::MassOperator)
+      if(OPERATOR == Operatortype::MassOperator)
         conv_diff_operator->apply_mass_matrix(dst, src);
-      else if(OPERATOR == Operator::ConvectiveOperator)
+      else if(OPERATOR == Operatortype::ConvectiveOperator)
         conv_diff_operator->apply_convective_term(dst, src);
-      else if(OPERATOR == Operator::DiffusiveOperator)
+      else if(OPERATOR == Operatortype::DiffusiveOperator)
         conv_diff_operator->apply_diffusive_term(dst, src);
-      else if(OPERATOR == Operator::MassConvectionDiffusionOperator)
+      else if(OPERATOR == Operatortype::MassConvectionDiffusionOperator)
         conv_diff_operator->apply_conv_diff_operator(dst, src);
 
       current_wall_time += timer.wall_time();

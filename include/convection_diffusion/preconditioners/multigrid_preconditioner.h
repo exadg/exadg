@@ -11,7 +11,7 @@
 #include "../../operators/mapping_flags.h"
 #include "../../operators/multigrid_operator.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
-#include "../spatial_discretization/operators/convection_diffusion_operator_merged.h"
+#include "../spatial_discretization/operators/combined_operator.h"
 
 namespace ConvDiff
 {
@@ -19,12 +19,11 @@ namespace ConvDiff
  *  Multigrid preconditioner for scalar convection-diffusion equation
  */
 template<int dim, typename Number, typename MultigridNumber>
-class MultigridPreconditionerMerged
-  : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
+class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
-  typedef ConvectionDiffusionOperatorMerged<dim, Number>          PDEOperatorNumber;
-  typedef ConvectionDiffusionOperatorMerged<dim, MultigridNumber> PDEOperator;
+  typedef Operator<dim, Number>          PDEOperatorNumber;
+  typedef Operator<dim, MultigridNumber> PDEOperator;
 
   typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
@@ -36,16 +35,16 @@ public:
   typedef typename BASE::VectorType        VectorType;
   typedef typename BASE::VectorTypeMG      VectorTypeMG;
 
-  virtual ~MultigridPreconditionerMerged(){};
+  virtual ~MultigridPreconditioner(){};
 
   void
-  initialize(MultigridData const &                              mg_data,
-             const parallel::Triangulation<dim> *               tria,
-             const FiniteElement<dim> &                         fe,
-             Mapping<dim> const &                               mapping,
-             ConvectionDiffusionOperatorMergedData<dim> const & operator_data_in,
-             Map const *                                        dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                                periodic_face_pairs = nullptr)
+  initialize(MultigridData const &                mg_data,
+             const parallel::Triangulation<dim> * tria,
+             const FiniteElement<dim> &           fe,
+             Mapping<dim> const &                 mapping,
+             OperatorData<dim> const &            operator_data_in,
+             Map const *                          dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
     operator_data            = operator_data_in;
     operator_data.dof_index  = 0;
@@ -362,7 +361,7 @@ private:
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         constrained_dofs_velocity;
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
 
-  ConvectionDiffusionOperatorMergedData<dim> operator_data;
+  OperatorData<dim> operator_data;
 };
 
 } // namespace ConvDiff

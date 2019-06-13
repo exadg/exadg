@@ -5,8 +5,8 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTION_DIFFUSION_OPERATOR_MERGED_H_
-#define INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTION_DIFFUSION_OPERATOR_MERGED_H_
+#ifndef INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_
+#define INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_
 
 #include "convective_operator.h"
 #include "diffusive_operator.h"
@@ -19,9 +19,9 @@
 namespace ConvDiff
 {
 template<int dim>
-struct ConvectionDiffusionOperatorMergedData : public OperatorBaseData
+struct OperatorData : public OperatorBaseData
 {
-  ConvectionDiffusionOperatorMergedData()
+  OperatorData()
     : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
       unsteady_problem(false),
       convective_problem(false),
@@ -58,14 +58,13 @@ struct ConvectionDiffusionOperatorMergedData : public OperatorBaseData
 };
 
 template<int dim, typename Number>
-class ConvectionDiffusionOperatorMerged
-  : public OperatorBase<dim, Number, ConvectionDiffusionOperatorMergedData<dim>>
+class Operator : public OperatorBase<dim, Number, OperatorData<dim>>
 {
 public:
   typedef Number value_type;
 
 private:
-  typedef OperatorBase<dim, Number, ConvectionDiffusionOperatorMergedData<dim>> Base;
+  typedef OperatorBase<dim, Number, OperatorData<dim>> Base;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
@@ -77,9 +76,9 @@ private:
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const &                    matrix_free,
-         AffineConstraints<double> const &                  constraint_matrix,
-         ConvectionDiffusionOperatorMergedData<dim> const & operator_data) const;
+  reinit(MatrixFree<dim, Number> const &   matrix_free,
+         AffineConstraints<double> const & constraint_matrix,
+         OperatorData<dim> const &         operator_data) const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -142,8 +141,8 @@ private:
                                   IntegratorFace & integrator_p) const;
 
   void
-  do_verify_boundary_conditions(types::boundary_id const                           boundary_id,
-                                ConvectionDiffusionOperatorMergedData<dim> const & operator_data,
+  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
+                                OperatorData<dim> const &            operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   // TODO shift to base class if possible
@@ -176,5 +175,5 @@ private:
 } // namespace ConvDiff
 
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_CONVECTION_DIFFUSION_OPERATOR_MERGED_H_ \
+#endif /* INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_ \
         */

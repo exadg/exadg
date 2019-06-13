@@ -8,10 +8,10 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 
+#include "../../convection_diffusion/spatial_discretization/operators/combined_operator.h"
 #include "dg_navier_stokes_base.h"
 #include "interface.h"
 
-#include "../../convection_diffusion/spatial_discretization/operators/convection_diffusion_operator_merged.h"
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
@@ -350,8 +350,7 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> multigrid_preconditioner_schur_complement;
   std::shared_ptr<PreconditionerBase<Number>> inv_mass_matrix_preconditioner_schur_complement;
 
-  std::shared_ptr<ConvDiff::ConvectionDiffusionOperatorMerged<dim, Number>>
-    pressure_conv_diff_operator;
+  std::shared_ptr<ConvDiff::Operator<dim, Number>> pressure_conv_diff_operator;
 
   std::shared_ptr<Poisson::LaplaceOperator<dim, Number>> laplace_operator_classical;
 

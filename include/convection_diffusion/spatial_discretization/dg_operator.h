@@ -23,7 +23,6 @@
 
 // operators
 #include "../../operators/inverse_mass_matrix.h"
-#include "operators/convection_diffusion_operator_merged.h"
 #include "operators/rhs_operator.h"
 
 // solvers and preconditioners
@@ -37,6 +36,7 @@
 
 // postprocessor
 #include "../postprocessor/postprocessor_base.h"
+#include "operators/combined_operator.h"
 
 using namespace dealii;
 
@@ -345,7 +345,7 @@ private:
   /*
    * Merged operators
    */
-  ConvectionDiffusionOperatorMerged<dim, Number> convection_diffusion_operator_merged;
+  Operator<dim, Number> combined_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 

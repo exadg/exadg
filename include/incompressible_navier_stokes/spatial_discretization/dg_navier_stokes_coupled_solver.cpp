@@ -952,7 +952,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   diffusive_kernel_data.degree_mapping = this->mapping_degree;
 
   // combined convection-diffusion operator
-  ConvDiff::ConvectionDiffusionOperatorMergedData<dim> operator_data;
+  ConvDiff::OperatorData<dim> operator_data;
   operator_data.dof_index  = this->get_dof_index_pressure();
   operator_data.quad_index = this->get_quad_index_pressure();
 
@@ -969,7 +969,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.convective_kernel_data = convective_kernel_data;
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
-  pressure_conv_diff_operator.reset(new ConvDiff::ConvectionDiffusionOperatorMerged<dim, Number>());
+  pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
   pressure_conv_diff_operator->reinit(this->get_matrix_free(), this->constraint_p, operator_data);
 }
 
