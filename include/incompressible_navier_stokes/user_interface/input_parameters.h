@@ -15,6 +15,7 @@
 
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver_data.h"
+#include "../../solvers_and_preconditioners/preconditioner/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../../time_integration/enum_types.h"
 
@@ -412,7 +413,7 @@ public:
 
   // description: see enum declaration (only relevant if block diagonal is used as
   // preconditioner)
-  PreconditionerBlockDiagonal preconditioner_block_diagonal_projection;
+  Elementwise::Preconditioner preconditioner_block_diagonal_projection;
 
   // solver data for block Jacobi preconditioner (only relevant if elementwise
   // iterative solution procedure is used for block diagonal preconditioner)

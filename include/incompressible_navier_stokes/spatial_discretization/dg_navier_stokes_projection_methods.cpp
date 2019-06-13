@@ -46,11 +46,8 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 {
   // setup Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-  laplace_operator_data.dof_index      = this->get_dof_index_pressure();
-  laplace_operator_data.quad_index     = this->get_quad_index_pressure();
-  laplace_operator_data.IP_factor      = this->param.IP_factor_pressure;
-  laplace_operator_data.degree         = this->param.get_degree_p();
-  laplace_operator_data.degree_mapping = this->param.IP_factor_pressure;
+  laplace_operator_data.dof_index  = this->get_dof_index_pressure();
+  laplace_operator_data.quad_index = this->get_quad_index_pressure();
 
   /*
    * In case of pure Dirichlet boundary conditions for the velocity (or more precisely pure Neumann
@@ -94,9 +91,12 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 
   laplace_operator_data.bc                   = this->boundary_descriptor_laplace;
   laplace_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  laplace_operator_data.degree_mapping       = this->mapping_degree;
   laplace_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
+
+  laplace_operator_data.kernel_data.IP_factor      = this->param.IP_factor_pressure;
+  laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
+  laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
 
   laplace_operator.reinit(this->matrix_free, this->constraint_p, laplace_operator_data);
 }

@@ -8,20 +8,22 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 #define INCLUDE_CONVECTION_DIFFUSION_MULTIGRID_PRECONDITIONER_H_
 
+#include "../../operators/mapping_flags.h"
 #include "../../operators/multigrid_operator.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
-#include "../spatial_discretization/operators/convection_diffusion_operator.h"
+#include "../spatial_discretization/operators/combined_operator.h"
 
 namespace ConvDiff
 {
 /*
- *  Multigrid preconditioner for scalar (reaction-)convection-diffusion operator.
+ *  Multigrid preconditioner for scalar convection-diffusion equation
  */
 template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
-  typedef ConvectionDiffusionOperator<dim, MultigridNumber> PDEOperator;
+  typedef Operator<dim, Number>          PDEOperatorNumber;
+  typedef Operator<dim, MultigridNumber> PDEOperator;
 
   typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
@@ -36,13 +38,13 @@ public:
   virtual ~MultigridPreconditioner(){};
 
   void
-  initialize(MultigridData const &                        mg_data,
-             const parallel::Triangulation<dim> *         tria,
-             const FiniteElement<dim> &                   fe,
-             Mapping<dim> const &                         mapping,
-             ConvectionDiffusionOperatorData<dim> const & operator_data_in,
-             Map const *                                  dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                          periodic_face_pairs = nullptr)
+  initialize(MultigridData const &                mg_data,
+             const parallel::Triangulation<dim> * tria,
+             const FiniteElement<dim> &           fe,
+             Mapping<dim> const &                 mapping,
+             OperatorData<dim> const &            operator_data_in,
+             Map const *                          dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
     operator_data            = operator_data_in;
     operator_data.dof_index  = 0;
@@ -113,19 +115,20 @@ public:
 
     additional_data.level_mg_handler      = this->level_info[level].h_level();
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
-    additional_data.mapping_update_flags =
-      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-       update_values);
 
+    MappingFlags flags;
+    if(operator_data.unsteady_problem)
+      flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+    if(operator_data.convective_problem)
+      flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+    if(operator_data.diffusive_problem)
+      flags = flags || Operators::DiffusiveKernel<dim, Number>::get_mapping_flags();
+
+    additional_data.mapping_update_flags = flags.cells;
     if(this->level_info[level].is_dg())
     {
-      additional_data.mapping_update_flags_inner_faces =
-        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-         update_values);
-
-      additional_data.mapping_update_flags_boundary_faces =
-        (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-         update_values);
+      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
+      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
     }
 
     if(operator_data.use_cell_based_loops && this->level_info[level].is_dg())
@@ -137,7 +140,7 @@ public:
                                           this->level_info[level].h_level());
     }
 
-    if(operator_data.type_velocity_field == TypeVelocityField::Analytical)
+    if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Analytical)
     {
       QGauss<1> quadrature(this->level_info[level].degree() + 1);
       matrix_free->reinit(mapping,
@@ -147,7 +150,8 @@ public:
                           additional_data);
     }
     // we need two dof-handlers in case the velocity field comes from the fluid solver.
-    else if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+    else if(operator_data.convective_kernel_data.type_velocity_field ==
+            TypeVelocityField::Numerical)
     {
       // collect dof-handlers
       std::vector<const DoFHandler<dim> *> dof_handler_vec;
@@ -187,7 +191,7 @@ public:
     BASE::initialize_dof_handler_and_constraints(
       operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
-    if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+    if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
     {
       FESystem<dim> fe_velocity(FE_DGQ<dim>(fe.degree), dim);
       Map           dirichlet_bc_velocity;
@@ -209,7 +213,7 @@ public:
   {
     BASE::initialize_transfer_operators();
 
-    if(operator_data.type_velocity_field == TypeVelocityField::Numerical)
+    if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
       this->transfers_velocity.template reinit<MultigridNumber>(this->matrix_free_objects,
                                                                 this->constraints_velocity,
                                                                 this->constrained_dofs_velocity,
@@ -222,8 +226,8 @@ public:
   virtual void
   update(LinearOperatorBase const * pde_operator_in)
   {
-    ConvectionDiffusionOperator<dim, Number> const * pde_operator =
-      dynamic_cast<ConvectionDiffusionOperator<dim, Number> const *>(pde_operator_in);
+    PDEOperatorNumber const * pde_operator =
+      dynamic_cast<PDEOperatorNumber const *>(pde_operator_in);
 
     AssertThrow(
       pde_operator != nullptr,
@@ -231,7 +235,8 @@ public:
         "Operator used to update multigrid preconditioner does not match actual PDE operator!"));
 
     MultigridOperatorType mg_operator_type = pde_operator->get_operator_data().mg_operator_type;
-    TypeVelocityField type_velocity_field  = pde_operator->get_operator_data().type_velocity_field;
+    TypeVelocityField     type_velocity_field =
+      pde_operator->get_operator_data().convective_kernel_data.type_velocity_field;
 
     if(type_velocity_field == TypeVelocityField::Numerical &&
        (mg_operator_type == MultigridOperatorType::ReactionConvection ||
@@ -253,13 +258,13 @@ public:
       }
 
       update_operators(pde_operator->get_evaluation_time(),
-                       pde_operator->get_scaling_factor_time_derivative_term(),
+                       pde_operator->get_scaling_factor_mass_matrix(),
                        vector_multigrid_type_ptr);
     }
     else
     {
       update_operators(pde_operator->get_evaluation_time(),
-                       pde_operator->get_scaling_factor_time_derivative_term());
+                       pde_operator->get_scaling_factor_mass_matrix());
     }
 
     update_smoothers();
@@ -280,21 +285,21 @@ private:
                    VectorTypeMG const * velocity = nullptr)
   {
     set_evaluation_time(evaluation_time);
-    set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
+    set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
 
     if(velocity != nullptr)
       set_velocity(*velocity);
   }
 
   /*
-   * This function updates velocity.
+   * This function updates the velocity field for all levels.
    * In order to update mg_matrices[level] this function has to be called.
    */
   void
   set_velocity(VectorTypeMG const & velocity)
   {
     // copy velocity to finest level
-    this->get_operator(this->fine_level)->set_velocity(velocity);
+    this->get_operator(this->fine_level)->set_velocity_copy(velocity);
 
     // interpolate velocity from fine to coarse level
     for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
@@ -302,7 +307,7 @@ private:
       auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
       auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
       transfers_velocity.interpolate(level, vector_coarse_level, vector_fine_level);
-      this->get_operator(level - 1)->set_velocity(vector_coarse_level);
+      this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
     }
   }
 
@@ -326,10 +331,10 @@ private:
    *  the scaling factor of the derivative term is variable.
    */
   void
-  set_scaling_factor_time_derivative_term(double const & scaling_factor)
+  set_scaling_factor_mass_matrix(double const & scaling_factor)
   {
     for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
-      this->get_operator(level)->set_scaling_factor_time_derivative_term(scaling_factor);
+      this->get_operator(level)->set_scaling_factor_mass_matrix(scaling_factor);
   }
 
   /*
@@ -361,7 +366,7 @@ private:
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         constrained_dofs_velocity;
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
 
-  ConvectionDiffusionOperatorData<dim> operator_data;
+  OperatorData<dim> operator_data;
 };
 
 } // namespace ConvDiff

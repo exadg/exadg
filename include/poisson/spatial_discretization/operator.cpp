@@ -281,19 +281,20 @@ DGOperator<dim, Number>::setup_operators()
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
   laplace_operator_data.dof_index            = 0;
   laplace_operator_data.quad_index           = 0;
-  laplace_operator_data.IP_factor            = param.IP_factor;
-  laplace_operator_data.degree               = param.degree;
-  laplace_operator_data.degree_mapping       = mapping_degree;
   laplace_operator_data.bc                   = boundary_descriptor;
   laplace_operator_data.use_cell_based_loops = param.enable_cell_based_face_loops;
+
+  laplace_operator_data.kernel_data.IP_factor      = param.IP_factor;
+  laplace_operator_data.kernel_data.degree         = param.degree;
+  laplace_operator_data.kernel_data.degree_mapping = mapping_degree;
 
   laplace_operator.reinit(matrix_free, constraint_matrix, laplace_operator_data);
 
   // rhs operator
   ConvDiff::RHSOperatorData<dim> rhs_operator_data;
-  rhs_operator_data.dof_index  = 0;
-  rhs_operator_data.quad_index = 0;
-  rhs_operator_data.rhs        = field_functions->right_hand_side;
+  rhs_operator_data.dof_index     = 0;
+  rhs_operator_data.quad_index    = 0;
+  rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
   rhs_operator.reinit(matrix_free, rhs_operator_data);
 }
 

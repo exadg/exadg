@@ -229,20 +229,6 @@ std::string
 enum_to_string(Preconditioner const enum_type);
 
 /*
- * Elementwise preconditioner for block Jacobi preconditioner (only relevant for
- * elementwise iterative solution procedure)
- */
-enum class PreconditionerBlockDiagonal
-{
-  Undefined,
-  None,
-  InverseMassMatrix
-};
-
-std::string
-enum_to_string(PreconditionerBlockDiagonal const enum_type);
-
-/*
  * Specify the operator type to be used for multigrid (which can differ from the
  * equation type)
  */

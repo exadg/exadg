@@ -20,8 +20,8 @@
 unsigned int const DEGREE_MIN = 7;
 unsigned int const DEGREE_MAX = 7;
 
-unsigned int const REFINE_SPACE_MIN = 5;
-unsigned int const REFINE_SPACE_MAX = 5;
+unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MAX = 2;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -88,8 +88,9 @@ void set_input_parameters(InputParameters &param)
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.type = MultigridType::phMG;
   param.multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
-  param.multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::None;
-  param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
+  param.multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
+  param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG; //AMG; //Chebyshev;
+  param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
   // projection step
   param.solver_projection = SolverProjection::CG;

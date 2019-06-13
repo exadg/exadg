@@ -120,7 +120,7 @@ void set_input_parameters(InputParameters &param)
   param.solver_projection = SolverProjection::CG;
   param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
   param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
-  param.preconditioner_block_diagonal_projection = PreconditionerBlockDiagonal::InverseMassMatrix;
+  param.preconditioner_block_diagonal_projection = Elementwise::Preconditioner::InverseMassMatrix;
   param.solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2,1000);
 
   // HIGH-ORDER DUAL SPLITTING SCHEME

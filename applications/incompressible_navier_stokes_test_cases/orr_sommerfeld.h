@@ -389,7 +389,7 @@ public:
     // call setup function of base class
     Base::setup(pde_operator);
 
-    energy_calculator.setup(pde_operator.get_data(),
+    energy_calculator.setup(pde_operator.get_matrix_free(),
                             pde_operator.get_dof_index_velocity(),
                             pde_operator.get_quad_index_velocity_linear(),
                             energy_data);

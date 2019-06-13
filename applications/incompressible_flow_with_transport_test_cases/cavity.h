@@ -222,7 +222,8 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
 
   // TEMPORAL DISCRETIZATION
   param.temporal_discretization = TemporalDiscretization::BDF;
-  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
   param.adaptive_time_stepping = ADAPTIVE_TIME_STEPPING;
   param.order_time_integrator = 2;
   param.time_integrator_oif = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -233,6 +234,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.cfl = CFL;
   param.max_velocity = MAX_VELOCITY;
   param.exponent_fe_degree_convection = 1.5;
+  param.exponent_fe_degree_diffusion = 3.0;
   param.diffusion_number = 0.01;
   param.dt_refinements = 0;
 
@@ -262,12 +264,15 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   // SOLVER
   param.solver = Solver::GMRES;
   param.solver_data = SolverData(1e4, 1.e-12, 1.e-6, 100);
-  param.preconditioner = Preconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
+  param.preconditioner = Preconditioner::BlockJacobi; //InverseMassMatrix; //BlockJacobi; //Multigrid;
   param.implement_block_diagonal_preconditioner_matrix_free = true;
+  param.solver_block_diagonal = Elementwise::Solver::GMRES;
+  param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
+  param.solver_data_block_diagonal = SolverData(1000, 1.e-12, 1.e-2, 1000);
   param.use_cell_based_face_loops = true;
   param.update_preconditioner = true;
 
-  param.multigrid_data.type = MultigridType::hMG;
+  param.multigrid_data.type = MultigridType::phMG;
   param.mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
@@ -283,7 +288,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.solver_info_data.interval_time = (END_TIME-START_TIME)/10.;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+  param.use_combined_operator = true;
 }
 }
 

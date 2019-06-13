@@ -31,6 +31,7 @@
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 #include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/print_throughput.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -74,6 +75,30 @@ enum class Operator{
 // clang-format on
 
 Operator OPERATOR = Operator::ConvectiveOperator;
+
+std::string
+enum_to_string(Operator const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    // clang-format off
+    case Operator::CoupledNonlinearResidual: string_type = "CoupledNonlinearResidual"; break;
+    case Operator::CoupledLinearized:        string_type = "CoupledLinearized";        break;
+    case Operator::PressurePoissonOperator:  string_type = "PressurePoissonOperator";  break;
+    case Operator::ConvectiveOperator:       string_type = "ConvectiveOperator";       break;
+    case Operator::HelmholtzOperator:        string_type = "HelmholtzOperator";        break;
+    case Operator::ProjectionOperator:       string_type = "ProjectionOperator";       break;
+    case Operator::VelocityConvDiffOperator: string_type = "VelocityConvDiffOperator"; break;
+    case Operator::InverseMassMatrix:        string_type = "InverseMassMatrix";        break;
+
+    default:AssertThrow(false, ExcMessage("Not implemented.")); break;
+      // clang-format on
+  }
+
+  return string_type;
+}
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
@@ -446,7 +471,7 @@ Problem<dim, Number>::apply_operator()
   {
     this->pcout
       << std::endl
-      << "WARNING: One should use a larger number of matrix-vector products to obtain reproducable results."
+      << "WARNING: One should use a larger number of matrix-vector products to obtain reproducible results."
       << std::endl;
   }
 
@@ -480,18 +505,18 @@ Problem<dim, Number>::apply_operator()
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  double wall_time_per_dofs = wall_time / (double)dofs;
+  double dofs_per_walltime = (double)dofs / wall_time;
 
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
   // clang-format off
   pcout << std::endl
-        << std::scientific << std::setprecision(4) << "t_wall/DoF [s]:  " << wall_time_per_dofs << std::endl
-        << std::scientific << std::setprecision(4) << "DoFs/sec:        " << 1./wall_time_per_dofs << std::endl
-        << std::scientific << std::setprecision(4) << "DoFs/(sec*core): " << 1./wall_time_per_dofs/(double)N_mpi_processes << std::endl;
+        << std::scientific << std::setprecision(4)
+        << "DoFs/sec:        " << dofs_per_walltime << std::endl
+        << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
   // clang-format on
 
-  wall_times.push_back(std::pair<unsigned int, double>(fe_degree, wall_time_per_dofs));
+  wall_times.push_back(std::pair<unsigned int, double>(fe_degree, dofs_per_walltime));
 
 
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -500,48 +525,7 @@ Problem<dim, Number>::apply_operator()
     navier_stokes_operation_coupled->set_sum_alphai_ui(nullptr);
   }
 
-
   pcout << std::endl << " ... done." << std::endl << std::endl;
-}
-
-void
-print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times)
-{
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::string str_operator_type[] = {"CoupledNonlinearResidual",
-                                       "CoupledLinearized",
-                                       "PressurePoissonOperator",
-                                       "ConvectiveOperator",
-                                       "HelmholtzOperator",
-                                       "ProjectionOperator",
-                                       "VelocityConvDiffOperator",
-                                       "InverseMassMatrix"};
-
-    // clang-format off
-    std::cout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl << std::endl
-              << "Operator type: " << str_operator_type[(int)OPERATOR]
-              << std::endl << std::endl
-              << "  k    " << "t_wall/DoF [s] " << "DoFs/sec   " << "DoFs/(sec*core) " << std::endl;
-
-    typedef typename std::vector<std::pair<unsigned int, double> >::const_iterator ITERATOR;
-    for(ITERATOR it = wall_times.begin(); it != wall_times.end(); ++it)
-    {
-      std::cout << "  " << std::setw(5) << std::left << it->first
-                << std::setw(2) << std::left << std::scientific << std::setprecision(4) << it->second
-                << "     " << std::setw(2) << std::left << std::scientific << std::setprecision(4) << 1./it->second
-                << " " << std::setw(2) << std::left << std::scientific << std::setprecision(4) << 1./it->second/(double)N_mpi_processes
-                << std::endl;
-    }
-
-    std::cout << "_________________________________________________________________________________"
-              << std::endl << std::endl;
-    // clang-format on
-  }
 }
 
 int
@@ -559,6 +543,9 @@ main(int argc, char ** argv)
       // manipulate polynomial degree
       param.degree_u = degree;
 
+      // reset h-refinements
+      param.h_refinements = REFINE_LEVELS[degree - 1];
+
       // setup problem and run simulation
       typedef double                       Number;
       std::shared_ptr<ProblemBase<Number>> problem;
@@ -575,7 +562,7 @@ main(int argc, char ** argv)
       problem->apply_operator();
     }
 
-    print_wall_times(wall_times);
+    print_throughput(wall_times, enum_to_string(OPERATOR));
     wall_times.clear();
   }
   catch(std::exception & exc)

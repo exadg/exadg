@@ -1,324 +1,179 @@
 #include "laplace_operator.h"
 
-#include "../../functionalities/evaluate_functions.h"
+#include "weak_boundary_conditions.h"
 
 namespace Poisson
 {
 template<int dim, typename Number>
-LaplaceOperator<dim, Number>::LaplaceOperator()
-  : OperatorBase<dim, Number, LaplaceOperatorData<dim>>()
-{
-}
-
-template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   mf_data,
+LaplaceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                      AffineConstraints<double> const & constraint_matrix,
                                      LaplaceOperatorData<dim> const &  operator_data) const
 {
-  Base::reinit(mf_data, constraint_matrix, operator_data);
-  // calculate penalty parameters
-  MappingQGeneric<dim> mapping(operator_data.degree_mapping);
-  IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
-                                               *this->matrix_free,
-                                               mapping,
-                                               this->operator_data.degree,
-                                               this->operator_data.dof_index);
-}
+  Base::reinit(matrix_free, constraint_matrix, operator_data);
 
-template<int dim, typename Number>
-bool
-LaplaceOperator<dim, Number>::is_singular() const
-{
-  return this->operator_is_singular();
-}
+  kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.dof_index);
 
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  LaplaceOperator<dim, Number>::calculate_value_flux(scalar const & jump_value) const
-{
-  return -0.5 * jump_value;
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  LaplaceOperator<dim, Number>::calculate_interior_value(unsigned int const   q,
-                                                         FEEvalFace const &   fe_eval,
-                                                         OperatorType const & operator_type) const
-{
-  scalar value_m = make_vectorized_array<Number>(0.0);
-
-  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
-  {
-    value_m = fe_eval.get_value(q);
-  }
-  else if(operator_type == OperatorType::inhomogeneous)
-  {
-    value_m = make_vectorized_array<Number>(0.0);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-  }
-
-  return value_m;
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  LaplaceOperator<dim, Number>::calculate_exterior_value(scalar const &           value_m,
-                                                         unsigned int const       q,
-                                                         FEEvalFace const &       fe_eval,
-                                                         OperatorType const &     operator_type,
-                                                         BoundaryType const &     boundary_type,
-                                                         types::boundary_id const boundary_id) const
-{
-  scalar value_p = make_vectorized_array<Number>(0.0);
-
-  if(boundary_type == BoundaryType::dirichlet)
-  {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
-    {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        this->operator_data.bc->dirichlet_bc.find(boundary_id);
-      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-
-      scalar g = evaluate_scalar_function(it->second, q_points, this->eval_time);
-
-      value_p = -value_m + 2.0 * g;
-    }
-    else if(operator_type == OperatorType::homogeneous)
-    {
-      value_p = -value_m;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-    }
-  }
-  else if(boundary_type == BoundaryType::neumann)
-  {
-    value_p = value_m;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-  }
-
-  return value_p;
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  LaplaceOperator<dim, Number>::calculate_gradient_flux(scalar const & normal_gradient_m,
-                                                        scalar const & normal_gradient_p,
-                                                        scalar const & jump_value,
-                                                        scalar const & penalty_parameter) const
-{
-  return 0.5 * (normal_gradient_m + normal_gradient_p) - penalty_parameter * jump_value;
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  LaplaceOperator<dim, Number>::calculate_interior_normal_gradient(
-    unsigned int const   q,
-    FEEvalFace const &   fe_eval,
-    OperatorType const & operator_type) const
-{
-  scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
-
-  if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
-  {
-    normal_gradient_m = fe_eval.get_normal_derivative(q);
-  }
-  else if(operator_type == OperatorType::inhomogeneous)
-  {
-    normal_gradient_m = make_vectorized_array<Number>(0.0);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-  }
-
-  return normal_gradient_m;
-}
-
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
-  LaplaceOperator<dim, Number>::calculate_exterior_normal_gradient(
-    scalar const &           normal_gradient_m,
-    unsigned int const       q,
-    FEEvalFace const &       fe_eval,
-    OperatorType const &     operator_type,
-    BoundaryType const &     boundary_type,
-    types::boundary_id const boundary_id) const
-{
-  scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
-
-  if(boundary_type == BoundaryType::dirichlet)
-  {
-    normal_gradient_p = normal_gradient_m;
-  }
-  else if(boundary_type == BoundaryType::neumann)
-  {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
-    {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        this->operator_data.bc->neumann_bc.find(boundary_id);
-      Point<dim, scalar> q_points = fe_eval.quadrature_point(q);
-
-      scalar h = evaluate_scalar_function(it->second, q_points, this->eval_time);
-
-      normal_gradient_p = -normal_gradient_m + 2.0 * h;
-    }
-    else if(operator_type == OperatorType::homogeneous)
-    {
-      normal_gradient_p = -normal_gradient_m;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-    }
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-  }
-
-  return normal_gradient_p;
+  this->integrator_flags = kernel.get_integrator_flags();
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_cell_integral(FEEvalCell & fe_eval,
-                                               unsigned int const /*cell*/) const
+LaplaceOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
-    fe_eval.submit_gradient(fe_eval.get_gradient(q), q);
+  Base::reinit_face(face);
+
+  kernel.reinit_face(*this->integrator_m, *this->integrator_p);
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_face_integral(FEEvalFace & fe_eval,
-                                               FEEvalFace & fe_eval_neighbor,
-                                               unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
 {
-  scalar tau_IP =
-    std::max(fe_eval.read_cell_data(array_penalty_parameter),
-             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
+  Base::reinit_boundary_face(face);
 
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+  kernel.reinit_boundary_face(*this->integrator_m);
+}
+
+template<int dim, typename Number>
+void
+LaplaceOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
+                                                     unsigned int const       face,
+                                                     types::boundary_id const boundary_id) const
+{
+  Base::reinit_face_cell_based(cell, face, boundary_id);
+
+  kernel.reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+}
+
+template<int dim, typename Number>
+void
+LaplaceOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
+{
+  for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    scalar jump_value = fe_eval.get_value(q) - fe_eval_neighbor.get_value(q);
-    scalar value_flux = calculate_value_flux(jump_value);
-
-    scalar normal_gradient_m = fe_eval.get_normal_derivative(q);
-    scalar normal_gradient_p = fe_eval_neighbor.get_normal_derivative(q);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
-
-    fe_eval.submit_normal_derivative(value_flux, q);
-    fe_eval_neighbor.submit_normal_derivative(value_flux, q);
-
-    fe_eval.submit_value(-gradient_flux, q);
-    fe_eval_neighbor.submit_value(gradient_flux, q); // + sign since n⁺ = -n⁻
+    integrator.submit_gradient(kernel.get_volume_flux(integrator, q), q);
   }
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_face_int_integral(FEEvalFace & fe_eval,
-                                                   FEEvalFace & fe_eval_neighbor,
-                                                   unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
+                                               IntegratorFace & integrator_p) const
 {
-  scalar tau_IP =
-    std::max(fe_eval.read_cell_data(array_penalty_parameter),
-             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  {
+    scalar value_m = integrator_m.get_value(q);
+    scalar value_p = integrator_p.get_value(q);
 
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+
+    scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
+    scalar normal_gradient_p = integrator_p.get_normal_derivative(q);
+
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+    integrator_p.submit_normal_derivative(gradient_flux, q);
+
+    integrator_m.submit_value(-value_flux, q);
+    integrator_p.submit_value(value_flux, q); // + sign since n⁺ = -n⁻
+  }
+}
+
+template<int dim, typename Number>
+void
+LaplaceOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m,
+                                                   IntegratorFace & integrator_p) const
+{
+  (void)integrator_p;
+
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     // set exterior value to zero
-    scalar jump_value = fe_eval.get_value(q);
-    scalar value_flux = calculate_value_flux(jump_value);
+    scalar value_m = integrator_m.get_value(q);
+    scalar value_p = make_vectorized_array<Number>(0.0);
+
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
     // set exterior value to zero
-    scalar normal_gradient_m = fe_eval.get_normal_derivative(q);
+    scalar normal_gradient_m = integrator_m.get_normal_derivative(q);
     scalar normal_gradient_p = make_vectorized_array<Number>(0.0);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
 
-    fe_eval.submit_normal_derivative(value_flux, q);
-    fe_eval.submit_value(-gradient_flux, q);
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+    integrator_m.submit_value(-value_flux, q);
   }
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_face_ext_integral(FEEvalFace & fe_eval,
-                                                   FEEvalFace & fe_eval_neighbor,
-                                                   unsigned int const /*face*/) const
+LaplaceOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
+                                                   IntegratorFace & integrator_p) const
 {
-  scalar tau_IP =
-    std::max(fe_eval.read_cell_data(array_penalty_parameter),
-             fe_eval_neighbor.read_cell_data(array_penalty_parameter)) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
+  (void)integrator_m;
 
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+  for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
   {
     // set value_m to zero
-    scalar jump_value = fe_eval_neighbor.get_value(q);
-    scalar value_flux = calculate_value_flux(jump_value);
+    scalar value_p = integrator_p.get_value(q);
+    scalar value_m = make_vectorized_array<Number>(0.0);
+
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_p, value_m);
 
     // set gradient_m to zero
     scalar normal_gradient_m = make_vectorized_array<Number>(0.0);
     // minus sign to get the correct normal vector n⁺ = -n⁻
-    scalar normal_gradient_p = -fe_eval_neighbor.get_normal_derivative(q);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
+    scalar normal_gradient_p = -integrator_p.get_normal_derivative(q);
 
-    // minus sign since n⁺ = -n⁻
-    fe_eval_neighbor.submit_normal_derivative(-value_flux, q);
-    fe_eval_neighbor.submit_value(-gradient_flux, q);
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_p, normal_gradient_m, value_p, value_m);
+
+    integrator_p.submit_normal_derivative(-gradient_flux, q); // opposite sign since n⁺ = -n⁻
+    integrator_p.submit_value(-value_flux, q);
   }
 }
 
 template<int dim, typename Number>
 void
-LaplaceOperator<dim, Number>::do_boundary_integral(FEEvalFace &               fe_eval,
+LaplaceOperator<dim, Number>::do_boundary_integral(IntegratorFace &           integrator_m,
                                                    OperatorType const &       operator_type,
-                                                   types::boundary_id const & boundary_id,
-                                                   unsigned int const /*face*/) const
+                                                   types::boundary_id const & boundary_id) const
 {
   BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
 
-  scalar tau_IP =
-    fe_eval.read_cell_data(array_penalty_parameter) *
-    IP::get_penalty_factor<Number>(this->operator_data.degree, this->operator_data.IP_factor);
-
-  for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value(q, fe_eval, operator_type);
-    scalar value_p =
-      calculate_exterior_value(value_m, q, fe_eval, operator_type, boundary_type, boundary_id);
-    scalar jump_value = value_m - value_p;
-    scalar value_flux = calculate_value_flux(jump_value);
+    scalar value_m = calculate_interior_value(q, integrator_m, operator_type);
+    scalar value_p = calculate_exterior_value(value_m,
+                                              q,
+                                              integrator_m,
+                                              operator_type,
+                                              boundary_type,
+                                              boundary_id,
+                                              this->operator_data.bc,
+                                              this->eval_time);
 
-    scalar normal_gradient_m = calculate_interior_normal_gradient(q, fe_eval, operator_type);
-    scalar normal_gradient_p = calculate_exterior_normal_gradient(
-      normal_gradient_m, q, fe_eval, operator_type, boundary_type, boundary_id);
-    scalar gradient_flux =
-      calculate_gradient_flux(normal_gradient_m, normal_gradient_p, jump_value, tau_IP);
+    scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
-    fe_eval.submit_normal_derivative(value_flux, q);
-    fe_eval.submit_value(-gradient_flux, q);
+    scalar normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
+    scalar normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
+                                                                  q,
+                                                                  integrator_m,
+                                                                  operator_type,
+                                                                  boundary_type,
+                                                                  boundary_id,
+                                                                  this->operator_data.bc,
+                                                                  this->eval_time);
+
+    scalar value_flux =
+      kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
+
+    integrator_m.submit_normal_derivative(gradient_flux, q);
+    integrator_m.submit_value(-value_flux, q);
   }
 }
 

@@ -50,7 +50,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::pMG;
+  param.multigrid_data.type = MultigridType::phMG;
   param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;

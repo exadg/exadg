@@ -14,6 +14,7 @@
 
 #include "../preconditioner/elementwise_preconditioners.h"
 #include "elementwise_krylov_solvers.h"
+#include "enum_types.h"
 #include "iterative_solvers_dealii_wrapper.h"
 
 using namespace dealii;
@@ -25,11 +26,11 @@ namespace Elementwise
  */
 struct IterativeSolverData
 {
-  IterativeSolverData() : solver_type(Elementwise::SolverType::CG), solver_data(SolverData())
+  IterativeSolverData() : solver_type(Elementwise::Solver::CG), solver_data(SolverData())
   {
   }
 
-  SolverType solver_type;
+  Solver solver_type;
 
   SolverData solver_data;
 };
@@ -83,12 +84,12 @@ private:
     AlignedVector<VectorizedArray<Number>> solution(dofs_per_cell);
 
     // setup elementwise solver
-    if(iterative_solver_data.solver_type == SolverType::CG)
+    if(iterative_solver_data.solver_type == Solver::CG)
     {
       solver.reset(new Elementwise::SolverCG<VectorizedArray<Number>, Operator, Preconditioner>(
         dofs_per_cell, iterative_solver_data.solver_data));
     }
-    else if(iterative_solver_data.solver_type == SolverType::GMRES)
+    else if(iterative_solver_data.solver_type == Solver::GMRES)
     {
       solver.reset(new Elementwise::SolverGMRES<VectorizedArray<Number>, Operator, Preconditioner>(
         dofs_per_cell, iterative_solver_data.solver_data));

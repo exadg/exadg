@@ -40,7 +40,7 @@ public:
     return pde_operator->get_constraint_matrix();
   }
 
-  virtual const MatrixFree<dim, Number> &
+  virtual MatrixFree<dim, Number> const &
   get_matrix_free() const
   {
     return pde_operator->get_matrix_free();

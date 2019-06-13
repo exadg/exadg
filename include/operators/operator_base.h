@@ -18,110 +18,120 @@
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
 #include "linear_operator_base.h"
+#include "mapping_flags.h"
+
+#include "../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
+#include "../solvers_and_preconditioners/preconditioner/enum_types.h"
+#include "../solvers_and_preconditioners/solvers/enum_types.h"
+#include "../solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
+#include "elementwise_operator.h"
 
 using namespace dealii;
 
+struct CellFlags
+{
+  CellFlags(const bool value = false, const bool gradient = false, const bool hessian = false)
+    : value(value), gradient(gradient), hessian(hessian){};
+
+  CellFlags
+  operator||(CellFlags const & other)
+  {
+    CellFlags cell_flags_combined;
+
+    cell_flags_combined.value    = this->value || other.value;
+    cell_flags_combined.gradient = this->value || other.gradient;
+    cell_flags_combined.hessian  = this->value || other.hessian;
+
+    return cell_flags_combined;
+  }
+
+  bool value;
+  bool gradient;
+  bool hessian;
+};
+
+struct FaceFlags
+{
+  FaceFlags(const bool value = false, const bool gradient = false)
+    : value(value), gradient(gradient){};
+
+  FaceFlags
+  operator||(FaceFlags const & other)
+  {
+    FaceFlags face_flags_combined;
+
+    face_flags_combined.value    = this->value || other.value;
+    face_flags_combined.gradient = this->value || other.gradient;
+
+    return face_flags_combined;
+  }
+
+  bool
+  do_eval() const
+  {
+    return value || gradient;
+  }
+
+  bool value;
+  bool gradient;
+};
+
+struct IntegratorFlags
+{
+  IntegratorFlags()
+  {
+  }
+
+  IntegratorFlags
+  operator||(IntegratorFlags const & other)
+  {
+    IntegratorFlags flags_combined;
+
+    flags_combined.cell_evaluate  = this->cell_evaluate || other.cell_evaluate;
+    flags_combined.cell_integrate = this->cell_integrate || other.cell_integrate;
+
+    flags_combined.face_evaluate  = this->face_evaluate || other.face_evaluate;
+    flags_combined.face_integrate = this->face_integrate || other.face_integrate;
+
+    return flags_combined;
+  }
+
+  CellFlags cell_evaluate;
+  CellFlags cell_integrate;
+
+  FaceFlags face_evaluate;
+  FaceFlags face_integrate;
+};
+
 struct OperatorBaseData
 {
-  OperatorBaseData(const unsigned int dof_index,
-                   const unsigned int quad_index,
-                   const bool         cell_evaluate_values     = false,
-                   const bool         cell_evaluate_gradients  = false,
-                   const bool         cell_evaluate_hessians   = false,
-                   const bool         cell_integrate_values    = false,
-                   const bool         cell_integrate_gradients = false,
-                   const bool         cell_integrate_hessians  = false,
-                   const bool         face_evaluate_values     = false,
-                   const bool         face_evaluate_gradients  = false,
-                   const bool         face_integrate_values    = false,
-                   const bool         face_integrate_gradients = false)
+  OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index)
     : dof_index(dof_index),
       quad_index(quad_index),
-      cell_evaluate(cell_evaluate_values, cell_evaluate_gradients, cell_evaluate_hessians),
-      cell_integrate(cell_integrate_values, cell_integrate_gradients, cell_integrate_hessians),
-      face_evaluate(face_evaluate_values, face_evaluate_gradients),
-      face_integrate(face_integrate_values, face_integrate_gradients),
-      evaluate_face_integrals(face_evaluate.do_eval() || face_integrate.do_eval()),
-      mapping_update_flags(update_default),
-      mapping_update_flags_inner_faces(update_default),
-      mapping_update_flags_boundary_faces(update_default),
-      use_cell_based_loops(false),
       operator_is_singular(false),
-      implement_block_diagonal_preconditioner_matrix_free(false)
+      use_cell_based_loops(false),
+      implement_block_diagonal_preconditioner_matrix_free(false),
+      solver_block_diagonal(Elementwise::Solver::GMRES),
+      preconditioner_block_diagonal(Elementwise::Preconditioner::InverseMassMatrix),
+      solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, 1000))
   {
-  }
-
-  struct Cell
-  {
-    Cell(const bool value = false, const bool gradient = false, const bool hessians = false)
-      : value(value), gradient(gradient), hessians(hessians){};
-
-    bool value;
-    bool gradient;
-    bool hessians;
-  };
-
-  struct Face
-  {
-    Face(const bool value = false, const bool gradient = false)
-      : value(value), gradient(gradient){};
-
-    bool
-    do_eval() const
-    {
-      return value || gradient;
-    }
-
-    bool value;
-    bool gradient;
-  };
-
-  template<typename Data>
-  void
-  append_mapping_update_flags(Data & other)
-  {
-    this->mapping_update_flags |= other.mapping_update_flags;
-    this->mapping_update_flags_inner_faces |= other.mapping_update_flags_inner_faces;
-    this->mapping_update_flags_boundary_faces |= other.mapping_update_flags_boundary_faces;
-  }
-
-  UpdateFlags
-  get_mapping_update_flags() const
-  {
-    return mapping_update_flags;
-  }
-
-  UpdateFlags
-  get_mapping_update_flags_inner_faces() const
-  {
-    return get_mapping_update_flags() | mapping_update_flags_inner_faces;
-  }
-
-  UpdateFlags
-  get_mapping_update_flags_boundary_faces() const
-  {
-    return get_mapping_update_flags_inner_faces() | mapping_update_flags_boundary_faces;
   }
 
   unsigned int dof_index;
   unsigned int quad_index;
 
-  Cell cell_evaluate;
-  Cell cell_integrate;
-  Face face_evaluate;
-  Face face_integrate;
-
-  bool evaluate_face_integrals;
-
-  UpdateFlags mapping_update_flags;
-  UpdateFlags mapping_update_flags_inner_faces;
-  UpdateFlags mapping_update_flags_boundary_faces;
+  // Solution of linear systems of equations and preconditioning
+  bool operator_is_singular;
 
   bool use_cell_based_loops;
 
-  // Solution of linear systems of equations and preconditioning
-  bool operator_is_singular;
+  // block Jacobi preconditioner
   bool implement_block_diagonal_preconditioner_matrix_free;
+
+  // elementwise iterative solution of block Jacobi problems
+  Elementwise::Solver         solver_block_diagonal;
+  Elementwise::Preconditioner preconditioner_block_diagonal;
+  SolverData                  solver_data_block_diagonal;
 };
 
 template<int dim, typename Number, typename AdditionalData, int n_components = 1>
@@ -132,8 +142,8 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
   typedef std::pair<unsigned int, unsigned int>      Range;
-  typedef CellIntegrator<dim, n_components, Number>  FEEvalCell;
-  typedef FaceIntegrator<dim, n_components, Number>  FEEvalFace;
+  typedef CellIntegrator<dim, n_components, Number>  IntegratorCell;
+  typedef FaceIntegrator<dim, n_components, Number>  IntegratorFace;
 
   /*
    * Solution of linear systems of equations and preconditioning
@@ -318,7 +328,8 @@ public:
   void
   apply_add_block_diagonal_elementwise(unsigned int const                    cell,
                                        VectorizedArray<Number> * const       dst,
-                                       VectorizedArray<Number> const * const src) const;
+                                       VectorizedArray<Number> const * const src,
+                                       unsigned int const                    problem_size) const;
 
 protected:
   /*
@@ -326,52 +337,54 @@ protected:
    * operator-specific and define how the operator looks like.
    */
 
+  virtual void
+  reinit_cell(unsigned int const cell) const;
+
+  virtual void
+  reinit_face(unsigned int const face) const;
+
+  virtual void
+  reinit_boundary_face(unsigned int const face) const;
+
   // standard integration procedure with separate loops for cell and face integrals
   virtual void
-  do_cell_integral(FEEvalCell & fe_eval, unsigned int const cell) const;
+  do_cell_integral(IntegratorCell & integrator) const;
 
   virtual void
-  do_face_integral(FEEvalFace & fe_eval_m, FEEvalFace & fe_eval_p, unsigned int const face) const;
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   virtual void
-  do_boundary_integral(FEEvalFace &               fe_eval,
+  do_boundary_integral(IntegratorFace &           integrator,
                        OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id,
-                       unsigned int const         face) const;
+                       types::boundary_id const & boundary_id) const;
 
   // The computation of the diagonal and block-diagonal requires face integrals of type
   // interior (int) and exterior (ext)
   virtual void
-  do_face_int_integral(FEEvalFace &       fe_eval_m,
-                       FEEvalFace &       fe_eval_p,
-                       unsigned int const face) const;
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   virtual void
-  do_face_ext_integral(FEEvalFace &       fe_eval_m,
-                       FEEvalFace &       fe_eval_p,
-                       unsigned int const face) const;
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
   // cell-based computation of both cell and face integrals
   virtual void
+  reinit_face_cell_based(unsigned int const       cell,
+                         unsigned int const       face,
+                         types::boundary_id const boundary_id) const;
+
+  // This function is currently only needed due to limitations of deal.II which do
+  // currently not allow to access neighboring data in case of cell-based face loops.
+  // Once this functionality is available, this function should be removed again.
+  // Since only special operators need to evaluate neighboring data, this function
+  // simply redirects to do_face_int_integral() unless specified otherwise, i.e.,
+  // if this function is not overwritten by a derived class (such as convective terms
+  // that require an additional evaluation of velocity fields for example).
+  virtual void
+  do_face_int_integral_cell_based(IntegratorFace & integrator_m,
+                                  IntegratorFace & integrator_p) const;
+
+  virtual void
   do_block_diagonal_cell_based() const;
-
-  // This function has to be overwritten by derived class in case that the indices cell and face are
-  // required to a specific operator. We implement this function here to avoid the need that
-  // every derived class has to implement this function.
-  virtual void
-  do_face_int_integral_cell_based(FEEvalFace &       fe_eval_m,
-                                  FEEvalFace &       fe_eval_p,
-                                  unsigned int const cell,
-                                  unsigned int const face) const;
-
-  // This function has to be overwritten by derived class in case that the indices cell and face are
-  // relevant for a specific operator.
-  virtual void
-  do_boundary_integral_cell_based(FEEvalFace &               fe_eval,
-                                  OperatorType const &       operator_type,
-                                  types::boundary_id const & boundary_id,
-                                  unsigned int const         cell,
-                                  unsigned int const         face) const;
 
   /*
    * Data structure containing all operator-specific data.
@@ -393,6 +406,33 @@ protected:
    */
   mutable lazy_ptr<AffineConstraints<double>> constraint;
 
+  /*
+   * Cell and face integrators.
+   */
+  mutable IntegratorFlags integrator_flags;
+
+  /*
+   * Is the operator used as a multigrid level operator?
+   */
+  mutable bool is_mg;
+
+  mutable std::shared_ptr<IntegratorCell> integrator;
+  mutable std::shared_ptr<IntegratorFace> integrator_m;
+  mutable std::shared_ptr<IntegratorFace> integrator_p;
+
+  /*
+   * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
+   */
+  typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> ELEMENTWISE_PRECONDITIONER;
+  typedef Elementwise::
+    IterativeSolver<dim, n_components, Number, ELEMENTWISE_OPERATOR, ELEMENTWISE_PRECONDITIONER>
+      ELEMENTWISE_SOLVER;
+
+  mutable std::shared_ptr<ELEMENTWISE_OPERATOR>       elementwise_operator;
+  mutable std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner;
+  mutable std::shared_ptr<ELEMENTWISE_SOLVER>         elementwise_solver;
+
 private:
   /*
    * Helper functions:
@@ -402,13 +442,15 @@ private:
    * operator for a unit vector which takes a value of 1 in row i and is 0 for all other entries.
    */
   void
-  create_standard_basis(unsigned int j, FEEvalCell & fe_eval) const;
+  create_standard_basis(unsigned int j, IntegratorCell & integrator) const;
 
   void
-  create_standard_basis(unsigned int j, FEEvalFace & fe_eval) const;
+  create_standard_basis(unsigned int j, IntegratorFace & integrator) const;
 
   void
-  create_standard_basis(unsigned int j, FEEvalFace & fe_eval_1, FEEvalFace & fe_eval_2) const;
+  create_standard_basis(unsigned int     j,
+                        IntegratorFace & integrator_1,
+                        IntegratorFace & integrator_2) const;
 
   /*
    * This function loops over all cells and calculates cell integrals.
@@ -596,19 +638,15 @@ private:
 
   /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators
-   * such as the mass matrix operator only involve cell integrals (do_eval_faces = false).
+   * such as the mass matrix operator only involve cell integrals.
    */
-  const bool do_eval_faces;
+  bool
+  evaluate_face_integrals() const;
 
   /*
    * Is the discretization based on discontinuous Galerkin method?
    */
   mutable bool is_dg;
-
-  /*
-   * Is the operator used as a multigrid level operator?
-   */
-  mutable bool is_mg;
 
   /*
    * Multigrid level: 0 <= level_mg_handler <= max_level. If the operator is not used as a multigrid
@@ -629,13 +667,6 @@ private:
   mutable bool block_diagonal_preconditioner_is_initialized;
 
   unsigned int n_mpi_processes;
-
-  /*
-   * FEEvaluation objects required for elementwise application of block Jacobi operation
-   */
-  mutable std::shared_ptr<FEEvalCell> fe_eval;
-  mutable std::shared_ptr<FEEvalFace> fe_eval_m;
-  mutable std::shared_ptr<FEEvalFace> fe_eval_p;
 
   /*
    * for CG

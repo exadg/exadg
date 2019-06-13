@@ -38,7 +38,7 @@ enum class BoundaryConditionType{
   HomogeneousNBCWithRHS
 };
 
-const BoundaryConditionType BOUNDARY_TYPE = BoundaryConditionType::HomogeneousNBCWithRHS;
+const BoundaryConditionType BOUNDARY_TYPE = BoundaryConditionType::HomogeneousDBC;
 
 const bool RIGHT_HAND_SIDE = (BOUNDARY_TYPE == BoundaryConditionType::HomogeneousNBCWithRHS) ? true : false;
 
@@ -60,13 +60,14 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.temporal_discretization = TemporalDiscretization::BDF;
+  param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  param.order_time_integrator = 2;
+  param.order_time_integrator = 3;
   param.start_with_low_order = false;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  param.time_step_size = 1.0e-2;
+  param.time_step_size = 1.0e-3;
   param.cfl = 0.1;
-  param.diffusion_number = 0.01;
+  param.diffusion_number = 0.04; //0.01;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // SPATIAL DISCRETIZATION
@@ -88,11 +89,16 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.IP_factor = 1.0;
 
   // SOLVER
-  param.solver = Solver::CG;
+  param.solver = Solver::CG; // use FGMRES for elementwise iterative block Jacobi type preconditioners
   param.solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
-  param.preconditioner = Preconditioner::Multigrid; //BlockJacobi;
+  param.preconditioner = Preconditioner::InverseMassMatrix; //BlockJacobi; //Multigrid;
   param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
+  param.implement_block_diagonal_preconditioner_matrix_free = true;
+  param.solver_block_diagonal = Elementwise::Solver::CG;
+  param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
+  param.solver_data_block_diagonal = SolverData(1000, 1.e-12, 1.e-2, 1000);
+  param.use_cell_based_face_loops = true;
   param.update_preconditioner = false;
 
   // output of solver information
@@ -100,7 +106,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = END_TIME-START_TIME;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+  param.use_combined_operator = true;
 }
 }
 

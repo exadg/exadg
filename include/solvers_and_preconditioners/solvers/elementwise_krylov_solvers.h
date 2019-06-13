@@ -189,12 +189,6 @@ add(value_type *       dst,
     dst[i] += scalar * in_vector[i];
 }
 
-enum class SolverType
-{
-  CG,
-  GMRES
-};
-
 /*
  * Base class.
  */

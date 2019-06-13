@@ -20,8 +20,8 @@
 unsigned int const DEGREE_MIN = 5;
 unsigned int const DEGREE_MAX = 5;
 
-unsigned int const REFINE_SPACE_MIN = 2;
-unsigned int const REFINE_SPACE_MAX = 2;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -47,7 +47,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  param.temporal_discretization = TemporalDiscretization::BDF; //BDF; //ExplRK;
+  param.temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
 
   // Explicit RK
   param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
@@ -101,8 +101,9 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // BlockJacobi (these parameters are also relevant if used as a smoother in multigrid)
   param.implement_block_diagonal_preconditioner_matrix_free = true;
-  param.preconditioner_block_diagonal = PreconditionerBlockDiagonal::InverseMassMatrix;
-  param.block_jacobi_solver_data = SolverData(1000,1.e-12,1.e-2,1000);
+  param.solver_block_diagonal = Elementwise::Solver::GMRES;
+  param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
+  param.solver_data_block_diagonal = SolverData(1000,1.e-12,1.e-2,1000);
 
   // Multigrid
   param.mg_operator_type = MultigridOperatorType::ReactionConvection;
@@ -123,7 +124,6 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // NUMERICAL PARAMETERS
   param.use_cell_based_face_loops = true;
-  param.runtime_optimization = false;
 }
 }
 

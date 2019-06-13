@@ -378,6 +378,10 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                                                       scalar_param[i],
                                                                       scalar_postprocessor[i]));
 
+    conv_diff_operator[i]->setup(periodic_faces,
+                                 scalar_boundary_descriptor[i],
+                                 scalar_field_functions[i]);
+
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
     {
@@ -398,6 +402,9 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                   ExcMessage("Specified time integration scheme is not implemented!"));
     }
 
+    scalar_time_integrator[i]->setup(scalar_param[i].restarted_simulation);
+
+    // adaptive time stepping
     if(fluid_param.adaptive_time_stepping == true)
     {
       AssertThrow(
@@ -419,19 +426,24 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                   scalar_param[i].start_with_low_order == true,
                 ExcMessage("start_with_low_order has to be true for this solver."));
 
-    conv_diff_operator[i]->setup(periodic_faces,
-                                 scalar_boundary_descriptor[i],
-                                 scalar_field_functions[i]);
-
-    scalar_time_integrator[i]->setup(scalar_param[i].restarted_simulation);
-
+    // setup solvers in case of BDF time integration (solution of linear systems of equations)
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
       std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
         std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+      double const scaling_factor =
+        scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term();
 
-      conv_diff_operator[i]->setup_solver(
-        scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term());
+      // To initialize solvers and preconditioners for the convection-diffusion problem,
+      // a numerical velocity field has to be provided.
+      std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
+      std::vector<double>                                             times;
+      fluid_time_integrator->get_velocities_and_times(velocities, times);
+
+      AssertThrow(times[0] == fluid_time_integrator->get_time(), ExcMessage("Logical error."));
+      LinearAlgebra::distributed::Vector<Number> const * velocity = velocities[0];
+
+      conv_diff_operator[i]->setup_operators_and_solver(scaling_factor, velocity);
     }
   }
 
@@ -531,44 +543,38 @@ Problem<dim, Number>::run_timeloop() const
 
   while(!finished_fluid || !finished_all_scalars)
   {
-    // We need to communicate between fluid solver and scalar transport solver, i.e.,
-    // ask the fluid solver for the velocity field and hand it over to the scalar transport solver
-
-    for(unsigned int i = 0; i < n_scalars; ++i)
-    {
-      if(scalar_param[i].treatment_of_convective_term ==
-         ConvDiff::TreatmentOfConvectiveTerm::Explicit)
-      {
-        // get velocity at time t_{n}
-        conv_diff_operator[i]->set_velocity(fluid_time_integrator->get_velocity());
-      }
-      else if(scalar_param[i].treatment_of_convective_term ==
-              ConvDiff::TreatmentOfConvectiveTerm::ExplicitOIF)
-      {
-        std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
-        std::vector<double>                                             times;
-
-        fluid_time_integrator->get_velocities_and_times(velocities, times);
-
-        conv_diff_operator[i]->set_velocities_and_times(velocities, times);
-      }
-    }
-
     // fluid: advance one time step
     finished_fluid = fluid_time_integrator->advance_one_timestep(!finished_fluid);
 
-    // in case of an implicit treatment we first have to solve the fluid before sending the
-    // velocity field to the scalar convection-diffusion solver
+    // At this point, we need to communicate between fluid solver and scalar transport solver, i.e.,
+    // ask the fluid solver for the velocity field and hand it over to the scalar transport solver
+    std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
+    std::vector<double>                                             times;
+    fluid_time_integrator->get_velocities_and_times(velocities, times);
+
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      if(scalar_param[i].treatment_of_convective_term ==
-         ConvDiff::TreatmentOfConvectiveTerm::Implicit)
+      if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
       {
-        // get velocity at time t_{n+1}
-        conv_diff_operator[i]->set_velocity(fluid_time_integrator->get_velocity());
+        std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> time_int_scalar =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntExplRK<Number>>(scalar_time_integrator[i]);
+        time_int_scalar->set_velocities_and_times(velocities, times);
       }
+      else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+      {
+        std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_int_scalar =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+        time_int_scalar->set_velocities_and_times(velocities, times);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+    }
 
-      // scalar transport: advance one time step
+    // scalar transport: advance one time step
+    for(unsigned int i = 0; i < n_scalars; ++i)
+    {
       finished_scalar[i] = scalar_time_integrator[i]->advance_one_timestep(!finished_scalar[i]);
     }
 

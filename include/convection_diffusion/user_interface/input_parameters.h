@@ -14,6 +14,8 @@
 #include "../../functionalities/restart_data.h"
 #include "../../functionalities/solver_info_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/preconditioner/enum_types.h"
+#include "../../solvers_and_preconditioners/solvers/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../../time_integration/enum_types.h"
 #include "enum_types.h"
@@ -240,11 +242,14 @@ public:
   bool implement_block_diagonal_preconditioner_matrix_free;
 
   // description: see enum declaration
-  PreconditionerBlockDiagonal preconditioner_block_diagonal;
+  Elementwise::Solver solver_block_diagonal;
+
+  // description: see enum declaration
+  Elementwise::Preconditioner preconditioner_block_diagonal;
 
   // solver data for block Jacobi preconditioner (only relevant for elementwise
   // iterative solution procedure)
-  SolverData block_jacobi_solver_data;
+  SolverData solver_data_block_diagonal;
 
   // description: see enum declaration
   MultigridOperatorType mg_operator_type;
@@ -269,18 +274,10 @@ public:
   // can be changed to such an algorithm (cell_based_face_loops).
   bool use_cell_based_face_loops;
 
-  // Runtime optimization: Evaluate volume and surface integrals of convective term,
-  // diffusive term and rhs term in one function (local_apply, local_apply_face,
-  // local_apply_boundary_face) instead of implementing each operator seperately and
-  // subsequently looping over all operators.
-  // Note: if runtime_optimization == false:
-  //   If an operator is not used (e.g. purely diffusive problem) the volume and
-  //   surface integrals of this operator are simply not evaluated
-  // Note: if runtime_optimization == true:
-  //  ensure that the rhs-function, velocity-field and that the diffusivity is zero
-  //  if the rhs operator, convective operator or diffusive operator is "inactive"
-  //  because the volume and surface integrals of these operators will always be evaluated
-  bool runtime_optimization;
+  // Evaluate convective term and diffusive term at once instead of implementing each
+  // operator separately and subsequently looping over all operators. This parameter is
+  // only relevant in case of fully explicit time integration.
+  bool use_combined_operator;
 };
 
 } // namespace ConvDiff

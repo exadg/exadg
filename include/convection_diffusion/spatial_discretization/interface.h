@@ -10,6 +10,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../../time_integration/interpolate.h"
+
 using namespace dealii;
 
 namespace ConvDiff
@@ -32,24 +34,30 @@ public:
 
   // explicit time integration: evaluate operator
   virtual void
-  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const = 0;
+  evaluate_explicit_time_int(VectorType &       dst,
+                             VectorType const & src,
+                             double const       evaluation_time,
+                             VectorType const * velocity = nullptr) const = 0;
 
   // explicit time integration: OIF substepping
   virtual void
-  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-    VectorType &       dst,
-    VectorType const & src,
-    double const       evaluation_time) const = 0;
+  evaluate_oif(VectorType &       dst,
+               VectorType const & src,
+               double const       evaluation_time,
+               VectorType const * velocity = nullptr) const = 0;
 
   // explicit time integration of convective term
   virtual void
   evaluate_convective_term(VectorType &       dst,
                            VectorType const & src,
-                           double const       evaluation_time) const = 0;
+                           double const       evaluation_time,
+                           VectorType const * velocity = nullptr) const = 0;
 
   // implicit time integration: calculate right-hand side of linear system of equations
   virtual void
-  rhs(VectorType & dst, double const evaluation_time = 0.0) const = 0;
+  rhs(VectorType &       dst,
+      double const       evaluation_time = 0.0,
+      VectorType const * velocity        = nullptr) const = 0;
 
   // implicit time integration: solve linear system of equations
   virtual unsigned int
@@ -57,7 +65,8 @@ public:
         VectorType const & rhs,
         bool const         update_preconditioner,
         double const       scaling_factor  = -1.0,
-        double const       evaluation_time = -1.0) = 0;
+        double const       evaluation_time = -1.0,
+        VectorType const * velocity        = nullptr) = 0;
 
   // add mass matrix term to rhs-vector
   virtual void
@@ -66,6 +75,9 @@ public:
   // time integration: initialize dof vectors
   virtual void
   initialize_dof_vector(VectorType & src) const = 0;
+
+  virtual void
+  initialize_dof_vector_velocity(VectorType & src) const = 0;
 
   // time integration: prescribe initial conditions
   virtual void
@@ -80,8 +92,9 @@ public:
                                               double const exponent_fe_degree) const = 0;
 
   virtual double
-  calculate_time_step_cfl_numerical_velocity(double const cfl,
-                                             double const exponent_fe_degree) const = 0;
+  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity,
+                                             double const       cfl,
+                                             double const       exponent_fe_degree) const = 0;
 
   // needed for time step calculation
   virtual double
@@ -103,22 +116,40 @@ public:
 };
 
 template<typename Number>
-class OperatorOIF
+class OperatorExplRK
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OperatorOIF(std::shared_ptr<ConvDiff::Interface::Operator<Number>> operator_in)
-    : pde_operator(operator_in)
+  OperatorExplRK(std::shared_ptr<ConvDiff::Interface::Operator<Number>> operator_in,
+                 bool const                                             numerical_velocity_field_in)
+    : pde_operator(operator_in), numerical_velocity_field(numerical_velocity_field_in)
   {
+    if(numerical_velocity_field)
+      initialize_dof_vector_velocity(velocity_interpolated);
+  }
+
+  void
+  set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
+                           std::vector<double> const &             times_in)
+  {
+    velocities = velocities_in;
+    times      = times_in;
   }
 
   void
   evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
   {
-    pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst,
-                                                                                  src,
-                                                                                  evaluation_time);
+    if(numerical_velocity_field)
+    {
+      interpolate(velocity_interpolated, evaluation_time, velocities, times);
+
+      pde_operator->evaluate_explicit_time_int(dst, src, evaluation_time, &velocity_interpolated);
+    }
+    else
+    {
+      pde_operator->evaluate_explicit_time_int(dst, src, evaluation_time);
+    }
   }
 
   void
@@ -127,8 +158,76 @@ public:
     pde_operator->initialize_dof_vector(src);
   }
 
+  void
+  initialize_dof_vector_velocity(VectorType & src) const
+  {
+    pde_operator->initialize_dof_vector_velocity(src);
+  }
+
 private:
   std::shared_ptr<ConvDiff::Interface::Operator<Number>> pde_operator;
+
+  bool                            numerical_velocity_field;
+  std::vector<VectorType const *> velocities;
+  std::vector<double>             times;
+  VectorType mutable velocity_interpolated;
+};
+
+template<typename Number>
+class OperatorOIF
+{
+public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  OperatorOIF(std::shared_ptr<ConvDiff::Interface::Operator<Number>> operator_in,
+              bool const                                             numerical_velocity_field_in)
+    : pde_operator(operator_in), numerical_velocity_field(numerical_velocity_field_in)
+  {
+    if(numerical_velocity_field)
+      initialize_dof_vector_velocity(velocity_interpolated);
+  }
+
+  void
+  set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
+                           std::vector<double> const &             times_in)
+  {
+    velocities = velocities_in;
+    times      = times_in;
+  }
+
+  void
+  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
+  {
+    if(numerical_velocity_field)
+    {
+      interpolate(velocity_interpolated, evaluation_time, velocities, times);
+      pde_operator->evaluate_oif(dst, src, evaluation_time, &velocity_interpolated);
+    }
+    else
+    {
+      pde_operator->evaluate_oif(dst, src, evaluation_time);
+    }
+  }
+
+  void
+  initialize_dof_vector(VectorType & src) const
+  {
+    pde_operator->initialize_dof_vector(src);
+  }
+
+  void
+  initialize_dof_vector_velocity(VectorType & src) const
+  {
+    pde_operator->initialize_dof_vector_velocity(src);
+  }
+
+private:
+  std::shared_ptr<ConvDiff::Interface::Operator<Number>> pde_operator;
+
+  bool                            numerical_velocity_field;
+  std::vector<VectorType const *> velocities;
+  std::vector<double>             times;
+  VectorType mutable velocity_interpolated;
 };
 
 } // namespace Interface

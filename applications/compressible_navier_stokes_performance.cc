@@ -9,8 +9,8 @@
 // deal.II
 #include <deal.II/base/revision.h>
 #include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
 
 // postprocessor
 #include "../include/compressible_navier_stokes/postprocessor/postprocessor_base.h"
@@ -28,6 +28,7 @@
 #include "../include/compressible_navier_stokes/user_interface/input_parameters.h"
 
 #include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/print_throughput.h"
 
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>
@@ -61,7 +62,7 @@ std::vector<int> REFINE_LEVELS = {
 //       in the main function.
 
 // Select the operator to be applied
-enum class OperatorType
+enum class Operator
 {
   ConvectiveTerm,
   ViscousTerm,
@@ -72,7 +73,30 @@ enum class OperatorType
   EvaluateOperatorExplicit
 };
 
-OperatorType OPERATOR_TYPE = OperatorType::ConvectiveTerm; // InverseMassMatrixDstDst;
+Operator OPERATOR = Operator::ConvectiveTerm; // InverseMassMatrixDstDst;
+
+std::string
+enum_to_string(Operator const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    // clang-format off
+    case Operator::ConvectiveTerm:            string_type = "ConvectiveTerm";           break;
+    case Operator::ViscousTerm:               string_type = "ViscousTerm";              break;
+    case Operator::ViscousAndConvectiveTerms: string_type = "ViscousAndConvectiveTerms";break;
+    case Operator::InverseMassMatrix:         string_type = "InverseMassMatrix";        break;
+    case Operator::InverseMassMatrixDstDst:   string_type = "InverseMassMatrixDstDst";  break;
+    case Operator::VectorUpdate:              string_type = "VectorUpdate";             break;
+    case Operator::EvaluateOperatorExplicit:  string_type = "EvaluateOperatorExplicit"; break;
+
+    default:AssertThrow(false, ExcMessage("Not implemented.")); break;
+      // clang-format on
+  }
+
+  return string_type;
+}
 
 // number of repetitions used to determine the average/minimum wall time required
 // to compute the matrix-vector product
@@ -259,19 +283,19 @@ Problem<dim, Number>::apply_operator()
       LIKWID_MARKER_START(("compressible_deg_" + std::to_string(degree)).c_str());
 #endif
 
-      if(OPERATOR_TYPE == OperatorType::ConvectiveTerm)
+      if(OPERATOR == Operator::ConvectiveTerm)
         comp_navier_stokes_operator->evaluate_convective(dst, src, 0.0);
-      else if(OPERATOR_TYPE == OperatorType::ViscousTerm)
+      else if(OPERATOR == Operator::ViscousTerm)
         comp_navier_stokes_operator->evaluate_viscous(dst, src, 0.0);
-      else if(OPERATOR_TYPE == OperatorType::ViscousAndConvectiveTerms)
+      else if(OPERATOR == Operator::ViscousAndConvectiveTerms)
         comp_navier_stokes_operator->evaluate_convective_and_viscous(dst, src, 0.0);
-      else if(OPERATOR_TYPE == OperatorType::InverseMassMatrix)
+      else if(OPERATOR == Operator::InverseMassMatrix)
         comp_navier_stokes_operator->apply_inverse_mass(dst, src);
-      else if(OPERATOR_TYPE == OperatorType::InverseMassMatrixDstDst)
+      else if(OPERATOR == Operator::InverseMassMatrixDstDst)
         comp_navier_stokes_operator->apply_inverse_mass(dst, dst);
-      else if(OPERATOR_TYPE == OperatorType::VectorUpdate)
+      else if(OPERATOR == Operator::VectorUpdate)
         dst.sadd(2.0, 1.0, src);
-      else if(OPERATOR_TYPE == OperatorType::EvaluateOperatorExplicit)
+      else if(OPERATOR == Operator::EvaluateOperatorExplicit)
         comp_navier_stokes_operator->evaluate(dst, src, 0.0);
       else
         AssertThrow(false, ExcMessage("Specified operator type not implemented"));
@@ -302,67 +326,23 @@ Problem<dim, Number>::apply_operator()
 
   types::global_dof_index const dofs = comp_navier_stokes_operator->get_number_of_dofs();
 
-  double wall_time_per_dofs = wall_time / (double)dofs;
+  double dofs_per_walltime = (double)dofs / wall_time;
 
   unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
   // clang-format off
   pcout << std::endl
-        << std::scientific << std::setprecision(4) << "t_wall/DoF [s]:  " << wall_time_per_dofs << std::endl
-        << std::scientific << std::setprecision(4) << "DoFs/sec:        " << 1. / wall_time_per_dofs << std::endl
-        << std::scientific << std::setprecision(4) << "DoFs/(sec*core): " << 1. / wall_time_per_dofs / (double)N_mpi_processes << std::endl;
+        << std::scientific << std::setprecision(4)
+        << "DoFs/sec:        " << dofs_per_walltime << std::endl
+        << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
   // clang-format on
 
-  wall_times.push_back(std::pair<unsigned int, double>(param.degree, wall_time_per_dofs));
+  wall_times.push_back(std::pair<unsigned int, double>(param.degree, dofs_per_walltime));
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 }
 
 } // namespace CompNS
-
-void
-print_wall_times(std::vector<std::pair<unsigned int, double>> const & wall_times)
-{
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::string str_operator_type[] = {"ConvectiveTerm",
-                                       "ViscousTerm",
-                                       "ViscousAndConvectiveTerms",
-                                       "InverseMassMatrix",
-                                       "InverseMassMatrixDstDst",
-                                       "VectorUpdate",
-                                       "EvaluateOperatorExplicit"};
-
-    // clang-format off
-    std::cout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl
-              << "Operator type: " << str_operator_type[(int)OPERATOR_TYPE] << std::endl
-              << std::endl
-              << "Wall times and throughput:" << std::endl
-              << std::endl
-              << "  k    " << "t_wall/DoF [s] " << "DoFs/sec   " << "DoFs/(sec*core) " << std::endl;
-
-    typedef typename std::vector<std::pair<unsigned int, double>>::const_iterator ITERATOR;
-    for(ITERATOR it = wall_times.begin(); it != wall_times.end(); ++it)
-    {
-      std::cout << std::scientific << std::setprecision(4)
-                << "  " << std::setw(5) << std::left << it->first
-                << std::setw(2) << std::left << it->second
-                << "     " << std::setw(2) << std::left << 1. / it->second
-                << " " << std::setw(2) << std::left << 1. / it->second / (double)N_mpi_processes
-                << std::endl;
-    }
-    // clang-format on
-
-    std::cout << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-  }
-}
 
 int
 main(int argc, char ** argv)
@@ -383,6 +363,9 @@ main(int argc, char ** argv)
       // manipulate polynomial degree
       param.degree = degree;
 
+      // reset h-refinements
+      param.h_refinements = REFINE_LEVELS[degree - 1];
+
       // setup problem and run simulation
       typedef double               Number;
       std::shared_ptr<ProblemBase> problem;
@@ -398,7 +381,7 @@ main(int argc, char ** argv)
       problem->apply_operator();
     }
 
-    print_wall_times(wall_times);
+    print_throughput(wall_times, enum_to_string(OPERATOR));
     wall_times.clear();
   }
   catch(std::exception & exc)

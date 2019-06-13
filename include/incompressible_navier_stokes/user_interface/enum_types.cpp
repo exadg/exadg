@@ -512,30 +512,6 @@ enum_to_string(TypePenaltyParameter const enum_type)
 /**************************************************************************************/
 
 std::string
-enum_to_string(PreconditionerBlockDiagonal const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    case PreconditionerBlockDiagonal::Undefined:
-      string_type = "Undefined";
-      break;
-    case PreconditionerBlockDiagonal::None:
-      string_type = "None";
-      break;
-    case PreconditionerBlockDiagonal::InverseMassMatrix:
-      string_type = "InverseMassMatrix";
-      break;
-    default:
-      AssertThrow(false, ExcMessage("Not implemented."));
-      break;
-  }
-
-  return string_type;
-}
-
-std::string
 enum_to_string(MultigridOperatorType const enum_type)
 {
   std::string string_type;

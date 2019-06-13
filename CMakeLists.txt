@@ -62,7 +62,7 @@ SET( TARGET_SRC
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/rhs_operator.cpp
-     include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
+     include/convection_diffusion/spatial_discretization/operators/combined_operator.cpp
      include/convection_diffusion/spatial_discretization/dg_operator.cpp
      include/convection_diffusion/spatial_discretization/interface.cpp
      include/convection_diffusion/time_integration/time_int_bdf.cpp
@@ -115,6 +115,8 @@ SET( TARGET_SRC
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
      include/compressible_navier_stokes/postprocessor/write_output.cpp
      include/compressible_navier_stokes/postprocessor/postprocessor.cpp
+     include/solvers_and_preconditioners/preconditioner/enum_types.cpp
+     include/solvers_and_preconditioners/solvers/enum_types.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp     
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp

@@ -420,7 +420,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.solver_info_data.interval_time = PERIOD/30;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+
 }
 }
 
@@ -780,7 +780,7 @@ public:
     }
 
     flow_rate_calculator.reset(new FlowRateCalculator<dim,Number>(
-        pde_operator.get_data(),
+        pde_operator.get_matrix_free(),
         pde_operator.get_dof_handler_u(),
         pde_operator.get_dof_index_velocity(),
         pde_operator.get_quad_index_velocity_linear(),

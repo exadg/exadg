@@ -23,8 +23,7 @@
 
 // operators
 #include "../../operators/inverse_mass_matrix.h"
-#include "operators/convection_diffusion_operator.h"
-#include "operators/convection_diffusion_operator_efficiency.h"
+#include "operators/rhs_operator.h"
 
 // solvers and preconditioners
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
@@ -34,11 +33,10 @@
 
 // time integration and interface
 #include "interface.h"
-#include "time_integration/interpolate.h"
-#include "time_integration/time_step_calculation.h"
 
 // postprocessor
 #include "../postprocessor/postprocessor_base.h"
+#include "operators/combined_operator.h"
 
 using namespace dealii;
 
@@ -78,13 +76,20 @@ public:
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_solver(double const scaling_factor_time_derivative_term_in = -1.0);
+  setup_operators_and_solver(double const       scaling_factor_mass_matrix = -1.0,
+                             VectorType const * velocity                   = nullptr);
 
   /*
    * Initialization of dof-vector.
    */
   void
   initialize_dof_vector(VectorType & src) const;
+
+  /*
+   * Initialization of velocity dof-vector (in case of numerical velocity field).
+   */
+  void
+  initialize_dof_vector_velocity(VectorType & src) const;
 
   /*
    * Prescribe initial conditions using a specified analytical function.
@@ -100,7 +105,10 @@ public:
    * finally applies the inverse mass matrix operator.
    */
   void
-  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const;
+  evaluate_explicit_time_int(VectorType &       dst,
+                             VectorType const & src,
+                             double const       evaluation_time,
+                             VectorType const * velocity = nullptr) const;
 
   /*
    * This function evaluates the convective term which is needed when using an explicit formulation
@@ -109,17 +117,18 @@ public:
   void
   evaluate_convective_term(VectorType &       dst,
                            VectorType const & src,
-                           double const       evaluation_time) const;
+                           double const       evaluation_time,
+                           VectorType const * velocity = nullptr) const;
 
   /*
    * This function is called by OIF sub-stepping algorithm. It evaluates the convective term,
    * multiplies the result by -1.0 and applies the inverse mass matrix operator.
    */
   void
-  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-    VectorType &       dst,
-    VectorType const & src,
-    double const       evaluation_time) const;
+  evaluate_oif(VectorType &       dst,
+               VectorType const & src,
+               double const       evaluation_time,
+               VectorType const * velocity = nullptr) const;
 
   /*
    * This function calculates the inhomogeneous parts of all operators arising e.g. from
@@ -128,11 +137,20 @@ public:
    *
    * Note that the convective operator only has a contribution to the right-hand side if it is
    * formulated implicitly in time. In case of an explicit treatment the whole convective operator
-   * (call function evaluate() instead of rhs()) has to be added to the right-hand side of the
-   * equations.
+   * (call function evaluate_convective_term() instead of rhs()) has to be added to the right-hand
+   * side of the equations.
    */
   void
-  rhs(VectorType & dst, double const evaluation_time = 0.0) const;
+  rhs(VectorType &       dst,
+      double const       evaluation_time = 0.0,
+      VectorType const * velocity        = nullptr) const;
+
+  /*
+   * This function applies the mass matrix operator to the src-vector and writes the result to the
+   * dst-vector.
+   */
+  void
+  apply_mass_matrix(VectorType & dst, VectorType const & src) const;
 
   /*
    * This function applies the mass matrix operator to the src-vector and adds the result to the
@@ -142,15 +160,47 @@ public:
   apply_mass_matrix_add(VectorType & dst, VectorType const & src) const;
 
   /*
-   * This function solves the linear system of equations in case of implicit time integration for
-   * the diffusive term (and the convective term).
+   * This function applies the convective operator to the src-vector and writes the result to the
+   * dst-vector. It is needed for throughput measurements of the matrix-free implementation.
+   */
+  void
+  apply_convective_term(VectorType & dst, VectorType const & src) const;
+
+  void
+  update_convective_term(double const evaluation_time, VectorType const * velocity = nullptr) const;
+
+  /*
+   * This function applies the diffusive operator to the src-vector and writes the result to the
+   * dst-vector. It is needed for throughput measurements of the matrix-free implementation.
+   */
+  void
+  apply_diffusive_term(VectorType & dst, VectorType const & src) const;
+
+  /*
+   * This function applies the combined mass-convection-diffusion operator to the src-vector
+   * and writes the result to the dst-vector. It is needed for throughput measurements of the
+   * matrix-free implementation.
+   */
+  void
+  apply_conv_diff_operator(VectorType & dst, VectorType const & src) const;
+
+  void
+  update_conv_diff_operator(double const       evaluation_time,
+                            double const       scaling_factor,
+                            VectorType const * velocity = nullptr) const;
+
+  /*
+   * This function solves the linear system of equations in case of implicit time integration or
+   * steady-state problems (potentially involving the mass matrix, convective, and diffusive
+   * operators).
    */
   unsigned int
   solve(VectorType &       sol,
         VectorType const & rhs,
         bool const         update_preconditioner,
         double const       scaling_factor = -1.0,
-        double const       time           = -1.0);
+        double const       time           = -1.0,
+        VectorType const * velocity       = nullptr);
 
   /*
    * Calculate time step size according to local CFL criterion
@@ -158,7 +208,9 @@ public:
 
   // use numerical velocity field
   double
-  calculate_time_step_cfl_numerical_velocity(double const cfl, double const exponent_degree) const;
+  calculate_time_step_cfl_numerical_velocity(VectorType const & velocity,
+                                             double const       cfl,
+                                             double const       exponent_degree) const;
 
   // use analytical velocity field
   double
@@ -190,16 +242,6 @@ public:
   get_number_of_dofs() const;
 
   /*
-   * Numerical velocity field.
-   */
-  void
-  set_velocity(VectorType const & velocity) const;
-
-  void
-  set_velocities_and_times(std::vector<VectorType const *> & velocities_in,
-                           std::vector<double> &             times_in) const;
-
-  /*
    * Perform postprocessing for a given solution vector.
    */
   void
@@ -221,18 +263,16 @@ private:
   initialize_matrix_free();
 
   /*
+   * Dof index for velocity (in case of numerical velocity field)
+   */
+  int
+  get_dof_index_velocity() const;
+
+  /*
    * Initializes individual operators (mass, convective, viscous terms, rhs).
    */
   void
-  setup_operators();
-
-  /*
-   * Initializes convection-diffusion operator which is the operator required for the solution of
-   * linear systems of equations.
-   */
-  void
-  initialize_convection_diffusion_operator(
-    double const scaling_factor_time_derivative_term_in = -1.0);
+  setup_operators(double const scaling_factor_mass_matrix, VectorType const * velocity = nullptr);
 
   /*
    * Initializes the preconditioner.
@@ -265,21 +305,33 @@ private:
   std::shared_ptr<MappingQGeneric<dim>> mapping;
   DoFHandler<dim>                       dof_handler;
 
+  /*
+   * Numerical velocity field.
+   */
+  std::shared_ptr<FESystem<dim>>   fe_velocity;
+  std::shared_ptr<DoFHandler<dim>> dof_handler_velocity;
+
+  /*
+   * Constraints
+   */
   AffineConstraints<double> constraint_matrix;
 
-
+  /*
+   * Matrix-free operator evaluation
+   */
   MatrixFree<dim, Number> matrix_free;
+
+  /*
+   * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
+   */
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_face_pairs;
 
   /*
    * User interface: Boundary conditions and field functions.
    */
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
-
-  /*
-   * Output to screen.
-   */
-  ConditionalOStream pcout;
 
   /*
    * Basic operators.
@@ -291,34 +343,18 @@ private:
   RHSOperator<dim, Number>                  rhs_operator;
 
   /*
-   * Numerical velocity field.
+   * Merged operators
    */
-  std::shared_ptr<FESystem<dim>>   fe_velocity;
-  std::shared_ptr<DoFHandler<dim>> dof_handler_velocity;
-
-  mutable std::vector<VectorType const *> velocities;
-  mutable std::vector<double>             times;
-  mutable VectorType                      velocity;
-
-  /*
-   * Solution of linear systems of equations
-   */
-  ConvectionDiffusionOperator<dim, Number> conv_diff_operator;
+  Operator<dim, Number> combined_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 
-
-  // TODO This variable is only needed when using a multigrid preconditioner
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
-
   /*
-   * Convection-diffusion operator for runtime optimization (merged operators including
-   * rhs-operator). This operator can only be used for explicit time integration.
+   * Output to screen.
    */
-  ConvectionDiffusionOperatorEfficiency<dim, Number> convection_diffusion_operator_efficiency;
+  ConditionalOStream pcout;
 
   /*
    * Postprocessor.

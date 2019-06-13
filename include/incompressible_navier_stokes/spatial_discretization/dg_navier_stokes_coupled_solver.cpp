@@ -788,12 +788,12 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
   {
     // multigrid V-cycle for negative Laplace operator
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index            = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index           = this->get_quad_index_pressure();
-    laplace_operator_data.IP_factor            = 1.0;
-    laplace_operator_data.degree               = this->param.get_degree_p();
-    laplace_operator_data.degree_mapping       = this->mapping_degree;
-    laplace_operator_data.operator_is_singular = this->param.pure_dirichlet_bc;
+    laplace_operator_data.dof_index                  = this->get_dof_index_pressure();
+    laplace_operator_data.quad_index                 = this->get_quad_index_pressure();
+    laplace_operator_data.operator_is_singular       = this->param.pure_dirichlet_bc;
+    laplace_operator_data.kernel_data.IP_factor      = 1.0;
+    laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
+    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
 
     laplace_operator_data.bc = this->boundary_descriptor_laplace;
 
@@ -850,12 +850,12 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index      = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index     = this->get_quad_index_pressure();
-    laplace_operator_data.IP_factor      = 1.0;
-    laplace_operator_data.degree         = this->param.get_degree_p();
-    laplace_operator_data.degree_mapping = this->mapping_degree;
-    laplace_operator_data.bc             = this->boundary_descriptor_laplace;
+    laplace_operator_data.dof_index                  = this->get_dof_index_pressure();
+    laplace_operator_data.quad_index                 = this->get_quad_index_pressure();
+    laplace_operator_data.bc                         = this->boundary_descriptor_laplace;
+    laplace_operator_data.kernel_data.IP_factor      = 1.0;
+    laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
+    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
     laplace_operator_classical->reinit(this->get_matrix_free(),
@@ -898,19 +898,13 @@ void
 DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator()
 {
   // pressure convection-diffusion operator
-  // a) mass matrix operator
-  ConvDiff::MassMatrixOperatorData mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index  = this->get_dof_index_pressure();
-  mass_matrix_operator_data.quad_index = this->get_quad_index_pressure();
 
+  // fill boundary descriptor
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
   boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
-  // for the pressure convection-diffusion operator the homogeneous operators (convective,
-  // diffusive) are applied, so there is no need to specify functions for boundary conditions
-  // since they will not be used (must not be used)
-  // -> use ConstantFunction as dummy, initialized with NAN in order to detect a possible
-  // incorrect access to boundary values
+  // For the pressure convection-diffusion operator the homogeneous operators are applied, so there
+  // is no need to specify functions for boundary conditions since they will never be used.
   std::shared_ptr<Function<dim>> dummy;
 
   // set boundary ID's for pressure convection-diffusion operator
@@ -934,50 +928,49 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
       std::pair<types::boundary_id, std::shared_ptr<Function<dim>>>(it->first, dummy));
   }
 
-  // b) diffusive operator
-  ConvDiff::DiffusiveOperatorData<dim> diffusive_operator_data;
-  diffusive_operator_data.dof_index      = this->get_dof_index_pressure();
-  diffusive_operator_data.quad_index     = this->get_quad_index_pressure();
-  diffusive_operator_data.IP_factor      = this->param.IP_factor_viscous;
-  diffusive_operator_data.degree         = this->param.get_degree_p();
-  diffusive_operator_data.degree_mapping = this->mapping_degree;
-  diffusive_operator_data.bc             = boundary_descriptor;
-  // TODO: the pressure convection-diffusion operator is initialized with constant viscosity, in
-  // case of varying viscosities the pressure convection-diffusion operator (the diffusive
-  // operator of the pressure convection-diffusion operator) has to be updated before applying
-  // this preconditioner
-  diffusive_operator_data.diffusivity = this->get_viscosity();
-
-  // c) convective operator
-  ConvDiff::ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.dof_index           = this->get_dof_index_pressure();
-  convective_operator_data.dof_index_velocity  = this->get_dof_index_velocity();
-  convective_operator_data.quad_index          = this->get_quad_index_velocity_linear();
-  convective_operator_data.type_velocity_field = ConvDiff::TypeVelocityField::Numerical;
-  convective_operator_data.numerical_flux_formulation =
+  // convective operator:
+  // use numerical velocity field with dof index of velocity field and local Lax-Friedrichs flux to
+  // mimic the upwind-like discretization of the linearized convective term in the Navier-Stokes
+  // equations.
+  ConvDiff::Operators::ConvectiveKernelData<dim> convective_kernel_data;
+  convective_kernel_data.type_velocity_field = ConvDiff::TypeVelocityField::Numerical;
+  convective_kernel_data.dof_index_velocity  = this->get_dof_index_velocity();
+  convective_kernel_data.numerical_flux_formulation =
     ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
-  convective_operator_data.bc = boundary_descriptor;
 
-  PressureConvectionDiffusionOperatorData<dim> pressure_convection_diffusion_operator_data;
-  pressure_convection_diffusion_operator_data.mass_matrix_operator_data = mass_matrix_operator_data;
-  pressure_convection_diffusion_operator_data.diffusive_operator_data   = diffusive_operator_data;
-  pressure_convection_diffusion_operator_data.convective_operator_data  = convective_operator_data;
+  // diffusive operator:
+  // take interior penalty factor of diffusivity of viscous operator, but use polynomial degree of
+  // pressure shape functions.
+  ConvDiff::Operators::DiffusiveKernelData diffusive_kernel_data;
+  diffusive_kernel_data.IP_factor = this->param.IP_factor_viscous;
+  // Note: the diffusive operator is initialized with constant viscosity. In case of spatially (and
+  // temporally) varying viscosities the diffusive operator has to be extended so that it can deal
+  // with variable coefficients (and should be updated in case of time dependent problems before
+  // applying the preconditioner).
+  diffusive_kernel_data.diffusivity    = this->param.viscosity;
+  diffusive_kernel_data.degree         = this->param.get_degree_p();
+  diffusive_kernel_data.degree_mapping = this->mapping_degree;
+
+  // combined convection-diffusion operator
+  ConvDiff::OperatorData<dim> operator_data;
+  operator_data.dof_index  = this->get_dof_index_pressure();
+  operator_data.quad_index = this->get_quad_index_pressure();
+
+  operator_data.bc                   = boundary_descriptor;
+  operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
+
   if(unsteady_problem_has_to_be_solved())
-    pressure_convection_diffusion_operator_data.unsteady_problem = true;
+    operator_data.unsteady_problem = true;
   else
-    pressure_convection_diffusion_operator_data.unsteady_problem = false;
-  pressure_convection_diffusion_operator_data.convective_problem =
-    nonlinear_problem_has_to_be_solved();
+    operator_data.unsteady_problem = false;
+  operator_data.convective_problem = nonlinear_problem_has_to_be_solved();
+  operator_data.diffusive_problem  = this->param.viscous_problem();
 
-  pressure_convection_diffusion_operator.reset(new PressureConvectionDiffusionOperator<dim, Number>(
-    *this->mapping,
-    this->get_matrix_free(),
-    pressure_convection_diffusion_operator_data,
-    this->constraint_p));
+  operator_data.convective_kernel_data = convective_kernel_data;
+  operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
-  if(unsteady_problem_has_to_be_solved())
-    pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(
-      this->momentum_operator.get_scaling_factor_time_derivative_term());
+  pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
+  pressure_conv_diff_operator->reinit(this->get_matrix_free(), this->constraint_p, operator_data);
 }
 
 // clang-format off
@@ -1096,15 +1089,6 @@ DGNavierStokesCoupled<dim, Number>::update_block_preconditioner(THIS const * /*o
   preconditioner_momentum->update(&momentum_operator);
 
   // pressure block
-  if(this->param.preconditioner_pressure_block ==
-     SchurComplementPreconditioner::PressureConvectionDiffusion)
-  {
-    if(unsteady_problem_has_to_be_solved())
-    {
-      pressure_convection_diffusion_operator->set_scaling_factor_time_derivative_term(
-        momentum_operator.get_scaling_factor_time_derivative_term());
-    }
-  }
 }
 
 template<int dim, typename Number>
@@ -1433,18 +1417,15 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
     // I. inverse, negative Laplace operator (-L)^{-1}
     apply_inverse_negative_laplace_operator(tmp_scp_pressure, src);
 
-    // II. pressure convection diffusion operator A_p
-    if(nonlinear_problem_has_to_be_solved() == true)
-    {
-      pressure_convection_diffusion_operator->apply(dst,
-                                                    tmp_scp_pressure,
-                                                    get_velocity_linearization());
-    }
-    else
-    {
-      VectorType dummy;
-      pressure_convection_diffusion_operator->apply(dst, tmp_scp_pressure, dummy);
-    }
+    // II. pressure convection-diffusion operator A_p
+    if(unsteady_problem_has_to_be_solved())
+      pressure_conv_diff_operator->set_scaling_factor_mass_matrix(
+        momentum_operator.get_scaling_factor_time_derivative_term());
+
+    if(nonlinear_problem_has_to_be_solved())
+      pressure_conv_diff_operator->set_velocity_ptr(get_velocity_linearization());
+
+    pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 
     // III. inverse pressure mass matrix M_p^{-1}
     inv_mass_matrix_preconditioner_schur_complement->vmult(dst, dst);
@@ -1488,7 +1469,7 @@ DGNavierStokesCoupled<dim, Number>::apply_inverse_negative_laplace_operator(
 
       bool singular = false;
       if(type_laplacian == DiscretizationOfLaplacian::Classical)
-        singular = laplace_operator_classical->is_singular();
+        singular = laplace_operator_classical->operator_is_singular();
       else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
         singular = laplace_operator_compatible->is_singular();
       else

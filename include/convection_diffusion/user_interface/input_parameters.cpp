@@ -64,15 +64,16 @@ InputParameters::InputParameters()
     update_preconditioner(false),
     update_preconditioner_every_time_steps(1),
     implement_block_diagonal_preconditioner_matrix_free(false),
-    preconditioner_block_diagonal(PreconditionerBlockDiagonal::InverseMassMatrix),
-    block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2, 1000)),
+    solver_block_diagonal(Elementwise::Solver::Undefined),
+    preconditioner_block_diagonal(Elementwise::Preconditioner::InverseMassMatrix),
+    solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, 1000)),
     mg_operator_type(MultigridOperatorType::Undefined),
     multigrid_data(MultigridData()),
     solver_info_data(SolverInfoData()),
 
     // NUMERICAL PARAMETERS
     use_cell_based_face_loops(false),
-    runtime_optimization(false)
+    use_combined_operator(true)
 {
 }
 
@@ -186,7 +187,7 @@ InputParameters::check_input_parameters()
   AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
 
   if(equation_type == EquationType::Convection ||
-     equation_type == EquationType::ConvectionDiffusion || runtime_optimization == true)
+     equation_type == EquationType::ConvectionDiffusion || use_combined_operator == true)
   {
     AssertThrow(numerical_flux_convective_operator != NumericalFluxConvectiveOperator::Undefined,
                 ExcMessage("parameter must be defined"));
@@ -206,12 +207,30 @@ InputParameters::check_input_parameters()
       AssertThrow(mg_operator_type != MultigridOperatorType::Undefined,
                   ExcMessage("parameter must be defined"));
 
-      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit ||
+         treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
       {
         AssertThrow(mg_operator_type != MultigridOperatorType::ReactionConvection &&
                       mg_operator_type != MultigridOperatorType::ReactionConvectionDiffusion,
                     ExcMessage(
                       "Invalid solver parameters. The convective term is treated explicitly."));
+      }
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      {
+        if(equation_type == EquationType::Convection)
+        {
+          AssertThrow(mg_operator_type == MultigridOperatorType::ReactionConvection,
+                      ExcMessage(
+                        "Invalid solver parameters. A purely diffusive problem is considered."));
+        }
+      }
+
+      if(equation_type == EquationType::Diffusion)
+      {
+        AssertThrow(mg_operator_type == MultigridOperatorType::ReactionDiffusion,
+                    ExcMessage(
+                      "Invalid solver parameters. A purely diffusive problem is considered."));
       }
     }
   }
@@ -222,6 +241,11 @@ InputParameters::check_input_parameters()
       use_cell_based_face_loops == true,
       ExcMessage(
         "Cell based face loops have to be used for matrix-free implementation of block diagonal preconditioner."));
+
+    AssertThrow(
+      solver_block_diagonal != Elementwise::Solver::Undefined,
+      ExcMessage(
+        "Invalid parameter. A solver type needs to be specified for elementwise matrix-free iterative solver."));
   }
 
   // NUMERICAL PARAMETERS
@@ -398,11 +422,13 @@ InputParameters::print_parameters_solver(ConditionalOStream & pcout)
 
   if(implement_block_diagonal_preconditioner_matrix_free)
   {
+    print_parameter(pcout, "Solver block diagonal", enum_to_string(solver_block_diagonal));
+
     print_parameter(pcout,
                     "Preconditioner block diagonal",
                     enum_to_string(preconditioner_block_diagonal));
 
-    block_jacobi_solver_data.print(pcout);
+    solver_data_block_diagonal.print(pcout);
   }
 
   if(preconditioner == Preconditioner::Multigrid)
@@ -421,10 +447,9 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
   pcout << std::endl << "Numerical parameters:" << std::endl;
 
   print_parameter(pcout, "Use cell-based face loops", use_cell_based_face_loops);
-  print_parameter(pcout,
-                  "Block Jacobi implemented matrix-free",
-                  implement_block_diagonal_preconditioner_matrix_free);
-  print_parameter(pcout, "Runtime optimization", runtime_optimization);
+
+  if(temporal_discretization == TemporalDiscretization::ExplRK)
+    print_parameter(pcout, "Use combined operator", use_combined_operator);
 }
 
 } // namespace ConvDiff

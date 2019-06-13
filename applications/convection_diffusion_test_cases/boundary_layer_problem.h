@@ -16,8 +16,8 @@
 /*                                                                                    */
 /**************************************************************************************/
 
-// prescribe value of phi at left and right boundary
-// neumann boundaries at upper and lower boundary
+// prescribe value of solution at left and right boundary
+// Neumann boundaries at upper and lower boundary
 // use constant advection velocity from left to right -> boundary layer
 
 // convergence studies in space or time
@@ -85,7 +85,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.use_cell_based_face_loops = true;
   param.solver = Solver::GMRES;
   param.solver_data = SolverData(1e4, 1.e-20, 1.e-8, 100);
-  param.preconditioner = Preconditioner::Multigrid;//Preconditioner::PointJacobi;
+  param.preconditioner = Preconditioner::Multigrid; //PointJacobi;
   param.mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   param.multigrid_data.type = MultigridType::hMG;
   // MG smoother
@@ -104,7 +104,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_info_data.interval_time = (param.end_time-param.start_time)/20;
 
   // NUMERICAL PARAMETERS
-  param.runtime_optimization = false;
+
 }
 }
 
@@ -138,8 +138,13 @@ void create_grid_and_set_boundary_ids(
          || ((dim==3) && ((std::fabs(cell->face(face_number)->center()(2) - left ) < 1e-12) ||
                           (std::fabs(cell->face(face_number)->center()(2) - right) < 1e-12))))
         cell->face(face_number)->set_boundary_id (1);
+
+      // TODO Neumann boundary condition at right boundary
+//      if (std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12)
+//        cell->face(face_number)->set_boundary_id (2);
     }
   }
+
   triangulation->refine_global(n_refine_space);
 }
 
@@ -165,16 +170,11 @@ public:
   double value (const Point<dim>   &p,
                 const unsigned int /*component*/) const
   {
-    double t = this->get_time();
-    double result = 0.0;
-
     double phi_l = 1.0 , phi_r = 0.0;
     double U = 1.0, L = 2.0;
     double Pe = U*L/DIFFUSIVITY;
-    if(t<(START_TIME + 1.0e-8))
-      result = phi_l + (phi_r-phi_l)*(0.5+p[0]/L);
-    else
-      result = phi_l + (phi_r-phi_l)*(std::exp(Pe*p[0]/L)-std::exp(-Pe/2.0))/(std::exp(Pe/2.0)-std::exp(-Pe/2.0));
+
+    double result = phi_l + (phi_r-phi_l)*(std::exp(Pe*p[0]/L)-std::exp(-Pe/2.0))/(std::exp(Pe/2.0)-std::exp(-Pe/2.0));
 
     return result;
   }
@@ -193,16 +193,14 @@ public:
     Function<dim>(n_components, time)
   {}
 
-  double value (const Point<dim>    &/*p*/,
+  double value (const Point<dim>    &p,
                 const unsigned int  /*component*/) const
   {
-    double result = 0.0;
+    double right = 1.0;
+    if(std::fabs(p[0]-right)<1.0e-12)
+      return -10.0;
 
-  //  double right = 1.0;
-  //  if( fabs(p[0]-right)<1.0e-12 )
-  //    result = 1.0;
-
-    return result;
+    return 0.0;
   }
 };
 
@@ -240,13 +238,14 @@ void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> >
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   boundary_descriptor->dirichlet_bc.insert(pair(0,new Solution<dim>()));
-  boundary_descriptor->neumann_bc.insert(pair(1,new NeumannBoundary<dim>()));
+  boundary_descriptor->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(1)));
+  boundary_descriptor->neumann_bc.insert(pair(2,new NeumannBoundary<dim>()));
 }
 
 template<int dim>
 void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functions)
 {
-  field_functions->initial_solution.reset(new Solution<dim>());
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new VelocityField<dim>());
 }

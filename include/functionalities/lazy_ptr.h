@@ -5,22 +5,25 @@ template<typename T>
 class lazy_ptr
 {
 public:
-  lazy_ptr() : tp(&t)
+  lazy_ptr() : t_ptr(&t)
   {
   }
 
+  // resets the pointer (using own data)
   void
   reset()
   {
-    this->tp = &this->t;
+    this->t_ptr = &this->t;
   }
 
+  // resets the pointer (using external data)
   void
-  reinit(T const & t)
+  reset(T const & t_other)
   {
-    this->tp = &t;
+    this->t_ptr = &t_other;
   }
 
+  // provides access to own data storage, e.g., in order to overwrite the data
   T &
   own()
   {
@@ -29,17 +32,17 @@ public:
 
   T const * operator->()
   {
-    return tp;
+    return t_ptr;
   }
 
   T const & operator*()
   {
-    return *tp;
+    return *t_ptr;
   }
 
 private:
   T         t;
-  T const * tp;
+  T const * t_ptr;
 };
 
 #endif
