@@ -1869,7 +1869,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::verify_boundary_conditi
   std::set<types::boundary_id> periodic_boundary_ids;
   for(unsigned int i = 0; i < operator_data.periodic_face_pairs_level0.size(); ++i)
   {
-    AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->level() == 0,
+    AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->h_level() == 0,
                 ExcMessage("Received periodic cell pairs on non-zero level"));
     periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i]
                                    .cell[0]

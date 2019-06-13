@@ -37,7 +37,7 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
 
   // .. and p_levels
   for(auto i : global_levels)
-    p_levels.push_back(i.id);
+    p_levels.push_back(i.dof_handler_id());
 
   sort(p_levels.begin(), p_levels.end());
   p_levels.erase(unique(p_levels.begin(), p_levels.end()), p_levels.end());
@@ -60,7 +60,7 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
   {
     auto level = global_levels[i];
 
-    map_global_level_to_h_levels[level.id][i] = level.level;
+    map_global_level_to_h_levels[level.dof_handler_id()][i] = level.h_level();
   }
 
   // create h-transfer operators between levels
@@ -92,57 +92,58 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
 
     std::shared_ptr<MGTransferMF<VectorType>> temp;
 
-    if(coarse_level.level != fine_level.level) // h-transfer
+    if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
     {
 #ifdef DEBUG
       printf("  h-MG (l=%2d,k=%2d,dg=%2d) -> (l=%2d,k=%2d,dg=%2d)\n",
-             coarse_level.level,
-             coarse_level.degree,
-             coarse_level.is_dg,
-             fine_level.level,
-             fine_level.degree,
-             fine_level.is_dg);
+             coarse_level.h_level(),
+             coarse_level.degree(),
+             coarse_level.is_dg(),
+             fine_level.h_level(),
+             fine_level.degree(),
+             fine_level.is_dg());
 #endif
 
-      temp = mg_tranfers_temp[coarse_level.id]; // get the previously h-transfer operator
+      temp =
+        mg_tranfers_temp[coarse_level.dof_handler_id()]; // get the previously h-transfer operator
     }
-    else if(coarse_level.degree != fine_level.degree) // p-transfer
+    else if(coarse_level.degree() != fine_level.degree()) // p-transfer
     {
 #ifdef DEBUG
       printf("  p-MG (l=%2d,k=%2d,dg=%2d) -> (l=%2d,k=%2d,dg=%2d)\n",
-             coarse_level.level,
-             coarse_level.degree,
-             coarse_level.is_dg,
-             fine_level.level,
-             fine_level.degree,
-             fine_level.is_dg);
+             coarse_level.h_level(),
+             coarse_level.degree(),
+             coarse_level.is_dg(),
+             fine_level.h_level(),
+             fine_level.degree(),
+             fine_level.is_dg());
 #endif
 
       if(n_components == 1)
         temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorType, 1>(&*mg_data[i],
                                                                           &*mg_data[i - 1],
-                                                                          fine_level.degree,
-                                                                          coarse_level.degree,
+                                                                          fine_level.degree(),
+                                                                          coarse_level.degree(),
                                                                           dof_handler_index));
       else if(n_components == dim)
         temp.reset(new MGTransferMFP<dim, MultigridNumber, VectorType, dim>(&*mg_data[i],
                                                                             &*mg_data[i - 1],
-                                                                            fine_level.degree,
-                                                                            coarse_level.degree,
+                                                                            fine_level.degree(),
+                                                                            coarse_level.degree(),
                                                                             dof_handler_index));
       else
         AssertThrow(false, ExcMessage("Cannot create MGTransferMFP!"));
     }
-    else if(coarse_level.is_dg != fine_level.is_dg) // c-transfer
+    else if(coarse_level.is_dg() != fine_level.is_dg()) // c-transfer
     {
 #ifdef DEBUG
       printf("  c-MG (l=%2d,k=%2d,dg=%2d) -> (l=%2d,k=%2d,dg=%2d)\n",
-             coarse_level.level,
-             coarse_level.degree,
-             coarse_level.is_dg,
-             fine_level.level,
-             fine_level.degree,
-             fine_level.is_dg);
+             coarse_level.h_level(),
+             coarse_level.degree(),
+             coarse_level.is_dg(),
+             fine_level.h_level(),
+             fine_level.degree(),
+             fine_level.is_dg());
 #endif
 
       if(n_components == 1)
@@ -151,8 +152,8 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
           *mg_data[i - 1],
           *mg_Constraints[i],
           *mg_Constraints[i - 1],
-          fine_level.level,
-          coarse_level.degree,
+          fine_level.h_level(),
+          coarse_level.degree(),
           dof_handler_index));
       else if(n_components == dim)
         temp.reset(new MGTransferMFC<dim, typename MatrixFree::value_type, VectorType, dim>(
@@ -160,8 +161,8 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
           *mg_data[i - 1],
           *mg_Constraints[i],
           *mg_Constraints[i - 1],
-          fine_level.level,
-          coarse_level.degree,
+          fine_level.h_level(),
+          coarse_level.degree(),
           dof_handler_index));
       else
         AssertThrow(false, ExcMessage("Cannot create MGTransferMFP!"));

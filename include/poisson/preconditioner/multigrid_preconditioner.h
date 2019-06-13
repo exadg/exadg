@@ -61,26 +61,29 @@ public:
 
     // setup MatrixFree::AdditionalData
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
-    additional_data.level_mg_handler = this->level_info[level].level;
+
+    additional_data.level_mg_handler = this->level_info[level].h_level();
 
     MappingFlags flags = Operators::LaplaceKernel<dim, Number>::get_mapping_flags();
 
     additional_data.mapping_update_flags = flags.cells;
 
-    if(this->level_info[level].is_dg)
+    if(this->level_info[level].is_dg())
     {
       additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
       additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
     }
 
-    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg)
+    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
-      Categorization::do_cell_based_loops(*tria, additional_data, this->level_info[level].level);
+      Categorization::do_cell_based_loops(*tria,
+                                          additional_data,
+                                          this->level_info[level].h_level());
     }
 
-    QGauss<1> const quad(this->level_info[level].degree + 1);
+    QGauss<1> const quad(this->level_info[level].degree() + 1);
     matrix_free->reinit(
       mapping, *this->dof_handlers[level], *this->constraints[level], quad, additional_data);
 

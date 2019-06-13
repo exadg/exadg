@@ -113,7 +113,7 @@ public:
 
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
 
-    additional_data.level_mg_handler      = this->level_info[level].level;
+    additional_data.level_mg_handler      = this->level_info[level].h_level();
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;
@@ -124,20 +124,25 @@ public:
     if(operator_data.diffusive_problem)
       flags = flags || Operators::DiffusiveKernel<dim, Number>::get_mapping_flags();
 
-    additional_data.mapping_update_flags                = flags.cells;
-    additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-    additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+    additional_data.mapping_update_flags = flags.cells;
+    if(this->level_info[level].is_dg())
+    {
+      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
+      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+    }
 
-    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg)
+    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
-      Categorization::do_cell_based_loops(*tria, additional_data, this->level_info[level].level);
+      Categorization::do_cell_based_loops(*tria,
+                                          additional_data,
+                                          this->level_info[level].h_level());
     }
 
     if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Analytical)
     {
-      QGauss<1> quadrature(this->level_info[level].degree + 1);
+      QGauss<1> quadrature(this->level_info[level].degree() + 1);
       matrix_free->reinit(mapping,
                           *this->dof_handlers[level],
                           *this->constraints[level],
@@ -163,7 +168,7 @@ public:
 
       std::vector<Quadrature<1>> quadrature_vec;
       quadrature_vec.resize(1);
-      quadrature_vec[0] = QGauss<1>(this->level_info[level].degree + 1);
+      quadrature_vec[0] = QGauss<1>(this->level_info[level].degree() + 1);
 
       matrix_free->reinit(
         mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
