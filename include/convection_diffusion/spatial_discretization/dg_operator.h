@@ -23,7 +23,6 @@
 
 // operators
 #include "../../operators/inverse_mass_matrix.h"
-#include "operators/convection_diffusion_operator.h"
 #include "operators/convection_diffusion_operator_merged.h"
 #include "operators/rhs_operator.h"
 
@@ -276,15 +275,6 @@ private:
   setup_operators(double const scaling_factor_mass_matrix, VectorType const * velocity = nullptr);
 
   /*
-   * Initializes convection-diffusion operator which is the operator required for the solution of
-   * linear systems of equations.
-   */
-  void
-  initialize_convection_diffusion_operator(
-    double const       scaling_factor_time_derivative_term_in = -1.0,
-    VectorType const * velocity                               = nullptr);
-
-  /*
    * Initializes the preconditioner.
    */
   void
@@ -356,11 +346,6 @@ private:
    * Merged operators
    */
   ConvectionDiffusionOperatorMerged<dim, Number> convection_diffusion_operator_merged;
-
-  /*
-   * Solution of linear systems of equations
-   */
-  ConvectionDiffusionOperator<dim, Number> conv_diff_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 

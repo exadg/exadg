@@ -62,7 +62,6 @@ SET( TARGET_SRC
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/rhs_operator.cpp
-     include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator_merged.cpp
      include/convection_diffusion/spatial_discretization/dg_operator.cpp
      include/convection_diffusion/spatial_discretization/interface.cpp

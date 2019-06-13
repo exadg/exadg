@@ -6,7 +6,7 @@ SET(TARGET_SRC
   ../../../include/convection_diffusion/spatial_discretization/operators/mass_operator.cpp
   ../../../include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
   ../../../include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
-  ../../../include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
+#  ../../../include/convection_diffusion/spatial_discretization/operators/convection_diffusion_operator.cpp
   src/main.cc
   )
 
