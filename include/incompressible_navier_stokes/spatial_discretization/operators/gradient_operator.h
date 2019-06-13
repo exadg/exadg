@@ -10,10 +10,8 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
-#include "../../../operators/operator_type.h"
-#include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
+#include "weak_boundary_conditions.h"
 
 using namespace dealii;
 
@@ -217,9 +215,15 @@ private:
       if(operator_data.use_boundary_data == true)
       {
         scalar value_m = calculate_interior_value(q, pressure, operator_type);
-
-        scalar value_p =
-          calculate_exterior_value(value_m, q, pressure, operator_type, boundary_type, boundary_id);
+        scalar value_p = calculate_exterior_value(value_m,
+                                                  q,
+                                                  pressure,
+                                                  operator_type,
+                                                  boundary_type,
+                                                  boundary_id,
+                                                  operator_data.bc,
+                                                  this->eval_time,
+                                                  inverse_scaling_factor_pressure);
 
         flux = calculate_flux(value_m, value_p);
       }
@@ -245,93 +249,6 @@ private:
     calculate_flux(scalar const & value_m, scalar const & value_p) const
   {
     return 0.5 * (value_m + value_p);
-  }
-
-  /*
-   *  These two function calculate the interior/exterior value on boundary faces depending on the
-   * operator type, the type of the boundary face and the given boundary conditions.
-   *
-   *                            +--------------------+----------------------+
-   *                            | Neumann boundaries | Dirichlet boundaries |
-   *  +-------------------------+--------------------+----------------------+
-   *  | full operator           | p⁺ = p⁻            | p⁺ = - p⁻ + 2g       |
-   *  +-------------------------+--------------------+----------------------+
-   *  | homogeneous operator    | p⁺ = p⁻            | p⁺ = - p⁻            |
-   *  +-------------------------+--------------------+----------------------+
-   *  | inhomogeneous operator  | p⁺ = 0 , p⁻ = 0    | p⁺ = 2g , p⁻ = 0     |
-   *  +-------------------------+--------------------+----------------------+
-   *
-   */
-  template<typename Integrator>
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_interior_value(unsigned int const   q,
-                             Integrator const &   integrator,
-                             OperatorType const & operator_type) const
-  {
-    // element e⁻
-    scalar value_m = make_vectorized_array<Number>(0.0);
-
-    if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
-    {
-      value_m = integrator.get_value(q);
-    }
-    else if(operator_type == OperatorType::inhomogeneous)
-    {
-      // do nothing, value_m is already initialized with zeros
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-    }
-
-    return value_m;
-  }
-
-
-  template<typename Integrator>
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_exterior_value(scalar const &           value_m,
-                             unsigned int const       q,
-                             Integrator const &       integrator,
-                             OperatorType const &     operator_type,
-                             BoundaryTypeP const &    boundary_type,
-                             types::boundary_id const boundary_id = types::boundary_id()) const
-  {
-    scalar value_p = make_vectorized_array<Number>(0.0);
-
-    if(boundary_type == BoundaryTypeP::Dirichlet)
-    {
-      if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
-      {
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-          operator_data.bc->dirichlet_bc.find(boundary_id);
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
-
-        scalar g = evaluate_scalar_function(it->second, q_points, eval_time);
-
-        value_p = -value_m + 2.0 * inverse_scaling_factor_pressure * g;
-      }
-      else if(operator_type == OperatorType::homogeneous)
-      {
-        value_p = -value_m;
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-      }
-    }
-    else if(boundary_type == BoundaryTypeP::Neumann)
-    {
-      value_p = value_m;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-    }
-
-    return value_p;
   }
 
   void

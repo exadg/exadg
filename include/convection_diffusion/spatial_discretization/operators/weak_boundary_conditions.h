@@ -35,12 +35,12 @@ template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   calculate_interior_value(unsigned int const                     q,
-                           FaceIntegrator<dim, 1, Number> const & fe_eval,
+                           FaceIntegrator<dim, 1, Number> const & integrator,
                            OperatorType const &                   operator_type)
 {
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
-    return fe_eval.get_value(q);
+    return integrator.get_value(q);
   }
   else if(operator_type == OperatorType::inhomogeneous)
   {
@@ -59,7 +59,7 @@ inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   calculate_exterior_value(VectorizedArray<Number> const &                value_m,
                            unsigned int const                             q,
-                           FaceIntegrator<dim, 1, Number> const &         fe_eval,
+                           FaceIntegrator<dim, 1, Number> const &         integrator,
                            OperatorType const &                           operator_type,
                            BoundaryType const &                           boundary_type,
                            types::boundary_id const                       boundary_id,
@@ -74,7 +74,7 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
         boundary_descriptor->dirichlet_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
+      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
       VectorizedArray<Number> g = evaluate_scalar_function(it->second, q_points, time);
 
@@ -132,14 +132,14 @@ template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
   VectorizedArray<Number>
   calculate_interior_normal_gradient(unsigned int const                     q,
-                                     FaceIntegrator<dim, 1, Number> const & fe_eval,
+                                     FaceIntegrator<dim, 1, Number> const & integrator,
                                      OperatorType const &                   operator_type)
 {
   VectorizedArray<Number> normal_gradient_m = make_vectorized_array<Number>(0.0);
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
-    normal_gradient_m = fe_eval.get_normal_derivative(q);
+    normal_gradient_m = integrator.get_normal_derivative(q);
   }
   else if(operator_type == OperatorType::inhomogeneous)
   {
@@ -159,7 +159,7 @@ inline DEAL_II_ALWAYS_INLINE //
   calculate_exterior_normal_gradient(
     VectorizedArray<Number> const &                normal_gradient_m,
     unsigned int const                             q,
-    FaceIntegrator<dim, 1, Number> const &         fe_eval,
+    FaceIntegrator<dim, 1, Number> const &         integrator,
     OperatorType const &                           operator_type,
     BoundaryType const &                           boundary_type,
     types::boundary_id const                       boundary_id,
@@ -178,7 +178,7 @@ inline DEAL_II_ALWAYS_INLINE //
     {
       typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
         boundary_descriptor->neumann_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
+      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
       VectorizedArray<Number> h = evaluate_scalar_function(it->second, q_points, time);
 

@@ -10,9 +10,8 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
-#include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
+#include "weak_boundary_conditions.h"
 
 using namespace dealii;
 
@@ -541,7 +540,14 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value(uM, q, integrator, boundary_type, boundary_id);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       operator_data.bc,
+                                                       this->eval_time,
+                                                       operator_data.type_dirichlet_bc);
 
         vector normalM = integrator.get_normal_vector(q);
 
@@ -558,7 +564,14 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value(uM, q, integrator, boundary_type, boundary_id);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       operator_data.bc,
+                                                       this->eval_time,
+                                                       operator_data.type_dirichlet_bc);
 
         vector normal = integrator.get_normal_vector(q);
 
@@ -579,7 +592,14 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector uM      = integrator.get_value(q);
-        vector uP      = calculate_exterior_value(uM, q, integrator, boundary_type, boundary_id);
+        vector uP      = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       operator_data.bc,
+                                                       this->eval_time,
+                                                       operator_data.type_dirichlet_bc);
         vector normalM = integrator.get_normal_vector(q);
 
         vector flux = calculate_lax_friedrichs_flux(uM, uP, normalM);
@@ -709,7 +729,14 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value(uM, q, integrator, boundary_type, boundary_id);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       operator_data.bc,
+                                                       this->eval_time,
+                                                       operator_data.type_dirichlet_bc);
 
         vector wM = integrator_transport.get_value(q);
 
@@ -728,7 +755,14 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value(uM, q, integrator, boundary_type, boundary_id);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       operator_data.bc,
+                                                       this->eval_time,
+                                                       operator_data.type_dirichlet_bc);
 
         // concerning the transport velocity w, use the same value for interior and
         // exterior states, i.e., do not prescribe boundary conditions
@@ -984,12 +1018,18 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector uM = integrator_linearization.get_value(q);
-        vector uP =
-          calculate_exterior_value(uM, q, integrator_linearization, boundary_type, boundary_id);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator_linearization,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       operator_data.bc,
+                                                       this->eval_time,
+                                                       operator_data.type_dirichlet_bc);
 
         vector delta_uM = integrator.get_value(q);
-        vector delta_uP =
-          calculate_exterior_value_linearized(delta_uM, q, integrator, boundary_type);
+        vector delta_uP = calculate_exterior_value_linearized(
+          delta_uM, q, integrator, boundary_type, operator_data.type_dirichlet_bc);
 
         vector normal = integrator.get_normal_vector(q);
 
@@ -1006,12 +1046,18 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         vector uM = integrator_linearization.get_value(q);
-        vector uP =
-          calculate_exterior_value(uM, q, integrator_linearization, boundary_type, boundary_id);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator_linearization,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       operator_data.bc,
+                                                       this->eval_time,
+                                                       operator_data.type_dirichlet_bc);
 
         vector delta_uM = integrator.get_value(q);
-        vector delta_uP =
-          calculate_exterior_value_linearized(delta_uM, q, integrator, boundary_type);
+        vector delta_uP = calculate_exterior_value_linearized(
+          delta_uM, q, integrator, boundary_type, operator_data.type_dirichlet_bc);
 
         vector normal = integrator.get_normal_vector(q);
 
@@ -1035,122 +1081,6 @@ private:
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
-  }
-
-  /*
-   *  This function calculates the exterior velocity on boundary faces
-   *  according to:
-   *
-   *  Dirichlet boundary: u⁺ = -u⁻ + 2g
-   *  Neumann boundary:   u⁺ = u⁻
-   *  symmetry boundary:  u⁺ = u⁻ -(u⁻*n)n - (u⁻*n)n = u⁻ - 2 (u⁻*n)n
-   */
-  template<typename Integrator>
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_exterior_value(vector const &           uM,
-                             unsigned int const       q,
-                             Integrator &             integrator,
-                             BoundaryTypeU const &    boundary_type,
-                             types::boundary_id const boundary_id) const
-  {
-    vector uP;
-
-    if(boundary_type == BoundaryTypeU::Dirichlet)
-    {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it;
-      it                          = operator_data.bc->dirichlet_bc.find(boundary_id);
-      Point<dim, scalar> q_points = integrator.quadrature_point(q);
-
-      vector g = evaluate_vectorial_function(it->second, q_points, eval_time);
-
-      if(operator_data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
-      {
-        uP = -uM + make_vectorized_array<Number>(2.0) * g;
-      }
-      else if(operator_data.type_dirichlet_bc == TypeDirichletBCs::Direct)
-      {
-        uP = g;
-      }
-      else
-      {
-        AssertThrow(
-          false,
-          ExcMessage(
-            "Type of imposition of Dirichlet BC's for convective term is not implemented."));
-      }
-    }
-    else if(boundary_type == BoundaryTypeU::Neumann)
-    {
-      uP = uM;
-    }
-    else if(boundary_type == BoundaryTypeU::Symmetry)
-    {
-      vector normalM = integrator.get_normal_vector(q);
-
-      uP = uM - 2. * (uM * normalM) * normalM;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-    }
-
-    return uP;
-  }
-
-  /*
-   *  Calculate Lax-Friedrichs flux for linearized operator on boundary faces.
-   *
-   *  Homogeneous linearized operator:
-   *  Dirichlet boundary: delta_u⁺ = - delta_u⁻
-   *  Neumann boundary:   delta_u⁺ = + delta_u⁻
-   *  symmetry boundary:  delta_u⁺ = delta_u⁻ - 2 (delta_u⁻*n)n
-   */
-  template<typename Integrator>
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_exterior_value_linearized(vector &              delta_uM,
-                                        unsigned int const    q,
-                                        Integrator &          integrator,
-                                        BoundaryTypeU const & boundary_type) const
-  {
-    // element e⁺
-    vector delta_uP;
-
-    if(boundary_type == BoundaryTypeU::Dirichlet)
-    {
-      if(operator_data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
-      {
-        delta_uP = -delta_uM;
-      }
-      else if(operator_data.type_dirichlet_bc == TypeDirichletBCs::Direct)
-      {
-        // delta_uP = 0
-        // do nothing, delta_uP is already initialized with zero
-      }
-      else
-      {
-        AssertThrow(
-          false,
-          ExcMessage(
-            "Type of imposition of Dirichlet BC's for convective term is not implemented."));
-      }
-    }
-    else if(boundary_type == BoundaryTypeU::Neumann)
-    {
-      delta_uP = delta_uM;
-    }
-    else if(boundary_type == BoundaryTypeU::Symmetry)
-    {
-      vector normalM = integrator.get_normal_vector(q);
-      delta_uP       = delta_uM - 2. * (delta_uM * normalM) * normalM;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-    }
-
-    return delta_uP;
   }
 
   /*
