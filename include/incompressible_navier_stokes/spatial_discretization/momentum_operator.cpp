@@ -286,13 +286,13 @@ MomentumOperator<dim, Number>::initialize_block_diagonal_preconditioner_matrix_f
 {
   elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
 
-  if(this->operator_data.preconditioner_block_jacobi == PreconditionerBlockDiagonal::None)
+  if(this->operator_data.preconditioner_block_jacobi == Elementwise::Preconditioner::None)
   {
     typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
     elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
   }
   else if(this->operator_data.preconditioner_block_jacobi ==
-          PreconditionerBlockDiagonal::InverseMassMatrix)
+          Elementwise::Preconditioner::InverseMassMatrix)
   {
     typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
 
@@ -306,9 +306,9 @@ MomentumOperator<dim, Number>::initialize_block_diagonal_preconditioner_matrix_f
 
   Elementwise::IterativeSolverData iterative_solver_data;
   if(operator_data.convective_problem)
-    iterative_solver_data.solver_type = Elementwise::SolverType::GMRES;
+    iterative_solver_data.solver_type = Elementwise::Solver::GMRES;
   else
-    iterative_solver_data.solver_type = Elementwise::SolverType::CG;
+    iterative_solver_data.solver_type = Elementwise::Solver::CG;
 
   iterative_solver_data.solver_data = this->operator_data.block_jacobi_solver_data;
 

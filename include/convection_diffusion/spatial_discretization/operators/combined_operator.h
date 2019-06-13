@@ -12,10 +12,6 @@
 #include "diffusive_operator.h"
 #include "mass_operator.h"
 
-#include "../../../operators/elementwise_operator.h"
-#include "../../../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
-#include "../../../solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
-
 namespace ConvDiff
 {
 template<int dim>
@@ -27,9 +23,6 @@ struct OperatorData : public OperatorBaseData
       convective_problem(false),
       diffusive_problem(false),
       scaling_factor_mass_matrix(1.0),
-      // TODO
-      preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
-      block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-2, 1000)),
       mg_operator_type(MultigridOperatorType::Undefined)
   {
   }
@@ -48,11 +41,6 @@ struct OperatorData : public OperatorBaseData
   Operators::DiffusiveKernelData       diffusive_kernel_data;
 
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
-
-  // TODO
-  // elementwise iterative solution of block Jacobi problems
-  PreconditionerBlockDiagonal preconditioner_block_jacobi;
-  SolverData                  block_jacobi_solver_data;
 
   MultigridOperatorType mg_operator_type;
 };
@@ -94,13 +82,6 @@ public:
 
   void
   set_scaling_factor_mass_matrix(Number const & number) const;
-
-  // TODO shift to base class if possible
-  // The base operator only implements the matrix-based variant of this operation.
-  // Hence, this function has to be overwritten here to support both matrix-based
-  // and matrix-free variants of the inverse block diagonal operator.
-  void
-  apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
 private:
   void
@@ -145,31 +126,9 @@ private:
                                 OperatorData<dim> const &            operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  // TODO shift to base class if possible
-  // This function has to initialize everything related to the block diagonal preconditioner when
-  // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
-  // evaluation.
-  void
-  initialize_block_diagonal_preconditioner_matrix_free() const;
-
   Operators::MassMatrixKernel<dim, Number> mass_kernel;
   Operators::ConvectiveKernel<dim, Number> convective_kernel;
   Operators::DiffusiveKernel<dim, Number>  diffusive_kernel;
-
-  // TODO shift to base class if possible
-  // Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
-  typedef Elementwise::OperatorBase<dim, Number, Base>             ELEMENTWISE_OPERATOR;
-  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> ELEMENTWISE_PRECONDITIONER;
-  typedef Elementwise::IterativeSolver<dim,
-                                       1 /*scalar equation*/,
-                                       Number,
-                                       ELEMENTWISE_OPERATOR,
-                                       ELEMENTWISE_PRECONDITIONER>
-    ELEMENTWISE_SOLVER;
-
-  mutable std::shared_ptr<ELEMENTWISE_OPERATOR>       elementwise_operator;
-  mutable std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner;
-  mutable std::shared_ptr<ELEMENTWISE_SOLVER>         elementwise_solver;
 };
 
 } // namespace ConvDiff

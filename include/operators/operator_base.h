@@ -20,6 +20,12 @@
 #include "linear_operator_base.h"
 #include "mapping_flags.h"
 
+#include "../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
+#include "../solvers_and_preconditioners/preconditioner/enum_types.h"
+#include "../solvers_and_preconditioners/solvers/enum_types.h"
+#include "../solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
+#include "elementwise_operator.h"
+
 using namespace dealii;
 
 struct CellFlags
@@ -102,20 +108,30 @@ struct OperatorBaseData
   OperatorBaseData(const unsigned int dof_index, const unsigned int quad_index)
     : dof_index(dof_index),
       quad_index(quad_index),
-      use_cell_based_loops(false),
       operator_is_singular(false),
-      implement_block_diagonal_preconditioner_matrix_free(false)
+      use_cell_based_loops(false),
+      implement_block_diagonal_preconditioner_matrix_free(false),
+      solver_block_diagonal(Elementwise::Solver::GMRES),
+      preconditioner_block_diagonal(Elementwise::Preconditioner::InverseMassMatrix),
+      solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, 1000))
   {
   }
 
   unsigned int dof_index;
   unsigned int quad_index;
 
-  bool use_cell_based_loops;
-
   // Solution of linear systems of equations and preconditioning
   bool operator_is_singular;
+
+  bool use_cell_based_loops;
+
+  // block Jacobi preconditioner
   bool implement_block_diagonal_preconditioner_matrix_free;
+
+  // elementwise iterative solution of block Jacobi problems
+  Elementwise::Solver         solver_block_diagonal;
+  Elementwise::Preconditioner preconditioner_block_diagonal;
+  SolverData                  solver_data_block_diagonal;
 };
 
 template<int dim, typename Number, typename AdditionalData, int n_components = 1>
@@ -403,6 +419,19 @@ protected:
   mutable std::shared_ptr<IntegratorCell> integrator;
   mutable std::shared_ptr<IntegratorFace> integrator_m;
   mutable std::shared_ptr<IntegratorFace> integrator_p;
+
+  /*
+   * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
+   */
+  typedef Elementwise::OperatorBase<dim, Number, This>             ELEMENTWISE_OPERATOR;
+  typedef Elementwise::PreconditionerBase<VectorizedArray<Number>> ELEMENTWISE_PRECONDITIONER;
+  typedef Elementwise::
+    IterativeSolver<dim, n_components, Number, ELEMENTWISE_OPERATOR, ELEMENTWISE_PRECONDITIONER>
+      ELEMENTWISE_SOLVER;
+
+  mutable std::shared_ptr<ELEMENTWISE_OPERATOR>       elementwise_operator;
+  mutable std::shared_ptr<ELEMENTWISE_PRECONDITIONER> elementwise_preconditioner;
+  mutable std::shared_ptr<ELEMENTWISE_SOLVER>         elementwise_solver;
 
 private:
   /*

@@ -115,6 +115,8 @@ SET( TARGET_SRC
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
      include/compressible_navier_stokes/postprocessor/write_output.cpp
      include/compressible_navier_stokes/postprocessor/postprocessor.cpp
+     include/solvers_and_preconditioners/preconditioner/enum_types.cpp
+     include/solvers_and_preconditioners/solvers/enum_types.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
      include/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp     
      include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp

@@ -39,7 +39,7 @@ struct MomentumOperatorData
       scaling_factor_time_derivative_term(-1.0),
       implement_block_diagonal_preconditioner_matrix_free(false),
       use_cell_based_loops(false),
-      preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
+      preconditioner_block_jacobi(Elementwise::Preconditioner::InverseMassMatrix),
       block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-1 /*rel_tol TODO*/, 1000)),
       mg_operator_type(MultigridOperatorType::Undefined)
   {
@@ -66,7 +66,7 @@ struct MomentumOperatorData
   bool use_cell_based_loops;
 
   // elementwise iterative solution of block Jacobi problems
-  PreconditionerBlockDiagonal preconditioner_block_jacobi;
+  Elementwise::Preconditioner preconditioner_block_jacobi;
   SolverData                  block_jacobi_solver_data;
 
   // Multigrid

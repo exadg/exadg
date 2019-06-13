@@ -252,13 +252,16 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
   rhs_operator.reinit(matrix_free, rhs_operator_data);
 
   // merged operator
-  OperatorData<dim> merged_operator_data;
-  merged_operator_data.dof_index            = 0;
-  merged_operator_data.quad_index           = 0;
-  merged_operator_data.bc                   = boundary_descriptor;
-  merged_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  merged_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+  OperatorData<dim> combined_operator_data;
+  combined_operator_data.dof_index            = 0;
+  combined_operator_data.quad_index           = 0;
+  combined_operator_data.bc                   = boundary_descriptor;
+  combined_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+  combined_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
+  combined_operator_data.solver_block_diagonal         = param.solver_block_diagonal;
+  combined_operator_data.preconditioner_block_diagonal = param.preconditioner_block_diagonal;
+  combined_operator_data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
 
   // linear system of equations has to be solved: the problem is either steady or
   // an unsteady problem is solved with BDF time integration (semi-implicit or fully implicit
@@ -267,48 +270,45 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
      this->param.temporal_discretization == TemporalDiscretization::BDF)
   {
     if(this->param.problem_type == ProblemType::Unsteady)
-      merged_operator_data.unsteady_problem = true;
+      combined_operator_data.unsteady_problem = true;
 
     if((this->param.equation_type == EquationType::Convection ||
         this->param.equation_type == EquationType::ConvectionDiffusion) &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      merged_operator_data.convective_problem = true;
+      combined_operator_data.convective_problem = true;
 
     if(this->param.equation_type == EquationType::Diffusion ||
        this->param.equation_type == EquationType::ConvectionDiffusion)
-      merged_operator_data.diffusive_problem = true;
+      combined_operator_data.diffusive_problem = true;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK)
   {
     // always false
-    merged_operator_data.unsteady_problem = false;
+    combined_operator_data.unsteady_problem = false;
 
     if(this->param.equation_type == EquationType::Convection ||
        this->param.equation_type == EquationType::ConvectionDiffusion)
-      merged_operator_data.convective_problem = true;
+      combined_operator_data.convective_problem = true;
 
     if(this->param.equation_type == EquationType::Diffusion ||
        this->param.equation_type == EquationType::ConvectionDiffusion)
-      merged_operator_data.diffusive_problem = true;
+      combined_operator_data.diffusive_problem = true;
   }
   else
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  merged_operator_data.scaling_factor_mass_matrix = scaling_factor_mass_matrix;
+  combined_operator_data.scaling_factor_mass_matrix = scaling_factor_mass_matrix;
 
-  merged_operator_data.convective_kernel_data = convective_kernel_data;
-  merged_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
+  combined_operator_data.convective_kernel_data = convective_kernel_data;
+  combined_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
-  merged_operator_data.preconditioner_block_jacobi = param.preconditioner_block_diagonal;
-  merged_operator_data.block_jacobi_solver_data    = param.block_jacobi_solver_data;
+  combined_operator_data.mg_operator_type = param.mg_operator_type;
 
-  merged_operator_data.mg_operator_type = param.mg_operator_type;
+  combined_operator.reinit(matrix_free, constraint_matrix, combined_operator_data);
 
-  combined_operator.reinit(matrix_free, constraint_matrix, merged_operator_data);
-
-  // the velocity vector needs to be set in case of numerical velocity field. Otherwise, certain
+  // The velocity vector needs to be set in case of numerical velocity field. Otherwise, certain
   // preconditioners requiring the velocity field during initialization can not be initialized.
   if(param.type_velocity_field == TypeVelocityField::Numerical)
   {

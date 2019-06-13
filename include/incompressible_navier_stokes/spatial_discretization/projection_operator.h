@@ -88,7 +88,7 @@ struct ProjectionOperatorData
       which_components(ContinuityPenaltyComponents::Normal),
       implement_block_diagonal_preconditioner_matrix_free(false),
       use_cell_based_loops(false),
-      preconditioner_block_jacobi(PreconditionerBlockDiagonal::InverseMassMatrix),
+      preconditioner_block_jacobi(Elementwise::Preconditioner::InverseMassMatrix),
       block_jacobi_solver_data(SolverData(1000, 1.e-12, 1.e-1 /*rel_tol TODO*/, 1000))
   {
   }
@@ -119,7 +119,7 @@ struct ProjectionOperatorData
   bool use_cell_based_loops;
 
   // elementwise iterative solution of block Jacobi problems
-  PreconditionerBlockDiagonal preconditioner_block_jacobi;
+  Elementwise::Preconditioner preconditioner_block_jacobi;
   SolverData                  block_jacobi_solver_data;
 };
 
@@ -956,13 +956,13 @@ private:
   {
     elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
 
-    if(this->operator_data.preconditioner_block_jacobi == PreconditionerBlockDiagonal::None)
+    if(this->operator_data.preconditioner_block_jacobi == Elementwise::Preconditioner::None)
     {
       typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
       elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
     }
     else if(this->operator_data.preconditioner_block_jacobi ==
-            PreconditionerBlockDiagonal::InverseMassMatrix)
+            Elementwise::Preconditioner::InverseMassMatrix)
     {
       typedef Elementwise::InverseMassMatrixPreconditioner<dim, dim, Number> INVERSE_MASS;
 
@@ -975,7 +975,7 @@ private:
     }
 
     Elementwise::IterativeSolverData iterative_solver_data;
-    iterative_solver_data.solver_type = Elementwise::SolverType::CG;
+    iterative_solver_data.solver_type = Elementwise::Solver::CG;
     iterative_solver_data.solver_data = this->operator_data.block_jacobi_solver_data;
 
     elementwise_solver.reset(new ELEMENTWISE_SOLVER(

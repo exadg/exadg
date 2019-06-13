@@ -14,6 +14,8 @@
 #include "../../functionalities/restart_data.h"
 #include "../../functionalities/solver_info_data.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
+#include "../../solvers_and_preconditioners/preconditioner/enum_types.h"
+#include "../../solvers_and_preconditioners/solvers/enum_types.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
 #include "../../time_integration/enum_types.h"
 #include "enum_types.h"
@@ -240,11 +242,14 @@ public:
   bool implement_block_diagonal_preconditioner_matrix_free;
 
   // description: see enum declaration
-  PreconditionerBlockDiagonal preconditioner_block_diagonal;
+  Elementwise::Solver solver_block_diagonal;
+
+  // description: see enum declaration
+  Elementwise::Preconditioner preconditioner_block_diagonal;
 
   // solver data for block Jacobi preconditioner (only relevant for elementwise
   // iterative solution procedure)
-  SolverData block_jacobi_solver_data;
+  SolverData solver_data_block_diagonal;
 
   // description: see enum declaration
   MultigridOperatorType mg_operator_type;

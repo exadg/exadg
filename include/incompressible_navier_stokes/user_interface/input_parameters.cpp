@@ -129,7 +129,7 @@ InputParameters::InputParameters()
     preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
     update_preconditioner_projection(true),
     update_preconditioner_projection_every_time_steps(1),
-    preconditioner_block_diagonal_projection(PreconditionerBlockDiagonal::InverseMassMatrix),
+    preconditioner_block_diagonal_projection(Elementwise::Preconditioner::InverseMassMatrix),
     solver_data_block_diagonal_projection(SolverData(1000, 1.e-12, 1.e-2, 1000)),
 
     // HIGH-ORDER DUAL SPLITTING SCHEME

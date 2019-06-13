@@ -451,10 +451,20 @@ OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_dia
   VectorType &       dst,
   VectorType const & src) const
 {
-  AssertThrow(this->operator_data.implement_block_diagonal_preconditioner_matrix_free == false,
-              ExcMessage("Not implemented."));
-
-  this->apply_inverse_block_diagonal_matrix_based(dst, src);
+  // matrix-free
+  if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
+  {
+    // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
+    // over several elements.
+    bool update_preconditioner = false;
+    elementwise_solver->solve(dst, src, update_preconditioner);
+  }
+  else // matrix-based
+  {
+    // Simply apply inverse of block matrices (using the LU factorization that has been computed
+    // before).
+    apply_inverse_block_diagonal_matrix_based(dst, src);
+  }
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -478,8 +488,35 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::
   initialize_block_diagonal_preconditioner_matrix_free() const
 {
-  AssertThrow(
-    false, ExcMessage("Not implemented. This function has to be implemented by derived classes."));
+  elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
+
+  if(operator_data.preconditioner_block_diagonal == Elementwise::Preconditioner::None)
+  {
+    typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
+
+    elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
+  }
+  else if(operator_data.preconditioner_block_diagonal ==
+          Elementwise::Preconditioner::InverseMassMatrix)
+  {
+    typedef Elementwise::InverseMassMatrixPreconditioner<dim, n_components, Number> INVERSE_MASS;
+
+    elementwise_preconditioner.reset(
+      new INVERSE_MASS(get_matrix_free(), get_dof_index(), get_quad_index()));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  Elementwise::IterativeSolverData iterative_solver_data;
+  iterative_solver_data.solver_type = operator_data.solver_block_diagonal;
+  iterative_solver_data.solver_data = operator_data.solver_data_block_diagonal;
+
+  elementwise_solver.reset(new ELEMENTWISE_SOLVER(
+    *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
+    *std::dynamic_pointer_cast<ELEMENTWISE_PRECONDITIONER>(elementwise_preconditioner),
+    iterative_solver_data));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>

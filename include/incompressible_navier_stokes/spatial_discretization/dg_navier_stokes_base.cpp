@@ -1026,7 +1026,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
 
       // solver
       Elementwise::IterativeSolverData projection_solver_data;
-      projection_solver_data.solver_type         = Elementwise::SolverType::CG;
+      projection_solver_data.solver_type         = Elementwise::Solver::CG;
       projection_solver_data.solver_data.abs_tol = param.solver_data_projection.abs_tol;
       projection_solver_data.solver_data.rel_tol = param.solver_data_projection.rel_tol;
 
