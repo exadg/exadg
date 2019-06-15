@@ -10,10 +10,83 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
+// TODO can be removed once MassMatrixOperator derives from OperatorBase
+#include "../../../operators/integrator_flags.h"
+#include "../../../operators/mapping_flags.h"
+
 using namespace dealii;
 
 namespace IncNS
 {
+namespace Operators
+{
+template<int dim, typename Number>
+class MassMatrixKernel
+{
+public:
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+
+  MassMatrixKernel() : scaling_factor(1.0)
+  {
+  }
+
+  void
+  reinit(double const & factor) const
+  {
+    set_scaling_factor(factor);
+  }
+
+  IntegratorFlags
+  get_integrator_flags() const
+  {
+    IntegratorFlags flags;
+
+    flags.cell_evaluate  = CellFlags(true, false, false);
+    flags.cell_integrate = CellFlags(true, false, false);
+
+    return flags;
+  }
+
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells = update_JxW_values;
+
+    // no face integrals
+
+    return flags;
+  }
+
+  Number
+  get_scaling_factor() const
+  {
+    return scaling_factor;
+  }
+
+  void
+  set_scaling_factor(Number const & number) const
+  {
+    scaling_factor = number;
+  }
+
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    get_volume_flux(vector const & value) const
+  {
+    return scaling_factor * value;
+  }
+
+private:
+  mutable Number scaling_factor;
+};
+
+} // namespace Operators
+
 struct MassMatrixOperatorData
 {
   MassMatrixOperatorData() : dof_index(0), quad_index(0)
@@ -38,8 +111,14 @@ public:
 
   typedef CellIntegrator<dim, dim, Number> Integrator;
 
-  MassMatrixOperator() : matrix_free(nullptr), scaling_factor(1.0)
+  MassMatrixOperator() : matrix_free(nullptr)
   {
+  }
+
+  void
+  set_scaling_factor(Number const & number)
+  {
+    kernel.set_scaling_factor(number);
   }
 
   MassMatrixOperatorData const &
@@ -55,11 +134,11 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             MassMatrixOperatorData const &  operator_data_in)
+  reinit(MatrixFree<dim, Number> const & matrix_free_in,
+         MassMatrixOperatorData const &  operator_data_in)
   {
-    this->matrix_free   = &matrix_free_in;
-    this->operator_data = operator_data_in;
+    matrix_free   = &matrix_free_in;
+    operator_data = operator_data_in;
 
     // Block Jacobi elementwise
     integrator.reset(
@@ -70,45 +149,47 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const
   {
-    AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
+    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
   }
 
+  // TODO can be removed once MassMatrixOperator derives from OperatorBase
   void
   apply_scale(VectorType & dst, Number const & factor, VectorType const & src) const
   {
-    scaling_factor = factor;
+    kernel.set_scaling_factor(factor);
 
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
 
-    scaling_factor = 1.0;
+    kernel.set_scaling_factor(1.0);
   }
 
   void
   apply_add(VectorType & dst, VectorType const & src) const
   {
-    AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
+    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
   }
 
+  // TODO can be removed once MassMatrixOperator derives from OperatorBase
   void
   apply_scale_add(VectorType & dst, Number const & factor, VectorType const & src) const
   {
-    scaling_factor = factor;
+    kernel.set_scaling_factor(factor);
 
     matrix_free->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
 
-    scaling_factor = 1.0;
+    kernel.set_scaling_factor(1.0);
   }
 
   void
   calculate_diagonal(VectorType & diagonal) const
   {
-    AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
+    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
     VectorType src;
@@ -119,7 +200,7 @@ public:
   void
   add_diagonal(VectorType & diagonal) const
   {
-    AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
+    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
     VectorType src;
@@ -130,7 +211,7 @@ public:
   void
   add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<Number>> & matrices) const
   {
-    AssertThrow(std::abs(scaling_factor - 1.0) < 1.e-12,
+    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
                 ExcMessage("Invalid parameter scaling_factor."));
 
     VectorType src;
@@ -170,7 +251,7 @@ private:
   {
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      integrator.submit_value(scaling_factor * integrator.get_value(q), q);
+      integrator.submit_value(kernel.get_volume_flux(integrator.get_value(q)), q);
     }
   }
 
@@ -268,10 +349,11 @@ private:
 
   MassMatrixOperatorData operator_data;
 
-  mutable Number scaling_factor;
-
+  // TODO can be removed once MassMatrixOperator derives from OperatorBase
   // required for elementwise block Jacobi operation
   std::shared_ptr<Integrator> integrator;
+
+  Operators::MassMatrixKernel<dim, Number> kernel;
 };
 
 } // namespace IncNS

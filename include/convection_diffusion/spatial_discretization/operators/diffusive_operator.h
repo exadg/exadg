@@ -19,7 +19,7 @@ struct DiffusiveKernelData
 
   double       IP_factor;
   unsigned int degree;
-  int          degree_mapping;
+  unsigned int degree_mapping;
   double       diffusivity;
 };
 

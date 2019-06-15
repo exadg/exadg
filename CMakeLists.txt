@@ -77,7 +77,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.cpp
-     include/incompressible_navier_stokes/spatial_discretization/operators/body_force_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/operators/rhs_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp 

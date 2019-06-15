@@ -102,8 +102,6 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
 
   FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
   for(unsigned int face = matrix_free.n_inner_face_batches();
       face < (matrix_free.n_inner_face_batches() + matrix_free.n_boundary_face_batches());
       face++)
@@ -117,13 +115,13 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
       integrator.reinit(face);
       integrator.read_dof_values(velocity);
       integrator.evaluate(true, false);
-      integrator.fill_JxW_values(JxW_values);
 
       scalar flow_rate_face = make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        flow_rate_face += JxW_values[q] * integrator.get_value(q) * integrator.get_normal_vector(q);
+        flow_rate_face +=
+          integrator.JxW(q) * integrator.get_value(q) * integrator.get_normal_vector(q);
       }
 
       // sum over all entries of VectorizedArray

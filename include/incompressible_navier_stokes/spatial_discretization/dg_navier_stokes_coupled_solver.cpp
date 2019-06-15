@@ -274,10 +274,11 @@ DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
   this->gradient_operator.rhs(dst.block(0), eval_time);
   dst.block(0) *= scaling_factor_continuity;
 
-  this->viscous_operator.rhs_add(dst.block(0), eval_time);
+  this->viscous_operator.set_evaluation_time(eval_time);
+  this->viscous_operator.rhs_add(dst.block(0));
 
   if(this->param.right_hand_side == true)
-    this->body_force_operator.evaluate_add(dst.block(0), eval_time);
+    this->rhs_operator.evaluate_add(dst.block(0), eval_time);
 
   // Divergence and continuity penalty operators: no contribution to rhs
 
@@ -383,7 +384,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType 
 
   if(this->param.right_hand_side == true)
   {
-    this->body_force_operator.evaluate(dst.block(0), evaluation_time);
+    this->rhs_operator.evaluate(dst.block(0), evaluation_time);
     // Shift body force term to the left-hand side of the equation.
     // This works since body_force_operator is the first operator
     // that is evaluated.
@@ -402,7 +403,10 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType 
   this->convective_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
 
   if(this->param.viscous_problem())
-    this->viscous_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
+  {
+    this->viscous_operator.set_evaluation_time(evaluation_time);
+    this->viscous_operator.evaluate_add(dst.block(0), src.block(0));
+  }
 
   // Divergence and continuity penalty operators
   if(this->param.add_penalty_terms_to_monolithic_system == true)
@@ -441,7 +445,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
 
   if(this->param.right_hand_side == true)
   {
-    this->body_force_operator.evaluate(dst.block(0), evaluation_time);
+    this->rhs_operator.evaluate(dst.block(0), evaluation_time);
     // Shift body force term to the left-hand side of the equation.
     // This works since body_force_operator is the first operator
     // that is evaluated.
@@ -452,7 +456,10 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
     this->convective_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
 
   if(this->param.viscous_problem())
-    this->viscous_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
+  {
+    this->viscous_operator.set_evaluation_time(evaluation_time);
+    this->viscous_operator.evaluate_add(dst.block(0), src.block(0));
+  }
 
   // Divergence and continuity penalty operators
   if(this->param.add_penalty_terms_to_monolithic_system == true)

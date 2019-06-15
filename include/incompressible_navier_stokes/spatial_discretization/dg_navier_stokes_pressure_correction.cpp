@@ -257,7 +257,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_add_body_force_term(
   VectorType & dst,
   double const evaluation_time) const
 {
-  this->body_force_operator.evaluate_add(dst, evaluation_time);
+  this->rhs_operator.evaluate_add(dst, evaluation_time);
 }
 
 template<int dim, typename Number>
@@ -330,7 +330,8 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual(Vecto
   this->convective_operator.evaluate_add(dst, src, evaluation_time);
 
   // viscous term
-  this->viscous_operator.evaluate_add(dst, src, evaluation_time);
+  this->viscous_operator.set_evaluation_time(evaluation_time);
+  this->viscous_operator.evaluate_add(dst, src);
 
   // rhs vector
   dst.add(-1.0, *rhs_vector);
@@ -353,7 +354,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
 
   if(this->param.right_hand_side == true)
   {
-    this->body_force_operator.evaluate(dst_u, evaluation_time);
+    this->rhs_operator.evaluate(dst_u, evaluation_time);
     // Shift body force term to the left-hand side of the equation.
     // This works since body_force_operator is the first operator
     // that is evaluated.
@@ -364,7 +365,10 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
     this->convective_operator.evaluate_add(dst_u, src_u, evaluation_time);
 
   if(this->param.viscous_problem())
-    this->viscous_operator.evaluate_add(dst_u, src_u, evaluation_time);
+  {
+    this->viscous_operator.set_evaluation_time(evaluation_time);
+    this->viscous_operator.evaluate_add(dst_u, src_u);
+  }
 
   // gradient operator scaled by scaling_factor_continuity
   this->gradient_operator.evaluate_add(dst_u, src_p, evaluation_time);

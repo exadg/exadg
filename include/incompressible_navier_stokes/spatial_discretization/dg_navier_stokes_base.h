@@ -31,16 +31,22 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h"
 
 // operators
-#include "operators/body_force_operator.h"
 #include "operators/convective_operator.h"
 #include "operators/divergence_operator.h"
 #include "operators/gradient_operator.h"
 #include "operators/mass_matrix_operator.h"
+#include "operators/rhs_operator.h"
 #include "operators/viscous_operator.h"
 
 #include "../../poisson/spatial_discretization/laplace_operator.h"
 
 #include "turbulence_model.h"
+
+#include "../../operators/elementwise_operator.h"
+#include "../../operators/inverse_mass_matrix.h"
+#include "../../operators/linear_operator_base.h"
+#include "interface.h"
+#include "projection_operator.h"
 
 // preconditioners and solvers
 #include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner.h"
@@ -50,12 +56,6 @@
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 
 #include "projection_solvers.h"
-
-#include "../../operators/elementwise_operator.h"
-#include "../../operators/inverse_mass_matrix.h"
-#include "../../operators/linear_operator_base.h"
-#include "interface.h"
-#include "projection_operator.h"
 
 // time integration
 #include "time_integration/time_step_calculation.h"
@@ -196,8 +196,12 @@ public:
   types::global_dof_index
   get_number_of_dofs() const;
 
+  // returns constant kinematic viscosity
   double
   get_viscosity() const;
+
+  VectorizedArray<Number>
+  get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
   MassMatrixOperatorData const &
   get_mass_matrix_operator_data() const;
@@ -458,7 +462,7 @@ protected:
   MassMatrixOperator<dim, Number> mass_matrix_operator;
   ConvectiveOperator<dim, Number> convective_operator;
   ViscousOperator<dim, Number>    viscous_operator;
-  BodyForceOperator<dim, Number>  body_force_operator;
+  RHSOperator<dim, Number>        rhs_operator;
   GradientOperator<dim, Number>   gradient_operator;
   DivergenceOperator<dim, Number> divergence_operator;
 
@@ -539,6 +543,11 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
+
+  /*
+   * Variable viscosity needed in case of turbulence model
+   */
+  std::shared_ptr<VariableCoefficients<dim, Number>> viscosity_coefficients;
 };
 
 } // namespace IncNS

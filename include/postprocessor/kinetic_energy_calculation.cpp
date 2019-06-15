@@ -129,8 +129,6 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
 {
   CellIntegrator<dim, dim, Number> fe_eval(matrix_free, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
-
   Number volume      = 0.;
   Number energy      = 0.;
   Number enstrophy   = 0.;
@@ -142,7 +140,6 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(src);
     fe_eval.evaluate(true, true);
-    fe_eval.fill_JxW_values(JxW_values);
 
     scalar volume_vec      = make_vectorized_array<Number>(0.);
     scalar energy_vec      = make_vectorized_array<Number>(0.);
@@ -151,20 +148,20 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
-      volume_vec += JxW_values[q];
+      volume_vec += fe_eval.JxW(q);
 
       vector velocity = fe_eval.get_value(q);
-      energy_vec += JxW_values[q] * make_vectorized_array<Number>(0.5) * velocity * velocity;
+      energy_vec += fe_eval.JxW(q) * make_vectorized_array<Number>(0.5) * velocity * velocity;
 
       tensor velocity_gradient = fe_eval.get_gradient(q);
-      dissipation_vec += JxW_values[q] * make_vectorized_array<Number>(this->data.viscosity) *
+      dissipation_vec += fe_eval.JxW(q) * make_vectorized_array<Number>(this->data.viscosity) *
                          scalar_product(velocity_gradient, velocity_gradient);
 
       Tensor<1, number_vorticity_components, scalar> omega = fe_eval.get_curl(q);
 
       scalar norm_omega = omega * omega;
 
-      enstrophy_vec += JxW_values[q] * make_vectorized_array<Number>(0.5) * norm_omega;
+      enstrophy_vec += fe_eval.JxW(q) * make_vectorized_array<Number>(0.5) * norm_omega;
     }
 
     // sum over entries of VectorizedArray, but only over those

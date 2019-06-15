@@ -302,7 +302,7 @@ DGNavierStokesDualSplitting<dim, Number>::evaluate_nonlinear_residual(VectorType
 {
   if(this->param.right_hand_side == true)
   {
-    this->body_force_operator.evaluate(dst, evaluation_time);
+    this->rhs_operator.evaluate(dst, evaluation_time);
     // shift body force term to the left-hand side of the equation
     dst *= -1.0;
   }
@@ -350,7 +350,7 @@ DGNavierStokesDualSplitting<dim, Number>::evaluate_body_force_and_apply_inverse_
   VectorType & dst,
   double const evaluation_time) const
 {
-  this->body_force_operator.evaluate(dst, evaluation_time);
+  this->rhs_operator.evaluate(dst, evaluation_time);
 
   this->inverse_mass_velocity.apply(dst, dst);
 }
@@ -707,7 +707,7 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_viscous_add_boundary
 
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
-      scalar viscosity = this->viscous_operator.get_viscosity(face, q);
+      scalar viscosity = this->get_viscosity_boundary_face(face, q);
 
       if(boundary_type == BoundaryTypeP::Neumann)
       {

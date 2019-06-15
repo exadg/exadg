@@ -257,11 +257,12 @@ public:
   vmult_add(VectorType & dst, VectorType const & src) const;
 
 
-  /*
-   *  This function applies the matrix-vector multiplication for the block Jacobi operation.
-   */
-  void
-  vmult_block_jacobi(VectorType & dst, VectorType const & src) const;
+  // TODO no longer needed -> block Jacobi implementation is shifted to base class OperatorBase
+  //  /*
+  //   *  This function applies the matrix-vector multiplication for the block Jacobi operation.
+  //   */
+  //  void
+  //  vmult_block_jacobi(VectorType & dst, VectorType const & src) const;
 
   /*
    *  Calculation of inverse diagonal (needed for smoothers and preconditioners)
@@ -322,11 +323,12 @@ private:
   void
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
-  /*
-   * Verify computation of block Jacobi matrices.
-   */
-  void
-  check_block_jacobi_matrices() const;
+  // TODO no longer needed -> block Jacobi implementation is shifted to base class OperatorBase
+  //  /*
+  //   * Verify computation of block Jacobi matrices.
+  //   */
+  //  void
+  //  check_block_jacobi_matrices() const;
 
   /*
    *  This function is only needed for testing.

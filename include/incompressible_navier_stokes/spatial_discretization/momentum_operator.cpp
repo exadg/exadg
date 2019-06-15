@@ -29,14 +29,12 @@ MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const & 
   (void)constraint_matrix;
 
   // setup own mass matrix operator
-  own_mass_matrix_operator_storage.initialize(matrix_free, operator_data.mass_matrix_operator_data);
+  own_mass_matrix_operator_storage.reinit(matrix_free, operator_data.mass_matrix_operator_data);
 
-  // TODO: refactor viscous operator, s.t. it does not need mapping
-  unsigned int const   degree = operator_data.viscous_operator_data.degree;
-  MappingQGeneric<dim> mapping(degree);
-  own_viscous_operator_storage.initialize(mapping,
-                                          matrix_free,
-                                          operator_data.viscous_operator_data);
+  own_viscous_operator_storage.reinit(matrix_free,
+                                      constraint_matrix,
+                                      operator_data.viscous_operator_data);
+
   own_convective_operator_storage.initialize(matrix_free, operator_data.convective_operator_data);
 
   this->reinit(matrix_free,
@@ -204,31 +202,31 @@ MomentumOperator<dim, Number>::vmult_add(VectorType & dst, VectorType const & sr
   }
 }
 
-
-template<int dim, typename Number>
-void
-MomentumOperator<dim, Number>::vmult_block_jacobi(VectorType & dst, VectorType const & src) const
-{
-  if(operator_data.unsteady_problem == true)
-  {
-    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
-                ExcMessage("Scaling factor of time derivative term has not been set!"));
-
-    mass_matrix_operator->apply(dst, src);
-    dst *= this->get_scaling_factor_time_derivative_term();
-  }
-  else
-  {
-    dst = 0.0;
-  }
-
-  viscous_operator->apply_block_diagonal_add(dst, src);
-
-  if(operator_data.convective_problem == true)
-  {
-    convective_operator->apply_block_diagonal_add(dst, src, evaluation_time);
-  }
-}
+// TODO no longer needed -> block Jacobi implementation is shifted to base class OperatorBase
+// template<int dim, typename Number>
+// void
+// MomentumOperator<dim, Number>::vmult_block_jacobi(VectorType & dst, VectorType const & src) const
+//{
+//  if(operator_data.unsteady_problem == true)
+//  {
+//    AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
+//                ExcMessage("Scaling factor of time derivative term has not been set!"));
+//
+//    mass_matrix_operator->apply(dst, src);
+//    dst *= this->get_scaling_factor_time_derivative_term();
+//  }
+//  else
+//  {
+//    dst = 0.0;
+//  }
+//
+//  viscous_operator->apply_block_diagonal_add(dst, src);
+//
+//  if(operator_data.convective_problem == true)
+//  {
+//    convective_operator->apply_block_diagonal_add(dst, src, evaluation_time);
+//  }
+//}
 
 template<int dim, typename Number>
 unsigned int
@@ -354,6 +352,7 @@ MomentumOperator<dim, Number>::update_block_diagonal_preconditioner() const
     // compute block matrices and add
     this->add_block_diagonal_matrices(matrices);
 
+    // TODO no longer needed -> block Jacobi implementation is shifted to base class OperatorBase
     // check_block_jacobi_matrices();
 
     calculate_lu_factorization_block_jacobi(matrices);
@@ -429,7 +428,7 @@ MomentumOperator<dim, Number>::apply_add_block_diagonal_elementwise(
     Elementwise::scale(dst, this->get_scaling_factor_time_derivative_term(), problem_size);
   }
 
-  viscous_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
+  viscous_operator->apply_add_block_diagonal_elementwise(cell, dst, src, problem_size);
 
   if(operator_data.convective_problem == true)
   {
@@ -473,38 +472,39 @@ MomentumOperator<dim, Number>::cell_loop_apply_inverse_block_diagonal(
   }
 }
 
-template<int dim, typename Number>
-void
-MomentumOperator<dim, Number>::check_block_jacobi_matrices() const
-{
-  VectorType src;
-  this->initialize_dof_vector(src);
-
-  // fill vector with values unequal zero
-  for(unsigned int i = 0; i < src.local_size(); ++i)
-    src.local_element(i) = i % 11;
-
-  // test matrix-vector product for block Jacobi problem by comparing
-  // matrix-free matrix-vector product and matrix-based matrix-vector product
-  // (where the matrices are generated using the matrix-free implementation)
-  VectorType tmp1(src), tmp2(src), diff(src);
-  tmp1 = 0.0;
-  tmp2 = 0.0;
-
-  // variant 1 (matrix-free)
-  vmult_block_jacobi(tmp1, src);
-
-  // variant 2 (matrix-based)
-  matrix_free->cell_loop(&This::cell_loop_apply_block_diagonal, this, tmp2, src);
-
-  diff = tmp2;
-  diff.add(-1.0, tmp1);
-
-  std::cout << "L2 norm variant 1 = " << tmp1.l2_norm() << std::endl
-            << "L2 norm variant 2 = " << tmp2.l2_norm() << std::endl
-            << "L2 norm v2 - v1 = " << diff.l2_norm() << std::endl
-            << std::endl;
-}
+// TODO no longer needed -> block Jacobi implementation is shifted to base class OperatorBase
+// template<int dim, typename Number>
+// void
+// MomentumOperator<dim, Number>::check_block_jacobi_matrices() const
+//{
+//  VectorType src;
+//  this->initialize_dof_vector(src);
+//
+//  // fill vector with values unequal zero
+//  for(unsigned int i = 0; i < src.local_size(); ++i)
+//    src.local_element(i) = i % 11;
+//
+//  // test matrix-vector product for block Jacobi problem by comparing
+//  // matrix-free matrix-vector product and matrix-based matrix-vector product
+//  // (where the matrices are generated using the matrix-free implementation)
+//  VectorType tmp1(src), tmp2(src), diff(src);
+//  tmp1 = 0.0;
+//  tmp2 = 0.0;
+//
+//  // variant 1 (matrix-free)
+//  vmult_block_jacobi(tmp1, src);
+//
+//  // variant 2 (matrix-based)
+//  matrix_free->cell_loop(&This::cell_loop_apply_block_diagonal, this, tmp2, src);
+//
+//  diff = tmp2;
+//  diff.add(-1.0, tmp1);
+//
+//  std::cout << "L2 norm variant 1 = " << tmp1.l2_norm() << std::endl
+//            << "L2 norm variant 2 = " << tmp2.l2_norm() << std::endl
+//            << "L2 norm v2 - v1 = " << diff.l2_norm() << std::endl
+//            << std::endl;
+//}
 
 template<int dim, typename Number>
 void

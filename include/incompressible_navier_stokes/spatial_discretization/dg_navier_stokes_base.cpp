@@ -248,7 +248,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   // mass matrix operator
   mass_matrix_operator_data.dof_index  = dof_index_u;
   mass_matrix_operator_data.quad_index = quad_index_u;
-  mass_matrix_operator.initialize(matrix_free, mass_matrix_operator_data);
+  mass_matrix_operator.reinit(matrix_free, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_velocity.initialize(matrix_free, param.degree_u, dof_index_u, quad_index_u);
@@ -260,11 +260,11 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
                                           quad_index_u);
 
   // body force operator
-  BodyForceOperatorData<dim> body_force_operator_data;
-  body_force_operator_data.dof_index  = dof_index_u;
-  body_force_operator_data.quad_index = quad_index_u;
-  body_force_operator_data.rhs        = field_functions->right_hand_side;
-  body_force_operator.initialize(matrix_free, body_force_operator_data);
+  RHSOperatorData<dim> rhs_data;
+  rhs_data.dof_index     = dof_index_u;
+  rhs_data.quad_index    = quad_index_u;
+  rhs_data.kernel_data.f = field_functions->right_hand_side;
+  rhs_operator.reinit(matrix_free, rhs_data);
 
   // gradient operator
   gradient_operator_data.dof_index_velocity   = dof_index_u;
@@ -273,7 +273,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   gradient_operator_data.integration_by_parts = param.gradp_integrated_by_parts;
   gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
   gradient_operator_data.bc                   = boundary_descriptor_pressure;
-  gradient_operator.initialize(matrix_free, gradient_operator_data);
+  gradient_operator.reinit(matrix_free, gradient_operator_data);
 
   // divergence operator
   divergence_operator_data.dof_index_velocity   = dof_index_u;
@@ -282,7 +282,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   divergence_operator_data.integration_by_parts = param.divu_integrated_by_parts;
   divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
   divergence_operator_data.bc                   = boundary_descriptor_velocity;
-  divergence_operator.initialize(matrix_free, divergence_operator_data);
+  divergence_operator.reinit(matrix_free, divergence_operator_data);
 
   // convective operator
   convective_operator_data.formulation          = param.formulation_convective_term;
@@ -296,17 +296,22 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   convective_operator.initialize(matrix_free, convective_operator_data);
 
   // viscous operator
-  viscous_operator_data.formulation_viscous_term     = param.formulation_viscous_term;
-  viscous_operator_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
-  viscous_operator_data.IP_formulation               = param.IP_formulation_viscous;
-  viscous_operator_data.degree                       = param.degree_u;
-  viscous_operator_data.IP_factor                    = param.IP_factor_viscous;
-  viscous_operator_data.bc                           = boundary_descriptor_velocity;
-  viscous_operator_data.dof_index                    = dof_index_u;
-  viscous_operator_data.quad_index                   = quad_index_u;
-  viscous_operator_data.viscosity                    = param.viscosity;
-  viscous_operator_data.use_cell_based_loops         = param.use_cell_based_face_loops;
-  viscous_operator.initialize(*mapping, matrix_free, viscous_operator_data);
+  viscous_operator_data.kernel_data.degree                   = param.degree_u;
+  viscous_operator_data.kernel_data.degree_mapping           = mapping_degree;
+  viscous_operator_data.kernel_data.IP_factor                = param.IP_factor_viscous;
+  viscous_operator_data.kernel_data.viscosity                = param.viscosity;
+  viscous_operator_data.kernel_data.formulation_viscous_term = param.formulation_viscous_term;
+  viscous_operator_data.kernel_data.penalty_term_div_formulation =
+    param.penalty_term_div_formulation;
+  viscous_operator_data.kernel_data.IP_formulation        = param.IP_formulation_viscous;
+  viscous_operator_data.kernel_data.viscosity_is_variable = param.use_turbulence_model;
+  viscous_operator_data.bc                                = boundary_descriptor_velocity;
+  viscous_operator_data.dof_index                         = dof_index_u;
+  viscous_operator_data.quad_index                        = quad_index_u;
+  viscous_operator_data.use_cell_based_loops              = param.use_cell_based_face_loops;
+  AffineConstraints<double> constraint_dummy;
+  constraint_dummy.close();
+  viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data);
 }
 
 
@@ -314,14 +319,22 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
 {
-  // make sure that viscous coefficients are initialized
-  viscous_operator.initialize_viscous_coefficients();
+  viscosity_coefficients.reset(new VariableCoefficients<dim, Number>());
+  // allocate vectors for variable coefficients and initialize with constant viscosity
+  viscosity_coefficients->initialize(matrix_free, param.degree_u, param.viscosity);
 
   // initialize turbulence model
   TurbulenceModelData model_data;
-  model_data.turbulence_model = param.turbulence_model;
-  model_data.constant         = param.turbulence_model_constant;
-  turbulence_model.initialize(matrix_free, *mapping, viscous_operator, model_data);
+  model_data.turbulence_model    = param.turbulence_model;
+  model_data.constant            = param.turbulence_model_constant;
+  model_data.kinematic_viscosity = param.viscosity;
+  model_data.dof_index           = dof_index_u;
+  model_data.quad_index          = quad_index_u;
+  model_data.degree              = param.degree_u;
+  turbulence_model.initialize(matrix_free, *mapping, viscosity_coefficients, model_data);
+
+  // set pointer so that viscous operator can access the coefficients
+  viscous_operator.set_viscosity_coefficients_ptr(viscosity_coefficients);
 }
 
 template<int dim, typename Number>
@@ -486,7 +499,21 @@ template<int dim, typename Number>
 double
 DGNavierStokesBase<dim, Number>::get_viscosity() const
 {
-  return viscous_operator.get_const_viscosity();
+  return param.viscosity;
+}
+
+template<int dim, typename Number>
+VectorizedArray<Number>
+DGNavierStokesBase<dim, Number>::get_viscosity_boundary_face(unsigned int const face,
+                                                             unsigned int const q) const
+{
+  VectorizedArray<Number> viscosity = make_vectorized_array<Number>(get_viscosity());
+
+  bool const viscosity_is_variable = param.use_turbulence_model;
+  if(viscosity_is_variable)
+    viscosity_coefficients->get_coefficient_face(face, q);
+
+  return viscosity;
 }
 
 template<int dim, typename Number>

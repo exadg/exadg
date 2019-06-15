@@ -10,23 +10,23 @@
 namespace IncNS
 {
 template<int dim, typename Number>
-TurbulenceModel<dim, Number>::TurbulenceModel() : matrix_free(nullptr), viscous_operator(nullptr)
+TurbulenceModel<dim, Number>::TurbulenceModel() : matrix_free(nullptr)
 {
 }
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::initialize(MatrixFree<dim, Number> const & matrix_free_in,
-                                         Mapping<dim> const &            mapping_in,
-                                         ViscousOperator<dim, Number> &  viscous_operator_in,
-                                         TurbulenceModelData const &     data_in)
+TurbulenceModel<dim, Number>::initialize(
+  MatrixFree<dim, Number> const &                    matrix_free_in,
+  Mapping<dim> const &                               mapping_in,
+  std::shared_ptr<VariableCoefficients<dim, Number>> viscosity_coefficients_in,
+  TurbulenceModelData const &                        data_in)
 {
-  matrix_free      = &matrix_free_in;
-  viscous_operator = &viscous_operator_in;
+  matrix_free            = &matrix_free_in;
+  viscosity_coefficients = viscosity_coefficients_in;
+  turb_model_data        = data_in;
 
   calculate_filter_width(mapping_in);
-
-  turb_model_data = data_in;
 }
 
 template<int dim, typename Number>
@@ -45,15 +45,13 @@ TurbulenceModel<dim, Number>::calculate_turbulent_viscosity(VectorType const & v
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::cell_loop_set_coefficients(MatrixFree<dim, Number> const & data,
-                                                         VectorType &,
-                                                         VectorType const & src,
-                                                         Range const &      cell_range) const
+TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &,
+  VectorType const & src,
+  Range const &      cell_range) const
 {
-  unsigned int const dof_index  = viscous_operator->get_operator_data().dof_index;
-  unsigned int const quad_index = viscous_operator->get_operator_data().quad_index;
-
-  CellIntegratorU integrator(data, dof_index, quad_index);
+  CellIntegratorU integrator(matrix_free, turb_model_data.dof_index, turb_model_data.quad_index);
 
   // loop over all cells
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -70,7 +68,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(MatrixFree<dim, Number>
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      scalar viscosity = make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
+      scalar viscosity = make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
 
       // calculate velocity gradient
       tensor velocity_gradient = integrator.get_gradient(q);
@@ -78,23 +76,27 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(MatrixFree<dim, Number>
       add_turbulent_viscosity(viscosity, filter_width, velocity_gradient, turb_model_data.constant);
 
       // set the coefficients
-      viscous_operator->set_viscous_coefficient_cell(cell, q, viscosity);
+      viscosity_coefficients->set_coefficient_cell(cell, q, viscosity);
     }
   }
 }
 
 template<int dim, typename Number>
 void
-TurbulenceModel<dim, Number>::face_loop_set_coefficients(MatrixFree<dim, Number> const & data,
-                                                         VectorType &,
-                                                         VectorType const & src,
-                                                         Range const &      face_range) const
+TurbulenceModel<dim, Number>::face_loop_set_coefficients(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &,
+  VectorType const & src,
+  Range const &      face_range) const
 {
-  unsigned int const dof_index  = viscous_operator->get_operator_data().dof_index;
-  unsigned int const quad_index = viscous_operator->get_operator_data().quad_index;
-
-  FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
-  FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
+  FaceIntegratorU integrator_m(matrix_free,
+                               true,
+                               turb_model_data.dof_index,
+                               turb_model_data.quad_index);
+  FaceIntegratorU integrator_p(matrix_free,
+                               false,
+                               turb_model_data.dof_index,
+                               turb_model_data.quad_index);
 
   // loop over all interior faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -116,9 +118,9 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(MatrixFree<dim, Number>
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      scalar viscosity = make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
+      scalar viscosity = make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
       scalar viscosity_neighbor =
-        make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
+        make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
 
       // calculate velocity gradient for both elements adjacent to the current face
       tensor velocity_gradient          = integrator_m.get_gradient(q);
@@ -131,8 +133,8 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(MatrixFree<dim, Number>
                               turb_model_data.constant);
 
       // set the coefficients
-      viscous_operator->set_viscous_coefficient_face(face, q, viscosity);
-      viscous_operator->set_viscous_coefficient_face_neighbor(face, q, viscosity_neighbor);
+      viscosity_coefficients->set_coefficient_face(face, q, viscosity);
+      viscosity_coefficients->set_coefficient_face_neighbor(face, q, viscosity_neighbor);
     }
   }
 }
@@ -140,15 +142,15 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(MatrixFree<dim, Number>
 template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
-  MatrixFree<dim, Number> const & data,
+  MatrixFree<dim, Number> const & matrix_free,
   VectorType &,
   VectorType const & src,
   Range const &      face_range) const
 {
-  unsigned int const dof_index  = viscous_operator->get_operator_data().dof_index;
-  unsigned int const quad_index = viscous_operator->get_operator_data().quad_index;
-
-  FaceIntegratorU integrator(data, true, dof_index, quad_index);
+  FaceIntegratorU integrator(matrix_free,
+                             true,
+                             turb_model_data.dof_index,
+                             turb_model_data.quad_index);
 
   // loop over all boundary faces
   for(unsigned int face = face_range.first; face < face_range.second; face++)
@@ -165,7 +167,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
     // loop over all quadrature points
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      scalar viscosity = make_vectorized_array<Number>(viscous_operator->get_const_viscosity());
+      scalar viscosity = make_vectorized_array<Number>(turb_model_data.kinematic_viscosity);
 
       // calculate velocity gradient
       tensor velocity_gradient = integrator.get_gradient(q);
@@ -173,7 +175,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
       add_turbulent_viscosity(viscosity, filter_width, velocity_gradient, turb_model_data.constant);
 
       // set the coefficients
-      viscous_operator->set_viscous_coefficient_face(face, q, viscosity);
+      viscosity_coefficients->set_coefficient_face(face, q, viscosity);
     }
   }
 }
@@ -186,10 +188,9 @@ TurbulenceModel<dim, Number>::calculate_filter_width(Mapping<dim> const & mappin
 
   filter_width_vector.resize(n_cells);
 
-  unsigned int const dof_index = viscous_operator->get_operator_data().dof_index;
-  unsigned int const degree    = viscous_operator->get_operator_data().degree;
+  unsigned int const dof_index = turb_model_data.dof_index;
 
-  QGauss<dim> quadrature(degree + 1);
+  QGauss<dim> quadrature(turb_model_data.degree + 1);
 
   FEValues<dim> fe_values(mapping,
                           matrix_free->get_dof_handler(dof_index).get_fe(),
@@ -217,7 +218,7 @@ TurbulenceModel<dim, Number>::calculate_filter_width(Mapping<dim> const & mappin
 
       // take polynomial degree of shape functions into account:
       // h/(k_u + 1)
-      h /= (double)(degree + 1);
+      h /= (double)(turb_model_data.degree + 1);
 
       filter_width_vector[i][v] = h;
     }
