@@ -37,7 +37,9 @@ MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const & 
                                       constraint_matrix,
                                       operator_data.viscous_operator_data);
 
-  own_convective_operator_storage.initialize(matrix_free, operator_data.convective_operator_data);
+  own_convective_operator_storage.reinit(matrix_free,
+                                         constraint_matrix,
+                                         operator_data.convective_operator_data);
 
   this->reinit(matrix_free,
                operator_data,
@@ -178,7 +180,8 @@ MomentumOperator<dim, Number>::vmult(VectorType & dst, VectorType const & src) c
 
   if(operator_data.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src, evaluation_time);
+    convective_operator->set_evaluation_time(evaluation_time);
+    convective_operator->apply_add(dst, src);
   }
 }
 
@@ -200,7 +203,8 @@ MomentumOperator<dim, Number>::vmult_add(VectorType & dst, VectorType const & sr
 
   if(operator_data.convective_problem == true)
   {
-    convective_operator->apply_add(dst, src, evaluation_time);
+    convective_operator->set_evaluation_time(evaluation_time);
+    convective_operator->apply_add(dst, src);
   }
 }
 
@@ -276,7 +280,8 @@ MomentumOperator<dim, Number>::calculate_diagonal(VectorType & diagonal) const
 
   if(operator_data.convective_problem == true)
   {
-    convective_operator->add_diagonal(diagonal, evaluation_time);
+    convective_operator->set_evaluation_time(evaluation_time);
+    convective_operator->add_diagonal(diagonal);
   }
 }
 
@@ -407,7 +412,8 @@ MomentumOperator<dim, Number>::add_block_diagonal_matrices(
 
   if(operator_data.convective_problem == true)
   {
-    convective_operator->add_block_diagonal_matrices(matrices, evaluation_time);
+    convective_operator->set_evaluation_time(evaluation_time);
+    convective_operator->add_block_diagonal_matrices(matrices);
   }
 }
 
@@ -434,7 +440,8 @@ MomentumOperator<dim, Number>::apply_add_block_diagonal_elementwise(
 
   if(operator_data.convective_problem == true)
   {
-    convective_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
+    convective_operator->set_evaluation_time(evaluation_time);
+    convective_operator->apply_add_block_diagonal_elementwise(cell, dst, src, problem_size);
   }
 }
 

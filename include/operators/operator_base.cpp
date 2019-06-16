@@ -814,14 +814,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::do_face_int_integral_ce
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_block_diagonal_cell_based() const
-{
-  AssertThrow(false,
-              ExcMessage("OperatorBase::do_block_diagonal_cell_based() has not been implemented!"));
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
 OperatorBase<dim, Number, AdditionalData, n_components>::create_standard_basis(
   unsigned int     j,
   IntegratorCell & integrator) const

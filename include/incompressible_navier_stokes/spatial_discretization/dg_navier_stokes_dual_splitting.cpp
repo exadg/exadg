@@ -319,7 +319,7 @@ DGNavierStokesDualSplitting<dim, Number>::evaluate_nonlinear_residual(VectorType
 
   this->mass_matrix_operator.apply_add(dst, temp);
 
-  this->convective_operator.evaluate_add(dst, src, evaluation_time);
+  this->convective_operator.evaluate_nonlinear_operator_add(dst, src, evaluation_time);
 }
 
 template<int dim, typename Number>
@@ -330,7 +330,8 @@ DGNavierStokesDualSplitting<dim, Number>::vmult(VectorType & dst, VectorType con
 
   dst *= scaling_factor_time_derivative_term;
 
-  this->convective_operator.apply_add(dst, src, evaluation_time);
+  this->convective_operator.set_evaluation_time(evaluation_time);
+  this->convective_operator.apply_add(dst, src);
 }
 
 template<int dim, typename Number>
@@ -340,7 +341,7 @@ DGNavierStokesDualSplitting<dim, Number>::evaluate_convective_term_and_apply_inv
   VectorType const & src,
   double const       evaluation_time) const
 {
-  this->convective_operator.evaluate(dst, src, evaluation_time);
+  this->convective_operator.evaluate_nonlinear_operator(dst, src, evaluation_time);
   this->inverse_mass_velocity.apply(dst, dst);
 }
 

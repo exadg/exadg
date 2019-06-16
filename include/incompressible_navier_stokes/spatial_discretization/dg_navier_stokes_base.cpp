@@ -288,15 +288,15 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   divergence_operator.reinit(matrix_free, divergence_operator_data);
 
   // convective operator
-  convective_operator_data.formulation          = param.formulation_convective_term;
-  convective_operator_data.dof_index            = dof_index_u;
-  convective_operator_data.quad_index           = quad_index_u_nonlinear;
-  convective_operator_data.upwind_factor        = param.upwind_factor;
-  convective_operator_data.bc                   = boundary_descriptor_velocity;
-  convective_operator_data.use_outflow_bc       = param.use_outflow_bc_convective_term;
-  convective_operator_data.type_dirichlet_bc    = param.type_dirichlet_bc_convective;
-  convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  convective_operator.initialize(matrix_free, convective_operator_data);
+  convective_operator_data.kernel_data.formulation   = param.formulation_convective_term;
+  convective_operator_data.kernel_data.upwind_factor = param.upwind_factor;
+  convective_operator_data.use_outflow_bc            = param.use_outflow_bc_convective_term;
+  convective_operator_data.type_dirichlet_bc         = param.type_dirichlet_bc_convective;
+  convective_operator_data.dof_index                 = dof_index_u;
+  convective_operator_data.quad_index                = quad_index_u_nonlinear;
+  convective_operator_data.use_cell_based_loops      = param.use_cell_based_face_loops;
+  convective_operator_data.bc                        = boundary_descriptor_velocity;
+  convective_operator.reinit(matrix_free, constraint_dummy, convective_operator_data);
 
   // viscous operator
   viscous_operator_data.kernel_data.degree                   = param.degree_u;
@@ -861,7 +861,7 @@ DGNavierStokesBase<dim, Number>::evaluate_convective_term(VectorType &       dst
                                                           VectorType const & src,
                                                           Number const       evaluation_time) const
 {
-  convective_operator.evaluate(dst, src, evaluation_time);
+  convective_operator.evaluate_nonlinear_operator(dst, src, evaluation_time);
 }
 
 template<int dim, typename Number>
@@ -891,7 +891,7 @@ DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inv
   VectorType const & src,
   Number const       evaluation_time) const
 {
-  convective_operator.evaluate(dst, src, evaluation_time);
+  convective_operator.evaluate_nonlinear_operator(dst, src, evaluation_time);
 
   // shift convective term to the rhs of the equation
   dst *= -1.0;
@@ -930,7 +930,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_convective_term(VectorTyp
 {
   VectorType dst;
   dst.reinit(velocity, false);
-  convective_operator.evaluate(dst, velocity, time);
+  convective_operator.evaluate_nonlinear_operator(dst, velocity, time);
   return velocity * dst;
 }
 

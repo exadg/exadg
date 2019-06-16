@@ -470,11 +470,11 @@ template<int dim, typename Number>
 class ViscousOperator : public OperatorBase<dim, Number, ViscousOperatorData<dim>, dim>
 {
 public:
-  typedef OperatorBase<dim, Number, ViscousOperatorData<dim>, dim> Base;
-
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+
+  typedef OperatorBase<dim, Number, ViscousOperatorData<dim>, dim> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::Range          Range;

@@ -13,1074 +13,116 @@
 #include "../../user_interface/input_parameters.h"
 #include "weak_boundary_conditions.h"
 
+#include "../../../operators/operator_base.h"
+
 using namespace dealii;
 
 namespace IncNS
 {
-template<int dim>
-struct ConvectiveOperatorData
+namespace Operators
 {
-  ConvectiveOperatorData()
-    : formulation(FormulationConvectiveTerm::DivergenceFormulation),
-      dof_index(0),
-      quad_index(0),
-      upwind_factor(1.0),
-      use_outflow_bc(false),
-      type_dirichlet_bc(TypeDirichletBCs::Mirror),
-      use_cell_based_loops(false)
+struct ConvectiveKernelData
+{
+  ConvectiveKernelData()
+    : formulation(FormulationConvectiveTerm::DivergenceFormulation), upwind_factor(1.0)
   {
   }
 
   FormulationConvectiveTerm formulation;
 
-  unsigned int dof_index;
-
-  unsigned int quad_index;
-
   double upwind_factor;
-
-  bool use_outflow_bc;
-
-  TypeDirichletBCs type_dirichlet_bc;
-
-  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
-
-  // use cell based loops
-  bool use_cell_based_loops;
 };
 
-
-
 template<int dim, typename Number>
-class ConvectiveOperator
+class ConvectiveKernel
 {
-public:
-  typedef ConvectiveOperator<dim, Number> This;
-
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
+private:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-  typedef std::pair<unsigned int, unsigned int> Range;
-
-  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
-  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
-
-  ConvectiveOperator()
-    : matrix_free(nullptr),
-      eval_time(0.0),
-      n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
-  {
-  }
-
-  ConvectiveOperatorData<dim> const &
-  get_operator_data() const
-  {
-    return operator_data;
-  }
-
+public:
   void
-  set_solution_linearization(VectorType const & src) const
+  reinit(ConvectiveKernelData const & data_in) const
   {
-    velocity_linearization = src;
-
-    velocity_linearization.update_ghost_values();
+    data = data_in;
   }
 
-  VectorType const &
-  get_solution_linearization() const
+  static MappingFlags
+  get_mapping_flags()
   {
-    return velocity_linearization;
+    MappingFlags flags;
+
+    flags.cells          = update_JxW_values | update_gradients;
+    flags.inner_faces    = update_JxW_values | update_normal_vectors;
+    flags.boundary_faces = update_JxW_values | update_normal_vectors;
+
+    return flags;
   }
 
-  void
-  initialize(MatrixFree<dim, Number> const &     matrix_free_in,
-             ConvectiveOperatorData<dim> const & operator_data_in)
+  IntegratorFlags
+  get_integrator_flags() const
   {
-    matrix_free   = &matrix_free_in;
-    operator_data = operator_data_in;
+    IntegratorFlags flags;
 
-    matrix_free->initialize_dof_vector(velocity_linearization, operator_data.dof_index);
-
-    // Block Jacobi elementwise
-    integrator.reset(
-      new CellIntegratorU(*matrix_free, operator_data.dof_index, operator_data.quad_index));
-    integrator_m.reset(
-      new FaceIntegratorU(*matrix_free, true, operator_data.dof_index, operator_data.quad_index));
-    integrator_p.reset(
-      new FaceIntegratorU(*matrix_free, false, operator_data.dof_index, operator_data.quad_index));
-    integrator_linearization.reset(
-      new CellIntegratorU(*matrix_free, operator_data.dof_index, operator_data.quad_index));
-    integrator_linearization_m.reset(
-      new FaceIntegratorU(*matrix_free, true, operator_data.dof_index, operator_data.quad_index));
-    integrator_linearization_p.reset(
-      new FaceIntegratorU(*matrix_free, false, operator_data.dof_index, operator_data.quad_index));
-  }
-
-  /*
-   * Evaluate nonlinear convective operator.
-   */
-  void
-  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop_nonlinear_operator,
-                      &This::face_loop_nonlinear_operator,
-                      &This::boundary_face_loop_nonlinear_operator,
-                      this,
-                      dst,
-                      src,
-                      true /*zero_dst_vector = true*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  void
-  evaluate_add(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop_nonlinear_operator,
-                      &This::face_loop_nonlinear_operator,
-                      &This::boundary_face_loop_nonlinear_operator,
-                      this,
-                      dst,
-                      src,
-                      false /*zero_dst_vector = false*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  // OIF splitting
-  /*
-   * Evaluate operator (linear transport with a divergence-free velocity, required for OIF
-   * splitting).
-   */
-  void
-  evaluate_linear_transport(VectorType &       dst,
-                            VectorType const & src,
-                            Number const       evaluation_time,
-                            VectorType const & velocity_transport) const
-  {
-    set_solution_linearization(velocity_transport);
-
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop_linear_transport,
-                      &This::face_loop_linear_transport,
-                      &This::boundary_face_loop_linear_transport,
-                      this,
-                      dst,
-                      src,
-                      true /*zero_dst_vector = true*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  /*
-   * Apply linearized convective operator.
-   */
-  void
-  apply(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop_linearized_operator,
-                      &This::face_loop_linearized_operator,
-                      &This::boundary_face_loop_linearized_operator,
-                      this,
-                      dst,
-                      src,
-                      true /*zero_dst_vector = true*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  void
-  apply_add(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop_linearized_operator,
-                      &This::face_loop_linearized_operator,
-                      &This::boundary_face_loop_linearized_operator,
-                      this,
-                      dst,
-                      src,
-                      false /*zero_dst_vector = false*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  /*
-   * Calculate diagonal of linearized convective operator.
-   */
-  void
-  calculate_diagonal(VectorType & diagonal, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    VectorType src;
-
-    matrix_free->loop(&This::cell_loop_diagonal,
-                      &This::face_loop_diagonal,
-                      &This::boundary_face_loop_diagonal,
-                      this,
-                      diagonal,
-                      src,
-                      true /*zero_dst_vector = true*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  void
-  add_diagonal(VectorType & diagonal, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    VectorType src;
-
-    matrix_free->loop(&This::cell_loop_diagonal,
-                      &This::face_loop_diagonal,
-                      &This::boundary_face_loop_diagonal,
-                      this,
-                      diagonal,
-                      src,
-                      false /*zero_dst_vector = false*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  /*
-   * Assemble block diagonal matrices for linearized convective operator.
-   */
-  void
-  add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<Number>> & matrices,
-                              Number const                            evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    VectorType src;
-
-    if(operator_data.use_cell_based_loops)
+    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      matrix_free->cell_loop(&This::cell_based_loop_calculate_block_diagonal, this, matrices, src);
+      flags.cell_evaluate  = CellFlags(true, false, false);
+      flags.cell_integrate = CellFlags(false, true, false);
+
+      flags.face_evaluate  = FaceFlags(true, false);
+      flags.face_integrate = FaceFlags(true, false);
     }
-    else
+    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      AssertThrow(
-        n_mpi_processes == 1,
-        ExcMessage(
-          "Block diagonal calculation with separate loops over cells and faces only works in serial. "
-          "Use cell based loops for parallel computations."));
+      flags.cell_evaluate  = CellFlags(true, true, false);
+      flags.cell_integrate = CellFlags(true, false, false);
 
-      matrix_free->loop(&This::cell_loop_calculate_block_diagonal,
-                        &This::face_loop_calculate_block_diagonal,
-                        &This::boundary_face_loop_calculate_block_diagonal,
-                        this,
-                        matrices,
-                        src);
+      flags.face_evaluate  = FaceFlags(true, false);
+      flags.face_integrate = FaceFlags(true, false);
     }
-  }
-
-  /*
-   *  Apply block-diagonal operator as a global operation (only needed in order to test the
-   * implementation for assembling the block-diagonal).
-   */
-  void
-  apply_block_diagonal(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop_linearized_operator,
-                      &This::face_loop_apply_block_diagonal_linearized_operator,
-                      &This::boundary_face_loop_linearized_operator,
-                      this,
-                      dst,
-                      src,
-                      true /*zero_dst_vector = true*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  /*
-   *  Apply-add block-diagonal operator as a global operation (only needed in order to test the
-   * implementation for assembling the block-diagonal).
-   */
-  void
-  apply_block_diagonal_add(VectorType &       dst,
-                           VectorType const & src,
-                           Number const       evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop_linearized_operator,
-                      &This::face_loop_apply_block_diagonal_linearized_operator,
-                      &This::boundary_face_loop_linearized_operator,
-                      this,
-                      dst,
-                      src,
-                      false /*zero_dst_vector = false*/,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values,
-                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
-  }
-
-  void
-  apply_add_block_diagonal_elementwise(unsigned int const   cell,
-                                       scalar * const       dst,
-                                       scalar const * const src,
-                                       unsigned int const   problem_size = 1) const
-  {
-    (void)problem_size;
-
-    unsigned int dofs_per_cell = integrator->dofs_per_cell;
-
-    integrator_linearization->reinit(cell);
-
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-      integrator_linearization->gather_evaluate(velocity_linearization, true, false, false);
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-      integrator_linearization->gather_evaluate(velocity_linearization, true, true, false);
-    else
-      AssertThrow(false, ExcMessage("Not implemented."));
-
-    integrator->reinit(cell);
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      integrator->begin_dof_values()[i] = src[i];
-
-    do_cell_integral_linearized_operator(*integrator, *integrator_linearization);
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      dst[i] += integrator->begin_dof_values()[i];
-
-    // loop over all faces
-    unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
-    for(unsigned int face = 0; face < n_faces; ++face)
+    else if(data.formulation == FormulationConvectiveTerm::EnergyPreservingFormulation)
     {
-      integrator_linearization_m->reinit(cell, face);
-      integrator_linearization_m->gather_evaluate(velocity_linearization, true, false);
+      flags.cell_evaluate  = CellFlags(true, true, false);
+      flags.cell_integrate = CellFlags(true, true, false);
 
-      // TODO
-      //        AssertThrow(false, ExcMessage("We have to evaluate the linearized velocity field on
-      //        the neighbor. This functionality is not implemented in deal.II/matrix_free."));
-      //        integrator_linearization_p->reinit(cell, face);
-      //        integrator_linearization_p->gather_evaluate(velocity_linearization, true, false);
-
-      integrator_m->reinit(cell, face);
-      integrator_p->reinit(cell, face);
-
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        integrator_m->begin_dof_values()[i] = src[i];
-
-      // do not need to read dof values for integrator_p (already initialized with 0)
-
-      integrator_m->evaluate(true, false);
-
-      auto bids        = matrix_free->get_faces_by_cells_boundary_id(cell, face);
-      auto boundary_id = bids[0];
-
-      if(boundary_id == numbers::internal_face_boundary_id) // internal face
-      {
-        // TODO
-        //            do_face_int_integral_linearized_operator(*integrator_m, *integrator_p,
-        //            *integrator_linearization_m, *integrator_linearization_p);
-
-        // plug in integrator_linearization_m twice to avoid the above problem with accessing dofs
-        // of the neighboring element
-        do_face_int_integral_linearized_operator(*integrator_m,
-                                                 *integrator_p,
-                                                 *integrator_linearization_m,
-                                                 *integrator_linearization_m);
-      }
-      else // boundary face
-      {
-        do_boundary_integral_linearized_operator(*integrator_m,
-                                                 *integrator_linearization_m,
-                                                 boundary_id);
-      }
-
-      integrator_m->integrate(true, false);
-
-      for(unsigned int i = 0; i < dofs_per_cell; ++i)
-        dst[i] += integrator_m->begin_dof_values()[i];
-    }
-  }
-
-private:
-  // nonlinear operator
-  template<typename Integrator>
-  void
-  do_cell_integral_nonlinear_operator(Integrator & integrator) const
-  {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      integrator.evaluate(true, false, false);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        // nonlinear convective flux F(u) = uu
-        vector u = integrator.get_value(q);
-        tensor F = outer_product(u, u);
-        // minus sign due to integration by parts
-        integrator.submit_gradient(-F, q);
-      }
-      integrator.integrate(false, true);
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      integrator.evaluate(true, true, false);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        // convective formulation: (u * grad) u = grad(u) * u
-        vector u          = integrator.get_value(q);
-        tensor gradient_u = integrator.get_gradient(q);
-        vector F          = gradient_u * u;
-
-        // plus sign since the strong formulation is used, i.e.
-        // integration by parts is performed twice
-        integrator.submit_value(F, q);
-      }
-      integrator.integrate(true, false);
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::EnergyPreservingFormulation)
-    {
-      integrator.evaluate(true, true, false);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        // nonlinear convective flux F(u) = uu
-        vector u          = integrator.get_value(q);
-        tensor F          = outer_product(u, u);
-        scalar divergence = integrator.get_divergence(q);
-        vector div_term   = -0.5 * divergence * u;
-        // minus sign due to integration by parts
-        integrator.submit_gradient(-F, q);
-        integrator.submit_value(div_term, q);
-      }
-      integrator.integrate(true, true);
+      flags.face_evaluate  = FaceFlags(true, false);
+      flags.face_integrate = FaceFlags(true, false);
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
+
+    return flags;
   }
 
-  template<typename Integrator>
-  void
-  do_face_integral_nonlinear_operator(Integrator & integrator_m, Integrator & integrator_p) const
+  IntegratorFlags
+  get_integrator_flags_linear_transport() const
   {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    IntegratorFlags flags;
+
+    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM     = integrator_m.get_value(q);
-        vector uP     = integrator_p.get_value(q);
-        vector normal = integrator_m.get_normal_vector(q);
+      flags.cell_evaluate  = CellFlags(true, false, false);
+      flags.cell_integrate = CellFlags(false, true, false);
 
-        vector flux = calculate_lax_friedrichs_flux(uM, uP, normal);
-
-        integrator_m.submit_value(flux, q);
-        integrator_p.submit_value(-flux, q); // minus sign since n⁺ = - n⁻
-      }
+      flags.face_evaluate  = FaceFlags(true, false);
+      flags.face_integrate = FaceFlags(true, false);
     }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM     = integrator_m.get_value(q);
-        vector uP     = integrator_p.get_value(q);
-        vector normal = integrator_m.get_normal_vector(q);
+      flags.cell_evaluate  = CellFlags(false, true, false);
+      flags.cell_integrate = CellFlags(true, false, false);
 
-        vector flux_times_normal       = calculate_upwind_flux(uM, uP, normal);
-        scalar average_normal_velocity = 0.5 * (uM + uP) * normal;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        integrator_m.submit_value(flux_times_normal - average_normal_velocity * uM, q);
-        // opposite signs since n⁺ = - n⁻
-        integrator_p.submit_value(-flux_times_normal + average_normal_velocity * uP, q);
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::EnergyPreservingFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM     = integrator_m.get_value(q);
-        vector uP     = integrator_p.get_value(q);
-        vector jump   = uM - uP;
-        vector normal = integrator_m.get_normal_vector(q);
-
-        vector flux = calculate_lax_friedrichs_flux(uM, uP, normal);
-
-        // corrections to obtain an energy preserving flux (which is not conservative!)
-        vector flux_m = flux + 0.25 * jump * normal * uP;
-        vector flux_p = -flux + 0.25 * jump * normal * uM;
-
-        integrator_m.submit_value(flux_m, q);
-        integrator_p.submit_value(flux_p, q);
-      }
+      flags.face_evaluate  = FaceFlags(true, false);
+      flags.face_integrate = FaceFlags(true, false);
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
-  }
 
-  template<typename Integrator>
-  void
-  do_boundary_integral_nonlinear_operator(Integrator &               integrator,
-                                          types::boundary_id const & boundary_id) const
-  {
-    BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
-
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value_nonlinear(uM,
-                                                       q,
-                                                       integrator,
-                                                       boundary_type,
-                                                       boundary_id,
-                                                       operator_data.bc,
-                                                       this->eval_time,
-                                                       operator_data.type_dirichlet_bc);
-
-        vector normalM = integrator.get_normal_vector(q);
-
-        vector flux = calculate_lax_friedrichs_flux(uM, uP, normalM);
-
-        if(boundary_type == BoundaryTypeU::Neumann && operator_data.use_outflow_bc == true)
-          apply_outflow_bc(flux, uM * normalM);
-
-        integrator.submit_value(flux, q);
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value_nonlinear(uM,
-                                                       q,
-                                                       integrator,
-                                                       boundary_type,
-                                                       boundary_id,
-                                                       operator_data.bc,
-                                                       this->eval_time,
-                                                       operator_data.type_dirichlet_bc);
-
-        vector normal = integrator.get_normal_vector(q);
-
-        vector flux_times_normal = calculate_upwind_flux(uM, uP, normal);
-
-        if(boundary_type == BoundaryTypeU::Neumann && operator_data.use_outflow_bc == true)
-          apply_outflow_bc(flux_times_normal, uM * normal);
-
-        scalar average_normal_velocity = 0.5 * (uM + uP) * normal;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        integrator.submit_value(flux_times_normal - average_normal_velocity * uM, q);
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::EnergyPreservingFormulation)
-    {
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector uM      = integrator.get_value(q);
-        vector uP      = calculate_exterior_value_nonlinear(uM,
-                                                       q,
-                                                       integrator,
-                                                       boundary_type,
-                                                       boundary_id,
-                                                       operator_data.bc,
-                                                       this->eval_time,
-                                                       operator_data.type_dirichlet_bc);
-        vector normalM = integrator.get_normal_vector(q);
-
-        vector flux = calculate_lax_friedrichs_flux(uM, uP, normalM);
-
-        if(boundary_type == BoundaryTypeU::Neumann && operator_data.use_outflow_bc == true)
-          apply_outflow_bc(flux, uM * normalM);
-
-        // corrections to obtain an energy preserving flux (which is not conservative!)
-        flux = flux + 0.25 * (uM - uP) * normalM * uP;
-        integrator.submit_value(flux, q);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  // OIF splitting
-  template<typename Integrator>
-  void
-  do_cell_integral_linear_transport(Integrator & integrator,
-                                    Integrator & integrator_transport) const
-  {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      integrator.evaluate(true, false, false);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        // nonlinear convective flux F = uw
-        vector u = integrator.get_value(q);
-        vector w = integrator_transport.get_value(q);
-        tensor F = outer_product(u, w);
-        // minus sign due to integration by parts
-        integrator.submit_gradient(-F, q);
-      }
-      integrator.integrate(false, true);
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      integrator.evaluate(false, true, false);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        // convective formulation: grad(u) * w
-        vector w      = integrator_transport.get_value(q);
-        tensor grad_u = integrator.get_gradient(q);
-        vector F      = grad_u * w;
-
-        // plus sign since the strong formulation is used, i.e.
-        // integration by parts is performed twice
-        integrator.submit_value(F, q);
-      }
-      integrator.integrate(true, false);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  // splitting
-  template<typename Integrator>
-  void
-  do_face_integral_linear_transport(Integrator & integrator_m,
-                                    Integrator & integrator_p,
-                                    Integrator & integrator_transport_m,
-                                    Integrator & integrator_transport_p) const
-  {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM = integrator_m.get_value(q);
-        vector uP = integrator_p.get_value(q);
-
-        vector wM = integrator_transport_m.get_value(q);
-        vector wP = integrator_transport_p.get_value(q);
-
-        vector normal = integrator_m.get_normal_vector(q);
-
-        vector flux = calculate_lax_friedrichs_flux_linear_transport(uM, uP, wM, wP, normal);
-
-        integrator_m.submit_value(flux, q);
-        integrator_p.submit_value(-flux, q); // minus sign since n⁺ = - n⁻
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM = integrator_m.get_value(q);
-        vector uP = integrator_p.get_value(q);
-
-        vector wM = integrator_transport_m.get_value(q);
-        vector wP = integrator_transport_p.get_value(q);
-
-        vector normal = integrator_m.get_normal_vector(q);
-
-        vector flux_times_normal = calculate_upwind_flux_linear_transport(uM, uP, wM, wP, normal);
-
-        scalar average_normal_velocity = 0.5 * (wM + wP) * normal;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        integrator_m.submit_value(flux_times_normal - average_normal_velocity * uM, q);
-        // opposite signs since n⁺ = - n⁻
-        integrator_p.submit_value(-flux_times_normal + average_normal_velocity * uP, q);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  // OIF splitting
-  template<typename Integrator>
-  void
-  do_boundary_integral_linear_transport(Integrator &               integrator,
-                                        Integrator &               integrator_transport,
-                                        types::boundary_id const & boundary_id) const
-  {
-    BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
-
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value_nonlinear(uM,
-                                                       q,
-                                                       integrator,
-                                                       boundary_type,
-                                                       boundary_id,
-                                                       operator_data.bc,
-                                                       this->eval_time,
-                                                       operator_data.type_dirichlet_bc);
-
-        vector wM = integrator_transport.get_value(q);
-
-        vector normal = integrator.get_normal_vector(q);
-
-        vector flux = calculate_lax_friedrichs_flux_linear_transport(uM, uP, wM, wM, normal);
-
-        if(boundary_type == BoundaryTypeU::Neumann && operator_data.use_outflow_bc == true)
-          apply_outflow_bc(flux, wM * normal);
-
-        integrator.submit_value(flux, q);
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector uM = integrator.get_value(q);
-        vector uP = calculate_exterior_value_nonlinear(uM,
-                                                       q,
-                                                       integrator,
-                                                       boundary_type,
-                                                       boundary_id,
-                                                       operator_data.bc,
-                                                       this->eval_time,
-                                                       operator_data.type_dirichlet_bc);
-
-        // concerning the transport velocity w, use the same value for interior and
-        // exterior states, i.e., do not prescribe boundary conditions
-        vector w = integrator_transport.get_value(q);
-
-        vector normal = integrator.get_normal_vector(q);
-
-        vector flux_times_normal = calculate_upwind_flux_linear_transport(uM, uP, w, w, normal);
-
-        if(boundary_type == BoundaryTypeU::Neumann && operator_data.use_outflow_bc == true)
-          apply_outflow_bc(flux_times_normal, w * normal);
-
-        scalar average_normal_velocity = w * normal;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        integrator.submit_value(flux_times_normal - average_normal_velocity * uM, q);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  // linearized operator
-  template<typename Integrator>
-  void
-  do_cell_integral_linearized_operator(Integrator & integrator,
-                                       Integrator & integrator_linearization) const
-  {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      integrator.evaluate(true, false, false);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector delta_u = integrator.get_value(q);
-        vector u       = integrator_linearization.get_value(q);
-        tensor F       = outer_product(u, delta_u);
-        integrator.submit_gradient(-(F + transpose(F)),
-                                   q); // minus sign due to integration by parts
-      }
-      integrator.integrate(false, true);
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      integrator.evaluate(true, true, false);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        // convective term: grad(u) * u
-        vector u            = integrator_linearization.get_value(q);
-        tensor grad_u       = integrator_linearization.get_gradient(q);
-        vector delta_u      = integrator.get_value(q);
-        tensor grad_delta_u = integrator.get_gradient(q);
-
-        vector F = grad_u * delta_u + grad_delta_u * u;
-
-        // plus sign since the strong formulation is used, i.e.
-        // integration by parts is performed twice
-        integrator.submit_value(F, q);
-      }
-      integrator.integrate(true, false);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  template<typename Integrator>
-  void
-  do_face_integral_linearized_operator(Integrator & integrator_m,
-                                       Integrator & integrator_p,
-                                       Integrator & integrator_linearization_m,
-                                       Integrator & integrator_linearization_p) const
-  {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization_m.get_value(q);
-        vector uP = integrator_linearization_p.get_value(q);
-
-        vector delta_uM = integrator_m.get_value(q);
-        vector delta_uP = integrator_p.get_value(q);
-
-        vector normal = integrator_m.get_normal_vector(q);
-
-        vector flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
-
-        integrator_m.submit_value(flux, q);
-        integrator_p.submit_value(-flux, q); // minus sign since n⁺ = -n⁻
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization_m.get_value(q);
-        vector uP = integrator_linearization_p.get_value(q);
-
-        vector delta_uM = integrator_m.get_value(q);
-        vector delta_uP = integrator_p.get_value(q);
-
-        vector normal = integrator_m.get_normal_vector(q);
-
-        vector flux_times_normal =
-          calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
-
-        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal;
-        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        integrator_m.submit_value(flux_times_normal - average_normal_velocity * delta_uM -
-                                    delta_average_normal_velocity * uM,
-                                  q);
-        // opposite signs since n⁺ = - n⁻
-        integrator_p.submit_value(-flux_times_normal + average_normal_velocity * delta_uP +
-                                    delta_average_normal_velocity * uP,
-                                  q);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  template<typename Integrator>
-  void
-  do_face_int_integral_linearized_operator(Integrator & integrator_m,
-                                           Integrator & /* integrator_p */,
-                                           Integrator & integrator_linearization_m,
-                                           Integrator & integrator_linearization_p) const
-  {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization_m.get_value(q);
-        vector uP = integrator_linearization_p.get_value(q);
-
-        vector delta_uM = integrator_m.get_value(q);
-        vector delta_uP; // set exterior value to zero
-
-        vector normal_m = integrator_m.get_normal_vector(q);
-
-        vector flux =
-          calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normal_m);
-
-        integrator_m.submit_value(flux, q);
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization_m.get_value(q);
-        vector uP = integrator_linearization_p.get_value(q);
-
-        vector delta_uM = integrator_m.get_value(q);
-        vector delta_uP; // set exterior value to zero
-
-        vector normal = integrator_m.get_normal_vector(q);
-
-        vector flux_times_normal =
-          calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
-
-        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal;
-        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        integrator_m.submit_value(flux_times_normal - average_normal_velocity * delta_uM -
-                                    delta_average_normal_velocity * uM,
-                                  q);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  template<typename Integrator>
-  void
-  do_face_ext_integral_linearized_operator(Integrator & /* integrator_m */,
-                                           Integrator & integrator_p,
-                                           Integrator & integrator_linearization_m,
-                                           Integrator & integrator_linearization_p) const
-  {
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization_m.get_value(q);
-        vector uP = integrator_linearization_p.get_value(q);
-
-        vector delta_uM; // set exterior value to zero
-        vector delta_uP = integrator_p.get_value(q);
-
-        vector normal_p = -integrator_p.get_normal_vector(q);
-
-        vector flux =
-          calculate_lax_friedrichs_flux_linearized(uP, uM, delta_uP, delta_uM, normal_p);
-
-        integrator_p.submit_value(flux, q);
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization_m.get_value(q);
-        vector uP = integrator_linearization_p.get_value(q);
-
-        vector delta_uM; // set exterior value to zero
-        vector delta_uP = integrator_p.get_value(q);
-
-        vector normal_p = -integrator_p.get_normal_vector(q);
-
-        vector flux_times_normal =
-          calculate_upwind_flux_linearized(uP, uM, delta_uP, delta_uM, normal_p);
-
-        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal_p;
-        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal_p;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        // opposite signs since n⁺ = - n⁻
-        integrator_p.submit_value(flux_times_normal - average_normal_velocity * delta_uP -
-                                    delta_average_normal_velocity * uP,
-                                  q);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-
-  template<typename Integrator>
-  void
-  do_boundary_integral_linearized_operator(Integrator &               integrator,
-                                           Integrator &               integrator_linearization,
-                                           types::boundary_id const & boundary_id) const
-  {
-    BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
-
-    if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization.get_value(q);
-        vector uP = calculate_exterior_value_nonlinear(uM,
-                                                       q,
-                                                       integrator_linearization,
-                                                       boundary_type,
-                                                       boundary_id,
-                                                       operator_data.bc,
-                                                       this->eval_time,
-                                                       operator_data.type_dirichlet_bc);
-
-        vector delta_uM = integrator.get_value(q);
-        vector delta_uP = calculate_exterior_value_linearized(
-          delta_uM, q, integrator, boundary_type, operator_data.type_dirichlet_bc);
-
-        vector normal = integrator.get_normal_vector(q);
-
-        vector flux = calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
-
-        if(boundary_type == BoundaryTypeU::Neumann && operator_data.use_outflow_bc == true)
-          apply_outflow_bc(flux, uM * normal);
-
-        integrator.submit_value(flux, q);
-      }
-    }
-    else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        vector uM = integrator_linearization.get_value(q);
-        vector uP = calculate_exterior_value_nonlinear(uM,
-                                                       q,
-                                                       integrator_linearization,
-                                                       boundary_type,
-                                                       boundary_id,
-                                                       operator_data.bc,
-                                                       this->eval_time,
-                                                       operator_data.type_dirichlet_bc);
-
-        vector delta_uM = integrator.get_value(q);
-        vector delta_uP = calculate_exterior_value_linearized(
-          delta_uM, q, integrator, boundary_type, operator_data.type_dirichlet_bc);
-
-        vector normal = integrator.get_normal_vector(q);
-
-        vector flux_times_normal =
-          calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
-
-        if(boundary_type == BoundaryTypeU::Neumann && operator_data.use_outflow_bc == true)
-          apply_outflow_bc(flux_times_normal, uM * normal);
-
-        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal;
-        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal;
-
-        // second term appears since the strong formulation is implemented (integration by parts
-        // is performed twice)
-        integrator.submit_value(flux_times_normal - average_normal_velocity * delta_uM -
-                                  delta_average_normal_velocity * uM,
-                                q);
-      }
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
+    return flags;
   }
 
   /*
@@ -1093,7 +135,7 @@ private:
     scalar
     calculate_lambda(scalar const & uM_n, scalar const & uP_n) const
   {
-    return this->operator_data.upwind_factor * 2.0 * std::max(std::abs(uM_n), std::abs(uP_n));
+    return data.upwind_factor * 2.0 * std::max(std::abs(uM_n), std::abs(uP_n));
   }
 
   /*
@@ -1181,9 +223,8 @@ private:
 
     vector jump_value = uM - uP;
 
-    return (average_normal_velocity * average_velocity + this->operator_data.upwind_factor * 0.5 *
-                                                           std::abs(average_normal_velocity) *
-                                                           jump_value);
+    return (average_normal_velocity * average_velocity +
+            data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
   }
 
   /*
@@ -1203,9 +244,8 @@ private:
 
     scalar average_normal_velocity = 0.5 * (wM + wP) * normalM;
 
-    return (average_normal_velocity * average_velocity + this->operator_data.upwind_factor * 0.5 *
-                                                           std::abs(average_normal_velocity) *
-                                                           jump_value);
+    return (average_normal_velocity * average_velocity +
+            data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
   }
 
   /*
@@ -1252,869 +292,1212 @@ private:
 
     return (average_normal_velocity * delta_average_velocity +
             delta_average_normal_velocity * average_velocity +
-            this->operator_data.upwind_factor * 0.5 * std::abs(average_normal_velocity) *
-              jump_value);
+            data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
+  }
+
+private:
+  mutable ConvectiveKernelData data;
+};
+
+
+} // namespace Operators
+
+template<int dim>
+struct ConvectiveOperatorData : public OperatorBaseData
+{
+  ConvectiveOperatorData()
+    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
+      use_outflow_bc(false),
+      type_dirichlet_bc(TypeDirichletBCs::Mirror)
+  {
+  }
+
+  bool use_outflow_bc;
+
+  TypeDirichletBCs type_dirichlet_bc;
+
+  Operators::ConvectiveKernelData kernel_data;
+
+  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
+};
+
+
+
+template<int dim, typename Number>
+class ConvectiveOperator : public OperatorBase<dim, Number, ConvectiveOperatorData<dim>, dim>
+{
+public:
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+
+  typedef ConvectiveOperator<dim, Number> This;
+
+  typedef OperatorBase<dim, Number, ConvectiveOperatorData<dim>, dim> Base;
+
+  typedef typename Base::VectorType     VectorType;
+  typedef typename Base::Range          Range;
+  typedef typename Base::IntegratorCell IntegratorCell;
+  typedef typename Base::IntegratorFace IntegratorFace;
+
+  void
+  set_solution_linearization(VectorType const & src) const
+  {
+    velocity = src;
+
+    velocity.update_ghost_values();
+  }
+
+  VectorType const &
+  get_solution_linearization() const
+  {
+    return velocity;
+  }
+
+  void
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         AffineConstraints<double> const &   constraint_matrix,
+         ConvectiveOperatorData<dim> const & operator_data) const
+  {
+    Base::reinit(matrix_free, constraint_matrix, operator_data);
+
+    kernel.reinit(operator_data.kernel_data);
+
+    // TODO -> shift to kernel
+    this->matrix_free->initialize_dof_vector(velocity, operator_data.dof_index);
+
+    integrator_velocity.reset(new IntegratorCell(matrix_free,
+                                                 this->operator_data.dof_index,
+                                                 this->operator_data.quad_index));
+    integrator_velocity_m.reset(new IntegratorFace(
+      matrix_free, true, this->operator_data.dof_index, this->operator_data.quad_index));
+    integrator_velocity_p.reset(new IntegratorFace(
+      matrix_free, false, this->operator_data.dof_index, this->operator_data.quad_index));
+    // TODO -> shift to kernel
+
+    this->integrator_flags = kernel.get_integrator_flags();
+
+    // OIF splitting
+    integrator_flags_linear_transport = kernel.get_integrator_flags_linear_transport();
+  }
+
+
+  /*
+   * Evaluate nonlinear operator.
+   */
+  void
+  evaluate_nonlinear_operator(VectorType &       dst,
+                              VectorType const & src,
+                              Number const       evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+
+    this->matrix_free->loop(&This::cell_loop_nonlinear_operator,
+                            &This::face_loop_nonlinear_operator,
+                            &This::boundary_face_loop_nonlinear_operator,
+                            this,
+                            dst,
+                            src,
+                            true /*zero_dst_vector = true*/,
+                            MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                            MatrixFree<dim, Number>::DataAccessOnFaces::values);
+  }
+
+  void
+  evaluate_nonlinear_operator_add(VectorType &       dst,
+                                  VectorType const & src,
+                                  Number const       evaluation_time) const
+  {
+    this->eval_time = evaluation_time;
+
+    this->matrix_free->loop(&This::cell_loop_nonlinear_operator,
+                            &This::face_loop_nonlinear_operator,
+                            &This::boundary_face_loop_nonlinear_operator,
+                            this,
+                            dst,
+                            src,
+                            false /*zero_dst_vector = false*/,
+                            MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                            MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
   /*
-   *  Evaluation of nonlinear convective operator.
+   * Evaluate operator (linear transport with a divergence-free velocity). This function
+   * is required in case of operator-integration-factor (OIF) splitting.
    */
   void
-  cell_loop_nonlinear_operator(MatrixFree<dim, Number> const & data,
+  evaluate_linear_transport(VectorType &       dst,
+                            VectorType const & src,
+                            Number const       evaluation_time,
+                            VectorType const & velocity_transport) const
+  {
+    set_solution_linearization(velocity_transport);
+
+    this->eval_time = evaluation_time;
+
+    this->matrix_free->loop(&This::cell_loop_linear_transport,
+                            &This::face_loop_linear_transport,
+                            &This::boundary_face_loop_linear_transport,
+                            this,
+                            dst,
+                            src,
+                            true /*zero_dst_vector = true*/,
+                            MatrixFree<dim, Number>::DataAccessOnFaces::values,
+                            MatrixFree<dim, Number>::DataAccessOnFaces::values);
+  }
+
+  void
+  rhs(VectorType & dst) const
+  {
+    (void)dst;
+
+    AssertThrow(false,
+                ExcMessage("The function rhs() does not make sense for the convective operator."));
+  }
+
+  void
+  rhs_add(VectorType & dst) const
+  {
+    (void)dst;
+
+    AssertThrow(
+      false, ExcMessage("The function rhs_add() does not make sense for the convective operator."));
+  }
+
+  void
+  evaluate(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+
+    AssertThrow(false,
+                ExcMessage(
+                  "The function evaluate() does not make sense for the convective operator."));
+  }
+
+  void
+  evaluate_add(VectorType & dst, VectorType const & src) const
+  {
+    (void)dst;
+    (void)src;
+
+    AssertThrow(false,
+                ExcMessage(
+                  "The function evaluate_add() does not make sense for the convective operator."));
+  }
+
+private:
+  /*
+   *  Evaluation of nonlinear operator.
+   */
+  void
+  cell_loop_nonlinear_operator(MatrixFree<dim, Number> const & matrix_free,
                                VectorType &                    dst,
                                VectorType const &              src,
                                Range const &                   cell_range) const
   {
-    CellIntegratorU integrator(data, operator_data.dof_index, operator_data.quad_index);
+    (void)matrix_free;
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      integrator.reinit(cell);
-      integrator.read_dof_values(src);
+      this->integrator->reinit(cell);
 
-      do_cell_integral_nonlinear_operator(integrator);
+      this->integrator->gather_evaluate(src,
+                                        this->integrator_flags.cell_evaluate.value,
+                                        this->integrator_flags.cell_evaluate.gradient,
+                                        this->integrator_flags.cell_evaluate.hessian);
 
-      integrator.distribute_local_to_global(dst);
+      do_cell_integral_nonlinear_operator(*this->integrator);
+
+      this->integrator->integrate_scatter(this->integrator_flags.cell_integrate.value,
+                                          this->integrator_flags.cell_integrate.gradient,
+                                          dst);
     }
   }
 
   void
-  face_loop_nonlinear_operator(MatrixFree<dim, Number> const & data,
+  face_loop_nonlinear_operator(MatrixFree<dim, Number> const & matrix_free,
                                VectorType &                    dst,
                                VectorType const &              src,
                                Range const &                   face_range) const
   {
-    FaceIntegratorU integrator_m(data, true, operator_data.dof_index, operator_data.quad_index);
-    FaceIntegratorU integrator_p(data, false, operator_data.dof_index, operator_data.quad_index);
+    (void)matrix_free;
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      integrator_m.reinit(face);
-      integrator_p.reinit(face);
+      this->integrator_m->reinit(face);
+      this->integrator_p->reinit(face);
 
-      integrator_m.gather_evaluate(src, true, false);
-      integrator_p.gather_evaluate(src, true, false);
+      this->integrator_m->gather_evaluate(src,
+                                          this->integrator_flags.face_evaluate.value,
+                                          this->integrator_flags.face_evaluate.gradient);
 
-      do_face_integral_nonlinear_operator(integrator_m, integrator_p);
+      this->integrator_p->gather_evaluate(src,
+                                          this->integrator_flags.face_evaluate.value,
+                                          this->integrator_flags.face_evaluate.gradient);
 
-      integrator_m.integrate_scatter(true, false, dst);
-      integrator_p.integrate_scatter(true, false, dst);
+      do_face_integral_nonlinear_operator(*this->integrator_m, *this->integrator_p);
+
+      this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate.value,
+                                            this->integrator_flags.face_integrate.gradient,
+                                            dst);
+
+      this->integrator_p->integrate_scatter(this->integrator_flags.face_integrate.value,
+                                            this->integrator_flags.face_integrate.gradient,
+                                            dst);
     }
   }
 
   void
-  boundary_face_loop_nonlinear_operator(MatrixFree<dim, Number> const & data,
+  boundary_face_loop_nonlinear_operator(MatrixFree<dim, Number> const & matrix_free,
                                         VectorType &                    dst,
                                         VectorType const &              src,
                                         Range const &                   face_range) const
   {
-    FaceIntegratorU integrator(data, true, operator_data.dof_index, operator_data.quad_index);
-
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      integrator.reinit(face);
+      this->integrator_m->reinit(face);
 
-      integrator.gather_evaluate(src, true, false);
+      this->integrator_m->gather_evaluate(src,
+                                          this->integrator_flags.face_evaluate.value,
+                                          this->integrator_flags.face_evaluate.gradient);
 
-      do_boundary_integral_nonlinear_operator(integrator, data.get_boundary_id(face));
+      do_boundary_integral_nonlinear_operator(*this->integrator_m,
+                                              matrix_free.get_boundary_id(face));
 
-      integrator.integrate_scatter(true, false, dst);
+      this->integrator_m->integrate_scatter(this->integrator_flags.face_integrate.value,
+                                            this->integrator_flags.face_integrate.gradient,
+                                            dst);
+    }
+  }
+
+  void
+  do_cell_integral_nonlinear_operator(IntegratorCell & integrator) const
+  {
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        // nonlinear convective flux F(u) = uu
+        vector u = integrator.get_value(q);
+        tensor F = outer_product(u, u);
+        // minus sign due to integration by parts
+        integrator.submit_gradient(-F, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        // convective formulation: (u * grad) u = grad(u) * u
+        vector u          = integrator.get_value(q);
+        tensor gradient_u = integrator.get_gradient(q);
+        vector F          = gradient_u * u;
+
+        // plus sign since the strong formulation is used, i.e.
+        // integration by parts is performed twice
+        integrator.submit_value(F, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::EnergyPreservingFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        // nonlinear convective flux F(u) = uu
+        vector u          = integrator.get_value(q);
+        tensor F          = outer_product(u, u);
+        scalar divergence = integrator.get_divergence(q);
+        vector div_term   = -0.5 * divergence * u;
+        // minus sign due to integration by parts
+        integrator.submit_gradient(-F, q);
+        integrator.submit_value(div_term, q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  void
+  do_face_integral_nonlinear_operator(IntegratorFace & integrator_m,
+                                      IntegratorFace & integrator_p) const
+  {
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM     = integrator_m.get_value(q);
+        vector uP     = integrator_p.get_value(q);
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux = kernel.calculate_lax_friedrichs_flux(uM, uP, normal);
+
+        integrator_m.submit_value(flux, q);
+        integrator_p.submit_value(-flux, q); // minus sign since n⁺ = - n⁻
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM     = integrator_m.get_value(q);
+        vector uP     = integrator_p.get_value(q);
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux_times_normal       = kernel.calculate_upwind_flux(uM, uP, normal);
+        scalar average_normal_velocity = 0.5 * (uM + uP) * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator_m.submit_value(flux_times_normal - average_normal_velocity * uM, q);
+        // opposite signs since n⁺ = - n⁻
+        integrator_p.submit_value(-flux_times_normal + average_normal_velocity * uP, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::EnergyPreservingFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM     = integrator_m.get_value(q);
+        vector uP     = integrator_p.get_value(q);
+        vector jump   = uM - uP;
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux = kernel.calculate_lax_friedrichs_flux(uM, uP, normal);
+
+        // corrections to obtain an energy preserving flux (which is not conservative!)
+        vector flux_m = flux + 0.25 * jump * normal * uP;
+        vector flux_p = -flux + 0.25 * jump * normal * uM;
+
+        integrator_m.submit_value(flux_m, q);
+        integrator_p.submit_value(flux_p, q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  void
+  do_boundary_integral_nonlinear_operator(IntegratorFace &           integrator,
+                                          types::boundary_id const & boundary_id) const
+  {
+    BoundaryTypeU boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        vector uM = integrator.get_value(q);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       this->operator_data.bc,
+                                                       this->eval_time,
+                                                       this->operator_data.type_dirichlet_bc);
+
+        vector normalM = integrator.get_normal_vector(q);
+
+        vector flux = kernel.calculate_lax_friedrichs_flux(uM, uP, normalM);
+
+        if(boundary_type == BoundaryTypeU::Neumann && this->operator_data.use_outflow_bc == true)
+          kernel.apply_outflow_bc(flux, uM * normalM);
+
+        integrator.submit_value(flux, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        vector uM = integrator.get_value(q);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       this->operator_data.bc,
+                                                       this->eval_time,
+                                                       this->operator_data.type_dirichlet_bc);
+
+        vector normal = integrator.get_normal_vector(q);
+
+        vector flux_times_normal = kernel.calculate_upwind_flux(uM, uP, normal);
+
+        if(boundary_type == BoundaryTypeU::Neumann && this->operator_data.use_outflow_bc == true)
+          kernel.apply_outflow_bc(flux_times_normal, uM * normal);
+
+        scalar average_normal_velocity = 0.5 * (uM + uP) * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator.submit_value(flux_times_normal - average_normal_velocity * uM, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::EnergyPreservingFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        vector uM      = integrator.get_value(q);
+        vector uP      = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       this->operator_data.bc,
+                                                       this->eval_time,
+                                                       this->operator_data.type_dirichlet_bc);
+        vector normalM = integrator.get_normal_vector(q);
+
+        vector flux = kernel.calculate_lax_friedrichs_flux(uM, uP, normalM);
+
+        if(boundary_type == BoundaryTypeU::Neumann && this->operator_data.use_outflow_bc == true)
+          kernel.apply_outflow_bc(flux, uM * normalM);
+
+        // corrections to obtain an energy preserving flux (which is not conservative!)
+        flux = flux + 0.25 * (uM - uP) * normalM * uP;
+        integrator.submit_value(flux, q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
     }
   }
 
   /*
-   *  OIF splitting: evaluation convective operator (linear transport).
+   *  OIF splitting: evaluation of convective operator (linear transport).
    */
   void
-  cell_loop_linear_transport(MatrixFree<dim, Number> const & data,
+  cell_loop_linear_transport(MatrixFree<dim, Number> const & matrix_free,
                              VectorType &                    dst,
                              VectorType const &              src,
                              Range const &                   cell_range) const
   {
-    CellIntegratorU integrator(data, operator_data.dof_index, operator_data.quad_index);
-
-    CellIntegratorU integrator_transport(data, operator_data.dof_index, operator_data.quad_index);
+    (void)matrix_free;
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      integrator.reinit(cell);
-      integrator.read_dof_values(src);
+      this->integrator->reinit(cell);
 
-      integrator_transport.reinit(cell);
-      integrator_transport.gather_evaluate(velocity_linearization, true, false, false);
+      this->integrator->gather_evaluate(src,
+                                        integrator_flags_linear_transport.cell_evaluate.value,
+                                        integrator_flags_linear_transport.cell_evaluate.gradient,
+                                        integrator_flags_linear_transport.cell_evaluate.hessian);
 
-      do_cell_integral_linear_transport(integrator, integrator_transport);
+      // Note that the integrator flags which are valid here are different from those for the
+      // linearized operator!
+      integrator_velocity->reinit(cell);
+      integrator_velocity->gather_evaluate(velocity, true, false, false);
 
-      integrator.distribute_local_to_global(dst);
+      do_cell_integral_linear_transport(*this->integrator);
+
+      this->integrator->integrate_scatter(integrator_flags_linear_transport.cell_integrate.value,
+                                          integrator_flags_linear_transport.cell_integrate.gradient,
+                                          dst);
     }
   }
 
   void
-  face_loop_linear_transport(MatrixFree<dim, Number> const & data,
+  face_loop_linear_transport(MatrixFree<dim, Number> const & matrix_free,
                              VectorType &                    dst,
                              VectorType const &              src,
                              Range const &                   face_range) const
   {
-    FaceIntegratorU integrator_m(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_p(data, false, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_transport_m(data,
-                                           true,
-                                           operator_data.dof_index,
-                                           operator_data.quad_index);
-
-    FaceIntegratorU integrator_transport_p(data,
-                                           false,
-                                           operator_data.dof_index,
-                                           operator_data.quad_index);
+    (void)matrix_free;
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      integrator_m.reinit(face);
-      integrator_p.reinit(face);
+      this->integrator_m->reinit(face);
+      this->integrator_p->reinit(face);
 
-      integrator_m.gather_evaluate(src, true, false);
-      integrator_p.gather_evaluate(src, true, false);
+      this->integrator_m->gather_evaluate(src,
+                                          integrator_flags_linear_transport.face_evaluate.value,
+                                          integrator_flags_linear_transport.face_evaluate.gradient);
 
-      integrator_transport_m.reinit(face);
-      integrator_transport_p.reinit(face);
+      this->integrator_p->gather_evaluate(src,
+                                          integrator_flags_linear_transport.face_evaluate.value,
+                                          integrator_flags_linear_transport.face_evaluate.gradient);
 
-      integrator_transport_m.gather_evaluate(velocity_linearization, true, false);
-      integrator_transport_p.gather_evaluate(velocity_linearization, true, false);
+      integrator_velocity_m->reinit(face);
+      integrator_velocity_m->gather_evaluate(velocity, true, false);
 
-      do_face_integral_linear_transport(integrator_m,
-                                        integrator_p,
-                                        integrator_transport_m,
-                                        integrator_transport_p);
+      integrator_velocity_p->reinit(face);
+      integrator_velocity_p->gather_evaluate(velocity, true, false);
 
-      integrator_m.integrate_scatter(true, false, dst);
-      integrator_p.integrate_scatter(true, false, dst);
+      do_face_integral_linear_transport(*this->integrator_m, *this->integrator_p);
+
+      this->integrator_m->integrate_scatter(
+        integrator_flags_linear_transport.face_integrate.value,
+        integrator_flags_linear_transport.face_integrate.gradient,
+        dst);
+
+      this->integrator_p->integrate_scatter(
+        integrator_flags_linear_transport.face_integrate.value,
+        integrator_flags_linear_transport.face_integrate.gradient,
+        dst);
     }
   }
 
   void
-  boundary_face_loop_linear_transport(MatrixFree<dim, Number> const & data,
+  boundary_face_loop_linear_transport(MatrixFree<dim, Number> const & matrix_free,
                                       VectorType &                    dst,
                                       VectorType const &              src,
                                       Range const &                   face_range) const
   {
-    FaceIntegratorU integrator(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_transport(data,
-                                         true,
-                                         operator_data.dof_index,
-                                         operator_data.quad_index);
-
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
-      integrator.reinit(face);
-      integrator.gather_evaluate(src, true, false);
+      this->integrator_m->reinit(face);
+      this->integrator_m->gather_evaluate(src,
+                                          integrator_flags_linear_transport.face_evaluate.value,
+                                          integrator_flags_linear_transport.face_evaluate.gradient);
 
-      integrator_transport.reinit(face);
-      integrator_transport.gather_evaluate(velocity_linearization, true, false);
+      integrator_velocity_m->reinit(face);
+      integrator_velocity_m->gather_evaluate(velocity, true, false);
 
-      do_boundary_integral_linear_transport(integrator,
-                                            integrator_transport,
-                                            data.get_boundary_id(face));
+      do_boundary_integral_linear_transport(*this->integrator_m, matrix_free.get_boundary_id(face));
 
-      integrator.integrate_scatter(true, false, dst);
+      this->integrator_m->integrate_scatter(
+        integrator_flags_linear_transport.face_integrate.value,
+        integrator_flags_linear_transport.face_integrate.gradient,
+        dst);
     }
   }
+
+  void
+  do_cell_integral_linear_transport(IntegratorCell & integrator) const
+  {
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        // nonlinear convective flux F = uw
+        vector u = integrator.get_value(q);
+        vector w = integrator_velocity->get_value(q);
+        tensor F = outer_product(u, w);
+        // minus sign due to integration by parts
+        integrator.submit_gradient(-F, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        // convective formulation: grad(u) * w
+        vector w      = integrator_velocity->get_value(q);
+        tensor grad_u = integrator.get_gradient(q);
+        vector F      = grad_u * w;
+
+        // plus sign since the strong formulation is used, i.e.
+        // integration by parts is performed twice
+        integrator.submit_value(F, q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  void
+  do_face_integral_linear_transport(IntegratorFace & integrator_m,
+                                    IntegratorFace & integrator_p) const
+  {
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM = integrator_m.get_value(q);
+        vector uP = integrator_p.get_value(q);
+
+        vector wM = integrator_velocity_m->get_value(q);
+        vector wP = integrator_velocity_p->get_value(q);
+
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux = kernel.calculate_lax_friedrichs_flux_linear_transport(uM, uP, wM, wP, normal);
+
+        integrator_m.submit_value(flux, q);
+        integrator_p.submit_value(-flux, q); // minus sign since n⁺ = - n⁻
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM = integrator_m.get_value(q);
+        vector uP = integrator_p.get_value(q);
+
+        vector wM = integrator_velocity_m->get_value(q);
+        vector wP = integrator_velocity_p->get_value(q);
+
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux_times_normal =
+          kernel.calculate_upwind_flux_linear_transport(uM, uP, wM, wP, normal);
+
+        scalar average_normal_velocity = 0.5 * (wM + wP) * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator_m.submit_value(flux_times_normal - average_normal_velocity * uM, q);
+        // opposite signs since n⁺ = - n⁻
+        integrator_p.submit_value(-flux_times_normal + average_normal_velocity * uP, q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  void
+  do_boundary_integral_linear_transport(IntegratorFace &           integrator,
+                                        types::boundary_id const & boundary_id) const
+  {
+    BoundaryTypeU boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        vector uM = integrator.get_value(q);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       this->operator_data.bc,
+                                                       this->eval_time,
+                                                       this->operator_data.type_dirichlet_bc);
+
+        // concerning the transport velocity w, use the same value for interior and
+        // exterior states, i.e., do not prescribe boundary conditions
+        vector wM = integrator_velocity_m->get_value(q);
+
+        vector normal = integrator.get_normal_vector(q);
+
+        vector flux = kernel.calculate_lax_friedrichs_flux_linear_transport(uM, uP, wM, wM, normal);
+
+        if(boundary_type == BoundaryTypeU::Neumann && this->operator_data.use_outflow_bc == true)
+          kernel.apply_outflow_bc(flux, wM * normal);
+
+        integrator.submit_value(flux, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        vector uM = integrator.get_value(q);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       integrator,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       this->operator_data.bc,
+                                                       this->eval_time,
+                                                       this->operator_data.type_dirichlet_bc);
+
+        // concerning the transport velocity w, use the same value for interior and
+        // exterior states, i.e., do not prescribe boundary conditions
+        vector wM = integrator_velocity_m->get_value(q);
+
+        vector normal = integrator.get_normal_vector(q);
+
+        vector flux_times_normal =
+          kernel.calculate_upwind_flux_linear_transport(uM, uP, wM, wM, normal);
+
+        if(boundary_type == BoundaryTypeU::Neumann && this->operator_data.use_outflow_bc == true)
+          kernel.apply_outflow_bc(flux_times_normal, wM * normal);
+
+        scalar average_normal_velocity = wM * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator.submit_value(flux_times_normal - average_normal_velocity * uM, q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
 
   /*
-   *  Evaluate linearized convective operator.
+   * Linearized operator.
    */
+
+  // Note: this function can only be used for the linearized operator.
   void
-  cell_loop_linearized_operator(MatrixFree<dim, Number> const & data,
-                                VectorType &                    dst,
-                                VectorType const &              src,
-                                Range const &                   cell_range) const
+  reinit_cell(unsigned int const cell) const
   {
-    CellIntegratorU integrator(data, operator_data.dof_index, operator_data.quad_index);
+    Base::reinit_cell(cell);
 
-    CellIntegratorU integrator_linearization(data,
-                                             operator_data.dof_index,
-                                             operator_data.quad_index);
+    // TODO -> shift to kernel
+    integrator_velocity->reinit(cell);
 
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+      integrator_velocity->gather_evaluate(velocity, true, false, false);
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+      integrator_velocity->gather_evaluate(velocity, true, true, false);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  // Note: this function can only be used for the linearized operator.
+  void
+  reinit_face(unsigned int const face) const
+  {
+    Base::reinit_face(face);
+
+    // TODO -> shift to kernel
+    integrator_velocity_m->reinit(face);
+    integrator_velocity_m->gather_evaluate(velocity, true, false);
+
+    integrator_velocity_p->reinit(face);
+    integrator_velocity_p->gather_evaluate(velocity, true, false);
+  }
+
+  // Note: this function can only be used for the linearized operator.
+  void
+  reinit_boundary_face(unsigned int const face) const
+  {
+    Base::reinit_boundary_face(face);
+
+    // TODO -> shift to kernel
+    integrator_velocity_m->reinit(face);
+    integrator_velocity_m->gather_evaluate(velocity, true, false);
+  }
+
+  // Note: this function can only be used for the linearized operator.
+  void
+  reinit_face_cell_based(unsigned int const       cell,
+                         unsigned int const       face,
+                         types::boundary_id const boundary_id) const
+  {
+    Base::reinit_face_cell_based(cell, face, boundary_id);
+
+    // TODO -> shift to kernel
+    integrator_velocity_m->reinit(cell, face);
+    integrator_velocity_m->gather_evaluate(velocity, true, false);
+
+    if(boundary_id == numbers::internal_face_boundary_id) // internal face
     {
-      integrator_linearization.reinit(cell);
-
-      if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, false, false);
-      else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, true, false);
-      else
-        AssertThrow(false, ExcMessage("Not implemented."));
-
-      integrator.reinit(cell);
-      integrator.read_dof_values(src);
-
-      do_cell_integral_linearized_operator(integrator, integrator_linearization);
-
-      integrator.distribute_local_to_global(dst);
+      // TODO: Matrix-free implementation in deal.II does currently not allow to access data of
+      // the neighboring element in case of cell-based face loops.
+      //      integrator_velocity_p->reinit(cell, face);
+      //      integrator_velocity_p->gather_evaluate(velocity, true, false);
     }
   }
 
+  // linearized operator
   void
-  face_loop_linearized_operator(MatrixFree<dim, Number> const & data,
-                                VectorType &                    dst,
-                                VectorType const &              src,
-                                Range const &                   face_range) const
+  do_cell_integral(IntegratorCell & integrator) const
   {
-    FaceIntegratorU integrator_m(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_p(data, false, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_m(data,
-                                               true,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_p(data,
-                                               false,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
     {
-      integrator_m.reinit(face);
-      integrator_p.reinit(face);
-
-      integrator_linearization_m.reinit(face);
-      integrator_linearization_p.reinit(face);
-
-      integrator_m.gather_evaluate(src, true, false);
-      integrator_p.gather_evaluate(src, true, false);
-
-      integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
-      integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
-
-      do_face_integral_linearized_operator(integrator_m,
-                                           integrator_p,
-                                           integrator_linearization_m,
-                                           integrator_linearization_p);
-
-      integrator_m.integrate_scatter(true, false, dst);
-      integrator_p.integrate_scatter(true, false, dst);
-    }
-  }
-
-  void
-  boundary_face_loop_linearized_operator(MatrixFree<dim, Number> const & data,
-                                         VectorType &                    dst,
-                                         VectorType const &              src,
-                                         Range const &                   face_range) const
-  {
-    FaceIntegratorU integrator(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization(data,
-                                             true,
-                                             operator_data.dof_index,
-                                             operator_data.quad_index);
-
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
-    {
-      integrator.reinit(face);
-      integrator_linearization.reinit(face);
-
-      integrator.gather_evaluate(src, true, false);
-      integrator_linearization.gather_evaluate(velocity_linearization, true, false);
-
-      do_boundary_integral_linearized_operator(integrator,
-                                               integrator_linearization,
-                                               data.get_boundary_id(face));
-
-      integrator.integrate_scatter(true, false, dst);
-    }
-  }
-
-
-  /*
-   *  Calculation of diagonal of linearized convective operator.
-   */
-  void
-  cell_loop_diagonal(MatrixFree<dim, Number> const & data,
-                     VectorType &                    dst,
-                     VectorType const &,
-                     Range const & cell_range) const
-  {
-    CellIntegratorU integrator(data, operator_data.dof_index, operator_data.quad_index);
-
-    CellIntegratorU integrator_linearization(data,
-                                             operator_data.dof_index,
-                                             operator_data.quad_index);
-
-    unsigned int const    dofs_per_cell = integrator.dofs_per_cell;
-    AlignedVector<scalar> local_diagonal_vector(dofs_per_cell);
-
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-    {
-      integrator_linearization.reinit(cell);
-
-      if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, false, false);
-      else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, true, false);
-      else
-        AssertThrow(false, ExcMessage("Not implemented."));
-
-      integrator.reinit(cell);
-
-      unsigned int dofs_per_cell = integrator.dofs_per_cell;
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        do_cell_integral_linearized_operator(integrator, integrator_linearization);
-
-        local_diagonal_vector[j] = integrator.begin_dof_values()[j];
-      }
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator.begin_dof_values()[j] = local_diagonal_vector[j];
-
-      integrator.distribute_local_to_global(dst);
-    }
-  }
-
-  void
-  face_loop_diagonal(MatrixFree<dim, Number> const & data,
-                     VectorType &                    dst,
-                     VectorType const &,
-                     Range const & face_range) const
-  {
-    FaceIntegratorU integrator_m(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_p(data, false, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_m(data,
-                                               true,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_p(data,
-                                               false,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    unsigned int const    dofs_per_cell = integrator_m.dofs_per_cell;
-    AlignedVector<scalar> local_diagonal_vector(dofs_per_cell);
-
-    // Perform face integrals for element e⁻
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
-    {
-      integrator_linearization_m.reinit(face);
-      integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_linearization_p.reinit(face);
-      integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_m.reinit(face);
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        // set dof value j of element- to 1 and all other dof values of element- to zero
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        integrator_m.evaluate(true, false);
-
-        do_face_int_integral_linearized_operator(integrator_m,
-                                                 integrator_p,
-                                                 integrator_linearization_m,
-                                                 integrator_linearization_p);
-
-        integrator_m.integrate(true, false);
-
-        local_diagonal_vector[j] = integrator_m.begin_dof_values()[j];
-      }
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator_m.begin_dof_values()[j] = local_diagonal_vector[j];
-
-      integrator_m.distribute_local_to_global(dst);
-    }
-
-    unsigned int const    dofs_per_cell_neighbor = integrator_p.dofs_per_cell;
-    AlignedVector<scalar> local_diagonal_vector_neighbor(dofs_per_cell_neighbor);
-
-    // Perform face integrals for element e⁺
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
-    {
-      integrator_linearization_m.reinit(face);
-      integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_linearization_p.reinit(face);
-      integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_p.reinit(face);
-
-      for(unsigned int j = 0; j < dofs_per_cell_neighbor; ++j)
-      {
-        // set dof value j of element+ to 1 and all other dof values of element+ to zero
-        for(unsigned int i = 0; i < dofs_per_cell_neighbor; ++i)
-          integrator_p.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator_p.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        integrator_p.evaluate(true, false);
-
-        do_face_ext_integral_linearized_operator(integrator_m,
-                                                 integrator_p,
-                                                 integrator_linearization_m,
-                                                 integrator_linearization_p);
-
-        integrator_p.integrate(true, false);
-
-        local_diagonal_vector_neighbor[j] = integrator_p.begin_dof_values()[j];
-      }
-      for(unsigned int j = 0; j < dofs_per_cell_neighbor; ++j)
-        integrator_p.begin_dof_values()[j] = local_diagonal_vector_neighbor[j];
-
-      integrator_p.distribute_local_to_global(dst);
-    }
-  }
-
-  void
-  boundary_face_loop_diagonal(MatrixFree<dim, Number> const & data,
-                              VectorType &                    dst,
-                              VectorType const &,
-                              Range const & face_range) const
-  {
-    FaceIntegratorU integrator(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization(data,
-                                             true,
-                                             operator_data.dof_index,
-                                             operator_data.quad_index);
-
-    unsigned int const    dofs_per_cell = integrator.dofs_per_cell;
-    AlignedVector<scalar> local_diagonal_vector(dofs_per_cell);
-
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
-    {
-      integrator.reinit(face);
-
-      integrator_linearization.reinit(face);
-      integrator_linearization.gather_evaluate(velocity_linearization, true, false);
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        // set dof value j of element- to 1 and all other dof values of element- to zero
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        integrator.evaluate(true, false);
-
-        do_boundary_integral_linearized_operator(integrator,
-                                                 integrator_linearization,
-                                                 data.get_boundary_id(face));
-
-        integrator.integrate(true, false);
-
-        local_diagonal_vector[j] = integrator.begin_dof_values()[j];
-      }
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator.begin_dof_values()[j] = local_diagonal_vector[j];
-
-      integrator.distribute_local_to_global(dst);
-    }
-  }
-
-  /*
-   *  Apply block-diagonal operator (only needed for testing): re-implement face_loop (cell_loop and
-   * boundary_face_loop are identical to linearized homogeneous operator.
-   */
-  void
-  face_loop_apply_block_diagonal_linearized_operator(MatrixFree<dim, Number> const & data,
-                                                     VectorType &                    dst,
-                                                     VectorType const &              src,
-                                                     Range const & face_range) const
-  {
-    FaceIntegratorU integrator_m(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_p(data, false, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_m(data,
-                                               true,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_p(data,
-                                               false,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    // Perform face integral for element e⁻
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
-    {
-      integrator_linearization_m.reinit(face);
-      integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_linearization_p.reinit(face);
-      integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_m.reinit(face);
-      integrator_m.gather_evaluate(src, true, false);
-
-      do_face_int_integral_linearized_operator(integrator_m,
-                                               integrator_p,
-                                               integrator_linearization_m,
-                                               integrator_linearization_p);
-
-      integrator_m.integrate_scatter(true, false, dst);
-    }
-
-    // Perform face integral for element e⁺
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
-    {
-      integrator_linearization_m.reinit(face);
-      integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_linearization_p.reinit(face);
-      integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_p.reinit(face);
-      integrator_p.gather_evaluate(src, true, false);
-
-      do_face_ext_integral_linearized_operator(integrator_m,
-                                               integrator_p,
-                                               integrator_linearization_m,
-                                               integrator_linearization_p);
-
-      integrator_p.integrate_scatter(true, false, dst);
-    }
-  }
-
-  /*
-   * Calculate/assemble block-diagonal matrices via matrix-free operator evaluation.
-   */
-  void
-  cell_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
-                                     std::vector<LAPACKFullMatrix<Number>> & matrices,
-                                     VectorType const &,
-                                     Range const & cell_range) const
-  {
-    CellIntegratorU integrator(data, operator_data.dof_index, operator_data.quad_index);
-
-    CellIntegratorU integrator_linearization(data,
-                                             operator_data.dof_index,
-                                             operator_data.quad_index);
-
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-    {
-      integrator_linearization.reinit(cell);
-
-      if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, false, false);
-      else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, true, false);
-      else
-        AssertThrow(false, ExcMessage("Not implemented."));
-
-      integrator.reinit(cell);
-
-      unsigned int dofs_per_cell = integrator.dofs_per_cell;
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        do_cell_integral_linearized_operator(integrator, integrator_linearization);
-
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
-            matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-              integrator.begin_dof_values()[i][v];
+        vector delta_u = integrator.get_value(q);
+        vector u       = integrator_velocity->get_value(q);
+        tensor F       = outer_product(u, delta_u);
+
+        // minus sign due to integration by parts
+        integrator.submit_gradient(-(F + transpose(F)), q);
       }
     }
-  }
-
-  void
-  face_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
-                                     std::vector<LAPACKFullMatrix<Number>> & matrices,
-                                     VectorType const &,
-                                     Range const & face_range) const
-  {
-    FaceIntegratorU integrator_m(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_p(data, false, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_m(data,
-                                               true,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization_p(data,
-                                               false,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    // Perform face integrals for element e⁻.
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      integrator_linearization_m.reinit(face);
-      integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_linearization_p.reinit(face);
-      integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_m.reinit(face);
-
-      unsigned int dofs_per_cell = integrator_m.dofs_per_cell;
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        // set dof value j of element- to 1 and all other dof values of element- to zero
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+        // convective term: grad(u) * u
+        vector u            = integrator_velocity->get_value(q);
+        tensor grad_u       = integrator_velocity->get_gradient(q);
+        vector delta_u      = integrator.get_value(q);
+        tensor grad_delta_u = integrator.get_gradient(q);
 
-        integrator_m.evaluate(true, false);
+        vector F = grad_u * delta_u + grad_delta_u * u;
 
-        do_face_int_integral_linearized_operator(integrator_m,
-                                                 integrator_p,
-                                                 integrator_linearization_m,
-                                                 integrator_linearization_p);
-
-        integrator_m.integrate(true, false);
-
-        for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
-        {
-          const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
-          if(cell_number != numbers::invalid_unsigned_int)
-            for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              matrices[cell_number](i, j) += integrator_m.begin_dof_values()[i][v];
-        }
+        // plus sign since the strong formulation is used, i.e.
+        // integration by parts is performed twice
+        integrator.submit_value(F, q);
       }
     }
-
-    // Perform face integrals for element e⁺.
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    else
     {
-      integrator_linearization_m.reinit(face);
-      integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_linearization_p.reinit(face);
-      integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
-
-      integrator_p.reinit(face);
-
-      unsigned int dofs_per_cell = integrator_p.dofs_per_cell;
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        // set dof value j of element+ to 1 and all other dof values of element+ to zero
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator_p.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator_p.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        integrator_p.evaluate(true, false);
-
-        do_face_ext_integral_linearized_operator(integrator_m,
-                                                 integrator_p,
-                                                 integrator_linearization_m,
-                                                 integrator_linearization_p);
-
-        integrator_p.integrate(true, false);
-
-        for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
-        {
-          const unsigned int cell_number = data.get_face_info(face).cells_exterior[v];
-          if(cell_number != numbers::invalid_unsigned_int)
-            for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              matrices[cell_number](i, j) += integrator_p.begin_dof_values()[i][v];
-        }
-      }
+      AssertThrow(false, ExcMessage("Not implemented."));
     }
   }
 
+  // linearized operator
   void
-  boundary_face_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
-                                              std::vector<LAPACKFullMatrix<Number>> & matrices,
-                                              VectorType const &,
-                                              Range const & face_range) const
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
   {
-    FaceIntegratorU integrator(data, true, operator_data.dof_index, operator_data.quad_index);
-
-    FaceIntegratorU integrator_linearization(data,
-                                             true,
-                                             operator_data.dof_index,
-                                             operator_data.quad_index);
-
-    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
     {
-      integrator.reinit(face);
-
-      integrator_linearization.reinit(face);
-      integrator_linearization.gather_evaluate(velocity_linearization, true, false);
-
-      unsigned int dofs_per_cell = integrator.dofs_per_cell;
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
       {
-        // set dof value j of element- to 1 and all other dof values of element- to zero
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = integrator_velocity_p->get_value(q);
 
-        integrator.evaluate(true, false);
+        vector delta_uM = integrator_m.get_value(q);
+        vector delta_uP = integrator_p.get_value(q);
 
-        do_boundary_integral_linearized_operator(integrator,
-                                                 integrator_linearization,
-                                                 data.get_boundary_id(face));
+        vector normal = integrator_m.get_normal_vector(q);
 
-        integrator.integrate(true, false);
+        vector flux =
+          kernel.calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
 
-        for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
-        {
-          const unsigned int cell_number = data.get_face_info(face).cells_interior[v];
-          if(cell_number != numbers::invalid_unsigned_int)
-            for(unsigned int i = 0; i < dofs_per_cell; ++i)
-              matrices[cell_number](i, j) += integrator.begin_dof_values()[i][v];
-        }
+        integrator_m.submit_value(flux, q);
+        integrator_p.submit_value(-flux, q); // minus sign since n⁺ = -n⁻
       }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = integrator_velocity_p->get_value(q);
+
+        vector delta_uM = integrator_m.get_value(q);
+        vector delta_uP = integrator_p.get_value(q);
+
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux_times_normal =
+          kernel.calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
+
+        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal;
+        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator_m.submit_value(flux_times_normal - average_normal_velocity * delta_uM -
+                                    delta_average_normal_velocity * uM,
+                                  q);
+        // opposite signs since n⁺ = - n⁻
+        integrator_p.submit_value(-flux_times_normal + average_normal_velocity * delta_uP +
+                                    delta_average_normal_velocity * uP,
+                                  q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
     }
   }
 
+  // linearized operator
   void
-  cell_based_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         data,
-                                           std::vector<LAPACKFullMatrix<Number>> & matrices,
-                                           VectorType const &,
-                                           Range const & cell_range) const
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
   {
-    CellIntegratorU integrator(data, operator_data.dof_index, operator_data.quad_index);
-    FaceIntegratorU integrator_m(data, true, operator_data.dof_index, operator_data.quad_index);
-    FaceIntegratorU integrator_p(data, false, operator_data.dof_index, operator_data.quad_index);
+    (void)integrator_p;
 
-    CellIntegratorU integrator_linearization(data,
-                                             operator_data.dof_index,
-                                             operator_data.quad_index);
-    FaceIntegratorU integrator_linearization_m(data,
-                                               true,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-    FaceIntegratorU integrator_linearization_p(data,
-                                               false,
-                                               operator_data.dof_index,
-                                               operator_data.quad_index);
-
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
     {
-      // cell integral
-      unsigned int const n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
-
-      integrator_linearization.reinit(cell);
-
-      if(operator_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, false, false);
-      else if(operator_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-        integrator_linearization.gather_evaluate(velocity_linearization, true, true, false);
-      else
-        AssertThrow(false, ExcMessage("Not implemented."));
-
-      integrator.reinit(cell);
-
-      unsigned int dofs_per_cell = integrator.dofs_per_cell;
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
       {
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = integrator_velocity_p->get_value(q);
 
-        do_cell_integral_linearized_operator(integrator, integrator_linearization);
+        vector delta_uM = integrator_m.get_value(q);
+        vector delta_uP; // set exterior value to zero
 
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          for(unsigned int v = 0; v < n_filled_lanes; ++v)
-            matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-              integrator.begin_dof_values()[i][v];
+        vector normal_m = integrator_m.get_normal_vector(q);
+
+        vector flux =
+          kernel.calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normal_m);
+
+        integrator_m.submit_value(flux, q);
       }
-
-      // loop over all faces
-      unsigned int const n_faces = GeometryInfo<dim>::faces_per_cell;
-      for(unsigned int face = 0; face < n_faces; ++face)
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
       {
-        integrator_linearization_m.reinit(cell, face);
-        integrator_linearization_m.gather_evaluate(velocity_linearization, true, false);
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = integrator_velocity_p->get_value(q);
 
+        vector delta_uM = integrator_m.get_value(q);
+        vector delta_uP; // set exterior value to zero
+
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux_times_normal =
+          kernel.calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
+
+        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal;
+        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator_m.submit_value(flux_times_normal - average_normal_velocity * delta_uM -
+                                    delta_average_normal_velocity * uM,
+                                  q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  // linearized operator
+
+  // TODO
+  // This function is currently only needed due to limitations of deal.II which do
+  // currently not allow to access neighboring data in case of cell-based face loops.
+  // Once this functionality is available, this function should be removed again.
+  void
+  do_face_int_integral_cell_based(IntegratorFace & integrator_m,
+                                  IntegratorFace & integrator_p) const
+  {
+    (void)integrator_p;
+
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM = integrator_velocity_m->get_value(q);
         // TODO
-        //        AssertThrow(false, ExcMessage("We have to evaluate the linearized velocity field
-        //        on the neighbor. This functionality is not implemented in deal.II/matrix_free."));
-        //        integrator_linearization_p.reinit(cell, face);
-        //        integrator_linearization_p.gather_evaluate(velocity_linearization, true, false);
+        // Accessing exterior data is currently not available in deal.II/matrixfree.
+        // Hence, we simply use the interior value, but note that the diagonal and block-diagonal
+        // are not calculated exactly.
+        vector uP = uM;
 
-        integrator_m.reinit(cell, face);
-        integrator_p.reinit(cell, face);
+        vector delta_uM = integrator_m.get_value(q);
+        vector delta_uP; // set exterior value to zero
 
-        auto bids        = data.get_faces_by_cells_boundary_id(cell, face);
-        auto boundary_id = bids[0];
+        vector normal_m = integrator_m.get_normal_vector(q);
 
-        for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        {
-          for(unsigned int i = 0; i < dofs_per_cell; ++i)
-            integrator_m.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-          integrator_m.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
+        vector flux =
+          kernel.calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normal_m);
 
-          integrator_m.evaluate(true, false);
-
-          if(boundary_id == numbers::internal_face_boundary_id) // internal face
-          {
-            // TODO
-            //            do_face_int_integral_linearized_operator(integrator_m,
-            //            integrator_p,integrator_linearization_m, integrator_linearization_p);
-
-            // plug in integrator_linearization_m twice to avoid the above problem with accessing
-            // dofs of the neighboring element
-            do_face_int_integral_linearized_operator(integrator_m,
-                                                     integrator_p,
-                                                     integrator_linearization_m,
-                                                     integrator_linearization_m);
-          }
-          else // boundary face
-          {
-            do_boundary_integral_linearized_operator(integrator_m,
-                                                     integrator_linearization_m,
-                                                     boundary_id);
-          }
-
-          integrator_m.integrate(true, false);
-
-          for(unsigned int i = 0; i < dofs_per_cell; ++i)
-            for(unsigned int v = 0; v < n_filled_lanes; ++v)
-              matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-                integrator_m.begin_dof_values()[i][v];
-        }
+        integrator_m.submit_value(flux, q);
       }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+      {
+        vector uM = integrator_velocity_m->get_value(q);
+        // TODO
+        // Accessing exterior data is currently not available in deal.II/matrixfree.
+        // Hence, we simply use the interior value, but note that the diagonal and block-diagonal
+        // are not calculated exactly.
+        vector uP = uM;
+
+        vector delta_uM = integrator_m.get_value(q);
+        vector delta_uP; // set exterior value to zero
+
+        vector normal = integrator_m.get_normal_vector(q);
+
+        vector flux_times_normal =
+          kernel.calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
+
+        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal;
+        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator_m.submit_value(flux_times_normal - average_normal_velocity * delta_uM -
+                                    delta_average_normal_velocity * uM,
+                                  q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
     }
   }
 
-  MatrixFree<dim, Number> const * matrix_free;
+  // linearized operator
+  void
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
+  {
+    (void)integrator_m;
 
-  ConvectiveOperatorData<dim> operator_data;
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
+      {
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = integrator_velocity_p->get_value(q);
 
-  mutable Number eval_time;
+        vector delta_uM; // set exterior value to zero
+        vector delta_uP = integrator_p.get_value(q);
 
-  mutable VectorType velocity_linearization;
+        vector normal_p = -integrator_p.get_normal_vector(q);
 
-  unsigned int n_mpi_processes;
+        vector flux =
+          kernel.calculate_lax_friedrichs_flux_linearized(uP, uM, delta_uP, delta_uM, normal_p);
 
-  std::shared_ptr<CellIntegratorU> integrator;
-  std::shared_ptr<FaceIntegratorU> integrator_m;
-  std::shared_ptr<FaceIntegratorU> integrator_p;
+        integrator_p.submit_value(flux, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
+      {
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = integrator_velocity_p->get_value(q);
 
-  std::shared_ptr<CellIntegratorU> integrator_linearization;
-  std::shared_ptr<FaceIntegratorU> integrator_linearization_m;
-  std::shared_ptr<FaceIntegratorU> integrator_linearization_p;
+        vector delta_uM; // set exterior value to zero
+        vector delta_uP = integrator_p.get_value(q);
+
+        vector normal_p = -integrator_p.get_normal_vector(q);
+
+        vector flux_times_normal =
+          kernel.calculate_upwind_flux_linearized(uP, uM, delta_uP, delta_uM, normal_p);
+
+        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal_p;
+        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal_p;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        // opposite signs since n⁺ = - n⁻
+        integrator_p.submit_value(flux_times_normal - average_normal_velocity * delta_uP -
+                                    delta_average_normal_velocity * uP,
+                                  q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  // linearized operator
+  void
+  do_boundary_integral(IntegratorFace &           integrator,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id) const
+  {
+    // make sure that this function is only accessed for OperatorType::homogeneous
+    AssertThrow(
+      operator_type == OperatorType::homogeneous,
+      ExcMessage(
+        "For the linearized convective operator, only OperatorType::homogeneous makes sense."));
+
+    BoundaryTypeU boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+
+    if(this->operator_data.kernel_data.formulation ==
+       FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       *integrator_velocity_m,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       this->operator_data.bc,
+                                                       this->eval_time,
+                                                       this->operator_data.type_dirichlet_bc);
+
+        vector delta_uM = integrator.get_value(q);
+        vector delta_uP = calculate_exterior_value_linearized(
+          delta_uM, q, integrator, boundary_type, this->operator_data.type_dirichlet_bc);
+
+        vector normal = integrator.get_normal_vector(q);
+
+        vector flux =
+          kernel.calculate_lax_friedrichs_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
+
+        if(boundary_type == BoundaryTypeU::Neumann && this->operator_data.use_outflow_bc == true)
+          kernel.apply_outflow_bc(flux, uM * normal);
+
+        integrator.submit_value(flux, q);
+      }
+    }
+    else if(this->operator_data.kernel_data.formulation ==
+            FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        vector uM = integrator_velocity_m->get_value(q);
+        vector uP = calculate_exterior_value_nonlinear(uM,
+                                                       q,
+                                                       *integrator_velocity_m,
+                                                       boundary_type,
+                                                       boundary_id,
+                                                       this->operator_data.bc,
+                                                       this->eval_time,
+                                                       this->operator_data.type_dirichlet_bc);
+
+        vector delta_uM = integrator.get_value(q);
+        vector delta_uP = calculate_exterior_value_linearized(
+          delta_uM, q, integrator, boundary_type, this->operator_data.type_dirichlet_bc);
+
+        vector normal = integrator.get_normal_vector(q);
+
+        vector flux_times_normal =
+          kernel.calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normal);
+
+        if(boundary_type == BoundaryTypeU::Neumann && this->operator_data.use_outflow_bc == true)
+          kernel.apply_outflow_bc(flux_times_normal, uM * normal);
+
+        scalar average_normal_velocity       = 0.5 * (uM + uP) * normal;
+        scalar delta_average_normal_velocity = 0.5 * (delta_uM + delta_uP) * normal;
+
+        // second term appears since the strong formulation is implemented (integration by parts
+        // is performed twice)
+        integrator.submit_value(flux_times_normal - average_normal_velocity * delta_uM -
+                                  delta_average_normal_velocity * uM,
+                                q);
+      }
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  mutable IntegratorFlags integrator_flags_linear_transport;
+
+  // TODO shift to ConvectiveKernel
+  mutable VectorType velocity;
+
+  mutable std::shared_ptr<IntegratorCell> integrator_velocity;
+  mutable std::shared_ptr<IntegratorFace> integrator_velocity_m;
+  mutable std::shared_ptr<IntegratorFace> integrator_velocity_p;
+  // TODO shift to ConvectiveKernel
+
+  Operators::ConvectiveKernel<dim, Number> kernel;
 };
 
 } // namespace IncNS

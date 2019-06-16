@@ -169,6 +169,7 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
+  // TODO check virtual
   virtual void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
@@ -176,9 +177,11 @@ public:
    * Algebraic multigrid (AMG): sparse matrix (Trilinos) methods
    */
 #ifdef DEAL_II_WITH_TRILINOS
+  // TODO check virtual
   virtual void
   init_system_matrix(SparseMatrix & system_matrix) const;
 
+  // TODO check virtual
   virtual void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
@@ -189,9 +192,11 @@ public:
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
    * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
+  // TODO check virtual
   virtual void
   apply(VectorType & dst, VectorType const & src) const;
 
+  // TODO check virtual
   virtual void
   apply_add(VectorType & dst, VectorType const & src) const;
 
@@ -200,29 +205,31 @@ public:
    * Operations of this type are called rhs_...() since these functions are called to calculate the
    * vector forming the right-hand side vector of linear systems of equations.
    */
-  void
+  virtual void
   rhs(VectorType & dst) const;
 
-  void
+  virtual void
   rhs_add(VectorType & dst) const;
 
   /*
    * Evaluate the operator including homogeneous and inhomogeneous contributions. The typical use
-   * case would be explicit time integration or the evaluation of nonlinear residuals where a
-   * splitting into homogeneous and inhomogeneous contributions in not required or not possible.
+   * case would be explicit time integration where a  splitting into homogeneous and inhomogeneous
+   * contributions is not required.
    */
-  void
+  virtual void
   evaluate(VectorType & dst, VectorType const & src) const;
 
-  void
+  virtual void
   evaluate_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * point Jacobi preconditioner (diagonal)
    */
+  // TODO check virtual
   virtual void
   calculate_diagonal(VectorType & diagonal) const;
 
+  // TODO check virtual
   virtual void
   add_diagonal(VectorType & diagonal) const;
 
@@ -234,6 +241,7 @@ public:
   void
   calculate_block_diagonal_matrices() const;
 
+  // TODO check virtual
   virtual void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
 
@@ -248,6 +256,7 @@ public:
   // This function has to initialize everything related to the block diagonal preconditioner when
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
+  // TODO check virtual
   virtual void
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
@@ -302,15 +311,12 @@ protected:
   // currently not allow to access neighboring data in case of cell-based face loops.
   // Once this functionality is available, this function should be removed again.
   // Since only special operators need to evaluate neighboring data, this function
-  // simply redirects to do_face_int_integral() unless specified otherwise, i.e.,
-  // if this function is not overwritten by a derived class (such as convective terms
-  // that require an additional evaluation of velocity fields for example).
+  // simply redirects to do_face_int_integral() if this function is not overwritten
+  // by a derived class (such as convective terms that require an additional
+  // evaluation of velocity fields for example).
   virtual void
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
-
-  virtual void
-  do_block_diagonal_cell_based() const;
 
   /*
    * Data structure containing all operator-specific data.

@@ -327,7 +327,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual(Vecto
   // always evaluate convective term since this function is only called
   // if a nonlinear problem has to be solved, i.e., if the convective operator
   // has to be considered
-  this->convective_operator.evaluate_add(dst, src, evaluation_time);
+  this->convective_operator.evaluate_nonlinear_operator_add(dst, src, evaluation_time);
 
   // viscous term
   this->viscous_operator.set_evaluation_time(evaluation_time);
@@ -362,7 +362,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
   }
 
   if(this->param.convective_problem())
-    this->convective_operator.evaluate_add(dst_u, src_u, evaluation_time);
+    this->convective_operator.evaluate_nonlinear_operator_add(dst_u, src_u, evaluation_time);
 
   if(this->param.viscous_problem())
   {

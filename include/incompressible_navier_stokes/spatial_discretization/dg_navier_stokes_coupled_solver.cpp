@@ -400,7 +400,9 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType 
 
   AssertThrow(this->param.convective_problem() == true, ExcMessage("Invalid parameters."));
 
-  this->convective_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
+  this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0),
+                                                            src.block(0),
+                                                            evaluation_time);
 
   if(this->param.viscous_problem())
   {
@@ -453,7 +455,9 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
   }
 
   if(this->param.convective_problem())
-    this->convective_operator.evaluate_add(dst.block(0), src.block(0), evaluation_time);
+    this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0),
+                                                              src.block(0),
+                                                              evaluation_time);
 
   if(this->param.viscous_problem())
   {
