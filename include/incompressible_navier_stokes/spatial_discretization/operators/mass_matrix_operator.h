@@ -10,9 +10,7 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-// TODO can be removed once MassMatrixOperator derives from OperatorBase
-#include "../../../operators/integrator_flags.h"
-#include "../../../operators/mapping_flags.h"
+#include "../../../operators/operator_base.h"
 
 using namespace dealii;
 
@@ -87,181 +85,75 @@ private:
 
 } // namespace Operators
 
-struct MassMatrixOperatorData
+struct MassMatrixOperatorData : public OperatorBaseData
 {
-  MassMatrixOperatorData() : dof_index(0), quad_index(0)
+  MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
   }
-
-  unsigned int dof_index;
-  unsigned int quad_index;
 };
 
 template<int dim, typename Number>
-class MassMatrixOperator
+class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData, dim>
 {
 public:
-  typedef MassMatrixOperator<dim, Number> This;
+  typedef OperatorBase<dim, Number, MassMatrixOperatorData, dim> Base;
 
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  typedef VectorizedArray<Number> scalar;
-
-  typedef std::pair<unsigned int, unsigned int> Range;
-
-  typedef CellIntegrator<dim, dim, Number> Integrator;
-
-  MassMatrixOperator() : matrix_free(nullptr)
-  {
-  }
+  typedef typename Base::VectorType     VectorType;
+  typedef typename Base::Range          Range;
+  typedef typename Base::IntegratorCell IntegratorCell;
 
   void
-  set_scaling_factor(Number const & number)
-  {
-    kernel.set_scaling_factor(number);
-  }
-
-  MassMatrixOperatorData const &
-  get_operator_data() const
-  {
-    return operator_data;
-  }
-
-  MatrixFree<dim, Number> const &
-  get_data() const
-  {
-    return *matrix_free;
-  }
+  set_scaling_factor(Number const & number);
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free_in,
-         MassMatrixOperatorData const &  operator_data_in)
-  {
-    matrix_free   = &matrix_free_in;
-    operator_data = operator_data_in;
+  reinit(MatrixFree<dim, Number> const &   matrix_free,
+         AffineConstraints<double> const & constraint_matrix,
+         MassMatrixOperatorData const &    operator_data) const;
 
-    // Block Jacobi elementwise
-    integrator.reset(
-      new Integrator(*matrix_free, this->operator_data.dof_index, this->operator_data.quad_index));
-  }
-
-  // apply matrix vector multiplication
-  void
-  apply(VectorType & dst, VectorType const & src) const
-  {
-    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
-                ExcMessage("Invalid parameter scaling_factor."));
-
-    matrix_free->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
-  }
-
-  // TODO can be removed once MassMatrixOperator derives from OperatorBase
+  // TODO can be removed once merged operators are used in MomentumOperator instead of sequential
+  // operator application
   void
   apply_scale(VectorType & dst, Number const & factor, VectorType const & src) const
   {
     kernel.set_scaling_factor(factor);
 
-    matrix_free->cell_loop(&This::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
+    this->matrix_free->cell_loop(
+      &MassMatrixOperator<dim, Number>::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
 
     kernel.set_scaling_factor(1.0);
   }
 
-  void
-  apply_add(VectorType & dst, VectorType const & src) const
-  {
-    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
-                ExcMessage("Invalid parameter scaling_factor."));
-
-    matrix_free->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
-  }
-
-  // TODO can be removed once MassMatrixOperator derives from OperatorBase
+  // TODO can be removed once merged operators are used in MomentumOperator instead of sequential
+  // operator application
   void
   apply_scale_add(VectorType & dst, Number const & factor, VectorType const & src) const
   {
     kernel.set_scaling_factor(factor);
 
-    matrix_free->cell_loop(&This::cell_loop, this, dst, src, false /*zero_dst_vector = false*/);
+    this->matrix_free->cell_loop(&MassMatrixOperator<dim, Number>::cell_loop,
+                                 this,
+                                 dst,
+                                 src,
+                                 false /*zero_dst_vector = false*/);
 
     kernel.set_scaling_factor(1.0);
   }
 
-  void
-  calculate_diagonal(VectorType & diagonal) const
-  {
-    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
-                ExcMessage("Invalid parameter scaling_factor."));
-
-    VectorType src;
-    matrix_free->cell_loop(
-      &This::cell_loop_diagonal, this, diagonal, src, true /*zero_dst_vector = true*/);
-  }
-
-  void
-  add_diagonal(VectorType & diagonal) const
-  {
-    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
-                ExcMessage("Invalid parameter scaling_factor."));
-
-    VectorType src;
-    matrix_free->cell_loop(
-      &This::cell_loop_diagonal, this, diagonal, src, false /*zero_dst_vector = false*/);
-  }
-
-  void
-  add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<Number>> & matrices) const
-  {
-    AssertThrow(std::abs(kernel.get_scaling_factor() - 1.0) < 1.e-12,
-                ExcMessage("Invalid parameter scaling_factor."));
-
-    VectorType src;
-
-    matrix_free->cell_loop(&This::cell_loop_calculate_block_diagonal, this, matrices, src);
-  }
-
-  void
-  apply_add_block_diagonal_elementwise(unsigned int const   cell,
-                                       scalar * const       dst,
-                                       scalar const * const src,
-                                       unsigned int const   problem_size = 1) const
-  {
-    (void)problem_size;
-
-    unsigned int dofs_per_cell = integrator->dofs_per_cell;
-
-    integrator->reinit(cell);
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      integrator->begin_dof_values()[i] = src[i];
-
-    integrator->evaluate(true, false, false);
-
-    do_cell_integral(*integrator);
-
-    integrator->integrate(true, false);
-
-    for(unsigned int i = 0; i < dofs_per_cell; ++i)
-      dst[i] += integrator->begin_dof_values()[i];
-  }
-
 private:
-  template<typename Integrator>
   void
-  do_cell_integral(Integrator & integrator) const
-  {
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-    {
-      integrator.submit_value(kernel.get_volume_flux(integrator.get_value(q)), q);
-    }
-  }
+  do_cell_integral(IntegratorCell & integrator) const;
 
+  // TODO can be removed once merged operators are used in MomentumOperator instead of sequential
+  // operator application
   void
   cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &              src,
             Range const &                   cell_range) const
   {
-    Integrator integrator(matrix_free, operator_data.dof_index, operator_data.quad_index);
+    IntegratorCell integrator(matrix_free,
+                              this->operator_data.dof_index,
+                              this->operator_data.quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -274,84 +166,6 @@ private:
       integrator.integrate_scatter(true, false, dst);
     }
   }
-
-  void
-  cell_loop_diagonal(MatrixFree<dim, Number> const & matrix_free,
-                     VectorType &                    dst,
-                     VectorType const &,
-                     Range const & cell_range) const
-  {
-    Integrator integrator(matrix_free, operator_data.dof_index, operator_data.quad_index);
-
-    unsigned int const                     dofs_per_cell = integrator.dofs_per_cell;
-    AlignedVector<VectorizedArray<Number>> local_diagonal_vector(dofs_per_cell);
-
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-    {
-      integrator.reinit(cell);
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        integrator.evaluate(true, false, false);
-
-        do_cell_integral(integrator);
-
-        integrator.integrate(true, false);
-
-        local_diagonal_vector[j] = integrator.begin_dof_values()[j];
-      }
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-        integrator.begin_dof_values()[j] = local_diagonal_vector[j];
-
-      integrator.distribute_local_to_global(dst);
-    }
-  }
-
-  void
-  cell_loop_calculate_block_diagonal(MatrixFree<dim, Number> const &         matrix_free,
-                                     std::vector<LAPACKFullMatrix<Number>> & matrices,
-                                     VectorType const &,
-                                     Range const & cell_range) const
-  {
-    Integrator integrator(matrix_free, operator_data.dof_index, operator_data.quad_index);
-
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-    {
-      integrator.reinit(cell);
-
-      unsigned int dofs_per_cell = integrator.dofs_per_cell;
-
-      for(unsigned int j = 0; j < dofs_per_cell; ++j)
-      {
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          integrator.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
-        integrator.begin_dof_values()[j] = make_vectorized_array<Number>(1.);
-
-        integrator.evaluate(true, false, false);
-
-        do_cell_integral(integrator);
-
-        integrator.integrate(true, false);
-
-        for(unsigned int i = 0; i < dofs_per_cell; ++i)
-          for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
-            matrices[cell * VectorizedArray<Number>::n_array_elements + v](i, j) +=
-              integrator.begin_dof_values()[i][v];
-      }
-    }
-  }
-
-  MatrixFree<dim, Number> const * matrix_free;
-
-  MassMatrixOperatorData operator_data;
-
-  // TODO can be removed once MassMatrixOperator derives from OperatorBase
-  // required for elementwise block Jacobi operation
-  std::shared_ptr<Integrator> integrator;
 
   Operators::MassMatrixKernel<dim, Number> kernel;
 };

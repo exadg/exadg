@@ -245,10 +245,13 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_operators()
 {
+  AffineConstraints<double> constraint_dummy;
+  constraint_dummy.close();
+
   // mass matrix operator
   mass_matrix_operator_data.dof_index  = dof_index_u;
   mass_matrix_operator_data.quad_index = quad_index_u;
-  mass_matrix_operator.reinit(matrix_free, mass_matrix_operator_data);
+  mass_matrix_operator.reinit(matrix_free, constraint_dummy, mass_matrix_operator_data);
 
   // inverse mass matrix operator
   inverse_mass_velocity.initialize(matrix_free, param.degree_u, dof_index_u, quad_index_u);
@@ -309,8 +312,6 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_operator_data.dof_index                         = dof_index_u;
   viscous_operator_data.quad_index                        = quad_index_u;
   viscous_operator_data.use_cell_based_loops              = param.use_cell_based_face_loops;
-  AffineConstraints<double> constraint_dummy;
-  constraint_dummy.close();
   viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data);
 }
 

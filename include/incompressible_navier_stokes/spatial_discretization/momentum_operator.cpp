@@ -29,7 +29,9 @@ MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const & 
   (void)constraint_matrix;
 
   // setup own mass matrix operator
-  own_mass_matrix_operator_storage.reinit(matrix_free, operator_data.mass_matrix_operator_data);
+  own_mass_matrix_operator_storage.reinit(matrix_free,
+                                          constraint_matrix,
+                                          operator_data.mass_matrix_operator_data);
 
   own_viscous_operator_storage.reinit(matrix_free,
                                       constraint_matrix,
@@ -423,7 +425,7 @@ MomentumOperator<dim, Number>::apply_add_block_diagonal_elementwise(
     AssertThrow(this->get_scaling_factor_time_derivative_term() > 0.0,
                 ExcMessage("Scaling factor of time derivative term has not been set!"));
 
-    mass_matrix_operator->apply_add_block_diagonal_elementwise(cell, dst, src);
+    mass_matrix_operator->apply_add_block_diagonal_elementwise(cell, dst, src, problem_size);
 
     Elementwise::scale(dst, this->get_scaling_factor_time_derivative_term(), problem_size);
   }
