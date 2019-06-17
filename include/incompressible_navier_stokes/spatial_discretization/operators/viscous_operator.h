@@ -220,17 +220,15 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     tensor
-    get_volume_flux(IntegratorCell const & integrator, unsigned int const q) const
+    get_volume_flux(tensor const & gradient, scalar const & viscosity) const
   {
-    scalar viscosity = get_viscosity_cell(integrator.get_cell_index(), q);
-
     if(data.formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
     {
-      return viscosity * make_vectorized_array<Number>(2.) * integrator.get_symmetric_gradient(q);
+      return viscosity * (gradient + transpose(gradient));
     }
     else if(data.formulation_viscous_term == FormulationViscousTerm::LaplaceFormulation)
     {
-      return viscosity * integrator.get_gradient(q);
+      return viscosity * gradient;
     }
     else
     {
@@ -243,14 +241,14 @@ public:
   }
 
   /*
-   *  Calculation of "value_flux".
+   *  Calculation of "gradient_flux".
    */
   inline DEAL_II_ALWAYS_INLINE //
     tensor
-    calculate_value_flux(vector const & value_m,
-                         vector const & value_p,
-                         vector const & normal,
-                         scalar const & viscosity) const
+    calculate_gradient_flux(vector const & value_m,
+                            vector const & value_p,
+                            vector const & normal,
+                            scalar const & viscosity) const
   {
     tensor value_flux;
 
@@ -336,18 +334,18 @@ public:
   }
 
   /*
-   *  Calculation of gradient flux. Strictly speaking, this value is not a numerical flux since
+   *  Calculation of "value_flux". Strictly speaking, this value is not a numerical flux since
    *  the flux is multiplied by the normal vector, i.e., "gradient_flux" = numerical_flux * normal,
    *  where normal denotes the normal vector of element e⁻.
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_gradient_flux(vector const & normal_gradient_m,
-                            vector const & normal_gradient_p,
-                            vector const & value_m,
-                            vector const & value_p,
-                            vector const & normal,
-                            scalar const & viscosity) const
+    calculate_value_flux(vector const & normal_gradient_m,
+                         vector const & normal_gradient_p,
+                         vector const & value_m,
+                         vector const & value_p,
+                         vector const & normal,
+                         scalar const & viscosity) const
   {
     vector gradient_flux;
 

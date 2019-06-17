@@ -13,6 +13,7 @@
 #include "../user_interface/input_parameters.h"
 
 #include "../../operators/linear_operator_base.h"
+#include "../../operators/mapping_flags.h"
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
@@ -141,6 +142,18 @@ private:
 
 public:
   typedef Number value_type;
+
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells          = update_JxW_values | update_gradients;
+    flags.inner_faces    = update_JxW_values | update_normal_vectors;
+    flags.boundary_faces = update_JxW_values | update_normal_vectors;
+
+    return flags;
+  }
 
   ProjectionOperator(MatrixFree<dim, Number> const & matrix_free_in,
                      unsigned int const              dof_index_in,

@@ -183,17 +183,28 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
   additional_data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data.mapping_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
 
-  additional_data.mapping_update_flags_inner_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+  MappingFlags flags;
 
-  additional_data.mapping_update_flags_boundary_faces =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values);
+  flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+  flags = flags || Operators::DivergenceKernel<dim, Number>::get_mapping_flags();
+  flags = flags || Operators::GradientKernel<dim, Number>::get_mapping_flags();
+
+  if(param.convective_problem())
+    flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+
+  if(param.viscous_problem())
+    flags = flags || Operators::ViscousKernel<dim, Number>::get_mapping_flags();
+
+  if(param.right_hand_side)
+    flags = flags || Operators::RHSKernel<dim, Number>::get_mapping_flags();
+
+  if(param.use_divergence_penalty || param.use_continuity_penalty)
+    flags = flags || ProjectionOperator<dim, Number>::get_mapping_flags();
+
+  additional_data.mapping_update_flags                = flags.cells;
+  additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
+  additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
   if(param.use_cell_based_face_loops)
   {
