@@ -16,11 +16,28 @@ ViscousOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_fr
                                      AffineConstraints<double> const & constraint_matrix,
                                      ViscousOperatorData<dim> const &  operator_data) const
 {
+  (void)matrix_free;
+  (void)constraint_matrix;
+  (void)operator_data;
+
+  AssertThrow(false,
+              ExcMessage(
+                "This reinit() function can not be used to initialize the viscous operator."));
+}
+
+template<int dim, typename Number>
+void
+ViscousOperator<dim, Number>::reinit(
+  MatrixFree<dim, Number> const &                        matrix_free,
+  AffineConstraints<double> const &                      constraint_matrix,
+  ViscousOperatorData<dim> const &                       operator_data,
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel)
+{
+  kernel = viscous_kernel;
+
   Base::reinit(matrix_free, constraint_matrix, operator_data);
 
-  kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.dof_index);
-
-  this->integrator_flags = kernel.get_integrator_flags();
+  this->integrator_flags = kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
@@ -28,7 +45,7 @@ void
 ViscousOperator<dim, Number>::set_viscosity_coefficients_ptr(
   std::shared_ptr<VariableCoefficients<dim, Number>> coefficients)
 {
-  kernel.set_viscosity_coefficients_ptr(coefficients);
+  kernel->set_viscosity_coefficients_ptr(coefficients);
 }
 
 template<int dim, typename Number>
@@ -37,7 +54,7 @@ ViscousOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
-  kernel.reinit_face(*this->integrator_m, *this->integrator_p);
+  kernel->reinit_face(*this->integrator_m, *this->integrator_p);
 }
 
 template<int dim, typename Number>
@@ -46,7 +63,7 @@ ViscousOperator<dim, Number>::reinit_boundary_face(unsigned int const face) cons
 {
   Base::reinit_boundary_face(face);
 
-  kernel.reinit_boundary_face(*this->integrator_m);
+  kernel->reinit_boundary_face(*this->integrator_m);
 }
 
 template<int dim, typename Number>
@@ -57,7 +74,7 @@ ViscousOperator<dim, Number>::reinit_face_cell_based(unsigned int const       ce
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
-  kernel.reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+  kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
 }
 
 template<int dim, typename Number>
@@ -66,8 +83,8 @@ ViscousOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) cons
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    scalar viscosity = kernel.get_viscosity_cell(integrator.get_cell_index(), q);
-    integrator.submit_gradient(kernel.get_volume_flux(integrator.get_gradient(q), viscosity), q);
+    scalar viscosity = kernel->get_viscosity_cell(integrator.get_cell_index(), q);
+    integrator.submit_gradient(kernel->get_volume_flux(integrator.get_gradient(q), viscosity), q);
   }
 }
 
@@ -82,14 +99,15 @@ ViscousOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     vector value_p = integrator_p.get_value(q);
     vector normal  = integrator_m.get_normal_vector(q);
 
-    scalar average_viscosity = kernel.get_viscosity_interior_face(integrator_m.get_face_index(), q);
+    scalar average_viscosity =
+      kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
     tensor gradient_flux =
-      kernel.calculate_gradient_flux(value_m, value_p, normal, average_viscosity);
+      kernel->calculate_gradient_flux(value_m, value_p, normal, average_viscosity);
 
-    vector normal_gradient_m = kernel.calculate_normal_gradient(q, integrator_m);
-    vector normal_gradient_p = kernel.calculate_normal_gradient(q, integrator_p);
+    vector normal_gradient_m = kernel->calculate_normal_gradient(q, integrator_m);
+    vector normal_gradient_p = kernel->calculate_normal_gradient(q, integrator_p);
 
-    vector value_flux = kernel.calculate_value_flux(
+    vector value_flux = kernel->calculate_value_flux(
       normal_gradient_m, normal_gradient_p, value_m, value_p, normal, average_viscosity);
 
     integrator_m.submit_gradient(gradient_flux, q);
@@ -113,14 +131,15 @@ ViscousOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_m
     vector value_p; // set exterior values to zero
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    scalar average_viscosity = kernel.get_viscosity_interior_face(integrator_m.get_face_index(), q);
+    scalar average_viscosity =
+      kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
     tensor gradient_flux =
-      kernel.calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
+      kernel->calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
 
-    vector normal_gradient_m = kernel.calculate_normal_gradient(q, integrator_m);
+    vector normal_gradient_m = kernel->calculate_normal_gradient(q, integrator_m);
     vector normal_gradient_p; // set exterior gradient to zero
 
-    vector value_flux = kernel.calculate_value_flux(
+    vector value_flux = kernel->calculate_value_flux(
       normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, average_viscosity);
 
     integrator_m.submit_gradient(gradient_flux, q);
@@ -142,16 +161,17 @@ ViscousOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m
     // multiply by -1.0 to get the correct normal vector !!!
     vector normal_p = -integrator_p.get_normal_vector(q);
 
-    scalar average_viscosity = kernel.get_viscosity_interior_face(integrator_p.get_face_index(), q);
+    scalar average_viscosity =
+      kernel->get_viscosity_interior_face(integrator_p.get_face_index(), q);
     tensor gradient_flux =
-      kernel.calculate_gradient_flux(value_p, value_m, normal_p, average_viscosity);
+      kernel->calculate_gradient_flux(value_p, value_m, normal_p, average_viscosity);
 
     // set exterior gradient to zero
     vector normal_gradient_m;
     // multiply by -1.0 since normal vector n⁺ = -n⁻ !!!
-    vector normal_gradient_p = -kernel.calculate_normal_gradient(q, integrator_p);
+    vector normal_gradient_p = -kernel->calculate_normal_gradient(q, integrator_p);
 
-    vector value_flux = kernel.calculate_value_flux(
+    vector value_flux = kernel->calculate_value_flux(
       normal_gradient_p, normal_gradient_m, value_p, value_m, normal_p, average_viscosity);
 
     integrator_p.submit_gradient(gradient_flux, q);
@@ -181,11 +201,11 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
 
     vector normal = integrator.get_normal_vector(q);
 
-    scalar viscosity     = kernel.get_viscosity_boundary_face(integrator.get_face_index(), q);
-    tensor gradient_flux = kernel.calculate_gradient_flux(value_m, value_p, normal, viscosity);
+    scalar viscosity     = kernel->get_viscosity_boundary_face(integrator.get_face_index(), q);
+    tensor gradient_flux = kernel->calculate_gradient_flux(value_m, value_p, normal, viscosity);
 
     vector normal_gradient_m =
-      kernel.calculate_interior_normal_gradient(q, integrator, operator_type);
+      kernel->calculate_interior_normal_gradient(q, integrator, operator_type);
     vector normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
                                                                   q,
                                                                   integrator,
@@ -195,7 +215,7 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                                                   this->operator_data.bc,
                                                                   this->eval_time);
 
-    vector value_flux = kernel.calculate_value_flux(
+    vector value_flux = kernel->calculate_value_flux(
       normal_gradient_m, normal_gradient_p, value_m, value_p, normal, viscosity);
 
     integrator.submit_gradient(gradient_flux, q);

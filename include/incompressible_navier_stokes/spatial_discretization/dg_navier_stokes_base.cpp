@@ -256,6 +256,28 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_operators()
 {
+  // operator kernels
+  convective_kernel_data.formulation           = param.formulation_convective_term;
+  convective_kernel_data.upwind_factor         = param.upwind_factor;
+  convective_kernel_data.use_outflow_bc        = param.use_outflow_bc_convective_term;
+  convective_kernel_data.type_dirichlet_bc     = param.type_dirichlet_bc_convective;
+  convective_kernel_data.dof_index             = dof_index_u;
+  convective_kernel_data.quad_index_linearized = this->get_quad_index_velocity_linearized();
+  convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+  convective_kernel->reinit(matrix_free, convective_kernel_data, false /* is_mg */);
+
+  viscous_kernel_data.degree                       = param.degree_u;
+  viscous_kernel_data.degree_mapping               = mapping_degree;
+  viscous_kernel_data.dof_index                    = dof_index_u;
+  viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
+  viscous_kernel_data.viscosity                    = param.viscosity;
+  viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
+  viscous_kernel_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
+  viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
+  viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
+  viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
+  viscous_kernel->reinit(matrix_free, viscous_kernel_data);
+
   AffineConstraints<double> constraint_dummy;
   constraint_dummy.close();
 
@@ -299,31 +321,24 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   divergence_operator.reinit(matrix_free, divergence_operator_data);
 
   // convective operator
-  convective_operator_data.kernel_data.formulation       = param.formulation_convective_term;
-  convective_operator_data.kernel_data.upwind_factor     = param.upwind_factor;
-  convective_operator_data.kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
-  convective_operator_data.kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
-  convective_operator_data.dof_index                     = dof_index_u;
-  convective_operator_data.quad_index                    = quad_index_u_nonlinear;
-  convective_operator_data.use_cell_based_loops          = param.use_cell_based_face_loops;
-  convective_operator_data.bc                            = boundary_descriptor_velocity;
-  convective_operator.reinit(matrix_free, constraint_dummy, convective_operator_data);
+  convective_operator_data.kernel_data          = convective_kernel_data;
+  convective_operator_data.dof_index            = dof_index_u;
+  convective_operator_data.quad_index           = this->get_quad_index_velocity_linearized();
+  convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+  convective_operator_data.quad_index_nonlinear = quad_index_u_nonlinear;
+  convective_operator_data.bc                   = boundary_descriptor_velocity;
+  convective_operator.reinit(matrix_free,
+                             constraint_dummy,
+                             convective_operator_data,
+                             convective_kernel);
 
   // viscous operator
-  viscous_operator_data.kernel_data.degree                   = param.degree_u;
-  viscous_operator_data.kernel_data.degree_mapping           = mapping_degree;
-  viscous_operator_data.kernel_data.IP_factor                = param.IP_factor_viscous;
-  viscous_operator_data.kernel_data.viscosity                = param.viscosity;
-  viscous_operator_data.kernel_data.formulation_viscous_term = param.formulation_viscous_term;
-  viscous_operator_data.kernel_data.penalty_term_div_formulation =
-    param.penalty_term_div_formulation;
-  viscous_operator_data.kernel_data.IP_formulation        = param.IP_formulation_viscous;
-  viscous_operator_data.kernel_data.viscosity_is_variable = param.use_turbulence_model;
-  viscous_operator_data.bc                                = boundary_descriptor_velocity;
-  viscous_operator_data.dof_index                         = dof_index_u;
-  viscous_operator_data.quad_index                        = quad_index_u;
-  viscous_operator_data.use_cell_based_loops              = param.use_cell_based_face_loops;
-  viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data);
+  viscous_operator_data.kernel_data          = viscous_kernel_data;
+  viscous_operator_data.bc                   = boundary_descriptor_velocity;
+  viscous_operator_data.dof_index            = dof_index_u;
+  viscous_operator_data.quad_index           = quad_index_u;
+  viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+  viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
 }
 
 
@@ -451,6 +466,26 @@ DGNavierStokesBase<dim, Number>::get_quad_index_velocity_nonlinear() const
   return quad_index_u_nonlinear;
 }
 
+
+template<int dim, typename Number>
+unsigned int
+DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linearized() const
+{
+  if(param.quad_rule_linearization == QuadratureRuleLinearization::Standard)
+  {
+    return quad_index_u;
+  }
+  else if(param.quad_rule_linearization == QuadratureRuleLinearization::Overintegration32k)
+  {
+    return quad_index_u_nonlinear;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+    return 0;
+  }
+}
+
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_pressure() const
@@ -576,6 +611,13 @@ unsigned int
 DGNavierStokesBase<dim, Number>::get_polynomial_degree() const
 {
   return param.degree_u;
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
+{
+  convective_kernel->set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>

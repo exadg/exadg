@@ -369,6 +369,18 @@ enum class MultigridOperatorType
 std::string
 enum_to_string(MultigridOperatorType const enum_type);
 
+/*
+ *  QuadratureRule
+ */
+enum class QuadratureRuleLinearization
+{
+  Standard,
+  Overintegration32k
+};
+
+std::string
+enum_to_string(QuadratureRuleLinearization const enum_type);
+
 
 /**************************************************************************************/
 /*                                                                                    */

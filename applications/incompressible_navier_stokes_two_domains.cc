@@ -444,11 +444,17 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
   // setup solvers
 
+  LinearAlgebra::distributed::Vector<Number> const * velocity_1 =
+    &time_integrator_1->get_velocity();
+
   navier_stokes_operation_1->setup_solvers(
-    time_integrator_1->get_scaling_factor_time_derivative_term());
+    time_integrator_1->get_scaling_factor_time_derivative_term(), velocity_1);
+
+  LinearAlgebra::distributed::Vector<Number> const * velocity_2 =
+    &time_integrator_2->get_velocity();
 
   navier_stokes_operation_2->setup_solvers(
-    time_integrator_2->get_scaling_factor_time_derivative_term());
+    time_integrator_2->get_scaling_factor_time_derivative_term(), velocity_2);
 
   setup_time = timer.wall_time();
 }

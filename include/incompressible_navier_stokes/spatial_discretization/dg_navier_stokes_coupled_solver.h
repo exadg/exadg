@@ -99,7 +99,8 @@ public:
         std::shared_ptr<FieldFunctions<dim>> const      field_functions);
 
   void
-  setup_solvers(double const & scaling_factor_time_derivative_term = 1.0);
+  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
+                VectorType const * velocity                            = nullptr);
 
   /*
    *  Update divergence penalty operator by recalculating the penalty parameter
@@ -157,9 +158,6 @@ public:
 
   void
   set_solution_linearization(BlockVectorType const & solution_linearization);
-
-  LinearAlgebra::distributed::Vector<Number> const &
-  get_velocity_linearization() const;
 
   /*
    * Stokes equations or convective term treated explicitly: solve linear system of equations
@@ -259,7 +257,8 @@ public:
 
 private:
   void
-  initialize_momentum_operator(double const & scaling_factor_time_derivative_term = 1.0);
+  initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
+                               VectorType const * velocity);
 
   void
   initialize_solver_coupled();

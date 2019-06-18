@@ -47,7 +47,8 @@ DGNavierStokesCoupled<dim, Number>::setup(
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup_solvers(
-  double const & scaling_factor_time_derivative_term)
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const * velocity)
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
@@ -57,7 +58,7 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
    * parameter. Note also that the velocity_conv_diff_operator has to be initialized before calling
    * the setup of the BlockPreconditioner!
    */
-  initialize_momentum_operator(scaling_factor_time_derivative_term);
+  initialize_momentum_operator(scaling_factor_time_derivative_term, velocity);
 
   initialize_block_preconditioner();
 
@@ -71,7 +72,8 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::initialize_momentum_operator(
-  double const & scaling_factor_time_derivative_term)
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const * velocity)
 {
   MomentumOperatorData<dim> momentum_operator_data;
 
@@ -95,7 +97,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_momentum_operator(
 
   momentum_operator_data.dof_index       = this->get_dof_index_velocity();
   momentum_operator_data.quad_index_std  = this->get_quad_index_velocity_linear();
-  momentum_operator_data.quad_index_over = this->get_quad_index_velocity_nonlinear();
+  momentum_operator_data.quad_index_over = this->get_quad_index_velocity_linearized();
 
   momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
   momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -107,6 +109,16 @@ DGNavierStokesCoupled<dim, Number>::initialize_momentum_operator(
                            this->mass_matrix_operator,
                            this->viscous_operator,
                            this->convective_operator);
+
+  if(momentum_operator_data.convective_problem)
+  {
+    AssertThrow(
+      velocity != nullptr,
+      ExcMessage(
+        "To initialize preconditioners, convective kernel needs access to a velocity field."));
+
+    this->set_velocity_ptr(*velocity);
+  }
 }
 
 template<int dim, typename Number>
@@ -233,18 +245,7 @@ void
 DGNavierStokesCoupled<dim, Number>::set_solution_linearization(
   BlockVectorType const & solution_linearization)
 {
-  momentum_operator.set_solution_linearization(solution_linearization.block(0));
-}
-
-template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
-DGNavierStokesCoupled<dim, Number>::get_velocity_linearization() const
-{
-  AssertThrow(this->param.nonlinear_problem_has_to_be_solved() == true,
-              ExcMessage(
-                "Attempt to access velocity_linearization which has not been initialized."));
-
-  return momentum_operator.get_solution_linearization();
+  this->set_velocity_ptr(solution_linearization.block(0));
 }
 
 template<int dim, typename Number>
@@ -1434,7 +1435,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
         momentum_operator.get_scaling_factor_time_derivative_term());
 
     if(nonlinear_problem_has_to_be_solved())
-      pressure_conv_diff_operator->set_velocity_ptr(get_velocity_linearization());
+      pressure_conv_diff_operator->set_velocity_ptr(this->convective_kernel->get_velocity());
 
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);
 

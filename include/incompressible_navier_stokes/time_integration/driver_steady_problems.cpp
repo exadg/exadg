@@ -41,6 +41,13 @@ DriverSteadyProblems<Number>::setup()
 }
 
 template<typename Number>
+LinearAlgebra::distributed::Vector<Number> const &
+DriverSteadyProblems<Number>::get_velocity() const
+{
+  return solution.block(0);
+}
+
+template<typename Number>
 void
 DriverSteadyProblems<Number>::initialize_vectors()
 {
@@ -59,7 +66,6 @@ DriverSteadyProblems<Number>::initialize_solution()
   double time = 0.0;
   operator_base->prescribe_initial_conditions(solution.block(0), solution.block(1), time);
 }
-
 
 template<typename Number>
 void

@@ -94,9 +94,9 @@ public:
   }
 
   void
-  reinit_multigrid(MatrixFree<dim, Number> const &   data,
-                   AffineConstraints<double> const & constraint_matrix,
-                   MomentumOperatorData<dim> const & operator_data);
+  reinit(MatrixFree<dim, Number> const &   data,
+         AffineConstraints<double> const & constraint_matrix,
+         MomentumOperatorData<dim> const & operator_data);
 
   void
   reinit(MatrixFree<dim, Number> const &         data,
@@ -209,13 +209,26 @@ public:
   get_scaling_factor_time_derivative_term() const;
 
   /*
-   *  Linearized velocity field for convective operator
+   *  Linearized velocity field for convective operator.
+   */
+
+  /*
+   * Interface required by Newton solver.
    */
   void
-  set_solution_linearization(VectorType const & solution_linearization);
+  set_solution_linearization(VectorType const & velocity);
+
+  /*
+   * Interfaces required by multigrid preconditioner.
+   */
+  void
+  set_velocity_copy(VectorType const & velocity);
+
+  void
+  set_velocity_ptr(VectorType const & velocity);
 
   VectorType const &
-  get_solution_linearization() const;
+  get_velocity() const;
 
   /*
    *  Evaluation time that is needed for evaluation of linearized convective operator.
@@ -364,9 +377,11 @@ private:
    */
   MassMatrixOperator<dim, Number> own_mass_matrix_operator_storage;
 
-  ViscousOperator<dim, Number> own_viscous_operator_storage;
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>> own_viscous_kernel;
+  ViscousOperator<dim, Number>                           own_viscous_operator_storage;
 
-  ConvectiveOperator<dim, Number> own_convective_operator_storage;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> own_convective_kernel;
+  ConvectiveOperator<dim, Number>                           own_convective_operator_storage;
 
   VectorType mutable temp_vector;
   VectorType mutable velocity_linearization;
@@ -405,7 +420,9 @@ struct MomentumOperatorMergedData : public OperatorBaseData
     : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
       unsteady_problem(false),
       convective_problem(false),
-      viscous_problem(false)
+      viscous_problem(false),
+      scaling_factor_mass_matrix(1.0),
+      mg_operator_type(MultigridOperatorType::Undefined)
   {
   }
 
@@ -413,7 +430,17 @@ struct MomentumOperatorMergedData : public OperatorBaseData
   bool convective_problem;
   bool viscous_problem;
 
+  // This variable is only needed for initialization, e.g., so that the
+  // multigrid smoothers can be initialized correctly during initialization
+  // (e.g., diagonal in case of Chebyshev smoother) without the need to
+  // update the whole multigrid preconditioner in the first time step.
+  double scaling_factor_mass_matrix;
+
   Operators::ConvectiveKernelData convective_kernel_data;
+  Operators::ViscousKernelData    viscous_kernel_data;
+
+  // Multigrid
+  MultigridOperatorType mg_operator_type;
 };
 
 template<int dim, typename Number>
@@ -431,6 +458,81 @@ private:
   typedef typename Base::IntegratorFace IntegratorFace;
 
 public:
+  void
+  reinit(MatrixFree<dim, Number> const &    matrix_free,
+         AffineConstraints<double> const &  constraint_matrix,
+         MomentumOperatorMergedData const & operator_data) const
+  {
+    // create new objects and initialize kernels
+    if(this->operator_data.unsteady_problem)
+    {
+      this->mass_kernel.reset(new Operators::MassMatrixKernel<dim, Number>());
+      this->mass_kernel.reinit(operator_data.scaling_factor_mass_matrix);
+    }
+
+    if(this->operator_data.convective_problem)
+    {
+      this->convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+      this->convective_kernel.reinit(matrix_free,
+                                     operator_data.convective_kernel_data,
+                                     this->is_mg);
+    }
+
+    if(this->operator_data.viscous_problem)
+    {
+      this->viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
+      this->viscous_kernel.reinit(matrix_free, operator_data.viscous_kernel_data);
+    }
+
+    reinit_base(matrix_free, constraint_matrix, operator_data);
+  }
+
+  void
+  reinit(MatrixFree<dim, Number> const &                           matrix_free,
+         AffineConstraints<double> const &                         constraint_matrix,
+         MomentumOperatorMergedData const &                        operator_data,
+         std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel,
+         std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
+         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
+  {
+    // simply set pointers
+    this->mass_kernel       = mass_kernel;
+    this->convective_kernel = convective_kernel;
+    this->viscous_kernel    = viscous_kernel;
+
+    reinit_base(matrix_free, constraint_matrix, operator_data);
+  }
+
+  LinearAlgebra::distributed::Vector<Number> const &
+  get_velocity() const
+  {
+    return convective_kernel.get_velocity();
+  }
+
+  void
+  set_velocity_copy(VectorType const & velocity) const
+  {
+    convective_kernel.set_velocity_copy(velocity);
+  }
+
+  void
+  set_velocity_ptr(VectorType const & velocity) const
+  {
+    convective_kernel.set_velocity_ptr(velocity);
+  }
+
+  Number
+  get_scaling_factor_mass_matrix() const
+  {
+    return mass_kernel.get_scaling_factor();
+  }
+
+  void
+  set_scaling_factor_mass_matrix(Number const & number) const
+  {
+    mass_kernel.set_scaling_factor(number);
+  }
+
   void
   rhs(VectorType & dst) const
   {
@@ -476,7 +578,7 @@ public:
     Base::reinit_cell(cell);
 
     if(this->operator_data.convective_problem)
-      convective_kernel.reinit_cell(cell);
+      convective_kernel->reinit_cell(cell);
   }
 
   void
@@ -485,10 +587,10 @@ public:
     Base::reinit_face(face);
 
     if(this->operator_data.convective_problem)
-      convective_kernel.reinit_face(face);
+      convective_kernel->reinit_face(face);
 
     if(this->operator_data.viscous_problem)
-      viscous_kernel.reinit_face(*this->integrator_m, *this->integrator_p);
+      viscous_kernel->reinit_face(*this->integrator_m, *this->integrator_p);
   }
 
   void
@@ -497,10 +599,10 @@ public:
     Base::reinit_boundary_face(face);
 
     if(this->operator_data.convective_problem)
-      convective_kernel.reinit_boundary_face(face);
+      convective_kernel->reinit_boundary_face(face);
 
     if(this->operator_data.viscous_problem)
-      viscous_kernel.reinit_boundary_face(*this->integrator_m);
+      viscous_kernel->reinit_boundary_face(*this->integrator_m);
   }
 
   void
@@ -511,10 +613,10 @@ public:
     Base::reinit_face_cell_based(cell, face, boundary_id);
 
     if(this->operator_data.convective_problem)
-      convective_kernel.reinit_face_cell_based(cell, face, boundary_id);
+      convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
 
     if(this->operator_data.viscous_problem)
-      viscous_kernel.reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
+      viscous_kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
   }
 
   // linearized operator
@@ -553,24 +655,24 @@ public:
         gradient = integrator.get_gradient(q);
 
       if(this->operator_data.unsteady_problem)
-        value_flux += mass_kernel.get_volume_flux(value);
+        value_flux += mass_kernel->get_volume_flux(value);
 
       if(this->operator_data.convective_problem)
       {
-        vector u = convective_kernel.get_velocity_cell(q);
+        vector u = convective_kernel->get_velocity_cell(q);
 
         if(this->operator_data.convective_kernel_data.formulation ==
            FormulationConvectiveTerm::DivergenceFormulation)
         {
           gradient_flux +=
-            convective_kernel.get_volume_flux_linearized_divergence_formulation(u, value);
+            convective_kernel->get_volume_flux_linearized_divergence_formulation(u, value);
         }
         else if(this->operator_data.convective_kernel_data.formulation ==
                 FormulationConvectiveTerm::ConvectiveFormulation)
         {
-          tensor grad_u = convective_kernel.get_velocity_gradient_cell(q);
+          tensor grad_u = convective_kernel->get_velocity_gradient_cell(q);
 
-          value_flux += convective_kernel.get_volume_flux_linearized_convective_formulation(
+          value_flux += convective_kernel->get_volume_flux_linearized_convective_formulation(
             u, value, grad_u, gradient);
         }
         else
@@ -581,8 +683,8 @@ public:
 
       if(this->operator_data.viscous_problem)
       {
-        scalar viscosity = viscous_kernel.get_viscosity_cell(integrator.get_cell_index(), q);
-        gradient_flux += viscous_kernel.get_volume_flux(gradient, viscosity);
+        scalar viscosity = viscous_kernel->get_viscosity_cell(integrator.get_cell_index(), q);
+        gradient_flux += viscous_kernel->get_volume_flux(gradient, viscosity);
       }
 
       if(submit_value)
@@ -608,11 +710,11 @@ public:
 
       if(this->operator_data.convective_problem)
       {
-        vector u_m = convective_kernel.get_velocity_m(q);
-        vector u_p = convective_kernel.get_velocity_p(q);
+        vector u_m = convective_kernel->get_velocity_m(q);
+        vector u_p = convective_kernel->get_velocity_p(q);
 
         std::tuple<vector, vector> flux =
-          convective_kernel.calculate_flux_linearized_interior_and_neighbor(
+          convective_kernel->calculate_flux_linearized_interior_and_neighbor(
             u_m, u_p, value_m, value_p, normal_m);
 
         value_flux_m += std::get<0>(flux);
@@ -622,15 +724,15 @@ public:
       if(this->operator_data.viscous_problem)
       {
         scalar average_viscosity =
-          viscous_kernel.get_viscosity_interior_face(integrator_m.get_face_index(), q);
+          viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
 
         gradient_flux =
-          viscous_kernel.calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
+          viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
 
-        vector normal_gradient_m = viscous_kernel.calculate_normal_gradient(q, integrator_m);
-        vector normal_gradient_p = viscous_kernel.calculate_normal_gradient(q, integrator_p);
+        vector normal_gradient_m = viscous_kernel->calculate_normal_gradient(q, integrator_m);
+        vector normal_gradient_p = viscous_kernel->calculate_normal_gradient(q, integrator_p);
 
-        vector value_flux = viscous_kernel.calculate_value_flux(
+        vector value_flux = viscous_kernel->calculate_value_flux(
           normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, average_viscosity);
 
         value_flux_m += -value_flux;
@@ -665,25 +767,25 @@ public:
 
       if(this->operator_data.convective_problem)
       {
-        vector u_m = convective_kernel.get_velocity_m(q);
-        vector u_p = convective_kernel.get_velocity_p(q);
+        vector u_m = convective_kernel->get_velocity_m(q);
+        vector u_p = convective_kernel->get_velocity_p(q);
 
-        value_flux_m += convective_kernel.calculate_flux_linearized_interior(
+        value_flux_m += convective_kernel->calculate_flux_linearized_interior(
           u_m, u_p, value_m, value_p, normal_m);
       }
 
       if(this->operator_data.viscous_problem)
       {
         scalar average_viscosity =
-          viscous_kernel.get_viscosity_interior_face(integrator_m.get_face_index(), q);
+          viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
 
         gradient_flux +=
-          viscous_kernel.calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
+          viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
 
-        vector normal_gradient_m = viscous_kernel.calculate_normal_gradient(q, integrator_m);
+        vector normal_gradient_m = viscous_kernel->calculate_normal_gradient(q, integrator_m);
         vector normal_gradient_p; // set exterior gradient to zero
 
-        vector value_flux = viscous_kernel.calculate_value_flux(
+        vector value_flux = viscous_kernel->calculate_value_flux(
           normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, average_viscosity);
 
         value_flux_m += -value_flux;
@@ -721,29 +823,29 @@ public:
 
       if(this->operator_data.convective_problem)
       {
-        vector u_m = convective_kernel.get_velocity_m(q);
+        vector u_m = convective_kernel->get_velocity_m(q);
         // TODO
         // Accessing exterior data is currently not available in deal.II/matrixfree.
         // Hence, we simply use the interior value, but note that the diagonal and block-diagonal
         // are not calculated exactly.
         vector u_p = u_m;
 
-        value_flux_m += convective_kernel.calculate_flux_linearized_interior(
+        value_flux_m += convective_kernel->calculate_flux_linearized_interior(
           u_m, u_p, value_m, value_p, normal_m);
       }
 
       if(this->operator_data.viscous_problem)
       {
         scalar average_viscosity =
-          viscous_kernel.get_viscosity_interior_face(integrator_m.get_face_index(), q);
+          viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
 
         gradient_flux +=
-          viscous_kernel.calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
+          viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, average_viscosity);
 
-        vector normal_gradient_m = viscous_kernel.calculate_normal_gradient(q, integrator_m);
+        vector normal_gradient_m = viscous_kernel->calculate_normal_gradient(q, integrator_m);
         vector normal_gradient_p; // set exterior gradient to zero
 
-        vector value_flux = viscous_kernel.calculate_value_flux(
+        vector value_flux = viscous_kernel->calculate_value_flux(
           normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, average_viscosity);
 
         value_flux_m += -value_flux;
@@ -776,27 +878,27 @@ public:
 
       if(this->operator_data.convective_problem)
       {
-        vector u_m = convective_kernel.get_velocity_m(q);
-        vector u_p = convective_kernel.get_velocity_p(q);
+        vector u_m = convective_kernel->get_velocity_m(q);
+        vector u_p = convective_kernel->get_velocity_p(q);
 
-        value_flux_p += convective_kernel.calculate_flux_linearized_interior(
+        value_flux_p += convective_kernel->calculate_flux_linearized_interior(
           u_p, u_m, value_p, value_m, normal_p);
       }
 
       if(this->operator_data.viscous_problem)
       {
         scalar average_viscosity =
-          viscous_kernel.get_viscosity_interior_face(integrator_p.get_face_index(), q);
+          viscous_kernel->get_viscosity_interior_face(integrator_p.get_face_index(), q);
 
         gradient_flux +=
-          viscous_kernel.calculate_gradient_flux(value_p, value_m, normal_p, average_viscosity);
+          viscous_kernel->calculate_gradient_flux(value_p, value_m, normal_p, average_viscosity);
 
         // set exterior gradient to zero
         vector normal_gradient_m;
         // multiply by -1.0 since normal vector n⁺ = -n⁻ !!!
-        vector normal_gradient_p = -viscous_kernel.calculate_normal_gradient(q, integrator_p);
+        vector normal_gradient_p = -viscous_kernel->calculate_normal_gradient(q, integrator_p);
 
-        vector value_flux = viscous_kernel.calculate_value_flux(
+        vector value_flux = viscous_kernel->calculate_value_flux(
           normal_gradient_p, normal_gradient_m, value_p, value_m, normal_p, average_viscosity);
 
         value_flux_p += -value_flux;
@@ -837,16 +939,16 @@ public:
       if(this->operator_data.convective_problem)
       {
         // value_p is calculated differently for the convective term and the viscous term
-        value_p = convective_kernel.calculate_exterior_value_linearized(value_m,
-                                                                        q,
-                                                                        integrator,
-                                                                        boundary_type);
+        value_p = convective_kernel->calculate_exterior_value_linearized(value_m,
+                                                                         q,
+                                                                         integrator,
+                                                                         boundary_type);
 
-        vector u_m = convective_kernel.get_velocity_m(q);
-        vector u_p = convective_kernel.calculate_exterior_value_nonlinear(
+        vector u_m = convective_kernel->get_velocity_m(q);
+        vector u_p = convective_kernel->calculate_exterior_value_nonlinear(
           u_m, q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->eval_time);
 
-        value_flux_m += convective_kernel.calculate_flux_linearized_boundary(
+        value_flux_m += convective_kernel->calculate_flux_linearized_boundary(
           u_m, u_p, value_m, value_p, normal_m, boundary_type);
       }
 
@@ -863,12 +965,12 @@ public:
                                            this->eval_time);
 
         scalar viscosity =
-          viscous_kernel.get_viscosity_boundary_face(integrator.get_face_index(), q);
+          viscous_kernel->get_viscosity_boundary_face(integrator.get_face_index(), q);
         gradient_flux +=
-          viscous_kernel.calculate_gradient_flux(value_m, value_p, normal_m, viscosity);
+          viscous_kernel->calculate_gradient_flux(value_m, value_p, normal_m, viscosity);
 
         vector normal_gradient_m =
-          viscous_kernel.calculate_interior_normal_gradient(q, integrator, operator_type);
+          viscous_kernel->calculate_interior_normal_gradient(q, integrator, operator_type);
         vector normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
                                                                       q,
                                                                       integrator,
@@ -878,7 +980,7 @@ public:
                                                                       this->operator_data.bc,
                                                                       this->eval_time);
 
-        vector value_flux = viscous_kernel.calculate_value_flux(
+        vector value_flux = viscous_kernel->calculate_value_flux(
           normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, viscosity);
 
         value_flux_m += -value_flux;
@@ -893,11 +995,25 @@ public:
     }
   }
 
-
 private:
-  Operators::MassMatrixKernel<dim, Number> mass_kernel;
-  Operators::ConvectiveKernel<dim, Number> convective_kernel;
-  Operators::ViscousKernel<dim, Number>    viscous_kernel;
+  void
+  reinit_base(MatrixFree<dim, Number> const &    matrix_free,
+              AffineConstraints<double> const &  constraint_matrix,
+              MomentumOperatorMergedData const & operator_data) const
+  {
+    Base::reinit(matrix_free, constraint_matrix, operator_data);
+
+    if(this->operator_data.unsteady_problem)
+      this->integrator_flags = this->integrator_flags || mass_kernel->get_integrator_flags();
+    if(this->operator_data.convective_problem)
+      this->integrator_flags = this->integrator_flags || convective_kernel->get_integrator_flags();
+    if(this->operator_data.viscous_problem)
+      this->integrator_flags = this->integrator_flags || viscous_kernel->get_integrator_flags();
+  }
+
+  std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 };
 
 

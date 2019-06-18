@@ -57,7 +57,8 @@ public:
   virtual ~DGNavierStokesDualSplitting();
 
   void
-  setup_solvers(double const & scaling_factor_time_derivative_term);
+  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
+                VectorType const * velocity                            = nullptr);
 
   /*
    *  Implicit formulation of convective term.
@@ -188,7 +189,7 @@ private:
    * Setup of solvers for the different sub-steps of the dual splitting scheme.
    */
   void
-  setup_convective_solver();
+  setup_convective_solver(VectorType const * velocity);
 
   /*
    * Setup of helmholtz solver (operator, preconditioner, solver).

@@ -27,7 +27,9 @@ struct ConvectiveKernelData
     : formulation(FormulationConvectiveTerm::DivergenceFormulation),
       upwind_factor(1.0),
       use_outflow_bc(false),
-      type_dirichlet_bc(TypeDirichletBCs::Mirror)
+      type_dirichlet_bc(TypeDirichletBCs::Mirror),
+      dof_index(0),
+      quad_index_linearized(0)
   {
   }
 
@@ -38,6 +40,9 @@ struct ConvectiveKernelData
   bool use_outflow_bc;
 
   TypeDirichletBCs type_dirichlet_bc;
+
+  unsigned int dof_index;
+  unsigned int quad_index_linearized;
 };
 
 template<int dim, typename Number>
@@ -56,17 +61,24 @@ private:
 public:
   void
   reinit(MatrixFree<dim, Number> const & matrix_free,
-         ConvectiveKernelData const &    data_in,
-         unsigned int const              dof_index,
-         unsigned int const              quad_index) const
+         ConvectiveKernelData const &    data,
+         bool const                      is_mg) const
   {
-    data = data_in;
+    this->data = data;
 
-    matrix_free.initialize_dof_vector(velocity, dof_index);
+    integrator_velocity.reset(
+      new IntegratorCell(matrix_free, data.dof_index, data.quad_index_linearized));
+    integrator_velocity_m.reset(
+      new IntegratorFace(matrix_free, true, data.dof_index, data.quad_index_linearized));
+    integrator_velocity_p.reset(
+      new IntegratorFace(matrix_free, false, data.dof_index, data.quad_index_linearized));
 
-    integrator_velocity.reset(new IntegratorCell(matrix_free, dof_index, quad_index));
-    integrator_velocity_m.reset(new IntegratorFace(matrix_free, true, dof_index, quad_index));
-    integrator_velocity_p.reset(new IntegratorFace(matrix_free, false, dof_index, quad_index));
+    // use own storage of velocity vector only in case of multigrid
+    if(is_mg)
+    {
+      velocity.reset();
+      matrix_free.initialize_dof_vector(velocity.own(), data.dof_index);
+    }
   }
 
   static MappingFlags
@@ -81,6 +93,10 @@ public:
     return flags;
   }
 
+  /*
+   * IntegratorFlags valid for both the nonlinear convective operator and the linearized convective
+   * operator
+   */
   IntegratorFlags
   get_integrator_flags() const
   {
@@ -118,47 +134,26 @@ public:
     return flags;
   }
 
-  IntegratorFlags
-  get_integrator_flags_linear_transport() const
-  {
-    IntegratorFlags flags;
-
-    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-    {
-      flags.cell_evaluate  = CellFlags(true, false, false);
-      flags.cell_integrate = CellFlags(false, true, false);
-
-      flags.face_evaluate  = FaceFlags(true, false);
-      flags.face_integrate = FaceFlags(true, false);
-    }
-    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-    {
-      flags.cell_evaluate  = CellFlags(false, true, false);
-      flags.cell_integrate = CellFlags(true, false, false);
-
-      flags.face_evaluate  = FaceFlags(true, false);
-      flags.face_integrate = FaceFlags(true, false);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-
-    return flags;
-  }
-
-  void
-  set_velocity(VectorType const & src) const
-  {
-    velocity = src;
-
-    velocity.update_ghost_values();
-  }
-
   VectorType const &
   get_velocity() const
   {
-    return velocity;
+    return *velocity;
+  }
+
+  void
+  set_velocity_copy(VectorType const & src) const
+  {
+    velocity.own() = src;
+
+    velocity->update_ghost_values();
+  }
+
+  void
+  set_velocity_ptr(VectorType const & src) const
+  {
+    velocity.reset(src);
+
+    velocity->update_ghost_values();
   }
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -189,33 +184,6 @@ public:
     return integrator_velocity_p->get_value(q);
   }
 
-  // linear transport
-  void
-  reinit_cell_linear_transport(unsigned int const cell) const
-  {
-    // Note that the integrator flags which are valid here are different from those for the
-    // linearized operator!
-    integrator_velocity->reinit(cell);
-    integrator_velocity->gather_evaluate(velocity, true, false, false);
-  }
-
-  void
-  reinit_face_linear_transport(unsigned int const face) const
-  {
-    integrator_velocity_m->reinit(face);
-    integrator_velocity_m->gather_evaluate(velocity, true, false);
-
-    integrator_velocity_p->reinit(face);
-    integrator_velocity_p->gather_evaluate(velocity, true, false);
-  }
-
-  void
-  reinit_boundary_face_linear_transport(unsigned int const face) const
-  {
-    integrator_velocity_m->reinit(face);
-    integrator_velocity_m->gather_evaluate(velocity, true, false);
-  }
-
   // linearized operator
   void
   reinit_cell(unsigned int const cell) const
@@ -223,9 +191,9 @@ public:
     integrator_velocity->reinit(cell);
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
-      integrator_velocity->gather_evaluate(velocity, true, false, false);
+      integrator_velocity->gather_evaluate(*velocity, true, false, false);
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
-      integrator_velocity->gather_evaluate(velocity, true, true, false);
+      integrator_velocity->gather_evaluate(*velocity, true, true, false);
     else
       AssertThrow(false, ExcMessage("Not implemented."));
   }
@@ -234,17 +202,17 @@ public:
   reinit_face(unsigned int const face) const
   {
     integrator_velocity_m->reinit(face);
-    integrator_velocity_m->gather_evaluate(velocity, true, false);
+    integrator_velocity_m->gather_evaluate(*velocity, true, false);
 
     integrator_velocity_p->reinit(face);
-    integrator_velocity_p->gather_evaluate(velocity, true, false);
+    integrator_velocity_p->gather_evaluate(*velocity, true, false);
   }
 
   void
   reinit_boundary_face(unsigned int const face) const
   {
     integrator_velocity_m->reinit(face);
-    integrator_velocity_m->gather_evaluate(velocity, true, false);
+    integrator_velocity_m->gather_evaluate(*velocity, true, false);
   }
 
   void
@@ -253,7 +221,7 @@ public:
                          types::boundary_id const boundary_id) const
   {
     integrator_velocity_m->reinit(cell, face);
-    integrator_velocity_m->gather_evaluate(velocity, true, false);
+    integrator_velocity_m->gather_evaluate(*velocity, true, false);
 
     if(boundary_id == numbers::internal_face_boundary_id) // internal face
     {
@@ -901,7 +869,7 @@ public:
 private:
   mutable ConvectiveKernelData data;
 
-  mutable VectorType velocity;
+  mutable lazy_ptr<VectorType> velocity;
 
   mutable std::shared_ptr<IntegratorCell> integrator_velocity;
   mutable std::shared_ptr<IntegratorFace> integrator_velocity_m;
@@ -914,11 +882,24 @@ private:
 template<int dim>
 struct ConvectiveOperatorData : public OperatorBaseData
 {
-  ConvectiveOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
+  ConvectiveOperatorData()
+    : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */), quad_index_nonlinear(0)
   {
   }
 
+  /*
+   * Needs ConvectiveKernelData since it is not possible to remove all kernel parameters from
+   * function do_cell_integral(), i.e. the parameter FormulationConvectiveTerm is explicitly needed
+   * by ConvectiveOperator.
+   */
   Operators::ConvectiveKernelData kernel_data;
+
+  /*
+   * In addition to the quad_index in OperatorBaseData (which denotes the quadrature index for the
+   * linearized problem), an additional quadrature index has to be specified for the convective
+   * operator evaluation in case of explicit time integration or nonlinear residual evaluation).
+   */
+  unsigned int quad_index_nonlinear;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
@@ -942,16 +923,29 @@ public:
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
+  ConvectiveOperator() : velocity_linear_transport(nullptr)
+  {
+  }
+
   void
-  set_solution_linearization(VectorType const & src) const;
+  set_velocity_copy(VectorType const & src) const;
+
+  void
+  set_velocity_ptr(VectorType const & src) const;
 
   LinearAlgebra::distributed::Vector<Number> const &
-  get_solution_linearization() const;
+  get_velocity() const;
 
   void
   reinit(MatrixFree<dim, Number> const &     matrix_free,
          AffineConstraints<double> const &   constraint_matrix,
          ConvectiveOperatorData<dim> const & operator_data) const;
+
+  void
+  reinit(MatrixFree<dim, Number> const &                           matrix_free,
+         AffineConstraints<double> const &                         constraint_matrix,
+         ConvectiveOperatorData<dim> const &                       operator_data,
+         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
   /*
    * Evaluate nonlinear operator.
@@ -974,7 +968,7 @@ public:
   evaluate_linear_transport(VectorType &       dst,
                             VectorType const & src,
                             Number const       evaluation_time,
-                            VectorType const & velocity_transport) const;
+                            VectorType const & velocity_linear_transport) const;
 
   void
   rhs(VectorType & dst) const;
@@ -1024,6 +1018,12 @@ private:
   /*
    *  OIF splitting: evaluation of convective operator (linear transport).
    */
+  IntegratorFlags
+  get_integrator_flags_linear_transport() const;
+
+  void
+  set_velocity_linear_transport(VectorType const & src) const;
+
   void
   cell_loop_linear_transport(MatrixFree<dim, Number> const & matrix_free,
                              VectorType &                    dst,
@@ -1043,14 +1043,17 @@ private:
                                       Range const &                   face_range) const;
 
   void
-  do_cell_integral_linear_transport(IntegratorCell & integrator) const;
+  do_cell_integral_linear_transport(IntegratorCell & integrator, IntegratorCell & velocity) const;
 
   void
   do_face_integral_linear_transport(IntegratorFace & integrator_m,
-                                    IntegratorFace & integrator_p) const;
+                                    IntegratorFace & integrator_p,
+                                    IntegratorFace & velocity_m,
+                                    IntegratorFace & velocity_p) const;
 
   void
   do_boundary_integral_linear_transport(IntegratorFace &           integrator,
+                                        IntegratorFace &           velocity,
                                         types::boundary_id const & boundary_id) const;
 
 
@@ -1108,7 +1111,10 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  Operators::ConvectiveKernel<dim, Number> kernel;
+  // OIF substepping
+  mutable VectorType const * velocity_linear_transport;
+
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };
 
 } // namespace IncNS

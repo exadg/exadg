@@ -29,11 +29,12 @@ DGNavierStokesPressureCorrection<dim, Number>::~DGNavierStokesPressureCorrection
 template<int dim, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
-  double const & scaling_factor_time_derivative_term)
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const * velocity)
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
-  setup_momentum_solver(scaling_factor_time_derivative_term);
+  setup_momentum_solver(scaling_factor_time_derivative_term, velocity);
 
   this->setup_pressure_poisson_solver();
 
@@ -47,9 +48,10 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
 template<int dim, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, Number>::setup_momentum_solver(
-  double const & scaling_factor_time_derivative_term)
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const * velocity)
 {
-  initialize_momentum_operator(scaling_factor_time_derivative_term);
+  initialize_momentum_operator(scaling_factor_time_derivative_term, velocity);
 
   initialize_momentum_preconditioner();
 
@@ -59,7 +61,8 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_momentum_solver(
 template<int dim, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_operator(
-  double const & scaling_factor_time_derivative_term)
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const * velocity)
 {
   MomentumOperatorData<dim> momentum_operator_data;
 
@@ -97,6 +100,16 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_operator(
                            this->mass_matrix_operator,
                            this->viscous_operator,
                            this->convective_operator);
+
+  if(momentum_operator_data.convective_problem)
+  {
+    AssertThrow(
+      velocity != nullptr,
+      ExcMessage(
+        "To initialize preconditioners, convective kernel needs access to a velocity field."));
+
+    this->set_velocity_ptr(*velocity);
+  }
 }
 
 template<int dim, typename Number>
@@ -383,12 +396,9 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::apply_momentum_operator(
-  VectorType &       dst,
-  VectorType const & src,
-  VectorType const & solution_linearization)
+DGNavierStokesPressureCorrection<dim, Number>::apply_momentum_operator(VectorType &       dst,
+                                                                       VectorType const & src)
 {
-  momentum_operator.set_solution_linearization(solution_linearization);
   momentum_operator.vmult(dst, src);
 }
 

@@ -58,9 +58,9 @@ using namespace dealii;
 // specify the test case that has to be solved
 
 // template
-#include "incompressible_flow_with_transport_test_cases/template.h"
+//#include "incompressible_flow_with_transport_test_cases/template.h"
 
-//#include "incompressible_flow_with_transport_test_cases/cavity.h"
+#include "incompressible_flow_with_transport_test_cases/cavity.h"
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 template<typename Number>
@@ -355,8 +355,11 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   // depends on quantities such as the time_step_size or gamma0!!!)
   fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
+  LinearAlgebra::distributed::Vector<Number> const * velocity =
+    &fluid_time_integrator->get_velocity();
+
   navier_stokes_operation->setup_solvers(
-    fluid_time_integrator->get_scaling_factor_time_derivative_term());
+    fluid_time_integrator->get_scaling_factor_time_derivative_term(), velocity);
 
   // SCALAR TRANSPORT
   for(unsigned int i = 0; i < n_scalars; ++i)

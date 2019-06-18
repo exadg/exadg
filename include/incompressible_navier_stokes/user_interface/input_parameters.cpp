@@ -113,6 +113,7 @@ InputParameters::InputParameters()
     // NUMERICAL PARAMETERS
     implement_block_diagonal_preconditioner_matrix_free(false),
     use_cell_based_face_loops(false),
+    quad_rule_linearization(QuadratureRuleLinearization::Overintegration32k),
 
     // PROJECTION METHODS
 
@@ -708,6 +709,8 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
                   implement_block_diagonal_preconditioner_matrix_free);
 
   print_parameter(pcout, "Use cell-based face loops", use_cell_based_face_loops);
+
+  print_parameter(pcout, "Quadrature rule linearization", enum_to_string(quad_rule_linearization));
 }
 
 void

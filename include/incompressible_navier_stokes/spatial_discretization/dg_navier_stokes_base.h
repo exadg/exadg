@@ -146,7 +146,8 @@ public:
    * by derived class.
    */
   virtual void
-  setup_solvers(double const & scaling_factor_time_derivative_term = 1.0) = 0;
+  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
+                VectorType const * velocity                            = nullptr) = 0;
 
   /*
    * Getters and setters.
@@ -165,6 +166,9 @@ public:
 
   unsigned int
   get_quad_index_velocity_nonlinear() const;
+
+  unsigned int
+  get_quad_index_velocity_linearized() const;
 
   unsigned int
   get_dof_index_pressure() const;
@@ -224,6 +228,9 @@ public:
   // Polynomial degree required, e.g., for CFL condition (CFL_k = CFL / k^{exp}).
   unsigned int
   get_polynomial_degree() const;
+
+  void
+  set_velocity_ptr(VectorType const & velocity) const;
 
   /*
    * Initialization of vectors.
@@ -453,6 +460,12 @@ protected:
   /*
    * Basic operators.
    */
+  Operators::ConvectiveKernelData convective_kernel_data;
+  Operators::ViscousKernelData    viscous_kernel_data;
+
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
+
   MassMatrixOperatorData      mass_matrix_operator_data;
   ViscousOperatorData<dim>    viscous_operator_data;
   ConvectiveOperatorData<dim> convective_operator_data;

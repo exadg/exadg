@@ -170,6 +170,8 @@ private:
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
+
+  LinearAlgebra::distributed::Vector<Number> velocity;
 };
 
 template<int dim, typename Number>
@@ -281,8 +283,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                  boundary_descriptor_pressure,
                                  field_functions);
 
-  // use a dummy value of 1.0 for scaling_factor_time_derivative_term
-  navier_stokes_operation->setup_solvers(1.0);
+  navier_stokes_operation->initialize_vector_velocity(velocity);
+  velocity = 1.0;
+  navier_stokes_operation->setup_solvers(1.0 /* dummy */, &velocity);
 
 
   // check that the operator type is consistent with the solution approach (coupled vs. splitting)
@@ -330,6 +333,9 @@ Problem<dim, Number>::apply_operator()
   // ... for dual splitting, pressure-correction.
   LinearAlgebra::distributed::Vector<Number> dst2, src2;
 
+  // set velocity required for evaluation of linearized operators
+  navier_stokes_operation->set_velocity_ptr(velocity);
+
   // initialize vectors
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
@@ -337,8 +343,10 @@ Problem<dim, Number>::apply_operator()
     navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(src1);
     src1 = 1.0;
 
-    // set linearized solution -> required to evaluate the linearized operator
-    navier_stokes_operation_coupled->set_solution_linearization(src1);
+    // TODO can be removed
+    //    // set linearized solution -> required to evaluate the linearized operator
+    //    navier_stokes_operation_coupled->set_solution_linearization(src1);
+
     // set sum_alphai_ui -> required to evaluate the nonlinear residual
     // in case an unsteady problem is considered
     navier_stokes_operation_coupled->set_sum_alphai_ui(&src1.block(0));
@@ -440,7 +448,7 @@ Problem<dim, Number>::apply_operator()
       else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
       {
         if(OPERATOR == Operator::VelocityConvDiffOperator)
-          navier_stokes_operation_pressure_correction->apply_momentum_operator(dst2,src2,src2);
+          navier_stokes_operation_pressure_correction->apply_momentum_operator(dst2,src2);
         else if(OPERATOR == Operator::ConvectiveOperator)
           navier_stokes_operation_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR == Operator::ProjectionOperator)

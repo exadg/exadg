@@ -42,17 +42,24 @@ Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
 }
 
 template<int dim, typename Number>
-void
-Operator<dim, Number>::set_velocity_copy(VectorType const & velocity_in) const
+LinearAlgebra::distributed::Vector<Number> const &
+Operator<dim, Number>::get_velocity() const
 {
-  convective_kernel.set_velocity_copy(velocity_in);
+  return convective_kernel.get_velocity();
 }
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity_in) const
+Operator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
-  convective_kernel.set_velocity_ptr(velocity_in);
+  convective_kernel.set_velocity_copy(velocity);
+}
+
+template<int dim, typename Number>
+void
+Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
+{
+  convective_kernel.set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>
@@ -67,13 +74,6 @@ void
 Operator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number) const
 {
   mass_kernel.set_scaling_factor(number);
-}
-
-template<int dim, typename Number>
-LinearAlgebra::distributed::Vector<Number> const &
-Operator<dim, Number>::get_velocity() const
-{
-  return convective_kernel.get_velocity();
 }
 
 template<int dim, typename Number>

@@ -29,14 +29,15 @@ DGNavierStokesDualSplitting<dim, Number>::~DGNavierStokesDualSplitting()
 template<int dim, typename Number>
 void
 DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
-  double const & scaling_factor_time_derivative_term)
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const * velocity)
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
   // initialize vectors that are needed by the nonlinear solver
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    setup_convective_solver();
+    setup_convective_solver(velocity);
   }
 
   this->setup_pressure_poisson_solver();
@@ -50,9 +51,16 @@ DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::setup_convective_solver()
+DGNavierStokesDualSplitting<dim, Number>::setup_convective_solver(VectorType const * velocity)
 {
   this->initialize_vector_velocity(temp);
+
+  AssertThrow(
+    velocity != nullptr,
+    ExcMessage(
+      "To initialize preconditioners, convective kernel needs access to a velocity field."));
+
+  this->set_velocity_ptr(*velocity);
 
   // preconditioner implicit convective step
   preconditioner_convective_problem.reset(
@@ -263,7 +271,7 @@ void
 DGNavierStokesDualSplitting<dim, Number>::set_solution_linearization(
   VectorType const & solution_linearization)
 {
-  this->convective_operator.set_solution_linearization(solution_linearization);
+  this->convective_kernel->set_velocity_ptr(solution_linearization);
 }
 
 template<int dim, typename Number>

@@ -56,7 +56,7 @@ public:
   do_rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
 
   /*
-   * This funtion solves the pressure Poisson equation and returns the number of iterations.
+   * This function solves the pressure Poisson equation and returns the number of iterations.
    */
   unsigned int
   do_solve_pressure(VectorType & dst, VectorType const & src) const;

@@ -51,7 +51,8 @@ public:
   virtual ~DGNavierStokesPressureCorrection();
 
   void
-  setup_solvers(double const & scaling_factor_time_derivative_term);
+  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
+                VectorType const * velocity                            = nullptr);
 
   /*
    * Momentum step:
@@ -105,9 +106,7 @@ public:
 
   // apply momentum operator
   void
-  apply_momentum_operator(VectorType &       dst,
-                          VectorType const & src,
-                          VectorType const & solution_linearization);
+  apply_momentum_operator(VectorType & dst, VectorType const & src);
 
 
   /*
@@ -166,10 +165,12 @@ private:
    * Setup of momentum solver (operator, preconditioner, solver).
    */
   void
-  setup_momentum_solver(double const & scaling_factor_time_derivative_term);
+  setup_momentum_solver(double const &     scaling_factor_time_derivative_term,
+                        VectorType const * velocity);
 
   void
-  initialize_momentum_operator(double const & scaling_factor_time_derivative_term);
+  initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
+                               VectorType const * velocity);
 
   void
   initialize_momentum_preconditioner();

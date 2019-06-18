@@ -366,6 +366,14 @@ public:
   // can be changed to such an algorithm (cell_based_face_loops).
   bool use_cell_based_face_loops;
 
+  // Quadrature rule used to integrate the linearized convective term. This parameter is
+  // therefore only relevant if linear systems of equations have to be solved involving
+  // the convective term. For reasons of computational efficiency, it might be advantageous
+  // to use a standard quadrature rule for the linearized problem in order to speed up
+  // the computation (hopefully without sacrificing the convergence rate of the Newton-Krylov
+  // approach).
+  QuadratureRuleLinearization quad_rule_linearization;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PROJECTION METHODS                                 */

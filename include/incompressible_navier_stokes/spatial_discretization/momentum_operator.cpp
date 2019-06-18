@@ -22,24 +22,31 @@ MomentumOperator<dim, Number>::MomentumOperator()
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::reinit_multigrid(MatrixFree<dim, Number> const &   matrix_free,
-                                                AffineConstraints<double> const & constraint_matrix,
-                                                MomentumOperatorData<dim> const & operator_data)
+MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
+                                      AffineConstraints<double> const & constraint_matrix,
+                                      MomentumOperatorData<dim> const & operator_data)
 {
   (void)constraint_matrix;
 
-  // setup own mass matrix operator
   own_mass_matrix_operator_storage.reinit(matrix_free,
                                           constraint_matrix,
                                           operator_data.mass_matrix_operator_data);
 
+  own_viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
+  own_viscous_kernel->reinit(matrix_free, operator_data.viscous_operator_data.kernel_data);
   own_viscous_operator_storage.reinit(matrix_free,
                                       constraint_matrix,
-                                      operator_data.viscous_operator_data);
+                                      operator_data.viscous_operator_data,
+                                      own_viscous_kernel);
 
+  own_convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+  own_convective_kernel->reinit(matrix_free,
+                                operator_data.convective_operator_data.kernel_data,
+                                true /* is_mg */);
   own_convective_operator_storage.reinit(matrix_free,
                                          constraint_matrix,
-                                         operator_data.convective_operator_data);
+                                         operator_data.convective_operator_data,
+                                         own_convective_kernel);
 
   this->reinit(matrix_free,
                operator_data,
@@ -89,23 +96,40 @@ MomentumOperator<dim, Number>::get_scaling_factor_time_derivative_term() const
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::set_solution_linearization(VectorType const & solution_linearization)
+MomentumOperator<dim, Number>::set_solution_linearization(VectorType const & velocity)
+{
+  set_velocity_ptr(velocity);
+}
+
+template<int dim, typename Number>
+void
+MomentumOperator<dim, Number>::set_velocity_copy(VectorType const & velocity)
 {
   if(operator_data.convective_problem == true)
   {
-    convective_operator->set_solution_linearization(solution_linearization);
+    convective_operator->set_velocity_copy(velocity);
+  }
+}
+
+template<int dim, typename Number>
+void
+MomentumOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity)
+{
+  if(operator_data.convective_problem == true)
+  {
+    convective_operator->set_velocity_ptr(velocity);
   }
 }
 
 template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-MomentumOperator<dim, Number>::get_solution_linearization() const
+MomentumOperator<dim, Number>::get_velocity() const
 {
   AssertThrow(operator_data.convective_problem == true,
               ExcMessage(
                 "Attempt to access velocity_linearization which has not been initialized."));
 
-  return convective_operator->get_solution_linearization();
+  return convective_operator->get_velocity();
 }
 
 template<int dim, typename Number>

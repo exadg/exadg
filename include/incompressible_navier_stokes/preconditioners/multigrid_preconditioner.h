@@ -45,10 +45,15 @@ public:
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    operator_data                 = operator_data_in;
-    operator_data.dof_index       = 0;
-    operator_data.quad_index_std  = 0;
-    operator_data.quad_index_over = 1;
+    operator_data                = operator_data_in;
+    operator_data.dof_index      = 0;
+    operator_data.quad_index_std = 0;
+    // check whether we need a second quadrature formula, i.e., it is possible to
+    // use the same quadrature formula for all terms
+    if(operator_data_in.quad_index_over != operator_data_in.quad_index_std)
+      operator_data.quad_index_over = operator_data.quad_index_std + 1;
+    else
+      operator_data.quad_index_over = operator_data.quad_index_std;
 
     // set dof index to zero since matrix free object only contains one dof-handler
     operator_data.mass_matrix_operator_data.dof_index  = operator_data.dof_index;
@@ -58,10 +63,17 @@ public:
     operator_data.viscous_operator_data.dof_index  = operator_data.dof_index;
     operator_data.viscous_operator_data.quad_index = operator_data.quad_index_std;
 
+    // do not forget to update kernel_data inside viscous_operator_data!
+    operator_data.viscous_operator_data.kernel_data.dof_index = operator_data.dof_index;
+
     // set dof index to zero since matrix free object only contains one dof-handler
-    operator_data.convective_operator_data.dof_index = operator_data.dof_index;
-    // set quad index to 1 since matrix free object only contains two quadrature formulas
+    operator_data.convective_operator_data.dof_index  = operator_data.dof_index;
     operator_data.convective_operator_data.quad_index = operator_data.quad_index_over;
+
+    // do not forget to update kernel_data inside convective_operator_data!
+    operator_data.convective_operator_data.kernel_data.dof_index = operator_data.dof_index;
+    operator_data.convective_operator_data.kernel_data.quad_index_linearized =
+      operator_data.quad_index_over;
 
     // When solving the reaction-convection-diffusion problem, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -110,10 +122,20 @@ public:
 
     // quadratures
     std::vector<Quadrature<1>> quadrature_vec;
-    quadrature_vec.resize(2);
+    quadrature_vec.resize(1);
     quadrature_vec[operator_data.quad_index_std] = QGauss<1>(dof_handler.get_fe().degree + 1);
-    quadrature_vec[operator_data.quad_index_over] =
-      QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
+
+    // only add another quadrature formula if necessary
+    if(operator_data.quad_index_over != operator_data.quad_index_std)
+    {
+      AssertThrow(operator_data.quad_index_over == operator_data.quad_index_std + 1,
+                  ExcMessage(
+                    "Assumption made regarding quadrature indices is no longer fulfilled."));
+
+      quadrature_vec.resize(2);
+      quadrature_vec[operator_data.quad_index_over] =
+        QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
+    }
 
     // additional data
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
@@ -152,9 +174,9 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit_multigrid(*this->matrix_free_objects[level],
-                                   *this->constraints[level],
-                                   operator_data);
+    pde_operator->reinit(*this->matrix_free_objects[level],
+                         *this->constraints[level],
+                         operator_data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
@@ -180,7 +202,7 @@ public:
 
     if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      VectorType const & vector_linearization = pde_operator->get_solution_linearization();
+      VectorType const & vector_linearization = pde_operator->get_velocity();
 
       // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
       VectorTypeMG         vector_multigrid_type_copy;
@@ -245,15 +267,15 @@ private:
   set_vector_linearization(VectorTypeMG const & vector_linearization)
   {
     // copy velocity to finest level
-    this->get_operator(this->fine_level)->set_solution_linearization(vector_linearization);
+    this->get_operator(this->fine_level)->set_velocity_copy(vector_linearization);
 
     // interpolate velocity from fine to coarse level
     for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
     {
-      auto & vector_fine_level   = this->get_operator(level - 0)->get_solution_linearization();
-      auto   vector_coarse_level = this->get_operator(level - 1)->get_solution_linearization();
+      auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
+      auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
       this->transfers.interpolate(level, vector_coarse_level, vector_fine_level);
-      this->get_operator(level - 1)->set_solution_linearization(vector_coarse_level);
+      this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
     }
   }
 
