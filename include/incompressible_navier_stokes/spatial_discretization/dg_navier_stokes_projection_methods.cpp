@@ -15,9 +15,9 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters const &              parameters_in,
-  std::shared_ptr<Postprocessor>       postprocessor_in)
-  : Base(triangulation, parameters_in, postprocessor_in)
+  InputParameters const &              parameters,
+  std::shared_ptr<Postprocessor>       postprocessor)
+  : Base(triangulation, parameters, postprocessor)
 {
   AssertThrow(this->param.get_degree_p() > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "

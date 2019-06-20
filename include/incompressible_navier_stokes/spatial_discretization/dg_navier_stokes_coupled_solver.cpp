@@ -52,13 +52,7 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
-  /*
-   * Setup velocity convection-diffusion operator in function setup_solvers() since velocity
-   * convection-diffusion operator data needs scaling_factor_time_derivative_term as input
-   * parameter. Note also that the velocity_conv_diff_operator has to be initialized before calling
-   * the setup of the BlockPreconditioner!
-   */
-  initialize_momentum_operator(scaling_factor_time_derivative_term, velocity);
+  Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
 
   initialize_block_preconditioner();
 
@@ -67,64 +61,6 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
   this->setup_projection_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesCoupled<dim, Number>::initialize_momentum_operator(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const * velocity)
-{
-  MomentumOperatorData<dim> data;
-
-  if(unsteady_problem_has_to_be_solved())
-    data.unsteady_problem = true;
-  else
-    data.unsteady_problem = false;
-  data.scaling_factor_mass_matrix = scaling_factor_time_derivative_term;
-
-  // convective problem
-  if(this->param.nonlinear_problem_has_to_be_solved())
-  {
-    data.convective_problem = true;
-  }
-  else
-  {
-    data.convective_problem = false;
-  }
-
-  if(this->param.viscous_problem())
-    data.viscous_problem = true;
-
-  data.viscous_kernel_data    = this->viscous_kernel_data;
-  data.convective_kernel_data = this->convective_kernel_data;
-
-  data.mg_operator_type = this->param.multigrid_operator_type_velocity_block;
-
-  data.bc = this->boundary_descriptor_velocity;
-
-  data.dof_index  = this->get_dof_index_velocity();
-  data.quad_index = this->get_quad_index_velocity_linearized();
-
-  data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  data.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.implement_block_diagonal_preconditioner_matrix_free;
-
-  AffineConstraints<double> constraint_dummy;
-  constraint_dummy.close();
-
-  momentum_operator.reinit(
-    this->matrix_free, constraint_dummy, data, this->viscous_kernel, this->convective_kernel);
-
-  if(data.convective_problem)
-  {
-    AssertThrow(
-      velocity != nullptr,
-      ExcMessage(
-        "To initialize preconditioners, convective kernel needs access to a velocity field."));
-
-    this->set_velocity_ptr(*velocity);
-  }
 }
 
 template<int dim, typename Number>
@@ -218,20 +154,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_vector_for_newton_solver(BlockVec
 }
 
 template<int dim, typename Number>
-bool
-DGNavierStokesCoupled<dim, Number>::nonlinear_problem_has_to_be_solved() const
-{
-  return this->param.nonlinear_problem_has_to_be_solved();
-}
-
-template<int dim, typename Number>
-bool
-DGNavierStokesCoupled<dim, Number>::unsteady_problem_has_to_be_solved() const
-{
-  return (this->param.solver_type == SolverType::Unsteady);
-}
-
-template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling_factor)
 {
@@ -262,7 +184,7 @@ DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(
   bool const &            update_preconditioner,
   double const &          scaling_factor_mass_matrix_term)
 {
-  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
+  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Note that there is no need to set the evaluation time for the momentum_operator
   // because this function is only called if the convective term is not considered
@@ -301,7 +223,7 @@ void
 DGNavierStokesCoupled<dim, Number>::vmult(BlockVectorType & dst, BlockVectorType const & src) const
 {
   // (1,1) block of saddle point matrix
-  momentum_operator.vmult(dst.block(0), src.block(0));
+  this->momentum_operator.vmult(dst.block(0), src.block(0));
 
   // Divergence and continuity penalty operators
   if(this->param.add_penalty_terms_to_monolithic_system == true)
@@ -362,8 +284,8 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
   //  Set evaluation_time and mass matrix scaling factor for linear operator (= MomentumOperator).
-  momentum_operator.set_evaluation_time(eval_time);
-  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
+  this->momentum_operator.set_evaluation_time(eval_time);
+  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
   newton_solver->solve(dst,
@@ -396,7 +318,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType 
     dst.block(0) *= -1.0;
   }
 
-  if(unsteady_problem_has_to_be_solved())
+  if(this->unsteady_problem_has_to_be_solved())
   {
     temp_vector.equ(scaling_factor_time_derivative_term, src.block(0));
     temp_vector.add(-1.0, *sum_alphai_ui);
@@ -574,12 +496,12 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   if(type == MomentumPreconditioner::PointJacobi)
   {
     preconditioner_momentum.reset(
-      new JacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
+      new JacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
   }
   else if(type == MomentumPreconditioner::BlockJacobi)
   {
     preconditioner_momentum.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
+      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
   }
   else if(type == MomentumPreconditioner::InverseMassMatrix)
   {
@@ -625,7 +547,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
                                 tria,
                                 fe,
                                 this->get_mapping(),
-                                momentum_operator.get_operator_data());
+                                this->momentum_operator.get_operator_data());
 }
 
 template<int dim, typename Number>
@@ -645,7 +567,7 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_momentum()
 
   solver_velocity_block.reset(
     new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-      momentum_operator, *preconditioner_momentum, gmres_data));
+      this->momentum_operator, *preconditioner_momentum, gmres_data));
 }
 
 template<int dim, typename Number>
@@ -972,11 +894,8 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.bc                   = boundary_descriptor;
   operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
 
-  if(unsteady_problem_has_to_be_solved())
-    operator_data.unsteady_problem = true;
-  else
-    operator_data.unsteady_problem = false;
-  operator_data.convective_problem = nonlinear_problem_has_to_be_solved();
+  operator_data.unsteady_problem   = this->unsteady_problem_has_to_be_solved();
+  operator_data.convective_problem = this->param.nonlinear_problem_has_to_be_solved();
   operator_data.diffusive_problem  = this->param.viscous_problem();
 
   operator_data.convective_kernel_data = convective_kernel_data;
@@ -1099,7 +1018,7 @@ void
 DGNavierStokesCoupled<dim, Number>::update_block_preconditioner(This const * /*operator*/)
 {
   // momentum block
-  preconditioner_momentum->update(&momentum_operator);
+  preconditioner_momentum->update(&this->momentum_operator);
 
   // pressure block
 }
@@ -1270,7 +1189,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_velocity_block(
   {
     // use the inverse mass matrix as an approximation to the momentum block
     preconditioner_momentum->vmult(dst, src);
-    dst *= 1. / momentum_operator.get_scaling_factor_mass_matrix();
+    dst *= 1. / this->momentum_operator.get_scaling_factor_mass_matrix();
   }
   else if(type == MomentumPreconditioner::Multigrid)
   {
@@ -1291,7 +1210,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_velocity_block(
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
       CheckMultigrid<dim, Number, MomentumOperator<dim, degree_u, Number>, MULTIGRID>
-        check_multigrid(momentum_operator,preconditioner);
+        check_multigrid(this->momentum_operator,preconditioner);
 
       check_multigrid.check();
       */
@@ -1342,7 +1261,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
   {
     // -S^{-1} = 1/dt  (-L)^{-1}
     apply_inverse_negative_laplace_operator(dst, src);
-    dst *= momentum_operator.get_scaling_factor_mass_matrix();
+    dst *= this->momentum_operator.get_scaling_factor_mass_matrix();
   }
   else if(type == SchurComplementPreconditioner::CahouetChabard)
   {
@@ -1350,7 +1269,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
 
     // I. 1/dt (-L)^{-1}
     apply_inverse_negative_laplace_operator(dst, src);
-    dst *= momentum_operator.get_scaling_factor_mass_matrix();
+    dst *= this->momentum_operator.get_scaling_factor_mass_matrix();
 
     // II. M_p^{-1}, apply inverse pressure mass matrix to src-vector and store the result in a
     // temporary vector
@@ -1376,7 +1295,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
       this->gradient_operator.apply(tmp_scp_velocity, dst);
 
       // II.b) A = 1/dt * mass matrix  +  viscous term  +  linearized convective term
-      momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
+      this->momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
 
       // II.c) -B
       this->divergence_operator.apply(tmp_scp_pressure, tmp_scp_velocity_2);
@@ -1404,7 +1323,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
       inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_velocity, tmp_scp_velocity);
 
       // II.c) A = 1/dt * mass matrix + viscous term + linearized convective term
-      momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
+      this->momentum_operator.vmult(tmp_scp_velocity_2, tmp_scp_velocity);
 
       // II.d) M^{-1}
       inv_mass_matrix_preconditioner_schur_complement->vmult(tmp_scp_velocity_2,
@@ -1429,11 +1348,13 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_pressure_block(
     apply_inverse_negative_laplace_operator(tmp_scp_pressure, src);
 
     // II. pressure convection-diffusion operator A_p
-    if(unsteady_problem_has_to_be_solved())
+    if(this->unsteady_problem_has_to_be_solved())
+    {
       pressure_conv_diff_operator->set_scaling_factor_mass_matrix(
-        momentum_operator.get_scaling_factor_mass_matrix());
+        this->momentum_operator.get_scaling_factor_mass_matrix());
+    }
 
-    if(nonlinear_problem_has_to_be_solved())
+    if(this->param.nonlinear_problem_has_to_be_solved())
       pressure_conv_diff_operator->set_velocity_ptr(this->convective_kernel->get_velocity());
 
     pressure_conv_diff_operator->apply(dst, tmp_scp_pressure);

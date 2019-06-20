@@ -8,9 +8,9 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_COUPLED_SOLVER_H_
 
-#include "../../convection_diffusion/spatial_discretization/operators/combined_operator.h"
 #include "dg_navier_stokes_base.h"
-#include "interface.h"
+
+#include "../../convection_diffusion/spatial_discretization/operators/combined_operator.h"
 
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../poisson/spatial_discretization/laplace_operator.h"
@@ -19,7 +19,6 @@
 #include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/compatible_laplace_operator.h"
 #include "../preconditioners/multigrid_preconditioner.h"
-#include "momentum_operator.h"
 
 namespace IncNS
 {
@@ -128,18 +127,6 @@ public:
   initialize_vector_for_newton_solver(BlockVectorType & src) const;
 
   /*
-   * Returns whether a non-linear problem has to be solved.
-   */
-  bool
-  nonlinear_problem_has_to_be_solved() const;
-
-  /*
-   * Return whether an unsteady problem has to be solved.
-   */
-  bool
-  unsteady_problem_has_to_be_solved() const;
-
-  /*
    * Setters and getters.
    */
 
@@ -187,7 +174,7 @@ public:
    * problems these parameters are omitted.
    */
   void
-  rhs_stokes_problem(BlockVectorType & dst, double const & eval_time = 0.0) const;
+  rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const;
 
 
   /*
@@ -209,7 +196,7 @@ public:
   void
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & sum_alphai_ui,
-                          double const &     evaluation_time,
+                          double const &     time,
                           bool const &       update_preconditioner,
                           double const &     scaling_factor_mass_matrix_term,
                           unsigned int &     newton_iterations,
@@ -253,10 +240,6 @@ public:
   apply_block_preconditioner(BlockVectorType & dst, BlockVectorType const & src) const;
 
 private:
-  void
-  initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
-                               VectorType const * velocity);
-
   void
   initialize_solver_coupled();
 
@@ -305,9 +288,6 @@ private:
   /*
    * Newton-Krylov solver for (non-)linear problem
    */
-
-  // Linear(ized) momentum operator
-  MomentumOperator<dim, Number> momentum_operator;
 
   // temporary vector needed to evaluate both the nonlinear residual and the linearized operator
   VectorType mutable temp_vector;

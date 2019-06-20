@@ -38,23 +38,25 @@
 #include "operators/rhs_operator.h"
 #include "operators/viscous_operator.h"
 
-#include "../../poisson/spatial_discretization/laplace_operator.h"
-
-#include "turbulence_model.h"
-
-#include "../../operators/elementwise_operator.h"
-#include "../../operators/inverse_mass_matrix.h"
-#include "../../operators/linear_operator_base.h"
-#include "interface.h"
+#include "momentum_operator.h"
 #include "projection_operator.h"
 
+#include "../../poisson/spatial_discretization/laplace_operator.h"
+
+#include "../../operators/inverse_mass_matrix.h"
+
+// LES turbulence model
+#include "turbulence_model.h"
+
+// interface space-time
+#include "interface.h"
+
 // preconditioners and solvers
-#include "../../incompressible_navier_stokes/preconditioners/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-
+#include "../preconditioners/multigrid_preconditioner.h"
 #include "projection_solvers.h"
 
 // time integration
@@ -142,12 +144,12 @@ public:
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
-   * (non-)linear systems of equation required for implicit formulations. It has to be implemented
-   * by derived class.
+   * (non-)linear systems of equation required for implicit formulations. It has to be extended
+   * by derived classes if necessary.
    */
   virtual void
   setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
-                VectorType const * velocity                            = nullptr) = 0;
+                VectorType const * velocity                            = nullptr);
 
   /*
    * Getters and setters.
@@ -200,7 +202,6 @@ public:
   types::global_dof_index
   get_number_of_dofs() const;
 
-  // returns constant kinematic viscosity
   double
   get_viscosity() const;
 
@@ -276,15 +277,15 @@ public:
 
   // If an analytical solution is available: shift pressure so that the numerical pressure solution
   // coincides with the analytical pressure solution in an arbitrary point. Note that the parameter
-  // 'eval_time' is only needed for unsteady problems.
+  // 'time' is only needed for unsteady problems.
   void
-  shift_pressure(VectorType & pressure, double const & eval_time = 0.0) const;
+  shift_pressure(VectorType & pressure, double const & time = 0.0) const;
 
   // If an analytical solution is available: shift pressure so that the numerical pressure solution
   // has a mean value identical to the "exact pressure solution" obtained by interpolation of
-  // analytical solution. Note that the parameter 'eval_time' is only needed for unsteady problems.
+  // analytical solution. Note that the parameter 'time' is only needed for unsteady problems.
   void
-  shift_pressure_mean_value(VectorType & pressure, double const & eval_time = 0.0) const;
+  shift_pressure_mean_value(VectorType & pressure, double const & time = 0.0) const;
 
   /*
    * Computation of derived quantities which is needed for postprocessing but some of them are also
@@ -402,6 +403,9 @@ protected:
   void
   setup_projection_solver();
 
+  bool
+  unsteady_problem_has_to_be_solved() const;
+
   /*
    * List of input parameters.
    */
@@ -480,6 +484,11 @@ protected:
   DivergenceOperator<dim, Number> divergence_operator;
 
   /*
+   * Linear(ized) momentum operator.
+   */
+  MomentumOperator<dim, Number> momentum_operator;
+
+  /*
    * Inverse mass matrix operator.
    */
   InverseMassMatrixOperator<dim, dim, Number> inverse_mass_velocity;
@@ -536,6 +545,10 @@ private:
 
   void
   initialize_operators();
+
+  void
+  initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
+                               VectorType const * velocity);
 
   void
   setup_projection_operator();

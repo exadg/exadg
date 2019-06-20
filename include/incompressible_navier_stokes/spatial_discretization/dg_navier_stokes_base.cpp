@@ -103,6 +103,15 @@ DGNavierStokesBase<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
+DGNavierStokesBase<dim, Number>::setup_solvers(double const & scaling_factor_time_derivative_term,
+                                               VectorType const * velocity)
+{
+  // depending on MatrixFree
+  initialize_momentum_operator(scaling_factor_time_derivative_term, velocity);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesBase<dim, Number>::initialize_boundary_descriptor_laplace()
 {
   boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<dim>());
@@ -341,6 +350,58 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
 }
 
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const * velocity)
+{
+  MomentumOperatorData<dim> data;
+
+  data.unsteady_problem           = unsteady_problem_has_to_be_solved();
+  data.scaling_factor_mass_matrix = scaling_factor_time_derivative_term;
+
+  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    data.convective_problem = false;
+  else
+    data.convective_problem = param.nonlinear_problem_has_to_be_solved();
+
+  data.viscous_problem = param.viscous_problem();
+
+  data.viscous_kernel_data    = viscous_kernel_data;
+  data.convective_kernel_data = convective_kernel_data;
+
+  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    data.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
+  else if(param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    data.mg_operator_type = param.multigrid_operator_type_momentum;
+  else if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    data.mg_operator_type = param.multigrid_operator_type_velocity_block;
+
+  data.bc = boundary_descriptor_velocity;
+
+  data.dof_index  = get_dof_index_velocity();
+  data.quad_index = get_quad_index_velocity_linearized();
+
+  data.use_cell_based_loops = param.use_cell_based_face_loops;
+  data.implement_block_diagonal_preconditioner_matrix_free =
+    param.implement_block_diagonal_preconditioner_matrix_free;
+
+  AffineConstraints<double> constraint_dummy;
+  constraint_dummy.close();
+
+  momentum_operator.reinit(matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
+
+  if(data.convective_problem)
+  {
+    AssertThrow(
+      velocity != nullptr,
+      ExcMessage(
+        "To initialize preconditioners, convective kernel needs access to a velocity field."));
+
+    set_velocity_ptr(*velocity);
+  }
+}
 
 template<int dim, typename Number>
 void
@@ -1202,6 +1263,13 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
       ExcMessage(
         "Specified combination of divergence and continuity penalty operators not implemented."));
   }
+}
+
+template<int dim, typename Number>
+bool
+DGNavierStokesBase<dim, Number>::unsteady_problem_has_to_be_solved() const
+{
+  return (this->param.solver_type == SolverType::Unsteady);
 }
 
 template<int dim, typename Number>

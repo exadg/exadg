@@ -12,9 +12,9 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters const &              parameters_in,
-  std::shared_ptr<Postprocessor>       postprocessor_in)
-  : Base(triangulation, parameters_in, postprocessor_in),
+  InputParameters const &              parameters,
+  std::shared_ptr<Postprocessor>       postprocessor)
+  : Base(triangulation, parameters, postprocessor),
     rhs_vector(nullptr),
     evaluation_time(0.0),
     scaling_factor_time_derivative_term(1.0)
@@ -34,11 +34,13 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
-  setup_momentum_solver(scaling_factor_time_derivative_term, velocity);
+  Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
 
-  this->setup_pressure_poisson_solver();
+  setup_momentum_solver();
 
-  this->setup_projection_solver();
+  Base::setup_pressure_poisson_solver();
+
+  Base::setup_projection_solver();
 
   setup_inverse_mass_matrix_operator_pressure();
 
@@ -47,70 +49,11 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::setup_momentum_solver(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const * velocity)
+DGNavierStokesPressureCorrection<dim, Number>::setup_momentum_solver()
 {
-  initialize_momentum_operator(scaling_factor_time_derivative_term, velocity);
-
   initialize_momentum_preconditioner();
 
   initialize_momentum_solver();
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_operator(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const * velocity)
-{
-  MomentumOperatorData<dim> data;
-
-  // the pressure-correction scheme is an unsteady solver
-  data.unsteady_problem           = true;
-  data.scaling_factor_mass_matrix = scaling_factor_time_derivative_term;
-
-  // convective problem
-  if(this->param.nonlinear_problem_has_to_be_solved())
-  {
-    data.convective_problem = true;
-  }
-  else
-  {
-    data.convective_problem = false;
-  }
-
-  if(this->param.viscous_problem())
-    data.viscous_problem = true;
-
-  data.viscous_kernel_data    = this->viscous_kernel_data;
-  data.convective_kernel_data = this->convective_kernel_data;
-
-  data.mg_operator_type = this->param.multigrid_operator_type_momentum;
-
-  data.bc = this->boundary_descriptor_velocity;
-
-  data.dof_index            = this->get_dof_index_velocity();
-  data.quad_index           = this->get_quad_index_velocity_linearized();
-  data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  data.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.implement_block_diagonal_preconditioner_matrix_free;
-
-  AffineConstraints<double> constraint_dummy;
-  constraint_dummy.close();
-
-  momentum_operator.reinit(
-    this->matrix_free, constraint_dummy, data, this->viscous_kernel, this->convective_kernel);
-
-  if(data.convective_problem)
-  {
-    AssertThrow(
-      velocity != nullptr,
-      ExcMessage(
-        "To initialize preconditioners, convective kernel needs access to a velocity field."));
-
-    this->set_velocity_ptr(*velocity);
-  }
 }
 
 template<int dim, typename Number>
@@ -128,12 +71,12 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
     momentum_preconditioner.reset(
-      new JacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
+      new JacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
     momentum_preconditioner.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
+      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
@@ -156,7 +99,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
                                   tria,
                                   fe,
                                   this->get_mapping(),
-                                  momentum_operator.get_operator_data());
+                                  this->momentum_operator.get_operator_data());
   }
   else
   {
@@ -182,7 +125,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     // setup solver
     momentum_linear_solver.reset(
       new CGSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *momentum_preconditioner, solver_data));
+        this->momentum_operator, *momentum_preconditioner, solver_data));
   }
   else if(this->param.solver_momentum == SolverMomentum::GMRES)
   {
@@ -199,7 +142,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     // setup solver
     momentum_linear_solver.reset(
       new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *momentum_preconditioner, solver_data));
+        this->momentum_operator, *momentum_preconditioner, solver_data));
   }
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {
@@ -213,7 +156,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
 
     momentum_linear_solver.reset(
       new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *momentum_preconditioner, solver_data));
+        this->momentum_operator, *momentum_preconditioner, solver_data));
   }
   else
   {
@@ -228,11 +171,14 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     this->initialize_vector_velocity(temp_vector);
 
     // setup Newton solver
-    momentum_newton_solver.reset(new NewtonSolver<VectorType,
-                                                  This,
-                                                  MomentumOperator<dim, Number>,
-                                                  IterativeSolverBase<VectorType>>(
-      this->param.newton_solver_data_momentum, *this, momentum_operator, *momentum_linear_solver));
+    momentum_newton_solver.reset(
+      new NewtonSolver<VectorType,
+                       This,
+                       MomentumOperator<dim, Number>,
+                       IterativeSolverBase<VectorType>>(this->param.newton_solver_data_momentum,
+                                                        *this,
+                                                        this->momentum_operator,
+                                                        *momentum_linear_solver));
   }
 }
 
@@ -257,7 +203,7 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     linear_iterations)
 {
-  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
+  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Note that there is no need to set the evaluation time for the momentum_operator
   // in this because because this function is only called if the convective term is not considered
@@ -268,20 +214,18 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::evaluate_add_body_force_term(
-  VectorType & dst,
-  double const evaluation_time) const
+DGNavierStokesPressureCorrection<dim, Number>::evaluate_add_body_force_term(VectorType & dst,
+                                                                            double const time) const
 {
-  this->rhs_operator.evaluate_add(dst, evaluation_time);
+  this->rhs_operator.evaluate_add(dst, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::rhs_add_viscous_term(
-  VectorType & dst,
-  double const evaluation_time) const
+DGNavierStokesPressureCorrection<dim, Number>::rhs_add_viscous_term(VectorType & dst,
+                                                                    double const time) const
 {
-  Base::do_rhs_add_viscous_term(dst, evaluation_time);
+  Base::do_rhs_add_viscous_term(dst, time);
 }
 
 template<int dim, typename Number>
@@ -297,7 +241,7 @@ void
 DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation(
   VectorType &       dst,
   VectorType const & rhs_vector,
-  double const &     eval_time,
+  double const &     time,
   bool const &       update_preconditioner,
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     newton_iterations,
@@ -307,12 +251,12 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation
   this->rhs_vector = &rhs_vector;
 
   // Set evaluation_time and mass matrix scaling factor for nonlinear operator
-  evaluation_time                     = eval_time;
+  evaluation_time                     = time;
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
-  // Set evaluation_time and mass matrix scaling factor for linear operator
-  momentum_operator.set_evaluation_time(eval_time);
-  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
+  // Set time and mass matrix scaling factor for linear operator
+  this->momentum_operator.set_evaluation_time(time);
+  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
   momentum_newton_solver->solve(dst,
@@ -357,7 +301,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
   VectorType &       dst_p,
   VectorType const & src_u,
   VectorType const & src_p,
-  double const &     evaluation_time) const
+  double const &     time) const
 {
   // velocity-block
 
@@ -367,7 +311,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
 
   if(this->param.right_hand_side == true)
   {
-    this->rhs_operator.evaluate(dst_u, evaluation_time);
+    this->rhs_operator.evaluate(dst_u, time);
     // Shift body force term to the left-hand side of the equation.
     // This works since body_force_operator is the first operator
     // that is evaluated.
@@ -375,20 +319,20 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
   }
 
   if(this->param.convective_problem())
-    this->convective_operator.evaluate_nonlinear_operator_add(dst_u, src_u, evaluation_time);
+    this->convective_operator.evaluate_nonlinear_operator_add(dst_u, src_u, time);
 
   if(this->param.viscous_problem())
   {
-    this->viscous_operator.set_evaluation_time(evaluation_time);
+    this->viscous_operator.set_evaluation_time(time);
     this->viscous_operator.evaluate_add(dst_u, src_u);
   }
 
   // gradient operator scaled by scaling_factor_continuity
-  this->gradient_operator.evaluate_add(dst_u, src_p, evaluation_time);
+  this->gradient_operator.evaluate_add(dst_u, src_p, time);
 
   // pressure-block
 
-  this->divergence_operator.evaluate(dst_p, src_u, evaluation_time);
+  this->divergence_operator.evaluate(dst_p, src_u, time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   // with respect to pressure gradient term and velocity divergence term
   dst_p *= -1.0;
@@ -399,17 +343,16 @@ void
 DGNavierStokesPressureCorrection<dim, Number>::apply_momentum_operator(VectorType &       dst,
                                                                        VectorType const & src)
 {
-  momentum_operator.apply(dst, src);
+  this->momentum_operator.apply(dst, src);
 }
 
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::rhs_pressure_gradient_term(
-  VectorType & dst,
-  double const evaluation_time) const
+DGNavierStokesPressureCorrection<dim, Number>::rhs_pressure_gradient_term(VectorType & dst,
+                                                                          double const time) const
 {
-  this->gradient_operator.rhs(dst, evaluation_time);
+  this->gradient_operator.rhs(dst, time);
 }
 
 
@@ -432,11 +375,10 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_pressure(VectorType &      
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add(
-  VectorType &   dst,
-  double const & evaluation_time) const
+DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
+                                                                   double const & time) const
 {
-  Base::do_rhs_ppe_laplace_add(dst, evaluation_time);
+  Base::do_rhs_ppe_laplace_add(dst, time);
 }
 
 template<int dim, typename Number>

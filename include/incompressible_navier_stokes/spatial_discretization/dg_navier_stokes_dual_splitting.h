@@ -192,10 +192,7 @@ private:
    * Setup of helmholtz solver (operator, preconditioner, solver).
    */
   void
-  setup_helmholtz_solver(double const & scaling_factor_time_derivative_term);
-
-  void
-  initialize_helmholtz_operator(double const & scaling_factor_time_derivative_term);
+  setup_helmholtz_solver();
 
   void
   initialize_helmholtz_preconditioner();
@@ -271,8 +268,6 @@ private:
   /*
    * Viscous step (Helmholtz-like equation).
    */
-  MomentumOperator<dim, Number> momentum_operator;
-
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
@@ -291,17 +286,17 @@ private:
     newton_solver;
 
   /*
+   * This factor is needed as element variable in case of an implicit treatment of the convective
+   * term where a nonlinear system of equations has to be solved.
+   */
+  double scaling_factor_time_derivative_term;
+
+  /*
    * Element variable used to store the current physical time. Note that this variable is not only
    * needed in case of an implicit treatment of the convective term, but also for the evaluation of
    * the right-hand side of the pressure Poisson equation.
    */
   double evaluation_time;
-
-  /*
-   * This factor is needed as element variable in case of an implicit treatment of the convective
-   * term where a nonlinear system of equations has to be solved.
-   */
-  double scaling_factor_time_derivative_term;
 };
 
 } // namespace IncNS

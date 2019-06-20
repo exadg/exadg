@@ -93,7 +93,7 @@ public:
   void
   solve_nonlinear_momentum_equation(VectorType &       dst,
                                     VectorType const & rhs_vector,
-                                    double const &     eval_time,
+                                    double const &     time,
                                     bool const &       update_preconditioner,
                                     double const &     scaling_factor_mass_matrix_term,
                                     unsigned int &     newton_iterations,
@@ -116,7 +116,7 @@ public:
                                      VectorType &       dst_p,
                                      VectorType const & src_u,
                                      VectorType const & src_p,
-                                     double const &     evaluation_time) const;
+                                     double const &     time) const;
 
   /*
    * Projection step.
@@ -124,7 +124,7 @@ public:
 
   // rhs pressure gradient
   void
-  rhs_pressure_gradient_term(VectorType & dst, double const evaluation_time) const;
+  rhs_pressure_gradient_term(VectorType & dst, double const time) const;
 
   /*
    * Pressure update step.
@@ -141,7 +141,7 @@ public:
   solve_pressure(VectorType & dst, VectorType const & src) const;
 
   void
-  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
+  rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
   /*
    * Postprocessing.
@@ -160,12 +160,7 @@ private:
    * Setup of momentum solver (operator, preconditioner, solver).
    */
   void
-  setup_momentum_solver(double const &     scaling_factor_time_derivative_term,
-                        VectorType const * velocity);
-
-  void
-  initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
-                               VectorType const * velocity);
+  setup_momentum_solver();
 
   void
   initialize_momentum_preconditioner();
@@ -184,8 +179,6 @@ private:
   /*
    * Momentum equation.
    */
-  MomentumOperator<dim, Number> momentum_operator;
-
   std::shared_ptr<
     NewtonSolver<VectorType, This, MomentumOperator<dim, Number>, IterativeSolverBase<VectorType>>>
     momentum_newton_solver;

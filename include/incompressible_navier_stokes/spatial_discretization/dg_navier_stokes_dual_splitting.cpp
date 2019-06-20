@@ -12,12 +12,12 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters const &              parameters_in,
-  std::shared_ptr<Postprocessor>       postprocessor_in)
-  : Base(triangulation, parameters_in, postprocessor_in),
+  InputParameters const &              parameters,
+  std::shared_ptr<Postprocessor>       postprocessor)
+  : Base(triangulation, parameters, postprocessor),
     sum_alphai_ui(nullptr),
-    evaluation_time(0.0),
-    scaling_factor_time_derivative_term(1.0)
+    scaling_factor_time_derivative_term(1.0),
+    evaluation_time(0.0)
 {
 }
 
@@ -34,17 +34,19 @@ DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
+  Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
+
   // initialize vectors that are needed by the nonlinear solver
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
     setup_convective_solver(velocity);
   }
 
-  this->setup_pressure_poisson_solver();
+  Base::setup_pressure_poisson_solver();
 
-  this->setup_projection_solver();
+  Base::setup_projection_solver();
 
-  setup_helmholtz_solver(scaling_factor_time_derivative_term);
+  setup_helmholtz_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
 }
@@ -90,52 +92,11 @@ DGNavierStokesDualSplitting<dim, Number>::setup_convective_solver(VectorType con
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::setup_helmholtz_solver(
-  double const & scaling_factor_time_derivative_term)
+DGNavierStokesDualSplitting<dim, Number>::setup_helmholtz_solver()
 {
-  initialize_helmholtz_operator(scaling_factor_time_derivative_term);
-
   initialize_helmholtz_preconditioner();
 
   initialize_helmholtz_solver();
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_operator(
-  double const & scaling_factor_time_derivative_term)
-{
-  MomentumOperatorData<dim> data;
-
-  // the dual splitting scheme is an unsteady solver
-  data.unsteady_problem           = true;
-  data.scaling_factor_mass_matrix = scaling_factor_time_derivative_term;
-
-  // convective problem
-  data.convective_problem = false; // dual splitting scheme!
-
-  if(this->param.viscous_problem())
-    data.viscous_problem = true;
-
-  data.viscous_kernel_data    = this->viscous_kernel_data;
-  data.convective_kernel_data = this->convective_kernel_data;
-
-  data.mg_operator_type = MultigridOperatorType::ReactionDiffusion; // dual splitting scheme!
-
-  data.bc = this->boundary_descriptor_velocity;
-
-  data.dof_index  = this->get_dof_index_velocity();
-  data.quad_index = this->get_quad_index_velocity_linearized();
-
-  data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  data.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.implement_block_diagonal_preconditioner_matrix_free;
-
-  AffineConstraints<double> constraint_dummy;
-  constraint_dummy.close();
-
-  momentum_operator.reinit(
-    this->matrix_free, constraint_dummy, data, this->viscous_kernel, this->convective_kernel);
 }
 
 template<int dim, typename Number>
@@ -157,12 +118,12 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
     helmholtz_preconditioner.reset(
-      new JacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
+      new JacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
   {
     helmholtz_preconditioner.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
+      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(this->momentum_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
@@ -184,7 +145,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
                                   tria,
                                   fe,
                                   this->get_mapping(),
-                                  momentum_operator.get_operator_data());
+                                  this->momentum_operator.get_operator_data());
   }
   else
   {
@@ -214,7 +175,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
 
     helmholtz_solver.reset(
       new CGSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *helmholtz_preconditioner, solver_data));
+        this->momentum_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::GMRES)
   {
@@ -237,7 +198,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
 
     helmholtz_solver.reset(
       new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *helmholtz_preconditioner, solver_data));
+        this->momentum_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {
@@ -257,7 +218,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
 
     helmholtz_solver.reset(
       new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *helmholtz_preconditioner, solver_data));
+        this->momentum_operator, *helmholtz_preconditioner, solver_data));
   }
   else
   {
@@ -782,7 +743,7 @@ DGNavierStokesDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
                                                         double const &     factor)
 {
   // Update operator
-  momentum_operator.set_scaling_factor_mass_matrix(factor);
+  this->momentum_operator.set_scaling_factor_mass_matrix(factor);
 
   unsigned int n_iter = helmholtz_solver->solve(dst, src, update_preconditioner);
 
@@ -794,7 +755,7 @@ void
 DGNavierStokesDualSplitting<dim, Number>::apply_helmholtz_operator(VectorType &       dst,
                                                                    VectorType const & src) const
 {
-  momentum_operator.vmult(dst, src);
+  this->momentum_operator.vmult(dst, src);
 }
 
 template<int dim, typename Number>
