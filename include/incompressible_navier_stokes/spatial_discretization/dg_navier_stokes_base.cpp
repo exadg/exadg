@@ -346,10 +346,6 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
 {
-  viscosity_coefficients.reset(new VariableCoefficients<dim, Number>());
-  // allocate vectors for variable coefficients and initialize with constant viscosity
-  viscosity_coefficients->initialize(matrix_free, param.degree_u, param.viscosity);
-
   // initialize turbulence model
   TurbulenceModelData model_data;
   model_data.turbulence_model    = param.turbulence_model;
@@ -358,10 +354,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.dof_index           = dof_index_u;
   model_data.quad_index          = quad_index_u;
   model_data.degree              = param.degree_u;
-  turbulence_model.initialize(matrix_free, *mapping, viscosity_coefficients, model_data);
-
-  // set pointer so that viscous operator can access the coefficients
-  viscous_operator.set_viscosity_coefficients_ptr(viscosity_coefficients);
+  turbulence_model.initialize(matrix_free, *mapping, viscous_kernel, model_data);
 }
 
 template<int dim, typename Number>
@@ -477,12 +470,15 @@ DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linearized() const
   }
   else if(param.quad_rule_linearization == QuadratureRuleLinearization::Overintegration32k)
   {
-    return quad_index_u_nonlinear;
+    if(param.nonlinear_problem_has_to_be_solved())
+      return quad_index_u_nonlinear;
+    else
+      return quad_index_u;
   }
   else
   {
     AssertThrow(false, ExcMessage("Not implemented"));
-    return 0;
+    return quad_index_u_nonlinear;
   }
 }
 
@@ -558,7 +554,7 @@ DGNavierStokesBase<dim, Number>::get_viscosity_boundary_face(unsigned int const 
 
   bool const viscosity_is_variable = param.use_turbulence_model;
   if(viscosity_is_variable)
-    viscosity_coefficients->get_coefficient_face(face, q);
+    viscous_kernel->get_coefficient_face(face, q);
 
   return viscosity;
 }
@@ -1129,7 +1125,11 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
   else if(param.use_divergence_penalty == true && param.use_continuity_penalty == true)
   {
     // preconditioner
-    if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
+    if(param.preconditioner_projection == PreconditionerProjection::None)
+    {
+      // do nothing, preconditioner will not be used
+    }
+    else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
       preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
         matrix_free, param.degree_u, get_dof_index_velocity(), get_quad_index_velocity_linear()));
@@ -1154,12 +1154,8 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     }
     else
     {
-      AssertThrow(param.preconditioner_projection == PreconditionerProjection::None ||
-                    param.preconditioner_projection ==
-                      PreconditionerProjection::InverseMassMatrix ||
-                    param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
-                    param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
-                  ExcMessage("Specified preconditioner of projection solver not implemented."));
+      AssertThrow(false,
+                  ExcMessage("Preconditioner specified for projection step is not implemented."));
     }
 
     // solver

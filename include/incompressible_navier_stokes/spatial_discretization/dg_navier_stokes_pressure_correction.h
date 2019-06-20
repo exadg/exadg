@@ -189,14 +189,24 @@ private:
   /*
    * Momentum equation.
    */
-  MomentumOperator<dim, Number> momentum_operator;
+#ifdef USE_MERGED_MOMENTUM_OPERATOR
+  MomentumOperatorMerged<dim, Number> momentum_operator_merged;
 
-  std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
-  std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;
+  std::shared_ptr<NewtonSolver<VectorType,
+                               THIS,
+                               MomentumOperatorMerged<dim, Number>,
+                               IterativeSolverBase<VectorType>>>
+    momentum_newton_solver;
+#else
+  MomentumOperator<dim, Number> momentum_operator;
 
   std::shared_ptr<
     NewtonSolver<VectorType, THIS, MomentumOperator<dim, Number>, IterativeSolverBase<VectorType>>>
     momentum_newton_solver;
+#endif
+
+  std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
+  std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;
 
   VectorType         temp_vector;
   VectorType const * rhs_vector;

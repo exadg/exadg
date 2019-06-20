@@ -274,7 +274,11 @@ private:
   /*
    * Viscous step (Helmholtz-like equation).
    */
+#ifdef USE_MERGED_MOMENTUM_OPERATOR
+  MomentumOperatorMerged<dim, Number> momentum_operator;
+#else
   MomentumOperator<dim, Number> helmholtz_operator;
+#endif
 
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 

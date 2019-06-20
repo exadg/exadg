@@ -17,14 +17,14 @@ TurbulenceModel<dim, Number>::TurbulenceModel() : matrix_free(nullptr)
 template<int dim, typename Number>
 void
 TurbulenceModel<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                    matrix_free_in,
-  Mapping<dim> const &                               mapping_in,
-  std::shared_ptr<VariableCoefficients<dim, Number>> viscosity_coefficients_in,
-  TurbulenceModelData const &                        data_in)
+  MatrixFree<dim, Number> const &                        matrix_free_in,
+  Mapping<dim> const &                                   mapping_in,
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
+  TurbulenceModelData const &                            data_in)
 {
-  matrix_free            = &matrix_free_in;
-  viscosity_coefficients = viscosity_coefficients_in;
-  turb_model_data        = data_in;
+  matrix_free     = &matrix_free_in;
+  viscous_kernel  = viscous_kernel_in;
+  turb_model_data = data_in;
 
   calculate_filter_width(mapping_in);
 }
@@ -76,7 +76,7 @@ TurbulenceModel<dim, Number>::cell_loop_set_coefficients(
       add_turbulent_viscosity(viscosity, filter_width, velocity_gradient, turb_model_data.constant);
 
       // set the coefficients
-      viscosity_coefficients->set_coefficient_cell(cell, q, viscosity);
+      viscous_kernel->set_coefficient_cell(cell, q, viscosity);
     }
   }
 }
@@ -133,8 +133,8 @@ TurbulenceModel<dim, Number>::face_loop_set_coefficients(
                               turb_model_data.constant);
 
       // set the coefficients
-      viscosity_coefficients->set_coefficient_face(face, q, viscosity);
-      viscosity_coefficients->set_coefficient_face_neighbor(face, q, viscosity_neighbor);
+      viscous_kernel->set_coefficient_face(face, q, viscosity);
+      viscous_kernel->set_coefficient_face_neighbor(face, q, viscosity_neighbor);
     }
   }
 }
@@ -175,7 +175,7 @@ TurbulenceModel<dim, Number>::boundary_face_loop_set_coefficients(
       add_turbulent_viscosity(viscosity, filter_width, velocity_gradient, turb_model_data.constant);
 
       // set the coefficients
-      viscosity_coefficients->set_coefficient_face(face, q, viscosity);
+      viscous_kernel->set_coefficient_face(face, q, viscosity);
     }
   }
 }

@@ -42,14 +42,6 @@ ViscousOperator<dim, Number>::reinit(
 
 template<int dim, typename Number>
 void
-ViscousOperator<dim, Number>::set_viscosity_coefficients_ptr(
-  std::shared_ptr<VariableCoefficients<dim, Number>> coefficients)
-{
-  kernel->set_viscosity_coefficients_ptr(coefficients);
-}
-
-template<int dim, typename Number>
-void
 ViscousOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);

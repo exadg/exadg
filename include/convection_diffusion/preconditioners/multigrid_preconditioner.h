@@ -28,19 +28,19 @@ public:
   typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
 
-  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> BASE;
+  typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> Base;
 
-  typedef typename BASE::Map               Map;
-  typedef typename BASE::PeriodicFacePairs PeriodicFacePairs;
-  typedef typename BASE::VectorType        VectorType;
-  typedef typename BASE::VectorTypeMG      VectorTypeMG;
+  typedef typename Base::Map               Map;
+  typedef typename Base::PeriodicFacePairs PeriodicFacePairs;
+  typedef typename Base::VectorType        VectorType;
+  typedef typename Base::VectorTypeMG      VectorTypeMG;
 
   virtual ~MultigridPreconditioner(){};
 
   void
   initialize(MultigridData const &                mg_data,
-             const parallel::Triangulation<dim> * tria,
-             const FiniteElement<dim> &           fe,
+             parallel::Triangulation<dim> const * tria,
+             FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
              OperatorData<dim> const &            operator_data_in,
              Map const *                          dirichlet_bc        = nullptr,
@@ -81,7 +81,7 @@ public:
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    BASE::initialize(mg_data,
+    Base::initialize(mg_data,
                      tria,
                      fe,
                      mapping,
@@ -188,7 +188,7 @@ public:
                                          parallel::Triangulation<dim> const * tria,
                                          Map const *                          dirichlet_bc)
   {
-    BASE::initialize_dof_handler_and_constraints(
+    Base::initialize_dof_handler_and_constraints(
       operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
     if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
@@ -211,7 +211,7 @@ public:
   void
   initialize_transfer_operators()
   {
-    BASE::initialize_transfer_operators();
+    Base::initialize_transfer_operators();
 
     if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
       this->transfers_velocity.template reinit<MultigridNumber>(this->matrix_free_objects,

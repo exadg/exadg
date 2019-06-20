@@ -310,7 +310,11 @@ private:
    */
 
   // Linear(ized) momentum operator
+#ifdef USE_MERGED_MOMENTUM_OPERATOR
+  MomentumOperatorMerged<dim, Number> momentum_operator_merged;
+#else
   MomentumOperator<dim, Number> momentum_operator;
+#endif
 
   // temporary vector needed to evaluate both the nonlinear residual and the linearized operator
   VectorType mutable temp_vector;

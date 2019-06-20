@@ -106,7 +106,11 @@ void
 DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poisson()
 {
   // setup preconditioner
-  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
+  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::None)
+  {
+    // do nothing, preconditioner will not be used
+  }
+  else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
   {
     preconditioner_pressure_poisson.reset(
       new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));

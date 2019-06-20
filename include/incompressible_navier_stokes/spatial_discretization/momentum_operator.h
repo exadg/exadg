@@ -1,5 +1,5 @@
 /*
- * velocity_conv_diff_operator.h
+ * momentum_operator.h
  *
  *  Created on: Aug 8, 2016
  *      Author: fehn
@@ -414,6 +414,7 @@ private:
   mutable std::shared_ptr<ELEMENTWISE_SOLVER>   elementwise_solver;
 };
 
+template<int dim>
 struct MomentumOperatorMergedData : public OperatorBaseData
 {
   MomentumOperatorMergedData()
@@ -441,96 +442,138 @@ struct MomentumOperatorMergedData : public OperatorBaseData
 
   // Multigrid
   MultigridOperatorType mg_operator_type;
+
+  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
 
 template<int dim, typename Number>
-class MomentumOperatorMerged : public OperatorBase<dim, Number, MomentumOperatorMergedData, dim>
+class MomentumOperatorMerged
+  : public OperatorBase<dim, Number, MomentumOperatorMergedData<dim>, dim>
 {
 private:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-  typedef OperatorBase<dim, Number, MomentumOperatorMergedData, dim> Base;
+  typedef OperatorBase<dim, Number, MomentumOperatorMergedData<dim>, dim> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
 public:
+  // required by preconditioner interfaces
+  typedef Number value_type;
+
   void
-  reinit(MatrixFree<dim, Number> const &    matrix_free,
-         AffineConstraints<double> const &  constraint_matrix,
-         MomentumOperatorMergedData const & operator_data) const
+  reinit(MatrixFree<dim, Number> const &         matrix_free,
+         AffineConstraints<double> const &       constraint_matrix,
+         MomentumOperatorMergedData<dim> const & operator_data) const
   {
+    Base::reinit(matrix_free, constraint_matrix, operator_data);
+
     // create new objects and initialize kernels
     if(this->operator_data.unsteady_problem)
     {
       this->mass_kernel.reset(new Operators::MassMatrixKernel<dim, Number>());
-      this->mass_kernel.reinit(operator_data.scaling_factor_mass_matrix);
+      this->mass_kernel->reinit(this->operator_data.scaling_factor_mass_matrix);
     }
 
     if(this->operator_data.convective_problem)
     {
       this->convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-      this->convective_kernel.reinit(matrix_free,
-                                     operator_data.convective_kernel_data,
-                                     this->is_mg);
+      this->convective_kernel->reinit(matrix_free,
+                                      this->operator_data.convective_kernel_data,
+                                      this->is_mg);
     }
 
     if(this->operator_data.viscous_problem)
     {
       this->viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-      this->viscous_kernel.reinit(matrix_free, operator_data.viscous_kernel_data);
+      this->viscous_kernel->reinit(matrix_free, this->operator_data.viscous_kernel_data);
     }
 
-    reinit_base(matrix_free, constraint_matrix, operator_data);
+    if(this->operator_data.unsteady_problem)
+      this->integrator_flags = this->integrator_flags || this->mass_kernel->get_integrator_flags();
+    if(this->operator_data.convective_problem)
+      this->integrator_flags =
+        this->integrator_flags || this->convective_kernel->get_integrator_flags();
+    if(this->operator_data.viscous_problem)
+      this->integrator_flags =
+        this->integrator_flags || this->viscous_kernel->get_integrator_flags();
   }
 
   void
   reinit(MatrixFree<dim, Number> const &                           matrix_free,
          AffineConstraints<double> const &                         constraint_matrix,
-         MomentumOperatorMergedData const &                        operator_data,
-         std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel,
+         MomentumOperatorMergedData<dim> const &                   operator_data,
          std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
          std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
   {
-    // simply set pointers
-    this->mass_kernel       = mass_kernel;
+    Base::reinit(matrix_free, constraint_matrix, operator_data);
+
+    // mass kernel: create new object and initialize kernel
+    if(this->operator_data.unsteady_problem)
+    {
+      this->mass_kernel.reset(new Operators::MassMatrixKernel<dim, Number>());
+      this->mass_kernel->reinit(this->operator_data.scaling_factor_mass_matrix);
+    }
+
+    // simply set pointers for convective and viscous kernels
     this->convective_kernel = convective_kernel;
     this->viscous_kernel    = viscous_kernel;
 
-    reinit_base(matrix_free, constraint_matrix, operator_data);
+    if(this->operator_data.unsteady_problem)
+      this->integrator_flags = this->integrator_flags || this->mass_kernel->get_integrator_flags();
+    if(this->operator_data.convective_problem)
+      this->integrator_flags =
+        this->integrator_flags || this->convective_kernel->get_integrator_flags();
+    if(this->operator_data.viscous_problem)
+      this->integrator_flags =
+        this->integrator_flags || this->viscous_kernel->get_integrator_flags();
   }
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const
   {
-    return convective_kernel.get_velocity();
+    return convective_kernel->get_velocity();
+  }
+
+  /*
+   * Interface required by Newton solver.
+   */
+  void
+  set_solution_linearization(VectorType const & velocity)
+  {
+    this->set_velocity_ptr(velocity);
   }
 
   void
   set_velocity_copy(VectorType const & velocity) const
   {
-    convective_kernel.set_velocity_copy(velocity);
+    convective_kernel->set_velocity_copy(velocity);
   }
 
   void
   set_velocity_ptr(VectorType const & velocity) const
   {
-    convective_kernel.set_velocity_ptr(velocity);
+    convective_kernel->set_velocity_ptr(velocity);
   }
 
   Number
   get_scaling_factor_mass_matrix() const
   {
-    return mass_kernel.get_scaling_factor();
+    AssertThrow(mass_kernel.get() != 0, ExcMessage("Mass kernel is not initialized."));
+
+    return mass_kernel->get_scaling_factor();
   }
 
   void
   set_scaling_factor_mass_matrix(Number const & number) const
   {
-    mass_kernel.set_scaling_factor(number);
+    AssertThrow(mass_kernel.get() != 0, ExcMessage("Mass kernel is not initialized."));
+
+    mass_kernel->set_scaling_factor(number);
   }
 
   void
@@ -655,7 +698,9 @@ public:
         gradient = integrator.get_gradient(q);
 
       if(this->operator_data.unsteady_problem)
+      {
         value_flux += mass_kernel->get_volume_flux(value);
+      }
 
       if(this->operator_data.convective_problem)
       {
@@ -996,24 +1041,9 @@ public:
   }
 
 private:
-  void
-  reinit_base(MatrixFree<dim, Number> const &    matrix_free,
-              AffineConstraints<double> const &  constraint_matrix,
-              MomentumOperatorMergedData const & operator_data) const
-  {
-    Base::reinit(matrix_free, constraint_matrix, operator_data);
-
-    if(this->operator_data.unsteady_problem)
-      this->integrator_flags = this->integrator_flags || mass_kernel->get_integrator_flags();
-    if(this->operator_data.convective_problem)
-      this->integrator_flags = this->integrator_flags || convective_kernel->get_integrator_flags();
-    if(this->operator_data.viscous_problem)
-      this->integrator_flags = this->integrator_flags || viscous_kernel->get_integrator_flags();
-  }
-
-  std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
-  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
-  std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
+  mutable std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
+  mutable std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  mutable std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 };
 
 

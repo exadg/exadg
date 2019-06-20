@@ -65,6 +65,9 @@
 
 using namespace dealii;
 
+// TODO
+#define USE_MERGED_MOMENTUM_OPERATOR
+
 namespace IncNS
 {
 template<int dim, typename Number>
@@ -556,11 +559,6 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
-
-  /*
-   * Variable viscosity needed in case of turbulence model
-   */
-  std::shared_ptr<VariableCoefficients<dim, Number>> viscosity_coefficients;
 };
 
 } // namespace IncNS

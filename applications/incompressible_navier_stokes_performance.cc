@@ -38,7 +38,7 @@ using namespace IncNS;
 
 // specify the flow problem to be used for throughput measurements
 
-#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/deformed_cube.h"
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
 std::vector<int> REFINE_LEVELS = {
@@ -61,6 +61,11 @@ std::vector<int> REFINE_LEVELS = {
 
 // Select the operator to be applied
 
+// Note: Make sure that the correct time integration scheme is selected in the input file that is
+//       compatible with the Operator type specified here. This also includes the treatment of the
+//       convective term (explicit/implicit), e.g., specifying VelocityConvDiffOperator together
+//       with an explicit treatment of the convective term will only apply the Helmholtz-like operator.
+
 // clang-format off
 enum class Operator{
   CoupledNonlinearResidual, // nonlinear residual of coupled system of equations
@@ -74,7 +79,7 @@ enum class Operator{
 };
 // clang-format on
 
-Operator OPERATOR = Operator::ConvectiveOperator;
+Operator OPERATOR = Operator::VelocityConvDiffOperator;
 
 std::string
 enum_to_string(Operator const enum_type)
@@ -379,16 +384,17 @@ Problem<dim, Number>::apply_operator()
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::VelocityConvDiffOperator ||
-       OPERATOR == Operator::ProjectionOperator || OPERATOR == Operator::InverseMassMatrix)
+    if(OPERATOR == Operator::VelocityConvDiffOperator ||
+       OPERATOR == Operator::ProjectionOperator ||
+       OPERATOR == Operator::InverseMassMatrix)
     {
-      navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
-      navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
+      navier_stokes_operation_pressure_correction->initialize_vector_velocity(src2);
+      navier_stokes_operation_pressure_correction->initialize_vector_velocity(dst2);
     }
     else if(OPERATOR == Operator::PressurePoissonOperator)
     {
-      navier_stokes_operation_dual_splitting->initialize_vector_pressure(src2);
-      navier_stokes_operation_dual_splitting->initialize_vector_pressure(dst2);
+      navier_stokes_operation_pressure_correction->initialize_vector_pressure(src2);
+      navier_stokes_operation_pressure_correction->initialize_vector_pressure(dst2);
     }
     else
     {
@@ -401,7 +407,6 @@ Problem<dim, Number>::apply_operator()
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-
 
   // Timer and wall times
   Timer  timer;
@@ -449,8 +454,6 @@ Problem<dim, Number>::apply_operator()
       {
         if(OPERATOR == Operator::VelocityConvDiffOperator)
           navier_stokes_operation_pressure_correction->apply_momentum_operator(dst2,src2);
-        else if(OPERATOR == Operator::ConvectiveOperator)
-          navier_stokes_operation_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR == Operator::ProjectionOperator)
           navier_stokes_operation_pressure_correction->apply_projection_operator(dst2,src2);
         else if(OPERATOR == Operator::PressurePoissonOperator)

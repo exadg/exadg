@@ -11,8 +11,8 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../operators/variable_coefficients.h"
 #include "../user_interface/input_parameters.h"
+#include "operators/viscous_operator.h"
 
 using namespace dealii;
 
@@ -77,10 +77,10 @@ public:
    * Initialization function.
    */
   void
-  initialize(MatrixFree<dim, Number> const &                    matrix_free_in,
-             Mapping<dim> const &                               mapping_in,
-             std::shared_ptr<VariableCoefficients<dim, Number>> viscosity_coefficients_in,
-             TurbulenceModelData const &                        data_in);
+  initialize(MatrixFree<dim, Number> const &                        matrix_free_in,
+             Mapping<dim> const &                                   mapping_in,
+             std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
+             TurbulenceModelData const &                            data_in);
 
   /*
    *  This function calculates the turbulent viscosity for a given velocity field.
@@ -232,7 +232,7 @@ private:
 
   MatrixFree<dim, Number> const * matrix_free;
 
-  std::shared_ptr<VariableCoefficients<dim, Number>> viscosity_coefficients;
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel;
 
   AlignedVector<scalar> filter_width_vector;
 };

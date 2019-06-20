@@ -70,12 +70,36 @@ public:
       array_penalty_parameter, matrix_free, mapping, data.degree, data.dof_index);
 
     AssertThrow(data.viscosity >= 0.0, ExcMessage("Viscosity is not set!"));
+
+    if(data.viscosity_is_variable)
+    {
+      // allocate vectors for variable coefficients and initialize with constant viscosity
+      viscosity_coefficients.initialize(matrix_free, data.degree, data.viscosity);
+    }
   }
 
   void
-  set_viscosity_coefficients_ptr(std::shared_ptr<VariableCoefficients<dim, Number>> coefficients)
+  set_coefficient_cell(unsigned int const cell, unsigned int const q, scalar const & value)
   {
-    viscosity_coefficients = coefficients;
+    viscosity_coefficients.set_coefficient_cell(cell, q, value);
+  }
+
+  scalar
+  get_coefficient_face(unsigned int const face, unsigned int const q)
+  {
+    return viscosity_coefficients.get_coefficient_face(face, q);
+  }
+
+  void
+  set_coefficient_face(unsigned int const face, unsigned int const q, scalar const & value)
+  {
+    viscosity_coefficients.set_coefficient_face(face, q, value);
+  }
+
+  void
+  set_coefficient_face_neighbor(unsigned int const face, unsigned int const q, scalar const & value)
+  {
+    viscosity_coefficients.set_coefficient_face_neighbor(face, q, value);
   }
 
   IntegratorFlags
@@ -149,7 +173,7 @@ public:
 
     if(data.viscosity_is_variable)
     {
-      viscosity = viscosity_coefficients->get_coefficient_cell(cell, q);
+      viscosity = viscosity_coefficients.get_coefficient_cell(cell, q);
     }
 
     return viscosity;
@@ -164,9 +188,9 @@ public:
   {
     scalar average_viscosity = make_vectorized_array<Number>(0.0);
 
-    scalar coefficient_face = viscosity_coefficients->get_coefficient_face(face, q);
+    scalar coefficient_face = viscosity_coefficients.get_coefficient_face(face, q);
     scalar coefficient_face_neighbor =
-      viscosity_coefficients->get_coefficient_face_neighbor(face, q);
+      viscosity_coefficients.get_coefficient_face_neighbor(face, q);
 
     // harmonic mean (harmonic weighting according to Schott and Rasthofer et al. (2015))
     average_viscosity = 2.0 * coefficient_face * coefficient_face_neighbor /
@@ -209,7 +233,7 @@ public:
 
     if(data.viscosity_is_variable)
     {
-      viscosity = viscosity_coefficients->get_coefficient_face(face, q);
+      viscosity = viscosity_coefficients.get_coefficient_face(face, q);
     }
 
     return viscosity;
@@ -447,7 +471,7 @@ private:
   mutable AlignedVector<scalar> array_penalty_parameter;
   mutable scalar                tau;
 
-  std::shared_ptr<VariableCoefficients<dim, Number>> viscosity_coefficients;
+  mutable VariableCoefficients<dim, Number> viscosity_coefficients;
 };
 
 } // namespace Operators
@@ -489,9 +513,6 @@ public:
          AffineConstraints<double> const &                      constraint_matrix,
          ViscousOperatorData<dim> const &                       operator_data,
          std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel);
-
-  void
-  set_viscosity_coefficients_ptr(std::shared_ptr<VariableCoefficients<dim, Number>> coefficients);
 
 private:
   void

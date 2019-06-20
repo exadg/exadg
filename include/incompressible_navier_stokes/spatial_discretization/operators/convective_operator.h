@@ -66,6 +66,7 @@ public:
   {
     this->data = data;
 
+    // integrators for linearized problem
     integrator_velocity.reset(
       new IntegratorCell(matrix_free, data.dof_index, data.quad_index_linearized));
     integrator_velocity_m.reset(
