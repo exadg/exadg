@@ -65,9 +65,6 @@
 
 using namespace dealii;
 
-// TODO
-#define USE_MERGED_MOMENTUM_OPERATOR
-
 namespace IncNS
 {
 template<int dim, typename Number>

@@ -25,17 +25,12 @@ class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<
                                          public Interface::OperatorPressureCorrection<Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, Number> BASE;
+  typedef DGNavierStokesProjectionMethods<dim, Number>  Base;
+  typedef DGNavierStokesPressureCorrection<dim, Number> This;
 
-  typedef DGNavierStokesProjectionMethods<dim, Number> PROJECTION_METHODS_BASE;
-
-  typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
-
-  typedef typename PROJECTION_METHODS_BASE::Postprocessor Postprocessor;
-
-  typedef DGNavierStokesPressureCorrection<dim, Number> THIS;
-
-  typedef typename PROJECTION_METHODS_BASE::MultigridNumber MultigridNumber;
+  typedef typename Base::VectorType      VectorType;
+  typedef typename Base::Postprocessor   Postprocessor;
+  typedef typename Base::MultigridNumber MultigridNumber;
 
 public:
   /*
@@ -189,21 +184,11 @@ private:
   /*
    * Momentum equation.
    */
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  MomentumOperatorMerged<dim, Number> momentum_operator_merged;
-
-  std::shared_ptr<NewtonSolver<VectorType,
-                               THIS,
-                               MomentumOperatorMerged<dim, Number>,
-                               IterativeSolverBase<VectorType>>>
-    momentum_newton_solver;
-#else
   MomentumOperator<dim, Number> momentum_operator;
 
   std::shared_ptr<
-    NewtonSolver<VectorType, THIS, MomentumOperator<dim, Number>, IterativeSolverBase<VectorType>>>
+    NewtonSolver<VectorType, This, MomentumOperator<dim, Number>, IterativeSolverBase<VectorType>>>
     momentum_newton_solver;
-#endif
 
   std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;

@@ -24,24 +24,21 @@ class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, 
                                     public Interface::OperatorDualSplitting<Number>
 {
 private:
-  typedef DGNavierStokesProjectionMethods<dim, Number> PROJECTION_METHODS_BASE;
+  typedef DGNavierStokesProjectionMethods<dim, Number> Base;
+  typedef DGNavierStokesDualSplitting<dim, Number>     This;
 
-  typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
+  typedef typename Base::VectorType      VectorType;
+  typedef typename Base::Postprocessor   Postprocessor;
+  typedef typename Base::MultigridNumber MultigridNumber;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-  typedef typename PROJECTION_METHODS_BASE::Postprocessor Postprocessor;
-
-  typedef DGNavierStokesDualSplitting<dim, Number> THIS;
-
   typedef std::pair<unsigned int, unsigned int> Range;
 
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
-
-  typedef typename PROJECTION_METHODS_BASE::MultigridNumber MultigridNumber;
 
 public:
   /*
@@ -274,11 +271,7 @@ private:
   /*
    * Viscous step (Helmholtz-like equation).
    */
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  MomentumOperatorMerged<dim, Number> momentum_operator;
-#else
-  MomentumOperator<dim, Number> helmholtz_operator;
-#endif
+  MomentumOperator<dim, Number> momentum_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
@@ -294,7 +287,7 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_convective_problem;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
-  std::shared_ptr<NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>>
+  std::shared_ptr<NewtonSolver<VectorType, This, This, IterativeSolverBase<VectorType>>>
     newton_solver;
 
   /*

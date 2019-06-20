@@ -20,13 +20,11 @@ template<int dim, typename Number>
 class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, Number>
 {
 protected:
-  typedef DGNavierStokesBase<dim, Number> BASE;
+  typedef DGNavierStokesBase<dim, Number> Base;
 
-  typedef typename BASE::VectorType VectorType;
-
-  typedef typename BASE::Postprocessor Postprocessor;
-
-  typedef typename BASE::MultigridNumber MultigridNumber;
+  typedef typename Base::VectorType      VectorType;
+  typedef typename Base::Postprocessor   Postprocessor;
+  typedef typename Base::MultigridNumber MultigridNumber;
 
 public:
   /*

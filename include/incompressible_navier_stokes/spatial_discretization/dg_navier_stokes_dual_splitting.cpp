@@ -14,7 +14,7 @@ DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
-  : PROJECTION_METHODS_BASE(triangulation, parameters_in, postprocessor_in),
+  : Base(triangulation, parameters_in, postprocessor_in),
     sum_alphai_ui(nullptr),
     evaluation_time(0.0),
     scaling_factor_time_derivative_term(1.0)
@@ -80,11 +80,11 @@ DGNavierStokesDualSplitting<dim, Number>::setup_convective_solver(VectorType con
   solver_data.use_preconditioner = true;
 
   // setup linear solver
-  linear_solver.reset(new GMRESSolver<THIS, PreconditionerBase<Number>, VectorType>(
+  linear_solver.reset(new GMRESSolver<This, PreconditionerBase<Number>, VectorType>(
     *this, *preconditioner_convective_problem, solver_data));
 
   // setup Newton solver
-  newton_solver.reset(new NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>(
+  newton_solver.reset(new NewtonSolver<VectorType, This, This, IterativeSolverBase<VectorType>>(
     this->param.newton_solver_data_convective, *this, *this, *linear_solver));
 }
 
@@ -105,8 +105,7 @@ void
 DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_operator(
   double const & scaling_factor_time_derivative_term)
 {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  MomentumOperatorMergedData<dim> data;
+  MomentumOperatorData<dim> data;
 
   // the dual splitting scheme is an unsteady solver
   data.unsteady_problem           = true;
@@ -137,38 +136,6 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_operator(
 
   momentum_operator.reinit(
     this->matrix_free, constraint_dummy, data, this->viscous_kernel, this->convective_kernel);
-#else
-  // setup velocity convection-diffusion operator
-  MomentumOperatorData<dim> momentum_operator_data;
-
-  // unsteady problem
-  momentum_operator_data.unsteady_problem = true;
-
-  momentum_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
-
-  // convective problem = false (dual splitting scheme!)
-  momentum_operator_data.convective_problem = false;
-
-  momentum_operator_data.dof_index       = this->get_dof_index_velocity();
-  momentum_operator_data.quad_index_std  = this->get_quad_index_velocity_linear();
-  momentum_operator_data.quad_index_over = this->get_quad_index_velocity_nonlinear();
-
-  momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.implement_block_diagonal_preconditioner_matrix_free;
-  // dual splitting scheme: We don't have a choice here!
-  momentum_operator_data.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
-
-  momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
-  momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
-  momentum_operator_data.convective_operator_data  = this->convective_operator_data;
-
-  helmholtz_operator.reinit(this->get_matrix_free(),
-                            momentum_operator_data,
-                            this->mass_matrix_operator,
-                            this->viscous_operator,
-                            this->convective_operator);
-#endif
 }
 
 template<int dim, typename Number>
@@ -189,47 +156,16 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::PointJacobi)
   {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
     helmholtz_preconditioner.reset(
-      new JacobiPreconditioner<MomentumOperatorMerged<dim, Number>>(momentum_operator));
-#else
-    helmholtz_preconditioner.reset(
-      new JacobiPreconditioner<MomentumOperator<dim, Number>>(helmholtz_operator));
-#endif
+      new JacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::BlockJacobi)
   {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
     helmholtz_preconditioner.reset(
-      new BlockJacobiPreconditioner<MomentumOperatorMerged<dim, Number>>(momentum_operator));
-#else
-    helmholtz_preconditioner.reset(
-      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(helmholtz_operator));
-#endif
+      new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
   }
   else if(this->param.preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    typedef MultigridPreconditionerMerged<dim, Number, MultigridNumber> MULTIGRID;
-
-    helmholtz_preconditioner.reset(new MULTIGRID());
-
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
-
-    auto & dof_handler = this->get_dof_handler_u();
-
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
-
-    const FiniteElement<dim> & fe = dof_handler.get_fe();
-
-    mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  tria,
-                                  fe,
-                                  this->get_mapping(),
-                                  momentum_operator.get_operator_data());
-#else
     typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     helmholtz_preconditioner.reset(new MULTIGRID());
@@ -248,8 +184,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
                                   tria,
                                   fe,
                                   this->get_mapping(),
-                                  helmholtz_operator.get_operator_data());
-#endif
+                                  momentum_operator.get_operator_data());
   }
   else
   {
@@ -277,15 +212,9 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    helmholtz_solver.reset(
-      new CGSolver<MomentumOperatorMerged<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *helmholtz_preconditioner, solver_data));
-#else
     helmholtz_solver.reset(
       new CGSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        helmholtz_operator, *helmholtz_preconditioner, solver_data));
-#endif
+        momentum_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::GMRES)
   {
@@ -306,15 +235,9 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    helmholtz_solver.reset(
-      new GMRESSolver<MomentumOperatorMerged<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *helmholtz_preconditioner, solver_data));
-#else
     helmholtz_solver.reset(
       new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        helmholtz_operator, *helmholtz_preconditioner, solver_data));
-#endif
+        momentum_operator, *helmholtz_preconditioner, solver_data));
   }
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {
@@ -332,15 +255,9 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
       solver_data.use_preconditioner = true;
     }
 
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    helmholtz_solver.reset(
-      new FGMRESSolver<MomentumOperatorMerged<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator, *helmholtz_preconditioner, solver_data));
-#else
     helmholtz_solver.reset(
       new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        helmholtz_operator, *helmholtz_preconditioner, solver_data));
-#endif
+        momentum_operator, *helmholtz_preconditioner, solver_data));
   }
   else
   {
@@ -480,9 +397,9 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(Vecto
   evaluation_time = eval_time;
 
   VectorType src_dummy;
-  this->matrix_free.loop(&THIS::cell_loop_empty,
-                         &THIS::face_loop_empty,
-                         &THIS::local_rhs_ppe_div_term_body_forces_boundary_face,
+  this->matrix_free.loop(&This::cell_loop_empty,
+                         &This::face_loop_empty,
+                         &This::local_rhs_ppe_div_term_body_forces_boundary_face,
                          this,
                          dst,
                          src_dummy);
@@ -553,9 +470,9 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_convective_term_add(
   VectorType &       dst,
   VectorType const & src) const
 {
-  this->matrix_free.loop(&THIS::cell_loop_empty,
-                         &THIS::face_loop_empty,
-                         &THIS::local_rhs_ppe_div_term_convective_term_boundary_face,
+  this->matrix_free.loop(&This::cell_loop_empty,
+                         &This::face_loop_empty,
+                         &This::local_rhs_ppe_div_term_convective_term_boundary_face,
                          this,
                          dst,
                          src);
@@ -630,9 +547,9 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_add(VectorType &   dst,
   evaluation_time = eval_time;
 
   VectorType src_dummy;
-  this->matrix_free.loop(&THIS::cell_loop_empty,
-                         &THIS::face_loop_empty,
-                         &THIS::local_rhs_ppe_nbc_add_boundary_face,
+  this->matrix_free.loop(&This::cell_loop_empty,
+                         &This::face_loop_empty,
+                         &This::local_rhs_ppe_nbc_add_boundary_face,
                          this,
                          dst,
                          src_dummy);
@@ -702,9 +619,9 @@ void
 DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_convective_add(VectorType &       dst,
                                                                  VectorType const & src) const
 {
-  this->matrix_free.loop(&THIS::cell_loop_empty,
-                         &THIS::face_loop_empty,
-                         &THIS::local_rhs_ppe_nbc_convective_add_boundary_face,
+  this->matrix_free.loop(&This::cell_loop_empty,
+                         &This::face_loop_empty,
+                         &This::local_rhs_ppe_nbc_convective_add_boundary_face,
                          this,
                          dst,
                          src);
@@ -770,9 +687,9 @@ void
 DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  this->matrix_free.loop(&THIS::cell_loop_empty,
-                         &THIS::face_loop_empty,
-                         &THIS::local_rhs_ppe_nbc_viscous_add_boundary_face,
+  this->matrix_free.loop(&This::cell_loop_empty,
+                         &This::face_loop_empty,
+                         &This::local_rhs_ppe_nbc_viscous_add_boundary_face,
                          this,
                          dst,
                          src);
@@ -838,7 +755,7 @@ void
 DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
                                                               double const & evaluation_time) const
 {
-  PROJECTION_METHODS_BASE::do_rhs_ppe_laplace_add(dst, evaluation_time);
+  Base::do_rhs_ppe_laplace_add(dst, evaluation_time);
 }
 
 template<int dim, typename Number>
@@ -846,7 +763,7 @@ unsigned int
 DGNavierStokesDualSplitting<dim, Number>::solve_pressure(VectorType &       dst,
                                                          VectorType const & src) const
 {
-  return PROJECTION_METHODS_BASE::do_solve_pressure(dst, src);
+  return Base::do_solve_pressure(dst, src);
 }
 
 template<int dim, typename Number>
@@ -854,7 +771,7 @@ void
 DGNavierStokesDualSplitting<dim, Number>::rhs_add_viscous_term(VectorType & dst,
                                                                double const evaluation_time) const
 {
-  PROJECTION_METHODS_BASE::do_rhs_add_viscous_term(dst, evaluation_time);
+  Base::do_rhs_add_viscous_term(dst, evaluation_time);
 }
 
 template<int dim, typename Number>
@@ -864,12 +781,8 @@ DGNavierStokesDualSplitting<dim, Number>::solve_viscous(VectorType &       dst,
                                                         bool const &       update_preconditioner,
                                                         double const &     factor)
 {
-  // Update Helmholtz operator
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
+  // Update operator
   momentum_operator.set_scaling_factor_mass_matrix(factor);
-#else
-  helmholtz_operator.set_scaling_factor_time_derivative_term(factor);
-#endif
 
   unsigned int n_iter = helmholtz_solver->solve(dst, src, update_preconditioner);
 
@@ -881,11 +794,7 @@ void
 DGNavierStokesDualSplitting<dim, Number>::apply_helmholtz_operator(VectorType &       dst,
                                                                    VectorType const & src) const
 {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
   momentum_operator.vmult(dst, src);
-#else
-  helmholtz_operator.vmult(dst, src);
-#endif
 }
 
 template<int dim, typename Number>

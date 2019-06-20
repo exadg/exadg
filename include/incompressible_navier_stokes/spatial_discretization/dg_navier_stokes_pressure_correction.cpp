@@ -14,7 +14,7 @@ DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
-  : PROJECTION_METHODS_BASE(triangulation, parameters_in, postprocessor_in),
+  : Base(triangulation, parameters_in, postprocessor_in),
     rhs_vector(nullptr),
     evaluation_time(0.0),
     scaling_factor_time_derivative_term(1.0)
@@ -64,8 +64,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_operator(
   double const &     scaling_factor_time_derivative_term,
   VectorType const * velocity)
 {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  MomentumOperatorMergedData<dim> data;
+  MomentumOperatorData<dim> data;
 
   // the pressure-correction scheme is an unsteady solver
   data.unsteady_problem           = true;
@@ -100,7 +99,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_operator(
   AffineConstraints<double> constraint_dummy;
   constraint_dummy.close();
 
-  momentum_operator_merged.reinit(
+  momentum_operator.reinit(
     this->matrix_free, constraint_dummy, data, this->viscous_kernel, this->convective_kernel);
 
   if(data.convective_problem)
@@ -112,54 +111,6 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_operator(
 
     this->set_velocity_ptr(*velocity);
   }
-#else
-  MomentumOperatorData<dim> momentum_operator_data;
-
-  // unsteady problem
-  momentum_operator_data.unsteady_problem = true;
-
-  momentum_operator_data.scaling_factor_time_derivative_term = scaling_factor_time_derivative_term;
-
-  // convective problem
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-  {
-    momentum_operator_data.convective_problem = true;
-  }
-  else
-  {
-    momentum_operator_data.convective_problem = false;
-  }
-
-  momentum_operator_data.dof_index       = this->get_dof_index_velocity();
-  momentum_operator_data.quad_index_std  = this->get_quad_index_velocity_linear();
-  momentum_operator_data.quad_index_over = this->get_quad_index_velocity_nonlinear();
-
-  momentum_operator_data.mass_matrix_operator_data = this->mass_matrix_operator_data;
-  momentum_operator_data.viscous_operator_data     = this->viscous_operator_data;
-  momentum_operator_data.convective_operator_data  = this->convective_operator_data;
-
-  momentum_operator_data.use_cell_based_loops = this->param.use_cell_based_face_loops;
-  momentum_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-    this->param.implement_block_diagonal_preconditioner_matrix_free;
-  momentum_operator_data.mg_operator_type = this->param.multigrid_operator_type_momentum;
-
-  momentum_operator.reinit(this->get_matrix_free(),
-                           momentum_operator_data,
-                           this->mass_matrix_operator,
-                           this->viscous_operator,
-                           this->convective_operator);
-
-  if(momentum_operator_data.convective_problem)
-  {
-    AssertThrow(
-      velocity != nullptr,
-      ExcMessage(
-        "To initialize preconditioners, convective kernel needs access to a velocity field."));
-
-    this->set_velocity_ptr(*velocity);
-  }
-#endif
 }
 
 template<int dim, typename Number>
@@ -176,48 +127,16 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::PointJacobi)
   {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    momentum_preconditioner.reset(
-      new JacobiPreconditioner<MomentumOperatorMerged<dim, Number>>(momentum_operator_merged));
-#else
     momentum_preconditioner.reset(
       new JacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
-#endif
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::BlockJacobi)
   {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    momentum_preconditioner.reset(
-      new BlockJacobiPreconditioner<MomentumOperatorMerged<dim, Number>>(momentum_operator_merged));
-#else
     momentum_preconditioner.reset(
       new BlockJacobiPreconditioner<MomentumOperator<dim, Number>>(momentum_operator));
-#endif
   }
   else if(this->param.preconditioner_momentum == MomentumPreconditioner::Multigrid)
   {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    typedef MultigridPreconditionerMerged<dim, Number, MultigridNumber> MULTIGRID;
-
-    momentum_preconditioner.reset(new MULTIGRID());
-
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
-
-
-    auto & dof_handler = this->get_dof_handler_u();
-
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
-
-    const FiniteElement<dim> & fe = dof_handler.get_fe();
-
-    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
-                                  tria,
-                                  fe,
-                                  this->get_mapping(),
-                                  momentum_operator_merged.get_operator_data());
-#else
     typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
     momentum_preconditioner.reset(new MULTIGRID());
@@ -238,7 +157,6 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
                                   fe,
                                   this->get_mapping(),
                                   momentum_operator.get_operator_data());
-#endif
   }
   else
   {
@@ -261,17 +179,10 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
 
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    // setup solver
-    momentum_linear_solver.reset(
-      new CGSolver<MomentumOperatorMerged<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator_merged, *momentum_preconditioner, solver_data));
-#else
     // setup solver
     momentum_linear_solver.reset(
       new CGSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         momentum_operator, *momentum_preconditioner, solver_data));
-#endif
   }
   else if(this->param.solver_momentum == SolverMomentum::GMRES)
   {
@@ -285,17 +196,10 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
 
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    // setup solver
-    momentum_linear_solver.reset(
-      new GMRESSolver<MomentumOperatorMerged<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator_merged, *momentum_preconditioner, solver_data));
-#else
     // setup solver
     momentum_linear_solver.reset(
       new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         momentum_operator, *momentum_preconditioner, solver_data));
-#endif
   }
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {
@@ -307,15 +211,9 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     if(this->param.preconditioner_momentum != MomentumPreconditioner::None)
       solver_data.use_preconditioner = true;
 
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    momentum_linear_solver.reset(
-      new FGMRESSolver<MomentumOperatorMerged<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        momentum_operator_merged, *momentum_preconditioner, solver_data));
-#else
     momentum_linear_solver.reset(
       new FGMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         momentum_operator, *momentum_preconditioner, solver_data));
-#endif
   }
   else
   {
@@ -329,24 +227,12 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     // initialize temp vector
     this->initialize_vector_velocity(temp_vector);
 
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-    // setup Newton solver
-    momentum_newton_solver.reset(
-      new NewtonSolver<VectorType,
-                       THIS,
-                       MomentumOperatorMerged<dim, Number>,
-                       IterativeSolverBase<VectorType>>(this->param.newton_solver_data_momentum,
-                                                        *this,
-                                                        momentum_operator_merged,
-                                                        *momentum_linear_solver));
-#else
     // setup Newton solver
     momentum_newton_solver.reset(new NewtonSolver<VectorType,
-                                                  THIS,
+                                                  This,
                                                   MomentumOperator<dim, Number>,
                                                   IterativeSolverBase<VectorType>>(
       this->param.newton_solver_data_momentum, *this, momentum_operator, *momentum_linear_solver));
-#endif
   }
 }
 
@@ -371,11 +257,7 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_linear_momentum_equation(
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     linear_iterations)
 {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  momentum_operator_merged.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
-#else
-  momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
-#endif
+  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Note that there is no need to set the evaluation time for the momentum_operator
   // in this because because this function is only called if the convective term is not considered
@@ -399,7 +281,7 @@ DGNavierStokesPressureCorrection<dim, Number>::rhs_add_viscous_term(
   VectorType & dst,
   double const evaluation_time) const
 {
-  PROJECTION_METHODS_BASE::do_rhs_add_viscous_term(dst, evaluation_time);
+  Base::do_rhs_add_viscous_term(dst, evaluation_time);
 }
 
 template<int dim, typename Number>
@@ -424,19 +306,13 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation
   // Set rhs_vector, this variable is used when evaluating the nonlinear residual
   this->rhs_vector = &rhs_vector;
 
-  // Set evaluation_time and mass matrix scaling factor for nonlinear operator (=
-  // DGNavierStokesPressureCorrection)
+  // Set evaluation_time and mass matrix scaling factor for nonlinear operator
   evaluation_time                     = eval_time;
   scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
 
-  // Set evaluation_time and mass matrix scaling factor for linear operator (= MomentumOperator).
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  momentum_operator_merged.set_evaluation_time(eval_time);
-  momentum_operator_merged.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
-#else
+  // Set evaluation_time and mass matrix scaling factor for linear operator
   momentum_operator.set_evaluation_time(eval_time);
-  momentum_operator.set_scaling_factor_time_derivative_term(scaling_factor_mass_matrix_term);
-#endif
+  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
   momentum_newton_solver->solve(dst,
@@ -523,11 +399,7 @@ void
 DGNavierStokesPressureCorrection<dim, Number>::apply_momentum_operator(VectorType &       dst,
                                                                        VectorType const & src)
 {
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  momentum_operator_merged.apply(dst, src);
-#else
-  momentum_operator.vmult(dst, src);
-#endif
+  momentum_operator.apply(dst, src);
 }
 
 
@@ -555,7 +427,7 @@ unsigned int
 DGNavierStokesPressureCorrection<dim, Number>::solve_pressure(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  return PROJECTION_METHODS_BASE::do_solve_pressure(dst, src);
+  return Base::do_solve_pressure(dst, src);
 }
 
 template<int dim, typename Number>
@@ -564,7 +436,7 @@ DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add(
   VectorType &   dst,
   double const & evaluation_time) const
 {
-  PROJECTION_METHODS_BASE::do_rhs_ppe_laplace_add(dst, evaluation_time);
+  Base::do_rhs_ppe_laplace_add(dst, evaluation_time);
 }
 
 template<int dim, typename Number>

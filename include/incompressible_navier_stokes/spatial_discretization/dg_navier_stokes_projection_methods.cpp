@@ -17,7 +17,7 @@ DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
-  : BASE(triangulation, parameters_in, postprocessor_in)
+  : Base(triangulation, parameters_in, postprocessor_in)
 {
   AssertThrow(this->param.get_degree_p() > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "

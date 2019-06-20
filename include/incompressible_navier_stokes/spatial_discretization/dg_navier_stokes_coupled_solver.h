@@ -66,17 +66,14 @@ class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>,
                               public Interface::OperatorCoupled<Number>
 {
 private:
-  typedef DGNavierStokesBase<dim, Number> BASE;
+  typedef DGNavierStokesBase<dim, Number>    Base;
+  typedef DGNavierStokesCoupled<dim, Number> This;
 
-  typedef typename BASE::MultigridNumber MultigridNumber;
-
-  typedef typename BASE::Postprocessor Postprocessor;
-
-  typedef typename BASE::VectorType VectorType;
+  typedef typename Base::MultigridNumber MultigridNumber;
+  typedef typename Base::Postprocessor   Postprocessor;
+  typedef typename Base::VectorType      VectorType;
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
-
-  typedef DGNavierStokesCoupled<dim, Number> THIS;
 
 public:
   /*
@@ -250,7 +247,7 @@ public:
    * Block preconditioner
    */
   void
-  update_block_preconditioner(THIS const * /*operator*/);
+  update_block_preconditioner(This const * /*operator*/);
 
   void
   apply_block_preconditioner(BlockVectorType & dst, BlockVectorType const & src) const;
@@ -310,11 +307,7 @@ private:
    */
 
   // Linear(ized) momentum operator
-#ifdef USE_MERGED_MOMENTUM_OPERATOR
-  MomentumOperatorMerged<dim, Number> momentum_operator_merged;
-#else
   MomentumOperator<dim, Number> momentum_operator;
-#endif
 
   // temporary vector needed to evaluate both the nonlinear residual and the linearized operator
   VectorType mutable temp_vector;
@@ -327,7 +320,7 @@ private:
   std::shared_ptr<IterativeSolverBase<BlockVectorType>> linear_solver;
 
   // Newton solver
-  std::shared_ptr<NewtonSolver<BlockVectorType, THIS, THIS, IterativeSolverBase<BlockVectorType>>>
+  std::shared_ptr<NewtonSolver<BlockVectorType, This, This, IterativeSolverBase<BlockVectorType>>>
     newton_solver;
 
   // time at which the linear/nonlinear operators are to be evaluated
