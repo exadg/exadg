@@ -370,8 +370,12 @@ public:
   // therefore only relevant if linear systems of equations have to be solved involving
   // the convective term. For reasons of computational efficiency, it might be advantageous
   // to use a standard quadrature rule for the linearized problem in order to speed up
-  // the computation (hopefully without sacrificing the convergence rate of the Newton-Krylov
-  // approach).
+  // the computation. However, it was found that choosing a lower order quadrature rule
+  // for the linearized problem only, increases the number of iterations significantly. It
+  // was found that the quadrature rules used for the nonlinear and linear problems should
+  // be the same. Hence, although this parameter speeds up the operator evaluation (i.e.
+  // the wall time per iteration), it is unclear whether a lower order quadrature rule
+  // really allows to achieve a more efficient method overall.
   QuadratureRuleLinearization quad_rule_linearization;
 
   /**************************************************************************************/
@@ -439,12 +443,6 @@ public:
   unsigned int order_extrapolation_pressure_nbc;
 
   // CONVECTIVE STEP
-  NewtonSolverData newton_solver_data_convective;
-
-  // solver data for linearized problem
-  SolverData solver_data_convective;
-
-  // update of preconditioner for this equation is currently not provided
 
   // VISCOUS STEP
 

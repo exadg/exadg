@@ -139,8 +139,6 @@ InputParameters::InputParameters()
     order_extrapolation_pressure_nbc((order_time_integrator <= 2) ? order_time_integrator : 2),
 
     // convective step
-    newton_solver_data_convective(NewtonSolverData(1e2, 1.e-12, 1.e-6)),
-    solver_data_convective(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
     // viscous step
     solver_viscous(SolverViscous::CG),
@@ -338,17 +336,15 @@ InputParameters::check_input_parameters()
     {
       pcout
         << "WARNING:" << std::endl
-        << "Order of extrapolation of viscous and convective terms in pressure Neumann boundary "
-        << "condition is larger than 2 which leads to a conditionally stable scheme." << std::endl;
+        << "Order of extrapolation of viscous and convective terms in pressure Neumann boundary"
+        << std::endl
+        << "condition is larger than 2 which leads to a scheme that is only conditionally stable."
+        << std::endl;
     }
 
-    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-    {
-      pcout << "WARNING:" << std::endl
-            << "An implicit treatment of the convective term in combination with the "
-            << "dual splitting projection scheme is only first order accurate in time."
-            << std::endl;
-    }
+    AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Implicit,
+                ExcMessage("An implicit treatment of the convective term is not possible "
+                           "in combination with the dual splitting scheme."));
   }
 
   // PRESSURE-CORRECTION SCHEME
@@ -772,22 +768,6 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
 
   // formulations
   print_parameter(pcout, "Order of extrapolation pressure NBC", order_extrapolation_pressure_nbc);
-
-  // convective step
-  pcout << "  Convective step:" << std::endl;
-
-  // Newton solver
-  if(equation_type == EquationType::NavierStokes &&
-     treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-  {
-    pcout << "  Newton solver:" << std::endl;
-
-    newton_solver_data_convective.print(pcout);
-
-    pcout << "  Linear solver:" << std::endl;
-
-    solver_data_convective.print(pcout);
-  }
 
   // projection method
   print_parameters_pressure_poisson(pcout);

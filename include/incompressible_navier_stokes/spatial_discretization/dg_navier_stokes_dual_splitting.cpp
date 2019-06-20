@@ -14,10 +14,7 @@ DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters const &              parameters,
   std::shared_ptr<Postprocessor>       postprocessor)
-  : Base(triangulation, parameters, postprocessor),
-    sum_alphai_ui(nullptr),
-    scaling_factor_time_derivative_term(1.0),
-    evaluation_time(0.0)
+  : Base(triangulation, parameters, postprocessor), evaluation_time(0.0)
 {
 }
 
@@ -36,12 +33,6 @@ DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
 
   Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
 
-  // initialize vectors that are needed by the nonlinear solver
-  if(this->param.nonlinear_problem_has_to_be_solved())
-  {
-    setup_convective_solver(velocity);
-  }
-
   Base::setup_pressure_poisson_solver();
 
   Base::setup_projection_solver();
@@ -49,45 +40,6 @@ DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
   setup_helmholtz_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::setup_convective_solver(VectorType const * velocity)
-{
-  this->initialize_vector_velocity(temp);
-
-  AssertThrow(
-    velocity != nullptr,
-    ExcMessage(
-      "To initialize preconditioners, convective kernel needs access to a velocity field."));
-
-  this->set_velocity_ptr(*velocity);
-
-  // preconditioner implicit convective step
-  preconditioner_convective_problem.reset(
-    new InverseMassMatrixPreconditioner<dim, dim, Number>(this->matrix_free,
-                                                          this->param.degree_u,
-                                                          this->get_dof_index_velocity(),
-                                                          this->get_quad_index_velocity_linear()));
-
-  // linear solver (GMRES)
-  GMRESSolverData solver_data;
-  solver_data.max_iter             = this->param.solver_data_convective.max_iter;
-  solver_data.solver_tolerance_abs = this->param.solver_data_convective.abs_tol;
-  solver_data.solver_tolerance_rel = this->param.solver_data_convective.rel_tol;
-  solver_data.max_n_tmp_vectors    = this->param.solver_data_convective.max_krylov_size;
-
-  // always use inverse mass matrix preconditioner
-  solver_data.use_preconditioner = true;
-
-  // setup linear solver
-  linear_solver.reset(new GMRESSolver<This, PreconditionerBase<Number>, VectorType>(
-    *this, *preconditioner_convective_problem, solver_data));
-
-  // setup Newton solver
-  newton_solver.reset(new NewtonSolver<VectorType, This, This, IterativeSolverBase<VectorType>>(
-    this->param.newton_solver_data_convective, *this, *this, *linear_solver));
 }
 
 template<int dim, typename Number>
@@ -224,90 +176,6 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
   {
     AssertThrow(false, ExcMessage("Specified viscous solver is not implemented."));
   }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::initialize_vector_for_newton_solver(
-  VectorType & src) const
-{
-  this->initialize_vector_velocity(src);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::set_solution_linearization(
-  VectorType const & solution_linearization)
-{
-  this->convective_kernel->set_velocity_ptr(solution_linearization);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::solve_nonlinear_convective_problem(
-  VectorType &       dst,
-  VectorType const & sum_alphai_ui,
-  double const &     eval_time,
-  double const &     scaling_factor_mass_matrix_term,
-  unsigned int &     newton_iterations,
-  unsigned int &     linear_iterations)
-{
-  // Set sum_alphai_ui, this variable is used when evaluating the nonlinear residual
-  this->sum_alphai_ui = &sum_alphai_ui;
-
-  // set evaluation time for both the linear and the nonlinear operator
-  // (=DGNavierStokesDualSplitting)
-  evaluation_time = eval_time;
-
-  // set scaling_factor_time_derivative term for both the linear and the nonlinear operator
-  // (=DGNavierStokesDualSplitting)
-  scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
-
-  // solve nonlinear problem
-  newton_solver->solve(
-    dst, newton_iterations, linear_iterations, /* update_preconditioner = */ false, 1);
-
-  // Reset sum_alphai_ui
-  this->sum_alphai_ui = nullptr;
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::evaluate_nonlinear_residual(VectorType &       dst,
-                                                                      VectorType const & src)
-{
-  if(this->param.right_hand_side == true)
-  {
-    this->rhs_operator.evaluate(dst, evaluation_time);
-    // shift body force term to the left-hand side of the equation
-    dst *= -1.0;
-  }
-  else // right_hand_side == false
-  {
-    // set dst to zero. This is necessary since the subsequent operators
-    // call functions of type ..._add
-    dst = 0.0;
-  }
-
-  // temp, src, sum_alphai_ui have the same number of blocks
-  temp.equ(scaling_factor_time_derivative_term, src);
-  temp.add(-1.0, *sum_alphai_ui);
-
-  this->mass_matrix_operator.apply_add(dst, temp);
-
-  this->convective_operator.evaluate_nonlinear_operator_add(dst, src, evaluation_time);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
-{
-  this->mass_matrix_operator.apply(dst, src);
-
-  dst *= scaling_factor_time_derivative_term;
-
-  this->convective_operator.set_evaluation_time(evaluation_time);
-  this->convective_operator.apply_add(dst, src);
 }
 
 template<int dim, typename Number>

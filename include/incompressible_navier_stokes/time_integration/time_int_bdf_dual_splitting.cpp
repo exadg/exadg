@@ -344,47 +344,12 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   velocity_np.add(1.0, this->sum_alphai_ui);
   velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
-  if(this->param.linear_problem_has_to_be_solved())
+  if(this->print_solver_info())
   {
-    // write output explicit case
-    if(this->print_solver_info())
-    {
-      this->pcout << std::endl
-                  << "Solve convective step explicitly:" << std::endl
-                  << "  Iterations:        " << std::setw(6) << std::right << "-"
-                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
-    }
-  }
-  else // nonlinear problem
-  {
-    // calculate Sum_i (alpha_i/dt * u_i)
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
-    for(unsigned int i = 1; i < velocity.size(); ++i)
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
-
-    unsigned int newton_iterations;
-    unsigned int linear_iterations;
-    pde_operator->solve_nonlinear_convective_problem(
-      velocity_np,
-      this->sum_alphai_ui,
-      this->get_next_time(),
-      this->get_scaling_factor_time_derivative_term(),
-      newton_iterations,
-      linear_iterations);
-
-    // write output implicit case
-    if(this->print_solver_info())
-    {
-      this->pcout << std::endl
-                  << "Solve nonlinear convective step for intermediate velocity:" << std::endl
-                  << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
-                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed
-                  << std::setprecision(2) << (double)linear_iterations / (double)newton_iterations
-                  << " (avg)" << std::endl
-                  << "  Linear iterations: " << std::setw(6) << std::right << std::fixed
-                  << std::setprecision(2) << linear_iterations << " (tot)" << std::endl;
-    }
+    this->pcout << std::endl
+                << "Solve convective step explicitly:" << std::endl
+                << "  Iterations:        " << std::setw(6) << std::right << "-"
+                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
   computing_times[0] += timer.wall_time();
