@@ -16,7 +16,8 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
-  : param(parameters_in),
+  : dealii::Subscriptor(),
+    param(parameters_in),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
     fe_p(param.get_degree_p()),
     fe_u_scalar(param.degree_u),
@@ -266,7 +267,6 @@ void
 DGNavierStokesBase<dim, Number>::initialize_operators()
 {
   // operator kernels
-  Operators::ConvectiveKernelData convective_kernel_data;
   convective_kernel_data.formulation           = param.formulation_convective_term;
   convective_kernel_data.upwind_factor         = param.upwind_factor;
   convective_kernel_data.use_outflow_bc        = param.use_outflow_bc_convective_term;
@@ -276,7 +276,6 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
   convective_kernel->reinit(matrix_free, convective_kernel_data, false /* is_mg */);
 
-  Operators::ViscousKernelData viscous_kernel_data;
   viscous_kernel_data.degree                       = param.degree_u;
   viscous_kernel_data.degree_mapping               = mapping_degree;
   viscous_kernel_data.dof_index                    = dof_index_u;
@@ -355,13 +354,19 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_operator_data.quad_index           = quad_index_u;
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
+}
 
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const & velocity)
+{
   // Momentum operator
   MomentumOperatorData<dim> data;
 
-  data.unsteady_problem = unsteady_problem_has_to_be_solved();
-  // scaling factor mass matrix not known at this point
-  data.scaling_factor_mass_matrix = 1.0;
+  data.unsteady_problem           = unsteady_problem_has_to_be_solved();
+  data.scaling_factor_mass_matrix = scaling_factor_time_derivative_term;
 
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     data.convective_problem = false;
@@ -395,17 +400,13 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   data.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
   data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
 
-  momentum_operator.reinit(matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
-}
+  AffineConstraints<double> constraint_dummy;
+  constraint_dummy.close();
 
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const & velocity)
-{
-  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
-  set_velocity_ptr(velocity);
+  momentum_operator.reinit(matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
+
+  if(data.convective_problem)
+    set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>
