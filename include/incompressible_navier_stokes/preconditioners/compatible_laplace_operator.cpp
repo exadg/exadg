@@ -4,7 +4,8 @@ namespace IncNS
 {
 template<int dim, typename Number>
 CompatibleLaplaceOperator<dim, Number>::CompatibleLaplaceOperator()
-  : matrix_free(nullptr),
+  : dealii::Subscriptor(),
+    matrix_free(nullptr),
     gradient_operator(nullptr),
     divergence_operator(nullptr),
     inv_mass_matrix_operator(nullptr)

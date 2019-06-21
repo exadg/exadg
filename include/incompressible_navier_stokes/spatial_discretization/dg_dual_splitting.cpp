@@ -79,11 +79,8 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
 
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
-    mg_preconditioner->initialize(this->param.multigrid_data_viscous,
-                                  tria,
-                                  fe,
-                                  this->get_mapping(),
-                                  this->momentum_operator.get_data());
+    mg_preconditioner->initialize(
+      this->param.multigrid_data_viscous, tria, fe, this->get_mapping(), this->momentum_operator);
   }
   else
   {

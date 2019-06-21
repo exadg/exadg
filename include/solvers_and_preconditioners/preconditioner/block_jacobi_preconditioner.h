@@ -8,11 +8,7 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCKJACOBIPRECONDITIONER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_BLOCKJACOBIPRECONDITIONER_H_
 
-#include <deal.II/lac/la_parallel_vector.h>
-
 #include "./preconditioner_base.h"
-
-#include "../../operators/linear_operator_base.h"
 
 template<typename Operator>
 class BlockJacobiPreconditioner : public PreconditionerBase<typename Operator::value_type>
@@ -33,7 +29,7 @@ public:
    *  when calling this function.
    */
   void
-  update(LinearOperatorBase const * /*linear_operator*/)
+  update()
   {
     underlying_operator.update_block_diagonal_preconditioner();
   }

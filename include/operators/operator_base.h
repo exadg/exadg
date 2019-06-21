@@ -1,6 +1,7 @@
 #ifndef OPERATION_BASE_H
 #define OPERATION_BASE_H
 
+#include <deal.II/base/subscriptor.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/la_parallel_vector.h>
@@ -18,7 +19,6 @@
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
 #include "integrator_flags.h"
-#include "linear_operator_base.h"
 #include "mapping_flags.h"
 
 #include "../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
@@ -61,7 +61,7 @@ struct OperatorBaseData
 };
 
 template<int dim, typename Number, typename AdditionalData, int n_components = 1>
-class OperatorBase : public LinearOperatorBase
+class OperatorBase : public dealii::Subscriptor
 {
 public:
   typedef OperatorBase<dim, Number, AdditionalData, n_components> This;

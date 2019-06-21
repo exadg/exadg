@@ -85,7 +85,7 @@ private:
 };
 
 template<int dim, typename Number>
-class LinearOperatorCoupled : public LinearOperatorBase
+class LinearOperatorCoupled : public dealii::Subscriptor
 {
 private:
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
@@ -93,7 +93,8 @@ private:
   typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
 
 public:
-  LinearOperatorCoupled() : pde_operator(nullptr)
+  LinearOperatorCoupled()
+    : dealii::Subscriptor(), pde_operator(nullptr), time(0.0), scaling_factor_mass_matrix(1.0)
   {
   }
 
@@ -157,7 +158,7 @@ public:
   }
 
   void
-  update(LinearOperatorBase const * /* linear_operator */)
+  update()
   {
     pde_operator->update_block_preconditioner();
   }

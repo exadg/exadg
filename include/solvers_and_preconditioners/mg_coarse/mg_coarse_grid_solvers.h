@@ -110,7 +110,7 @@ public:
   }
 
   void
-  update(const Operator & underlying_operator)
+  update()
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::None)
     {
@@ -119,11 +119,11 @@ public:
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi ||
             additional_data.preconditioner == MultigridCoarseGridPreconditioner::BlockJacobi)
     {
-      preconditioner->update(&underlying_operator);
+      preconditioner->update();
     }
     else if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::AMG)
     {
-      preconditioner_trilinos->update(&underlying_operator);
+      preconditioner_trilinos->update();
     }
     else
     {
@@ -301,9 +301,9 @@ public:
   }
 
   void
-  update(LinearOperatorBase const * linear_operator)
+  update()
   {
-    amg_preconditioner->update(linear_operator);
+    amg_preconditioner->update();
   }
 
   void

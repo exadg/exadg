@@ -9,7 +9,6 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 
 #include "../../functionalities/set_zero_mean_value.h"
-#include "../../operators/linear_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 
@@ -42,7 +41,7 @@ struct CompatibleLaplaceOperatorData
 };
 
 template<int dim, typename Number = double>
-class CompatibleLaplaceOperator : public LinearOperatorBase
+class CompatibleLaplaceOperator : public dealii::Subscriptor
 {
 public:
   typedef Number value_type;

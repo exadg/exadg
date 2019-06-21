@@ -42,11 +42,12 @@ public:
              parallel::Triangulation<dim> const * tria,
              FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             OperatorData<dim> const &            data_in,
+             PDEOperatorNumber const &            pde_operator_in,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    data            = data_in;
+    pde_operator    = &pde_operator_in;
+    data            = pde_operator->get_data();
     data.dof_index  = 0;
     data.quad_index = 0;
 
@@ -216,16 +217,8 @@ public:
    *  This function updates the multigrid preconditioner.
    */
   virtual void
-  update(LinearOperatorBase const * pde_operator_in)
+  update()
   {
-    PDEOperatorNumber const * pde_operator =
-      dynamic_cast<PDEOperatorNumber const *>(pde_operator_in);
-
-    AssertThrow(
-      pde_operator != nullptr,
-      ExcMessage(
-        "Operator used to update multigrid preconditioner does not match actual PDE operator!"));
-
     MultigridOperatorType mg_operator_type = pde_operator->get_data().mg_operator_type;
     TypeVelocityField     type_velocity_field =
       pde_operator->get_data().convective_kernel_data.type_velocity_field;
@@ -358,6 +351,8 @@ private:
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
 
   OperatorData<dim> data;
+
+  PDEOperatorNumber const * pde_operator;
 };
 
 } // namespace ConvDiff

@@ -13,7 +13,8 @@
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 OperatorBase<dim, Number, AdditionalData, n_components>::OperatorBase()
-  : data(AdditionalData()),
+  : dealii::Subscriptor(),
+    data(AdditionalData()),
     matrix_free(),
     time(0.0),
     is_mg(false),

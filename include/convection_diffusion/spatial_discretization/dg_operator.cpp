@@ -387,8 +387,13 @@ DGOperator<dim, Number>::initialize_preconditioner()
 
     OperatorData<dim> const & data = combined_operator.get_data();
 
-    mg_preconditioner->initialize(
-      mg_data, tria, fe, *mapping, data, &data.bc->dirichlet_bc, &this->periodic_face_pairs);
+    mg_preconditioner->initialize(mg_data,
+                                  tria,
+                                  fe,
+                                  *mapping,
+                                  combined_operator,
+                                  &data.bc->dirichlet_bc,
+                                  &this->periodic_face_pairs);
   }
   else
   {

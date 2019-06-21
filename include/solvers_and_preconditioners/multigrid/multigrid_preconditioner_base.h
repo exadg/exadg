@@ -86,7 +86,7 @@ public:
    * with time-dependent coefficients).
    */
   virtual void
-  update(LinearOperatorBase const * /*linear_operator*/);
+  update();
 
 protected:
   /*

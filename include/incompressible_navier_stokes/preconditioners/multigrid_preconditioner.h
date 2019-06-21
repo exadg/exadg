@@ -42,11 +42,13 @@ public:
              parallel::Triangulation<dim> const * tria,
              FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             MomentumOperatorData<dim> const &    data_in,
+             PDEOperatorNumber const &            pde_operator_in,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    data            = data_in;
+    pde_operator = &pde_operator_in;
+
+    data            = pde_operator->get_data();
     data.dof_index  = 0;
     data.quad_index = 0;
 
@@ -149,16 +151,8 @@ public:
    * This function updates the multigrid preconditioner.
    */
   virtual void
-  update(LinearOperatorBase const * pde_operator_in)
+  update()
   {
-    PDEOperatorNumber const * pde_operator =
-      dynamic_cast<PDEOperatorNumber const *>(pde_operator_in);
-
-    AssertThrow(
-      pde_operator != nullptr,
-      ExcMessage(
-        "Operator used to update multigrid preconditioner does not match actual PDE operator!"));
-
     update_operators(pde_operator);
 
     update_smoothers();
@@ -276,6 +270,8 @@ private:
   }
 
   MomentumOperatorData<dim> data;
+
+  PDEOperatorNumber const * pde_operator;
 };
 
 } // namespace IncNS

@@ -518,7 +518,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
                                 tria,
                                 fe,
                                 this->get_mapping(),
-                                this->momentum_operator.get_data());
+                                this->momentum_operator);
 }
 
 template<int dim, typename Number>
@@ -990,7 +990,7 @@ void
 DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
 {
   // momentum block
-  preconditioner_momentum->update(&this->momentum_operator);
+  preconditioner_momentum->update();
 
   // pressure block
 }

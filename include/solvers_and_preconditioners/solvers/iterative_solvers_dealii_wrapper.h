@@ -102,7 +102,7 @@ public:
     {
       if(update_preconditioner == true)
       {
-        preconditioner.update(&underlying_operator);
+        preconditioner.update();
       }
 
       solver.solve(underlying_operator, dst, rhs, preconditioner);
@@ -212,7 +212,7 @@ public:
     {
       if(update_preconditioner == true)
       {
-        preconditioner.update(&this->underlying_operator);
+        preconditioner.update();
       }
 
       solver.solve(this->underlying_operator, dst, rhs, this->preconditioner);
@@ -291,7 +291,7 @@ public:
     {
       if(update_preconditioner == true)
       {
-        preconditioner.update(&underlying_operator);
+        preconditioner.update();
       }
 
       solver.solve(underlying_operator, dst, rhs, preconditioner);
