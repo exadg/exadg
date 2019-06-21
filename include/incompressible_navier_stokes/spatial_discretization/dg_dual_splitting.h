@@ -1,21 +1,20 @@
 /*
- * dg_navier_stokes_dual_splitting.h
+ * dg_dual_splitting.h
  *
  *  Created on: Jun 27, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
 
 // base class
-#include "dg_navier_stokes_projection_methods.h"
-
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "interface.h"
 
 #include "curl_compute.h"
+#include "dg_projection_methods.h"
 
 namespace IncNS
 {
@@ -233,5 +232,5 @@ private:
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_ \
         */

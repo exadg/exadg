@@ -5,6 +5,8 @@
 
 #include "linear_operator_base.h"
 
+using namespace dealii;
+
 template<int dim, typename Number>
 class MultigridOperatorBase : public LinearOperatorBase
 {

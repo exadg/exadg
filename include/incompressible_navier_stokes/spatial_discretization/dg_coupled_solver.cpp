@@ -1,11 +1,11 @@
 /*
- * dg_navier_stokes_coupled_solver.cpp
+ * dg_coupled_solver.cpp
  *
  *  Created on: Dec 6, 2018
  *      Author: fehn
  */
 
-#include "dg_navier_stokes_coupled_solver.h"
+#include "dg_coupled_solver.h"
 
 namespace IncNS
 {
@@ -14,7 +14,7 @@ DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::Triangulation<dim> const & triangulation,
   InputParameters const &              parameters,
   std::shared_ptr<Postprocessor>       postprocessor)
-  : Base(triangulation, parameters_in, postprocessor), scaling_factor_continuity(1.0)
+  : Base(triangulation, parameters, postprocessor), scaling_factor_continuity(1.0)
 {
 }
 

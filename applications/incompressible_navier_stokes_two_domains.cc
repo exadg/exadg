@@ -14,10 +14,10 @@
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
 
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"

@@ -1,14 +1,13 @@
 /*
- * dg_navier_stokes_projection_methods.cpp
+ * dg_projection_methods.cpp
  *
  *  Created on: Dec 6, 2018
  *      Author: fehn
  */
 
-#include "dg_navier_stokes_projection_methods.h"
-
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
+#include "dg_projection_methods.h"
 
 namespace IncNS
 {

@@ -20,10 +20,10 @@
 // postprocessor
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
-// Navier-Stokes operator
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
+// spatial discretization
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
 
 // Parameters, BCs, etc.
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"

@@ -1,11 +1,11 @@
 /*
- * dg_navier_stokes_pressure_correction.cpp
+ * dg_pressure_correction.cpp
  *
  *  Created on: Dec 6, 2018
  *      Author: fehn
  */
 
-#include "dg_navier_stokes_pressure_correction.h"
+#include "dg_pressure_correction.h"
 
 namespace IncNS
 {

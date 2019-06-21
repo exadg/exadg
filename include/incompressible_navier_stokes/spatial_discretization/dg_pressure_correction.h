@@ -1,14 +1,12 @@
 /*
- * dg_navier_stokes_pressure_correction.h
+ * dg_pressure_correction.h
  *
  *  Created on: Oct 26, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_
-
-#include "dg_navier_stokes_projection_methods.h"
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_
 
 #include "interface.h"
 #include "momentum_operator.h"
@@ -17,6 +15,7 @@
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner.h"
+#include "dg_projection_methods.h"
 
 namespace IncNS
 {
@@ -248,5 +247,5 @@ private:
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PRESSURE_CORRECTION_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_ \
         */
