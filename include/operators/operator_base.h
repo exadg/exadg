@@ -101,13 +101,13 @@ public:
    *  Getters and setters.
    */
   AdditionalData const &
-  get_operator_data() const;
+  get_data() const;
 
   void
-  set_evaluation_time(double const time) const;
+  set_time(double const time) const;
 
   double
-  get_evaluation_time() const;
+  get_time() const;
 
   unsigned int
   get_level() const;
@@ -169,20 +169,17 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
-  // TODO check virtual
-  virtual void
+  void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
   /*
    * Algebraic multigrid (AMG): sparse matrix (Trilinos) methods
    */
 #ifdef DEAL_II_WITH_TRILINOS
-  // TODO check virtual
-  virtual void
+  void
   init_system_matrix(SparseMatrix & system_matrix) const;
 
-  // TODO check virtual
-  virtual void
+  void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
@@ -192,18 +189,19 @@ public:
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
    * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
-  // TODO check virtual
-  virtual void
+  void
   apply(VectorType & dst, VectorType const & src) const;
 
-  // TODO check virtual
-  virtual void
+  void
   apply_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
    * Operations of this type are called rhs_...() since these functions are called to calculate the
-   * vector forming the right-hand side vector of linear systems of equations.
+   * vector forming the right-hand side vector of linear systems of equations. Functions of type
+   * rhs only make sense for linear operators (but they have e.g. no meaning for linearized
+   * operators of nonlinear problems). For this reason, these functions are currently defined
+   * 'virtual' to provide the opportunity to override and assert these functions in derived classes.
    */
   virtual void
   rhs(VectorType & dst) const;
@@ -213,8 +211,11 @@ public:
 
   /*
    * Evaluate the operator including homogeneous and inhomogeneous contributions. The typical use
-   * case would be explicit time integration where a  splitting into homogeneous and inhomogeneous
-   * contributions is not required.
+   * case would be explicit time integration where a splitting into homogeneous and inhomogeneous
+   * contributions is not required. Functions of type evaluate only make sense for linear operators
+   * (but they have e.g. no meaning for linearized operators of nonlinear problems). For this
+   * reason, these functions are currently defined 'virtual' to provide the opportunity to override
+   * and assert these functions in derived classes.
    */
   virtual void
   evaluate(VectorType & dst, VectorType const & src) const;
@@ -225,12 +226,10 @@ public:
   /*
    * point Jacobi preconditioner (diagonal)
    */
-  // TODO check virtual
-  virtual void
+  void
   calculate_diagonal(VectorType & diagonal) const;
 
-  // TODO check virtual
-  virtual void
+  void
   add_diagonal(VectorType & diagonal) const;
 
   /*
@@ -241,8 +240,7 @@ public:
   void
   calculate_block_diagonal_matrices() const;
 
-  // TODO check virtual
-  virtual void
+  void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
 
   void
@@ -256,8 +254,7 @@ public:
   // This function has to initialize everything related to the block diagonal preconditioner when
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
-  // TODO check virtual
-  virtual void
+  void
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
   void
@@ -321,7 +318,7 @@ protected:
   /*
    * Data structure containing all operator-specific data.
    */
-  mutable AdditionalData operator_data;
+  mutable AdditionalData data;
 
   /*
    * Matrix-free object.
@@ -329,9 +326,9 @@ protected:
   mutable lazy_ptr<MatrixFree<dim, Number>> matrix_free;
 
   /*
-   * Evaluation time (required for time-dependent problems).
+   * Physical time (required for time-dependent problems).
    */
-  mutable double eval_time;
+  mutable double time;
 
   /*
    * Constraint matrix.

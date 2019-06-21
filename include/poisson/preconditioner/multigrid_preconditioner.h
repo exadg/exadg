@@ -36,21 +36,16 @@ public:
              const parallel::Triangulation<dim> * tria,
              const FiniteElement<dim> &           fe,
              Mapping<dim> const &                 mapping,
-             LaplaceOperatorData<dim> const &     operator_data_in,
+             LaplaceOperatorData<dim> const &     data_in,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    operator_data            = operator_data_in;
-    operator_data.dof_index  = 0;
-    operator_data.quad_index = 0;
+    data            = data_in;
+    data.dof_index  = 0;
+    data.quad_index = 0;
 
-    BASE::initialize(mg_data,
-                     tria,
-                     fe,
-                     mapping,
-                     operator_data.operator_is_singular,
-                     dirichlet_bc,
-                     periodic_face_pairs);
+    BASE::initialize(
+      mg_data, tria, fe, mapping, data.operator_is_singular, dirichlet_bc, periodic_face_pairs);
   }
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
@@ -74,7 +69,7 @@ public:
       additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
     }
 
-    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg())
+    if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
@@ -95,9 +90,7 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<Laplace> pde_operator(new Laplace());
-    pde_operator->reinit(*this->matrix_free_objects[level],
-                         *this->constraints[level],
-                         operator_data);
+    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
@@ -105,7 +98,7 @@ public:
     return mg_operator;
   }
 
-  LaplaceOperatorData<dim> operator_data;
+  LaplaceOperatorData<dim> data;
 };
 
 } // namespace Poisson

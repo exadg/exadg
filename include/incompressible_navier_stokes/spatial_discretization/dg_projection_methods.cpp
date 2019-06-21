@@ -5,9 +5,9 @@
  *      Author: fehn
  */
 
+#include "dg_projection_methods.h"
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
-#include "dg_projection_methods.h"
 
 namespace IncNS
 {
@@ -134,8 +134,8 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
                                   tria,
                                   fe,
                                   *this->mapping,
-                                  laplace_operator.get_operator_data(),
-                                  &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                  laplace_operator.get_data(),
+                                  &laplace_operator.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
   else
@@ -200,7 +200,7 @@ void
 DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType & dst,
                                                                       double const time) const
 {
-  this->viscous_operator.set_evaluation_time(time);
+  this->viscous_operator.set_time(time);
   this->viscous_operator.rhs_add(dst);
 }
 
@@ -209,7 +209,7 @@ void
 DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType &   dst,
                                                                      double const & time) const
 {
-  this->laplace_operator.set_evaluation_time(time);
+  this->laplace_operator.set_time(time);
   this->laplace_operator.rhs_add(dst);
 }
 

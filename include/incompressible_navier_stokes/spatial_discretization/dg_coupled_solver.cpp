@@ -181,7 +181,7 @@ DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
   this->gradient_operator.rhs(dst.block(0), time);
   dst.block(0) *= scaling_factor_continuity;
 
-  this->viscous_operator.set_evaluation_time(time);
+  this->viscous_operator.set_time(time);
   this->viscous_operator.rhs_add(dst.block(0));
 
   if(this->param.right_hand_side == true)
@@ -206,7 +206,7 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
   double const &          scaling_factor_mass_matrix) const
 {
   // (1,1) block of saddle point matrix
-  this->momentum_operator.set_evaluation_time(time);
+  this->momentum_operator.set_time(time);
   this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix);
   this->momentum_operator.vmult(dst.block(0), src.block(0));
 
@@ -302,7 +302,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
 
   if(this->param.viscous_problem())
   {
-    this->viscous_operator.set_evaluation_time(time);
+    this->viscous_operator.set_time(time);
     this->viscous_operator.evaluate_add(dst.block(0), src.block(0));
   }
 
@@ -359,7 +359,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVect
 
   if(this->param.viscous_problem())
   {
-    this->viscous_operator.set_evaluation_time(time);
+    this->viscous_operator.set_time(time);
     this->viscous_operator.evaluate_add(dst.block(0), src.block(0));
   }
 
@@ -518,7 +518,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
                                 tria,
                                 fe,
                                 this->get_mapping(),
-                                this->momentum_operator.get_operator_data());
+                                this->momentum_operator.get_data());
 }
 
 template<int dim, typename Number>

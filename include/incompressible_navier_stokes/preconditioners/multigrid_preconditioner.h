@@ -38,24 +38,24 @@ public:
   virtual ~MultigridPreconditioner(){};
 
   void
-  initialize(MultigridData const &                data,
+  initialize(MultigridData const &                mg_data,
              parallel::Triangulation<dim> const * tria,
              FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             MomentumOperatorData<dim> const &    operator_data_in,
+             MomentumOperatorData<dim> const &    data_in,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    operator_data            = operator_data_in;
-    operator_data.dof_index  = 0;
-    operator_data.quad_index = 0;
+    data            = data_in;
+    data.dof_index  = 0;
+    data.quad_index = 0;
 
     // do not forget to update viscous_kernel_data!
-    operator_data.viscous_kernel_data.dof_index = operator_data.dof_index;
+    data.viscous_kernel_data.dof_index = data.dof_index;
 
     // do not forget to update convective_kernel_data!
-    operator_data.convective_kernel_data.dof_index             = operator_data.dof_index;
-    operator_data.convective_kernel_data.quad_index_linearized = operator_data.quad_index;
+    data.convective_kernel_data.dof_index             = data.dof_index;
+    data.convective_kernel_data.quad_index_linearized = data.quad_index;
 
     // When solving the reaction-convection-diffusion problem, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -63,25 +63,30 @@ public:
     // reaction-convection-diffusion operator. Accordingly, we have to reset which
     // operators should be "active" for the multigrid preconditioner, independently of
     // the actual equation type that is solved.
-    AssertThrow(operator_data.mg_operator_type != MultigridOperatorType::Undefined,
+    AssertThrow(data.mg_operator_type != MultigridOperatorType::Undefined,
                 ExcMessage("Invalid parameter mg_operator_type."));
 
-    if(operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    if(data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
       // deactivate convective term for multigrid preconditioner
-      operator_data.convective_problem = false;
+      data.convective_problem = false;
     }
-    else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      AssertThrow(operator_data.convective_problem == true, ExcMessage("Invalid parameter."));
+      AssertThrow(data.convective_problem == true, ExcMessage("Invalid parameter."));
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    Base::initialize(
-      data, tria, fe, mapping, false /*operator_is_singular*/, dirichlet_bc, periodic_face_pairs);
+    Base::initialize(mg_data,
+                     tria,
+                     fe,
+                     mapping,
+                     false /*operator_is_singular*/,
+                     dirichlet_bc,
+                     periodic_face_pairs);
   }
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
@@ -97,11 +102,11 @@ public:
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;
-    if(operator_data.unsteady_problem)
+    if(data.unsteady_problem)
       flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
-    if(operator_data.convective_problem)
+    if(data.convective_problem)
       flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
-    if(operator_data.viscous_problem)
+    if(data.viscous_problem)
       flags = flags || Operators::ViscousKernel<dim, Number>::get_mapping_flags();
 
     additional_data.mapping_update_flags = flags.cells;
@@ -111,7 +116,7 @@ public:
       additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
     }
 
-    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg())
+    if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
@@ -132,9 +137,7 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit(*this->matrix_free_objects[level],
-                         *this->constraints[level],
-                         operator_data);
+    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
@@ -171,13 +174,13 @@ private:
   void
   update_operators(PDEOperatorNumber const * pde_operator)
   {
-    if(operator_data.unsteady_problem)
+    if(data.unsteady_problem)
     {
-      set_evaluation_time(pde_operator->get_evaluation_time());
+      set_time(pde_operator->get_time());
       set_scaling_factor_time_derivative_term(pde_operator->get_scaling_factor_mass_matrix());
     }
 
-    MultigridOperatorType mg_operator_type = pde_operator->get_operator_data().mg_operator_type;
+    MultigridOperatorType mg_operator_type = pde_operator->get_data().mg_operator_type;
 
     if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
@@ -227,11 +230,11 @@ private:
    * depends on the current time.)
    */
   void
-  set_evaluation_time(double const & evaluation_time)
+  set_time(double const & time)
   {
     for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
     {
-      get_operator(level)->set_evaluation_time(evaluation_time);
+      get_operator(level)->set_time(time);
     }
   }
 
@@ -272,7 +275,7 @@ private:
     return mg_operator->get_pde_operator();
   }
 
-  MomentumOperatorData<dim> operator_data;
+  MomentumOperatorData<dim> data;
 };
 
 } // namespace IncNS

@@ -385,15 +385,10 @@ DGOperator<dim, Number>::initialize_preconditioner()
 
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
-    OperatorData<dim> const & operator_data = combined_operator.get_operator_data();
+    OperatorData<dim> const & data = combined_operator.get_data();
 
-    mg_preconditioner->initialize(mg_data,
-                                  tria,
-                                  fe,
-                                  *mapping,
-                                  operator_data,
-                                  &operator_data.bc->dirichlet_bc,
-                                  &this->periodic_face_pairs);
+    mg_preconditioner->initialize(
+      mg_data, tria, fe, *mapping, data, &data.bc->dirichlet_bc, &this->periodic_face_pairs);
   }
   else
   {
@@ -483,10 +478,9 @@ DGOperator<dim, Number>::initialize_dof_vector_velocity(VectorType & velocity) c
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src,
-                                                      double const evaluation_time) const
+DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
-  field_functions->initial_solution->set_time(evaluation_time);
+  field_functions->initial_solution->set_time(time);
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -503,7 +497,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
                                                     VectorType const & src,
-                                                    double const       evaluation_time,
+                                                    double const       time,
                                                     VectorType const * velocity) const
 {
   // evaluate each operator separately
@@ -516,7 +510,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     if(param.equation_type == EquationType::Diffusion ||
        param.equation_type == EquationType::ConvectionDiffusion)
     {
-      diffusive_operator.set_evaluation_time(evaluation_time);
+      diffusive_operator.set_time(time);
       diffusive_operator.evaluate_add(dst, src);
     }
 
@@ -531,7 +525,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
         convective_operator.set_velocity_ptr(*velocity);
       }
 
-      convective_operator.set_evaluation_time(evaluation_time);
+      convective_operator.set_time(time);
       convective_operator.evaluate_add(dst, src);
     }
 
@@ -540,7 +534,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
 
     if(param.right_hand_side == true)
     {
-      rhs_operator.evaluate_add(dst, evaluation_time);
+      rhs_operator.evaluate_add(dst, time);
     }
   }
   else // param.use_combined_operator == true
@@ -559,7 +553,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
       }
     }
 
-    combined_operator.set_evaluation_time(evaluation_time);
+    combined_operator.set_time(time);
     combined_operator.evaluate(dst, src);
 
     // shift diffusive and convective term to the rhs of the equation
@@ -567,7 +561,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
 
     if(param.right_hand_side == true)
     {
-      rhs_operator.evaluate_add(dst, evaluation_time);
+      rhs_operator.evaluate_add(dst, time);
     }
   }
 
@@ -579,7 +573,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
                                                   VectorType const & src,
-                                                  double const       evaluation_time,
+                                                  double const       time,
                                                   VectorType const * velocity) const
 {
   if(param.type_velocity_field == TypeVelocityField::Numerical)
@@ -589,7 +583,7 @@ DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
     convective_operator.set_velocity_ptr(*velocity);
   }
 
-  convective_operator.set_evaluation_time(evaluation_time);
+  convective_operator.set_time(time);
   convective_operator.evaluate(dst, src);
 }
 
@@ -597,7 +591,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
                                       VectorType const & src,
-                                      double const       evaluation_time,
+                                      double const       time,
                                       VectorType const * velocity) const
 {
   if(param.type_velocity_field == TypeVelocityField::Numerical)
@@ -607,7 +601,7 @@ DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
     convective_operator.set_velocity_ptr(*velocity);
   }
 
-  convective_operator.set_evaluation_time(evaluation_time);
+  convective_operator.set_time(time);
   convective_operator.evaluate(dst, src);
 
   // shift convective term to the rhs of the equation
@@ -618,9 +612,7 @@ DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::rhs(VectorType &       dst,
-                             double const       evaluation_time,
-                             VectorType const * velocity) const
+DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const * velocity) const
 {
   // evaluate each operator separately
   if(param.use_combined_operator == false)
@@ -632,7 +624,7 @@ DGOperator<dim, Number>::rhs(VectorType &       dst,
     if(param.equation_type == EquationType::Diffusion ||
        param.equation_type == EquationType::ConvectionDiffusion)
     {
-      diffusive_operator.set_evaluation_time(evaluation_time);
+      diffusive_operator.set_time(time);
       diffusive_operator.rhs_add(dst);
     }
 
@@ -651,7 +643,7 @@ DGOperator<dim, Number>::rhs(VectorType &       dst,
           convective_operator.set_velocity_ptr(*velocity);
         }
 
-        convective_operator.set_evaluation_time(evaluation_time);
+        convective_operator.set_time(time);
         convective_operator.rhs_add(dst);
       }
     }
@@ -677,14 +669,14 @@ DGOperator<dim, Number>::rhs(VectorType &       dst,
       }
     }
 
-    combined_operator.set_evaluation_time(evaluation_time);
+    combined_operator.set_time(time);
     combined_operator.rhs(dst);
   }
 
   // rhs operator f(t)
   if(param.right_hand_side == true)
   {
-    rhs_operator.evaluate_add(dst, evaluation_time);
+    rhs_operator.evaluate_add(dst, time);
   }
 }
 
@@ -711,7 +703,7 @@ DGOperator<dim, Number>::apply_convective_term(VectorType & dst, VectorType cons
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::update_convective_term(double const       evaluation_time,
+DGOperator<dim, Number>::update_convective_term(double const       time,
                                                 VectorType const * velocity) const
 {
   if(param.type_velocity_field == TypeVelocityField::Numerical)
@@ -721,7 +713,7 @@ DGOperator<dim, Number>::update_convective_term(double const       evaluation_ti
     convective_operator.set_velocity_ptr(*velocity);
   }
 
-  convective_operator.set_evaluation_time(evaluation_time);
+  convective_operator.set_time(time);
 }
 
 template<int dim, typename Number>
@@ -740,12 +732,12 @@ DGOperator<dim, Number>::apply_conv_diff_operator(VectorType & dst, VectorType c
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::update_conv_diff_operator(double const       evaluation_time,
+DGOperator<dim, Number>::update_conv_diff_operator(double const       time,
                                                    double const       scaling_factor,
                                                    VectorType const * velocity) const
 {
   combined_operator.set_scaling_factor_mass_matrix(scaling_factor);
-  combined_operator.set_evaluation_time(evaluation_time);
+  combined_operator.set_time(time);
 
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
@@ -775,7 +767,7 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
                                VectorType const * velocity)
 {
   combined_operator.set_scaling_factor_mass_matrix(scaling_factor);
-  combined_operator.set_evaluation_time(time);
+  combined_operator.set_time(time);
 
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)

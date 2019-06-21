@@ -6,9 +6,9 @@ template<int dim, typename Number>
 void
 MassMatrixOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                         AffineConstraints<double> const & constraint_matrix,
-                                        MassMatrixOperatorData const &    operator_data) const
+                                        MassMatrixOperatorData const &    data) const
 {
-  Base::reinit(matrix_free, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, data);
 
   this->integrator_flags = kernel.get_integrator_flags();
 }

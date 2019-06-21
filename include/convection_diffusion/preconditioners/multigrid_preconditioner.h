@@ -42,13 +42,13 @@ public:
              parallel::Triangulation<dim> const * tria,
              FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             OperatorData<dim> const &            operator_data_in,
+             OperatorData<dim> const &            data_in,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    operator_data            = operator_data_in;
-    operator_data.dof_index  = 0;
-    operator_data.quad_index = 0;
+    data            = data_in;
+    data.dof_index  = 0;
+    data.quad_index = 0;
 
     // When solving the reaction-convection-diffusion equations, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -56,38 +56,33 @@ public:
     // reaction-convection-diffusion operator. Accordingly, we have to reset which
     // operators should be "active" for the multigrid preconditioner, independently of
     // the actual equation type that is solved.
-    AssertThrow(operator_data.mg_operator_type != MultigridOperatorType::Undefined,
+    AssertThrow(data.mg_operator_type != MultigridOperatorType::Undefined,
                 ExcMessage("Invalid parameter mg_operator_type."));
 
-    if(operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    if(data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
       // deactivate convective term for multigrid preconditioner
-      operator_data.convective_problem = false;
-      operator_data.diffusive_problem  = true;
+      data.convective_problem = false;
+      data.diffusive_problem  = true;
     }
-    else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvection)
+    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvection)
     {
-      operator_data.convective_problem = true;
+      data.convective_problem = true;
       // deactivate viscous term for multigrid preconditioner
-      operator_data.diffusive_problem = false;
+      data.diffusive_problem = false;
     }
-    else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      operator_data.convective_problem = true;
-      operator_data.diffusive_problem  = true;
+      data.convective_problem = true;
+      data.diffusive_problem  = true;
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-    Base::initialize(mg_data,
-                     tria,
-                     fe,
-                     mapping,
-                     operator_data.operator_is_singular,
-                     dirichlet_bc,
-                     periodic_face_pairs);
+    Base::initialize(
+      mg_data, tria, fe, mapping, data.operator_is_singular, dirichlet_bc, periodic_face_pairs);
   }
 
   std::shared_ptr<MGOperatorBase>
@@ -95,9 +90,7 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit(*this->matrix_free_objects[level],
-                         *this->constraints[level],
-                         operator_data);
+    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
@@ -117,11 +110,11 @@ public:
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;
-    if(operator_data.unsteady_problem)
+    if(data.unsteady_problem)
       flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
-    if(operator_data.convective_problem)
+    if(data.convective_problem)
       flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
-    if(operator_data.diffusive_problem)
+    if(data.diffusive_problem)
       flags = flags || Operators::DiffusiveKernel<dim, Number>::get_mapping_flags();
 
     additional_data.mapping_update_flags = flags.cells;
@@ -131,7 +124,7 @@ public:
       additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
     }
 
-    if(operator_data.use_cell_based_loops && this->level_info[level].is_dg())
+    if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
         &this->dof_handlers[level]->get_triangulation());
@@ -140,7 +133,7 @@ public:
                                           this->level_info[level].h_level());
     }
 
-    if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Analytical)
+    if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Analytical)
     {
       QGauss<1> quadrature(this->level_info[level].degree() + 1);
       matrix_free->reinit(mapping,
@@ -150,8 +143,7 @@ public:
                           additional_data);
     }
     // we need two dof-handlers in case the velocity field comes from the fluid solver.
-    else if(operator_data.convective_kernel_data.type_velocity_field ==
-            TypeVelocityField::Numerical)
+    else if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
     {
       // collect dof-handlers
       std::vector<const DoFHandler<dim> *> dof_handler_vec;
@@ -191,7 +183,7 @@ public:
     Base::initialize_dof_handler_and_constraints(
       operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
-    if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
     {
       FESystem<dim> fe_velocity(FE_DGQ<dim>(fe.degree), dim);
       Map           dirichlet_bc_velocity;
@@ -213,7 +205,7 @@ public:
   {
     Base::initialize_transfer_operators();
 
-    if(operator_data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
       this->transfers_velocity.template reinit<MultigridNumber>(this->matrix_free_objects,
                                                                 this->constraints_velocity,
                                                                 this->constrained_dofs_velocity,
@@ -234,9 +226,9 @@ public:
       ExcMessage(
         "Operator used to update multigrid preconditioner does not match actual PDE operator!"));
 
-    MultigridOperatorType mg_operator_type = pde_operator->get_operator_data().mg_operator_type;
+    MultigridOperatorType mg_operator_type = pde_operator->get_data().mg_operator_type;
     TypeVelocityField     type_velocity_field =
-      pde_operator->get_operator_data().convective_kernel_data.type_velocity_field;
+      pde_operator->get_data().convective_kernel_data.type_velocity_field;
 
     if(type_velocity_field == TypeVelocityField::Numerical &&
        (mg_operator_type == MultigridOperatorType::ReactionConvection ||
@@ -257,19 +249,18 @@ public:
         vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
       }
 
-      update_operators(pde_operator->get_evaluation_time(),
+      update_operators(pde_operator->get_time(),
                        pde_operator->get_scaling_factor_mass_matrix(),
                        vector_multigrid_type_ptr);
     }
     else
     {
-      update_operators(pde_operator->get_evaluation_time(),
-                       pde_operator->get_scaling_factor_mass_matrix());
+      update_operators(pde_operator->get_time(), pde_operator->get_scaling_factor_mass_matrix());
     }
 
     update_smoothers();
 
-    this->update_coarse_solver(operator_data.operator_is_singular);
+    this->update_coarse_solver(data.operator_is_singular);
   }
 
 private:
@@ -280,11 +271,11 @@ private:
    *   - set_scaling_factor_time_derivative_term
    */
   void
-  update_operators(double const &       evaluation_time,
+  update_operators(double const &       time,
                    double const &       scaling_factor_time_derivative_term,
                    VectorTypeMG const * velocity = nullptr)
   {
-    set_evaluation_time(evaluation_time);
+    set_time(time);
     set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
 
     if(velocity != nullptr)
@@ -312,16 +303,16 @@ private:
   }
 
   /*
-   *  This function updates the evaluation time.
+   *  This function sets the current the time.
    *  In order to update operators[level] this function has to be called.
    *  (This is due to the fact that the velocity field of the convective term
    *  is a function of the time.)
    */
   void
-  set_evaluation_time(double const & evaluation_time)
+  set_time(double const & time)
   {
     for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
-      this->get_operator(level)->set_evaluation_time(evaluation_time);
+      this->get_operator(level)->set_time(time);
   }
 
   /*
@@ -366,7 +357,7 @@ private:
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         constrained_dofs_velocity;
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
 
-  OperatorData<dim> operator_data;
+  OperatorData<dim> data;
 };
 
 } // namespace ConvDiff

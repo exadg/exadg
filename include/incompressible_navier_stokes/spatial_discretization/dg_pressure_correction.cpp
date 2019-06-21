@@ -96,7 +96,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
                                   tria,
                                   fe,
                                   this->get_mapping(),
-                                  this->momentum_operator.get_operator_data());
+                                  this->momentum_operator.get_data());
   }
   else
   {
@@ -232,7 +232,7 @@ DGNavierStokesPressureCorrection<dim, Number>::solve_nonlinear_momentum_equation
   nonlinear_operator.update(rhs_vector, time, scaling_factor_mass_matrix_term);
 
   // Set time and mass matrix scaling factor for linear operator
-  this->momentum_operator.set_evaluation_time(time);
+  this->momentum_operator.set_time(time);
   this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
@@ -260,7 +260,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual(
   this->convective_operator.evaluate_nonlinear_operator_add(dst, src, time);
 
   // viscous term
-  this->viscous_operator.set_evaluation_time(time);
+  this->viscous_operator.set_time(time);
   this->viscous_operator.evaluate_add(dst, src);
 
   // rhs vector
@@ -296,7 +296,7 @@ DGNavierStokesPressureCorrection<dim, Number>::evaluate_nonlinear_residual_stead
 
   if(this->param.viscous_problem())
   {
-    this->viscous_operator.set_evaluation_time(time);
+    this->viscous_operator.set_time(time);
     this->viscous_operator.evaluate_add(dst_u, src_u);
   }
 

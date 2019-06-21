@@ -893,8 +893,8 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                 tria,
                                 fe,
                                 *mapping,
-                                laplace_operator.get_operator_data(),
-                                &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                laplace_operator.get_data(),
+                                &laplace_operator.get_data().bc->dirichlet_bc,
                                 &periodic_face_pairs);
 
   // setup solver

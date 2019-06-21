@@ -94,7 +94,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         MassMatrixOperatorData const &    operator_data) const;
+         MassMatrixOperatorData const &    data) const;
 
   void
   set_scaling_factor(Number const & number);

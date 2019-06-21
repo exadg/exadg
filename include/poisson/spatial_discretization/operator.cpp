@@ -95,8 +95,8 @@ DGOperator<dim, Number>::setup_solver()
                                   tria,
                                   fe,
                                   *mapping,
-                                  laplace_operator.get_operator_data(),
-                                  &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                  laplace_operator.get_data(),
+                                  &laplace_operator.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
   else
@@ -160,15 +160,15 @@ DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src) const
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::rhs(VectorType & dst, double const evaluation_time) const
+DGOperator<dim, Number>::rhs(VectorType & dst, double const time) const
 {
   dst = 0;
 
-  laplace_operator.set_evaluation_time(evaluation_time);
+  laplace_operator.set_time(time);
   laplace_operator.rhs_add(dst);
 
   if(param.right_hand_side == true)
-    rhs_operator.evaluate_add(dst, evaluation_time);
+    rhs_operator.evaluate_add(dst, time);
 }
 
 template<int dim, typename Number>

@@ -47,13 +47,13 @@ public:
     PeriodicFaces;
 
   DGOperator(parallel::Triangulation<dim> const &                      triangulation,
-             Poisson::InputParameters const &                          param_in,
-             std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor_in);
+             Poisson::InputParameters const &                          param,
+             std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor);
 
   void
   setup(PeriodicFaces const                                     periodic_face_pairs,
-        std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor_in,
-        std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions_in);
+        std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor,
+        std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions);
 
   void
   setup_solver();
@@ -68,7 +68,7 @@ public:
   prescribe_initial_conditions(VectorType & src) const;
 
   void
-  rhs(VectorType & dst, double const evaluation_time = 0.0) const;
+  rhs(VectorType & dst, double const time = 0.0) const;
 
   unsigned int
   solve(VectorType & sol, VectorType const & rhs) const;

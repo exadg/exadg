@@ -506,12 +506,12 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         ViscousOperatorData<dim> const &  operator_data) const;
+         ViscousOperatorData<dim> const &  data) const;
 
   void
   reinit(MatrixFree<dim, Number> const &                        matrix_free,
          AffineConstraints<double> const &                      constraint_matrix,
-         ViscousOperatorData<dim> const &                       operator_data,
+         ViscousOperatorData<dim> const &                       data,
          std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel);
 
 private:

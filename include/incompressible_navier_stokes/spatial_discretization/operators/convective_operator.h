@@ -940,26 +940,24 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &     matrix_free,
          AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & operator_data) const;
+         ConvectiveOperatorData<dim> const & data) const;
 
   void
   reinit(MatrixFree<dim, Number> const &                           matrix_free,
          AffineConstraints<double> const &                         constraint_matrix,
-         ConvectiveOperatorData<dim> const &                       operator_data,
+         ConvectiveOperatorData<dim> const &                       data,
          std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
   /*
    * Evaluate nonlinear operator.
    */
   void
-  evaluate_nonlinear_operator(VectorType &       dst,
-                              VectorType const & src,
-                              Number const       evaluation_time) const;
+  evaluate_nonlinear_operator(VectorType & dst, VectorType const & src, Number const time) const;
 
   void
   evaluate_nonlinear_operator_add(VectorType &       dst,
                                   VectorType const & src,
-                                  Number const       evaluation_time) const;
+                                  Number const       time) const;
 
   /*
    * Evaluate operator (linear transport with a divergence-free velocity). This function
@@ -968,7 +966,7 @@ public:
   void
   evaluate_linear_transport(VectorType &       dst,
                             VectorType const & src,
-                            Number const       evaluation_time,
+                            Number const       time,
                             VectorType const & velocity_linear_transport) const;
 
   void

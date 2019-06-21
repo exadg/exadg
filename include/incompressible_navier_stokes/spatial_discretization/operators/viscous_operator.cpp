@@ -14,11 +14,11 @@ template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                      AffineConstraints<double> const & constraint_matrix,
-                                     ViscousOperatorData<dim> const &  operator_data) const
+                                     ViscousOperatorData<dim> const &  data) const
 {
   (void)matrix_free;
   (void)constraint_matrix;
-  (void)operator_data;
+  (void)data;
 
   AssertThrow(false,
               ExcMessage(
@@ -30,12 +30,12 @@ void
 ViscousOperator<dim, Number>::reinit(
   MatrixFree<dim, Number> const &                        matrix_free,
   AffineConstraints<double> const &                      constraint_matrix,
-  ViscousOperatorData<dim> const &                       operator_data,
+  ViscousOperatorData<dim> const &                       data,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel)
 {
   kernel = viscous_kernel;
 
-  Base::reinit(matrix_free, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, data);
 
   this->integrator_flags = kernel->get_integrator_flags();
 }
@@ -177,19 +177,13 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                                    OperatorType const &       operator_type,
                                                    types::boundary_id const & boundary_id) const
 {
-  BoundaryTypeU boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+  BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector value_m = calculate_interior_value(q, integrator, operator_type);
-    vector value_p = calculate_exterior_value(value_m,
-                                              q,
-                                              integrator,
-                                              operator_type,
-                                              boundary_type,
-                                              boundary_id,
-                                              this->operator_data.bc,
-                                              this->eval_time);
+    vector value_p = calculate_exterior_value(
+      value_m, q, integrator, operator_type, boundary_type, boundary_id, this->data.bc, this->time);
 
     vector normal = integrator.get_normal_vector(q);
 
@@ -204,8 +198,8 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                                                   operator_type,
                                                                   boundary_type,
                                                                   boundary_id,
-                                                                  this->operator_data.bc,
-                                                                  this->eval_time);
+                                                                  this->data.bc,
+                                                                  this->time);
 
     vector value_flux = kernel->calculate_value_flux(
       normal_gradient_m, normal_gradient_p, value_m, value_p, normal, viscosity);

@@ -83,7 +83,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
                                   tria,
                                   fe,
                                   this->get_mapping(),
-                                  this->momentum_operator.get_operator_data());
+                                  this->momentum_operator.get_data());
   }
   else
   {

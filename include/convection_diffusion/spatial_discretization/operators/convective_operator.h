@@ -379,7 +379,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &     matrix_free,
          AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & operator_data) const;
+         ConvectiveOperatorData<dim> const & data) const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -430,7 +430,7 @@ private:
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                ConvectiveOperatorData<dim> const &  operator_data,
+                                ConvectiveOperatorData<dim> const &  data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   Operators::ConvectiveKernel<dim, Number> kernel;

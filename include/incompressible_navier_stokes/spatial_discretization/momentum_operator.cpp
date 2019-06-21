@@ -6,37 +6,35 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                       AffineConstraints<double> const & constraint_matrix,
-                                      MomentumOperatorData<dim> const & operator_data) const
+                                      MomentumOperatorData<dim> const & data) const
 {
-  Base::reinit(matrix_free, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, data);
 
   // create new objects and initialize kernels
-  if(this->operator_data.unsteady_problem)
+  if(this->data.unsteady_problem)
   {
     this->mass_kernel.reset(new Operators::MassMatrixKernel<dim, Number>());
-    this->mass_kernel->reinit(this->operator_data.scaling_factor_mass_matrix);
+    this->mass_kernel->reinit(this->data.scaling_factor_mass_matrix);
   }
 
-  if(this->operator_data.convective_problem)
+  if(this->data.convective_problem)
   {
     this->convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-    this->convective_kernel->reinit(matrix_free,
-                                    this->operator_data.convective_kernel_data,
-                                    this->is_mg);
+    this->convective_kernel->reinit(matrix_free, this->data.convective_kernel_data, this->is_mg);
   }
 
-  if(this->operator_data.viscous_problem)
+  if(this->data.viscous_problem)
   {
     this->viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-    this->viscous_kernel->reinit(matrix_free, this->operator_data.viscous_kernel_data);
+    this->viscous_kernel->reinit(matrix_free, this->data.viscous_kernel_data);
   }
 
-  if(this->operator_data.unsteady_problem)
+  if(this->data.unsteady_problem)
     this->integrator_flags = this->integrator_flags || this->mass_kernel->get_integrator_flags();
-  if(this->operator_data.convective_problem)
+  if(this->data.convective_problem)
     this->integrator_flags =
       this->integrator_flags || this->convective_kernel->get_integrator_flags();
-  if(this->operator_data.viscous_problem)
+  if(this->data.viscous_problem)
     this->integrator_flags = this->integrator_flags || this->viscous_kernel->get_integrator_flags();
 }
 
@@ -45,29 +43,29 @@ void
 MomentumOperator<dim, Number>::reinit(
   MatrixFree<dim, Number> const &                           matrix_free,
   AffineConstraints<double> const &                         constraint_matrix,
-  MomentumOperatorData<dim> const &                         operator_data,
+  MomentumOperatorData<dim> const &                         data,
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel)
 {
-  Base::reinit(matrix_free, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, data);
 
   // mass kernel: create new object and initialize kernel
-  if(this->operator_data.unsteady_problem)
+  if(this->data.unsteady_problem)
   {
     this->mass_kernel.reset(new Operators::MassMatrixKernel<dim, Number>());
-    this->mass_kernel->reinit(this->operator_data.scaling_factor_mass_matrix);
+    this->mass_kernel->reinit(this->data.scaling_factor_mass_matrix);
   }
 
   // simply set pointers for convective and viscous kernels
   this->convective_kernel = convective_kernel;
   this->viscous_kernel    = viscous_kernel;
 
-  if(this->operator_data.unsteady_problem)
+  if(this->data.unsteady_problem)
     this->integrator_flags = this->integrator_flags || this->mass_kernel->get_integrator_flags();
-  if(this->operator_data.convective_problem)
+  if(this->data.convective_problem)
     this->integrator_flags =
       this->integrator_flags || this->convective_kernel->get_integrator_flags();
-  if(this->operator_data.viscous_problem)
+  if(this->data.viscous_problem)
     this->integrator_flags = this->integrator_flags || this->viscous_kernel->get_integrator_flags();
 }
 
@@ -112,7 +110,7 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number) const
 {
-  if(this->operator_data.unsteady_problem)
+  if(this->data.unsteady_problem)
     mass_kernel->set_scaling_factor(number);
 }
 
@@ -165,7 +163,7 @@ MomentumOperator<dim, Number>::reinit_cell(unsigned int const cell) const
 {
   Base::reinit_cell(cell);
 
-  if(this->operator_data.convective_problem)
+  if(this->data.convective_problem)
     convective_kernel->reinit_cell(cell);
 }
 
@@ -175,10 +173,10 @@ MomentumOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
-  if(this->operator_data.convective_problem)
+  if(this->data.convective_problem)
     convective_kernel->reinit_face(face);
 
-  if(this->operator_data.viscous_problem)
+  if(this->data.viscous_problem)
     viscous_kernel->reinit_face(*this->integrator_m, *this->integrator_p);
 }
 
@@ -188,10 +186,10 @@ MomentumOperator<dim, Number>::reinit_boundary_face(unsigned int const face) con
 {
   Base::reinit_boundary_face(face);
 
-  if(this->operator_data.convective_problem)
+  if(this->data.convective_problem)
     convective_kernel->reinit_boundary_face(face);
 
-  if(this->operator_data.viscous_problem)
+  if(this->data.viscous_problem)
     viscous_kernel->reinit_boundary_face(*this->integrator_m);
 }
 
@@ -203,10 +201,10 @@ MomentumOperator<dim, Number>::reinit_face_cell_based(unsigned int const       c
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
-  if(this->operator_data.convective_problem)
+  if(this->data.convective_problem)
     convective_kernel->reinit_face_cell_based(cell, face, boundary_id);
 
-  if(this->operator_data.viscous_problem)
+  if(this->data.viscous_problem)
     viscous_kernel->reinit_face_cell_based(boundary_id, *this->integrator_m, *this->integrator_p);
 }
 
@@ -214,23 +212,22 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
-  bool const get_value =
-    this->operator_data.unsteady_problem || this->operator_data.convective_problem;
+  bool const get_value = this->data.unsteady_problem || this->data.convective_problem;
 
-  bool const get_gradient = this->operator_data.viscous_problem ||
-                            (this->operator_data.convective_problem &&
-                             this->operator_data.convective_kernel_data.formulation ==
-                               FormulationConvectiveTerm::ConvectiveFormulation);
+  bool const get_gradient =
+    this->data.viscous_problem ||
+    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
+                                        FormulationConvectiveTerm::ConvectiveFormulation);
 
-  bool const submit_value = this->operator_data.unsteady_problem ||
-                            (this->operator_data.convective_problem &&
-                             this->operator_data.convective_kernel_data.formulation ==
-                               FormulationConvectiveTerm::ConvectiveFormulation);
+  bool const submit_value =
+    this->data.unsteady_problem ||
+    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
+                                        FormulationConvectiveTerm::ConvectiveFormulation);
 
-  bool const submit_gradient = this->operator_data.viscous_problem ||
-                               (this->operator_data.convective_problem &&
-                                this->operator_data.convective_kernel_data.formulation ==
-                                  FormulationConvectiveTerm::DivergenceFormulation);
+  bool const submit_gradient =
+    this->data.viscous_problem ||
+    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
+                                        FormulationConvectiveTerm::DivergenceFormulation);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -245,22 +242,22 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
     if(get_gradient)
       gradient = integrator.get_gradient(q);
 
-    if(this->operator_data.unsteady_problem)
+    if(this->data.unsteady_problem)
     {
       value_flux += mass_kernel->get_volume_flux(value);
     }
 
-    if(this->operator_data.convective_problem)
+    if(this->data.convective_problem)
     {
       vector u = convective_kernel->get_velocity_cell(q);
 
-      if(this->operator_data.convective_kernel_data.formulation ==
+      if(this->data.convective_kernel_data.formulation ==
          FormulationConvectiveTerm::DivergenceFormulation)
       {
         gradient_flux +=
           convective_kernel->get_volume_flux_linearized_divergence_formulation(u, value);
       }
-      else if(this->operator_data.convective_kernel_data.formulation ==
+      else if(this->data.convective_kernel_data.formulation ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
         tensor grad_u = convective_kernel->get_velocity_gradient_cell(q);
@@ -274,7 +271,7 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
       }
     }
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       scalar viscosity = viscous_kernel->get_viscosity_cell(integrator.get_cell_index(), q);
       gradient_flux += viscous_kernel->get_volume_flux(gradient, viscosity);
@@ -302,7 +299,7 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     vector value_flux_m, value_flux_p;
     tensor gradient_flux;
 
-    if(this->operator_data.convective_problem)
+    if(this->data.convective_problem)
     {
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
@@ -315,7 +312,7 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
       value_flux_p += std::get<1>(flux);
     }
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       scalar average_viscosity =
         viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
@@ -336,7 +333,7 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     integrator_m.submit_value(value_flux_m, q);
     integrator_p.submit_value(value_flux_p, q);
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       integrator_m.submit_gradient(gradient_flux, q);
       integrator_p.submit_gradient(gradient_flux, q);
@@ -360,7 +357,7 @@ MomentumOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
     vector value_flux_m;
     tensor gradient_flux;
 
-    if(this->operator_data.convective_problem)
+    if(this->data.convective_problem)
     {
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
@@ -369,7 +366,7 @@ MomentumOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
         convective_kernel->calculate_flux_linearized_interior(u_m, u_p, value_m, value_p, normal_m);
     }
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       scalar average_viscosity =
         viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
@@ -388,7 +385,7 @@ MomentumOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
 
     integrator_m.submit_value(value_flux_m, q);
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       integrator_m.submit_gradient(gradient_flux, q);
     }
@@ -411,7 +408,7 @@ MomentumOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
     vector value_flux_m;
     tensor gradient_flux;
 
-    if(this->operator_data.convective_problem)
+    if(this->data.convective_problem)
     {
       vector u_m = convective_kernel->get_velocity_m(q);
       // TODO
@@ -424,7 +421,7 @@ MomentumOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
         convective_kernel->calculate_flux_linearized_interior(u_m, u_p, value_m, value_p, normal_m);
     }
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       scalar average_viscosity =
         viscous_kernel->get_viscosity_interior_face(integrator_m.get_face_index(), q);
@@ -443,7 +440,7 @@ MomentumOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
 
     integrator_m.submit_value(value_flux_m, q);
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       integrator_m.submit_gradient(gradient_flux, q);
     }
@@ -467,7 +464,7 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
     vector value_flux_p;
     tensor gradient_flux;
 
-    if(this->operator_data.convective_problem)
+    if(this->data.convective_problem)
     {
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
@@ -476,7 +473,7 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
         convective_kernel->calculate_flux_linearized_interior(u_p, u_m, value_p, value_m, normal_p);
     }
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       scalar average_viscosity =
         viscous_kernel->get_viscosity_interior_face(integrator_p.get_face_index(), q);
@@ -497,7 +494,7 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
 
     integrator_p.submit_value(value_flux_p, q);
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       integrator_p.submit_gradient(gradient_flux, q);
     }
@@ -516,7 +513,7 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
     ExcMessage(
       "For the linearized momentum operator, only OperatorType::homogeneous makes sense."));
 
-  BoundaryTypeU boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+  BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -527,7 +524,7 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
     vector value_flux_m;
     tensor gradient_flux;
 
-    if(this->operator_data.convective_problem)
+    if(this->data.convective_problem)
     {
       // value_p is calculated differently for the convective term and the viscous term
       value_p = convective_kernel->calculate_exterior_value_linearized(value_m,
@@ -537,13 +534,13 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
 
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->calculate_exterior_value_nonlinear(
-        u_m, q, integrator, boundary_type, boundary_id, this->operator_data.bc, this->eval_time);
+        u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
 
       value_flux_m += convective_kernel->calculate_flux_linearized_boundary(
         u_m, u_p, value_m, value_p, normal_m, boundary_type);
     }
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       // value_p is calculated differently for the convective term and the viscous term
       value_p = calculate_exterior_value(value_m,
@@ -552,8 +549,8 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
                                          operator_type,
                                          boundary_type,
                                          boundary_id,
-                                         this->operator_data.bc,
-                                         this->eval_time);
+                                         this->data.bc,
+                                         this->time);
 
       scalar viscosity =
         viscous_kernel->get_viscosity_boundary_face(integrator.get_face_index(), q);
@@ -568,8 +565,8 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
                                                                     operator_type,
                                                                     boundary_type,
                                                                     boundary_id,
-                                                                    this->operator_data.bc,
-                                                                    this->eval_time);
+                                                                    this->data.bc,
+                                                                    this->time);
 
       vector value_flux = viscous_kernel->calculate_value_flux(
         normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, viscosity);
@@ -579,7 +576,7 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
 
     integrator.submit_value(value_flux_m, q);
 
-    if(this->operator_data.viscous_problem)
+    if(this->data.viscous_problem)
     {
       integrator.submit_gradient(gradient_flux, q);
     }
