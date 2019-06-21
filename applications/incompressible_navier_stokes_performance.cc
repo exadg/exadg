@@ -64,7 +64,8 @@ std::vector<int> REFINE_LEVELS = {
 // Note: Make sure that the correct time integration scheme is selected in the input file that is
 //       compatible with the Operator type specified here. This also includes the treatment of the
 //       convective term (explicit/implicit), e.g., specifying VelocityConvDiffOperator together
-//       with an explicit treatment of the convective term will only apply the Helmholtz-like operator.
+//       with an explicit treatment of the convective term will only apply the Helmholtz-like
+//       operator.
 
 // clang-format off
 enum class Operator{
@@ -290,7 +291,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   navier_stokes_operation->initialize_vector_velocity(velocity);
   velocity = 1.0;
-  navier_stokes_operation->setup_solvers(1.0 /* dummy */, &velocity);
+  navier_stokes_operation->setup_solvers(1.0 /* dummy */, velocity);
 
 
   // check that the operator type is consistent with the solution approach (coupled vs. splitting)
@@ -348,14 +349,6 @@ Problem<dim, Number>::apply_operator()
     navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(src1);
     src1 = 1.0;
 
-    // TODO can be removed
-    //    // set linearized solution -> required to evaluate the linearized operator
-    //    navier_stokes_operation_coupled->set_solution_linearization(src1);
-
-    // set sum_alphai_ui -> required to evaluate the nonlinear residual
-    // in case an unsteady problem is considered
-    navier_stokes_operation_coupled->set_sum_alphai_ui(&src1.block(0));
-
     if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::InverseMassMatrix)
     {
       navier_stokes_operation_coupled->initialize_vector_velocity(src2);
@@ -384,8 +377,7 @@ Problem<dim, Number>::apply_operator()
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(OPERATOR == Operator::VelocityConvDiffOperator ||
-       OPERATOR == Operator::ProjectionOperator ||
+    if(OPERATOR == Operator::VelocityConvDiffOperator || OPERATOR == Operator::ProjectionOperator ||
        OPERATOR == Operator::InverseMassMatrix)
     {
       navier_stokes_operation_pressure_correction->initialize_vector_velocity(src2);
@@ -425,9 +417,9 @@ Problem<dim, Number>::apply_operator()
       if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
       {
         if(OPERATOR == Operator::CoupledNonlinearResidual)
-          navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1);
+          navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
         else if(OPERATOR == Operator::CoupledLinearized)
-          navier_stokes_operation_coupled->vmult(dst1,src1);
+          navier_stokes_operation_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
         else if(OPERATOR == Operator::ConvectiveOperator)
           navier_stokes_operation_coupled->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR == Operator::InverseMassMatrix)
@@ -528,13 +520,6 @@ Problem<dim, Number>::apply_operator()
   // clang-format on
 
   wall_times.push_back(std::pair<unsigned int, double>(fe_degree, dofs_per_walltime));
-
-
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    // reset sum_alphai_ui
-    navier_stokes_operation_coupled->set_sum_alphai_ui(nullptr);
-  }
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 }

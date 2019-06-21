@@ -117,6 +117,7 @@ public:
   void
   evaluate_add(VectorType & dst, VectorType const & src) const;
 
+private:
   void
   reinit_cell(unsigned int const cell) const;
 
@@ -163,7 +164,6 @@ public:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-private:
   mutable std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
   mutable std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   mutable std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;

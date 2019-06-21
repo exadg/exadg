@@ -198,21 +198,19 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(
-  VectorType & dst,
-  double const evaluation_time) const
+DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType & dst,
+                                                                      double const time) const
 {
-  this->viscous_operator.set_evaluation_time(evaluation_time);
+  this->viscous_operator.set_evaluation_time(time);
   this->viscous_operator.rhs_add(dst);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(
-  VectorType &   dst,
-  double const & evaluation_time) const
+DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType &   dst,
+                                                                     double const & time) const
 {
-  this->laplace_operator.set_evaluation_time(evaluation_time);
+  this->laplace_operator.set_evaluation_time(time);
   this->laplace_operator.rhs_add(dst);
 }
 

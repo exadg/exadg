@@ -20,6 +20,67 @@
 
 namespace IncNS
 {
+// forward declaration
+template<int dim, typename Number>
+class DGNavierStokesPressureCorrection;
+
+template<int dim, typename Number>
+class NonlinearMomentumOperator
+{
+private:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef DGNavierStokesPressureCorrection<dim, Number> PDEOperator;
+
+public:
+  NonlinearMomentumOperator()
+    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass_matrix(1.0)
+  {
+  }
+
+  void
+  initialize(PDEOperator const & pde_operator)
+  {
+    this->pde_operator = &pde_operator;
+  }
+
+  void
+  update(VectorType const & rhs_vector, double const & time, double const & scaling_factor)
+  {
+    this->rhs_vector                 = &rhs_vector;
+    this->time                       = time;
+    this->scaling_factor_mass_matrix = scaling_factor;
+  }
+
+  /*
+   * The implementation of the Newton solver requires a function called
+   * 'initialize_vector_for_newton_solver'.
+   */
+  void
+  initialize_vector_for_newton_solver(VectorType & src) const
+  {
+    pde_operator->initialize_vector_velocity(src);
+  }
+
+  /*
+   * The implementation of the Newton solver requires a function called
+   * 'evaluate_nonlinear_residual".
+   */
+  void
+  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src)
+  {
+    pde_operator->evaluate_nonlinear_residual(
+      dst, src, rhs_vector, time, scaling_factor_mass_matrix);
+  }
+
+private:
+  PDEOperator const * pde_operator;
+
+  VectorType const * rhs_vector;
+  double             time;
+  double             scaling_factor_mass_matrix;
+};
+
 template<int dim, typename Number = double>
 class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, Number>,
                                          public Interface::OperatorPressureCorrection<Number>
@@ -37,8 +98,8 @@ public:
    * Constructor.
    */
   DGNavierStokesPressureCorrection(parallel::Triangulation<dim> const & triangulation,
-                                   InputParameters const &              parameters_in,
-                                   std::shared_ptr<Postprocessor>       postprocessor_in);
+                                   InputParameters const &              parameters,
+                                   std::shared_ptr<Postprocessor>       postprocessor);
 
   /*
    * Destructor.
@@ -46,8 +107,7 @@ public:
   virtual ~DGNavierStokesPressureCorrection();
 
   void
-  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
-                VectorType const * velocity                            = nullptr);
+  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
 
   /*
    * Momentum step:
@@ -67,28 +127,12 @@ public:
    * Calculation of right-hand side vector:
    */
 
-  // body force term
-  void
-  evaluate_add_body_force_term(VectorType & dst, double const evaluation_time) const;
-
   // viscous term
   void
-  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
+  rhs_add_viscous_term(VectorType & dst, double const time) const;
 
   /*
    * Convective term treated implicitly: solve non-linear system of equations
-   */
-
-  /*
-   * The implementation of the Newton solver requires that the underlying operator
-   * implements a function called "initialize_vector_for_newton_solver".
-   */
-  void
-  initialize_vector_for_newton_solver(VectorType & src) const;
-
-  /*
-   * This function solves the non-linear system of equations in case of an implicit formulation of
-   * the convective term.
    */
   void
   solve_nonlinear_momentum_equation(VectorType &       dst,
@@ -99,24 +143,32 @@ public:
                                     unsigned int &     newton_iterations,
                                     unsigned int &     linear_iterations);
 
-  // apply momentum operator
-  void
-  apply_momentum_operator(VectorType & dst, VectorType const & src);
-
-
   /*
-   * The implementation of the Newton solver requires that the underlying operator
-   * implements a function called "evaluate_nonlinear_residual".
+   * This function evaluates the nonlinear residual.
    */
   void
-  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src);
+  evaluate_nonlinear_residual(VectorType &       dst,
+                              VectorType const & src,
+                              VectorType const * rhs_vector,
+                              double const &     time,
+                              double const &     scaling_factor_mass_matrix) const;
 
+  /*
+   * This function evaluates the nonlinear residual of the steady Navier-Stokes equations (momentum
+   * equation and continuity equation).
+   */
   void
   evaluate_nonlinear_residual_steady(VectorType &       dst_u,
                                      VectorType &       dst_p,
                                      VectorType const & src_u,
                                      VectorType const & src_p,
                                      double const &     time) const;
+
+  /*
+   * This function applies the linearized momentum operator and is used for throughput measurements.
+   */
+  void
+  apply_momentum_operator(VectorType & dst, VectorType const & src);
 
   /*
    * Projection step.
@@ -179,18 +231,19 @@ private:
   /*
    * Momentum equation.
    */
-  std::shared_ptr<
-    NewtonSolver<VectorType, This, MomentumOperator<dim, Number>, IterativeSolverBase<VectorType>>>
+
+  // Nonlinear operator and solver
+  NonlinearMomentumOperator<dim, Number> nonlinear_operator;
+
+  std::shared_ptr<NewtonSolver<VectorType,
+                               NonlinearMomentumOperator<dim, Number>,
+                               MomentumOperator<dim, Number>,
+                               IterativeSolverBase<VectorType>>>
     momentum_newton_solver;
 
+  // linear solver (momentum_operator serves as linear operator)
   std::shared_ptr<PreconditionerBase<Number>>      momentum_preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> momentum_linear_solver;
-
-  VectorType         temp_vector;
-  VectorType const * rhs_vector;
-
-  double evaluation_time;
-  double scaling_factor_time_derivative_term;
 };
 
 } // namespace IncNS

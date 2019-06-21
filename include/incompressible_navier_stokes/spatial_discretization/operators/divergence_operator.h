@@ -126,6 +126,9 @@ public:
   reinit(MatrixFree<dim, Number> const &     matrix_free_in,
          DivergenceOperatorData<dim> const & data_in);
 
+  DivergenceOperatorData<dim> const &
+  get_operator_data() const;
+
   // homogeneous operator
   void
   apply(VectorType & dst, VectorType const & src) const;

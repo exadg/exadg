@@ -32,8 +32,15 @@ GradientOperator<dim, Number>::set_scaling_factor_pressure(double const & scalin
 }
 
 template<int dim, typename Number>
+GradientOperatorData<dim> const &
+GradientOperator<dim, Number>::get_operator_data() const
+{
+  return this->data;
+}
+
+template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::apply(VectorType & dst, const VectorType & src) const
+GradientOperator<dim, Number>::apply(VectorType & dst, VectorType const & src) const
 {
   matrix_free->loop(&This::cell_loop,
                     &This::face_loop,
@@ -46,7 +53,7 @@ GradientOperator<dim, Number>::apply(VectorType & dst, const VectorType & src) c
 
 template<int dim, typename Number>
 void
-GradientOperator<dim, Number>::apply_add(VectorType & dst, const VectorType & src) const
+GradientOperator<dim, Number>::apply_add(VectorType & dst, VectorType const & src) const
 {
   matrix_free->loop(&This::cell_loop,
                     &This::face_loop,

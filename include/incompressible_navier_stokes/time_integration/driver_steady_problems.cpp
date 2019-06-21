@@ -111,11 +111,14 @@ DriverSteadyProblems<Number>::solve()
   }
   else // nonlinear problem
   {
+    VectorType rhs(solution.block(0));
+    rhs = 0.0;
+    if(this->param.right_hand_side)
+      operator_base->evaluate_add_body_force_term(rhs, 0.0 /* time */);
+
     // Newton solver
-    pde_operator->solve_nonlinear_steady_problem(solution,
-                                                 this->param.update_preconditioner_coupled,
-                                                 N_iter_nonlinear,
-                                                 N_iter_linear);
+    pde_operator->solve_nonlinear_steady_problem(
+      solution, rhs, this->param.update_preconditioner_coupled, N_iter_nonlinear, N_iter_linear);
   }
 
   // special case: pure Dirichlet BC's

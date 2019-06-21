@@ -127,6 +127,9 @@ public:
   void
   set_scaling_factor_pressure(double const & scaling_factor);
 
+  GradientOperatorData<dim> const &
+  get_operator_data() const;
+
   // homogeneous operator
   void
   apply(VectorType & dst, const VectorType & src) const;

@@ -122,8 +122,8 @@ public:
    * Constructor.
    */
   DGNavierStokesBase(parallel::Triangulation<dim> const & triangulation,
-                     InputParameters const &              parameters_in,
-                     std::shared_ptr<Postprocessor>       postprocessor_in);
+                     InputParameters const &              parameters,
+                     std::shared_ptr<Postprocessor>       postprocessor);
 
   /*
    * Destructor.
@@ -148,8 +148,7 @@ public:
    * by derived classes if necessary.
    */
   virtual void
-  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
-                VectorType const * velocity                            = nullptr);
+  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
 
   /*
    * Getters and setters.
@@ -208,24 +207,6 @@ public:
   VectorizedArray<Number>
   get_viscosity_boundary_face(unsigned int const face, unsigned int const q) const;
 
-  MassMatrixOperatorData const &
-  get_mass_matrix_operator_data() const;
-
-  ViscousOperatorData<dim> const &
-  get_viscous_operator_data() const;
-
-  ConvectiveOperatorData<dim> const &
-  get_convective_operator_data() const;
-
-  GradientOperatorData<dim> const &
-  get_gradient_operator_data() const;
-
-  DivergenceOperatorData<dim> const &
-  get_divergence_operator_data() const;
-
-  std::shared_ptr<FieldFunctions<dim>> const
-  get_field_functions() const;
-
   // Polynomial degree required, e.g., for CFL condition (CFL_k = CFL / k^{exp}).
   unsigned int
   get_polynomial_degree() const;
@@ -251,7 +232,7 @@ public:
   void
   prescribe_initial_conditions(VectorType & velocity,
                                VectorType & pressure,
-                               double const evaluation_time) const;
+                               double const time) const;
 
   /*
    * Time step calculation.
@@ -327,30 +308,31 @@ public:
   void
   apply_mass_matrix_add(VectorType & dst, VectorType const & src) const;
 
+  // body force term
+  void
+  evaluate_add_body_force_term(VectorType & dst, double const time) const;
+
   // convective term
   void
-  evaluate_convective_term(VectorType &       dst,
-                           VectorType const & src,
-                           Number const       evaluation_time) const;
+  evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const;
 
   // pressure gradient term
   void
   evaluate_pressure_gradient_term(VectorType &       dst,
                                   VectorType const & src,
-                                  double const       evaluation_time) const;
+                                  double const       time) const;
 
   // velocity divergence
   void
   evaluate_velocity_divergence_term(VectorType &       dst,
                                     VectorType const & src,
-                                    double const       evaluation_time) const;
+                                    double const       time) const;
 
   // OIF splitting
   void
-  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-    VectorType &       dst,
-    VectorType const & src,
-    Number const       evaluation_time) const;
+  evaluate_negative_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
+                                                                  VectorType const & src,
+                                                                  Number const       time) const;
 
   // OIF splitting: interpolated velocity solution
   void
@@ -462,20 +444,14 @@ protected:
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
 
   /*
-   * Basic operators.
+   * Operator kernels.
    */
-  Operators::ConvectiveKernelData convective_kernel_data;
-  Operators::ViscousKernelData    viscous_kernel_data;
-
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 
-  MassMatrixOperatorData      mass_matrix_operator_data;
-  ViscousOperatorData<dim>    viscous_operator_data;
-  ConvectiveOperatorData<dim> convective_operator_data;
-  GradientOperatorData<dim>   gradient_operator_data;
-  DivergenceOperatorData<dim> divergence_operator_data;
-
+  /*
+   * Basic operators.
+   */
   MassMatrixOperator<dim, Number> mass_matrix_operator;
   ConvectiveOperator<dim, Number> convective_operator;
   ViscousOperator<dim, Number>    viscous_operator;
@@ -548,7 +524,7 @@ private:
 
   void
   initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
-                               VectorType const * velocity);
+                               VectorType const & velocity);
 
   void
   setup_projection_operator();

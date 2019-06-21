@@ -24,6 +24,13 @@ DivergenceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matr
 }
 
 template<int dim, typename Number>
+DivergenceOperatorData<dim> const &
+DivergenceOperator<dim, Number>::get_operator_data() const
+{
+  return this->data;
+}
+
+template<int dim, typename Number>
 void
 DivergenceOperator<dim, Number>::apply(VectorType & dst, VectorType const & src) const
 {

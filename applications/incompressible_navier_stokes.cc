@@ -52,9 +52,9 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
-#include "incompressible_navier_stokes_test_cases/cavity.h"
+//#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
@@ -305,18 +305,14 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     // depends on quantities such as the time_step_size or gamma0!!!)
     time_integrator->setup(param.restarted_simulation);
 
-    LinearAlgebra::distributed::Vector<Number> const * velocity = &time_integrator->get_velocity();
-
     navier_stokes_operation->setup_solvers(
-      time_integrator->get_scaling_factor_time_derivative_term(), velocity);
+      time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
   }
   else if(param.solver_type == SolverType::Steady)
   {
     driver_steady->setup();
 
-    LinearAlgebra::distributed::Vector<Number> const * velocity = &driver_steady->get_velocity();
-
-    navier_stokes_operation->setup_solvers(1.0 /* dummy */, velocity);
+    navier_stokes_operation->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
   }
   else
   {

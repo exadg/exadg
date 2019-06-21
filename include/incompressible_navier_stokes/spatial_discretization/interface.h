@@ -63,6 +63,9 @@ public:
                                double const time) const = 0;
 
   virtual void
+  evaluate_add_body_force_term(VectorType & dst, double const time) const = 0;
+
+  virtual void
   evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const = 0;
 
   virtual void
@@ -155,10 +158,13 @@ public:
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
                               bool const &            update_preconditioner,
+                              double const &          time                            = 0.0,
                               double const &          scaling_factor_mass_matrix_term = 1.0) = 0;
 
   virtual void
-  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src) const = 0;
+  evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
+                                     BlockVectorType const & src,
+                                     double const &          time) const = 0;
 
   virtual void
   solve_nonlinear_problem(BlockVectorType &  dst,
@@ -170,10 +176,11 @@ public:
                           unsigned int &     linear_iterations) = 0;
 
   virtual void
-  solve_nonlinear_steady_problem(BlockVectorType & dst,
-                                 bool const &      update_preconditioner,
-                                 unsigned int &    newton_iterations,
-                                 unsigned int &    linear_iterations) = 0;
+  solve_nonlinear_steady_problem(BlockVectorType &  dst,
+                                 VectorType const & rhs_vector,
+                                 bool const &       update_preconditioner,
+                                 unsigned int &     newton_iterations,
+                                 unsigned int &     linear_iterations) = 0;
 
   virtual void
   do_postprocessing(VectorType const & velocity,
@@ -300,9 +307,6 @@ public:
                                     double const &     scaling_factor_mass_matrix_term,
                                     unsigned int &     newton_iterations,
                                     unsigned int &     linear_iterations) = 0;
-
-  virtual void
-  evaluate_add_body_force_term(VectorType & dst, double const time) const = 0;
 
   virtual void
   rhs_add_viscous_term(VectorType & dst, double const time) const = 0;

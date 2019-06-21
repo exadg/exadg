@@ -12,13 +12,9 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters const &              parameters_in,
-  std::shared_ptr<Postprocessor>       postprocessor_in)
-  : Base(triangulation, parameters_in, postprocessor_in),
-    sum_alphai_ui(nullptr),
-    evaluation_time(0.0),
-    scaling_factor_time_derivative_term(1.0),
-    scaling_factor_continuity(1.0)
+  InputParameters const &              parameters,
+  std::shared_ptr<Postprocessor>       postprocessor)
+  : Base(triangulation, parameters_in, postprocessor), scaling_factor_continuity(1.0)
 {
 }
 
@@ -32,14 +28,14 @@ void
 DGNavierStokesCoupled<dim, Number>::setup(
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions)
 {
   Base::setup(periodic_face_pairs,
-              boundary_descriptor_velocity_in,
-              boundary_descriptor_pressure_in,
-              field_functions_in);
+              boundary_descriptor_velocity,
+              boundary_descriptor_pressure,
+              field_functions);
 
   this->initialize_vector_velocity(temp_vector);
 }
@@ -48,7 +44,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup_solvers(
   double const &     scaling_factor_time_derivative_term,
-  VectorType const * velocity)
+  VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
@@ -67,6 +63,8 @@ template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
 {
+  linear_operator.initialize(*this);
+
   // setup linear solver
   if(this->param.solver_coupled == SolverCoupled::GMRES)
   {
@@ -82,9 +80,9 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new GMRESSolver<This, Preconditioner, BlockVectorType>(*this,
-                                                                               block_preconditioner,
-                                                                               solver_data));
+    linear_solver.reset(
+      new GMRESSolver<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
+        linear_operator, block_preconditioner, solver_data));
   }
   else if(this->param.solver_coupled == SolverCoupled::FGMRES)
   {
@@ -99,8 +97,9 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
       solver_data.use_preconditioner = true;
     }
 
-    linear_solver.reset(new FGMRESSolver<This, Preconditioner, BlockVectorType>(
-      *this, block_preconditioner, solver_data));
+    linear_solver.reset(
+      new FGMRESSolver<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
+        linear_operator, block_preconditioner, solver_data));
   }
   else
   {
@@ -110,9 +109,13 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
   // setup Newton solver
   if(this->param.nonlinear_problem_has_to_be_solved())
   {
-    newton_solver.reset(
-      new NewtonSolver<BlockVectorType, This, This, IterativeSolverBase<BlockVectorType>>(
-        this->param.newton_solver_data_coupled, *this, *this, *linear_solver));
+    nonlinear_operator.initialize(*this);
+
+    newton_solver.reset(new NewtonSolver<BlockVectorType,
+                                         NonlinearOperatorCoupled<dim, Number>,
+                                         LinearOperatorCoupled<dim, Number>,
+                                         IterativeSolverBase<BlockVectorType>>(
+      this->param.newton_solver_data_coupled, nonlinear_operator, linear_operator, *linear_solver));
   }
 }
 
@@ -148,32 +151,10 @@ DGNavierStokesCoupled<dim, Number>::initialize_block_vector_velocity_pressure(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::initialize_vector_for_newton_solver(BlockVectorType & src) const
-{
-  initialize_block_vector_velocity_pressure(src);
-}
-
-template<int dim, typename Number>
-void
 DGNavierStokesCoupled<dim, Number>::set_scaling_factor_continuity(double const scaling_factor)
 {
   scaling_factor_continuity = scaling_factor;
   this->gradient_operator.set_scaling_factor_pressure(scaling_factor);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesCoupled<dim, Number>::set_sum_alphai_ui(VectorType const * vector)
-{
-  this->sum_alphai_ui = vector;
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesCoupled<dim, Number>::set_solution_linearization(
-  BlockVectorType const & solution_linearization)
-{
-  this->set_velocity_ptr(solution_linearization.block(0));
 }
 
 template<int dim, typename Number>
@@ -182,13 +163,11 @@ DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(
   BlockVectorType &       dst,
   BlockVectorType const & src,
   bool const &            update_preconditioner,
+  double const &          time,
   double const &          scaling_factor_mass_matrix_term)
 {
-  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
-
-  // Note that there is no need to set the evaluation time for the momentum_operator
-  // because this function is only called if the convective term is not considered
-  // in the momentum_operator (Stokes eq. or explicit treatment of convective term).
+  // Update linear operator
+  linear_operator.update(time, scaling_factor_mass_matrix_term);
 
   return linear_solver->solve(dst, src, update_preconditioner);
 }
@@ -196,22 +175,22 @@ DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
-                                                       double const &    eval_time) const
+                                                       double const &    time) const
 {
   // velocity-block
-  this->gradient_operator.rhs(dst.block(0), eval_time);
+  this->gradient_operator.rhs(dst.block(0), time);
   dst.block(0) *= scaling_factor_continuity;
 
-  this->viscous_operator.set_evaluation_time(eval_time);
+  this->viscous_operator.set_evaluation_time(time);
   this->viscous_operator.rhs_add(dst.block(0));
 
   if(this->param.right_hand_side == true)
-    this->rhs_operator.evaluate_add(dst.block(0), eval_time);
+    this->rhs_operator.evaluate_add(dst.block(0), time);
 
   // Divergence and continuity penalty operators: no contribution to rhs
 
   // pressure-block
-  this->divergence_operator.rhs(dst.block(1), eval_time);
+  this->divergence_operator.rhs(dst.block(1), time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   // with respect to pressure gradient term and velocity divergence term
   // scale by scaling_factor_continuity
@@ -220,9 +199,15 @@ DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::vmult(BlockVectorType & dst, BlockVectorType const & src) const
+DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
+  BlockVectorType &       dst,
+  BlockVectorType const & src,
+  double const &          time,
+  double const &          scaling_factor_mass_matrix) const
 {
   // (1,1) block of saddle point matrix
+  this->momentum_operator.set_evaluation_time(time);
+  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix);
   this->momentum_operator.vmult(dst.block(0), src.block(0));
 
   // Divergence and continuity penalty operators
@@ -251,11 +236,17 @@ DGNavierStokesCoupled<dim, Number>::vmult(BlockVectorType & dst, BlockVectorType
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::solve_nonlinear_steady_problem(
-  BlockVectorType & dst,
-  bool const &      update_preconditioner,
-  unsigned int &    newton_iterations,
-  unsigned int &    linear_iterations)
+  BlockVectorType &  dst,
+  VectorType const & rhs_vector,
+  bool const &       update_preconditioner,
+  unsigned int &     newton_iterations,
+  unsigned int &     linear_iterations)
 {
+  // update nonlinear operator
+  nonlinear_operator.update(rhs_vector, 0.0 /* time */, 1.0 /* scaling_factor */);
+
+  // no need to update linear operator since this is a steady problem
+
   // solve nonlinear problem
   newton_solver->solve(dst,
                        newton_iterations,
@@ -268,24 +259,18 @@ template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
   BlockVectorType &  dst,
-  VectorType const & sum_alphai_ui,
-  double const &     eval_time,
+  VectorType const & rhs_vector,
+  double const &     time,
   bool const &       update_preconditioner,
   double const &     scaling_factor_mass_matrix_term,
   unsigned int &     newton_iterations,
   unsigned int &     linear_iterations)
 {
-  // Set sum_alphai_ui (this variable is used when evaluating the nonlinear residual).
-  this->sum_alphai_ui = &sum_alphai_ui;
+  // Update nonlinear operator
+  nonlinear_operator.update(rhs_vector, time, scaling_factor_mass_matrix_term);
 
-  // Set evaluation_time and mass matrix scaling factor for nonlinear operator (=
-  // DGNavierStokesCoupled)
-  evaluation_time                     = eval_time;
-  scaling_factor_time_derivative_term = scaling_factor_mass_matrix_term;
-
-  //  Set evaluation_time and mass matrix scaling factor for linear operator (= MomentumOperator).
-  this->momentum_operator.set_evaluation_time(eval_time);
-  this->momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix_term);
+  // Update linear operator
+  linear_operator.update(time, scaling_factor_mass_matrix_term);
 
   // Solve nonlinear problem
   newton_solver->solve(dst,
@@ -293,47 +278,31 @@ DGNavierStokesCoupled<dim, Number>::solve_nonlinear_problem(
                        linear_iterations,
                        update_preconditioner,
                        this->param.update_preconditioner_coupled_every_newton_iter);
-
-  // Reset sum_alphai_ui
-  this->sum_alphai_ui = nullptr;
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType &       dst,
-                                                                BlockVectorType const & src) const
+DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
+  BlockVectorType &       dst,
+  BlockVectorType const & src,
+  VectorType const *      rhs_vector,
+  double const &          time,
+  double const &          scaling_factor_mass_matrix) const
 {
   // velocity-block
 
-  // set dst.block(0) to zero. This is necessary since subsequent operators
-  // call functions of type ..._add
-  dst.block(0) = 0.0;
-
-  if(this->param.right_hand_side == true)
-  {
-    this->rhs_operator.evaluate(dst.block(0), evaluation_time);
-    // Shift body force term to the left-hand side of the equation.
-    // This works since body_force_operator is the first operator
-    // that is evaluated.
-    dst.block(0) *= -1.0;
-  }
-
   if(this->unsteady_problem_has_to_be_solved())
-  {
-    temp_vector.equ(scaling_factor_time_derivative_term, src.block(0));
-    temp_vector.add(-1.0, *sum_alphai_ui);
-    this->mass_matrix_operator.apply_add(dst.block(0), temp_vector);
-  }
+    this->mass_matrix_operator.apply_scale(dst.block(0), scaling_factor_mass_matrix, src.block(0));
+  else
+    dst.block(0) = 0.0;
 
   AssertThrow(this->param.convective_problem() == true, ExcMessage("Invalid parameters."));
 
-  this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0),
-                                                            src.block(0),
-                                                            evaluation_time);
+  this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
 
   if(this->param.viscous_problem())
   {
-    this->viscous_operator.set_evaluation_time(evaluation_time);
+    this->viscous_operator.set_evaluation_time(time);
     this->viscous_operator.evaluate_add(dst.block(0), src.block(0));
   }
 
@@ -347,13 +316,15 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType 
   }
 
   // gradient operator scaled by scaling_factor_continuity
-  this->gradient_operator.evaluate(temp_vector, src.block(1), evaluation_time);
+  this->gradient_operator.evaluate(temp_vector, src.block(1), time);
   dst.block(0).add(scaling_factor_continuity, temp_vector);
 
+  // constant right-hand side vector (body force vector and sum_alphai_ui term)
+  dst.block(0).add(-1.0, *rhs_vector);
 
   // pressure-block
 
-  this->divergence_operator.evaluate(dst.block(1), src.block(0), evaluation_time);
+  this->divergence_operator.evaluate(dst.block(1), src.block(0), time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   // with respect to pressure gradient term and velocity divergence term
   // scale by scaling_factor_continuity
@@ -362,9 +333,9 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(BlockVectorType 
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
-  BlockVectorType &       dst,
-  BlockVectorType const & src) const
+DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
+                                                                       BlockVectorType const & src,
+                                                                       double const & time) const
 {
   // velocity-block
 
@@ -374,7 +345,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
 
   if(this->param.right_hand_side == true)
   {
-    this->rhs_operator.evaluate(dst.block(0), evaluation_time);
+    this->rhs_operator.evaluate(dst.block(0), time);
     // Shift body force term to the left-hand side of the equation.
     // This works since body_force_operator is the first operator
     // that is evaluated.
@@ -382,13 +353,13 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
   }
 
   if(this->param.convective_problem())
-    this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0),
-                                                              src.block(0),
-                                                              evaluation_time);
+  {
+    this->convective_operator.evaluate_nonlinear_operator_add(dst.block(0), src.block(0), time);
+  }
 
   if(this->param.viscous_problem())
   {
-    this->viscous_operator.set_evaluation_time(evaluation_time);
+    this->viscous_operator.set_evaluation_time(time);
     this->viscous_operator.evaluate_add(dst.block(0), src.block(0));
   }
 
@@ -402,13 +373,13 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(
   }
 
   // gradient operator scaled by scaling_factor_continuity
-  this->gradient_operator.evaluate(temp_vector, src.block(1), evaluation_time);
+  this->gradient_operator.evaluate(temp_vector, src.block(1), time);
   dst.block(0).add(scaling_factor_continuity, temp_vector);
 
 
   // pressure-block
 
-  this->divergence_operator.evaluate(dst.block(1), src.block(0), evaluation_time);
+  this->divergence_operator.evaluate(dst.block(1), src.block(0), time);
   // multiply by -1.0 since we use a formulation with symmetric saddle point matrix
   // with respect to pressure gradient term and velocity divergence term
   // scale by scaling_factor_continuity
@@ -679,14 +650,15 @@ CompatibleLaplaceOperatorData<dim> const
 DGNavierStokesCoupled<dim, Number>::get_compatible_laplace_operator_data() const
 {
   CompatibleLaplaceOperatorData<dim> comp_laplace_operator_data;
-  comp_laplace_operator_data.degree_u                 = this->param.degree_u;
-  comp_laplace_operator_data.degree_p                 = this->param.get_degree_p();
-  comp_laplace_operator_data.dof_index_velocity       = this->get_dof_index_velocity();
-  comp_laplace_operator_data.dof_index_pressure       = this->get_dof_index_pressure();
-  comp_laplace_operator_data.operator_is_singular     = this->param.pure_dirichlet_bc;
-  comp_laplace_operator_data.dof_handler_u            = &this->get_dof_handler_u();
-  comp_laplace_operator_data.gradient_operator_data   = this->get_gradient_operator_data();
-  comp_laplace_operator_data.divergence_operator_data = this->get_divergence_operator_data();
+  comp_laplace_operator_data.degree_u               = this->param.degree_u;
+  comp_laplace_operator_data.degree_p               = this->param.get_degree_p();
+  comp_laplace_operator_data.dof_index_velocity     = this->get_dof_index_velocity();
+  comp_laplace_operator_data.dof_index_pressure     = this->get_dof_index_pressure();
+  comp_laplace_operator_data.operator_is_singular   = this->param.pure_dirichlet_bc;
+  comp_laplace_operator_data.dof_handler_u          = &this->get_dof_handler_u();
+  comp_laplace_operator_data.gradient_operator_data = this->gradient_operator.get_operator_data();
+  comp_laplace_operator_data.divergence_operator_data =
+    this->divergence_operator.get_operator_data();
 
   return comp_laplace_operator_data;
 }
@@ -1015,7 +987,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::update_block_preconditioner(This const * /*operator*/)
+DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
 {
   // momentum block
   preconditioner_momentum->update(&this->momentum_operator);

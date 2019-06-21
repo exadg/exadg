@@ -104,7 +104,7 @@ DGNavierStokesBase<dim, Number>::setup(
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::setup_solvers(double const & scaling_factor_time_derivative_term,
-                                               VectorType const * velocity)
+                                               VectorType const & velocity)
 {
   // depending on MatrixFree
   initialize_momentum_operator(scaling_factor_time_derivative_term, velocity);
@@ -266,6 +266,7 @@ void
 DGNavierStokesBase<dim, Number>::initialize_operators()
 {
   // operator kernels
+  Operators::ConvectiveKernelData convective_kernel_data;
   convective_kernel_data.formulation           = param.formulation_convective_term;
   convective_kernel_data.upwind_factor         = param.upwind_factor;
   convective_kernel_data.use_outflow_bc        = param.use_outflow_bc_convective_term;
@@ -275,6 +276,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
   convective_kernel->reinit(matrix_free, convective_kernel_data, false /* is_mg */);
 
+  Operators::ViscousKernelData viscous_kernel_data;
   viscous_kernel_data.degree                       = param.degree_u;
   viscous_kernel_data.degree_mapping               = mapping_degree;
   viscous_kernel_data.dof_index                    = dof_index_u;
@@ -291,6 +293,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   constraint_dummy.close();
 
   // mass matrix operator
+  MassMatrixOperatorData mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index  = dof_index_u;
   mass_matrix_operator_data.quad_index = quad_index_u;
   mass_matrix_operator.reinit(matrix_free, constraint_dummy, mass_matrix_operator_data);
@@ -312,6 +315,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   rhs_operator.reinit(matrix_free, rhs_data);
 
   // gradient operator
+  GradientOperatorData<dim> gradient_operator_data;
   gradient_operator_data.dof_index_velocity   = dof_index_u;
   gradient_operator_data.dof_index_pressure   = dof_index_p;
   gradient_operator_data.quad_index           = quad_index_u;
@@ -321,6 +325,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   gradient_operator.reinit(matrix_free, gradient_operator_data);
 
   // divergence operator
+  DivergenceOperatorData<dim> divergence_operator_data;
   divergence_operator_data.dof_index_velocity   = dof_index_u;
   divergence_operator_data.dof_index_pressure   = dof_index_p;
   divergence_operator_data.quad_index           = quad_index_u;
@@ -330,6 +335,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   divergence_operator.reinit(matrix_free, divergence_operator_data);
 
   // convective operator
+  ConvectiveOperatorData<dim> convective_operator_data;
   convective_operator_data.kernel_data          = convective_kernel_data;
   convective_operator_data.dof_index            = dof_index_u;
   convective_operator_data.quad_index           = this->get_quad_index_velocity_linearized();
@@ -342,24 +348,20 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
                              convective_kernel);
 
   // viscous operator
+  ViscousOperatorData<dim> viscous_operator_data;
   viscous_operator_data.kernel_data          = viscous_kernel_data;
   viscous_operator_data.bc                   = boundary_descriptor_velocity;
   viscous_operator_data.dof_index            = dof_index_u;
   viscous_operator_data.quad_index           = quad_index_u;
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
-}
 
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
-  double const &     scaling_factor_time_derivative_term,
-  VectorType const * velocity)
-{
+  // Momentum operator
   MomentumOperatorData<dim> data;
 
-  data.unsteady_problem           = unsteady_problem_has_to_be_solved();
-  data.scaling_factor_mass_matrix = scaling_factor_time_derivative_term;
+  data.unsteady_problem = unsteady_problem_has_to_be_solved();
+  // scaling factor mass matrix not known at this point
+  data.scaling_factor_mass_matrix = 1.0;
 
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     data.convective_problem = false;
@@ -386,21 +388,24 @@ DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
   data.use_cell_based_loops = param.use_cell_based_face_loops;
   data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
-
-  AffineConstraints<double> constraint_dummy;
-  constraint_dummy.close();
+  if(data.convective_problem)
+    data.solver_block_diagonal = Elementwise::Solver::GMRES;
+  else
+    data.solver_block_diagonal = Elementwise::Solver::CG;
+  data.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;
+  data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
 
   momentum_operator.reinit(matrix_free, constraint_dummy, data, viscous_kernel, convective_kernel);
+}
 
-  if(data.convective_problem)
-  {
-    AssertThrow(
-      velocity != nullptr,
-      ExcMessage(
-        "To initialize preconditioners, convective kernel needs access to a velocity field."));
-
-    set_velocity_ptr(*velocity);
-  }
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
+  double const &     scaling_factor_time_derivative_term,
+  VectorType const & velocity)
+{
+  momentum_operator.set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
+  set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>
@@ -620,48 +625,6 @@ DGNavierStokesBase<dim, Number>::get_viscosity_boundary_face(unsigned int const 
   return viscosity;
 }
 
-template<int dim, typename Number>
-MassMatrixOperatorData const &
-DGNavierStokesBase<dim, Number>::get_mass_matrix_operator_data() const
-{
-  return mass_matrix_operator_data;
-}
-
-template<int dim, typename Number>
-ViscousOperatorData<dim> const &
-DGNavierStokesBase<dim, Number>::get_viscous_operator_data() const
-{
-  return viscous_operator_data;
-}
-
-template<int dim, typename Number>
-ConvectiveOperatorData<dim> const &
-DGNavierStokesBase<dim, Number>::get_convective_operator_data() const
-{
-  return convective_operator_data;
-}
-
-template<int dim, typename Number>
-GradientOperatorData<dim> const &
-DGNavierStokesBase<dim, Number>::get_gradient_operator_data() const
-{
-  return gradient_operator_data;
-}
-
-template<int dim, typename Number>
-DivergenceOperatorData<dim> const &
-DGNavierStokesBase<dim, Number>::get_divergence_operator_data() const
-{
-  return divergence_operator_data;
-}
-
-template<int dim, typename Number>
-std::shared_ptr<FieldFunctions<dim>> const
-DGNavierStokesBase<dim, Number>::get_field_functions() const
-{
-  return field_functions;
-}
-
 // Polynomial degree required for CFL condition, e.g., CFL_k = CFL / k^{exp}.
 template<int dim, typename Number>
 unsigned int
@@ -702,10 +665,10 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & velocity,
                                                               VectorType & pressure,
-                                                              double const evaluation_time) const
+                                                              double const time) const
 {
-  field_functions->initial_solution_velocity->set_time(evaluation_time);
-  field_functions->initial_solution_pressure->set_time(evaluation_time);
+  field_functions->initial_solution_velocity->set_time(time);
+  field_functions->initial_solution_pressure->set_time(time);
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -769,13 +732,12 @@ DGNavierStokesBase<dim, Number>::apply_mass_matrix_add(VectorType &       dst,
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::shift_pressure(VectorType &   pressure,
-                                                double const & eval_time) const
+DGNavierStokesBase<dim, Number>::shift_pressure(VectorType & pressure, double const & time) const
 {
   VectorType vec1(pressure);
   for(unsigned int i = 0; i < vec1.local_size(); ++i)
     vec1.local_element(i) = 1.;
-  field_functions->analytical_solution_pressure->set_time(eval_time);
+  field_functions->analytical_solution_pressure->set_time(time);
   double const exact   = field_functions->analytical_solution_pressure->value(first_point);
   double       current = 0.;
   if(pressure.locally_owned_elements().is_element(dof_index_first_point))
@@ -787,7 +749,7 @@ DGNavierStokesBase<dim, Number>::shift_pressure(VectorType &   pressure,
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressure,
-                                                           double const & eval_time) const
+                                                           double const & time) const
 {
   // one cannot use Number as template here since Number might be float
   // while analytical_solution_pressure is of type Function<dim,double>
@@ -796,7 +758,7 @@ DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressu
   VectorTypeDouble vec_double;
   vec_double = pressure; // initialize
 
-  field_functions->analytical_solution_pressure->set_time(eval_time);
+  field_functions->analytical_solution_pressure->set_time(time);
   VectorTools::interpolate(*mapping,
                            dof_handler_p,
                            *(field_functions->analytical_solution_pressure),
@@ -967,30 +929,37 @@ DGNavierStokesBase<dim, Number>::apply_inverse_mass_matrix(VectorType &       ds
 
 template<int dim, typename Number>
 void
+DGNavierStokesBase<dim, Number>::evaluate_add_body_force_term(VectorType & dst,
+                                                              double const time) const
+{
+  this->rhs_operator.evaluate_add(dst, time);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesBase<dim, Number>::evaluate_convective_term(VectorType &       dst,
                                                           VectorType const & src,
-                                                          Number const       evaluation_time) const
+                                                          Number const       time) const
 {
-  convective_operator.evaluate_nonlinear_operator(dst, src, evaluation_time);
+  convective_operator.evaluate_nonlinear_operator(dst, src, time);
 }
 
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::evaluate_pressure_gradient_term(VectorType &       dst,
                                                                  VectorType const & src,
-                                                                 double const evaluation_time) const
+                                                                 double const       time) const
 {
-  gradient_operator.evaluate(dst, src, evaluation_time);
+  gradient_operator.evaluate(dst, src, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::evaluate_velocity_divergence_term(
-  VectorType &       dst,
-  VectorType const & src,
-  double const       evaluation_time) const
+DGNavierStokesBase<dim, Number>::evaluate_velocity_divergence_term(VectorType &       dst,
+                                                                   VectorType const & src,
+                                                                   double const       time) const
 {
-  divergence_operator.evaluate(dst, src, evaluation_time);
+  divergence_operator.evaluate(dst, src, time);
 }
 
 // OIF splitting
@@ -999,9 +968,9 @@ void
 DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
   VectorType &       dst,
   VectorType const & src,
-  Number const       evaluation_time) const
+  Number const       time) const
 {
-  convective_operator.evaluate_nonlinear_operator(dst, src, evaluation_time);
+  convective_operator.evaluate_nonlinear_operator(dst, src, time);
 
   // shift convective term to the rhs of the equation
   dst *= -1.0;
@@ -1014,10 +983,10 @@ void
 DGNavierStokesBase<dim, Number>::evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
   VectorType &       dst,
   VectorType const & src,
-  Number const       evaluation_time,
+  Number const       time,
   VectorType const & velocity_transport) const
 {
-  convective_operator.evaluate_linear_transport(dst, src, evaluation_time, velocity_transport);
+  convective_operator.evaluate_linear_transport(dst, src, time, velocity_transport);
 
   // shift convective term to the rhs of the equation
   dst *= -1.0;

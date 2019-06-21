@@ -46,16 +46,20 @@ public:
    */
   DGNavierStokesDualSplitting(parallel::Triangulation<dim> const & triangulation,
                               InputParameters const &              parameters,
-                              std::shared_ptr<Postprocessor>       postprocessor);
+                              std::shared_ptr<Postprocessor>       postprocessor)
+    : Base(triangulation, parameters, postprocessor), time(0.0)
+  {
+  }
 
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesDualSplitting();
+  virtual ~DGNavierStokesDualSplitting()
+  {
+  }
 
   void
-  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
-                VectorType const * velocity                            = nullptr);
+  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
 
   /*
    * This function evaluates the convective term and applies the inverse mass matrix.
@@ -137,7 +141,7 @@ public:
 
 private:
   /*
-   * Setup of helmholtz solver (operator, preconditioner, solver).
+   * Setup of Helmholtz solver (operator, preconditioner, solver).
    */
   void
   setup_helmholtz_solver();
@@ -221,11 +225,10 @@ private:
   std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
 
   /*
-   * Element variable used to store the current physical time. Note that this variable is not only
-   * needed in case of an implicit treatment of the convective term, but also for the evaluation of
-   * the right-hand side of the pressure Poisson equation.
+   * Element variable used to store the current physical time. This variable is needed for the
+   * evaluation of the right-hand side of the pressure Poisson equation.
    */
-  double evaluation_time;
+  double time;
 };
 
 } // namespace IncNS

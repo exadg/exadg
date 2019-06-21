@@ -31,8 +31,8 @@ public:
    * Constructor.
    */
   DGNavierStokesProjectionMethods(parallel::Triangulation<dim> const & triangulation,
-                                  InputParameters const &              parameters_in,
-                                  std::shared_ptr<Postprocessor>       postprocessor_in);
+                                  InputParameters const &              parameters,
+                                  std::shared_ptr<Postprocessor>       postprocessor);
 
   /*
    * Destructor.
@@ -44,14 +44,14 @@ public:
    * dst-vector.
    */
   void
-  do_rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
+  do_rhs_add_viscous_term(VectorType & dst, double const time) const;
 
   /*
    * Pressure Poisson equation: This function evaluates the inhomogeneous parts of boundary face
    * integrals of the negative Laplace operator and adds the result to the dst-vector.
    */
   void
-  do_rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
+  do_rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
   /*
    * This function solves the pressure Poisson equation and returns the number of iterations.
@@ -60,13 +60,13 @@ public:
   do_solve_pressure(VectorType & dst, VectorType const & src) const;
 
   /*
-   * This function evaluates the projection operator (homogeneous part = apply).
+   * This function applies the projection operator (used for throughput measurements).
    */
   void
   apply_projection_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   * This function evaluates the Laplace operator (homogeneous part = apply).
+   * This function applies the Laplace operator (used for throughput measurements).
    */
   void
   apply_laplace_operator(VectorType & dst, VectorType const & src) const;

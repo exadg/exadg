@@ -10,24 +10,10 @@
 namespace IncNS
 {
 template<int dim, typename Number>
-DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
-  parallel::Triangulation<dim> const & triangulation,
-  InputParameters const &              parameters,
-  std::shared_ptr<Postprocessor>       postprocessor)
-  : Base(triangulation, parameters, postprocessor), evaluation_time(0.0)
-{
-}
-
-template<int dim, typename Number>
-DGNavierStokesDualSplitting<dim, Number>::~DGNavierStokesDualSplitting()
-{
-}
-
-template<int dim, typename Number>
 void
 DGNavierStokesDualSplitting<dim, Number>::setup_solvers(
   double const &     scaling_factor_time_derivative_term,
-  VectorType const * velocity)
+  VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
@@ -221,9 +207,9 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_velocity_divergence_term(
 template<int dim, typename Number>
 void
 DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(VectorType &   dst,
-                                                                           double const & eval_time)
+                                                                           double const & time)
 {
-  evaluation_time = eval_time;
+  this->time = time;
 
   VectorType src_dummy;
   this->matrix_free.loop(&This::cell_loop_empty,
@@ -261,9 +247,8 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
-                                                 q_points,
-                                                 evaluation_time);
+        vector rhs =
+          evaluate_vectorial_function(this->field_functions->right_hand_side, q_points, this->time);
 
         scalar flux_times_normal = rhs * integrator.get_normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
@@ -370,10 +355,9 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_add(VectorType &   dst,
-                                                          double const & eval_time)
+DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_add(VectorType & dst, double const & time)
 {
-  evaluation_time = eval_time;
+  this->time = time;
 
   VectorType src_dummy;
   this->matrix_free.loop(&This::cell_loop_empty,
@@ -412,14 +396,13 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_add_boundary_face(
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
-                                                 q_points,
-                                                 evaluation_time);
+        vector rhs =
+          evaluate_vectorial_function(this->field_functions->right_hand_side, q_points, this->time);
 
         // evaluate boundary condition
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
-        vector dudt = evaluate_vectorial_function(it->second, q_points, evaluation_time);
+        vector dudt = evaluate_vectorial_function(it->second, q_points, this->time);
 
         vector normal = integrator.get_normal_vector(q);
 

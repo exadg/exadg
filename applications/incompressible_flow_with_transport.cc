@@ -355,11 +355,9 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   // depends on quantities such as the time_step_size or gamma0!!!)
   fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
-  LinearAlgebra::distributed::Vector<Number> const * velocity =
-    &fluid_time_integrator->get_velocity();
-
   navier_stokes_operation->setup_solvers(
-    fluid_time_integrator->get_scaling_factor_time_derivative_term(), velocity);
+    fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+    fluid_time_integrator->get_velocity());
 
   // SCALAR TRANSPORT
   for(unsigned int i = 0; i < n_scalars; ++i)

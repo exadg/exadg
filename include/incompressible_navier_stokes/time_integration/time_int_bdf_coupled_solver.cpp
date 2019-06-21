@@ -269,6 +269,7 @@ TimeIntBDFCoupled<Number>::solve_timestep()
       pde_operator->solve_linear_stokes_problem(solution_np,
                                                 rhs_vector,
                                                 update_preconditioner,
+                                                this->get_next_time(),
                                                 this->get_scaling_factor_time_derivative_term());
 
     iterations[0] += linear_iterations;
@@ -294,6 +295,11 @@ TimeIntBDFCoupled<Number>::solve_timestep()
                               solution[i].block(0));
     }
 
+    VectorType rhs(this->sum_alphai_ui);
+    this->operator_base->apply_mass_matrix(rhs, this->sum_alphai_ui);
+    if(this->param.right_hand_side)
+      this->operator_base->evaluate_add_body_force_term(rhs, this->get_next_time());
+
     // Newton solver
     unsigned int newton_iterations = 0;
     unsigned int linear_iterations = 0;
@@ -302,7 +308,7 @@ TimeIntBDFCoupled<Number>::solve_timestep()
       (this->time_step_number % this->param.update_preconditioner_coupled_every_time_steps == 0);
 
     pde_operator->solve_nonlinear_problem(solution_np,
-                                          this->sum_alphai_ui,
+                                          rhs,
                                           this->get_next_time(),
                                           update_preconditioner,
                                           this->get_scaling_factor_time_derivative_term(),
@@ -610,7 +616,9 @@ template<typename Number>
 double
 TimeIntBDFCoupled<Number>::evaluate_residual()
 {
-  this->pde_operator->evaluate_nonlinear_residual_steady(this->solution_np, this->solution[0]);
+  this->pde_operator->evaluate_nonlinear_residual_steady(this->solution_np,
+                                                         this->solution[0],
+                                                         this->get_time());
 
   double residual = this->solution_np.l2_norm();
 

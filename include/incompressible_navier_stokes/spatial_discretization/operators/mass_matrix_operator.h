@@ -103,38 +103,29 @@ public:
   typedef typename Base::IntegratorCell IntegratorCell;
 
   void
-  set_scaling_factor(Number const & number);
+  set_scaling_factor(Number const & number) const;
 
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          MassMatrixOperatorData const &    operator_data) const;
 
-  // TODO can be removed once merged operators are used in MomentumOperator instead of sequential
-  // operator application
   void
   apply_scale(VectorType & dst, Number const & factor, VectorType const & src) const
   {
     kernel.set_scaling_factor(factor);
 
-    this->matrix_free->cell_loop(
-      &MassMatrixOperator<dim, Number>::cell_loop, this, dst, src, true /*zero_dst_vector = true*/);
+    this->apply(dst, src);
 
     kernel.set_scaling_factor(1.0);
   }
 
-  // TODO can be removed once merged operators are used in MomentumOperator instead of sequential
-  // operator application
   void
   apply_scale_add(VectorType & dst, Number const & factor, VectorType const & src) const
   {
     kernel.set_scaling_factor(factor);
 
-    this->matrix_free->cell_loop(&MassMatrixOperator<dim, Number>::cell_loop,
-                                 this,
-                                 dst,
-                                 src,
-                                 false /*zero_dst_vector = false*/);
+    this->apply_add(dst, src);
 
     kernel.set_scaling_factor(1.0);
   }
@@ -142,30 +133,6 @@ public:
 private:
   void
   do_cell_integral(IntegratorCell & integrator) const;
-
-  // TODO can be removed once merged operators are used in MomentumOperator instead of sequential
-  // operator application
-  void
-  cell_loop(MatrixFree<dim, Number> const & matrix_free,
-            VectorType &                    dst,
-            VectorType const &              src,
-            Range const &                   cell_range) const
-  {
-    IntegratorCell integrator(matrix_free,
-                              this->operator_data.dof_index,
-                              this->operator_data.quad_index);
-
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-    {
-      integrator.reinit(cell);
-
-      integrator.gather_evaluate(src, true, false, false);
-
-      do_cell_integral(integrator);
-
-      integrator.integrate_scatter(true, false, dst);
-    }
-  }
 
   Operators::MassMatrixKernel<dim, Number> kernel;
 };

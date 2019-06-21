@@ -453,7 +453,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
    */
   if(this->param.right_hand_side == true)
   {
-    pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
+    this->operator_base->evaluate_add_body_force_term(rhs, this->get_next_time());
   }
 
   /*

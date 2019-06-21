@@ -27,6 +27,117 @@ template<int dim, typename Number>
 class DGNavierStokesCoupled;
 
 template<int dim, typename Number>
+class NonlinearOperatorCoupled
+{
+private:
+  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+
+  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+
+public:
+  NonlinearOperatorCoupled()
+    : pde_operator(nullptr), rhs_vector(nullptr), time(0.0), scaling_factor_mass_matrix(1.0)
+  {
+  }
+
+  void
+  initialize(PDEOperator const & pde_operator)
+  {
+    this->pde_operator = &pde_operator;
+  }
+
+  void
+  update(VectorType const & rhs_vector, double const & time, double const & scaling_factor)
+  {
+    this->rhs_vector                 = &rhs_vector;
+    this->time                       = time;
+    this->scaling_factor_mass_matrix = scaling_factor;
+  }
+
+  /*
+   * The implementation of the Newton solver requires a function called
+   * 'initialize_vector_for_newton_solver'.
+   */
+  void
+  initialize_vector_for_newton_solver(BlockVectorType & src) const
+  {
+    pde_operator->initialize_block_vector_velocity_pressure(src);
+  }
+
+  /*
+   * The implementation of the Newton solver requires a function called
+   * 'evaluate_nonlinear_residual'.
+   */
+  void
+  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src) const
+  {
+    pde_operator->evaluate_nonlinear_residual(
+      dst, src, rhs_vector, time, scaling_factor_mass_matrix);
+  }
+
+private:
+  PDEOperator const * pde_operator;
+
+  VectorType const * rhs_vector;
+  double             time;
+  double             scaling_factor_mass_matrix;
+};
+
+template<int dim, typename Number>
+class LinearOperatorCoupled : public LinearOperatorBase
+{
+private:
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
+
+  typedef DGNavierStokesCoupled<dim, Number> PDEOperator;
+
+public:
+  LinearOperatorCoupled() : pde_operator(nullptr)
+  {
+  }
+
+  void
+  initialize(PDEOperator const & pde_operator)
+  {
+    this->pde_operator = &pde_operator;
+  }
+
+  /*
+   * The implementation of the Newton solver requires a function called
+   * 'set_solution_linearization'.
+   */
+  void
+  set_solution_linearization(BlockVectorType const & solution_linearization) const
+  {
+    pde_operator->set_velocity_ptr(solution_linearization.block(0));
+  }
+
+  void
+  update(double const & time, double const & scaling_factor)
+  {
+    this->time                       = time;
+    this->scaling_factor_mass_matrix = scaling_factor;
+  }
+
+  /*
+   * The implementation of linear solvers in deal.ii requires that a function called 'vmult' is
+   * provided.
+   */
+  void
+  vmult(BlockVectorType & dst, BlockVectorType const & src) const
+  {
+    pde_operator->apply_linearized_problem(dst, src, time, scaling_factor_mass_matrix);
+  }
+
+private:
+  PDEOperator const * pde_operator;
+
+  double time;
+  double scaling_factor_mass_matrix;
+};
+
+template<int dim, typename Number>
 class BlockPreconditioner
 {
 private:
@@ -46,9 +157,9 @@ public:
   }
 
   void
-  update(PDEOperator const * op)
+  update(LinearOperatorBase const * /* linear_operator */)
   {
-    pde_operator->update_block_preconditioner(op);
+    pde_operator->update_block_preconditioner();
   }
 
   void
@@ -79,8 +190,8 @@ public:
    * Constructor.
    */
   DGNavierStokesCoupled(parallel::Triangulation<dim> const & triangulation,
-                        InputParameters const &              parameters_in,
-                        std::shared_ptr<Postprocessor>       postprocessor_in);
+                        InputParameters const &              parameters,
+                        std::shared_ptr<Postprocessor>       postprocessor);
 
   /*
    * Destructor.
@@ -95,8 +206,7 @@ public:
         std::shared_ptr<FieldFunctions<dim>> const      field_functions);
 
   void
-  setup_solvers(double const &     scaling_factor_time_derivative_term = 1.0,
-                VectorType const * velocity                            = nullptr);
+  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
 
   /*
    *  Update divergence penalty operator by recalculating the penalty parameter
@@ -120,13 +230,6 @@ public:
   initialize_block_vector_velocity_pressure(BlockVectorType & src) const;
 
   /*
-   * The implementation of the Newton solver requires that the underlying operator implements a
-   * function called "initialize_vector_for_newton_solver".
-   */
-  void
-  initialize_vector_for_newton_solver(BlockVectorType & src) const;
-
-  /*
    * Setters and getters.
    */
 
@@ -137,45 +240,22 @@ public:
   void
   set_scaling_factor_continuity(double const scaling_factor);
 
-  void
-  set_sum_alphai_ui(VectorType const * vector = nullptr);
-
-  void
-  set_solution_linearization(BlockVectorType const & solution_linearization);
-
   /*
    * Stokes equations or convective term treated explicitly: solve linear system of equations
    */
 
   /*
-   *  This function solves the linear Stokes problem (steady/unsteady Stokes or unsteady
-   * Navier-Stokes with explicit treatment of convective term). The parameter
-   * scaling_factor_mass_matrix_term has to be specified for unsteady problem and can be omitted for
-   * steady problems.
+   * This function solves the linear Stokes problem (Stokes equations or Navier-Stokes
+   * equations with an explicit treatment of the convective term). The parameter
+   * scaling_factor_mass_matrix_term has to be specified for unsteady problem and
+   * can be omitted for steady problems.
    */
   unsigned int
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
                               bool const &            update_preconditioner,
+                              double const &          time                            = 0.0,
                               double const &          scaling_factor_mass_matrix_term = 1.0);
-
-
-  /*
-   *  For the linear solver, the operator of the linear(ized) problem has to implement a function
-   * called vmult() which calculates the matrix-vector product for the linear(ized) problem.
-   */
-  void
-  vmult(BlockVectorType & dst, BlockVectorType const & src) const;
-
-  /*
-   * This function calculates the right-hand side of the steady Stokes problem, or unsteady Stokes
-   * problem, or unsteady Navier-Stokes problem with explicit treatment of the convective term. The
-   * parameters 'src' and 'eval_time' have to be specified for unsteady problems. For steady
-   * problems these parameters are omitted.
-   */
-  void
-  rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const;
-
 
   /*
    * Convective term treated implicitly: solve non-linear system of equations
@@ -185,17 +265,18 @@ public:
    * This function solves the nonlinear problem for steady problems.
    */
   void
-  solve_nonlinear_steady_problem(BlockVectorType & dst,
-                                 bool const &      update_preconditioner,
-                                 unsigned int &    newton_iterations,
-                                 unsigned int &    linear_iterations);
+  solve_nonlinear_steady_problem(BlockVectorType &  dst,
+                                 VectorType const & rhs_vector,
+                                 bool const &       update_preconditioner,
+                                 unsigned int &     newton_iterations,
+                                 unsigned int &     linear_iterations);
 
   /*
    * This function solves the nonlinear problem for unsteady problems.
    */
   void
   solve_nonlinear_problem(BlockVectorType &  dst,
-                          VectorType const & sum_alphai_ui,
+                          VectorType const & rhs_vector,
                           double const &     time,
                           bool const &       update_preconditioner,
                           double const &     scaling_factor_mass_matrix_term,
@@ -207,16 +288,40 @@ public:
    * This function evaluates the nonlinear residual.
    */
   void
-  evaluate_nonlinear_residual(BlockVectorType & dst, BlockVectorType const & src) const;
+  evaluate_nonlinear_residual(BlockVectorType &       dst,
+                              BlockVectorType const & src,
+                              VectorType const *      rhs_vector,
+                              double const &          time,
+                              double const &          scaling_factor_mass_matrix) const;
 
   /*
-   *  This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
-   *  This function has to be implemented seperately (for example, the convective term will be
-   *  evaluated in case of the Navier-Stokes equations and the time-derivative term is never
+   * This function evaluates the nonlinear residual of the steady Navier-Stokes equations.
+   * This function has to be implemented separately (for example, the convective term will be
+   * evaluated in case of the Navier-Stokes equations and the time-derivative term is never
    * evaluated).
    */
   void
-  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src) const;
+  evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
+                                     BlockVectorType const & src,
+                                     double const &          time) const;
+
+  /*
+   * This function calculates the matrix-vector product for the linear(ized) problem.
+   */
+  void
+  apply_linearized_problem(BlockVectorType &       dst,
+                           BlockVectorType const & src,
+                           double const &          time,
+                           double const &          scaling_factor_mass_matrix) const;
+
+  /*
+   * This function calculates the right-hand side of the steady Stokes problem, or unsteady Stokes
+   * problem, or unsteady Navier-Stokes problem with explicit treatment of the convective term. The
+   * parameters 'src' and 'time' have to be specified for unsteady problems. For steady
+   * problems these parameters are omitted.
+   */
+  void
+  rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const;
 
   /*
    * Postprocessing.
@@ -234,7 +339,7 @@ public:
    * Block preconditioner
    */
   void
-  update_block_preconditioner(This const * /*operator*/);
+  update_block_preconditioner();
 
   void
   apply_block_preconditioner(BlockVectorType & dst, BlockVectorType const & src) const;
@@ -292,24 +397,23 @@ private:
   // temporary vector needed to evaluate both the nonlinear residual and the linearized operator
   VectorType mutable temp_vector;
 
-  // vector needed to evaluate the nonlinear residual (which stays constant over all Newton
-  // iterations)
-  VectorType const * sum_alphai_ui;
+  double scaling_factor_continuity;
 
-  // linear solver
-  std::shared_ptr<IterativeSolverBase<BlockVectorType>> linear_solver;
+  // Nonlinear operator
+  NonlinearOperatorCoupled<dim, Number> nonlinear_operator;
 
   // Newton solver
-  std::shared_ptr<NewtonSolver<BlockVectorType, This, This, IterativeSolverBase<BlockVectorType>>>
+  std::shared_ptr<NewtonSolver<BlockVectorType,
+                               NonlinearOperatorCoupled<dim, Number>,
+                               LinearOperatorCoupled<dim, Number>,
+                               IterativeSolverBase<BlockVectorType>>>
     newton_solver;
 
-  // time at which the linear/nonlinear operators are to be evaluated
-  double evaluation_time;
+  // Linear operator
+  LinearOperatorCoupled<dim, Number> linear_operator;
 
-  // scaling factor in front of the mass matrix operator (gamma0/dt)
-  double scaling_factor_time_derivative_term;
-
-  double scaling_factor_continuity;
+  // Linear solver
+  std::shared_ptr<IterativeSolverBase<BlockVectorType>> linear_solver;
 
   /*
    * Block preconditioner for linear(ized) problem

@@ -11,7 +11,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 void
-MassMatrixOperator<dim, Number>::set_scaling_factor(Number const & number)
+MassMatrixOperator<dim, Number>::set_scaling_factor(Number const & number) const
 {
   kernel.set_scaling_factor(number);
 }

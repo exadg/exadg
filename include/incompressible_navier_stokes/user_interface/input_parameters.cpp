@@ -113,6 +113,7 @@ InputParameters::InputParameters()
     // NUMERICAL PARAMETERS
     implement_block_diagonal_preconditioner_matrix_free(false),
     use_cell_based_face_loops(false),
+    solver_data_block_diagonal(SolverData(1000, 1.e-12, 1.e-2, 1000)),
     quad_rule_linearization(QuadratureRuleLinearization::Overintegration32k),
 
     // PROJECTION METHODS
@@ -377,6 +378,13 @@ InputParameters::check_input_parameters()
     {
       AssertThrow(multigrid_operator_type_velocity_block != MultigridOperatorType::Undefined,
                   ExcMessage("Parameter must be defined"));
+
+      if(equation_type == EquationType::Stokes)
+      {
+        AssertThrow(multigrid_operator_type_velocity_block !=
+                      MultigridOperatorType::ReactionConvectionDiffusion,
+                    ExcMessage("Invalid parameter (the specified equation type is Stokes)."));
+      }
 
       if(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
       {
@@ -705,6 +713,11 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
                   implement_block_diagonal_preconditioner_matrix_free);
 
   print_parameter(pcout, "Use cell-based face loops", use_cell_based_face_loops);
+
+  if(implement_block_diagonal_preconditioner_matrix_free)
+  {
+    solver_data_block_diagonal.print(pcout);
+  }
 
   print_parameter(pcout, "Quadrature rule linearization", enum_to_string(quad_rule_linearization));
 }

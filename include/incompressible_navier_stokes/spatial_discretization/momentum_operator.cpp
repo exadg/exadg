@@ -112,9 +112,8 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number) const
 {
-  AssertThrow(mass_kernel.get() != 0, ExcMessage("Mass kernel is not initialized."));
-
-  mass_kernel->set_scaling_factor(number);
+  if(this->operator_data.unsteady_problem)
+    mass_kernel->set_scaling_factor(number);
 }
 
 template<int dim, typename Number>
