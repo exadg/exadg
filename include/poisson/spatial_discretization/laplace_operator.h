@@ -176,9 +176,9 @@ public:
   typedef typename Base::VectorType VectorType;
 
   void
-  reinit(MatrixFree<dim, Number> const &   mf_data,
+  reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         LaplaceOperatorData<dim> const &  operator_data) const;
+         LaplaceOperatorData<dim> const &  data) const;
 
 private:
   void
@@ -211,7 +211,7 @@ private:
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                LaplaceOperatorData<dim> const &     operator_data,
+                                LaplaceOperatorData<dim> const &     data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   Operators::LaplaceKernel<dim, Number> kernel;

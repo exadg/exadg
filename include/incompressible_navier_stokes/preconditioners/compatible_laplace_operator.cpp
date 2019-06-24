@@ -4,7 +4,8 @@ namespace IncNS
 {
 template<int dim, typename Number>
 CompatibleLaplaceOperator<dim, Number>::CompatibleLaplaceOperator()
-  : data(nullptr),
+  : dealii::Subscriptor(),
+    matrix_free(nullptr),
     gradient_operator(nullptr),
     divergence_operator(nullptr),
     inv_mass_matrix_operator(nullptr)
@@ -14,7 +15,7 @@ CompatibleLaplaceOperator<dim, Number>::CompatibleLaplaceOperator()
 template<int dim, typename Number>
 void
 CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
-  MatrixFree<dim, Number> const &            data,
+  MatrixFree<dim, Number> const &            matrix_free,
   AffineConstraints<double> const &          constraint_matrix,
   CompatibleLaplaceOperatorData<dim> const & operator_data)
 {
@@ -22,23 +23,23 @@ CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
 
   // setup own gradient operator
   GradientOperatorData<dim> gradient_operator_data = operator_data.gradient_operator_data;
-  own_gradient_operator_storage.initialize(data, gradient_operator_data);
+  own_gradient_operator_storage.reinit(matrix_free, gradient_operator_data);
 
   // setup own divergence operator
   DivergenceOperatorData<dim> divergence_operator_data = operator_data.divergence_operator_data;
-  own_divergence_operator_storage.initialize(data, divergence_operator_data);
+  own_divergence_operator_storage.reinit(matrix_free, divergence_operator_data);
 
   // setup own inverse mass matrix operator
   // NOTE: use quad_index = 0 since own_matrix_free_storage contains only one quadrature formula
   // (i.e. on would use quad_index = 0 also if quad_index_velocity would be 1 !)
   unsigned int quad_index = 0;
-  own_inv_mass_matrix_operator_storage.initialize(data,
+  own_inv_mass_matrix_operator_storage.initialize(matrix_free,
                                                   operator_data.degree_u,
                                                   operator_data.dof_index_velocity,
                                                   quad_index);
 
   // setup compatible Laplace operator
-  initialize(data,
+  initialize(matrix_free,
              operator_data,
              own_gradient_operator_storage,
              own_divergence_operator_storage,
@@ -48,14 +49,14 @@ CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
 template<int dim, typename Number>
 void
 CompatibleLaplaceOperator<dim, Number>::initialize(
-  MatrixFree<dim, Number> const &                     mf_data_in,
+  MatrixFree<dim, Number> const &                     matrix_free_in,
   CompatibleLaplaceOperatorData<dim> const &          operator_data_in,
   GradientOperator<dim, Number> const &               gradient_operator_in,
   DivergenceOperator<dim, Number> const &             divergence_operator_in,
   InverseMassMatrixOperator<dim, dim, Number> const & inv_mass_matrix_operator_in)
 {
   // copy parameters into element variables
-  this->data                     = &mf_data_in;
+  this->matrix_free              = &matrix_free_in;
   this->operator_data            = operator_data_in;
   this->gradient_operator        = &gradient_operator_in;
   this->divergence_operator      = &divergence_operator_in;
@@ -126,14 +127,14 @@ template<int dim, typename Number>
 types::global_dof_index
 CompatibleLaplaceOperator<dim, Number>::m() const
 {
-  return data->get_vector_partitioner(operator_data.dof_index_pressure)->size();
+  return matrix_free->get_vector_partitioner(operator_data.dof_index_pressure)->size();
 }
 
 template<int dim, typename Number>
 types::global_dof_index
 CompatibleLaplaceOperator<dim, Number>::n() const
 {
-  return data->get_vector_partitioner(operator_data.dof_index_pressure)->size();
+  return matrix_free->get_vector_partitioner(operator_data.dof_index_pressure)->size();
 }
 
 template<int dim, typename Number>
@@ -148,7 +149,7 @@ template<int dim, typename Number>
 MatrixFree<dim, Number> const &
 CompatibleLaplaceOperator<dim, Number>::get_matrix_free() const
 {
-  return *data;
+  return *matrix_free;
 }
 
 template<int dim, typename Number>
@@ -191,14 +192,14 @@ template<int dim, typename Number>
 void
 CompatibleLaplaceOperator<dim, Number>::initialize_dof_vector_pressure(VectorType & vector) const
 {
-  data->initialize_dof_vector(vector, operator_data.dof_index_pressure);
+  matrix_free->initialize_dof_vector(vector, operator_data.dof_index_pressure);
 }
 
 template<int dim, typename Number>
 void
 CompatibleLaplaceOperator<dim, Number>::initialize_dof_vector_velocity(VectorType & vector) const
 {
-  data->initialize_dof_vector(vector, operator_data.dof_index_velocity);
+  matrix_free->initialize_dof_vector(vector, operator_data.dof_index_velocity);
 }
 
 template<int dim, typename Number>

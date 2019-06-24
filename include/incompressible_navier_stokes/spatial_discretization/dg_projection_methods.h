@@ -1,12 +1,12 @@
 /*
- * dg_navier_stokes_projection_methods.h
+ * dg_projection_methods.h
  *
  *  Created on: Nov 7, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PROJECTION_METHODS_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PROJECTION_METHODS_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PROJECTION_METHODS_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PROJECTION_METHODS_H_
 
 #include "../../incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 
@@ -20,21 +20,19 @@ template<int dim, typename Number>
 class DGNavierStokesProjectionMethods : public DGNavierStokesBase<dim, Number>
 {
 protected:
-  typedef DGNavierStokesBase<dim, Number> BASE;
+  typedef DGNavierStokesBase<dim, Number> Base;
 
-  typedef typename BASE::VectorType VectorType;
-
-  typedef typename BASE::Postprocessor Postprocessor;
-
-  typedef typename BASE::MultigridNumber MultigridNumber;
+  typedef typename Base::VectorType      VectorType;
+  typedef typename Base::Postprocessor   Postprocessor;
+  typedef typename Base::MultigridNumber MultigridNumber;
 
 public:
   /*
    * Constructor.
    */
   DGNavierStokesProjectionMethods(parallel::Triangulation<dim> const & triangulation,
-                                  InputParameters const &              parameters_in,
-                                  std::shared_ptr<Postprocessor>       postprocessor_in);
+                                  InputParameters const &              parameters,
+                                  std::shared_ptr<Postprocessor>       postprocessor);
 
   /*
    * Destructor.
@@ -46,29 +44,29 @@ public:
    * dst-vector.
    */
   void
-  do_rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
+  do_rhs_add_viscous_term(VectorType & dst, double const time) const;
 
   /*
    * Pressure Poisson equation: This function evaluates the inhomogeneous parts of boundary face
    * integrals of the negative Laplace operator and adds the result to the dst-vector.
    */
   void
-  do_rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
+  do_rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
   /*
-   * This funtion solves the pressure Poisson equation and returns the number of iterations.
+   * This function solves the pressure Poisson equation and returns the number of iterations.
    */
   unsigned int
   do_solve_pressure(VectorType & dst, VectorType const & src) const;
 
   /*
-   * This function evaluates the projection operator (homogeneous part = apply).
+   * This function applies the projection operator (used for throughput measurements).
    */
   void
   apply_projection_operator(VectorType & dst, VectorType const & src) const;
 
   /*
-   * This function evaluates the Laplace operator (homogeneous part = apply).
+   * This function applies the Laplace operator (used for throughput measurements).
    */
   void
   apply_laplace_operator(VectorType & dst, VectorType const & src) const;
@@ -106,5 +104,5 @@ private:
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_PROJECTION_METHODS_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PROJECTION_METHODS_H_ \
         */

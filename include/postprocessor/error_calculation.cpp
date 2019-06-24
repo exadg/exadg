@@ -139,7 +139,7 @@ template<int dim, typename Number>
 void
 ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, double const time)
 {
-  bool relative = true;
+  bool relative = error_data.calculate_relative_errors;
 
   double const error = calculate_error<dim>(relative,
                                             *dof_handler,

@@ -20,10 +20,10 @@
 // postprocessor
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
-// Navier-Stokes operator
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
+// spatial discretization
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
 
 // Parameters, BCs, etc.
 #include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
@@ -38,7 +38,7 @@ using namespace IncNS;
 
 // specify the flow problem to be used for throughput measurements
 
-#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/deformed_cube.h"
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
 std::vector<int> REFINE_LEVELS = {
@@ -61,6 +61,12 @@ std::vector<int> REFINE_LEVELS = {
 
 // Select the operator to be applied
 
+// Note: Make sure that the correct time integration scheme is selected in the input file that is
+//       compatible with the Operator type specified here. This also includes the treatment of the
+//       convective term (explicit/implicit), e.g., specifying VelocityConvDiffOperator together
+//       with an explicit treatment of the convective term will only apply the Helmholtz-like
+//       operator.
+
 // clang-format off
 enum class Operator{
   CoupledNonlinearResidual, // nonlinear residual of coupled system of equations
@@ -74,7 +80,7 @@ enum class Operator{
 };
 // clang-format on
 
-Operator OPERATOR = Operator::ConvectiveOperator;
+Operator OPERATOR = Operator::VelocityConvDiffOperator;
 
 std::string
 enum_to_string(Operator const enum_type)
@@ -170,6 +176,8 @@ private:
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
+
+  LinearAlgebra::distributed::Vector<Number> velocity;
 };
 
 template<int dim, typename Number>
@@ -281,8 +289,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                  boundary_descriptor_pressure,
                                  field_functions);
 
-  // use a dummy value of 1.0 for scaling_factor_time_derivative_term
-  navier_stokes_operation->setup_solvers(1.0);
+  navier_stokes_operation->initialize_vector_velocity(velocity);
+  velocity = 1.0;
+  navier_stokes_operation->setup_solvers(1.0 /* dummy */, velocity);
 
 
   // check that the operator type is consistent with the solution approach (coupled vs. splitting)
@@ -330,18 +339,15 @@ Problem<dim, Number>::apply_operator()
   // ... for dual splitting, pressure-correction.
   LinearAlgebra::distributed::Vector<Number> dst2, src2;
 
+  // set velocity required for evaluation of linearized operators
+  navier_stokes_operation->set_velocity_ptr(velocity);
+
   // initialize vectors
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(dst1);
     navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(src1);
     src1 = 1.0;
-
-    // set linearized solution -> required to evaluate the linearized operator
-    navier_stokes_operation_coupled->set_solution_linearization(src1);
-    // set sum_alphai_ui -> required to evaluate the nonlinear residual
-    // in case an unsteady problem is considered
-    navier_stokes_operation_coupled->set_sum_alphai_ui(&src1.block(0));
 
     if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::InverseMassMatrix)
     {
@@ -371,16 +377,16 @@ Problem<dim, Number>::apply_operator()
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::VelocityConvDiffOperator ||
-       OPERATOR == Operator::ProjectionOperator || OPERATOR == Operator::InverseMassMatrix)
+    if(OPERATOR == Operator::VelocityConvDiffOperator || OPERATOR == Operator::ProjectionOperator ||
+       OPERATOR == Operator::InverseMassMatrix)
     {
-      navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
-      navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
+      navier_stokes_operation_pressure_correction->initialize_vector_velocity(src2);
+      navier_stokes_operation_pressure_correction->initialize_vector_velocity(dst2);
     }
     else if(OPERATOR == Operator::PressurePoissonOperator)
     {
-      navier_stokes_operation_dual_splitting->initialize_vector_pressure(src2);
-      navier_stokes_operation_dual_splitting->initialize_vector_pressure(dst2);
+      navier_stokes_operation_pressure_correction->initialize_vector_pressure(src2);
+      navier_stokes_operation_pressure_correction->initialize_vector_pressure(dst2);
     }
     else
     {
@@ -393,7 +399,6 @@ Problem<dim, Number>::apply_operator()
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-
 
   // Timer and wall times
   Timer  timer;
@@ -412,9 +417,9 @@ Problem<dim, Number>::apply_operator()
       if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
       {
         if(OPERATOR == Operator::CoupledNonlinearResidual)
-          navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1);
+          navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
         else if(OPERATOR == Operator::CoupledLinearized)
-          navier_stokes_operation_coupled->vmult(dst1,src1);
+          navier_stokes_operation_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
         else if(OPERATOR == Operator::ConvectiveOperator)
           navier_stokes_operation_coupled->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR == Operator::InverseMassMatrix)
@@ -440,9 +445,7 @@ Problem<dim, Number>::apply_operator()
       else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
       {
         if(OPERATOR == Operator::VelocityConvDiffOperator)
-          navier_stokes_operation_pressure_correction->apply_momentum_operator(dst2,src2,src2);
-        else if(OPERATOR == Operator::ConvectiveOperator)
-          navier_stokes_operation_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
+          navier_stokes_operation_pressure_correction->apply_momentum_operator(dst2,src2);
         else if(OPERATOR == Operator::ProjectionOperator)
           navier_stokes_operation_pressure_correction->apply_projection_operator(dst2,src2);
         else if(OPERATOR == Operator::PressurePoissonOperator)
@@ -517,13 +520,6 @@ Problem<dim, Number>::apply_operator()
   // clang-format on
 
   wall_times.push_back(std::pair<unsigned int, double>(fe_degree, dofs_per_walltime));
-
-
-  if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-  {
-    // reset sum_alphai_ui
-    navier_stokes_operation_coupled->set_sum_alphai_ui(nullptr);
-  }
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 }

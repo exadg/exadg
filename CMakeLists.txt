@@ -77,7 +77,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/divergence_operator.cpp
-     include/incompressible_navier_stokes/spatial_discretization/operators/body_force_operator.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/operators/rhs_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp 
@@ -87,10 +87,10 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/projection_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/turbulence_model.cpp 
      include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.cpp
-     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_projection_methods.cpp
-     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.cpp
-     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.cpp
-     include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_projection_methods.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.cpp
+     include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.cpp
      include/incompressible_navier_stokes/spatial_discretization/interface.cpp 
      include/incompressible_navier_stokes/preconditioners/compatible_laplace_operator.cpp
      include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.cpp

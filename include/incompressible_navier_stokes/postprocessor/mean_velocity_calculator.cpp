@@ -160,8 +160,6 @@ MeanVelocityCalculator<dim, Number>::calculate_area() const
 {
   FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
   Number area = 0.0;
 
   for(unsigned int face = matrix_free.n_inner_face_batches();
@@ -175,13 +173,12 @@ MeanVelocityCalculator<dim, Number>::calculate_area() const
     if(it != data.boundary_IDs.end())
     {
       integrator.reinit(face);
-      integrator.fill_JxW_values(JxW_values);
 
       scalar area_local = make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        area_local += JxW_values[q];
+        area_local += integrator.JxW(q);
       }
 
       // sum over all entries of VectorizedArray
@@ -221,21 +218,18 @@ MeanVelocityCalculator<dim, Number>::local_calculate_volume(
 {
   CellIntegratorU integrator(data, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
   Number volume = 0.;
 
   // Loop over all elements
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator.reinit(cell);
-    integrator.fill_JxW_values(JxW_values);
 
     scalar volume_vec = make_vectorized_array<Number>(0.);
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      volume_vec += JxW_values[q];
+      volume_vec += integrator.JxW(q);
     }
 
     // sum over entries of VectorizedArray, but only over those that are "active"
@@ -254,8 +248,6 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
 {
   FaceIntegratorU integrator(matrix_free, true, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
   // initialize with zero since we accumulate into this variable
   Number flow_rate = 0.0;
 
@@ -272,13 +264,13 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
       integrator.reinit(face);
       integrator.read_dof_values(velocity);
       integrator.evaluate(true, false);
-      integrator.fill_JxW_values(JxW_values);
 
       scalar flow_rate_face = make_vectorized_array<Number>(0.0);
 
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
-        flow_rate_face += JxW_values[q] * integrator.get_value(q) * integrator.get_normal_vector(q);
+        flow_rate_face +=
+          integrator.JxW(q) * integrator.get_value(q) * integrator.get_normal_vector(q);
       }
 
       // sum over all entries of VectorizedArray
@@ -335,8 +327,6 @@ MeanVelocityCalculator<dim, Number>::local_calculate_flow_rate_volume(
 {
   CellIntegratorU integrator(data, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
   Number flow_rate = 0.;
 
   // Loop over all elements
@@ -345,7 +335,6 @@ MeanVelocityCalculator<dim, Number>::local_calculate_flow_rate_volume(
     integrator.reinit(cell);
     integrator.read_dof_values(src);
     integrator.evaluate(true, false);
-    integrator.fill_JxW_values(JxW_values);
 
     scalar flow_rate_vec = make_vectorized_array<Number>(0.);
 
@@ -353,7 +342,7 @@ MeanVelocityCalculator<dim, Number>::local_calculate_flow_rate_volume(
     {
       scalar velocity_direction = this->data.direction * integrator.get_value(q);
 
-      flow_rate_vec += velocity_direction * JxW_values[q];
+      flow_rate_vec += velocity_direction * integrator.JxW(q);
     }
 
     // sum over entries of VectorizedArray, but only over those

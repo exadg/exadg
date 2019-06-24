@@ -47,7 +47,7 @@ public:
     // Accumulated linear iterations
     linear_iterations = 0.0;
 
-    // Newton iteration
+    // Newton iterations
     unsigned int n_iter = 0;
 
     while(norm_r > this->solver_data.abs_tol && norm_r / norm_r_0 > solver_data.rel_tol &&

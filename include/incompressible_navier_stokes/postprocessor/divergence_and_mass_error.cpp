@@ -84,8 +84,6 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
 {
   CellIntegratorU integrator(data, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
   Number div = 0.;
   Number ref = 0.;
 
@@ -94,7 +92,6 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
     integrator.reinit(cell);
     integrator.read_dof_values(source);
     integrator.evaluate(true, true);
-    integrator.fill_JxW_values(JxW_values);
 
     scalar div_vec = make_vectorized_array<Number>(0.);
     scalar ref_vec = make_vectorized_array<Number>(0.);
@@ -102,8 +99,8 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div(
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       vector velocity = integrator.get_value(q);
-      ref_vec += JxW_values[q] * velocity.norm();
-      div_vec += JxW_values[q] * std::abs(integrator.get_divergence(q));
+      ref_vec += integrator.JxW(q) * velocity.norm();
+      div_vec += integrator.JxW(q) * std::abs(integrator.get_divergence(q));
     }
 
     // sum over entries of VectorizedArray, but only over those that are "active"
@@ -129,8 +126,6 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
   FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
   FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(integrator_m.n_q_points);
-
   Number diff_mass_flux = 0.;
   Number mean_mass_flux = 0.;
 
@@ -142,7 +137,6 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
     integrator_p.reinit(face);
     integrator_p.read_dof_values(source);
     integrator_p.evaluate(true, false);
-    integrator_m.fill_JxW_values(JxW_values);
 
     scalar diff_mass_flux_vec = make_vectorized_array<Number>(0.);
     scalar mean_mass_flux_vec = make_vectorized_array<Number>(0.);
@@ -150,11 +144,11 @@ DivergenceAndMassErrorCalculator<dim, Number>::local_compute_div_face(
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
       diff_mass_flux_vec +=
-        JxW_values[q] * std::abs((integrator_m.get_value(q) - integrator_p.get_value(q)) *
-                                 integrator_m.get_normal_vector(q));
-      mean_mass_flux_vec +=
-        JxW_values[q] * std::abs(0.5 * (integrator_m.get_value(q) + integrator_p.get_value(q)) *
-                                 integrator_m.get_normal_vector(q));
+        integrator_m.JxW(q) * std::abs((integrator_m.get_value(q) - integrator_p.get_value(q)) *
+                                       integrator_m.get_normal_vector(q));
+      mean_mass_flux_vec += integrator_m.JxW(q) *
+                            std::abs(0.5 * (integrator_m.get_value(q) + integrator_p.get_value(q)) *
+                                     integrator_m.get_normal_vector(q));
     }
 
     // sum over entries of VectorizedArray, but only over those that are "active"

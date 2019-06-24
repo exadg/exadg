@@ -87,7 +87,7 @@ public:
   update()
   {
     if(preconditioner != nullptr)
-      preconditioner->update(underlying_operator);
+      preconditioner->update();
   }
 
   /*

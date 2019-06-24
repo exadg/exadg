@@ -1,21 +1,20 @@
 /*
- * dg_navier_stokes_dual_splitting.h
+ * dg_dual_splitting.h
  *
  *  Created on: Jun 27, 2016
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
 
 // base class
-#include "dg_navier_stokes_projection_methods.h"
-
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
 #include "interface.h"
 
 #include "curl_compute.h"
+#include "dg_projection_methods.h"
 
 namespace IncNS
 {
@@ -24,85 +23,42 @@ class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, 
                                     public Interface::OperatorDualSplitting<Number>
 {
 private:
-  typedef DGNavierStokesProjectionMethods<dim, Number> PROJECTION_METHODS_BASE;
+  typedef DGNavierStokesProjectionMethods<dim, Number> Base;
+  typedef DGNavierStokesDualSplitting<dim, Number>     This;
 
-  typedef typename PROJECTION_METHODS_BASE::VectorType VectorType;
+  typedef typename Base::VectorType      VectorType;
+  typedef typename Base::Postprocessor   Postprocessor;
+  typedef typename Base::MultigridNumber MultigridNumber;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
-
-  typedef typename PROJECTION_METHODS_BASE::Postprocessor Postprocessor;
-
-  typedef DGNavierStokesDualSplitting<dim, Number> THIS;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
-  typedef typename PROJECTION_METHODS_BASE::MultigridNumber MultigridNumber;
-
 public:
   /*
    * Constructor.
    */
   DGNavierStokesDualSplitting(parallel::Triangulation<dim> const & triangulation,
-                              InputParameters const &              parameters_in,
-                              std::shared_ptr<Postprocessor>       postprocessor_in);
+                              InputParameters const &              parameters,
+                              std::shared_ptr<Postprocessor>       postprocessor)
+    : Base(triangulation, parameters, postprocessor), time(0.0)
+  {
+  }
 
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesDualSplitting();
+  virtual ~DGNavierStokesDualSplitting()
+  {
+  }
 
   void
-  setup_solvers(double const & scaling_factor_time_derivative_term);
-
-  /*
-   *  Implicit formulation of convective term.
-   */
-
-  /*
-   * The implementation of the Newton solver requires that the underlying operator
-   * implements a function called "initialize_vector_for_newton_solver".
-   */
-  void
-  initialize_vector_for_newton_solver(VectorType & src) const;
-
-  /*
-   * This function solves the non-linear system of equations in case of an implicit formulation of
-   * the convective term.
-   */
-  void
-  solve_nonlinear_convective_problem(VectorType &       dst,
-                                     VectorType const & sum_alphai_ui,
-                                     double const &     eval_time,
-                                     double const &     scaling_factor_mass_matrix_term,
-                                     unsigned int &     newton_iterations,
-                                     unsigned int &     linear_iterations);
-
-  /*
-   *  The implementation of the Newton solver requires that the underlying operator
-   *  implements a function called "evaluate_nonlinear_residual".
-   */
-  void
-  evaluate_nonlinear_residual(VectorType & dst, VectorType const & src);
-
-  /*
-   * The implementation of the Newton solver requires that the linearized operator
-   * implements a function called "set_solution_linearization".
-   */
-  void
-  set_solution_linearization(VectorType const & solution_linearization);
-
-  /*
-   *  To solve the linearized convective problem, the underlying operator has to implement a
-   * function called "vmult" (which calculates the matrix vector product for the linearized
-   * convective problem).
-   */
-  void
-  vmult(VectorType & dst, VectorType const & src) const;
+  setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
 
   /*
    * This function evaluates the convective term and applies the inverse mass matrix.
@@ -110,14 +66,13 @@ public:
   void
   evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
                                                          VectorType const & src,
-                                                         double const       evaluation_time) const;
+                                                         double const       time) const;
 
   /*
    * This function evaluates the body force term and applies the inverse mass matrix.
    */
   void
-  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst,
-                                                    double const evaluation_time) const;
+  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst, double const time) const;
 
   /*
    * Pressure Poisson equation.
@@ -128,17 +83,17 @@ public:
   apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const;
 
   void
-  rhs_velocity_divergence_term(VectorType & dst, double const & evaluation_time) const;
+  rhs_velocity_divergence_term(VectorType & dst, double const & time) const;
 
   void
-  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & eval_time);
+  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time);
 
   void
   rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const;
 
   // rhs pressure
   void
-  rhs_ppe_nbc_add(VectorType & dst, double const & evaluation_time);
+  rhs_ppe_nbc_add(VectorType & dst, double const & time);
 
   // rhs pressure: Neumann BC convective term
   void
@@ -149,7 +104,7 @@ public:
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const;
 
   void
-  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const;
+  rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
   unsigned int
   solve_pressure(VectorType & dst, VectorType const & src) const;
@@ -163,7 +118,7 @@ public:
   apply_helmholtz_operator(VectorType & dst, VectorType const & src) const;
 
   void
-  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const;
+  rhs_add_viscous_term(VectorType & dst, double const time) const;
 
   unsigned int
   solve_viscous(VectorType &       dst,
@@ -185,19 +140,10 @@ public:
 
 private:
   /*
-   * Setup of solvers for the different sub-steps of the dual splitting scheme.
+   * Setup of Helmholtz solver (operator, preconditioner, solver).
    */
   void
-  setup_convective_solver();
-
-  /*
-   * Setup of helmholtz solver (operator, preconditioner, solver).
-   */
-  void
-  setup_helmholtz_solver(double const & scaling_factor_time_derivative_term);
-
-  void
-  initialize_helmholtz_operator(double const & scaling_factor_time_derivative_term);
+  setup_helmholtz_solver();
 
   void
   initialize_helmholtz_preconditioner();
@@ -273,40 +219,18 @@ private:
   /*
    * Viscous step (Helmholtz-like equation).
    */
-  MomentumOperator<dim, Number> helmholtz_operator;
-
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
 
   /*
-   * Implicit solution of convective step (solve non-linear system of equations).
+   * Element variable used to store the current physical time. This variable is needed for the
+   * evaluation of the right-hand side of the pressure Poisson equation.
    */
-  VectorType         temp;
-  VectorType const * sum_alphai_ui;
-
-  // implicit solution of convective step
-  std::shared_ptr<PreconditionerBase<Number>> preconditioner_convective_problem;
-
-  std::shared_ptr<IterativeSolverBase<VectorType>> linear_solver;
-  std::shared_ptr<NewtonSolver<VectorType, THIS, THIS, IterativeSolverBase<VectorType>>>
-    newton_solver;
-
-  /*
-   * Element variable used to store the current physical time. Note that this variable is not only
-   * needed in case of an implicit treatment of the convective term, but also for the evaluation of
-   * the right-hand side of the pressure Poisson equation.
-   */
-  double evaluation_time;
-
-  /*
-   * This factor is needed as element variable in case of an implicit treatment of the convective
-   * term where a nonlinear system of equations has to be solved.
-   */
-  double scaling_factor_time_derivative_term;
+  double time;
 };
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_NAVIER_STOKES_DUAL_SPLITTING_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_ \
         */

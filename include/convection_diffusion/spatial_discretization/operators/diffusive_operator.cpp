@@ -9,11 +9,11 @@ template<int dim, typename Number>
 void
 DiffusiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    matrix_free,
                                        AffineConstraints<double> const &  constraint_matrix,
-                                       DiffusiveOperatorData<dim> const & operator_data) const
+                                       DiffusiveOperatorData<dim> const & data) const
 {
-  Base::reinit(matrix_free, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, data);
 
-  kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.dof_index);
+  kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
 
   this->integrator_flags = kernel.get_integrator_flags();
 }
@@ -144,7 +144,7 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                                      OperatorType const &       operator_type,
                                                      types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -156,8 +156,8 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                               operator_type,
                                               boundary_type,
                                               boundary_id,
-                                              this->operator_data.bc,
-                                              this->eval_time);
+                                              this->data.bc,
+                                              this->time);
 
     scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
@@ -169,8 +169,8 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
                                                                   operator_type,
                                                                   boundary_type,
                                                                   boundary_id,
-                                                                  this->operator_data.bc,
-                                                                  this->eval_time);
+                                                                  this->data.bc,
+                                                                  this->time);
 
     scalar value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
@@ -184,10 +184,10 @@ template<int dim, typename Number>
 void
 DiffusiveOperator<dim, Number>::do_verify_boundary_conditions(
   types::boundary_id const             boundary_id,
-  DiffusiveOperatorData<dim> const &   operator_data,
+  DiffusiveOperatorData<dim> const &   data,
   std::set<types::boundary_id> const & periodic_boundary_ids) const
 {
-  do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
+  do_verify_boundary_conditions(boundary_id, data, periodic_boundary_ids);
 }
 
 template class DiffusiveOperator<2, float>;

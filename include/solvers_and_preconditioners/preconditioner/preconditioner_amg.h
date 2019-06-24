@@ -50,7 +50,7 @@ public:
   }
 
   void
-  update(LinearOperatorBase const * /*linear_operator*/)
+  update()
   {
 #ifdef DEAL_II_WITH_TRILINOS
     // clear content of matrix since the next calculate_system_matrix-commands add their result

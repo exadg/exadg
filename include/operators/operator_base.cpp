@@ -13,9 +13,10 @@
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 OperatorBase<dim, Number, AdditionalData, n_components>::OperatorBase()
-  : operator_data(AdditionalData()),
+  : dealii::Subscriptor(),
+    data(AdditionalData()),
     matrix_free(),
-    eval_time(0.0),
+    time(0.0),
     is_mg(false),
     is_dg(true),
     level_mg_handler(numbers::invalid_unsigned_int),
@@ -34,14 +35,14 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   // reinit data structures
   this->matrix_free.reset(matrix_free);
   this->constraint.reset(constraint_matrix);
-  this->operator_data = operator_data;
+  this->data = operator_data;
 
   // TODO: do it somewhere else where we have access to periodic_face_pairs
   //  // verify boundary conditions
-  //  if(this->operator_data.evaluate_face_integrals)
+  //  if(this->data.evaluate_face_integrals)
   //  {
-  //    this->verify_boundary_conditions(this->matrix_free->get_dof_handler(this->operator_data.dof_index),
-  //                                     this->operator_data);
+  //    this->verify_boundary_conditions(this->matrix_free->get_dof_handler(this->data.dof_index),
+  //                                     this->data);
   //  }
 
   // check if DG or CG
@@ -52,17 +53,14 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   // of freedom. A DG element does not share any degrees of freedom over a
   // vertex but has all of them in the last item, i.e., quads in 2D and hexes
   // in 3D, and thus necessarily has dofs_per_vertex=0
-  is_dg =
-    (this->matrix_free->get_dof_handler(this->operator_data.dof_index).get_fe().dofs_per_vertex ==
-     0);
+  is_dg = (this->matrix_free->get_dof_handler(this->data.dof_index).get_fe().dofs_per_vertex == 0);
 
-  integrator.reset(new IntegratorCell(*this->matrix_free,
-                                      this->operator_data.dof_index,
-                                      this->operator_data.quad_index));
-  integrator_m.reset(new IntegratorFace(
-    *this->matrix_free, true, this->operator_data.dof_index, this->operator_data.quad_index));
-  integrator_p.reset(new IntegratorFace(
-    *this->matrix_free, false, this->operator_data.dof_index, this->operator_data.quad_index));
+  integrator.reset(
+    new IntegratorCell(*this->matrix_free, this->data.dof_index, this->data.quad_index));
+  integrator_m.reset(
+    new IntegratorFace(*this->matrix_free, true, this->data.dof_index, this->data.quad_index));
+  integrator_p.reset(
+    new IntegratorFace(*this->matrix_free, false, this->data.dof_index, this->data.quad_index));
 
   if(!is_dg)
   {
@@ -84,24 +82,23 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 AdditionalData const &
-OperatorBase<dim, Number, AdditionalData, n_components>::get_operator_data() const
+OperatorBase<dim, Number, AdditionalData, n_components>::get_data() const
 {
-  return operator_data;
+  return data;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
-OperatorBase<dim, Number, AdditionalData, n_components>::set_evaluation_time(
-  double const time) const
+OperatorBase<dim, Number, AdditionalData, n_components>::set_time(double const t) const
 {
-  eval_time = time;
+  this->time = t;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 double
-OperatorBase<dim, Number, AdditionalData, n_components>::get_evaluation_time() const
+OperatorBase<dim, Number, AdditionalData, n_components>::get_time() const
 {
-  return eval_time;
+  return time;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -129,21 +126,21 @@ template<int dim, typename Number, typename AdditionalData, int n_components>
 unsigned int
 OperatorBase<dim, Number, AdditionalData, n_components>::get_dof_index() const
 {
-  return this->operator_data.dof_index;
+  return this->data.dof_index;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 unsigned int
 OperatorBase<dim, Number, AdditionalData, n_components>::get_quad_index() const
 {
-  return this->operator_data.quad_index;
+  return this->data.quad_index;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 bool
 OperatorBase<dim, Number, AdditionalData, n_components>::operator_is_singular() const
 {
-  return this->operator_data.operator_is_singular;
+  return this->data.operator_is_singular;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -340,7 +337,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::add_diagonal(VectorType
   // compute diagonal
   if(is_dg && evaluate_face_integrals())
   {
-    if(operator_data.use_cell_based_loops)
+    if(data.use_cell_based_loops)
     {
       matrix_free->cell_loop(&This::cell_based_loop_diagonal, this, diagonal, diagonal);
     }
@@ -380,8 +377,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::calculate_block_diagona
      matrix_free->n_macro_cells() * vectorization_length != matrices.size())
   {
     auto dofs =
-      matrix_free->get_shape_info(this->operator_data.dof_index).dofs_per_component_on_cell *
-      n_components;
+      matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
 
     matrices.resize(matrix_free->n_macro_cells() * vectorization_length,
                     LAPACKFullMatrix<Number>(dofs, dofs));
@@ -406,7 +402,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::add_block_diagonal_matr
 
   if(evaluate_face_integrals())
   {
-    if(operator_data.use_cell_based_loops)
+    if(data.use_cell_based_loops)
     {
       matrix_free->cell_loop(&This::cell_based_loop_block_diagonal, this, matrices, matrices);
     }
@@ -452,7 +448,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::apply_inverse_block_dia
   VectorType const & src) const
 {
   // matrix-free
-  if(this->operator_data.implement_block_diagonal_preconditioner_matrix_free)
+  if(this->data.implement_block_diagonal_preconditioner_matrix_free)
   {
     // Solve elementwise block Jacobi problems iteratively using an elementwise solver vectorized
     // over several elements.
@@ -490,14 +486,13 @@ OperatorBase<dim, Number, AdditionalData, n_components>::
 {
   elementwise_operator.reset(new ELEMENTWISE_OPERATOR(*this));
 
-  if(operator_data.preconditioner_block_diagonal == Elementwise::Preconditioner::None)
+  if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::None)
   {
     typedef Elementwise::PreconditionerIdentity<VectorizedArray<Number>> IDENTITY;
 
     elementwise_preconditioner.reset(new IDENTITY(elementwise_operator->get_problem_size()));
   }
-  else if(operator_data.preconditioner_block_diagonal ==
-          Elementwise::Preconditioner::InverseMassMatrix)
+  else if(data.preconditioner_block_diagonal == Elementwise::Preconditioner::InverseMassMatrix)
   {
     typedef Elementwise::InverseMassMatrixPreconditioner<dim, n_components, Number> INVERSE_MASS;
 
@@ -510,8 +505,8 @@ OperatorBase<dim, Number, AdditionalData, n_components>::
   }
 
   Elementwise::IterativeSolverData iterative_solver_data;
-  iterative_solver_data.solver_type = operator_data.solver_block_diagonal;
-  iterative_solver_data.solver_data = operator_data.solver_data_block_diagonal;
+  iterative_solver_data.solver_type = data.solver_block_diagonal;
+  iterative_solver_data.solver_data = data.solver_data_block_diagonal;
 
   elementwise_solver.reset(new ELEMENTWISE_SOLVER(
     *std::dynamic_pointer_cast<ELEMENTWISE_OPERATOR>(elementwise_operator),
@@ -596,7 +591,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::update_block_diagonal_p
 
   if(!block_diagonal_preconditioner_is_initialized)
   {
-    if(operator_data.implement_block_diagonal_preconditioner_matrix_free)
+    if(data.implement_block_diagonal_preconditioner_matrix_free)
     {
       initialize_block_diagonal_preconditioner_matrix_free();
     }
@@ -604,8 +599,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::update_block_diagonal_p
     {
       // allocate memory only the first time
       auto dofs =
-        matrix_free->get_shape_info(this->operator_data.dof_index).dofs_per_component_on_cell *
-        n_components;
+        matrix_free->get_shape_info(this->data.dof_index).dofs_per_component_on_cell * n_components;
       matrices.resize(matrix_free->n_macro_cells() * vectorization_length,
                       LAPACKFullMatrix<Number>(dofs, dofs));
     }
@@ -617,7 +611,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::update_block_diagonal_p
 
   // For the matrix-free variant there is nothing to do.
   // For the matrix-based variant we have to recompute the block matrices.
-  if(!operator_data.implement_block_diagonal_preconditioner_matrix_free)
+  if(!data.implement_block_diagonal_preconditioner_matrix_free)
   {
     // clear matrices
     initialize_block_jacobi_matrices_with_zero(matrices);
@@ -810,14 +804,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::do_face_int_integral_ce
   IntegratorFace & integrator_p) const
 {
   this->do_face_int_integral(integrator_m, integrator_p);
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_block_diagonal_cell_based() const
-{
-  AssertThrow(false,
-              ExcMessage("OperatorBase::do_block_diagonal_cell_based() has not been implemented!"));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -1867,17 +1853,17 @@ OperatorBase<dim, Number, AdditionalData, n_components>::verify_boundary_conditi
 {
   // fill set with periodic boundary ids
   std::set<types::boundary_id> periodic_boundary_ids;
-  for(unsigned int i = 0; i < operator_data.periodic_face_pairs_level0.size(); ++i)
+  for(unsigned int i = 0; i < data.periodic_face_pairs_level0.size(); ++i)
   {
-    AssertThrow(operator_data.periodic_face_pairs_level0[i].cell[0]->h_level() == 0,
+    AssertThrow(data.periodic_face_pairs_level0[i].cell[0]->h_level() == 0,
                 ExcMessage("Received periodic cell pairs on non-zero level"));
-    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i]
+    periodic_boundary_ids.insert(data.periodic_face_pairs_level0[i]
                                    .cell[0]
-                                   ->face(operator_data.periodic_face_pairs_level0[i].face_idx[0])
+                                   ->face(data.periodic_face_pairs_level0[i].face_idx[0])
                                    ->boundary_id());
-    periodic_boundary_ids.insert(operator_data.periodic_face_pairs_level0[i]
+    periodic_boundary_ids.insert(data.periodic_face_pairs_level0[i]
                                    .cell[1]
-                                   ->face(operator_data.periodic_face_pairs_level0[i].face_idx[1])
+                                   ->face(data.periodic_face_pairs_level0[i].face_idx[1])
                                    ->boundary_id());
   }
 
@@ -1890,7 +1876,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::verify_boundary_conditi
       if(cell->at_boundary(f))
       {
         types::boundary_id bid = cell->face(f)->boundary_id();
-        do_verify_boundary_conditions(bid, operator_data, periodic_boundary_ids);
+        do_verify_boundary_conditions(bid, data, periodic_boundary_ids);
       }
     }
   }
@@ -1900,11 +1886,11 @@ template<int dim, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, Number, AdditionalData, n_components>::do_verify_boundary_conditions(
   types::boundary_id const             boundary_id,
-  AdditionalData const &               operator_data,
+  AdditionalData const &               data,
   std::set<types::boundary_id> const & periodic_boundary_ids) const
 {
   (void)boundary_id;
-  (void)operator_data;
+  (void)data;
   (void)periodic_boundary_ids;
 
   AssertThrow(

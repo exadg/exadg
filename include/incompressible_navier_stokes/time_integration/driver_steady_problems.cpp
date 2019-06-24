@@ -41,6 +41,13 @@ DriverSteadyProblems<Number>::setup()
 }
 
 template<typename Number>
+LinearAlgebra::distributed::Vector<Number> const &
+DriverSteadyProblems<Number>::get_velocity() const
+{
+  return solution.block(0);
+}
+
+template<typename Number>
 void
 DriverSteadyProblems<Number>::initialize_vectors()
 {
@@ -59,7 +66,6 @@ DriverSteadyProblems<Number>::initialize_solution()
   double time = 0.0;
   operator_base->prescribe_initial_conditions(solution.block(0), solution.block(1), time);
 }
-
 
 template<typename Number>
 void
@@ -105,11 +111,14 @@ DriverSteadyProblems<Number>::solve()
   }
   else // nonlinear problem
   {
+    VectorType rhs(solution.block(0));
+    rhs = 0.0;
+    if(this->param.right_hand_side)
+      operator_base->evaluate_add_body_force_term(rhs, 0.0 /* time */);
+
     // Newton solver
-    pde_operator->solve_nonlinear_steady_problem(solution,
-                                                 this->param.update_preconditioner_coupled,
-                                                 N_iter_nonlinear,
-                                                 N_iter_linear);
+    pde_operator->solve_nonlinear_steady_problem(
+      solution, rhs, this->param.update_preconditioner_coupled, N_iter_nonlinear, N_iter_linear);
   }
 
   // special case: pure Dirichlet BC's

@@ -535,6 +535,27 @@ enum_to_string(MultigridOperatorType const enum_type)
   return string_type;
 }
 
+std::string
+enum_to_string(QuadratureRuleLinearization const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case QuadratureRuleLinearization::Standard:
+      string_type = "Standard (k+1)";
+      break;
+    case QuadratureRuleLinearization::Overintegration32k:
+      string_type = "Over-integration (3/2k)";
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                        HIGH-ORDER DUAL SPLITTING SCHEME                            */

@@ -19,7 +19,7 @@ struct DiffusiveKernelData
 
   double       IP_factor;
   unsigned int degree;
-  int          degree_mapping;
+  unsigned int degree_mapping;
   double       diffusivity;
 };
 
@@ -187,7 +187,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &    matrix_free,
          AffineConstraints<double> const &  constraint_matrix,
-         DiffusiveOperatorData<dim> const & operator_data) const;
+         DiffusiveOperatorData<dim> const & data) const;
 
 private:
   void

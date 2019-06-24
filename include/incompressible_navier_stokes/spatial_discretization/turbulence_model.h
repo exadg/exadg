@@ -11,6 +11,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
+#include "../user_interface/input_parameters.h"
 #include "operators/viscous_operator.h"
 
 using namespace dealii;
@@ -22,12 +23,28 @@ namespace IncNS
  */
 struct TurbulenceModelData
 {
-  TurbulenceModelData() : turbulence_model(TurbulenceEddyViscosityModel::Undefined), constant(1.0)
+  TurbulenceModelData()
+    : turbulence_model(TurbulenceEddyViscosityModel::Undefined),
+      constant(1.0),
+      kinematic_viscosity(1.0),
+      dof_index(0),
+      quad_index(0),
+      degree(1)
   {
   }
 
   TurbulenceEddyViscosityModel turbulence_model;
   double                       constant;
+
+  // constant kinematic viscosity (physical viscosity)
+  double kinematic_viscosity;
+
+  // required for matrix-free loops
+  unsigned int dof_index;
+  unsigned int quad_index;
+
+  // required for calculation of filter width
+  unsigned int degree;
 };
 
 
@@ -60,10 +77,10 @@ public:
    * Initialization function.
    */
   void
-  initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             Mapping<dim> const &            mapping_in,
-             ViscousOperator<dim, Number> &  viscous_operator_in,
-             TurbulenceModelData const &     data_in);
+  initialize(MatrixFree<dim, Number> const &                        matrix_free_in,
+             Mapping<dim> const &                                   mapping_in,
+             std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel_in,
+             TurbulenceModelData const &                            data_in);
 
   /*
    *  This function calculates the turbulent viscosity for a given velocity field.
@@ -215,7 +232,7 @@ private:
 
   MatrixFree<dim, Number> const * matrix_free;
 
-  ViscousOperator<dim, Number> * viscous_operator;
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel;
 
   AlignedVector<scalar> filter_width_vector;
 };

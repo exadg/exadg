@@ -9,7 +9,6 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_COMPATIBLE_LAPLACE_OPERATOR_H_
 
 #include "../../functionalities/set_zero_mean_value.h"
-#include "../../operators/linear_operator_base.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 
@@ -42,7 +41,7 @@ struct CompatibleLaplaceOperatorData
 };
 
 template<int dim, typename Number = double>
-class CompatibleLaplaceOperator : public LinearOperatorBase
+class CompatibleLaplaceOperator : public dealii::Subscriptor
 {
 public:
   typedef Number value_type;
@@ -56,14 +55,14 @@ public:
   }
 
   void
-  initialize(MatrixFree<dim, Number> const &            mf_data_in,
+  initialize(MatrixFree<dim, Number> const &            matrix_free_in,
              CompatibleLaplaceOperatorData<dim> const & compatible_laplace_operator_data_in,
              GradientOperator<dim, Number> const &      gradient_operator_in,
              DivergenceOperator<dim, Number> const &    divergence_operator_in,
              InverseMassMatrixOperator<dim, dim, Number> const & inv_mass_matrix_operator_in);
 
   void
-  reinit_multigrid(MatrixFree<dim, Number> const &            data,
+  reinit_multigrid(MatrixFree<dim, Number> const &            matrix_free,
                    AffineConstraints<double> const &          constraint_matrix,
                    CompatibleLaplaceOperatorData<dim> const & operator_data);
 
@@ -79,8 +78,8 @@ public:
   bool
   is_empty_locally() const
   {
-    MatrixFree<dim, Number> const & data = get_matrix_free();
-    return (data.n_macro_cells() == 0);
+    MatrixFree<dim, Number> const & matrix_free = get_matrix_free();
+    return (matrix_free.n_macro_cells() == 0);
   }
 
   virtual AffineConstraints<double> const &
@@ -178,7 +177,7 @@ public:
   update_inverse_block_diagonal() const;
 
 private:
-  MatrixFree<dim, Number> const * data;
+  MatrixFree<dim, Number> const * matrix_free;
 
   GradientOperator<dim, Number> const * gradient_operator;
 

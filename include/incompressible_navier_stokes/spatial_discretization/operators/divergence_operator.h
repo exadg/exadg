@@ -11,15 +11,73 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../functionalities/evaluate_functions.h"
-#include "../../../operators/operator_type.h"
-#include "../../user_interface/boundary_descriptor.h"
+#include "../../../operators/mapping_flags.h"
 #include "../../user_interface/input_parameters.h"
+#include "weak_boundary_conditions.h"
 
 using namespace dealii;
 
 namespace IncNS
 {
+namespace Operators
+{
+template<int dim, typename Number>
+class DivergenceKernel
+{
+private:
+  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+
+public:
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells          = update_JxW_values | update_gradients;
+    flags.inner_faces    = update_JxW_values | update_normal_vectors;
+    flags.boundary_faces = update_JxW_values | update_quadrature_points | update_normal_vectors;
+
+    return flags;
+  }
+
+  /*
+   *  This function implements the central flux as numerical flux function.
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_flux(vector const & value_m, vector const & value_p) const
+  {
+    return 0.5 * (value_m + value_p);
+  }
+
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral for
+   * weak formulation (performing integration-by-parts)
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    get_volume_flux_weak(CellIntegratorU & velocity, unsigned int const q) const
+  {
+    // minus sign due to integration by parts
+    return -velocity.get_value(q);
+  }
+
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral for
+   * strong formulation (no integration-by-parts, or integration-by-parts performed twice)
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    get_volume_flux_strong(CellIntegratorU & velocity, unsigned int const q) const
+  {
+    return velocity.get_divergence(q);
+  }
+};
+} // namespace Operators
+
 template<int dim>
 struct DivergenceOperatorData
 {
@@ -62,487 +120,104 @@ public:
   typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
-
-  DivergenceOperator() : matrix_free(nullptr), eval_time(0.0)
-  {
-  }
+  DivergenceOperator();
 
   void
-  initialize(MatrixFree<dim, Number> const &     matrix_free_in,
-             DivergenceOperatorData<dim> const & operator_data_in)
-  {
-    this->matrix_free   = &matrix_free_in;
-    this->operator_data = operator_data_in;
-  }
+  reinit(MatrixFree<dim, Number> const &     matrix_free_in,
+         DivergenceOperatorData<dim> const & data_in);
+
+  DivergenceOperatorData<dim> const &
+  get_operator_data() const;
+
+  // homogeneous operator
+  void
+  apply(VectorType & dst, VectorType const & src) const;
 
   void
-  apply(VectorType & dst, VectorType const & src) const
-  {
-    matrix_free->loop(&This::cell_loop,
-                      &This::face_loop,
-                      &This::boundary_face_loop_hom_operator,
-                      this,
-                      dst,
-                      src,
-                      true /*zero_dst_vector = true*/);
-  }
+  apply_add(VectorType & dst, VectorType const & src) const;
+
+  // inhomogeneous operator
+  void
+  rhs(VectorType & dst, Number const evaluation_time) const;
 
   void
-  apply_add(VectorType & dst, VectorType const & src) const
-  {
-    matrix_free->loop(&This::cell_loop,
-                      &This::face_loop,
-                      &This::boundary_face_loop_hom_operator,
-                      this,
-                      dst,
-                      src,
-                      false /*zero_dst_vector = false*/);
-  }
+  rhs_add(VectorType & dst, Number const evaluation_time) const;
+
+  // full operator, i.e., homogeneous and inhomogeneous contributions
+  void
+  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const;
 
   void
-  rhs(VectorType & dst, Number const evaluation_time) const
-  {
-    dst = 0.0;
-    rhs_add(dst, evaluation_time);
-  }
-
-  void
-  rhs_add(VectorType & dst, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    VectorType tmp;
-    tmp.reinit(dst, false /* init with 0 */);
-
-    matrix_free->loop(&This::cell_loop_inhom_operator,
-                      &This::face_loop_inhom_operator,
-                      &This::boundary_face_loop_inhom_operator,
-                      this,
-                      tmp,
-                      tmp,
-                      false /*zero_dst_vector = false*/);
-
-    // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
-    dst.add(-1.0, tmp);
-  }
-
-  void
-  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop,
-                      &This::face_loop,
-                      &This::boundary_face_loop_full_operator,
-                      this,
-                      dst,
-                      src,
-                      true /*zero_dst_vector = true*/);
-  }
-
-  void
-  evaluate_add(VectorType & dst, VectorType const & src, Number const evaluation_time) const
-  {
-    this->eval_time = evaluation_time;
-
-    matrix_free->loop(&This::cell_loop,
-                      &This::face_loop,
-                      &This::boundary_face_loop_full_operator,
-                      this,
-                      dst,
-                      src,
-                      false /*zero_dst_vector = false*/);
-  }
+  evaluate_add(VectorType & dst, VectorType const & src, Number const evaluation_time) const;
 
 private:
-  template<typename CellIntegratorP, typename CellIntegratorU>
   void
-  do_cell_integral_weak(CellIntegratorP & pressure, CellIntegratorU & velocity) const
-  {
-    for(unsigned int q = 0; q < velocity.n_q_points; ++q)
-    {
-      // minus sign due to integration by parts
-      pressure.submit_gradient(-velocity.get_value(q), q);
-    }
-  }
+  do_cell_integral_weak(CellIntegratorP & pressure, CellIntegratorU & velocity) const;
 
-  template<typename CellIntegratorP, typename CellIntegratorU>
   void
-  do_cell_integral_strong(CellIntegratorP & pressure, CellIntegratorU & velocity) const
-  {
-    for(unsigned int q = 0; q < velocity.n_q_points; ++q)
-    {
-      pressure.submit_value(velocity.get_divergence(q), q);
-    }
-  }
+  do_cell_integral_strong(CellIntegratorP & pressure, CellIntegratorU & velocity) const;
 
-  template<typename FaceIntegratorP, typename FaceIntegratorU>
   void
   do_face_integral(FaceIntegratorU & velocity_m,
                    FaceIntegratorU & velocity_p,
                    FaceIntegratorP & pressure_m,
-                   FaceIntegratorP & pressure_p) const
-  {
-    for(unsigned int q = 0; q < velocity_m.n_q_points; ++q)
-    {
-      vector value_m = velocity_m.get_value(q);
-      vector value_p = velocity_p.get_value(q);
+                   FaceIntegratorP & pressure_p) const;
 
-      vector flux = calculate_flux(value_m, value_p);
-
-      scalar flux_times_normal = flux * velocity_m.get_normal_vector(q);
-
-      pressure_m.submit_value(flux_times_normal, q);
-      // minus sign since n⁺ = - n⁻
-      pressure_p.submit_value(-flux_times_normal, q);
-    }
-  }
-
-  template<typename FaceIntegratorP, typename FaceIntegratorU>
   void
   do_boundary_integral(FaceIntegratorU &          velocity,
                        FaceIntegratorP &          pressure,
                        OperatorType const &       operator_type,
-                       types::boundary_id const & boundary_id) const
-  {
-    BoundaryTypeU boundary_type = operator_data.bc->get_boundary_type(boundary_id);
-
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
-    {
-      vector flux;
-
-      if(operator_data.use_boundary_data == true)
-      {
-        vector value_m = calculate_interior_value(q, velocity, operator_type);
-        vector value_p =
-          calculate_exterior_value(value_m, q, velocity, operator_type, boundary_type, boundary_id);
-
-        flux = calculate_flux(value_m, value_p);
-      }
-      else // use_boundary_data == false
-      {
-        vector value_m = velocity.get_value(q);
-
-        flux = calculate_flux(value_m, value_m /* value_p = value_m */);
-      }
-
-      scalar flux_times_normal = flux * velocity.get_normal_vector(q);
-      pressure.submit_value(flux_times_normal, q);
-    }
-  }
-
-  /*
-   *  This function implements the central flux as numerical flux function.
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_flux(vector const & value_m, vector const & value_p) const
-  {
-    return 0.5 * (value_m + value_p);
-  }
-
-  // clang-format off
-  /*
-   *  The following two functions calculate the interior/exterior value for boundary faces depending on the
-   *  operator type, the type of the boundary face and the given boundary conditions.
-   *
-   *                            +-------------------------+--------------------+------------------------------+
-   *                            | Dirichlet boundaries    | Neumann boundaries | symmetry boundaries          |
-   *  +-------------------------+-------------------------+--------------------+------------------------------+
-   *  | full operator           | u⁺ = -u⁻ + 2g           | u⁺ = u⁻            | u⁺ = u⁻ - 2 (u⁻*n)n          |
-   *  +-------------------------+-------------------------+--------------------+------------------------------+
-   *  | homogeneous operator    | u⁺ = -u⁻                | u⁺ = u⁻            | u⁺ = u⁻ - 2 (u⁻*n)n          |
-   *  +-------------------------+-------------------------+--------------------+------------------------------+
-   *  | inhomogeneous operator  | u⁺ = -u⁻ + 2g , u⁻ = 0  | u⁺ = u⁻ , u⁻ = 0   | u⁺ = u⁻ - 2 (u⁻*n)n , u⁻ = 0 |
-   *  +-------------------------+-------------------------+--------------------+------------------------------+
-   *
-   */
-  // clang-format on
-  template<typename Integrator>
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_interior_value(unsigned int const   q,
-                             Integrator const &   integrator,
-                             OperatorType const & operator_type) const
-  {
-    // element e⁻
-    vector value_m;
-
-    if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
-    {
-      value_m = integrator.get_value(q);
-    }
-    else if(operator_type == OperatorType::inhomogeneous)
-    {
-      // do nothing, value_m is already initialized with zeros
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-    }
-
-    return value_m;
-  }
-
-  template<typename Integrator>
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    calculate_exterior_value(vector const &           value_m,
-                             unsigned int const       q,
-                             Integrator const &       integrator,
-                             OperatorType const &     operator_type,
-                             BoundaryTypeU const &    boundary_type,
-                             types::boundary_id const boundary_id = types::boundary_id()) const
-  {
-    // element e⁺
-    vector value_p;
-
-    if(boundary_type == BoundaryTypeU::Dirichlet)
-    {
-      if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
-      {
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-          operator_data.bc->dirichlet_bc.find(boundary_id);
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
-
-        vector g = evaluate_vectorial_function(it->second, q_points, eval_time);
-
-        value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
-      }
-      else if(operator_type == OperatorType::homogeneous)
-      {
-        value_p = -value_m;
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-      }
-    }
-    else if(boundary_type == BoundaryTypeU::Neumann)
-    {
-      value_p = value_m;
-    }
-    else if(boundary_type == BoundaryTypeU::Symmetry)
-    {
-      vector normal_m = integrator.get_normal_vector(q);
-
-      value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-    }
-
-    return value_p;
-  }
+                       types::boundary_id const & boundary_id) const;
 
   void
   cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &              src,
-            Range const &                   cell_range) const
-  {
-    CellIntegratorU velocity(matrix_free,
-                             operator_data.dof_index_velocity,
-                             operator_data.quad_index);
-    CellIntegratorP pressure(matrix_free,
-                             operator_data.dof_index_pressure,
-                             operator_data.quad_index);
-
-    for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
-    {
-      pressure.reinit(cell);
-
-      velocity.reinit(cell);
-
-      if(operator_data.integration_by_parts == true)
-      {
-        velocity.gather_evaluate(src, true, false, false);
-
-        do_cell_integral_weak(pressure, velocity);
-
-        pressure.integrate_scatter(false, true, dst);
-      }
-      else // integration_by_parts == false
-      {
-        velocity.gather_evaluate(src, false, true, false);
-
-        do_cell_integral_strong(pressure, velocity);
-
-        pressure.integrate_scatter(true, false, dst);
-      }
-    }
-  }
+            Range const &                   cell_range) const;
 
   void
   face_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &              src,
-            Range const &                   face_range) const
-  {
-    if(operator_data.integration_by_parts == true)
-    {
-      FaceIntegratorU velocity_m(matrix_free,
-                                 true,
-                                 operator_data.dof_index_velocity,
-                                 operator_data.quad_index);
-      FaceIntegratorU velocity_p(matrix_free,
-                                 false,
-                                 operator_data.dof_index_velocity,
-                                 operator_data.quad_index);
-
-      FaceIntegratorP pressure_m(matrix_free,
-                                 true,
-                                 operator_data.dof_index_pressure,
-                                 operator_data.quad_index);
-      FaceIntegratorP pressure_p(matrix_free,
-                                 false,
-                                 operator_data.dof_index_pressure,
-                                 operator_data.quad_index);
-
-      for(unsigned int face = face_range.first; face < face_range.second; face++)
-      {
-        pressure_m.reinit(face);
-        pressure_p.reinit(face);
-
-        velocity_m.reinit(face);
-        velocity_p.reinit(face);
-
-        velocity_m.gather_evaluate(src, true, false);
-        velocity_p.gather_evaluate(src, true, false);
-
-        do_face_integral(velocity_m, velocity_p, pressure_m, pressure_p);
-
-        pressure_m.integrate_scatter(true, false, dst);
-        pressure_p.integrate_scatter(true, false, dst);
-      }
-    }
-  }
+            Range const &                   face_range) const;
 
   void
   boundary_face_loop_hom_operator(MatrixFree<dim, Number> const & matrix_free,
                                   VectorType &                    dst,
                                   VectorType const &              src,
-                                  Range const &                   face_range) const
-  {
-    if(operator_data.integration_by_parts == true)
-    {
-      FaceIntegratorU velocity(matrix_free,
-                               true,
-                               operator_data.dof_index_velocity,
-                               operator_data.quad_index);
-
-      FaceIntegratorP pressure(matrix_free,
-                               true,
-                               operator_data.dof_index_pressure,
-                               operator_data.quad_index);
-
-      for(unsigned int face = face_range.first; face < face_range.second; face++)
-      {
-        pressure.reinit(face);
-        velocity.reinit(face);
-
-        velocity.gather_evaluate(src, true, false);
-
-        do_boundary_integral(velocity,
-                             pressure,
-                             OperatorType::homogeneous,
-                             matrix_free.get_boundary_id(face));
-
-        pressure.integrate_scatter(true, false, dst);
-      }
-    }
-  }
+                                  Range const &                   face_range) const;
 
   void
   boundary_face_loop_full_operator(MatrixFree<dim, Number> const & matrix_free,
                                    VectorType &                    dst,
                                    VectorType const &              src,
-                                   Range const &                   face_range) const
-  {
-    if(operator_data.integration_by_parts == true)
-    {
-      FaceIntegratorU velocity(matrix_free,
-                               true,
-                               operator_data.dof_index_velocity,
-                               operator_data.quad_index);
-
-      FaceIntegratorP pressure(matrix_free,
-                               true,
-                               operator_data.dof_index_pressure,
-                               operator_data.quad_index);
-
-      for(unsigned int face = face_range.first; face < face_range.second; face++)
-      {
-        pressure.reinit(face);
-        velocity.reinit(face);
-
-        velocity.gather_evaluate(src, true, false);
-
-        do_boundary_integral(velocity,
-                             pressure,
-                             OperatorType::full,
-                             matrix_free.get_boundary_id(face));
-
-        pressure.integrate_scatter(true, false, dst);
-      }
-    }
-  }
+                                   Range const &                   face_range) const;
 
   void
-  cell_loop_inhom_operator(MatrixFree<dim, Number> const &,
-                           VectorType &,
-                           VectorType const &,
-                           Range const &) const
-  {
-  }
+  cell_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                    dst,
+                           VectorType const &              src,
+                           Range const &                   cell_range) const;
 
   void
-  face_loop_inhom_operator(MatrixFree<dim, Number> const &,
-                           VectorType &,
-                           VectorType const &,
-                           Range const &) const
-  {
-  }
+  face_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
+                           VectorType &                    dst,
+                           VectorType const &              src,
+                           Range const &                   face_range) const;
 
   void
-  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const & matrix_free,
-                                    VectorType &                    dst,
-                                    VectorType const &,
-                                    std::pair<unsigned int, unsigned int> const & face_range) const
-  {
-    if(operator_data.integration_by_parts == true)
-    {
-      FaceIntegratorU velocity(matrix_free,
-                               true,
-                               operator_data.dof_index_velocity,
-                               operator_data.quad_index);
-
-      FaceIntegratorP pressure(matrix_free,
-                               true,
-                               operator_data.dof_index_pressure,
-                               operator_data.quad_index);
-
-      for(unsigned int face = face_range.first; face < face_range.second; face++)
-      {
-        pressure.reinit(face);
-        velocity.reinit(face);
-
-        do_boundary_integral(velocity,
-                             pressure,
-                             OperatorType::inhomogeneous,
-                             matrix_free.get_boundary_id(face));
-
-        pressure.integrate_scatter(true, false, dst);
-      }
-    }
-  }
+  boundary_face_loop_inhom_operator(MatrixFree<dim, Number> const &               matrix_free,
+                                    VectorType &                                  dst,
+                                    VectorType const &                            src,
+                                    std::pair<unsigned int, unsigned int> const & face_range) const;
 
   MatrixFree<dim, Number> const * matrix_free;
 
-  DivergenceOperatorData<dim> operator_data;
+  DivergenceOperatorData<dim> data;
 
-  mutable Number eval_time;
+  mutable double time;
+
+  Operators::DivergenceKernel<dim, Number> kernel;
 };
 
 } // namespace IncNS

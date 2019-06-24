@@ -32,6 +32,7 @@ template<typename Number>
 class DriverSteadyProblems
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef Interface::OperatorBase<Number>    OperatorBase;
@@ -49,6 +50,9 @@ public:
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
+  VectorType const &
+  get_velocity() const;
 
 private:
   void

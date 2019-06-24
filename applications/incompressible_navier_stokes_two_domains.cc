@@ -14,10 +14,10 @@
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
 
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
@@ -445,10 +445,12 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   // setup solvers
 
   navier_stokes_operation_1->setup_solvers(
-    time_integrator_1->get_scaling_factor_time_derivative_term());
+    time_integrator_1->get_scaling_factor_time_derivative_term(),
+    time_integrator_1->get_velocity());
 
   navier_stokes_operation_2->setup_solvers(
-    time_integrator_2->get_scaling_factor_time_derivative_term());
+    time_integrator_2->get_scaling_factor_time_derivative_term(),
+    time_integrator_2->get_velocity());
 
   setup_time = timer.wall_time();
 }

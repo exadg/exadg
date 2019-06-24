@@ -8,11 +8,11 @@ template<int dim, typename Number>
 void
 LaplaceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                      AffineConstraints<double> const & constraint_matrix,
-                                     LaplaceOperatorData<dim> const &  operator_data) const
+                                     LaplaceOperatorData<dim> const &  data) const
 {
-  Base::reinit(matrix_free, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, data);
 
-  kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.dof_index);
+  kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
 
   this->integrator_flags = kernel.get_integrator_flags();
 }
@@ -143,7 +143,7 @@ LaplaceOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                                    OperatorType const &       operator_type,
                                                    types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -154,8 +154,8 @@ LaplaceOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                               operator_type,
                                               boundary_type,
                                               boundary_id,
-                                              this->operator_data.bc,
-                                              this->eval_time);
+                                              this->data.bc,
+                                              this->time);
 
     scalar gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
@@ -166,8 +166,8 @@ LaplaceOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
                                                                   operator_type,
                                                                   boundary_type,
                                                                   boundary_id,
-                                                                  this->operator_data.bc,
-                                                                  this->eval_time);
+                                                                  this->data.bc,
+                                                                  this->time);
 
     scalar value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
@@ -181,14 +181,14 @@ template<int dim, typename Number>
 void
 LaplaceOperator<dim, Number>::do_verify_boundary_conditions(
   types::boundary_id const             boundary_id,
-  LaplaceOperatorData<dim> const &     operator_data,
+  LaplaceOperatorData<dim> const &     data,
   std::set<types::boundary_id> const & periodic_boundary_ids) const
 {
   unsigned int counter = 0;
-  if(operator_data.bc->dirichlet_bc.find(boundary_id) != operator_data.bc->dirichlet_bc.end())
+  if(data.bc->dirichlet_bc.find(boundary_id) != data.bc->dirichlet_bc.end())
     counter++;
 
-  if(operator_data.bc->neumann_bc.find(boundary_id) != operator_data.bc->neumann_bc.end())
+  if(data.bc->neumann_bc.find(boundary_id) != data.bc->neumann_bc.end())
     counter++;
 
   if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())

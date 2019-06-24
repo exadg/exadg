@@ -9,11 +9,11 @@ template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
                                         AffineConstraints<double> const &   constraint_matrix,
-                                        ConvectiveOperatorData<dim> const & operator_data) const
+                                        ConvectiveOperatorData<dim> const & data) const
 {
-  Base::reinit(matrix_free, constraint_matrix, operator_data);
+  Base::reinit(matrix_free, constraint_matrix, data);
 
-  kernel.reinit(matrix_free, operator_data.kernel_data, operator_data.quad_index, this->is_mg);
+  kernel.reinit(matrix_free, data.kernel_data, data.quad_index, this->is_mg);
 
   this->integrator_flags = kernel.get_integrator_flags();
 }
@@ -85,7 +85,7 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
   {
     scalar value = integrator.get_value(q);
 
-    integrator.submit_gradient(kernel.get_volume_flux(value, integrator, q, this->eval_time), q);
+    integrator.submit_gradient(kernel.get_volume_flux(value, integrator, q, this->time), q);
   }
 }
 
@@ -99,7 +99,7 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar value_m = integrator_m.get_value(q);
     scalar value_p = integrator_p.get_value(q);
 
-    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->eval_time, true);
+    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->time, true);
 
     integrator_m.submit_value(flux, q);
     integrator_p.submit_value(-flux, q);
@@ -119,7 +119,7 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
     scalar value_p = make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
-    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->eval_time, true);
+    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->time, true);
 
     integrator_m.submit_value(flux, q);
   }
@@ -149,7 +149,7 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
     // version using integrator_velocity_p is currently not implemented in deal.II.
     bool exterior_velocity_available = false; // TODO -> set to true once functionality is available
     scalar flux                      = kernel.calculate_flux(
-      q, integrator_m, value_m, value_p, this->eval_time, exterior_velocity_available);
+      q, integrator_m, value_m, value_p, this->time, exterior_velocity_available);
 
     integrator_m.submit_value(flux, q);
   }
@@ -168,7 +168,7 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
     scalar value_m = make_vectorized_array<Number>(0.0);
     scalar value_p = integrator_p.get_value(q);
 
-    scalar flux = kernel.calculate_flux(q, integrator_p, value_m, value_p, this->eval_time, true);
+    scalar flux = kernel.calculate_flux(q, integrator_p, value_m, value_p, this->time, true);
 
     // minus sign since n⁺ = -n⁻
     integrator_p.submit_value(-flux, q);
@@ -181,7 +181,7 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                                       OperatorType const &       operator_type,
                                                       types::boundary_id const & boundary_id) const
 {
-  BoundaryType boundary_type = this->operator_data.bc->get_boundary_type(boundary_id);
+  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
@@ -193,12 +193,12 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                               operator_type,
                                               boundary_type,
                                               boundary_id,
-                                              this->operator_data.bc,
-                                              this->eval_time);
+                                              this->data.bc,
+                                              this->time);
 
     // In case of numerical velocity field:
     // Simply use velocity_p = velocity_m on boundary faces -> exterior_velocity_available = false.
-    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->eval_time, false);
+    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->time, false);
 
     integrator_m.submit_value(flux, q);
   }
@@ -208,10 +208,10 @@ template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::do_verify_boundary_conditions(
   types::boundary_id const             boundary_id,
-  ConvectiveOperatorData<dim> const &  operator_data,
+  ConvectiveOperatorData<dim> const &  data,
   std::set<types::boundary_id> const & periodic_boundary_ids) const
 {
-  do_verify_boundary_conditions(boundary_id, operator_data, periodic_boundary_ids);
+  do_verify_boundary_conditions(boundary_id, data, periodic_boundary_ids);
 }
 
 template class ConvectiveOperator<2, float>;

@@ -12,7 +12,7 @@
 
 #include "../user_interface/input_parameters.h"
 
-#include "../../operators/linear_operator_base.h"
+#include "../../operators/mapping_flags.h"
 #include "../../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
@@ -124,7 +124,7 @@ struct ProjectionOperatorData
 };
 
 template<int dim, typename Number>
-class ProjectionOperator : public LinearOperatorBase
+class ProjectionOperator : public dealii::Subscriptor
 {
 private:
   typedef ProjectionOperator<dim, Number> This;
@@ -142,11 +142,24 @@ private:
 public:
   typedef Number value_type;
 
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells          = update_JxW_values | update_gradients;
+    flags.inner_faces    = update_JxW_values | update_normal_vectors;
+    flags.boundary_faces = update_JxW_values | update_normal_vectors;
+
+    return flags;
+  }
+
   ProjectionOperator(MatrixFree<dim, Number> const & matrix_free_in,
                      unsigned int const              dof_index_in,
                      unsigned int const              quad_index_in,
                      ProjectionOperatorData const    operator_data_in)
-    : matrix_free(matrix_free_in),
+    : dealii::Subscriptor(),
+      matrix_free(matrix_free_in),
       dof_index(dof_index_in),
       quad_index(quad_index_in),
       array_conti_penalty_parameter(0),

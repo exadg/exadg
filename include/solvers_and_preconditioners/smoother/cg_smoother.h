@@ -81,7 +81,7 @@ public:
   update()
   {
     if(preconditioner != nullptr)
-      preconditioner->update(underlying_operator);
+      preconditioner->update();
   }
 
   // same as step(), but sets dst-vector to zero

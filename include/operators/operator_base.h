@@ -1,6 +1,7 @@
 #ifndef OPERATION_BASE_H
 #define OPERATION_BASE_H
 
+#include <deal.II/base/subscriptor.h>
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/la_parallel_vector.h>
@@ -17,7 +18,7 @@
 
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
 
-#include "linear_operator_base.h"
+#include "integrator_flags.h"
 #include "mapping_flags.h"
 
 #include "../solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
@@ -27,81 +28,6 @@
 #include "elementwise_operator.h"
 
 using namespace dealii;
-
-struct CellFlags
-{
-  CellFlags(const bool value = false, const bool gradient = false, const bool hessian = false)
-    : value(value), gradient(gradient), hessian(hessian){};
-
-  CellFlags
-  operator||(CellFlags const & other)
-  {
-    CellFlags cell_flags_combined;
-
-    cell_flags_combined.value    = this->value || other.value;
-    cell_flags_combined.gradient = this->value || other.gradient;
-    cell_flags_combined.hessian  = this->value || other.hessian;
-
-    return cell_flags_combined;
-  }
-
-  bool value;
-  bool gradient;
-  bool hessian;
-};
-
-struct FaceFlags
-{
-  FaceFlags(const bool value = false, const bool gradient = false)
-    : value(value), gradient(gradient){};
-
-  FaceFlags
-  operator||(FaceFlags const & other)
-  {
-    FaceFlags face_flags_combined;
-
-    face_flags_combined.value    = this->value || other.value;
-    face_flags_combined.gradient = this->value || other.gradient;
-
-    return face_flags_combined;
-  }
-
-  bool
-  do_eval() const
-  {
-    return value || gradient;
-  }
-
-  bool value;
-  bool gradient;
-};
-
-struct IntegratorFlags
-{
-  IntegratorFlags()
-  {
-  }
-
-  IntegratorFlags
-  operator||(IntegratorFlags const & other)
-  {
-    IntegratorFlags flags_combined;
-
-    flags_combined.cell_evaluate  = this->cell_evaluate || other.cell_evaluate;
-    flags_combined.cell_integrate = this->cell_integrate || other.cell_integrate;
-
-    flags_combined.face_evaluate  = this->face_evaluate || other.face_evaluate;
-    flags_combined.face_integrate = this->face_integrate || other.face_integrate;
-
-    return flags_combined;
-  }
-
-  CellFlags cell_evaluate;
-  CellFlags cell_integrate;
-
-  FaceFlags face_evaluate;
-  FaceFlags face_integrate;
-};
 
 struct OperatorBaseData
 {
@@ -135,7 +61,7 @@ struct OperatorBaseData
 };
 
 template<int dim, typename Number, typename AdditionalData, int n_components = 1>
-class OperatorBase : public LinearOperatorBase
+class OperatorBase : public dealii::Subscriptor
 {
 public:
   typedef OperatorBase<dim, Number, AdditionalData, n_components> This;
@@ -175,13 +101,13 @@ public:
    *  Getters and setters.
    */
   AdditionalData const &
-  get_operator_data() const;
+  get_data() const;
 
   void
-  set_evaluation_time(double const time) const;
+  set_time(double const time) const;
 
   double
-  get_evaluation_time() const;
+  get_time() const;
 
   unsigned int
   get_level() const;
@@ -243,17 +169,17 @@ public:
   void
   update_block_diagonal_preconditioner() const;
 
-  virtual void
+  void
   apply_inverse_block_diagonal(VectorType & dst, VectorType const & src) const;
 
   /*
    * Algebraic multigrid (AMG): sparse matrix (Trilinos) methods
    */
 #ifdef DEAL_II_WITH_TRILINOS
-  virtual void
+  void
   init_system_matrix(SparseMatrix & system_matrix) const;
 
-  virtual void
+  void
   calculate_system_matrix(SparseMatrix & system_matrix) const;
 #endif
 
@@ -263,41 +189,47 @@ public:
    * iterative solvers (as well as multigrid preconditioners and smoothers). Operations of this type
    * are called apply_...() and vmult_...() as required by deal.II interfaces.
    */
-  virtual void
+  void
   apply(VectorType & dst, VectorType const & src) const;
 
-  virtual void
+  void
   apply_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * evaluate inhomogeneous parts of operator related to inhomogeneous boundary face integrals.
    * Operations of this type are called rhs_...() since these functions are called to calculate the
-   * vector forming the right-hand side vector of linear systems of equations.
+   * vector forming the right-hand side vector of linear systems of equations. Functions of type
+   * rhs only make sense for linear operators (but they have e.g. no meaning for linearized
+   * operators of nonlinear problems). For this reason, these functions are currently defined
+   * 'virtual' to provide the opportunity to override and assert these functions in derived classes.
    */
-  void
+  virtual void
   rhs(VectorType & dst) const;
 
-  void
+  virtual void
   rhs_add(VectorType & dst) const;
 
   /*
    * Evaluate the operator including homogeneous and inhomogeneous contributions. The typical use
-   * case would be explicit time integration or the evaluation of nonlinear residuals where a
-   * splitting into homogeneous and inhomogeneous contributions in not required or not possible.
+   * case would be explicit time integration where a splitting into homogeneous and inhomogeneous
+   * contributions is not required. Functions of type evaluate only make sense for linear operators
+   * (but they have e.g. no meaning for linearized operators of nonlinear problems). For this
+   * reason, these functions are currently defined 'virtual' to provide the opportunity to override
+   * and assert these functions in derived classes.
    */
-  void
+  virtual void
   evaluate(VectorType & dst, VectorType const & src) const;
 
-  void
+  virtual void
   evaluate_add(VectorType & dst, VectorType const & src) const;
 
   /*
    * point Jacobi preconditioner (diagonal)
    */
-  virtual void
+  void
   calculate_diagonal(VectorType & diagonal) const;
 
-  virtual void
+  void
   add_diagonal(VectorType & diagonal) const;
 
   /*
@@ -308,7 +240,7 @@ public:
   void
   calculate_block_diagonal_matrices() const;
 
-  virtual void
+  void
   add_block_diagonal_matrices(BlockMatrix & matrices) const;
 
   void
@@ -322,7 +254,7 @@ public:
   // This function has to initialize everything related to the block diagonal preconditioner when
   // using the matrix-free variant with elementwise iterative solvers and matrix-free operator
   // evaluation.
-  virtual void
+  void
   initialize_block_diagonal_preconditioner_matrix_free() const;
 
   void
@@ -376,20 +308,17 @@ protected:
   // currently not allow to access neighboring data in case of cell-based face loops.
   // Once this functionality is available, this function should be removed again.
   // Since only special operators need to evaluate neighboring data, this function
-  // simply redirects to do_face_int_integral() unless specified otherwise, i.e.,
-  // if this function is not overwritten by a derived class (such as convective terms
-  // that require an additional evaluation of velocity fields for example).
+  // simply redirects to do_face_int_integral() if this function is not overwritten
+  // by a derived class (such as convective terms that require an additional
+  // evaluation of velocity fields for example).
   virtual void
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
 
-  virtual void
-  do_block_diagonal_cell_based() const;
-
   /*
    * Data structure containing all operator-specific data.
    */
-  mutable AdditionalData operator_data;
+  mutable AdditionalData data;
 
   /*
    * Matrix-free object.
@@ -397,9 +326,9 @@ protected:
   mutable lazy_ptr<MatrixFree<dim, Number>> matrix_free;
 
   /*
-   * Evaluation time (required for time-dependent problems).
+   * Physical time (required for time-dependent problems).
    */
-  mutable double eval_time;
+  mutable double time;
 
   /*
    * Constraint matrix.

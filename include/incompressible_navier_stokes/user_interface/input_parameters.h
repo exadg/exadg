@@ -366,6 +366,26 @@ public:
   // can be changed to such an algorithm (cell_based_face_loops).
   bool use_cell_based_face_loops;
 
+  // Solver data for block Jacobi preconditioner. Accordingly, this parameter is only
+  // relevant if the block diagonal preconditioner is implemented in a matrix-free way
+  // using an elementwise iterative solution procedure for which solver tolerances have to
+  // be provided by the user. It was found that rather coarse relative solver  tolerances
+  // of around 1.e-2 are enough and for lower tolerances one would 'over-solve' the local
+  // preconditioning problems without a further benefit in global iteration counts.
+  SolverData solver_data_block_diagonal;
+
+  // Quadrature rule used to integrate the linearized convective term. This parameter is
+  // therefore only relevant if linear systems of equations have to be solved involving
+  // the convective term. For reasons of computational efficiency, it might be advantageous
+  // to use a standard quadrature rule for the linearized problem in order to speed up
+  // the computation. However, it was found that choosing a lower order quadrature rule
+  // for the linearized problem only, increases the number of iterations significantly. It
+  // was found that the quadrature rules used for the nonlinear and linear problems should
+  // be the same. Hence, although this parameter speeds up the operator evaluation (i.e.
+  // the wall time per iteration), it is unclear whether a lower order quadrature rule
+  // really allows to achieve a more efficient method overall.
+  QuadratureRuleLinearization quad_rule_linearization;
+
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PROJECTION METHODS                                 */
@@ -431,12 +451,6 @@ public:
   unsigned int order_extrapolation_pressure_nbc;
 
   // CONVECTIVE STEP
-  NewtonSolverData newton_solver_data_convective;
-
-  // solver data for linearized problem
-  SolverData solver_data_convective;
-
-  // update of preconditioner for this equation is currently not provided
 
   // VISCOUS STEP
 

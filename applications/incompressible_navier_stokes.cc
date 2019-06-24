@@ -16,10 +16,10 @@
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
 
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
@@ -306,13 +306,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     time_integrator->setup(param.restarted_simulation);
 
     navier_stokes_operation->setup_solvers(
-      time_integrator->get_scaling_factor_time_derivative_term());
+      time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
   }
   else if(param.solver_type == SolverType::Steady)
   {
     driver_steady->setup();
 
-    navier_stokes_operation->setup_solvers();
+    navier_stokes_operation->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
   }
   else
   {

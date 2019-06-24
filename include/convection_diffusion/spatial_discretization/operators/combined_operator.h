@@ -66,7 +66,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         OperatorData<dim> const &         operator_data) const;
+         OperatorData<dim> const &         data) const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -123,7 +123,7 @@ private:
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                OperatorData<dim> const &            operator_data,
+                                OperatorData<dim> const &            data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   Operators::MassMatrixKernel<dim, Number> mass_kernel;

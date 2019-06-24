@@ -384,8 +384,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_constraine
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::update(
-  LinearOperatorBase const * /*linear_operator*/)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update()
 {
   // do nothing in base class (has to be implemented by derived classes if necessary)
 }
@@ -578,7 +577,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
       {
         std::shared_ptr<MGCoarseKrylov<Operator>> coarse_solver =
           std::dynamic_pointer_cast<MGCoarseKrylov<Operator>>(coarse_grid_solver);
-        coarse_solver->update(*this->operators[0]);
+        coarse_solver->update();
       }
 
       break;
@@ -587,7 +586,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
     {
       std::shared_ptr<MGCoarseAMG<Operator>> coarse_solver =
         std::dynamic_pointer_cast<MGCoarseAMG<Operator>>(coarse_grid_solver);
-      coarse_solver->update(&(*this->operators[0]));
+      coarse_solver->update();
 
       break;
     }

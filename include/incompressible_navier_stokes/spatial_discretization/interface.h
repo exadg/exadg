@@ -63,6 +63,9 @@ public:
                                double const time) const = 0;
 
   virtual void
+  evaluate_add_body_force_term(VectorType & dst, double const time) const = 0;
+
+  virtual void
   evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const = 0;
 
   virtual void
@@ -80,12 +83,12 @@ public:
   virtual void
   evaluate_pressure_gradient_term(VectorType &       dst,
                                   VectorType const & src,
-                                  double const       evaluation_time) const = 0;
+                                  double const       time) const = 0;
 
   virtual void
   evaluate_velocity_divergence_term(VectorType &       dst,
                                     VectorType const & src,
-                                    double const       evaluation_time) const = 0;
+                                    double const       time) const = 0;
 
   virtual void
   apply_mass_matrix(VectorType & dst, VectorType const & src) const = 0;
@@ -149,31 +152,35 @@ public:
   update_continuity_penalty_operator(VectorType const & velocity) const = 0;
 
   virtual void
-  rhs_stokes_problem(BlockVectorType & dst, double const & eval_time = 0.0) const = 0;
+  rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const = 0;
 
   virtual unsigned int
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
                               bool const &            update_preconditioner,
+                              double const &          time                            = 0.0,
                               double const &          scaling_factor_mass_matrix_term = 1.0) = 0;
 
   virtual void
-  evaluate_nonlinear_residual_steady(BlockVectorType & dst, BlockVectorType const & src) const = 0;
+  evaluate_nonlinear_residual_steady(BlockVectorType &       dst,
+                                     BlockVectorType const & src,
+                                     double const &          time) const = 0;
 
   virtual void
   solve_nonlinear_problem(BlockVectorType &  dst,
                           VectorType const & sum_alphai_ui,
-                          double const &     evaluation_time,
+                          double const &     time,
                           bool const &       update_preconditioner,
                           double const &     scaling_factor_mass_matrix_term,
                           unsigned int &     newton_iterations,
                           unsigned int &     linear_iterations) = 0;
 
   virtual void
-  solve_nonlinear_steady_problem(BlockVectorType & dst,
-                                 bool const &      update_preconditioner,
-                                 unsigned int &    newton_iterations,
-                                 unsigned int &    linear_iterations) = 0;
+  solve_nonlinear_steady_problem(BlockVectorType &  dst,
+                                 VectorType const & rhs_vector,
+                                 bool const &       update_preconditioner,
+                                 unsigned int &     newton_iterations,
+                                 unsigned int &     linear_iterations) = 0;
 
   virtual void
   do_postprocessing(VectorType const & velocity,
@@ -204,21 +211,12 @@ public:
   }
 
   virtual void
-  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst,
-                                                    double const evaluation_time) const = 0;
+  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst, double const time) const = 0;
 
   virtual void
   evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
                                                          VectorType const & src,
-                                                         double const evaluation_time) const = 0;
-
-  virtual void
-  solve_nonlinear_convective_problem(VectorType &       dst,
-                                     VectorType const & sum_alphai_ui,
-                                     double const &     eval_time,
-                                     double const &     scaling_factor_mass_matrix_term,
-                                     unsigned int &     newton_iterations,
-                                     unsigned int &     linear_iterations) = 0;
+                                                         double const       time) const = 0;
 
   virtual unsigned int
   solve_pressure(VectorType & dst, VectorType const & src) const = 0;
@@ -227,19 +225,19 @@ public:
   apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  rhs_velocity_divergence_term(VectorType & dst, double const & evaluation_time) const = 0;
+  rhs_velocity_divergence_term(VectorType & dst, double const & time) const = 0;
 
   virtual void
   rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & eval_time) = 0;
+  rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time) = 0;
 
   virtual void
-  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const = 0;
+  rhs_ppe_laplace_add(VectorType & dst, double const & time) const = 0;
 
   virtual void
-  rhs_ppe_nbc_add(VectorType & dst, double const & evaluation_time) = 0;
+  rhs_ppe_nbc_add(VectorType & dst, double const & time) = 0;
 
   virtual void
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const = 0;
@@ -254,7 +252,7 @@ public:
                 double const &     scaling_factor_time_derivative_term) = 0;
 
   virtual void
-  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const = 0;
+  rhs_add_viscous_term(VectorType & dst, double const time) const = 0;
 
   virtual void
   do_postprocessing(VectorType const & velocity,
@@ -304,36 +302,33 @@ public:
   virtual void
   solve_nonlinear_momentum_equation(VectorType &       dst,
                                     VectorType const & rhs_vector,
-                                    double const &     eval_time,
+                                    double const &     time,
                                     bool const &       update_preconditioner,
                                     double const &     scaling_factor_mass_matrix_term,
                                     unsigned int &     newton_iterations,
                                     unsigned int &     linear_iterations) = 0;
 
   virtual void
-  evaluate_add_body_force_term(VectorType & dst, double const evaluation_time) const = 0;
-
-  virtual void
-  rhs_add_viscous_term(VectorType & dst, double const evaluation_time) const = 0;
+  rhs_add_viscous_term(VectorType & dst, double const time) const = 0;
 
   virtual unsigned int
   solve_pressure(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  rhs_ppe_laplace_add(VectorType & dst, double const & evaluation_time) const = 0;
+  rhs_ppe_laplace_add(VectorType & dst, double const & time) const = 0;
 
   virtual void
   apply_inverse_pressure_mass_matrix(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  rhs_pressure_gradient_term(VectorType & dst, double const evaluation_time) const = 0;
+  rhs_pressure_gradient_term(VectorType & dst, double const time) const = 0;
 
   virtual void
   evaluate_nonlinear_residual_steady(VectorType &       dst_u,
                                      VectorType &       dst_p,
                                      VectorType const & src_u,
                                      VectorType const & src_p,
-                                     double const &     evaluation_time) const = 0;
+                                     double const &     time) const = 0;
 };
 
 /*
@@ -369,19 +364,18 @@ public:
   }
 
   void
-  evaluate(VectorType & dst, VectorType const & src, double const evaluation_time) const
+  evaluate(VectorType & dst, VectorType const & src, double const time) const
   {
     if(transport_with_interpolated_velocity)
     {
-      interpolate(solution_interpolated, evaluation_time, solutions, times);
+      interpolate(solution_interpolated, time, solutions, times);
 
       pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-        dst, src, evaluation_time, solution_interpolated);
+        dst, src, time, solution_interpolated);
     }
     else // nonlinear transport (standard convective term)
     {
-      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(
-        dst, src, evaluation_time);
+      pde_operator->evaluate_negative_convective_term_and_apply_inverse_mass_matrix(dst, src, time);
     }
   }
 

@@ -22,6 +22,7 @@ template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 private:
+  typedef MomentumOperator<dim, Number>                        PDEOperatorNumber;
   typedef MomentumOperator<dim, MultigridNumber>               PDEOperator;
   typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
@@ -37,31 +38,26 @@ public:
   virtual ~MultigridPreconditioner(){};
 
   void
-  initialize(MultigridData const &                data,
-             const parallel::Triangulation<dim> * tria,
-             const FiniteElement<dim> &           fe,
+  initialize(MultigridData const &                mg_data,
+             parallel::Triangulation<dim> const * tria,
+             FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             MomentumOperatorData<dim> const &    operator_data_in,
+             PDEOperatorNumber const &            pde_operator_in,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    operator_data                 = operator_data_in;
-    operator_data.dof_index       = 0;
-    operator_data.quad_index_std  = 0;
-    operator_data.quad_index_over = 1;
+    pde_operator = &pde_operator_in;
 
-    // set dof index to zero since matrix free object only contains one dof-handler
-    operator_data.mass_matrix_operator_data.dof_index  = operator_data.dof_index;
-    operator_data.mass_matrix_operator_data.quad_index = operator_data.quad_index_std;
+    data            = pde_operator->get_data();
+    data.dof_index  = 0;
+    data.quad_index = 0;
 
-    // set dof index to zero since matrix free object only contains one dof-handler
-    operator_data.viscous_operator_data.dof_index  = operator_data.dof_index;
-    operator_data.viscous_operator_data.quad_index = operator_data.quad_index_std;
+    // do not forget to update viscous_kernel_data!
+    data.viscous_kernel_data.dof_index = data.dof_index;
 
-    // set dof index to zero since matrix free object only contains one dof-handler
-    operator_data.convective_operator_data.dof_index = operator_data.dof_index;
-    // set quad index to 1 since matrix free object only contains two quadrature formulas
-    operator_data.convective_operator_data.quad_index = operator_data.quad_index_over;
+    // do not forget to update convective_kernel_data!
+    data.convective_kernel_data.dof_index             = data.dof_index;
+    data.convective_kernel_data.quad_index_linearized = data.quad_index;
 
     // When solving the reaction-convection-diffusion problem, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -69,26 +65,30 @@ public:
     // reaction-convection-diffusion operator. Accordingly, we have to reset which
     // operators should be "active" for the multigrid preconditioner, independently of
     // the actual equation type that is solved.
-    AssertThrow(operator_data.mg_operator_type != MultigridOperatorType::Undefined,
+    AssertThrow(data.mg_operator_type != MultigridOperatorType::Undefined,
                 ExcMessage("Invalid parameter mg_operator_type."));
 
-    if(operator_data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    if(data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
       // deactivate convective term for multigrid preconditioner
-      operator_data.convective_problem = false;
+      data.convective_problem = false;
     }
-    else if(operator_data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      AssertThrow(operator_data.convective_problem == true, ExcMessage("Invalid parameter."));
+      AssertThrow(data.convective_problem == true, ExcMessage("Invalid parameter."));
     }
     else
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
 
-
-    Base::initialize(
-      data, tria, fe, mapping, false /*operator_is_singular*/, dirichlet_bc, periodic_face_pairs);
+    Base::initialize(mg_data,
+                     tria,
+                     fe,
+                     mapping,
+                     false /*operator_is_singular*/,
+                     dirichlet_bc,
+                     periodic_face_pairs);
   }
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
@@ -97,52 +97,39 @@ public:
     std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
     matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
 
-    auto & dof_handler = *this->dof_handlers[level];
-
-    std::vector<DoFHandler<dim> const *> dof_handler_vec;
-    dof_handler_vec.resize(1);
-    dof_handler_vec[0] = &dof_handler;
-
-    // constraint matrix
-    std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
-    constraint_matrix_vec.resize(1);
-    constraint_matrix_vec[0] = &*this->constraints[level];
-
-    // quadratures
-    std::vector<Quadrature<1>> quadrature_vec;
-    quadrature_vec.resize(2);
-    quadrature_vec[operator_data.quad_index_std] = QGauss<1>(dof_handler.get_fe().degree + 1);
-    quadrature_vec[operator_data.quad_index_over] =
-      QGauss<1>(dof_handler.get_fe().degree + (dof_handler.get_fe().degree + 2) / 2);
-
     // additional data
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
 
-    additional_data.mapping_update_flags =
-      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-       update_values);
+    additional_data.level_mg_handler      = this->level_info[level].h_level();
+    additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
-    additional_data.mapping_update_flags_inner_faces =
-      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-       update_values);
+    MappingFlags flags;
+    if(data.unsteady_problem)
+      flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+    if(data.convective_problem)
+      flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+    if(data.viscous_problem)
+      flags = flags || Operators::ViscousKernel<dim, Number>::get_mapping_flags();
 
-    additional_data.mapping_update_flags_boundary_faces =
-      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-       update_values);
+    additional_data.mapping_update_flags = flags.cells;
+    if(this->level_info[level].is_dg())
+    {
+      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
+      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+    }
 
-    additional_data.level_mg_handler = this->level_info[level].h_level();
-
-    if(operator_data.use_cell_based_loops)
+    if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
       auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-        &dof_handler.get_triangulation());
+        &this->dof_handlers[level]->get_triangulation());
       Categorization::do_cell_based_loops(*tria,
                                           additional_data,
                                           this->level_info[level].h_level());
     }
 
+    QGauss<1> quadrature(this->level_info[level].degree() + 1);
     matrix_free->reinit(
-      mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
+      mapping, *this->dof_handlers[level], *this->constraints[level], quadrature, additional_data);
 
     return matrix_free;
   }
@@ -152,9 +139,7 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit_multigrid(*this->matrix_free_objects[level],
-                                   *this->constraints[level],
-                                   operator_data);
+    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
@@ -166,21 +151,34 @@ public:
    * This function updates the multigrid preconditioner.
    */
   virtual void
-  update(LinearOperatorBase const * pde_operator_in)
+  update()
   {
-    MomentumOperator<dim, Number> const * pde_operator =
-      dynamic_cast<MomentumOperator<dim, Number> const *>(pde_operator_in);
+    update_operators(pde_operator);
 
-    AssertThrow(
-      pde_operator != nullptr,
-      ExcMessage(
-        "Operator used to update multigrid preconditioner does not match actual PDE operator!"));
+    update_smoothers();
 
-    MultigridOperatorType mg_operator_type = pde_operator->get_operator_data().mg_operator_type;
+    // singular operators do not occur for this operator
+    this->update_coarse_solver(false /* operator_is_singular */);
+  }
+
+private:
+  /*
+   * This function updates the multigrid operators for all levels
+   */
+  void
+  update_operators(PDEOperatorNumber const * pde_operator)
+  {
+    if(data.unsteady_problem)
+    {
+      set_time(pde_operator->get_time());
+      set_scaling_factor_time_derivative_term(pde_operator->get_scaling_factor_mass_matrix());
+    }
+
+    MultigridOperatorType mg_operator_type = pde_operator->get_data().mg_operator_type;
 
     if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      VectorType const & vector_linearization = pde_operator->get_solution_linearization();
+      VectorType const & vector_linearization = pde_operator->get_velocity();
 
       // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
       VectorTypeMG         vector_multigrid_type_copy;
@@ -195,46 +193,8 @@ public:
         vector_multigrid_type_ptr  = &vector_multigrid_type_copy;
       }
 
-      update_operators(pde_operator->get_evaluation_time(),
-                       pde_operator->get_scaling_factor_time_derivative_term(),
-                       vector_multigrid_type_ptr);
+      set_vector_linearization(*vector_multigrid_type_ptr);
     }
-    else if(mg_operator_type == MultigridOperatorType::ReactionDiffusion)
-    {
-      update_operators(pde_operator->get_evaluation_time(),
-                       pde_operator->get_scaling_factor_time_derivative_term());
-    }
-    else
-    {
-      AssertThrow(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion ||
-                    mg_operator_type == MultigridOperatorType::ReactionDiffusion,
-                  ExcMessage("Multigrid operator type is invalid or not implemented."));
-    }
-
-    update_smoothers();
-
-    // singular operators do not occur for this operator
-    this->update_coarse_solver(false /* operator_is_singular */);
-  }
-
-private:
-  /*
-   * This function updates operators
-   * To do this, three functions are called:
-   *  - set_vector_linearization
-   *  - set_evaluation_time
-   *  - set_scaling_factor_time_derivative_term
-   */
-  void
-  update_operators(double const &       evaluation_time,
-                   double const &       scaling_factor_time_derivative_term,
-                   VectorTypeMG const * vector_linearization = nullptr)
-  {
-    set_evaluation_time(evaluation_time);
-    set_scaling_factor_time_derivative_term(scaling_factor_time_derivative_term);
-
-    if(vector_linearization != nullptr)
-      set_vector_linearization(*vector_linearization);
   }
 
   /*
@@ -245,36 +205,36 @@ private:
   set_vector_linearization(VectorTypeMG const & vector_linearization)
   {
     // copy velocity to finest level
-    this->get_operator(this->fine_level)->set_solution_linearization(vector_linearization);
+    this->get_operator(this->fine_level)->set_velocity_copy(vector_linearization);
 
     // interpolate velocity from fine to coarse level
     for(unsigned int level = this->fine_level; level > this->coarse_level; --level)
     {
-      auto & vector_fine_level   = this->get_operator(level - 0)->get_solution_linearization();
-      auto   vector_coarse_level = this->get_operator(level - 1)->get_solution_linearization();
+      auto & vector_fine_level   = this->get_operator(level - 0)->get_velocity();
+      auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
       this->transfers.interpolate(level, vector_coarse_level, vector_fine_level);
-      this->get_operator(level - 1)->set_solution_linearization(vector_coarse_level);
+      this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
     }
   }
 
   /*
-   * This function updates the evaluation time. In order to update operators[level] this function
+   * This function updates the evaluation time. In order to update the operators this function
    * has to be called. (This is due to the fact that the linearized convective term does not only
    * depend on the linearized velocity field but also on Dirichlet boundary data which itself
    * depends on the current time.)
    */
   void
-  set_evaluation_time(double const & evaluation_time)
+  set_time(double const & time)
   {
     for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
     {
-      get_operator(level)->set_evaluation_time(evaluation_time);
+      get_operator(level)->set_time(time);
     }
   }
 
   /*
-   * This function updates scaling_factor_time_derivative_term. In order to update
-   * operators[level] this function has to be called. This is necessary if adaptive time stepping
+   * This function updates scaling_factor_time_derivative_term. In order to update the
+   * operators this function has to be called. This is necessary if adaptive time stepping
    * is used where the scaling factor of the derivative term is variable.
    */
   void
@@ -282,14 +242,13 @@ private:
   {
     for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
     {
-      get_operator(level)->set_scaling_factor_time_derivative_term(
-        scaling_factor_time_derivative_term);
+      get_operator(level)->set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
     }
   }
 
   /*
-   * This function updates the smoother for all levels of the multigrid algorithm.
-   * The prerequisite to call this function is that operators[level] have been updated.
+   * This function updates the smoother for all multigrid levels.
+   * The prerequisite to call this function is that the multigrid operators have been updated.
    */
   void
   update_smoothers()
@@ -310,9 +269,10 @@ private:
     return mg_operator->get_pde_operator();
   }
 
-  MomentumOperatorData<dim> operator_data;
-};
+  MomentumOperatorData<dim> data;
 
+  PDEOperatorNumber const * pde_operator;
+};
 
 } // namespace IncNS
 

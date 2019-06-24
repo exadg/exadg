@@ -13,8 +13,6 @@ class MassMatrixKernel
 public:
   typedef VectorizedArray<Number> scalar;
 
-  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
-
   MassMatrixKernel() : scaling_factor(1.0)
   {
   }
@@ -90,38 +88,20 @@ class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorDa
 private:
   typedef OperatorBase<dim, Number, MassMatrixOperatorData> Base;
 
-  typedef typename Base::IntegratorCell IntegratorCell;
+  typedef typename Base::IntegratorCell Integrator;
 
 public:
-  MassMatrixOperator()
-  {
-  }
-
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         MassMatrixOperatorData const &    operator_data) const
-  {
-    Base::reinit(matrix_free, constraint_matrix, operator_data);
-
-    this->integrator_flags = kernel.get_integrator_flags();
-  }
+         MassMatrixOperatorData const &    data) const;
 
   void
-  set_scaling_factor(Number const & number)
-  {
-    kernel.set_scaling_factor(number);
-  }
+  set_scaling_factor(Number const & number);
 
 private:
   void
-  do_cell_integral(IntegratorCell & integrator) const
-  {
-    for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-    {
-      integrator.submit_value(kernel.get_volume_flux(integrator.get_value(q)), q);
-    }
-  }
+  do_cell_integral(Integrator & integrator) const;
 
   Operators::MassMatrixKernel<dim, Number> kernel;
 };

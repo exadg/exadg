@@ -1,5 +1,12 @@
-#ifndef INCLUDE_CONVECTION_DIFFUSION_RHS
-#define INCLUDE_CONVECTION_DIFFUSION_RHS
+/*
+ * body_force_operator.h
+ *
+ *  Created on: Nov 5, 2018
+ *      Author: fehn
+ */
+
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_RHS_OPERATOR_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_RHS_OPERATOR_H_
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
@@ -8,7 +15,7 @@
 
 using namespace dealii;
 
-namespace ConvDiff
+namespace IncNS
 {
 namespace Operators
 {
@@ -22,9 +29,10 @@ template<int dim, typename Number>
 class RHSKernel
 {
 private:
-  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
-  typedef VectorizedArray<Number> scalar;
+  typedef CellIntegrator<dim, dim, Number> Integrator;
 
 public:
   void
@@ -49,14 +57,12 @@ public:
    * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    get_volume_flux(IntegratorCell const & integrator,
-                    unsigned int const     q,
-                    Number const &         time) const
+    vector
+    get_volume_flux(Integrator const & integrator, unsigned int const q, Number const & time) const
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    return evaluate_scalar_function(data.f, q_points, time);
+    return evaluate_vectorial_function(data.f, q_points, time);
   }
 
 private:
@@ -82,47 +88,30 @@ struct RHSOperatorData
 template<int dim, typename Number>
 class RHSOperator
 {
-private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
+public:
   typedef RHSOperator<dim, Number> This;
 
-  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-public:
-  /*
-   * Constructor.
-   */
+  typedef CellIntegrator<dim, dim, Number> Integrator;
+
   RHSOperator();
 
-  /*
-   * Initialization.
-   */
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, RHSOperatorData<dim> const & data);
+  reinit(MatrixFree<dim, Number> const & matrix_free_in, RHSOperatorData<dim> const & data_in);
 
-  /*
-   * Evaluate operator and overwrite dst-vector.
-   */
   void
-  evaluate(VectorType & dst, double const evaluation_time) const;
+  evaluate(VectorType & dst, Number const evaluation_time) const;
 
-  /*
-   * Evaluate operator and add to dst-vector.
-   */
   void
-  evaluate_add(VectorType & dst, double const evaluation_time) const;
+  evaluate_add(VectorType & dst, Number const evaluation_time) const;
 
 private:
   void
-  do_cell_integral(IntegratorCell & integrator) const;
+  do_cell_integral(Integrator & integrator) const;
 
-  /*
-   * The right-hand side operator involves only cell integrals so we only need a function looping
-   * over all cells and computing the cell integrals.
-   */
   void
   cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
@@ -137,7 +126,8 @@ private:
 
   Operators::RHSKernel<dim, Number> kernel;
 };
+} // namespace IncNS
 
-} // namespace ConvDiff
 
-#endif
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_RHS_OPERATOR_H_ \
+        */

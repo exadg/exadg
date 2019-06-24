@@ -1,12 +1,11 @@
 /*
- * dg_navier_stokes_projection_methods.cpp
+ * dg_projection_methods.cpp
  *
  *  Created on: Dec 6, 2018
  *      Author: fehn
  */
 
-#include "dg_navier_stokes_projection_methods.h"
-
+#include "dg_projection_methods.h"
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 
@@ -15,9 +14,9 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::Triangulation<dim> const & triangulation,
-  InputParameters const &              parameters_in,
-  std::shared_ptr<Postprocessor>       postprocessor_in)
-  : BASE(triangulation, parameters_in, postprocessor_in)
+  InputParameters const &              parameters,
+  std::shared_ptr<Postprocessor>       postprocessor)
+  : Base(triangulation, parameters, postprocessor)
 {
   AssertThrow(this->param.get_degree_p() > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
@@ -106,7 +105,11 @@ void
 DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure_poisson()
 {
   // setup preconditioner
-  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
+  if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::None)
+  {
+    // do nothing, preconditioner will not be used
+  }
+  else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
   {
     preconditioner_pressure_poisson.reset(
       new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
@@ -131,8 +134,8 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
                                   tria,
                                   fe,
                                   *this->mapping,
-                                  laplace_operator.get_operator_data(),
-                                  &laplace_operator.get_operator_data().bc->dirichlet_bc,
+                                  laplace_operator.get_data(),
+                                  &laplace_operator.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
   else
@@ -194,20 +197,19 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(
-  VectorType & dst,
-  double const evaluation_time) const
+DGNavierStokesProjectionMethods<dim, Number>::do_rhs_add_viscous_term(VectorType & dst,
+                                                                      double const time) const
 {
-  this->viscous_operator.rhs_add(dst, evaluation_time);
+  this->viscous_operator.set_time(time);
+  this->viscous_operator.rhs_add(dst);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(
-  VectorType &   dst,
-  double const & evaluation_time) const
+DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType &   dst,
+                                                                     double const & time) const
 {
-  this->laplace_operator.set_evaluation_time(evaluation_time);
+  this->laplace_operator.set_time(time);
   this->laplace_operator.rhs_add(dst);
 }
 

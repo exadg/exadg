@@ -33,10 +33,10 @@
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 // spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_pressure_correction.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
 
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
@@ -58,9 +58,9 @@ using namespace dealii;
 // specify the test case that has to be solved
 
 // template
-#include "incompressible_flow_with_transport_test_cases/template.h"
+//#include "incompressible_flow_with_transport_test_cases/template.h"
 
-//#include "incompressible_flow_with_transport_test_cases/cavity.h"
+#include "incompressible_flow_with_transport_test_cases/cavity.h"
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 template<typename Number>
@@ -356,7 +356,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
   navier_stokes_operation->setup_solvers(
-    fluid_time_integrator->get_scaling_factor_time_derivative_term());
+    fluid_time_integrator->get_scaling_factor_time_derivative_term(),
+    fluid_time_integrator->get_velocity());
 
   // SCALAR TRANSPORT
   for(unsigned int i = 0; i < n_scalars; ++i)

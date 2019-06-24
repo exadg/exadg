@@ -134,15 +134,12 @@ PerturbationEnergyCalculator<dim, Number>::local_compute(
 {
   CellIntegrator<dim, dim, Number> fe_eval(data, dof_index, quad_index);
 
-  AlignedVector<scalar> JxW_values(fe_eval.n_q_points);
-
   // Loop over all elements
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     fe_eval.reinit(cell);
     fe_eval.read_dof_values(src);
     fe_eval.evaluate(true, false);
-    fe_eval.fill_JxW_values(JxW_values);
 
     VectorizedArray<Number> energy_vec = make_vectorized_array<Number>(0.);
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
@@ -155,7 +152,7 @@ PerturbationEnergyCalculator<dim, Number>::local_compute(
 
       vector velocity_base;
       velocity_base[0] = energy_data.U_max * (1.0 - y * y);
-      energy_vec += JxW_values[q] * (velocity - velocity_base) * (velocity - velocity_base);
+      energy_vec += fe_eval.JxW(q) * (velocity - velocity_base) * (velocity - velocity_base);
     }
 
     // sum over entries of VectorizedArray, but only over those

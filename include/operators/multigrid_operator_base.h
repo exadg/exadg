@@ -3,14 +3,18 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
-#include "linear_operator_base.h"
+using namespace dealii;
 
 template<int dim, typename Number>
-class MultigridOperatorBase : public LinearOperatorBase
+class MultigridOperatorBase : public dealii::Subscriptor
 {
 public:
   typedef Number                                     value_type;
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  MultigridOperatorBase() : dealii::Subscriptor()
+  {
+  }
 
   virtual ~MultigridOperatorBase()
   {
