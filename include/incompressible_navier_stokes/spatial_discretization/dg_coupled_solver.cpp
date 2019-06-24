@@ -54,7 +54,8 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
 
   initialize_solver_coupled();
 
-  this->setup_projection_solver();
+  if(this->param.add_penalty_terms_to_monolithic_system == false)
+    this->setup_projection_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
 }

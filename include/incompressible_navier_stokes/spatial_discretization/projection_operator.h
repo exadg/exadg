@@ -17,9 +17,12 @@
 #include "../../solvers_and_preconditioners/util/invert_diagonal.h"
 #include "../../solvers_and_preconditioners/util/verify_calculation_of_diagonal.h"
 
-#include "operators/elementwise_operator.h"
-#include "solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
-#include "solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
+// TODO
+//#include "operators/elementwise_operator.h"
+//#include "solvers_and_preconditioners/preconditioner/elementwise_preconditioners.h"
+//#include "solvers_and_preconditioners/solvers/wrapper_elementwise_solvers.h"
+
+#include "../../operators/operator_base.h"
 
 using namespace dealii;
 
@@ -71,6 +74,411 @@ namespace IncNS
  *
  *            use both terms:       tau_conti = tau_conti_conv + tau_conti_viscous
  */
+
+namespace Operators
+{
+struct DivergencePenaltyKernelData
+{
+  DivergencePenaltyKernelData()
+    : type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
+      viscosity(0.0),
+      degree(1),
+      penalty_factor(1.0),
+      dof_index(0),
+      quad_index(0)
+  {
+  }
+
+  // type of penalty parameter (viscous and/or convective terms)
+  TypePenaltyParameter type_penalty_parameter;
+
+  // viscosity, needed for computation of penalty factor
+  double viscosity;
+
+  // degree of finite element shape functions
+  unsigned int degree;
+
+  // the penalty term can be scaled by 'penalty_factor'
+  double penalty_factor;
+
+  unsigned int dof_index;
+  unsigned int quad_index;
+};
+
+template<int dim, typename Number>
+class DivergencePenaltyKernel
+{
+private:
+  typedef CellIntegrator<dim, dim, Number> IntegratorCell;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef VectorizedArray<Number> scalar;
+
+public:
+  DivergencePenaltyKernel() : matrix_free(nullptr), array_penalty_parameter(0), scaling_factor(1.0)
+  {
+  }
+
+  void
+  reinit(MatrixFree<dim, Number> const & matrix_free, DivergencePenaltyKernelData const & data)
+  {
+    this->matrix_free = &matrix_free;
+
+    this->data = data;
+
+    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
+    array_penalty_parameter.resize(n_cells);
+  }
+
+  IntegratorFlags
+  get_integrator_flags() const
+  {
+    IntegratorFlags flags;
+
+    flags.cell_evaluate  = CellFlags(false, true, false);
+    flags.cell_integrate = CellFlags(false, true, false);
+
+    // no face integrals
+
+    return flags;
+  }
+
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    flags.cells = update_JxW_values | update_gradients;
+
+    // no face integrals
+
+    return flags;
+  }
+
+  void
+  set_scaling_factor(double const & factor)
+  {
+    scaling_factor = factor;
+  }
+
+  void
+  calculate_penalty_parameter(VectorType const & velocity)
+  {
+    velocity.update_ghost_values();
+
+    IntegratorCell integrator(*matrix_free, data.dof_index, data.quad_index);
+
+    AlignedVector<scalar> JxW_values(integrator.n_q_points);
+
+    unsigned int n_cells = matrix_free->n_cell_batches() + matrix_free->n_ghost_cell_batches();
+    for(unsigned int cell = 0; cell < n_cells; ++cell)
+    {
+      scalar tau_convective = make_vectorized_array<Number>(0.0);
+      scalar tau_viscous    = make_vectorized_array<Number>(data.viscosity);
+
+      if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
+         data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        integrator.reinit(cell);
+        integrator.read_dof_values(velocity);
+        integrator.evaluate(true, false);
+
+        scalar volume      = make_vectorized_array<Number>(0.0);
+        scalar norm_U_mean = make_vectorized_array<Number>(0.0);
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+        {
+          volume += integrator.JxW(q);
+          norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
+        }
+        norm_U_mean /= volume;
+
+        tau_convective =
+          norm_U_mean * std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
+      }
+
+      if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_penalty_parameter[cell] = data.penalty_factor * tau_convective;
+      }
+      else if(data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_penalty_parameter[cell] = data.penalty_factor * tau_viscous;
+      }
+      else if(data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_penalty_parameter[cell] = data.penalty_factor * (tau_convective + tau_viscous);
+      }
+    }
+  }
+
+  void
+  reinit_cell(IntegratorCell & integrator) const
+  {
+    tau = integrator.read_cell_data(array_penalty_parameter) * scaling_factor;
+  }
+
+  /*
+   * Volume flux, i.e., the term occurring in the volume integral
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    get_volume_flux(IntegratorCell const & integrator, unsigned int const q) const
+  {
+    return tau * integrator.get_divergence(q);
+  }
+
+private:
+  MatrixFree<dim, Number> const * matrix_free;
+
+  DivergencePenaltyKernelData data;
+
+  AlignedVector<scalar> array_penalty_parameter;
+
+  double scaling_factor;
+
+  mutable scalar tau;
+};
+
+struct ContinuityPenaltyKernelData
+{
+  ContinuityPenaltyKernelData()
+    : type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
+      which_components(ContinuityPenaltyComponents::Normal),
+      viscosity(0.0),
+      degree(1),
+      penalty_factor(1.0),
+      dof_index(0),
+      quad_index(0)
+  {
+  }
+
+  // type of penalty parameter (viscous and/or convective terms)
+  TypePenaltyParameter type_penalty_parameter;
+
+  // the continuity penalty term can be applied to all velocity components or to the normal
+  // component only
+  ContinuityPenaltyComponents which_components;
+
+  // viscosity, needed for computation of penalty factor
+  double viscosity;
+
+  // degree of finite element shape functions
+  unsigned int degree;
+
+  // the penalty term can be scaled by 'penalty_factor'
+  double penalty_factor;
+
+  unsigned int dof_index;
+  unsigned int quad_index;
+};
+
+template<int dim, typename Number>
+class ContinuityPenaltyKernel
+{
+private:
+  typedef CellIntegrator<dim, dim, Number> IntegratorCell;
+  typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
+
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+
+public:
+  ContinuityPenaltyKernel() : matrix_free(nullptr), array_penalty_parameter(0), scaling_factor(1.0)
+  {
+  }
+
+  void
+  reinit(MatrixFree<dim, Number> const & matrix_free, ContinuityPenaltyKernelData const & data)
+  {
+    this->matrix_free = &matrix_free;
+
+    this->data = data;
+
+    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
+    array_penalty_parameter.resize(n_cells);
+  }
+
+  IntegratorFlags
+  get_integrator_flags() const
+  {
+    IntegratorFlags flags;
+
+    // no cell integrals
+
+    flags.face_evaluate  = FaceFlags(true, false);
+    flags.face_integrate = FaceFlags(true, false);
+
+    return flags;
+  }
+
+  static MappingFlags
+  get_mapping_flags()
+  {
+    MappingFlags flags;
+
+    // no cell integrals
+
+    flags.inner_faces = update_JxW_values | update_normal_vectors;
+
+    // no boundary face integrals
+
+    return flags;
+  }
+
+  void
+  set_scaling_factor(double const & factor)
+  {
+    scaling_factor = factor;
+  }
+
+  void
+  calculate_penalty_parameter(VectorType const & velocity)
+  {
+    velocity.update_ghost_values();
+
+    IntegratorCell integrator(*matrix_free, data.dof_index, data.quad_index);
+
+    AlignedVector<scalar> JxW_values(integrator.n_q_points);
+
+    unsigned int n_cells = matrix_free->n_cell_batches() + matrix_free->n_ghost_cell_batches();
+    for(unsigned int cell = 0; cell < n_cells; ++cell)
+    {
+      integrator.reinit(cell);
+      integrator.read_dof_values(velocity);
+      integrator.evaluate(true, false);
+      scalar volume      = make_vectorized_array<Number>(0.0);
+      scalar norm_U_mean = make_vectorized_array<Number>(0.0);
+
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        volume += integrator.JxW(q);
+        norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
+      }
+
+      norm_U_mean /= volume;
+
+      scalar tau_convective = norm_U_mean;
+      scalar h              = std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
+      scalar tau_viscous    = make_vectorized_array<Number>(data.viscosity) / h;
+
+      if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_penalty_parameter[cell] = data.penalty_factor * tau_convective;
+      }
+      else if(data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_penalty_parameter[cell] = data.penalty_factor * tau_viscous;
+      }
+      else if(data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_penalty_parameter[cell] = data.penalty_factor * (tau_convective + tau_viscous);
+      }
+    }
+  }
+
+  void
+  reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
+  {
+    tau = 0.5 *
+          (integrator_m.read_cell_data(array_penalty_parameter) +
+           integrator_p.read_cell_data(array_penalty_parameter)) *
+          scaling_factor;
+  }
+
+  void
+  reinit_face_cell_based(types::boundary_id const boundary_id,
+                         IntegratorFace &         integrator_m,
+                         IntegratorFace &         integrator_p) const
+  {
+    if(boundary_id == numbers::internal_face_boundary_id) // internal face
+    {
+      tau = 0.5 *
+            (integrator_m.read_cell_data(array_penalty_parameter) +
+             integrator_p.read_cell_data(array_penalty_parameter)) *
+            scaling_factor;
+    }
+    else // boundary face
+    {
+      // will not be used since the continuity penalty operator is zero on boundary faces
+      tau = integrator_m.read_cell_data(array_penalty_parameter) * scaling_factor;
+    }
+  }
+
+  // TODO
+  //  inline DEAL_II_ALWAYS_INLINE //
+  //    vector
+  //    calculate_flux(IntegratorFace const &integrator_m, IntegratorFace const &integrator_p,
+  //    unsigned int const q) const
+  //  {
+  //    vector uM         = integrator_m.get_value(q);
+  //    vector uP         = integrator_p.get_value(q);
+  //    vector jump_value = uM - uP;
+  //
+  //    vector flux;
+  //
+  //    if(data.which_components == ContinuityPenaltyComponents::All)
+  //    {
+  //      // penalize all velocity components
+  //     flux = tau * jump_value;
+  //    }
+  //    else if(data.which_components == ContinuityPenaltyComponents::Normal)
+  //    {
+  //      // penalize normal components only
+  //      vector normal = integrator_m.get_normal_vector(q);
+  //
+  //      flux = tau * (jump_value * normal) * normal;
+  //    }
+  //    else
+  //    {
+  //      AssertThrow(false, ExcMessage("not implemented."));
+  //    }
+  //
+  //    return flux;
+  //  }
+
+
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_flux(vector const & u_m, vector const & u_p, vector const & normal_m) const
+  {
+    vector jump_value = u_m - u_p;
+
+    vector flux;
+
+    if(data.which_components == ContinuityPenaltyComponents::All)
+    {
+      // penalize all velocity components
+      flux = tau * jump_value;
+    }
+    else if(data.which_components == ContinuityPenaltyComponents::Normal)
+    {
+      flux = tau * (jump_value * normal_m) * normal_m;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("not implemented."));
+    }
+
+    return flux;
+  }
+
+
+private:
+  MatrixFree<dim, Number> const * matrix_free;
+
+  ContinuityPenaltyKernelData data;
+
+  AlignedVector<scalar> array_penalty_parameter;
+
+  double scaling_factor;
+
+  mutable scalar tau;
+};
+
+} // namespace Operators
 
 /*
  *  Operator data.
@@ -136,8 +544,8 @@ private:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  typedef CellIntegrator<dim, dim, Number> CellIntegratorU;
-  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+  typedef CellIntegrator<dim, dim, Number> IntegratorCell;
+  typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
 
 public:
   typedef Number value_type;
@@ -154,10 +562,13 @@ public:
     return flags;
   }
 
-  ProjectionOperator(MatrixFree<dim, Number> const & matrix_free_in,
-                     unsigned int const              dof_index_in,
-                     unsigned int const              quad_index_in,
-                     ProjectionOperatorData const    operator_data_in)
+  ProjectionOperator(
+    MatrixFree<dim, Number> const &                                  matrix_free_in,
+    unsigned int const                                               dof_index_in,
+    unsigned int const                                               quad_index_in,
+    ProjectionOperatorData const                                     operator_data_in,
+    std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_penalty_kernel,
+    std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_penalty_kernel)
     : dealii::Subscriptor(),
       matrix_free(matrix_free_in),
       dof_index(dof_index_in),
@@ -180,17 +591,19 @@ public:
       array_conti_penalty_parameter.resize(n_cells);
 
     if(operator_data.use_divergence_penalty)
-      integrator.reset(new CellIntegratorU(this->get_matrix_free(),
-                                           this->get_dof_index(),
-                                           this->get_quad_index()));
+      integrator.reset(
+        new IntegratorCell(this->get_matrix_free(), this->get_dof_index(), this->get_quad_index()));
 
     if(operator_data.use_continuity_penalty)
     {
-      integrator_m.reset(new FaceIntegratorU(
+      integrator_m.reset(new IntegratorFace(
         this->get_matrix_free(), true, this->get_dof_index(), this->get_quad_index()));
-      integrator_p.reset(new FaceIntegratorU(
+      integrator_p.reset(new IntegratorFace(
         this->get_matrix_free(), false, this->get_dof_index(), this->get_quad_index()));
     }
+
+    this->div_kernel   = div_penalty_kernel;
+    this->conti_kernel = conti_penalty_kernel;
   }
 
   MatrixFree<dim, Number> const &
@@ -238,107 +651,34 @@ public:
   void
   calculate_penalty_parameter(VectorType const & velocity)
   {
+    // TODO
     if(operator_data.use_divergence_penalty)
       calculate_div_penalty_parameter(velocity);
     if(operator_data.use_continuity_penalty)
       calculate_conti_penalty_parameter(velocity);
+
+    if(operator_data.use_divergence_penalty)
+      div_kernel->calculate_penalty_parameter(velocity);
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->calculate_penalty_parameter(velocity);
   }
 
   void
   calculate_div_penalty_parameter(VectorType const & velocity)
   {
-    velocity.update_ghost_values();
+    // TODO
+    do_calculate_div_penalty_parameter(velocity);
 
-    CellIntegratorU integrator(matrix_free, dof_index, quad_index);
-
-    AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
-    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
-    for(unsigned int cell = 0; cell < n_cells; ++cell)
-    {
-      scalar tau_convective = make_vectorized_array<Number>(0.0);
-      scalar tau_viscous    = make_vectorized_array<Number>(operator_data.viscosity);
-
-      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
-         operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
-      {
-        integrator.reinit(cell);
-        integrator.read_dof_values(velocity);
-        integrator.evaluate(true, false);
-
-        scalar volume      = make_vectorized_array<Number>(0.0);
-        scalar norm_U_mean = make_vectorized_array<Number>(0.0);
-        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-        {
-          volume += integrator.JxW(q);
-          norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
-        }
-        norm_U_mean /= volume;
-
-        tau_convective = norm_U_mean * std::exp(std::log(volume) / (double)dim) /
-                         (double)(operator_data.degree + 1);
-      }
-
-      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
-      {
-        array_div_penalty_parameter[cell] = operator_data.penalty_factor_div * tau_convective;
-      }
-      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
-      {
-        array_div_penalty_parameter[cell] = operator_data.penalty_factor_div * tau_viscous;
-      }
-      else if(operator_data.type_penalty_parameter ==
-              TypePenaltyParameter::ViscousAndConvectiveTerms)
-      {
-        array_div_penalty_parameter[cell] =
-          operator_data.penalty_factor_div * (tau_convective + tau_viscous);
-      }
-    }
+    div_kernel->calculate_penalty_parameter(velocity);
   }
 
   void
   calculate_conti_penalty_parameter(VectorType const & velocity)
   {
-    velocity.update_ghost_values();
+    // TODO
+    do_calculate_conti_penalty_parameter(velocity);
 
-    CellIntegratorU integrator(matrix_free, dof_index, quad_index);
-
-    AlignedVector<scalar> JxW_values(integrator.n_q_points);
-
-    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
-    for(unsigned int cell = 0; cell < n_cells; ++cell)
-    {
-      integrator.reinit(cell);
-      integrator.read_dof_values(velocity);
-      integrator.evaluate(true, false);
-      scalar volume      = make_vectorized_array<Number>(0.0);
-      scalar norm_U_mean = make_vectorized_array<Number>(0.0);
-      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
-      {
-        volume += integrator.JxW(q);
-        norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
-      }
-      norm_U_mean /= volume;
-
-      scalar tau_convective = norm_U_mean;
-      scalar h = std::exp(std::log(volume) / (double)dim) / (double)(operator_data.degree + 1);
-      scalar tau_viscous = make_vectorized_array<Number>(operator_data.viscosity) / h;
-
-      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
-      {
-        array_conti_penalty_parameter[cell] = operator_data.penalty_factor_conti * tau_convective;
-      }
-      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
-      {
-        array_conti_penalty_parameter[cell] = operator_data.penalty_factor_conti * tau_viscous;
-      }
-      else if(operator_data.type_penalty_parameter ==
-              TypePenaltyParameter::ViscousAndConvectiveTerms)
-      {
-        array_conti_penalty_parameter[cell] =
-          operator_data.penalty_factor_conti * (tau_convective + tau_viscous);
-      }
-    }
+    conti_kernel->calculate_penalty_parameter(velocity);
   }
 
   void
@@ -350,8 +690,14 @@ public:
   void
   apply(VectorType & dst, VectorType const & src) const
   {
+    // TODO
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
+
+    if(operator_data.use_divergence_penalty)
+      div_kernel->set_scaling_factor(time_step_size);
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->set_scaling_factor(time_step_size);
 
     if(operator_data.use_divergence_penalty && operator_data.use_continuity_penalty)
       do_apply(dst, src, true);
@@ -364,8 +710,14 @@ public:
   void
   apply_add(VectorType & dst, VectorType const & src) const
   {
+    // TODO
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
+
+    if(operator_data.use_divergence_penalty)
+      div_kernel->set_scaling_factor(time_step_size);
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->set_scaling_factor(time_step_size);
 
     if(operator_data.use_divergence_penalty && operator_data.use_continuity_penalty)
       do_apply(dst, src, false);
@@ -378,7 +730,11 @@ public:
   void
   apply_div_penalty(VectorType & dst, VectorType const & src) const
   {
+    // TODO
     scaling_factor_div = 1.0;
+
+    if(operator_data.use_divergence_penalty)
+      div_kernel->set_scaling_factor(1.0);
 
     do_apply_div_penalty(dst, src, true);
   }
@@ -386,7 +742,11 @@ public:
   void
   apply_add_div_penalty(VectorType & dst, VectorType const & src) const
   {
+    // TODO
     scaling_factor_div = 1.0;
+
+    if(operator_data.use_divergence_penalty)
+      div_kernel->set_scaling_factor(1.0);
 
     do_apply_div_penalty(dst, src, false);
   }
@@ -394,7 +754,11 @@ public:
   void
   apply_conti_penalty(VectorType & dst, VectorType const & src) const
   {
+    // TODO
     scaling_factor_conti = 1.0;
+
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->set_scaling_factor(1.0);
 
     do_apply_conti_penalty(dst, src, true);
   }
@@ -402,7 +766,11 @@ public:
   void
   apply_add_conti_penalty(VectorType & dst, VectorType const & src) const
   {
+    // TODO
     scaling_factor_conti = 1.0;
+
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->set_scaling_factor(1.0);
 
     do_apply_conti_penalty(dst, src, false);
   }
@@ -506,12 +874,20 @@ public:
   {
     (void)problem_size;
 
+    // TODO
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
 
     if(operator_data.use_divergence_penalty)
+      div_kernel->set_scaling_factor(time_step_size);
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->set_scaling_factor(time_step_size);
+
+    if(operator_data.use_divergence_penalty)
     {
       integrator->reinit(cell);
+
+      reinit_cell(*integrator);
 
       unsigned int dofs_per_cell = integrator->dofs_per_cell;
 
@@ -537,6 +913,11 @@ public:
         integrator_m->reinit(cell, face);
         integrator_p->reinit(cell, face);
 
+        auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
+        auto bid  = bids[0];
+
+        reinit_face_cell_based(bid, *integrator_m, *integrator_p);
+
         unsigned int dofs_per_cell = integrator_m->dofs_per_cell;
 
         for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -546,17 +927,13 @@ public:
 
         integrator_m->evaluate(true, false);
 
-        auto bids = matrix_free.get_faces_by_cells_boundary_id(cell, face);
-        auto bid  = bids[0];
-
         if(bid == numbers::internal_face_boundary_id) // internal face
         {
           do_face_int_integral(*integrator_m, *integrator_p);
         }
         else // boundary face
         {
-          // use same integrator so that the result becomes zero (only jumps involved)
-          do_face_int_integral(*integrator_m, *integrator_m);
+          do_boundary_integral(*integrator_m, OperatorType::homogeneous, bid);
         }
 
         integrator_m->integrate(true, false);
@@ -568,6 +945,103 @@ public:
   }
 
 private:
+  void
+  do_calculate_div_penalty_parameter(VectorType const & velocity)
+  {
+    velocity.update_ghost_values();
+
+    IntegratorCell integrator(matrix_free, dof_index, quad_index);
+
+    AlignedVector<scalar> JxW_values(integrator.n_q_points);
+
+    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
+    for(unsigned int cell = 0; cell < n_cells; ++cell)
+    {
+      scalar tau_convective = make_vectorized_array<Number>(0.0);
+      scalar tau_viscous    = make_vectorized_array<Number>(operator_data.viscosity);
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm ||
+         operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        integrator.reinit(cell);
+        integrator.read_dof_values(velocity);
+        integrator.evaluate(true, false);
+
+        scalar volume      = make_vectorized_array<Number>(0.0);
+        scalar norm_U_mean = make_vectorized_array<Number>(0.0);
+        for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+        {
+          volume += integrator.JxW(q);
+          norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
+        }
+        norm_U_mean /= volume;
+
+        tau_convective = norm_U_mean * std::exp(std::log(volume) / (double)dim) /
+                         (double)(operator_data.degree + 1);
+      }
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_div_penalty_parameter[cell] = operator_data.penalty_factor_div * tau_convective;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_div_penalty_parameter[cell] = operator_data.penalty_factor_div * tau_viscous;
+      }
+      else if(operator_data.type_penalty_parameter ==
+              TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_div_penalty_parameter[cell] =
+          operator_data.penalty_factor_div * (tau_convective + tau_viscous);
+      }
+    }
+  }
+
+  void
+  do_calculate_conti_penalty_parameter(VectorType const & velocity)
+  {
+    velocity.update_ghost_values();
+
+    IntegratorCell integrator(matrix_free, dof_index, quad_index);
+
+    AlignedVector<scalar> JxW_values(integrator.n_q_points);
+
+    unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
+    for(unsigned int cell = 0; cell < n_cells; ++cell)
+    {
+      integrator.reinit(cell);
+      integrator.read_dof_values(velocity);
+      integrator.evaluate(true, false);
+      scalar volume      = make_vectorized_array<Number>(0.0);
+      scalar norm_U_mean = make_vectorized_array<Number>(0.0);
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        volume += integrator.JxW(q);
+        norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
+      }
+      norm_U_mean /= volume;
+
+      scalar tau_convective = norm_U_mean;
+      scalar h = std::exp(std::log(volume) / (double)dim) / (double)(operator_data.degree + 1);
+      scalar tau_viscous = make_vectorized_array<Number>(operator_data.viscosity) / h;
+
+      if(operator_data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
+      {
+        array_conti_penalty_parameter[cell] = operator_data.penalty_factor_conti * tau_convective;
+      }
+      else if(operator_data.type_penalty_parameter == TypePenaltyParameter::ViscousTerm)
+      {
+        array_conti_penalty_parameter[cell] = operator_data.penalty_factor_conti * tau_viscous;
+      }
+      else if(operator_data.type_penalty_parameter ==
+              TypePenaltyParameter::ViscousAndConvectiveTerms)
+      {
+        array_conti_penalty_parameter[cell] =
+          operator_data.penalty_factor_conti * (tau_convective + tau_viscous);
+      }
+    }
+  }
+
   void
   do_apply_div_penalty(VectorType & dst, VectorType const & src, bool const zero_dst_vector) const
   {
@@ -610,137 +1084,211 @@ private:
                      MatrixFree<dim, Number>::DataAccessOnFaces::values);
   }
 
-  template<typename FEEval>
   void
-  do_cell_integral(FEEval & integrator) const
+  reinit_cell(IntegratorCell & integrator) const
   {
-    scalar tau = integrator.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
+    div_kernel->reinit_cell(integrator);
+  }
+
+  void
+  reinit_face(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
+  {
+    conti_kernel->reinit_face(integrator_m, integrator_p);
+  }
+
+  void
+  reinit_face_cell_based(types::boundary_id const boundary_id,
+                         IntegratorFace &         integrator_m,
+                         IntegratorFace &         integrator_p) const
+  {
+    conti_kernel->reinit_face_cell_based(boundary_id, integrator_m, integrator_p);
+  }
+
+  void
+  do_cell_integral(IntegratorCell & integrator) const
+  {
+    // TODO
+    //    scalar tau = integrator.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
       integrator.submit_value(integrator.get_value(q), q);
-      integrator.submit_divergence(tau * integrator.get_divergence(q), q);
+      // TODO
+      //      integrator.submit_divergence(tau * integrator.get_divergence(q), q);
+
+      integrator.submit_divergence(div_kernel->get_volume_flux(integrator, q), q);
     }
   }
 
-  template<typename FEEval>
   void
-  do_cell_integral_div_penalty(FEEval & integrator) const
+  do_cell_integral_div_penalty(IntegratorCell & integrator) const
   {
-    scalar tau = integrator.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
+    // TODO
+    //    scalar tau = integrator.read_cell_data(array_div_penalty_parameter) * scaling_factor_div;
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      integrator.submit_divergence(tau * integrator.get_divergence(q), q);
+      // TODO
+      //      integrator.submit_divergence(tau * integrator.get_divergence(q), q);
+
+      integrator.submit_divergence(div_kernel->get_volume_flux(integrator, q), q);
     }
   }
 
-  template<typename FEFaceEval>
   void
-  do_face_integral(FEFaceEval & integrator_m, FEFaceEval & integrator_p) const
+  do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
   {
-    scalar tau = 0.5 *
-                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
-                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
-                 scaling_factor_conti;
+    // TODO
+    //    scalar tau = 0.5 *
+    //                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
+    //                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
+    //                 scaling_factor_conti;
 
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      vector uM         = integrator_m.get_value(q);
-      vector uP         = integrator_p.get_value(q);
-      vector jump_value = uM - uP;
+      // TODO
+      //      vector uM         = integrator_m.get_value(q);
+      //      vector uP         = integrator_p.get_value(q);
+      //      vector jump_value = uM - uP;
+      //
+      //      if(operator_data.which_components == ContinuityPenaltyComponents::All)
+      //      {
+      //        // penalize all velocity components
+      //        integrator_m.submit_value(tau * jump_value, q);
+      //        integrator_p.submit_value(-tau * jump_value, q);
+      //      }
+      //      else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+      //      {
+      //        // penalize normal components only
+      //        vector normal = integrator_m.get_normal_vector(q);
+      //
+      //        integrator_m.submit_value(tau * (jump_value * normal) * normal, q);
+      //        integrator_p.submit_value(-tau * (jump_value * normal) * normal, q);
+      //      }
+      //      else
+      //      {
+      //        AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+      //                      operator_data.which_components == ContinuityPenaltyComponents::Normal,
+      //                    ExcMessage("not implemented."));
+      //      }
 
-      if(operator_data.which_components == ContinuityPenaltyComponents::All)
-      {
-        // penalize all velocity components
-        integrator_m.submit_value(tau * jump_value, q);
-        integrator_p.submit_value(-tau * jump_value, q);
-      }
-      else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
-      {
-        // penalize normal components only
-        vector normal = integrator_m.get_normal_vector(q);
+      vector u_m      = integrator_m.get_value(q);
+      vector u_p      = integrator_p.get_value(q);
+      vector normal_m = integrator_m.get_normal_vector(q);
 
-        integrator_m.submit_value(tau * (jump_value * normal) * normal, q);
-        integrator_p.submit_value(-tau * (jump_value * normal) * normal, q);
-      }
-      else
-      {
-        AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
-                      operator_data.which_components == ContinuityPenaltyComponents::Normal,
-                    ExcMessage("not implemented."));
-      }
+      vector flux = conti_kernel->calculate_flux(u_m, u_p, normal_m);
+
+      integrator_m.submit_value(flux, q);
+      integrator_p.submit_value(-flux, q);
     }
   }
 
-  template<typename FEFaceEval>
   void
-  do_face_int_integral(FEFaceEval & integrator_m, FEFaceEval & integrator_p) const
+  do_face_int_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
   {
-    scalar tau = 0.5 *
-                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
-                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
-                 scaling_factor_conti;
+    (void)integrator_p;
+
+    // TODO
+    //    scalar tau = 0.5 *
+    //                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
+    //                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
+    //                 scaling_factor_conti;
 
     for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
     {
-      vector uM = integrator_m.get_value(q);
-      vector uP; // set uP to zero
-      vector jump_value = uM - uP;
+      // TODO
+      //      vector uM = integrator_m.get_value(q);
+      //      vector uP; // set uP to zero
+      //      vector jump_value = uM - uP;
+      //
+      //      if(operator_data.which_components == ContinuityPenaltyComponents::All)
+      //      {
+      //        // penalize all velocity components
+      //        integrator_m.submit_value(tau * jump_value, q);
+      //      }
+      //      else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+      //      {
+      //        // penalize normal components only
+      //        vector normal = integrator_m.get_normal_vector(q);
+      //        integrator_m.submit_value(tau * (jump_value * normal) * normal, q);
+      //      }
+      //      else
+      //      {
+      //        AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+      //                      operator_data.which_components == ContinuityPenaltyComponents::Normal,
+      //                    ExcMessage("not implemented."));
+      //      }
 
-      if(operator_data.which_components == ContinuityPenaltyComponents::All)
-      {
-        // penalize all velocity components
-        integrator_m.submit_value(tau * jump_value, q);
-      }
-      else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
-      {
-        // penalize normal components only
-        vector normal = integrator_m.get_normal_vector(q);
-        integrator_m.submit_value(tau * (jump_value * normal) * normal, q);
-      }
-      else
-      {
-        AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
-                      operator_data.which_components == ContinuityPenaltyComponents::Normal,
-                    ExcMessage("not implemented."));
-      }
+      vector u_m = integrator_m.get_value(q);
+      vector u_p; // set u_p to zero
+      vector normal_m = integrator_m.get_normal_vector(q);
+
+      vector flux = conti_kernel->calculate_flux(u_m, u_p, normal_m);
+
+      integrator_m.submit_value(flux, q);
     }
   }
 
-  template<typename FEFaceEval>
   void
-  do_face_ext_integral(FEFaceEval & integrator_m, FEFaceEval & integrator_p) const
+  do_face_ext_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const
   {
-    scalar tau = 0.5 *
-                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
-                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
-                 scaling_factor_conti;
+    (void)integrator_m;
+
+    // TODO
+    //    scalar tau = 0.5 *
+    //                 (integrator_m.read_cell_data(array_conti_penalty_parameter) +
+    //                  integrator_p.read_cell_data(array_conti_penalty_parameter)) *
+    //                 scaling_factor_conti;
 
     for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
     {
-      vector uM; // set uM to zero
-      vector uP = integrator_p.get_value(q);
+      // TODO
+      //      vector uM; // set uM to zero
+      //      vector uP = integrator_p.get_value(q);
+      //
+      //      vector jump_value = uP - uM; // interior - exterior = uP - uM (neighbor!)
+      //
+      //      if(operator_data.which_components == ContinuityPenaltyComponents::All)
+      //      {
+      //        // penalize all velocity components
+      //        integrator_p.submit_value(tau * jump_value, q);
+      //      }
+      //      else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
+      //      {
+      //        // penalize normal components only
+      //        vector normal = integrator_p.get_normal_vector(q);
+      //        integrator_p.submit_value(tau * (jump_value * normal) * normal, q);
+      //      }
+      //      else
+      //      {
+      //        AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
+      //                      operator_data.which_components == ContinuityPenaltyComponents::Normal,
+      //                    ExcMessage("not implemented."));
+      //      }
 
-      vector jump_value = uP - uM; // interior - exterior = uP - uM (neighbor!)
+      vector u_m; // set u_m to zero
+      vector u_p      = integrator_p.get_value(q);
+      vector normal_p = -integrator_p.get_normal_vector(q);
 
-      if(operator_data.which_components == ContinuityPenaltyComponents::All)
-      {
-        // penalize all velocity components
-        integrator_p.submit_value(tau * jump_value, q);
-      }
-      else if(operator_data.which_components == ContinuityPenaltyComponents::Normal)
-      {
-        // penalize normal components only
-        vector normal = integrator_p.get_normal_vector(q);
-        integrator_p.submit_value(tau * (jump_value * normal) * normal, q);
-      }
-      else
-      {
-        AssertThrow(operator_data.which_components == ContinuityPenaltyComponents::All ||
-                      operator_data.which_components == ContinuityPenaltyComponents::Normal,
-                    ExcMessage("not implemented."));
-      }
+      vector flux = conti_kernel->calculate_flux(u_p, u_m, normal_p);
+
+      integrator_p.submit_value(flux, q);
+    }
+  }
+
+  void
+  do_boundary_integral(IntegratorFace &           integrator_m,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id) const
+  {
+    (void)operator_type;
+    (void)boundary_id;
+
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      vector flux; // continuity penalty term is zero on boundary faces
+
+      integrator_m.submit_value(flux, q);
     }
   }
 
@@ -751,12 +1299,14 @@ private:
             VectorType const &              src,
             Range const &                   cell_range) const
   {
-    CellIntegratorU integrator(data, dof_index, quad_index);
+    IntegratorCell integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       integrator.reinit(cell);
       integrator.gather_evaluate(src, true, true);
+
+      reinit_cell(integrator);
 
       do_cell_integral(integrator);
 
@@ -770,12 +1320,14 @@ private:
                         VectorType const &              src,
                         Range const &                   cell_range) const
   {
-    CellIntegratorU integrator(data, dof_index, quad_index);
+    IntegratorCell integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       integrator.reinit(cell);
       integrator.gather_evaluate(src, false, true);
+
+      reinit_cell(integrator);
 
       do_cell_integral_div_penalty(integrator);
 
@@ -798,8 +1350,8 @@ private:
             VectorType const &              src,
             Range const &                   face_range) const
   {
-    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
-    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
+    IntegratorFace integrator_m(data, true, dof_index, quad_index);
+    IntegratorFace integrator_p(data, false, dof_index, quad_index);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
@@ -808,6 +1360,8 @@ private:
 
       integrator_m.gather_evaluate(src, true, false);
       integrator_p.gather_evaluate(src, true, false);
+
+      reinit_face(integrator_m, integrator_p);
 
       do_face_integral(integrator_m, integrator_p);
 
@@ -833,8 +1387,14 @@ private:
   void
   calculate_diagonal(VectorType & diagonal) const
   {
+    // TODO
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
+
+    if(operator_data.use_divergence_penalty)
+      div_kernel->set_scaling_factor(time_step_size);
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->set_scaling_factor(time_step_size);
 
     VectorType src_dummy(diagonal);
     matrix_free.loop(&This::cell_loop_diagonal,
@@ -857,7 +1417,7 @@ private:
                      VectorType const & /*src*/,
                      Range const & cell_range) const
   {
-    CellIntegratorU integrator(data, dof_index, quad_index);
+    IntegratorCell integrator(data, dof_index, quad_index);
 
     unsigned int const    dofs_per_cell = integrator.dofs_per_cell;
     AlignedVector<scalar> local_diagonal_vector(dofs_per_cell);
@@ -865,6 +1425,8 @@ private:
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       integrator.reinit(cell);
+
+      reinit_cell(integrator);
 
       for(unsigned int j = 0; j < dofs_per_cell; ++j)
       {
@@ -896,13 +1458,15 @@ private:
                      VectorType const & /*src*/,
                      Range const & face_range) const
   {
-    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
-    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
+    IntegratorFace integrator_m(data, true, dof_index, quad_index);
+    IntegratorFace integrator_p(data, false, dof_index, quad_index);
 
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       integrator_m.reinit(face);
       integrator_p.reinit(face);
+
+      reinit_face(integrator_m, integrator_p);
 
       // element-
       unsigned int const    dofs_per_cell = integrator_m.dofs_per_cell;
@@ -1000,8 +1564,14 @@ private:
   void
   add_block_diagonal_matrices(std::vector<LAPACKFullMatrix<Number>> & matrices) const
   {
+    // TODO
     scaling_factor_div   = time_step_size;
     scaling_factor_conti = time_step_size;
+
+    if(operator_data.use_divergence_penalty)
+      div_kernel->set_scaling_factor(time_step_size);
+    if(operator_data.use_continuity_penalty)
+      conti_kernel->set_scaling_factor(time_step_size);
 
     VectorType src;
 
@@ -1033,11 +1603,13 @@ private:
                                      VectorType const &,
                                      Range const & cell_range) const
   {
-    CellIntegratorU integrator(data, dof_index, quad_index);
+    IntegratorCell integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       integrator.reinit(cell);
+
+      reinit_cell(integrator);
 
       unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
@@ -1067,14 +1639,16 @@ private:
                                      VectorType const &,
                                      Range const & face_range) const
   {
-    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
-    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
+    IntegratorFace integrator_m(data, true, dof_index, quad_index);
+    IntegratorFace integrator_p(data, false, dof_index, quad_index);
 
     // Perform face integrals for element e⁻.
     for(unsigned int face = face_range.first; face < face_range.second; face++)
     {
       integrator_m.reinit(face);
       integrator_p.reinit(face);
+
+      reinit_face(integrator_m, integrator_p);
 
       unsigned int dofs_per_cell = integrator_m.dofs_per_cell;
 
@@ -1106,6 +1680,8 @@ private:
     {
       integrator_m.reinit(face);
       integrator_p.reinit(face);
+
+      reinit_face(integrator_m, integrator_p);
 
       // Note that the velocity has dim components.
       unsigned int dofs_per_cell = integrator_p.dofs_per_cell;
@@ -1149,9 +1725,9 @@ private:
                                            VectorType const &,
                                            Range const & cell_range) const
   {
-    CellIntegratorU integrator(data, dof_index, quad_index);
-    FaceIntegratorU integrator_m(data, true, dof_index, quad_index);
-    FaceIntegratorU integrator_p(data, false, dof_index, quad_index);
+    IntegratorCell integrator(data, dof_index, quad_index);
+    IntegratorFace integrator_m(data, true, dof_index, quad_index);
+    IntegratorFace integrator_p(data, false, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -1159,6 +1735,8 @@ private:
       unsigned int const n_filled_lanes = data.n_active_entries_per_cell_batch(cell);
 
       integrator.reinit(cell);
+
+      reinit_cell(integrator);
 
       unsigned int dofs_per_cell = integrator.dofs_per_cell;
 
@@ -1189,6 +1767,8 @@ private:
         auto bids = data.get_faces_by_cells_boundary_id(cell, face);
         auto bid  = bids[0];
 
+        reinit_face_cell_based(bid, integrator_m, integrator_p);
+
         for(unsigned int j = 0; j < dofs_per_cell; ++j)
         {
           for(unsigned int i = 0; i < dofs_per_cell; ++i)
@@ -1203,8 +1783,7 @@ private:
           }
           else // boundary face
           {
-            // use same integrator so that the result becomes zero (only jumps involved)
-            do_face_int_integral(integrator_m, integrator_m);
+            do_boundary_integral(integrator_m, OperatorType::homogeneous, bid);
           }
 
           integrator_m.integrate(true, false);
@@ -1230,7 +1809,7 @@ private:
                                          VectorType const &              src,
                                          Range const &                   cell_range) const
   {
-    CellIntegratorU integrator(data, dof_index, quad_index);
+    IntegratorCell integrator(data, dof_index, quad_index);
 
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
@@ -1308,9 +1887,12 @@ private:
   /*
    * FEEvaluation objects required for elementwise block Jacobi operations
    */
-  std::shared_ptr<CellIntegratorU> integrator;
-  std::shared_ptr<FaceIntegratorU> integrator_m;
-  std::shared_ptr<FaceIntegratorU> integrator_p;
+  std::shared_ptr<IntegratorCell> integrator;
+  std::shared_ptr<IntegratorFace> integrator_m;
+  std::shared_ptr<IntegratorFace> integrator_p;
+
+  std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_kernel;
+  std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_kernel;
 };
 
 } // namespace IncNS

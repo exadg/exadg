@@ -452,6 +452,9 @@ protected:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 
+  std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_penalty_kernel;
+  std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_penalty_kernel;
+
   /*
    * Basic operators.
    */
@@ -528,9 +531,6 @@ private:
   void
   initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
                                VectorType const & velocity);
-
-  void
-  setup_projection_operator();
 
   void
   initialize_turbulence_model();
