@@ -9,12 +9,9 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_DUAL_SPLITTING_H_
 
 // base class
-#include <deal.II/matrix_free/fe_evaluation_notemplate.h>
-
-#include "interface.h"
+#include "dg_projection_methods.h"
 
 #include "curl_compute.h"
-#include "dg_projection_methods.h"
 
 namespace IncNS
 {

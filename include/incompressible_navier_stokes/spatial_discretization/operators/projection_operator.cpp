@@ -25,12 +25,11 @@ ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix
 
 template<int dim, typename Number>
 void
-ProjectionOperator<dim, Number>::reinit(
-  MatrixFree<dim, Number> const &                                  matrix_free,
-  AffineConstraints<double> const &                                constraint_matrix,
-  ProjectionOperatorData const &                                   data,
-  std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_penalty_kernel,
-  std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_penalty_kernel)
+ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
+                                        AffineConstraints<double> const & constraint_matrix,
+                                        ProjectionOperatorData const &    data,
+                                        std::shared_ptr<DivKernel>        div_penalty_kernel,
+                                        std::shared_ptr<ContiKernel>      conti_penalty_kernel)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 

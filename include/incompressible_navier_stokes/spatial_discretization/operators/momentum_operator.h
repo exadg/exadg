@@ -5,14 +5,14 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
 
-#include "operators/convective_operator.h"
-#include "operators/mass_matrix_operator.h"
-#include "operators/viscous_operator.h"
+#include "convective_operator.h"
+#include "mass_matrix_operator.h"
+#include "viscous_operator.h"
 
-#include "../../operators/operator_base.h"
+#include "../../../operators/operator_base.h"
 
 namespace IncNS
 {
@@ -173,5 +173,5 @@ private:
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_ \
         */

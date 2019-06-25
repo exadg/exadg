@@ -37,12 +37,9 @@
 #include "operators/mass_matrix_operator.h"
 #include "operators/rhs_operator.h"
 #include "operators/viscous_operator.h"
-
-#include "momentum_operator.h"
-#include "projection_operator.h"
-
+#include "operators/momentum_operator.h"
+#include "operators/projection_operator.h"
 #include "../../poisson/spatial_discretization/laplace_operator.h"
-
 #include "../../operators/inverse_mass_matrix.h"
 
 // LES turbulence model
