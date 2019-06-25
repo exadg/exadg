@@ -206,8 +206,11 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   if(param.right_hand_side)
     flags = flags || Operators::RHSKernel<dim, Number>::get_mapping_flags();
 
-  if(param.use_divergence_penalty || param.use_continuity_penalty)
-    flags = flags || ProjectionOperator<dim, Number>::get_mapping_flags();
+  if(param.use_divergence_penalty)
+    flags = flags || Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags();
+
+  if(param.use_continuity_penalty)
+    flags = flags || Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags();
 
   additional_data.mapping_update_flags                = flags.cells;
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
@@ -398,28 +401,31 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     conti_penalty_operator.reinit(matrix_free, operator_data, conti_penalty_kernel);
   }
 
-  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
-     param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
-     (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution &&
-      param.add_penalty_terms_to_monolithic_system == false))
+  if(param.use_divergence_penalty || param.use_continuity_penalty)
   {
-    // setup projection operator
-    ProjectionOperatorData data;
-    data.use_divergence_penalty = param.use_divergence_penalty;
-    data.use_continuity_penalty = param.use_continuity_penalty;
-    // TODO
-    data.use_cell_based_loops = param.use_cell_based_face_loops;
-    data.implement_block_diagonal_preconditioner_matrix_free =
-      param.implement_block_diagonal_preconditioner_matrix_free;
-    data.preconditioner_block_jacobi = param.preconditioner_block_diagonal_projection;
-    data.block_jacobi_solver_data    = param.solver_data_block_diagonal_projection;
+    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
+       param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
+       (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution &&
+        param.add_penalty_terms_to_monolithic_system == false))
+    {
+      // setup projection operator
+      ProjectionOperatorData data;
+      data.use_divergence_penalty = param.use_divergence_penalty;
+      data.use_continuity_penalty = param.use_continuity_penalty;
+      data.dof_index              = get_dof_index_velocity();
+      data.quad_index             = get_quad_index_velocity_linear();
+      data.use_cell_based_loops   = param.use_cell_based_face_loops;
+      data.implement_block_diagonal_preconditioner_matrix_free =
+        param.implement_block_diagonal_preconditioner_matrix_free;
+      data.solver_block_diagonal         = Elementwise::Solver::CG;
+      data.preconditioner_block_diagonal = param.preconditioner_block_diagonal_projection;
+      data.solver_data_block_diagonal    = param.solver_data_block_diagonal_projection;
 
-    projection_operator.reset(new PROJ_OPERATOR(matrix_free,
-                                                get_dof_index_velocity(),
-                                                get_quad_index_velocity_linear(),
-                                                data,
-                                                div_penalty_kernel,
-                                                conti_penalty_kernel));
+      projection_operator.reset(new PROJ_OPERATOR());
+
+      projection_operator->reinit(
+        matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
+    }
   }
 }
 
@@ -1195,8 +1201,8 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
       AssertThrow(false, ExcMessage("Specified projection solver not implemented."));
     }
   }
-  // both divergence and continuity penalty terms
-  else if(param.use_divergence_penalty == true && param.use_continuity_penalty == true)
+  // continuity penalty term with/without divergence penalty term -> globally coupled problem
+  else if(param.use_continuity_penalty == true)
   {
     // preconditioner
     if(param.preconditioner_projection == PreconditionerProjection::None)
@@ -1294,10 +1300,8 @@ DGNavierStokesBase<dim, Number>::update_projection_operator(VectorType const & v
               ExcMessage("Projection operator is not initialized."));
 
   // Update projection operator, i.e., the penalty parameters that depend on the velocity field
-  projection_operator->calculate_penalty_parameter(velocity);
-
-  // Set the correct time step size.
-  projection_operator->set_time_step_size(time_step_size);
+  // and the time step size
+  projection_operator->update(velocity, time_step_size);
 }
 
 template<int dim, typename Number>
