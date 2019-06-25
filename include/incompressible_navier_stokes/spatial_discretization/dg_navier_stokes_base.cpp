@@ -354,8 +354,8 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
   if(param.use_divergence_penalty)
   {
+    // Kernel
     Operators::DivergencePenaltyKernelData div_penalty_data;
-
     div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
     div_penalty_data.viscosity              = param.viscosity;
     div_penalty_data.degree                 = param.degree_u;
@@ -365,10 +365,18 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
     div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
     div_penalty_kernel->reinit(matrix_free, div_penalty_data);
+
+    // Operator
+    DivergencePenaltyData operator_data;
+    operator_data.dof_index  = get_dof_index_velocity();
+    operator_data.quad_index = get_quad_index_velocity_linear();
+
+    div_penalty_operator.reinit(matrix_free, operator_data, div_penalty_kernel);
   }
 
   if(param.use_continuity_penalty)
   {
+    // Kernel
     Operators::ContinuityPenaltyKernelData conti_penalty_data;
 
     conti_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
@@ -381,30 +389,38 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
     conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
     conti_penalty_kernel->reinit(matrix_free, conti_penalty_data);
+
+    // Operator
+    ContinuityPenaltyData operator_data;
+    operator_data.dof_index  = get_dof_index_velocity();
+    operator_data.quad_index = get_quad_index_velocity_linear();
+
+    conti_penalty_operator.reinit(matrix_free, operator_data, conti_penalty_kernel);
   }
 
-  // setup projection operator
-  ProjectionOperatorData proj_op_data;
-  proj_op_data.type_penalty_parameter = param.type_penalty_parameter;
-  proj_op_data.viscosity              = param.viscosity;
-  proj_op_data.use_divergence_penalty = param.use_divergence_penalty;
-  proj_op_data.use_continuity_penalty = param.use_continuity_penalty;
-  proj_op_data.degree                 = param.degree_u;
-  proj_op_data.penalty_factor_div     = param.divergence_penalty_factor;
-  proj_op_data.penalty_factor_conti   = param.continuity_penalty_factor;
-  proj_op_data.which_components       = param.continuity_penalty_components;
-  proj_op_data.use_cell_based_loops   = param.use_cell_based_face_loops;
-  proj_op_data.implement_block_diagonal_preconditioner_matrix_free =
-    param.implement_block_diagonal_preconditioner_matrix_free;
-  proj_op_data.preconditioner_block_jacobi = param.preconditioner_block_diagonal_projection;
-  proj_op_data.block_jacobi_solver_data    = param.solver_data_block_diagonal_projection;
+  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
+     param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
+     (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution &&
+      param.add_penalty_terms_to_monolithic_system == false))
+  {
+    // setup projection operator
+    ProjectionOperatorData data;
+    data.use_divergence_penalty = param.use_divergence_penalty;
+    data.use_continuity_penalty = param.use_continuity_penalty;
+    // TODO
+    data.use_cell_based_loops = param.use_cell_based_face_loops;
+    data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    data.preconditioner_block_jacobi = param.preconditioner_block_diagonal_projection;
+    data.block_jacobi_solver_data    = param.solver_data_block_diagonal_projection;
 
-  projection_operator.reset(new PROJ_OPERATOR(matrix_free,
-                                              get_dof_index_velocity(),
-                                              get_quad_index_velocity_linear(),
-                                              proj_op_data,
-                                              div_penalty_kernel,
-                                              conti_penalty_kernel));
+    projection_operator.reset(new PROJ_OPERATOR(matrix_free,
+                                                get_dof_index_velocity(),
+                                                get_quad_index_velocity_linear(),
+                                                data,
+                                                div_penalty_kernel,
+                                                conti_penalty_kernel));
+  }
 }
 
 template<int dim, typename Number>
@@ -1085,7 +1101,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_divergence_term(
   {
     VectorType dst;
     dst.reinit(velocity, false);
-    projection_operator->apply_div_penalty(dst, velocity);
+    div_penalty_operator.apply(dst, velocity);
     return velocity * dst;
   }
   else
@@ -1103,7 +1119,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
   {
     VectorType dst;
     dst.reinit(velocity, false);
-    projection_operator->apply_conti_penalty(dst, velocity);
+    conti_penalty_operator.apply(dst, velocity);
     return velocity * dst;
   }
   else

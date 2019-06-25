@@ -122,18 +122,16 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::update_divergence_penalty_operator(
-  VectorType const & velocity) const
+DGNavierStokesCoupled<dim, Number>::update_divergence_penalty_operator(VectorType const & velocity)
 {
-  this->projection_operator->calculate_div_penalty_parameter(velocity);
+  this->div_penalty_operator.update(velocity);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::update_continuity_penalty_operator(
-  VectorType const & velocity) const
+DGNavierStokesCoupled<dim, Number>::update_continuity_penalty_operator(VectorType const & velocity)
 {
-  this->projection_operator->calculate_conti_penalty_parameter(velocity);
+  this->conti_penalty_operator.update(velocity);
 }
 
 template<int dim, typename Number>
@@ -215,9 +213,9 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
   if(this->param.add_penalty_terms_to_monolithic_system == true)
   {
     if(this->param.use_divergence_penalty == true)
-      this->projection_operator->apply_add_div_penalty(dst.block(0), src.block(0));
+      this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      this->projection_operator->apply_add_conti_penalty(dst.block(0), src.block(0));
+      this->conti_penalty_operator.apply_add(dst.block(0), src.block(0));
   }
 
   // (1,2) block of saddle point matrix
@@ -311,9 +309,9 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
   if(this->param.add_penalty_terms_to_monolithic_system == true)
   {
     if(this->param.use_divergence_penalty == true)
-      this->projection_operator->apply_add_div_penalty(dst.block(0), src.block(0));
+      this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      this->projection_operator->apply_add_conti_penalty(dst.block(0), src.block(0));
+      this->conti_penalty_operator.apply_add(dst.block(0), src.block(0));
   }
 
   // gradient operator scaled by scaling_factor_continuity
@@ -368,9 +366,9 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVect
   if(this->param.add_penalty_terms_to_monolithic_system == true)
   {
     if(this->param.use_divergence_penalty == true)
-      this->projection_operator->apply_add_div_penalty(dst.block(0), src.block(0));
+      this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      this->projection_operator->apply_add_conti_penalty(dst.block(0), src.block(0));
+      this->conti_penalty_operator.apply_add(dst.block(0), src.block(0));
   }
 
   // gradient operator scaled by scaling_factor_continuity

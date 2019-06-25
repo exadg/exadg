@@ -465,6 +465,9 @@ protected:
   GradientOperator<dim, Number>   gradient_operator;
   DivergenceOperator<dim, Number> divergence_operator;
 
+  DivergencePenaltyOperator<dim, Number> div_penalty_operator;
+  ContinuityPenaltyOperator<dim, Number> conti_penalty_operator;
+
   /*
    * Linear(ized) momentum operator.
    */

@@ -146,10 +146,10 @@ public:
   set_scaling_factor_continuity(double const scaling_factor) = 0;
 
   virtual void
-  update_divergence_penalty_operator(VectorType const & velocity) const = 0;
+  update_divergence_penalty_operator(VectorType const & velocity) = 0;
 
   virtual void
-  update_continuity_penalty_operator(VectorType const & velocity) const = 0;
+  update_continuity_penalty_operator(VectorType const & velocity) = 0;
 
   virtual void
   rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const = 0;
