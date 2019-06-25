@@ -31,16 +31,16 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h"
 
 // operators
+#include "../../operators/inverse_mass_matrix.h"
+#include "../../poisson/spatial_discretization/laplace_operator.h"
 #include "operators/convective_operator.h"
 #include "operators/divergence_operator.h"
 #include "operators/gradient_operator.h"
 #include "operators/mass_matrix_operator.h"
-#include "operators/rhs_operator.h"
-#include "operators/viscous_operator.h"
 #include "operators/momentum_operator.h"
 #include "operators/projection_operator.h"
-#include "../../poisson/spatial_discretization/laplace_operator.h"
-#include "../../operators/inverse_mass_matrix.h"
+#include "operators/rhs_operator.h"
+#include "operators/viscous_operator.h"
 
 // LES turbulence model
 #include "turbulence_model.h"
@@ -54,7 +54,6 @@
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
 #include "../preconditioners/multigrid_preconditioner.h"
-#include "projection_solvers.h"
 
 // time integration
 #include "time_integration/time_step_calculation.h"

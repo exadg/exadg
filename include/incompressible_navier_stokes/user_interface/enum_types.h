@@ -428,8 +428,8 @@ enum_to_string(PreconditionerPressurePoisson const enum_type);
  */
 enum class SolverProjection
 {
-  LU,
-  CG
+  CG,
+  FGMRES
 };
 
 std::string

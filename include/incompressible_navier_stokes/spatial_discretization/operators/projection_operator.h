@@ -83,23 +83,6 @@ public:
          std::shared_ptr<DivKernel>        div_penalty_kernel,
          std::shared_ptr<ContiKernel>      conti_penalty_kernel);
 
-  // TODO remove if possible
-  AlignedVector<VectorizedArray<Number>> const &
-  get_array_div_penalty_parameter() const
-  {
-    return div_kernel->get_array_penalty_parameter();
-  }
-
-  // TODO remove if possible
-  /*
-   *  Get the time step size.
-   */
-  double
-  get_time_step_size() const
-  {
-    return time_step_size;
-  }
-
   void
   update(VectorType const & velocity, double const & dt);
 

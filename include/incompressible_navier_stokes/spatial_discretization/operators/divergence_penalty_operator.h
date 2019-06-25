@@ -121,13 +121,6 @@ public:
     return flags;
   }
 
-  // TODO remove this later if possible
-  AlignedVector<VectorizedArray<Number>> const &
-  get_array_penalty_parameter() const
-  {
-    return array_penalty_parameter;
-  }
-
   void
   calculate_penalty_parameter(VectorType const & velocity)
   {

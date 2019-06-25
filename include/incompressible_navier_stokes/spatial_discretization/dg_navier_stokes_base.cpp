@@ -1140,19 +1140,10 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
 {
   // setup projection solver
 
-  // divergence penalty only
+  // divergence penalty only -> local, elementwise problem
   if(param.use_divergence_penalty == true && param.use_continuity_penalty == false)
   {
-    // use direct solver
-    if(param.solver_projection == SolverProjection::LU)
-    {
-      // projection operator
-      typedef DirectProjectionSolverDivergencePenalty<dim, Number, PROJ_OPERATOR> PROJ_SOLVER;
-
-      projection_solver.reset(new PROJ_SOLVER(*projection_operator));
-    }
-    // use iterative solver (PCG)
-    else if(param.solver_projection == SolverProjection::CG)
+    if(param.solver_projection == SolverProjection::CG)
     {
       // projection operator
       elementwise_projection_operator.reset(new ELEMENTWISE_PROJ_OPERATOR(*projection_operator));
@@ -1218,8 +1209,8 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     {
       // Note that at this point (when initializing the Jacobi preconditioner and calculating the
       // diagonal) the penalty parameter of the projection operator has not been calculated and the
-      // time step size has not been set. Hence, update_preconditioner = true should be used for the
-      // Jacobi preconditioner in order to use to correct diagonal for preconditioning.
+      // time step size has not been set. Hence, 'update_preconditioner = true' should be used for
+      // the Jacobi preconditioner in order to use to correct diagonal for preconditioning.
       preconditioner_projection.reset(new JacobiPreconditioner<PROJ_OPERATOR>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
@@ -1227,7 +1218,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     {
       // Note that at this point (when initializing the Jacobi preconditioner)
       // the penalty parameter of the projection operator has not been calculated and the time step
-      // size has not been set. Hence, update_preconditioner = true should be used for the Jacobi
+      // size has not been set. Hence, 'update_preconditioner = true' should be used for the Jacobi
       // preconditioner in order to use to correct diagonal blocks for preconditioning.
       preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));

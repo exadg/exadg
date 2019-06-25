@@ -614,11 +614,11 @@ enum_to_string(SolverProjection const enum_type)
 
   switch(enum_type)
   {
-    case SolverProjection::LU:
-      string_type = "LU";
-      break;
     case SolverProjection::CG:
       string_type = "CG";
+      break;
+    case SolverProjection::FGMRES:
+      string_type = "FGMRES";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
