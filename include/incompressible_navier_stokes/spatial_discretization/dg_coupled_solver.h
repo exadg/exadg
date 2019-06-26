@@ -18,7 +18,7 @@
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/compatible_laplace_operator.h"
-#include "../preconditioners/multigrid_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 namespace IncNS
 {

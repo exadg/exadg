@@ -53,7 +53,7 @@
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../preconditioners/multigrid_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 // time integration
 #include "time_integration/time_step_calculation.h"
