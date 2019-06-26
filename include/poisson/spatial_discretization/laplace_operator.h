@@ -19,7 +19,7 @@ struct LaplaceKernelData
 
   double       IP_factor;
   unsigned int degree;
-  int          degree_mapping;
+  unsigned int degree_mapping;
 };
 
 template<int dim, typename Number>

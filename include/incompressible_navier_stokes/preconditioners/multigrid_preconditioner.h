@@ -131,11 +131,29 @@ public:
   initialize_operator(unsigned int const level)
   {
     // initialize pde_operator in a first step
-    std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+    std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
+
+    // The polynomial degree changes in case of p-multigrid, so we have to adapt
+    // viscous_kernel_data. In the current implementation, the polynomial degree for the mapping is
+    // limited by the polynomial degree of the shape functions, i.e., degree_mapping will be reduced
+    // in case of p-multigrid.
+    Operators::ConvectiveKernelData convective_kernel_data =
+      this->pde_operator->get_convective_kernel_data();
+    Operators::ViscousKernelData viscous_kernel_data =
+      this->pde_operator->get_viscous_kernel_data();
+
+    viscous_kernel_data.degree = this->level_info[level].degree();
+    viscous_kernel_data.degree_mapping =
+      std::min(viscous_kernel_data.degree, viscous_kernel_data.degree_mapping);
+
+    pde_operator_level->reinit(*this->matrix_free_objects[level],
+                               *this->constraints[level],
+                               data,
+                               convective_kernel_data,
+                               viscous_kernel_data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
-    std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
+    std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));
 
     return mg_operator;
   }

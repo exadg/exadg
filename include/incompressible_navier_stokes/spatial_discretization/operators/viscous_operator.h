@@ -78,6 +78,12 @@ public:
     }
   }
 
+  ViscousKernelData const &
+  get_data() const
+  {
+    return this->data;
+  }
+
   void
   set_coefficient_cell(unsigned int const cell, unsigned int const q, scalar const & value)
   {

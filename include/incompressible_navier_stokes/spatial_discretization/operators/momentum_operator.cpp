@@ -8,6 +8,22 @@ MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_f
                                       AffineConstraints<double> const & constraint_matrix,
                                       MomentumOperatorData<dim> const & data) const
 {
+  (void)matrix_free;
+  (void)constraint_matrix;
+  (void)data;
+
+  AssertThrow(false, ExcMessage("This reinit function is not implemented for MomentumOperator."));
+}
+
+template<int dim, typename Number>
+void
+MomentumOperator<dim, Number>::reinit(
+  MatrixFree<dim, Number> const &         matrix_free,
+  AffineConstraints<double> const &       constraint_matrix,
+  MomentumOperatorData<dim> const &       data,
+  Operators::ConvectiveKernelData const & convective_kernel_data,
+  Operators::ViscousKernelData const &    viscous_kernel_data) const
+{
   Base::reinit(matrix_free, constraint_matrix, data);
 
   // create new objects and initialize kernels
@@ -21,7 +37,7 @@ MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_f
   {
     this->convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
     this->convective_kernel->reinit(matrix_free,
-                                    this->data.convective_kernel_data,
+                                    convective_kernel_data,
                                     this->data.dof_index,
                                     this->data.quad_index,
                                     this->is_mg);
@@ -30,7 +46,7 @@ MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_f
   if(this->data.viscous_problem)
   {
     this->viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-    this->viscous_kernel->reinit(matrix_free, this->data.viscous_kernel_data, this->data.dof_index);
+    this->viscous_kernel->reinit(matrix_free, viscous_kernel_data, this->data.dof_index);
   }
 
   if(this->data.unsteady_problem)
@@ -71,6 +87,26 @@ MomentumOperator<dim, Number>::reinit(
       this->integrator_flags || this->convective_kernel->get_integrator_flags();
   if(this->data.viscous_problem)
     this->integrator_flags = this->integrator_flags || this->viscous_kernel->get_integrator_flags();
+}
+
+template<int dim, typename Number>
+Operators::ConvectiveKernelData
+MomentumOperator<dim, Number>::get_convective_kernel_data() const
+{
+  if(this->data.convective_problem)
+    return convective_kernel->get_data();
+  else
+    return Operators::ConvectiveKernelData();
+}
+
+template<int dim, typename Number>
+Operators::ViscousKernelData
+MomentumOperator<dim, Number>::get_viscous_kernel_data() const
+{
+  if(this->data.viscous_problem)
+    return viscous_kernel->get_data();
+  else
+    return Operators::ViscousKernelData();
 }
 
 template<int dim, typename Number>

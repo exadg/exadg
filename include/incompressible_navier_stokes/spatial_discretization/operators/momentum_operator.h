@@ -72,11 +72,24 @@ public:
          MomentumOperatorData<dim> const & data) const;
 
   void
+  reinit(MatrixFree<dim, Number> const &         matrix_free,
+         AffineConstraints<double> const &       constraint_matrix,
+         MomentumOperatorData<dim> const &       data,
+         Operators::ConvectiveKernelData const & convective_kernel_data,
+         Operators::ViscousKernelData const &    viscous_kernel_data) const;
+
+  void
   reinit(MatrixFree<dim, Number> const &                           matrix_free,
          AffineConstraints<double> const &                         constraint_matrix,
          MomentumOperatorData<dim> const &                         data,
          std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
          std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel);
+
+  Operators::ConvectiveKernelData
+  get_convective_kernel_data() const;
+
+  Operators::ViscousKernelData
+  get_viscous_kernel_data() const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;

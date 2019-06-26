@@ -131,6 +131,12 @@ public:
     return flags;
   }
 
+  ConvectiveKernelData const &
+  get_data() const
+  {
+    return this->data;
+  }
+
   VectorType const &
   get_velocity() const
   {

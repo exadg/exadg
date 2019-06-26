@@ -91,7 +91,17 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+
+    // The polynomial degree changes in case of p-multigrid, so we have to adapt
+    // diffusive_kernel_data. In the current implementation, the polynomial degree for the mapping
+    // is limited by the polynomial degree of the shape functions, i.e., degree_mapping will be
+    // reduced in case of p-multigrid.
+    OperatorData<dim> data_level            = data;
+    data_level.diffusive_kernel_data.degree = this->level_info[level].degree();
+    data_level.diffusive_kernel_data.degree_mapping =
+      std::min(data_level.diffusive_kernel_data.degree, data.diffusive_kernel_data.degree_mapping);
+
+    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data_level);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
