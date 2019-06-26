@@ -304,8 +304,6 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
   combined_operator_data.convective_kernel_data = convective_kernel_data;
   combined_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
-  combined_operator_data.mg_operator_type = param.mg_operator_type;
-
   combined_operator.reinit(matrix_free, constraint_matrix, combined_operator_data);
 
   // The velocity vector needs to be set in case of numerical velocity field. Otherwise, certain
@@ -392,6 +390,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
                                   fe,
                                   *mapping,
                                   combined_operator,
+                                  param.mg_operator_type,
                                   &data.bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
