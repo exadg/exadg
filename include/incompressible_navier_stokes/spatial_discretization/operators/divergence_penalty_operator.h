@@ -48,9 +48,7 @@ struct DivergencePenaltyKernelData
     : type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
       viscosity(0.0),
       degree(1),
-      penalty_factor(1.0),
-      dof_index(0),
-      quad_index(0)
+      penalty_factor(1.0)
   {
   }
 
@@ -65,9 +63,6 @@ struct DivergencePenaltyKernelData
 
   // the penalty term can be scaled by 'penalty_factor'
   double penalty_factor;
-
-  unsigned int dof_index;
-  unsigned int quad_index;
 };
 
 template<int dim, typename Number>
@@ -81,14 +76,21 @@ private:
   typedef VectorizedArray<Number> scalar;
 
 public:
-  DivergencePenaltyKernel() : matrix_free(nullptr), array_penalty_parameter(0)
+  DivergencePenaltyKernel()
+    : matrix_free(nullptr), dof_index(0), quad_index(0), array_penalty_parameter(0)
   {
   }
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, DivergencePenaltyKernelData const & data)
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         unsigned int const                  dof_index,
+         unsigned int const                  quad_index,
+         DivergencePenaltyKernelData const & data)
   {
     this->matrix_free = &matrix_free;
+
+    this->dof_index  = dof_index;
+    this->quad_index = quad_index;
 
     this->data = data;
 
@@ -126,7 +128,7 @@ public:
   {
     velocity.update_ghost_values();
 
-    IntegratorCell integrator(*matrix_free, data.dof_index, data.quad_index);
+    IntegratorCell integrator(*matrix_free, dof_index, quad_index);
 
     AlignedVector<scalar> JxW_values(integrator.n_q_points);
 
@@ -190,6 +192,9 @@ public:
 private:
   MatrixFree<dim, Number> const * matrix_free;
 
+  unsigned int dof_index;
+  unsigned int quad_index;
+
   DivergencePenaltyKernelData data;
 
   AlignedVector<scalar> array_penalty_parameter;
@@ -206,7 +211,6 @@ struct DivergencePenaltyData
   }
 
   unsigned int dof_index;
-
   unsigned int quad_index;
 };
 

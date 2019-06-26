@@ -28,7 +28,6 @@ struct ViscousKernelData
     : IP_factor(1.0),
       degree(1),
       degree_mapping(1),
-      dof_index(0),
       viscosity(1.0),
       formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
       penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Symmetrized),
@@ -40,7 +39,6 @@ struct ViscousKernelData
   double                           IP_factor;
   unsigned int                     degree;
   unsigned int                     degree_mapping;
-  unsigned int                     dof_index;
   double                           viscosity;
   FormulationViscousTerm           formulation_viscous_term;
   PenaltyTermDivergenceFormulation penalty_term_div_formulation;
@@ -61,13 +59,15 @@ private:
 
 public:
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, ViscousKernelData const & data) const
+  reinit(MatrixFree<dim, Number> const & matrix_free,
+         ViscousKernelData const &       data,
+         unsigned int const              dof_index) const
   {
     this->data = data;
 
     MappingQGeneric<dim> mapping(data.degree_mapping);
     IP::calculate_penalty_parameter<dim, Number>(
-      array_penalty_parameter, matrix_free, mapping, data.degree, data.dof_index);
+      array_penalty_parameter, matrix_free, mapping, data.degree, dof_index);
 
     AssertThrow(data.viscosity >= 0.0, ExcMessage("Viscosity is not set!"));
 

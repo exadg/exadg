@@ -52,13 +52,6 @@ public:
     data.dof_index  = 0;
     data.quad_index = 0;
 
-    // do not forget to update viscous_kernel_data!
-    data.viscous_kernel_data.dof_index = data.dof_index;
-
-    // do not forget to update convective_kernel_data!
-    data.convective_kernel_data.dof_index             = data.dof_index;
-    data.convective_kernel_data.quad_index_linearized = data.quad_index;
-
     // When solving the reaction-convection-diffusion problem, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
     // operator (which is symmetric, Chebyshev smoother, etc.) instead of the non-symmetric

@@ -27,9 +27,7 @@ struct ConvectiveKernelData
     : formulation(FormulationConvectiveTerm::DivergenceFormulation),
       upwind_factor(1.0),
       use_outflow_bc(false),
-      type_dirichlet_bc(TypeDirichletBCs::Mirror),
-      dof_index(0),
-      quad_index_linearized(0)
+      type_dirichlet_bc(TypeDirichletBCs::Mirror)
   {
   }
 
@@ -40,9 +38,6 @@ struct ConvectiveKernelData
   bool use_outflow_bc;
 
   TypeDirichletBCs type_dirichlet_bc;
-
-  unsigned int dof_index;
-  unsigned int quad_index_linearized;
 };
 
 template<int dim, typename Number>
@@ -62,23 +57,24 @@ public:
   void
   reinit(MatrixFree<dim, Number> const & matrix_free,
          ConvectiveKernelData const &    data,
+         unsigned int const              dof_index,
+         unsigned int const              quad_index_linearized,
          bool const                      is_mg) const
   {
     this->data = data;
 
     // integrators for linearized problem
-    integrator_velocity.reset(
-      new IntegratorCell(matrix_free, data.dof_index, data.quad_index_linearized));
+    integrator_velocity.reset(new IntegratorCell(matrix_free, dof_index, quad_index_linearized));
     integrator_velocity_m.reset(
-      new IntegratorFace(matrix_free, true, data.dof_index, data.quad_index_linearized));
+      new IntegratorFace(matrix_free, true, dof_index, quad_index_linearized));
     integrator_velocity_p.reset(
-      new IntegratorFace(matrix_free, false, data.dof_index, data.quad_index_linearized));
+      new IntegratorFace(matrix_free, false, dof_index, quad_index_linearized));
 
     // use own storage of velocity vector only in case of multigrid
     if(is_mg)
     {
       velocity.reset();
-      matrix_free.initialize_dof_vector(velocity.own(), data.dof_index);
+      matrix_free.initialize_dof_vector(velocity.own(), dof_index);
     }
   }
 

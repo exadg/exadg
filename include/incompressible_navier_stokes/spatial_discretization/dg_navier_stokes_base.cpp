@@ -267,18 +267,19 @@ void
 DGNavierStokesBase<dim, Number>::initialize_operators()
 {
   // operator kernels
-  convective_kernel_data.formulation           = param.formulation_convective_term;
-  convective_kernel_data.upwind_factor         = param.upwind_factor;
-  convective_kernel_data.use_outflow_bc        = param.use_outflow_bc_convective_term;
-  convective_kernel_data.type_dirichlet_bc     = param.type_dirichlet_bc_convective;
-  convective_kernel_data.dof_index             = dof_index_u;
-  convective_kernel_data.quad_index_linearized = this->get_quad_index_velocity_linearized();
+  convective_kernel_data.formulation       = param.formulation_convective_term;
+  convective_kernel_data.upwind_factor     = param.upwind_factor;
+  convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
+  convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
   convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-  convective_kernel->reinit(matrix_free, convective_kernel_data, false /* is_mg */);
+  convective_kernel->reinit(matrix_free,
+                            convective_kernel_data,
+                            dof_index_u,
+                            get_quad_index_velocity_linearized(),
+                            false /* is_mg */);
 
   viscous_kernel_data.degree                       = param.degree_u;
   viscous_kernel_data.degree_mapping               = mapping_degree;
-  viscous_kernel_data.dof_index                    = dof_index_u;
   viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
   viscous_kernel_data.viscosity                    = param.viscosity;
   viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
@@ -286,7 +287,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
   viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-  viscous_kernel->reinit(matrix_free, viscous_kernel_data);
+  viscous_kernel->reinit(matrix_free, viscous_kernel_data, dof_index_u);
 
   AffineConstraints<double> constraint_dummy;
   constraint_dummy.close();
@@ -363,11 +364,12 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     div_penalty_data.viscosity              = param.viscosity;
     div_penalty_data.degree                 = param.degree_u;
     div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
-    div_penalty_data.dof_index              = get_dof_index_velocity();
-    div_penalty_data.quad_index             = get_quad_index_velocity_linear();
 
     div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
-    div_penalty_kernel->reinit(matrix_free, div_penalty_data);
+    div_penalty_kernel->reinit(matrix_free,
+                               get_dof_index_velocity(),
+                               get_quad_index_velocity_linear(),
+                               div_penalty_data);
 
     // Operator
     DivergencePenaltyData operator_data;
@@ -387,11 +389,12 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     conti_penalty_data.viscosity              = param.viscosity;
     conti_penalty_data.degree                 = param.degree_u;
     conti_penalty_data.penalty_factor         = param.continuity_penalty_factor;
-    conti_penalty_data.dof_index              = get_dof_index_velocity();
-    conti_penalty_data.quad_index             = get_quad_index_velocity_linear();
 
     conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
-    conti_penalty_kernel->reinit(matrix_free, conti_penalty_data);
+    conti_penalty_kernel->reinit(matrix_free,
+                                 get_dof_index_velocity(),
+                                 get_quad_index_velocity_linear(),
+                                 conti_penalty_data);
 
     // Operator
     ContinuityPenaltyData operator_data;

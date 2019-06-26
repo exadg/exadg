@@ -20,13 +20,17 @@ MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_f
   if(this->data.convective_problem)
   {
     this->convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-    this->convective_kernel->reinit(matrix_free, this->data.convective_kernel_data, this->is_mg);
+    this->convective_kernel->reinit(matrix_free,
+                                    this->data.convective_kernel_data,
+                                    this->data.dof_index,
+                                    this->data.quad_index,
+                                    this->is_mg);
   }
 
   if(this->data.viscous_problem)
   {
     this->viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-    this->viscous_kernel->reinit(matrix_free, this->data.viscous_kernel_data);
+    this->viscous_kernel->reinit(matrix_free, this->data.viscous_kernel_data, this->data.dof_index);
   }
 
   if(this->data.unsteady_problem)

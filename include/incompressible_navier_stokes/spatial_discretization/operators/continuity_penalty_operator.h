@@ -53,9 +53,7 @@ struct ContinuityPenaltyKernelData
       which_components(ContinuityPenaltyComponents::Normal),
       viscosity(0.0),
       degree(1),
-      penalty_factor(1.0),
-      dof_index(0),
-      quad_index(0)
+      penalty_factor(1.0)
   {
   }
 
@@ -74,9 +72,6 @@ struct ContinuityPenaltyKernelData
 
   // the penalty term can be scaled by 'penalty_factor'
   double penalty_factor;
-
-  unsigned int dof_index;
-  unsigned int quad_index;
 };
 
 template<int dim, typename Number>
@@ -92,14 +87,21 @@ private:
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
 public:
-  ContinuityPenaltyKernel() : matrix_free(nullptr), array_penalty_parameter(0)
+  ContinuityPenaltyKernel()
+    : matrix_free(nullptr), dof_index(0), quad_index(0), array_penalty_parameter(0)
   {
   }
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free, ContinuityPenaltyKernelData const & data)
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         unsigned int const                  dof_index,
+         unsigned int const                  quad_index,
+         ContinuityPenaltyKernelData const & data)
   {
     this->matrix_free = &matrix_free;
+
+    this->dof_index  = dof_index;
+    this->quad_index = quad_index;
 
     this->data = data;
 
@@ -139,7 +141,7 @@ public:
   {
     velocity.update_ghost_values();
 
-    IntegratorCell integrator(*matrix_free, data.dof_index, data.quad_index);
+    IntegratorCell integrator(*matrix_free, dof_index, quad_index);
 
     AlignedVector<scalar> JxW_values(integrator.n_q_points);
 
@@ -161,8 +163,8 @@ public:
       norm_U_mean /= volume;
 
       scalar tau_convective = norm_U_mean;
-      scalar h              = std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
-      scalar tau_viscous    = make_vectorized_array<Number>(data.viscosity) / h;
+      scalar h_eff          = std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);
+      scalar tau_viscous    = make_vectorized_array<Number>(data.viscosity) / h_eff;
 
       if(data.type_penalty_parameter == TypePenaltyParameter::ConvectiveTerm)
       {
@@ -231,6 +233,9 @@ public:
 
 private:
   MatrixFree<dim, Number> const * matrix_free;
+
+  unsigned int dof_index;
+  unsigned int quad_index;
 
   ContinuityPenaltyKernelData data;
 
