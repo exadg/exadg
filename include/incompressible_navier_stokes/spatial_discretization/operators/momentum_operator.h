@@ -25,8 +25,7 @@ struct MomentumOperatorData : public OperatorBaseData
       convective_problem(false),
       viscous_problem(false),
       scaling_factor_mass_matrix(1.0),
-      formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
-      mg_operator_type(MultigridOperatorType::Undefined)
+      formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation)
   {
   }
 
@@ -41,9 +40,6 @@ struct MomentumOperatorData : public OperatorBaseData
   double scaling_factor_mass_matrix;
 
   FormulationConvectiveTerm formulation_convective_term;
-
-  // Multigrid
-  MultigridOperatorType mg_operator_type;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };

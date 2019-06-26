@@ -517,7 +517,8 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
                                 tria,
                                 fe,
                                 this->get_mapping(),
-                                this->momentum_operator);
+                                this->momentum_operator,
+                                this->param.multigrid_operator_type_velocity_block);
 }
 
 template<int dim, typename Number>

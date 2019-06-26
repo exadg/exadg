@@ -455,13 +455,6 @@ DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
 
   data.formulation_convective_term = param.formulation_convective_term;
 
-  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    data.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
-  else if(param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    data.mg_operator_type = param.multigrid_operator_type_momentum;
-  else if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    data.mg_operator_type = param.multigrid_operator_type_velocity_block;
-
   data.bc = boundary_descriptor_velocity;
 
   data.dof_index  = get_dof_index_velocity();

@@ -92,8 +92,12 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
 
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
-    mg_preconditioner->initialize(
-      this->param.multigrid_data_momentum, tria, fe, this->get_mapping(), this->momentum_operator);
+    mg_preconditioner->initialize(this->param.multigrid_data_momentum,
+                                  tria,
+                                  fe,
+                                  this->get_mapping(),
+                                  this->momentum_operator,
+                                  this->param.multigrid_operator_type_momentum);
   }
   else
   {

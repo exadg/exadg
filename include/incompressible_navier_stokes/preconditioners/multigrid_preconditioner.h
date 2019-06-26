@@ -42,13 +42,16 @@ public:
              parallel::Triangulation<dim> const * tria,
              FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             PDEOperatorNumber const &            pde_operator_in,
+             PDEOperatorNumber const &            pde_operator,
+             MultigridOperatorType const &        mg_operator_type,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    pde_operator = &pde_operator_in;
+    this->pde_operator = &pde_operator;
 
-    data            = pde_operator->get_data();
+    this->mg_operator_type = mg_operator_type;
+
+    data            = this->pde_operator->get_data();
     data.dof_index  = 0;
     data.quad_index = 0;
 
@@ -58,15 +61,15 @@ public:
     // reaction-convection-diffusion operator. Accordingly, we have to reset which
     // operators should be "active" for the multigrid preconditioner, independently of
     // the actual equation type that is solved.
-    AssertThrow(data.mg_operator_type != MultigridOperatorType::Undefined,
+    AssertThrow(this->mg_operator_type != MultigridOperatorType::Undefined,
                 ExcMessage("Invalid parameter mg_operator_type."));
 
-    if(data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    if(this->mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
       // deactivate convective term for multigrid preconditioner
       data.convective_problem = false;
     }
-    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    else if(this->mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
       AssertThrow(data.convective_problem == true, ExcMessage("Invalid parameter."));
     }
@@ -185,8 +188,6 @@ private:
       set_scaling_factor_time_derivative_term(pde_operator->get_scaling_factor_mass_matrix());
     }
 
-    MultigridOperatorType mg_operator_type = pde_operator->get_data().mg_operator_type;
-
     if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
       VectorType const & vector_linearization = pde_operator->get_velocity();
@@ -283,6 +284,8 @@ private:
   MomentumOperatorData<dim> data;
 
   PDEOperatorNumber const * pde_operator;
+
+  MultigridOperatorType mg_operator_type;
 };
 
 } // namespace IncNS
