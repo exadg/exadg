@@ -65,9 +65,12 @@ public:
     auto & fe    = dof_handler.get_fe();
     auto   level = level_to_triangulation_level_map[level_in];
 
-    auto & src_ghosted = this->ghosted_level_vector[level - 0];
-    auto & dst_ghosted = this->ghosted_level_vector[level - 1];
-
+    LinearAlgebra::distributed::Vector<Number> src_ghosted;
+    IndexSet                                   relevant_dofs;
+    DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs);
+    src_ghosted.reinit(dof_handler.locally_owned_mg_dofs(level),
+                       relevant_dofs,
+                       src.get_mpi_communicator());
     src_ghosted.copy_locally_owned_data_from(src);
     src_ghosted.update_ghost_values();
 
@@ -102,10 +105,10 @@ public:
         cell->get_mg_dof_indices(dof_indices);
 #pragma GCC diagnostic pop
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
-          dst_ghosted(dof_indices[i]) = dof_values_coarse[i];
+          dst(dof_indices[i]) = dof_values_coarse[i];
       }
 
-    dst.copy_locally_owned_data_from(dst_ghosted);
+    dst.zero_out_ghosts();
   }
 
   /**

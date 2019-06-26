@@ -192,7 +192,7 @@ private:
 
       // current coarse level becomes the fine level in the next iteration
       this->get_operator(level - 1)->initialize_dof_vector(velocity_fine_level);
-      velocity_fine_level = velocity_coarse_level;
+      velocity_fine_level.copy_locally_owned_data_from(velocity_coarse_level);
     }
   }
 
