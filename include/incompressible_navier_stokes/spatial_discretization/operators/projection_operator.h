@@ -71,10 +71,21 @@ private:
 public:
   typedef Number value_type;
 
+  ProjectionOperator() : velocity(nullptr), time_step_size(1.0)
+  {
+  }
+
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          ProjectionOperatorData const &    data) const;
+
+  void
+  reinit(MatrixFree<dim, Number> const &                matrix_free,
+         AffineConstraints<double> const &              constraint_matrix,
+         ProjectionOperatorData const &                 data,
+         Operators::DivergencePenaltyKernelData const & div_kernel_data,
+         Operators::ContinuityPenaltyKernelData const & conti_kernel_data);
 
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
@@ -82,6 +93,21 @@ public:
          ProjectionOperatorData const &    data,
          std::shared_ptr<DivKernel>        div_penalty_kernel,
          std::shared_ptr<ContiKernel>      conti_penalty_kernel);
+
+  ProjectionOperatorData
+  get_data() const;
+
+  Operators::DivergencePenaltyKernelData
+  get_divergence_kernel_data() const;
+
+  Operators::ContinuityPenaltyKernelData
+  get_continuity_kernel_data() const;
+
+  double
+  get_time_step_size() const;
+
+  LinearAlgebra::distributed::Vector<Number> const &
+  get_velocity() const;
 
   void
   update(VectorType const & velocity, double const & dt);
@@ -115,7 +141,8 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  double time_step_size;
+  VectorType const * velocity;
+  double             time_step_size;
 
   std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_kernel;
   std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_kernel;

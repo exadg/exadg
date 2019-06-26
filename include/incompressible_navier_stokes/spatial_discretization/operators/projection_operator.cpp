@@ -25,6 +25,48 @@ ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix
 
 template<int dim, typename Number>
 void
+ProjectionOperator<dim, Number>::reinit(
+  MatrixFree<dim, Number> const &                matrix_free,
+  AffineConstraints<double> const &              constraint_matrix,
+  ProjectionOperatorData const &                 data,
+  Operators::DivergencePenaltyKernelData const & div_kernel_data,
+  Operators::ContinuityPenaltyKernelData const & conti_kernel_data)
+{
+  Base::reinit(matrix_free, constraint_matrix, data);
+
+  if(this->data.use_divergence_penalty)
+  {
+    this->div_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
+    this->div_kernel->reinit(matrix_free,
+                             this->data.dof_index,
+                             this->data.quad_index,
+                             div_kernel_data);
+  }
+
+  if(this->data.use_continuity_penalty)
+  {
+    this->conti_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
+    this->conti_kernel->reinit(matrix_free,
+                               this->data.dof_index,
+                               this->data.quad_index,
+                               conti_kernel_data);
+  }
+
+  // mass matrix
+  this->integrator_flags.cell_evaluate  = CellFlags(true, false, false);
+  this->integrator_flags.cell_integrate = CellFlags(true, false, false);
+
+  // divergence penalty
+  if(this->data.use_divergence_penalty)
+    this->integrator_flags = this->integrator_flags || div_kernel->get_integrator_flags();
+
+  // continuity penalty
+  if(this->data.use_continuity_penalty)
+    this->integrator_flags = this->integrator_flags || conti_kernel->get_integrator_flags();
+}
+
+template<int dim, typename Number>
+void
 ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                         AffineConstraints<double> const & constraint_matrix,
                                         ProjectionOperatorData const &    data,
@@ -50,9 +92,55 @@ ProjectionOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix
 }
 
 template<int dim, typename Number>
+ProjectionOperatorData
+ProjectionOperator<dim, Number>::get_data() const
+{
+  return this->data;
+}
+
+template<int dim, typename Number>
+Operators::DivergencePenaltyKernelData
+ProjectionOperator<dim, Number>::get_divergence_kernel_data() const
+{
+  if(this->data.use_divergence_penalty)
+    return div_kernel->get_data();
+  else
+    return Operators::DivergencePenaltyKernelData();
+}
+
+template<int dim, typename Number>
+Operators::ContinuityPenaltyKernelData
+ProjectionOperator<dim, Number>::get_continuity_kernel_data() const
+{
+  if(this->data.use_continuity_penalty)
+    return conti_kernel->get_data();
+  else
+    return Operators::ContinuityPenaltyKernelData();
+}
+
+template<int dim, typename Number>
+double
+ProjectionOperator<dim, Number>::get_time_step_size() const
+{
+  return this->time_step_size;
+}
+
+template<int dim, typename Number>
+LinearAlgebra::distributed::Vector<Number> const &
+ProjectionOperator<dim, Number>::get_velocity() const
+{
+  AssertThrow(velocity != nullptr,
+              ExcMessage("Velocity ptr is not initialized in ProjectionOperator."));
+
+  return *velocity;
+}
+
+template<int dim, typename Number>
 void
 ProjectionOperator<dim, Number>::update(VectorType const & velocity, double const & dt)
 {
+  this->velocity = &velocity;
+
   if(this->data.use_divergence_penalty)
     div_kernel->calculate_penalty_parameter(velocity);
   if(this->data.use_continuity_penalty)

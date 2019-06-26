@@ -8,6 +8,7 @@
 #include "dg_navier_stokes_base.h"
 
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_projection.h"
 
 namespace IncNS
 {
@@ -1220,6 +1221,28 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
       preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
+    else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
+    {
+      typedef MultigridPreconditionerProjection<dim, Number, MultigridNumber> MULTIGRID;
+
+      preconditioner_projection.reset(new MULTIGRID());
+
+      std::shared_ptr<MULTIGRID> mg_preconditioner =
+        std::dynamic_pointer_cast<MULTIGRID>(preconditioner_projection);
+
+      auto & dof_handler = this->get_dof_handler_u();
+
+      parallel::Triangulation<dim> const * tria =
+        dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+      const FiniteElement<dim> & fe = dof_handler.get_fe();
+
+      mg_preconditioner->initialize(this->param.multigrid_data_projection,
+                                    tria,
+                                    fe,
+                                    this->get_mapping(),
+                                    *this->projection_operator);
+    }
     else
     {
       AssertThrow(false,
@@ -1235,20 +1258,9 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
       projection_solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
       projection_solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
       // default value of use_preconditioner = false
-      if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-         param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
-         param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
+      if(param.preconditioner_projection != PreconditionerProjection::None)
       {
         projection_solver_data.use_preconditioner = true;
-      }
-      else
-      {
-        AssertThrow(param.preconditioner_projection == PreconditionerProjection::None ||
-                      param.preconditioner_projection ==
-                        PreconditionerProjection::InverseMassMatrix ||
-                      param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
-                      param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
-                    ExcMessage("Specified preconditioner of projection solver not implemented."));
       }
 
       // setup solver

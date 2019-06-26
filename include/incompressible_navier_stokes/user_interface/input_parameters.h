@@ -422,6 +422,9 @@ public:
   // description: see enum declaration
   PreconditionerProjection preconditioner_projection;
 
+  // description: see declaration of MultigridData
+  MultigridData multigrid_data_projection;
+
   // Update preconditioner before solving the linear system of equations.
   // Note that this variable is only used when using an iterative method
   // to solve the global projection equation.

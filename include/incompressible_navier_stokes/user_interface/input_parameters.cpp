@@ -129,6 +129,7 @@ InputParameters::InputParameters()
     solver_projection(SolverProjection::CG),
     solver_data_projection(SolverData(1000, 1.e-12, 1.e-6, 100)),
     preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
+    multigrid_data_projection(MultigridData()),
     update_preconditioner_projection(true),
     update_preconditioner_projection_every_time_steps(1),
     preconditioner_block_diagonal_projection(Elementwise::Preconditioner::InverseMassMatrix),
@@ -765,6 +766,11 @@ InputParameters::print_parameters_projection_step(ConditionalOStream & pcout)
                         enum_to_string(preconditioner_block_diagonal_projection));
 
         solver_data_block_diagonal_projection.print(pcout);
+      }
+
+      if(preconditioner_projection == PreconditionerProjection::Multigrid)
+      {
+        multigrid_data_projection.print(pcout);
       }
 
       print_parameter(pcout,

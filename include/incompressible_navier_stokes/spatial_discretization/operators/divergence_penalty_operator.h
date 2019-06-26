@@ -98,6 +98,12 @@ public:
     array_penalty_parameter.resize(n_cells);
   }
 
+  DivergencePenaltyKernelData
+  get_data()
+  {
+    return this->data;
+  }
+
   IntegratorFlags
   get_integrator_flags() const
   {

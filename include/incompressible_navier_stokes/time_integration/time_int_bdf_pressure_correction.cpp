@@ -325,6 +325,11 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
    *  Solve the linear or nonlinear problem.
    */
 
+  bool const update_preconditioner =
+    this->param.update_preconditioner_momentum &&
+    ((this->time_step_number - 1) % this->param.update_preconditioner_momentum_every_time_steps ==
+     0);
+
   if(this->param.linear_problem_has_to_be_solved())
   {
     if(this->param.viscous_problem())
@@ -340,9 +345,6 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
 
       // solve linear system of equations
       unsigned int linear_iterations_momentum = 0;
-      bool const   update_preconditioner =
-        this->param.update_preconditioner_momentum &&
-        (this->time_step_number % this->param.update_preconditioner_momentum_every_time_steps == 0);
 
       pde_operator->solve_linear_momentum_equation(velocity_np,
                                                    rhs,
@@ -392,9 +394,6 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
 
     unsigned int linear_iterations_momentum;
     unsigned int nonlinear_iterations_momentum;
-    bool const   update_preconditioner =
-      this->param.update_preconditioner_momentum &&
-      (this->time_step_number % this->param.update_preconditioner_momentum_every_time_steps == 0);
 
     pde_operator->solve_nonlinear_momentum_equation(velocity_np,
                                                     rhs,
@@ -763,7 +762,9 @@ TimeIntBDFPressureCorrection<Number>::projection_step()
     // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_projection &&
-      (this->time_step_number % this->param.update_preconditioner_projection_every_time_steps == 0);
+      ((this->time_step_number - 1) %
+         this->param.update_preconditioner_projection_every_time_steps ==
+       0);
 
     iterations_projection =
       this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);

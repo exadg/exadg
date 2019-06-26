@@ -444,9 +444,10 @@ enum_to_string(SolverProjection const enum_type);
 enum class PreconditionerProjection
 {
   None,
+  InverseMassMatrix,
   PointJacobi,
   BlockJacobi,
-  InverseMassMatrix
+  Multigrid
 };
 
 std::string
