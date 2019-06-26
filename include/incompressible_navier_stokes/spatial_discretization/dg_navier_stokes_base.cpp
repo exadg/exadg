@@ -1253,26 +1253,47 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     if(param.solver_projection == SolverProjection::CG)
     {
       // setup solver data
-      CGSolverData projection_solver_data;
-      projection_solver_data.max_iter             = param.solver_data_projection.max_iter;
-      projection_solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
-      projection_solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
+      CGSolverData solver_data;
+      solver_data.max_iter             = param.solver_data_projection.max_iter;
+      solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
+      solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
       // default value of use_preconditioner = false
       if(param.preconditioner_projection != PreconditionerProjection::None)
       {
-        projection_solver_data.use_preconditioner = true;
+        solver_data.use_preconditioner = true;
       }
 
       // setup solver
       projection_solver.reset(new CGSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
         *preconditioner_projection,
-        projection_solver_data));
+        solver_data));
+    }
+    else if(param.solver_projection == SolverProjection::FGMRES)
+    {
+      // setup solver data
+      FGMRESSolverData solver_data;
+      solver_data.max_iter             = param.solver_data_projection.max_iter;
+      solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
+      solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
+      solver_data.max_n_tmp_vectors    = param.solver_data_projection.max_krylov_size;
+
+      // default value of use_preconditioner = false
+      if(param.preconditioner_projection != PreconditionerProjection::None)
+      {
+        solver_data.use_preconditioner = true;
+      }
+
+      // setup solver
+      projection_solver.reset(
+        new FGMRESSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
+          *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
+          *preconditioner_projection,
+          solver_data));
     }
     else
     {
-      AssertThrow(param.solver_projection == SolverProjection::CG,
-                  ExcMessage("Specified projection solver not implemented."));
+      AssertThrow(false, ExcMessage("Specified projection solver not implemented."));
     }
   }
   else
