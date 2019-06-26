@@ -25,6 +25,7 @@ struct MomentumOperatorData : public OperatorBaseData
       convective_problem(false),
       viscous_problem(false),
       scaling_factor_mass_matrix(1.0),
+      formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
       mg_operator_type(MultigridOperatorType::Undefined)
   {
   }
@@ -39,8 +40,7 @@ struct MomentumOperatorData : public OperatorBaseData
   // update the whole multigrid preconditioner in the first time step.
   double scaling_factor_mass_matrix;
 
-  Operators::ConvectiveKernelData convective_kernel_data;
-  Operators::ViscousKernelData    viscous_kernel_data;
+  FormulationConvectiveTerm formulation_convective_term;
 
   // Multigrid
   MultigridOperatorType mg_operator_type;

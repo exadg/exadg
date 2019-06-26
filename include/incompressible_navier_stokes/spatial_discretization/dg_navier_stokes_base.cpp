@@ -267,6 +267,7 @@ void
 DGNavierStokesBase<dim, Number>::initialize_operators()
 {
   // operator kernels
+  Operators::ConvectiveKernelData convective_kernel_data;
   convective_kernel_data.formulation       = param.formulation_convective_term;
   convective_kernel_data.upwind_factor     = param.upwind_factor;
   convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
@@ -278,6 +279,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
                             get_quad_index_velocity_linearized(),
                             false /* is_mg */);
 
+  Operators::ViscousKernelData viscous_kernel_data;
   viscous_kernel_data.degree                       = param.degree_u;
   viscous_kernel_data.degree_mapping               = mapping_degree;
   viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
@@ -451,8 +453,7 @@ DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
 
   data.viscous_problem = param.viscous_problem();
 
-  data.viscous_kernel_data    = viscous_kernel_data;
-  data.convective_kernel_data = convective_kernel_data;
+  data.formulation_convective_term = param.formulation_convective_term;
 
   if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     data.mg_operator_type = MultigridOperatorType::ReactionDiffusion;

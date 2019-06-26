@@ -256,18 +256,18 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
   bool const get_gradient =
     this->data.viscous_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::ConvectiveFormulation);
+    (this->data.convective_problem &&
+     this->data.formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation);
 
   bool const submit_value =
     this->data.unsteady_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::ConvectiveFormulation);
+    (this->data.convective_problem &&
+     this->data.formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation);
 
   bool const submit_gradient =
     this->data.viscous_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::DivergenceFormulation);
+    (this->data.convective_problem &&
+     this->data.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -291,13 +291,12 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
     {
       vector u = convective_kernel->get_velocity_cell(q);
 
-      if(this->data.convective_kernel_data.formulation ==
-         FormulationConvectiveTerm::DivergenceFormulation)
+      if(this->data.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       {
         gradient_flux +=
           convective_kernel->get_volume_flux_linearized_divergence_formulation(u, value);
       }
-      else if(this->data.convective_kernel_data.formulation ==
+      else if(this->data.formulation_convective_term ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
         tensor grad_u = convective_kernel->get_velocity_gradient_cell(q);
