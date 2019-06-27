@@ -12,6 +12,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include "../functionalities/calculate_characteristic_element_length.h"
+#include "../functionalities/cutoff_floating_point_number.h"
 #include "enum_types.h"
 
 using namespace dealii;
@@ -295,6 +296,17 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
 
   // find minimum over all processors
   new_time_step = Utilities::MPI::min(new_time_step, MPI_COMM_WORLD);
+
+  // Cut time step size after, e.g., 4 digits of accuracy in order to make sure that there is no
+  // drift in the time step size depending on the number of processors when using adaptive time
+  // stepping. This effect can occur since the velocity field and the time step size are coupled
+  // (there is some form of feedback loop in case of adaptive time stepping, i.e., a minor change
+  // in the time step size due to round-off errors implies that the velocity field is evaluated
+  // at a slightly different time in the next time step and so on). This way, it can be ensured
+  // that the sequence of time step sizes is exactly reproducible with the results being
+  // independent of the number of processors, which is important for code verification in a
+  // parallel setting.
+  new_time_step = cutoff(new_time_step, 4);
 
   return new_time_step;
 }
