@@ -18,10 +18,6 @@ using namespace dealii;
 template<int dim, typename Number>
 class MassMatrixKernel
 {
-private:
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-
 public:
   MassMatrixKernel()
   {
