@@ -238,6 +238,8 @@ DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(VectorType &    
   //  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
   // call pressure Poisson solver
+  // Note: currently no update of pressure Poisson preconditioner implemented -> might be necessary
+  // for moving meshes where the pressure Poisson operator becomes time-dependent
   unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, false);
 
   return n_iter;

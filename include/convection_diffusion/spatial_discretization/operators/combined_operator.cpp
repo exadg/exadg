@@ -15,7 +15,7 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                               AffineConstraints<double> const & constraint_matrix,
-                              OperatorData<dim> const &         data) const
+                              OperatorData<dim> const &         data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 
@@ -69,7 +69,7 @@ Operator<dim, Number>::get_scaling_factor_mass_matrix() const
 
 template<int dim, typename Number>
 void
-Operator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number) const
+Operator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number)
 {
   mass_kernel.set_scaling_factor(number);
 }

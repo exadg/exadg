@@ -19,7 +19,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::OperatorBase()
     time(0.0),
     is_mg(false),
     is_dg(true),
-    level_mg_handler(numbers::invalid_unsigned_int),
+    level(numbers::invalid_unsigned_int),
     block_diagonal_preconditioner_is_initialized(false),
     n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
 {
@@ -30,7 +30,7 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   MatrixFree<dim, Number> const &   matrix_free,
   AffineConstraints<double> const & constraint_matrix,
-  AdditionalData const &            operator_data) const
+  AdditionalData const &            operator_data)
 {
   // reinit data structures
   this->matrix_free.reset(matrix_free);
@@ -71,13 +71,13 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   }
 
   // set multigrid level
-  this->level_mg_handler = this->matrix_free->get_level_mg_handler();
+  this->level = this->matrix_free->get_level_mg_handler();
 
   // The default value is is_mg = false and this variable is set to true in case
   // the operator is applied in multigrid algorithm. By convention, the default
   // argument numbers::invalid_unsigned_int corresponds to the default
   // value is_mg = false
-  this->is_mg = (this->level_mg_handler != numbers::invalid_unsigned_int);
+  this->is_mg = (this->level != numbers::invalid_unsigned_int);
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -105,7 +105,7 @@ template<int dim, typename Number, typename AdditionalData, int n_components>
 unsigned int
 OperatorBase<dim, Number, AdditionalData, n_components>::get_level() const
 {
-  return level_mg_handler;
+  return level;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -644,17 +644,16 @@ OperatorBase<dim, Number, AdditionalData, n_components>::init_system_matrix(
       comm = MPI_COMM_SELF;
   }
 
-  TrilinosWrappers::SparsityPattern dsp(is_mg ? dof_handler.locally_owned_mg_dofs(
-                                                  this->level_mg_handler) :
+  TrilinosWrappers::SparsityPattern dsp(is_mg ? dof_handler.locally_owned_mg_dofs(this->level) :
                                                 dof_handler.locally_owned_dofs(),
                                         comm);
 
   if(is_dg && is_mg)
-    MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level_mg_handler);
+    MGTools::make_flux_sparsity_pattern(dof_handler, dsp, this->level);
   else if(is_dg && !is_mg)
     DoFTools::make_flux_sparsity_pattern(dof_handler, dsp);
   else if(/*!is_dg &&*/ is_mg)
-    MGTools::make_sparsity_pattern(dof_handler, dsp, this->level_mg_handler, *this->constraint);
+    MGTools::make_sparsity_pattern(dof_handler, dsp, this->level, *this->constraint);
   else /* if (!is_dg && !is_mg)*/
     DoFTools::make_sparsity_pattern(dof_handler, dsp, *this->constraint);
 

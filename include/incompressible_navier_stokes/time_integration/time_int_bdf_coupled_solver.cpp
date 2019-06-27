@@ -218,6 +218,11 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     }
   }
 
+  bool const update_preconditioner =
+    this->param.update_preconditioner_coupled &&
+    ((this->time_step_number - 1) % this->param.update_preconditioner_coupled_every_time_steps ==
+     0);
+
   if(this->param.linear_problem_has_to_be_solved())
   {
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
@@ -260,11 +265,6 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     // apply mass matrix to sum_alphai_ui and add to rhs vector
     this->operator_base->apply_mass_matrix_add(rhs_vector.block(0), this->sum_alphai_ui);
 
-    // solve coupled system of equations
-    bool const update_preconditioner =
-      this->param.update_preconditioner_coupled &&
-      (this->time_step_number % this->param.update_preconditioner_coupled_every_time_steps == 0);
-
     unsigned int linear_iterations =
       pde_operator->solve_linear_stokes_problem(solution_np,
                                                 rhs_vector,
@@ -303,9 +303,6 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     // Newton solver
     unsigned int newton_iterations = 0;
     unsigned int linear_iterations = 0;
-    bool const   update_preconditioner =
-      this->param.update_preconditioner_coupled &&
-      (this->time_step_number % this->param.update_preconditioner_coupled_every_time_steps == 0);
 
     pde_operator->solve_nonlinear_problem(solution_np,
                                           rhs,
@@ -403,7 +400,8 @@ TimeIntBDFCoupled<Number>::projection_step()
 
   bool const update_preconditioner =
     this->param.update_preconditioner_projection &&
-    (this->time_step_number % this->param.update_preconditioner_projection_every_time_steps == 0);
+    ((this->time_step_number - 1) % this->param.update_preconditioner_projection_every_time_steps ==
+     0);
 
   // solve projection (where also the preconditioner is updated)
   unsigned int iterations_postprocessing =

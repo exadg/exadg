@@ -8,14 +8,12 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_DG_PRESSURE_CORRECTION_H_
 
-#include "interface.h"
-#include "momentum_operator.h"
+#include "dg_projection_methods.h"
 
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
-#include "../preconditioners/multigrid_preconditioner.h"
-#include "dg_projection_methods.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 namespace IncNS
 {

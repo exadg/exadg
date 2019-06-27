@@ -5,14 +5,14 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
 
-#include "operators/convective_operator.h"
-#include "operators/mass_matrix_operator.h"
-#include "operators/viscous_operator.h"
+#include "convective_operator.h"
+#include "mass_matrix_operator.h"
+#include "viscous_operator.h"
 
-#include "../../operators/operator_base.h"
+#include "../../../operators/operator_base.h"
 
 namespace IncNS
 {
@@ -25,7 +25,7 @@ struct MomentumOperatorData : public OperatorBaseData
       convective_problem(false),
       viscous_problem(false),
       scaling_factor_mass_matrix(1.0),
-      mg_operator_type(MultigridOperatorType::Undefined)
+      formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation)
   {
   }
 
@@ -39,11 +39,7 @@ struct MomentumOperatorData : public OperatorBaseData
   // update the whole multigrid preconditioner in the first time step.
   double scaling_factor_mass_matrix;
 
-  Operators::ConvectiveKernelData convective_kernel_data;
-  Operators::ViscousKernelData    viscous_kernel_data;
-
-  // Multigrid
-  MultigridOperatorType mg_operator_type;
+  FormulationConvectiveTerm formulation_convective_term;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
@@ -69,7 +65,14 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         MomentumOperatorData<dim> const & data) const;
+         MomentumOperatorData<dim> const & data);
+
+  void
+  reinit(MatrixFree<dim, Number> const &         matrix_free,
+         AffineConstraints<double> const &       constraint_matrix,
+         MomentumOperatorData<dim> const &       data,
+         Operators::ConvectiveKernelData const & convective_kernel_data,
+         Operators::ViscousKernelData const &    viscous_kernel_data);
 
   void
   reinit(MatrixFree<dim, Number> const &                           matrix_free,
@@ -77,6 +80,12 @@ public:
          MomentumOperatorData<dim> const &                         data,
          std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel,
          std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel);
+
+  Operators::ConvectiveKernelData
+  get_convective_kernel_data() const;
+
+  Operators::ViscousKernelData
+  get_viscous_kernel_data() const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -164,14 +173,14 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  mutable std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
-  mutable std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
-  mutable std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
+  std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 };
 
 
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_MOMENTUM_OPERATOR_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_ \
         */

@@ -5,13 +5,13 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
-#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_
+#ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_MOMENTUM_H_
+#define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_MOMENTUM_H_
 
 
 #include "../../operators/multigrid_operator.h"
 #include "../../solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
-#include "../spatial_discretization/momentum_operator.h"
+#include "../spatial_discretization/operators/momentum_operator.h"
 
 namespace IncNS
 {
@@ -42,22 +42,18 @@ public:
              parallel::Triangulation<dim> const * tria,
              FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             PDEOperatorNumber const &            pde_operator_in,
+             PDEOperatorNumber const &            pde_operator,
+             MultigridOperatorType const &        mg_operator_type,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    pde_operator = &pde_operator_in;
+    this->pde_operator = &pde_operator;
 
-    data            = pde_operator->get_data();
+    this->mg_operator_type = mg_operator_type;
+
+    data            = this->pde_operator->get_data();
     data.dof_index  = 0;
     data.quad_index = 0;
-
-    // do not forget to update viscous_kernel_data!
-    data.viscous_kernel_data.dof_index = data.dof_index;
-
-    // do not forget to update convective_kernel_data!
-    data.convective_kernel_data.dof_index             = data.dof_index;
-    data.convective_kernel_data.quad_index_linearized = data.quad_index;
 
     // When solving the reaction-convection-diffusion problem, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
@@ -65,15 +61,15 @@ public:
     // reaction-convection-diffusion operator. Accordingly, we have to reset which
     // operators should be "active" for the multigrid preconditioner, independently of
     // the actual equation type that is solved.
-    AssertThrow(data.mg_operator_type != MultigridOperatorType::Undefined,
+    AssertThrow(this->mg_operator_type != MultigridOperatorType::Undefined,
                 ExcMessage("Invalid parameter mg_operator_type."));
 
-    if(data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    if(this->mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
       // deactivate convective term for multigrid preconditioner
       data.convective_problem = false;
     }
-    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    else if(this->mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
       AssertThrow(data.convective_problem == true, ExcMessage("Invalid parameter."));
     }
@@ -138,11 +134,25 @@ public:
   initialize_operator(unsigned int const level)
   {
     // initialize pde_operator in a first step
-    std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+    std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
+
+    Operators::ConvectiveKernelData convective_kernel_data =
+      this->pde_operator->get_convective_kernel_data();
+    Operators::ViscousKernelData viscous_kernel_data =
+      this->pde_operator->get_viscous_kernel_data();
+
+    // The polynomial degree changes in case of p-multigrid, so we have to adapt
+    // viscous_kernel_data.
+    viscous_kernel_data.degree = this->level_info[level].degree();
+
+    pde_operator_level->reinit(*this->matrix_free_objects[level],
+                               *this->constraints[level],
+                               data,
+                               convective_kernel_data,
+                               viscous_kernel_data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
-    std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
+    std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));
 
     return mg_operator;
   }
@@ -173,8 +183,6 @@ private:
       set_time(pde_operator->get_time());
       set_scaling_factor_time_derivative_term(pde_operator->get_scaling_factor_mass_matrix());
     }
-
-    MultigridOperatorType mg_operator_type = pde_operator->get_data().mg_operator_type;
 
     if(mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
@@ -272,9 +280,11 @@ private:
   MomentumOperatorData<dim> data;
 
   PDEOperatorNumber const * pde_operator;
+
+  MultigridOperatorType mg_operator_type;
 };
 
 } // namespace IncNS
 
-#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_H_ \
+#endif /* INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_PRECONDITIONERS_MULTIGRID_PRECONDITIONER_MOMENTUM_H_ \
         */

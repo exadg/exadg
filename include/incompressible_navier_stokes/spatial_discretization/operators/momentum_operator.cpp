@@ -6,7 +6,23 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                       AffineConstraints<double> const & constraint_matrix,
-                                      MomentumOperatorData<dim> const & data) const
+                                      MomentumOperatorData<dim> const & data)
+{
+  (void)matrix_free;
+  (void)constraint_matrix;
+  (void)data;
+
+  AssertThrow(false, ExcMessage("This reinit function is not implemented for MomentumOperator."));
+}
+
+template<int dim, typename Number>
+void
+MomentumOperator<dim, Number>::reinit(
+  MatrixFree<dim, Number> const &         matrix_free,
+  AffineConstraints<double> const &       constraint_matrix,
+  MomentumOperatorData<dim> const &       data,
+  Operators::ConvectiveKernelData const & convective_kernel_data,
+  Operators::ViscousKernelData const &    viscous_kernel_data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 
@@ -20,13 +36,17 @@ MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_f
   if(this->data.convective_problem)
   {
     this->convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-    this->convective_kernel->reinit(matrix_free, this->data.convective_kernel_data, this->is_mg);
+    this->convective_kernel->reinit(matrix_free,
+                                    convective_kernel_data,
+                                    this->data.dof_index,
+                                    this->data.quad_index,
+                                    this->is_mg);
   }
 
   if(this->data.viscous_problem)
   {
     this->viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-    this->viscous_kernel->reinit(matrix_free, this->data.viscous_kernel_data);
+    this->viscous_kernel->reinit(matrix_free, viscous_kernel_data, this->data.dof_index);
   }
 
   if(this->data.unsteady_problem)
@@ -67,6 +87,26 @@ MomentumOperator<dim, Number>::reinit(
       this->integrator_flags || this->convective_kernel->get_integrator_flags();
   if(this->data.viscous_problem)
     this->integrator_flags = this->integrator_flags || this->viscous_kernel->get_integrator_flags();
+}
+
+template<int dim, typename Number>
+Operators::ConvectiveKernelData
+MomentumOperator<dim, Number>::get_convective_kernel_data() const
+{
+  if(this->data.convective_problem)
+    return convective_kernel->get_data();
+  else
+    return Operators::ConvectiveKernelData();
+}
+
+template<int dim, typename Number>
+Operators::ViscousKernelData
+MomentumOperator<dim, Number>::get_viscous_kernel_data() const
+{
+  if(this->data.viscous_problem)
+    return viscous_kernel->get_data();
+  else
+    return Operators::ViscousKernelData();
 }
 
 template<int dim, typename Number>
@@ -216,18 +256,18 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
   bool const get_gradient =
     this->data.viscous_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::ConvectiveFormulation);
+    (this->data.convective_problem &&
+     this->data.formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation);
 
   bool const submit_value =
     this->data.unsteady_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::ConvectiveFormulation);
+    (this->data.convective_problem &&
+     this->data.formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation);
 
   bool const submit_gradient =
     this->data.viscous_problem ||
-    (this->data.convective_problem && this->data.convective_kernel_data.formulation ==
-                                        FormulationConvectiveTerm::DivergenceFormulation);
+    (this->data.convective_problem &&
+     this->data.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -251,13 +291,12 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
     {
       vector u = convective_kernel->get_velocity_cell(q);
 
-      if(this->data.convective_kernel_data.formulation ==
-         FormulationConvectiveTerm::DivergenceFormulation)
+      if(this->data.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       {
         gradient_flux +=
           convective_kernel->get_volume_flux_linearized_divergence_formulation(u, value);
       }
-      else if(this->data.convective_kernel_data.formulation ==
+      else if(this->data.formulation_convective_term ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
         tensor grad_u = convective_kernel->get_velocity_gradient_cell(q);

@@ -43,7 +43,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const & matrix_free,
          DiffusiveKernelData const &     data_in,
-         unsigned int const              dof_index) const
+         unsigned int const              dof_index)
   {
     data = data_in;
 
@@ -149,10 +149,11 @@ public:
   }
 
 private:
-  mutable DiffusiveKernelData data;
+  DiffusiveKernelData data;
 
-  mutable AlignedVector<scalar> array_penalty_parameter;
-  mutable scalar                tau;
+  AlignedVector<scalar> array_penalty_parameter;
+
+  mutable scalar tau;
 };
 
 } // namespace Operators
@@ -187,7 +188,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &    matrix_free,
          AffineConstraints<double> const &  constraint_matrix,
-         DiffusiveOperatorData<dim> const & data) const;
+         DiffusiveOperatorData<dim> const & data);
 
 private:
   void

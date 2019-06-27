@@ -543,7 +543,9 @@ TimeIntBDFDualSplitting<Number>::projection_step()
     // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_projection &&
-      (this->time_step_number % this->param.update_preconditioner_projection_every_time_steps == 0);
+      ((this->time_step_number - 1) %
+         this->param.update_preconditioner_projection_every_time_steps ==
+       0);
 
     iterations_projection =
       this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
@@ -625,7 +627,8 @@ TimeIntBDFDualSplitting<Number>::viscous_step()
     // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_viscous &&
-      (this->time_step_number % this->param.update_preconditioner_viscous_every_time_steps == 0);
+      ((this->time_step_number - 1) % this->param.update_preconditioner_viscous_every_time_steps ==
+       0);
 
     unsigned int iterations_viscous = pde_operator->solve_viscous(
       velocity_np, rhs, update_preconditioner, this->get_scaling_factor_time_derivative_term());

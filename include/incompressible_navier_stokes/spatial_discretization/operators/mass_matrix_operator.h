@@ -108,7 +108,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         MassMatrixOperatorData const &    data) const;
+         MassMatrixOperatorData const &    data);
 
   void
   apply_scale(VectorType & dst, Number const & factor, VectorType const & src) const

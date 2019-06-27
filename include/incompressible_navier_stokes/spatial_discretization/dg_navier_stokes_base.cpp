@@ -8,6 +8,7 @@
 #include "dg_navier_stokes_base.h"
 
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_projection.h"
 
 namespace IncNS
 {
@@ -76,9 +77,6 @@ DGNavierStokesBase<dim, Number>::setup(
 
   // depending on MatrixFree
   initialize_operators();
-
-  // depending on MatrixFree
-  setup_projection_operator();
 
   // turbulence model
   if(param.use_turbulence_model == true)
@@ -209,8 +207,11 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   if(param.right_hand_side)
     flags = flags || Operators::RHSKernel<dim, Number>::get_mapping_flags();
 
-  if(param.use_divergence_penalty || param.use_continuity_penalty)
-    flags = flags || ProjectionOperator<dim, Number>::get_mapping_flags();
+  if(param.use_divergence_penalty)
+    flags = flags || Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags();
+
+  if(param.use_continuity_penalty)
+    flags = flags || Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags();
 
   additional_data.mapping_update_flags                = flags.cells;
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
@@ -267,18 +268,21 @@ void
 DGNavierStokesBase<dim, Number>::initialize_operators()
 {
   // operator kernels
-  convective_kernel_data.formulation           = param.formulation_convective_term;
-  convective_kernel_data.upwind_factor         = param.upwind_factor;
-  convective_kernel_data.use_outflow_bc        = param.use_outflow_bc_convective_term;
-  convective_kernel_data.type_dirichlet_bc     = param.type_dirichlet_bc_convective;
-  convective_kernel_data.dof_index             = dof_index_u;
-  convective_kernel_data.quad_index_linearized = this->get_quad_index_velocity_linearized();
+  Operators::ConvectiveKernelData convective_kernel_data;
+  convective_kernel_data.formulation       = param.formulation_convective_term;
+  convective_kernel_data.upwind_factor     = param.upwind_factor;
+  convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
+  convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
   convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-  convective_kernel->reinit(matrix_free, convective_kernel_data, false /* is_mg */);
+  convective_kernel->reinit(matrix_free,
+                            convective_kernel_data,
+                            dof_index_u,
+                            get_quad_index_velocity_linearized(),
+                            false /* is_mg */);
 
+  Operators::ViscousKernelData viscous_kernel_data;
   viscous_kernel_data.degree                       = param.degree_u;
   viscous_kernel_data.degree_mapping               = mapping_degree;
-  viscous_kernel_data.dof_index                    = dof_index_u;
   viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
   viscous_kernel_data.viscosity                    = param.viscosity;
   viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
@@ -286,7 +290,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
   viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-  viscous_kernel->reinit(matrix_free, viscous_kernel_data);
+  viscous_kernel->reinit(matrix_free, viscous_kernel_data, dof_index_u);
 
   AffineConstraints<double> constraint_dummy;
   constraint_dummy.close();
@@ -354,6 +358,81 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_operator_data.quad_index           = quad_index_u;
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
+
+  if(param.use_divergence_penalty)
+  {
+    // Kernel
+    Operators::DivergencePenaltyKernelData div_penalty_data;
+    div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
+    div_penalty_data.viscosity              = param.viscosity;
+    div_penalty_data.degree                 = param.degree_u;
+    div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
+
+    div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
+    div_penalty_kernel->reinit(matrix_free,
+                               get_dof_index_velocity(),
+                               get_quad_index_velocity_linear(),
+                               div_penalty_data);
+
+    // Operator
+    DivergencePenaltyData operator_data;
+    operator_data.dof_index  = get_dof_index_velocity();
+    operator_data.quad_index = get_quad_index_velocity_linear();
+
+    div_penalty_operator.reinit(matrix_free, operator_data, div_penalty_kernel);
+  }
+
+  if(param.use_continuity_penalty)
+  {
+    // Kernel
+    Operators::ContinuityPenaltyKernelData conti_penalty_data;
+
+    conti_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
+    conti_penalty_data.which_components       = param.continuity_penalty_components;
+    conti_penalty_data.viscosity              = param.viscosity;
+    conti_penalty_data.degree                 = param.degree_u;
+    conti_penalty_data.penalty_factor         = param.continuity_penalty_factor;
+
+    conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
+    conti_penalty_kernel->reinit(matrix_free,
+                                 get_dof_index_velocity(),
+                                 get_quad_index_velocity_linear(),
+                                 conti_penalty_data);
+
+    // Operator
+    ContinuityPenaltyData operator_data;
+    operator_data.dof_index  = get_dof_index_velocity();
+    operator_data.quad_index = get_quad_index_velocity_linear();
+
+    conti_penalty_operator.reinit(matrix_free, operator_data, conti_penalty_kernel);
+  }
+
+  if(param.use_divergence_penalty || param.use_continuity_penalty)
+  {
+    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
+       param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
+       (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution &&
+        param.add_penalty_terms_to_monolithic_system == false))
+    {
+      // setup projection operator
+      ProjectionOperatorData data;
+      data.use_divergence_penalty = param.use_divergence_penalty;
+      data.use_continuity_penalty = param.use_continuity_penalty;
+      data.dof_index              = get_dof_index_velocity();
+      data.quad_index             = get_quad_index_velocity_linear();
+      data.use_cell_based_loops   = param.use_cell_based_face_loops;
+      data.implement_block_diagonal_preconditioner_matrix_free =
+        param.implement_block_diagonal_preconditioner_matrix_free;
+      data.solver_block_diagonal         = Elementwise::Solver::CG;
+      data.preconditioner_block_diagonal = param.preconditioner_block_diagonal_projection;
+      data.solver_data_block_diagonal    = param.solver_data_block_diagonal_projection;
+
+      projection_operator.reset(new PROJ_OPERATOR());
+
+      projection_operator->reinit(
+        matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
+    }
+  }
 }
 
 template<int dim, typename Number>
@@ -375,15 +454,7 @@ DGNavierStokesBase<dim, Number>::initialize_momentum_operator(
 
   data.viscous_problem = param.viscous_problem();
 
-  data.viscous_kernel_data    = viscous_kernel_data;
-  data.convective_kernel_data = convective_kernel_data;
-
-  if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    data.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
-  else if(param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    data.mg_operator_type = param.multigrid_operator_type_momentum;
-  else if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    data.mg_operator_type = param.multigrid_operator_type_velocity_block;
+  data.formulation_convective_term = param.formulation_convective_term;
 
   data.bc = boundary_descriptor_velocity;
 
@@ -1034,7 +1105,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_divergence_term(
   {
     VectorType dst;
     dst.reinit(velocity, false);
-    projection_operator->apply_div_penalty(dst, velocity);
+    div_penalty_operator.apply(dst, velocity);
     return velocity * dst;
   }
   else
@@ -1052,7 +1123,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
   {
     VectorType dst;
     dst.reinit(velocity, false);
-    projection_operator->apply_conti_penalty(dst, velocity);
+    conti_penalty_operator.apply(dst, velocity);
     return velocity * dst;
   }
   else
@@ -1063,47 +1134,14 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::setup_projection_operator()
-{
-  // setup projection operator
-  ProjectionOperatorData proj_op_data;
-  proj_op_data.type_penalty_parameter = param.type_penalty_parameter;
-  proj_op_data.viscosity              = param.viscosity;
-  proj_op_data.use_divergence_penalty = param.use_divergence_penalty;
-  proj_op_data.use_continuity_penalty = param.use_continuity_penalty;
-  proj_op_data.degree                 = param.degree_u;
-  proj_op_data.penalty_factor_div     = param.divergence_penalty_factor;
-  proj_op_data.penalty_factor_conti   = param.continuity_penalty_factor;
-  proj_op_data.which_components       = param.continuity_penalty_components;
-  proj_op_data.use_cell_based_loops   = param.use_cell_based_face_loops;
-  proj_op_data.implement_block_diagonal_preconditioner_matrix_free =
-    param.implement_block_diagonal_preconditioner_matrix_free;
-  proj_op_data.preconditioner_block_jacobi = param.preconditioner_block_diagonal_projection;
-  proj_op_data.block_jacobi_solver_data    = param.solver_data_block_diagonal_projection;
-
-  projection_operator.reset(new PROJ_OPERATOR(
-    matrix_free, get_dof_index_velocity(), get_quad_index_velocity_linear(), proj_op_data));
-}
-
-template<int dim, typename Number>
-void
 DGNavierStokesBase<dim, Number>::setup_projection_solver()
 {
   // setup projection solver
 
-  // divergence penalty only
+  // divergence penalty only -> local, elementwise problem
   if(param.use_divergence_penalty == true && param.use_continuity_penalty == false)
   {
-    // use direct solver
-    if(param.solver_projection == SolverProjection::LU)
-    {
-      // projection operator
-      typedef DirectProjectionSolverDivergencePenalty<dim, Number, PROJ_OPERATOR> PROJ_SOLVER;
-
-      projection_solver.reset(new PROJ_SOLVER(*projection_operator));
-    }
-    // use iterative solver (PCG)
-    else if(param.solver_projection == SolverProjection::CG)
+    if(param.solver_projection == SolverProjection::CG)
     {
       // projection operator
       elementwise_projection_operator.reset(new ELEMENTWISE_PROJ_OPERATOR(*projection_operator));
@@ -1152,8 +1190,8 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
       AssertThrow(false, ExcMessage("Specified projection solver not implemented."));
     }
   }
-  // both divergence and continuity penalty terms
-  else if(param.use_divergence_penalty == true && param.use_continuity_penalty == true)
+  // continuity penalty term with/without divergence penalty term -> globally coupled problem
+  else if(param.use_continuity_penalty == true)
   {
     // preconditioner
     if(param.preconditioner_projection == PreconditionerProjection::None)
@@ -1169,8 +1207,8 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     {
       // Note that at this point (when initializing the Jacobi preconditioner and calculating the
       // diagonal) the penalty parameter of the projection operator has not been calculated and the
-      // time step size has not been set. Hence, update_preconditioner = true should be used for the
-      // Jacobi preconditioner in order to use to correct diagonal for preconditioning.
+      // time step size has not been set. Hence, 'update_preconditioner = true' should be used for
+      // the Jacobi preconditioner in order to use to correct diagonal for preconditioning.
       preconditioner_projection.reset(new JacobiPreconditioner<PROJ_OPERATOR>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
     }
@@ -1178,10 +1216,32 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     {
       // Note that at this point (when initializing the Jacobi preconditioner)
       // the penalty parameter of the projection operator has not been calculated and the time step
-      // size has not been set. Hence, update_preconditioner = true should be used for the Jacobi
+      // size has not been set. Hence, 'update_preconditioner = true' should be used for the Jacobi
       // preconditioner in order to use to correct diagonal blocks for preconditioning.
       preconditioner_projection.reset(new BlockJacobiPreconditioner<PROJ_OPERATOR>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator)));
+    }
+    else if(param.preconditioner_projection == PreconditionerProjection::Multigrid)
+    {
+      typedef MultigridPreconditionerProjection<dim, Number, MultigridNumber> MULTIGRID;
+
+      preconditioner_projection.reset(new MULTIGRID());
+
+      std::shared_ptr<MULTIGRID> mg_preconditioner =
+        std::dynamic_pointer_cast<MULTIGRID>(preconditioner_projection);
+
+      auto & dof_handler = this->get_dof_handler_u();
+
+      parallel::Triangulation<dim> const * tria =
+        dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+
+      const FiniteElement<dim> & fe = dof_handler.get_fe();
+
+      mg_preconditioner->initialize(this->param.multigrid_data_projection,
+                                    tria,
+                                    fe,
+                                    this->get_mapping(),
+                                    *this->projection_operator);
     }
     else
     {
@@ -1193,37 +1253,47 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     if(param.solver_projection == SolverProjection::CG)
     {
       // setup solver data
-      CGSolverData projection_solver_data;
-      projection_solver_data.max_iter             = param.solver_data_projection.max_iter;
-      projection_solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
-      projection_solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
+      CGSolverData solver_data;
+      solver_data.max_iter             = param.solver_data_projection.max_iter;
+      solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
+      solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
       // default value of use_preconditioner = false
-      if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix ||
-         param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
-         param.preconditioner_projection == PreconditionerProjection::BlockJacobi)
+      if(param.preconditioner_projection != PreconditionerProjection::None)
       {
-        projection_solver_data.use_preconditioner = true;
-      }
-      else
-      {
-        AssertThrow(param.preconditioner_projection == PreconditionerProjection::None ||
-                      param.preconditioner_projection ==
-                        PreconditionerProjection::InverseMassMatrix ||
-                      param.preconditioner_projection == PreconditionerProjection::PointJacobi ||
-                      param.preconditioner_projection == PreconditionerProjection::BlockJacobi,
-                    ExcMessage("Specified preconditioner of projection solver not implemented."));
+        solver_data.use_preconditioner = true;
       }
 
       // setup solver
       projection_solver.reset(new CGSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
         *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
         *preconditioner_projection,
-        projection_solver_data));
+        solver_data));
+    }
+    else if(param.solver_projection == SolverProjection::FGMRES)
+    {
+      // setup solver data
+      FGMRESSolverData solver_data;
+      solver_data.max_iter             = param.solver_data_projection.max_iter;
+      solver_data.solver_tolerance_abs = param.solver_data_projection.abs_tol;
+      solver_data.solver_tolerance_rel = param.solver_data_projection.rel_tol;
+      solver_data.max_n_tmp_vectors    = param.solver_data_projection.max_krylov_size;
+
+      // default value of use_preconditioner = false
+      if(param.preconditioner_projection != PreconditionerProjection::None)
+      {
+        solver_data.use_preconditioner = true;
+      }
+
+      // setup solver
+      projection_solver.reset(
+        new FGMRESSolver<PROJ_OPERATOR, PreconditionerBase<Number>, VectorType>(
+          *std::dynamic_pointer_cast<PROJ_OPERATOR>(projection_operator),
+          *preconditioner_projection,
+          solver_data));
     }
     else
     {
-      AssertThrow(param.solver_projection == SolverProjection::CG,
-                  ExcMessage("Specified projection solver not implemented."));
+      AssertThrow(false, ExcMessage("Specified projection solver not implemented."));
     }
   }
   else
@@ -1251,10 +1321,8 @@ DGNavierStokesBase<dim, Number>::update_projection_operator(VectorType const & v
               ExcMessage("Projection operator is not initialized."));
 
   // Update projection operator, i.e., the penalty parameters that depend on the velocity field
-  projection_operator->calculate_penalty_parameter(velocity);
-
-  // Set the correct time step size.
-  projection_operator->set_time_step_size(time_step_size);
+  // and the time step size
+  projection_operator->update(velocity, time_step_size);
 }
 
 template<int dim, typename Number>

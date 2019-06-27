@@ -8,8 +8,8 @@
 
 #include "../../../../../include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.h"
 #include "../../../../../include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.h"
+#include "../../../../../include/incompressible_navier_stokes/spatial_discretization/operators/projection_operator.h"
 #include "../../../../../include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.h"
-#include "../../../../../include/incompressible_navier_stokes/spatial_discretization/projection_operator.h"
 
 namespace IncNS
 {

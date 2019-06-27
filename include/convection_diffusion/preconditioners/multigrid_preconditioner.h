@@ -42,12 +42,15 @@ public:
              parallel::Triangulation<dim> const * tria,
              FiniteElement<dim> const &           fe,
              Mapping<dim> const &                 mapping,
-             PDEOperatorNumber const &            pde_operator_in,
+             PDEOperatorNumber const &            pde_operator,
+             MultigridOperatorType const &        mg_operator_type,
              Map const *                          dirichlet_bc        = nullptr,
              PeriodicFacePairs *                  periodic_face_pairs = nullptr)
   {
-    pde_operator    = &pde_operator_in;
-    data            = pde_operator->get_data();
+    this->pde_operator     = &pde_operator;
+    this->mg_operator_type = mg_operator_type;
+
+    data            = this->pde_operator->get_data();
     data.dof_index  = 0;
     data.quad_index = 0;
 
@@ -57,22 +60,22 @@ public:
     // reaction-convection-diffusion operator. Accordingly, we have to reset which
     // operators should be "active" for the multigrid preconditioner, independently of
     // the actual equation type that is solved.
-    AssertThrow(data.mg_operator_type != MultigridOperatorType::Undefined,
+    AssertThrow(this->mg_operator_type != MultigridOperatorType::Undefined,
                 ExcMessage("Invalid parameter mg_operator_type."));
 
-    if(data.mg_operator_type == MultigridOperatorType::ReactionDiffusion)
+    if(this->mg_operator_type == MultigridOperatorType::ReactionDiffusion)
     {
       // deactivate convective term for multigrid preconditioner
       data.convective_problem = false;
       data.diffusive_problem  = true;
     }
-    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvection)
+    else if(this->mg_operator_type == MultigridOperatorType::ReactionConvection)
     {
       data.convective_problem = true;
       // deactivate viscous term for multigrid preconditioner
       data.diffusive_problem = false;
     }
-    else if(data.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    else if(this->mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
       data.convective_problem = true;
       data.diffusive_problem  = true;
@@ -91,7 +94,13 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
-    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+
+    // The polynomial degree changes in case of p-multigrid, so we have to adapt
+    // diffusive_kernel_data.
+    OperatorData<dim> data_level            = data;
+    data_level.diffusive_kernel_data.degree = this->level_info[level].degree();
+
+    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data_level);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
@@ -219,8 +228,7 @@ public:
   virtual void
   update()
   {
-    MultigridOperatorType mg_operator_type = pde_operator->get_data().mg_operator_type;
-    TypeVelocityField     type_velocity_field =
+    TypeVelocityField type_velocity_field =
       pde_operator->get_data().convective_kernel_data.type_velocity_field;
 
     if(type_velocity_field == TypeVelocityField::Numerical &&
@@ -353,6 +361,8 @@ private:
   OperatorData<dim> data;
 
   PDEOperatorNumber const * pde_operator;
+
+  MultigridOperatorType mg_operator_type;
 };
 
 } // namespace ConvDiff

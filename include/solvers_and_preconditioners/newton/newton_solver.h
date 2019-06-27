@@ -8,6 +8,8 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_NEWTON_SOLVER_H_
 
+#include <deal.II/base/exceptions.h>
+
 #include "newton_solver_data.h"
 
 template<typename VectorType,

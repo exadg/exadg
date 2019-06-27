@@ -614,11 +614,11 @@ enum_to_string(SolverProjection const enum_type)
 
   switch(enum_type)
   {
-    case SolverProjection::LU:
-      string_type = "LU";
-      break;
     case SolverProjection::CG:
       string_type = "CG";
+      break;
+    case SolverProjection::FGMRES:
+      string_type = "FGMRES";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
@@ -638,14 +638,17 @@ enum_to_string(PreconditionerProjection const enum_type)
     case PreconditionerProjection::None:
       string_type = "None";
       break;
+    case PreconditionerProjection::InverseMassMatrix:
+      string_type = "InverseMassMatrix";
+      break;
     case PreconditionerProjection::PointJacobi:
       string_type = "PointJacobi";
       break;
     case PreconditionerProjection::BlockJacobi:
       string_type = "BlockJacobi";
       break;
-    case PreconditionerProjection::InverseMassMatrix:
-      string_type = "InverseMassMatrix";
+    case PreconditionerProjection::Multigrid:
+      string_type = "Multigrid";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));

@@ -14,7 +14,7 @@ template<int dim, typename Number>
 void
 ViscousOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                      AffineConstraints<double> const & constraint_matrix,
-                                     ViscousOperatorData<dim> const &  data) const
+                                     ViscousOperatorData<dim> const &  data)
 {
   (void)matrix_free;
   (void)constraint_matrix;

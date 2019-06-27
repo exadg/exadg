@@ -90,7 +90,12 @@ public:
   {
     // initialize pde_operator in a first step
     std::shared_ptr<Laplace> pde_operator(new Laplace());
-    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+
+    // The polynomial degree changes in case of p-multigrid, so we have to adapt kernel data.
+    LaplaceOperatorData<dim> data_level = data;
+    data_level.kernel_data.degree       = this->level_info[level].degree();
+
+    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data_level);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));

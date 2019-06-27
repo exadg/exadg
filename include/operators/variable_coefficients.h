@@ -49,7 +49,7 @@ public:
   }
 
   scalar
-  get_coefficient_cell(unsigned int const cell, unsigned int const q)
+  get_coefficient_cell(unsigned int const cell, unsigned int const q) const
   {
     return coefficients_cell[cell][q];
   }
@@ -61,7 +61,7 @@ public:
   }
 
   scalar
-  get_coefficient_face(unsigned int const face, unsigned int const q)
+  get_coefficient_face(unsigned int const face, unsigned int const q) const
   {
     return coefficients_face[face][q];
   }
@@ -73,7 +73,7 @@ public:
   }
 
   scalar
-  get_coefficient_face_neighbor(unsigned int const face, unsigned int const q)
+  get_coefficient_face_neighbor(unsigned int const face, unsigned int const q) const
   {
     return coefficients_face_neighbor[face][q];
   }
@@ -87,7 +87,7 @@ public:
   // TODO
   //  scalar
   //  get_coefficient_cell_based(unsigned int const face,
-  //                             unsigned int const q)
+  //                             unsigned int const q) const
   //  {
   //    return coefficients_face_cell_based[face][q];
   //  }

@@ -135,6 +135,9 @@ add_constraints(
         // is potentially dangerous but we know what we are doing... ;-)
         if(level != numbers::invalid_unsigned_int)
         {
+          if(mg_constrained_dofs.get_boundary_indices(level).size() != dof_handler.n_dofs(level))
+            const_cast<IndexSet &>(mg_constrained_dofs.get_boundary_indices(level))
+              .set_size(dof_handler.n_dofs(level));
           const_cast<IndexSet &>(mg_constrained_dofs.get_boundary_indices(level))
             .add_index(line_index);
         }

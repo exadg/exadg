@@ -22,8 +22,7 @@ struct OperatorData : public OperatorBaseData
       unsteady_problem(false),
       convective_problem(false),
       diffusive_problem(false),
-      scaling_factor_mass_matrix(1.0),
-      mg_operator_type(MultigridOperatorType::Undefined)
+      scaling_factor_mass_matrix(1.0)
   {
   }
 
@@ -41,8 +40,6 @@ struct OperatorData : public OperatorBaseData
   Operators::DiffusiveKernelData       diffusive_kernel_data;
 
   std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
-
-  MultigridOperatorType mg_operator_type;
 };
 
 template<int dim, typename Number>
@@ -66,7 +63,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         OperatorData<dim> const &         data) const;
+         OperatorData<dim> const &         data);
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -81,7 +78,7 @@ public:
   get_scaling_factor_mass_matrix() const;
 
   void
-  set_scaling_factor_mass_matrix(Number const & number) const;
+  set_scaling_factor_mass_matrix(Number const & number);
 
 private:
   void

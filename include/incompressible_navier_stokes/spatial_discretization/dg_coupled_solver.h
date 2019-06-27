@@ -18,7 +18,7 @@
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../preconditioners/compatible_laplace_multigrid_preconditioner.h"
 #include "../preconditioners/compatible_laplace_operator.h"
-#include "../preconditioners/multigrid_preconditioner.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 namespace IncNS
 {
@@ -214,14 +214,14 @@ public:
    *  which depends on the current velocity field
    */
   void
-  update_divergence_penalty_operator(VectorType const & velocity) const;
+  update_divergence_penalty_operator(VectorType const & velocity);
 
   /*
    *  Update continuity penalty operator by recalculating the penalty parameter
    *  which depends on the current velocity field
    */
   void
-  update_continuity_penalty_operator(VectorType const & velocity) const;
+  update_continuity_penalty_operator(VectorType const & velocity);
 
 
   /*

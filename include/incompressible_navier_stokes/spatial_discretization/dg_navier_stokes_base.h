@@ -31,19 +31,16 @@
 #include "../../incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.h"
 
 // operators
+#include "../../operators/inverse_mass_matrix.h"
+#include "../../poisson/spatial_discretization/laplace_operator.h"
 #include "operators/convective_operator.h"
 #include "operators/divergence_operator.h"
 #include "operators/gradient_operator.h"
 #include "operators/mass_matrix_operator.h"
+#include "operators/momentum_operator.h"
+#include "operators/projection_operator.h"
 #include "operators/rhs_operator.h"
 #include "operators/viscous_operator.h"
-
-#include "momentum_operator.h"
-#include "projection_operator.h"
-
-#include "../../poisson/spatial_discretization/laplace_operator.h"
-
-#include "../../operators/inverse_mass_matrix.h"
 
 // LES turbulence model
 #include "turbulence_model.h"
@@ -56,8 +53,7 @@
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
-#include "../preconditioners/multigrid_preconditioner.h"
-#include "projection_solvers.h"
+#include "../preconditioners/multigrid_preconditioner_momentum.h"
 
 // time integration
 #include "time_integration/time_step_calculation.h"
@@ -446,11 +442,11 @@ protected:
   /*
    * Operator kernels.
    */
-  Operators::ConvectiveKernelData convective_kernel_data;
-  Operators::ViscousKernelData    viscous_kernel_data;
-
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
+
+  std::shared_ptr<Operators::DivergencePenaltyKernel<dim, Number>> div_penalty_kernel;
+  std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> conti_penalty_kernel;
 
   /*
    * Basic operators.
@@ -461,6 +457,9 @@ protected:
   RHSOperator<dim, Number>        rhs_operator;
   GradientOperator<dim, Number>   gradient_operator;
   DivergenceOperator<dim, Number> divergence_operator;
+
+  DivergencePenaltyOperator<dim, Number> div_penalty_operator;
+  ContinuityPenaltyOperator<dim, Number> conti_penalty_operator;
 
   /*
    * Linear(ized) momentum operator.
@@ -528,9 +527,6 @@ private:
   void
   initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
                                VectorType const & velocity);
-
-  void
-  setup_projection_operator();
 
   void
   initialize_turbulence_model();
