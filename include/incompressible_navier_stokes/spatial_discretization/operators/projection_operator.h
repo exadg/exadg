@@ -78,7 +78,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         ProjectionOperatorData const &    data) const;
+         ProjectionOperatorData const &    data);
 
   void
   reinit(MatrixFree<dim, Number> const &                matrix_free,

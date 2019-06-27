@@ -738,7 +738,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::update_conv_diff_operator(double const       time,
                                                    double const       scaling_factor,
-                                                   VectorType const * velocity) const
+                                                   VectorType const * velocity)
 {
   combined_operator.set_scaling_factor_mass_matrix(scaling_factor);
   combined_operator.set_time(time);

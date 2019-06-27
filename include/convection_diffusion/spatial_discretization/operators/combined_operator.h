@@ -63,7 +63,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         OperatorData<dim> const &         data) const;
+         OperatorData<dim> const &         data);
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -78,7 +78,7 @@ public:
   get_scaling_factor_mass_matrix() const;
 
   void
-  set_scaling_factor_mass_matrix(Number const & number) const;
+  set_scaling_factor_mass_matrix(Number const & number);
 
 private:
   void

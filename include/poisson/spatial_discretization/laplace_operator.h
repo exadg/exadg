@@ -42,7 +42,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const & matrix_free,
          LaplaceKernelData const &       data_in,
-         unsigned int const              dof_index) const
+         unsigned int const              dof_index)
   {
     data = data_in;
 
@@ -139,10 +139,11 @@ public:
   }
 
 private:
-  mutable LaplaceKernelData data;
+  LaplaceKernelData data;
 
-  mutable AlignedVector<scalar> array_penalty_parameter;
-  mutable scalar                tau;
+  AlignedVector<scalar> array_penalty_parameter;
+
+  mutable scalar tau;
 };
 
 } // namespace Operators
@@ -178,7 +179,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         LaplaceOperatorData<dim> const &  data) const;
+         LaplaceOperatorData<dim> const &  data);
 
 private:
   void

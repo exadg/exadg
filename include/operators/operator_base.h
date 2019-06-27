@@ -95,7 +95,7 @@ public:
   virtual void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         AdditionalData const &            operator_data) const;
+         AdditionalData const &            operator_data);
 
   /*
    *  Getters and setters.
@@ -318,7 +318,7 @@ protected:
   /*
    * Data structure containing all operator-specific data.
    */
-  mutable AdditionalData data;
+  AdditionalData data;
 
   /*
    * Matrix-free object.
@@ -336,18 +336,18 @@ protected:
   mutable lazy_ptr<AffineConstraints<double>> constraint;
 
   /*
-   * Cell and face integrators.
+   * Cell and face integrator flags.
    */
-  mutable IntegratorFlags integrator_flags;
+  IntegratorFlags integrator_flags;
 
   /*
    * Is the operator used as a multigrid level operator?
    */
-  mutable bool is_mg;
+  bool is_mg;
 
-  mutable std::shared_ptr<IntegratorCell> integrator;
-  mutable std::shared_ptr<IntegratorFace> integrator_m;
-  mutable std::shared_ptr<IntegratorFace> integrator_p;
+  std::shared_ptr<IntegratorCell> integrator;
+  std::shared_ptr<IntegratorFace> integrator_m;
+  std::shared_ptr<IntegratorFace> integrator_p;
 
   /*
    * Block Jacobi preconditioner/smoother: matrix-free version with elementwise iterative solver
@@ -575,13 +575,13 @@ private:
   /*
    * Is the discretization based on discontinuous Galerkin method?
    */
-  mutable bool is_dg;
+  bool is_dg;
 
   /*
-   * Multigrid level: 0 <= level_mg_handler <= max_level. If the operator is not used as a multigrid
+   * Multigrid level: 0 <= level <= max_level. If the operator is not used as a multigrid
    * level operator, this variable takes a value of numbers::invalid_unsigned_int.
    */
-  mutable unsigned int level_mg_handler;
+  unsigned int level;
 
   /*
    * Vector of matrices for block-diagonal preconditioners.
@@ -600,7 +600,7 @@ private:
   /*
    * for CG
    */
-  mutable std::vector<unsigned int>              constrained_indices;
+  std::vector<unsigned int>                      constrained_indices;
   mutable std::vector<std::pair<Number, Number>> constrained_values;
 };
 

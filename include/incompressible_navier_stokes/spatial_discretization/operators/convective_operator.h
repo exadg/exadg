@@ -59,7 +59,7 @@ public:
          ConvectiveKernelData const &    data,
          unsigned int const              dof_index,
          unsigned int const              quad_index_linearized,
-         bool const                      is_mg) const
+         bool const                      is_mg)
   {
     this->data = data;
 
@@ -870,13 +870,13 @@ public:
   }
 
 private:
-  mutable ConvectiveKernelData data;
+  ConvectiveKernelData data;
 
   mutable lazy_ptr<VectorType> velocity;
 
-  mutable std::shared_ptr<IntegratorCell> integrator_velocity;
-  mutable std::shared_ptr<IntegratorFace> integrator_velocity_m;
-  mutable std::shared_ptr<IntegratorFace> integrator_velocity_p;
+  std::shared_ptr<IntegratorCell> integrator_velocity;
+  std::shared_ptr<IntegratorFace> integrator_velocity_m;
+  std::shared_ptr<IntegratorFace> integrator_velocity_p;
 };
 
 
@@ -942,7 +942,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &     matrix_free,
          AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & data) const;
+         ConvectiveOperatorData<dim> const & data);
 
   void
   reinit(MatrixFree<dim, Number> const &                           matrix_free,

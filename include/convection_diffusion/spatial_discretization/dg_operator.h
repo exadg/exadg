@@ -187,7 +187,7 @@ public:
   void
   update_conv_diff_operator(double const       evaluation_time,
                             double const       scaling_factor,
-                            VectorType const * velocity = nullptr) const;
+                            VectorType const * velocity = nullptr);
 
   /*
    * This function solves the linear system of equations in case of implicit time integration or

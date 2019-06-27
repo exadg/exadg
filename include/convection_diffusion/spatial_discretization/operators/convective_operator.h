@@ -55,7 +55,7 @@ public:
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          ConvectiveKernelData<dim> const & data_in,
          unsigned int const                quad_index,
-         bool const                        is_mg) const
+         bool const                        is_mg)
   {
     data = data_in;
 
@@ -337,13 +337,13 @@ public:
   }
 
 private:
-  mutable ConvectiveKernelData<dim> data;
+  ConvectiveKernelData<dim> data;
 
   mutable lazy_ptr<VectorType> velocity;
 
-  mutable std::shared_ptr<CellIntegratorVelocity> integrator_velocity;
-  mutable std::shared_ptr<FaceIntegratorVelocity> integrator_velocity_m;
-  mutable std::shared_ptr<FaceIntegratorVelocity> integrator_velocity_p;
+  std::shared_ptr<CellIntegratorVelocity> integrator_velocity;
+  std::shared_ptr<FaceIntegratorVelocity> integrator_velocity_m;
+  std::shared_ptr<FaceIntegratorVelocity> integrator_velocity_p;
 };
 
 } // namespace Operators
@@ -379,7 +379,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &     matrix_free,
          AffineConstraints<double> const &   constraint_matrix,
-         ConvectiveOperatorData<dim> const & data) const;
+         ConvectiveOperatorData<dim> const & data);
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;

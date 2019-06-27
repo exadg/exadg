@@ -9,7 +9,7 @@ template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
                                         AffineConstraints<double> const &   constraint_matrix,
-                                        ConvectiveOperatorData<dim> const & data) const
+                                        ConvectiveOperatorData<dim> const & data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 

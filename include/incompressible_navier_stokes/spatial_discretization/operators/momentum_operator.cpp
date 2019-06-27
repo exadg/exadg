@@ -6,7 +6,7 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                       AffineConstraints<double> const & constraint_matrix,
-                                      MomentumOperatorData<dim> const & data) const
+                                      MomentumOperatorData<dim> const & data)
 {
   (void)matrix_free;
   (void)constraint_matrix;
@@ -22,7 +22,7 @@ MomentumOperator<dim, Number>::reinit(
   AffineConstraints<double> const &       constraint_matrix,
   MomentumOperatorData<dim> const &       data,
   Operators::ConvectiveKernelData const & convective_kernel_data,
-  Operators::ViscousKernelData const &    viscous_kernel_data) const
+  Operators::ViscousKernelData const &    viscous_kernel_data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 

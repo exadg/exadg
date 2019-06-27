@@ -65,14 +65,14 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         MomentumOperatorData<dim> const & data) const;
+         MomentumOperatorData<dim> const & data);
 
   void
   reinit(MatrixFree<dim, Number> const &         matrix_free,
          AffineConstraints<double> const &       constraint_matrix,
          MomentumOperatorData<dim> const &       data,
          Operators::ConvectiveKernelData const & convective_kernel_data,
-         Operators::ViscousKernelData const &    viscous_kernel_data) const;
+         Operators::ViscousKernelData const &    viscous_kernel_data);
 
   void
   reinit(MatrixFree<dim, Number> const &                           matrix_free,
@@ -173,9 +173,9 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  mutable std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
-  mutable std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
-  mutable std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
+  std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 };
 
 

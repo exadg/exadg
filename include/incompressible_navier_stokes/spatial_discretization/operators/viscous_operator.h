@@ -61,7 +61,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const & matrix_free,
          ViscousKernelData const &       data,
-         unsigned int const              dof_index) const
+         unsigned int const              dof_index)
   {
     this->data = data;
 
@@ -472,12 +472,13 @@ public:
   }
 
 private:
-  mutable ViscousKernelData data;
+  ViscousKernelData data;
 
-  mutable AlignedVector<scalar> array_penalty_parameter;
-  mutable scalar                tau;
+  AlignedVector<scalar> array_penalty_parameter;
 
-  mutable VariableCoefficients<dim, Number> viscosity_coefficients;
+  mutable scalar tau;
+
+  VariableCoefficients<dim, Number> viscosity_coefficients;
 };
 
 } // namespace Operators
@@ -512,7 +513,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         ViscousOperatorData<dim> const &  data) const;
+         ViscousOperatorData<dim> const &  data);
 
   void
   reinit(MatrixFree<dim, Number> const &                        matrix_free,

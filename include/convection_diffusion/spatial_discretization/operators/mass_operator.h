@@ -18,7 +18,7 @@ public:
   }
 
   void
-  reinit(double const & factor) const
+  reinit(double const & factor)
   {
     set_scaling_factor(factor);
   }
@@ -53,7 +53,7 @@ public:
   }
 
   void
-  set_scaling_factor(Number const & number) const
+  set_scaling_factor(Number const & number)
   {
     scaling_factor = number;
   }
@@ -69,7 +69,7 @@ public:
   }
 
 private:
-  mutable Number scaling_factor;
+  Number scaling_factor;
 };
 
 } // namespace Operators
@@ -94,7 +94,7 @@ public:
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
-         MassMatrixOperatorData const &    data) const;
+         MassMatrixOperatorData const &    data);
 
   void
   set_scaling_factor(Number const & number);
