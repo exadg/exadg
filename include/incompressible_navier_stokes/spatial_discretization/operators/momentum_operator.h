@@ -9,9 +9,9 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_MOMENTUM_OPERATOR_H_
 
 #include "convective_operator.h"
-#include "mass_matrix_operator.h"
 #include "viscous_operator.h"
 
+#include "../../../operators/mass_matrix_kernel.h"
 #include "../../../operators/operator_base.h"
 
 namespace IncNS
@@ -62,6 +62,8 @@ public:
   // required by preconditioner interfaces
   typedef Number value_type;
 
+  MomentumOperator();
+
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
@@ -109,7 +111,7 @@ public:
   get_scaling_factor_mass_matrix() const;
 
   void
-  set_scaling_factor_mass_matrix(Number const & number) const;
+  set_scaling_factor_mass_matrix(Number const & number);
 
   /*
    * Interfaces of OperatorBase.
@@ -173,9 +175,11 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  std::shared_ptr<Operators::MassMatrixKernel<dim, Number>> mass_kernel;
+  std::shared_ptr<MassMatrixKernel<dim, Number>>            mass_kernel;
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
+
+  double scaling_factor_mass_matrix;
 };
 
 

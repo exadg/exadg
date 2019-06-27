@@ -194,7 +194,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
 
   MappingFlags flags;
 
-  flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+  flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
   flags = flags || Operators::DivergenceKernel<dim, Number>::get_mapping_flags();
   flags = flags || Operators::GradientKernel<dim, Number>::get_mapping_flags();
 

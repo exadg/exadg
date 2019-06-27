@@ -3,6 +3,11 @@
 namespace IncNS
 {
 template<int dim, typename Number>
+MomentumOperator<dim, Number>::MomentumOperator() : scaling_factor_mass_matrix(1.0)
+{
+}
+
+template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                                       AffineConstraints<double> const & constraint_matrix,
@@ -29,8 +34,8 @@ MomentumOperator<dim, Number>::reinit(
   // create new objects and initialize kernels
   if(this->data.unsteady_problem)
   {
-    this->mass_kernel.reset(new Operators::MassMatrixKernel<dim, Number>());
-    this->mass_kernel->reinit(this->data.scaling_factor_mass_matrix);
+    this->mass_kernel.reset(new MassMatrixKernel<dim, Number>());
+    this->scaling_factor_mass_matrix = this->data.scaling_factor_mass_matrix;
   }
 
   if(this->data.convective_problem)
@@ -72,8 +77,8 @@ MomentumOperator<dim, Number>::reinit(
   // mass kernel: create new object and initialize kernel
   if(this->data.unsteady_problem)
   {
-    this->mass_kernel.reset(new Operators::MassMatrixKernel<dim, Number>());
-    this->mass_kernel->reinit(this->data.scaling_factor_mass_matrix);
+    this->mass_kernel.reset(new MassMatrixKernel<dim, Number>());
+    this->scaling_factor_mass_matrix = this->data.scaling_factor_mass_matrix;
   }
 
   // simply set pointers for convective and viscous kernels
@@ -141,17 +146,14 @@ template<int dim, typename Number>
 Number
 MomentumOperator<dim, Number>::get_scaling_factor_mass_matrix() const
 {
-  AssertThrow(mass_kernel.get() != 0, ExcMessage("Mass kernel is not initialized."));
-
-  return mass_kernel->get_scaling_factor();
+  return this->scaling_factor_mass_matrix;
 }
 
 template<int dim, typename Number>
 void
-MomentumOperator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number) const
+MomentumOperator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number)
 {
-  if(this->data.unsteady_problem)
-    mass_kernel->set_scaling_factor(number);
+  this->scaling_factor_mass_matrix = number;
 }
 
 template<int dim, typename Number>
@@ -284,7 +286,7 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
     if(this->data.unsteady_problem)
     {
-      value_flux += mass_kernel->get_volume_flux(value);
+      value_flux += mass_kernel->get_volume_flux(scaling_factor_mass_matrix, value);
     }
 
     if(this->data.convective_problem)

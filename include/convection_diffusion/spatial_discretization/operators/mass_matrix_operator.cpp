@@ -1,7 +1,12 @@
-#include "mass_operator.h"
+#include "mass_matrix_operator.h"
 
 namespace ConvDiff
 {
+template<int dim, typename Number>
+MassMatrixOperator<dim, Number>::MassMatrixOperator() : scaling_factor(1.0)
+{
+}
+
 template<int dim, typename Number>
 void
 MassMatrixOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
@@ -17,7 +22,7 @@ template<int dim, typename Number>
 void
 MassMatrixOperator<dim, Number>::set_scaling_factor(Number const & number)
 {
-  kernel.set_scaling_factor(number);
+  scaling_factor = number;
 }
 
 template<int dim, typename Number>
@@ -26,7 +31,7 @@ MassMatrixOperator<dim, Number>::do_cell_integral(Integrator & integrator) const
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    integrator.submit_value(kernel.get_volume_flux(integrator.get_value(q)), q);
+    integrator.submit_value(kernel.get_volume_flux(scaling_factor, integrator.get_value(q)), q);
   }
 }
 

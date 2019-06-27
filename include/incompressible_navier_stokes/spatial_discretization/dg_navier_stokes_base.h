@@ -464,7 +464,7 @@ protected:
   /*
    * Linear(ized) momentum operator.
    */
-  MomentumOperator<dim, Number> momentum_operator;
+  mutable MomentumOperator<dim, Number> momentum_operator;
 
   /*
    * Inverse mass matrix operator.

@@ -8,9 +8,9 @@
 #ifndef INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_
 #define INCLUDE_CONVECTION_DIFFUSION_SPATIAL_DISCRETIZATION_OPERATORS_COMBINED_OPERATOR_H_
 
+#include "../../../operators/mass_matrix_kernel.h"
 #include "convective_operator.h"
 #include "diffusive_operator.h"
-#include "mass_operator.h"
 
 namespace ConvDiff
 {
@@ -60,6 +60,8 @@ private:
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
 public:
+  Operator();
+
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
@@ -123,9 +125,11 @@ private:
                                 OperatorData<dim> const &            data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  Operators::MassMatrixKernel<dim, Number> mass_kernel;
+  MassMatrixKernel<dim, Number>            mass_kernel;
   Operators::ConvectiveKernel<dim, Number> convective_kernel;
   Operators::DiffusiveKernel<dim, Number>  diffusive_kernel;
+
+  double scaling_factor_mass_matrix;
 };
 
 } // namespace ConvDiff
