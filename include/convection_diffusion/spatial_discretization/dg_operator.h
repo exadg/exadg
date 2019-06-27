@@ -23,6 +23,7 @@
 
 // operators
 #include "../../operators/inverse_mass_matrix.h"
+#include "operators/mass_matrix_operator.h"
 #include "operators/rhs_operator.h"
 
 // solvers and preconditioners

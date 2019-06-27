@@ -78,7 +78,7 @@ public:
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;
-    flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+    flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
     if(data.use_divergence_penalty)
       flags = flags || Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags();
     if(data.use_continuity_penalty)

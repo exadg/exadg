@@ -10,81 +10,13 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
+#include "../../../operators/mass_matrix_kernel.h"
 #include "../../../operators/operator_base.h"
 
 using namespace dealii;
 
 namespace IncNS
 {
-namespace Operators
-{
-template<int dim, typename Number>
-class MassMatrixKernel
-{
-public:
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-
-  MassMatrixKernel() : scaling_factor(1.0)
-  {
-  }
-
-  void
-  reinit(double const & factor) const
-  {
-    set_scaling_factor(factor);
-  }
-
-  IntegratorFlags
-  get_integrator_flags() const
-  {
-    IntegratorFlags flags;
-
-    flags.cell_evaluate  = CellFlags(true, false, false);
-    flags.cell_integrate = CellFlags(true, false, false);
-
-    return flags;
-  }
-
-  static MappingFlags
-  get_mapping_flags()
-  {
-    MappingFlags flags;
-
-    flags.cells = update_JxW_values;
-
-    // no face integrals
-
-    return flags;
-  }
-
-  Number
-  get_scaling_factor() const
-  {
-    return scaling_factor;
-  }
-
-  void
-  set_scaling_factor(Number const & number) const
-  {
-    scaling_factor = number;
-  }
-
-  /*
-   * Volume flux, i.e., the term occurring in the volume integral
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    get_volume_flux(vector const & value) const
-  {
-    return scaling_factor * value;
-  }
-
-private:
-  mutable Number scaling_factor;
-};
-
-} // namespace Operators
-
 struct MassMatrixOperatorData : public OperatorBaseData
 {
   MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
@@ -102,8 +34,7 @@ public:
   typedef typename Base::Range          Range;
   typedef typename Base::IntegratorCell IntegratorCell;
 
-  void
-  set_scaling_factor(Number const & number) const;
+  MassMatrixOperator();
 
   void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
@@ -111,30 +42,21 @@ public:
          MassMatrixOperatorData const &    data);
 
   void
-  apply_scale(VectorType & dst, Number const & factor, VectorType const & src) const
-  {
-    kernel.set_scaling_factor(factor);
-
-    this->apply(dst, src);
-
-    kernel.set_scaling_factor(1.0);
-  }
+  set_scaling_factor(Number const & number);
 
   void
-  apply_scale_add(VectorType & dst, Number const & factor, VectorType const & src) const
-  {
-    kernel.set_scaling_factor(factor);
+  apply_scale(VectorType & dst, Number const & factor, VectorType const & src) const;
 
-    this->apply_add(dst, src);
-
-    kernel.set_scaling_factor(1.0);
-  }
+  void
+  apply_scale_add(VectorType & dst, Number const & factor, VectorType const & src) const;
 
 private:
   void
   do_cell_integral(IntegratorCell & integrator) const;
 
-  Operators::MassMatrixKernel<dim, Number> kernel;
+  MassMatrixKernel<dim, Number> kernel;
+
+  mutable double scaling_factor;
 };
 
 } // namespace IncNS

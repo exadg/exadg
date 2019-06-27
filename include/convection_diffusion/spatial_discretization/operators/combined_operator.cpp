@@ -12,6 +12,11 @@
 namespace ConvDiff
 {
 template<int dim, typename Number>
+Operator<dim, Number>::Operator() : scaling_factor_mass_matrix(1.0)
+{
+}
+
+template<int dim, typename Number>
 void
 Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
                               AffineConstraints<double> const & constraint_matrix,
@@ -19,8 +24,8 @@ Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 
-  if(this->data.unsteady_problem)
-    mass_kernel.reinit(data.scaling_factor_mass_matrix);
+  // mass matrix
+  this->scaling_factor_mass_matrix = data.scaling_factor_mass_matrix;
 
   if(this->data.convective_problem)
     convective_kernel.reinit(matrix_free,
@@ -64,14 +69,14 @@ template<int dim, typename Number>
 Number
 Operator<dim, Number>::get_scaling_factor_mass_matrix() const
 {
-  return mass_kernel.get_scaling_factor();
+  return scaling_factor_mass_matrix;
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::set_scaling_factor_mass_matrix(Number const & number)
 {
-  mass_kernel.set_scaling_factor(number);
+  scaling_factor_mass_matrix = number;
 }
 
 template<int dim, typename Number>
@@ -139,7 +144,7 @@ Operator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
       flux += diffusive_kernel.get_volume_flux(integrator, q);
 
     if(this->data.unsteady_problem)
-      integrator.submit_value(mass_kernel.get_volume_flux(value), q);
+      integrator.submit_value(mass_kernel.get_volume_flux(scaling_factor_mass_matrix, value), q);
 
     integrator.submit_gradient(flux, q);
   }

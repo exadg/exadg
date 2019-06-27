@@ -121,7 +121,7 @@ public:
 
     MappingFlags flags;
     if(data.unsteady_problem)
-      flags = flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+      flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
     if(data.convective_problem)
       flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
     if(data.diffusive_problem)

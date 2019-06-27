@@ -106,7 +106,7 @@ DGOperator<dim, Number>::initialize_matrix_free()
 
   if(param.problem_type == ProblemType::Unsteady)
   {
-    mapping_flags = mapping_flags || Operators::MassMatrixKernel<dim, Number>::get_mapping_flags();
+    mapping_flags = mapping_flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
   }
 
   if(param.right_hand_side)
