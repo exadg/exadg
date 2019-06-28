@@ -62,7 +62,7 @@ using namespace dealii;
 #include "../../../operators/operation-base-util/interpolate.h"
 #include "../../../operators/operation-base-util/l2_norm.h"
 
-#include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_mg_level_object.h"
+#include "../../../../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_mg_level_object.h"
 
 enum RunConfiguration
 {

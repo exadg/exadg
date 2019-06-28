@@ -1,8 +1,8 @@
-#include "mg_transfer_mf_c.h"
-
 #include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/matrix_free/fe_evaluation.h>
+
+#include "mg_transfer_mf_c.h"
 
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferMFC<dim, Number, VectorType, components>::MGTransferMFC(

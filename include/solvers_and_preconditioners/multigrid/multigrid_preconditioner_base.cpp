@@ -431,12 +431,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
       initialize_chebyshev_smoother(mg_operator, level);
       break;
     }
-    case MultigridSmoother::ChebyshevNonsymmetricOperator:
-    {
-      smoothers[level].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
-      initialize_chebyshev_smoother_nonsymmetric_operator(mg_operator, level);
-      break;
-    }
     case MultigridSmoother::GMRES:
     {
       typedef GMRESSmoother<Operator, VectorTypeMG> GMRES_SMOOTHER;
@@ -501,11 +495,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_smoother(unsig
       initialize_chebyshev_smoother(*operators[level], level);
       break;
     }
-    case MultigridSmoother::ChebyshevNonsymmetricOperator:
-    {
-      initialize_chebyshev_smoother_nonsymmetric_operator(*operators[level], level);
-      break;
-    }
     case MultigridSmoother::GMRES:
     {
       typedef GMRESSmoother<Operator, VectorTypeMG> GMRES_SMOOTHER;
@@ -559,17 +548,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_coarse_solver(
                                                 operator_is_singular);
       break;
     }
-    case MultigridCoarseGridSolver::ChebyshevNonsymmetricOperator:
-    {
-      AssertThrow(
-        data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
-        ExcMessage(
-          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
-
-      initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(
-        *operators[0], data.coarse_problem.solver_data, operator_is_singular);
-      break;
-    }
     case MultigridCoarseGridSolver::CG:
     case MultigridCoarseGridSolver::GMRES:
     {
@@ -617,20 +595,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       initialize_chebyshev_smoother_coarse_grid(coarse_operator,
                                                 data.coarse_problem.solver_data,
                                                 operator_is_singular);
-
-      coarse_grid_solver.reset(new MGCoarseChebyshev<VectorTypeMG, SMOOTHER>(smoothers[0]));
-      break;
-    }
-    case MultigridCoarseGridSolver::ChebyshevNonsymmetricOperator:
-    {
-      AssertThrow(
-        data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi,
-        ExcMessage(
-          "Only PointJacobi preconditioner implemented for Chebyshev coarse grid solver."));
-
-      smoothers[0].reset(new ChebyshevSmoother<Operator, VectorTypeMG>());
-      initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(
-        coarse_operator, data.coarse_problem.solver_data, operator_is_singular);
 
       coarse_grid_solver.reset(new MGCoarseChebyshev<VectorTypeMG, SMOOTHER>(smoothers[0]));
       break;
@@ -766,94 +730,6 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   smoother->initialize(coarse_operator, smoother_data);
 }
 
-template<int dim, typename Number, typename MultigridNumber>
-void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_chebyshev_smoother_nonsymmetric_operator(Operator & mg_operator, unsigned int level)
-{
-  typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
-  typename CHEBYSHEV_SMOOTHER::AdditionalData       smoother_data;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  mg_operator.initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
-  mg_operator.calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
-#pragma GCC diagnostic pop
-
-  /*
-  std::pair<double,double> eigenvalues =
-  compute_eigenvalues_gmres(operators[level],
-  smoother_data.matrix_diagonal_inverse);
-  std::cout<<"Max EW = "<< eigenvalues.second <<" : Min EW =
-  "<<eigenvalues.first<<std::endl;
-  */
-
-  // use gmres to calculate eigenvalues for nonsymmetric problem
-  unsigned int const eig_n_iter = 20;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  std::pair<std::complex<double>, std::complex<double>> eigenvalues =
-    compute_eigenvalues_gmres(mg_operator, smoother_data.matrix_diagonal_inverse, eig_n_iter);
-#pragma GCC diagnostic pop
-
-  double const factor = 1.1;
-
-  smoother_data.max_eigenvalue      = factor * std::abs(eigenvalues.second);
-  smoother_data.smoothing_range     = data.smoother_data.smoothing_range;
-  smoother_data.degree              = data.smoother_data.iterations;
-  smoother_data.eig_cg_n_iterations = 0;
-
-  std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother =
-    std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(smoothers[level]);
-  smoother->initialize(mg_operator, smoother_data);
-}
-
-template<int dim, typename Number, typename MultigridNumber>
-void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::
-  initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(Operator & coarse_operator,
-                                                                  SolverData const & solver_data,
-                                                                  bool const operator_is_singular)
-{
-  // use Chebyshev smoother of high degree to solve the coarse grid problem approximately
-  typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
-  typename CHEBYSHEV_SMOOTHER::AdditionalData       smoother_data;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  coarse_operator.initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
-  coarse_operator.calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
-#pragma GCC diagnostic pop
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  std::pair<std::complex<double>, std::complex<double>> eigenvalues =
-    compute_eigenvalues_gmres(coarse_operator,
-                              smoother_data.matrix_diagonal_inverse,
-                              operator_is_singular);
-#pragma GCC diagnostic pop
-
-  double const factor = 1.1;
-
-  smoother_data.max_eigenvalue = factor * std::abs(eigenvalues.second);
-  smoother_data.smoothing_range =
-    factor * std::abs(eigenvalues.second) / std::abs(eigenvalues.first);
-
-  double sigma = (1. - std::sqrt(1. / smoother_data.smoothing_range)) /
-                 (1. + std::sqrt(1. / smoother_data.smoothing_range));
-
-  // calculate/estimate the number of Chebyshev iterations needed to reach a specified relative
-  // solver tolerance
-  double const eps = solver_data.rel_tol;
-
-  smoother_data.degree = std::log(1. / eps + std::sqrt(1. / eps / eps - 1)) / std::log(1. / sigma);
-  smoother_data.eig_cg_n_iterations = 0;
-
-  std::shared_ptr<CHEBYSHEV_SMOOTHER> smoother =
-    std::dynamic_pointer_cast<CHEBYSHEV_SMOOTHER>(smoothers[0]);
-  smoother->initialize(coarse_operator, smoother_data);
-}
 
 template class MultigridPreconditionerBase<2, float, float>;
 template class MultigridPreconditionerBase<2, double, float>;

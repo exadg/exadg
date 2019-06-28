@@ -46,6 +46,12 @@ SET( TARGET_SRC
      include/matrix_free/resolve_templates_float_3d.cpp
      include/matrix_free/resolve_templates_double_2d.cpp
      include/matrix_free/resolve_templates_double_3d.cpp
+     include/solvers_and_preconditioners/preconditioner/enum_types.cpp
+     include/solvers_and_preconditioners/solvers/enum_types.cpp
+     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
+     include/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp     
+     include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.cpp
+     include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.cpp
      include/postprocessor/error_calculation.cpp
      include/postprocessor/lift_and_drag_calculation.cpp
      include/postprocessor/pressure_difference_calculation.cpp
@@ -117,13 +123,7 @@ SET( TARGET_SRC
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
      include/compressible_navier_stokes/postprocessor/write_output.cpp
      include/compressible_navier_stokes/postprocessor/postprocessor.cpp
-     include/solvers_and_preconditioners/preconditioner/enum_types.cpp
-     include/solvers_and_preconditioners/solvers/enum_types.cpp
-     include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.cpp
-     include/solvers_and_preconditioners/multigrid/multigrid_input_parameters.cpp     
-     include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
-     include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.cpp
-   )
+  )
 
 # Set the include directory and the name of the project
 INCLUDE_DIRECTORIES(include)

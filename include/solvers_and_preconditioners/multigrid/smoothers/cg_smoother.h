@@ -1,44 +1,41 @@
 /*
- * GMRESSmoother.h
+ * cg_smoother.h
  *
- *  Created on: Nov 16, 2016
+ *  Created on: Mar 24, 2017
  *      Author: fehn
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_GMRESSMOOTHER_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_GMRESSMOOTHER_H_
+#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_CG_SMOOTHER_H_
+#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_CG_SMOOTHER_H_
 
 // deal.II
-#include <deal.II/lac/solver_gmres.h>
+#include <deal.II/lac/solver_cg.h>
 
-// parent class
 #include "smoother_base.h"
 
-// preconditioner
-#include "../preconditioner/block_jacobi_preconditioner.h"
-#include "../preconditioner/jacobi_preconditioner.h"
+#include "../../preconditioner/block_jacobi_preconditioner.h"
+#include "../../preconditioner/jacobi_preconditioner.h"
 
-// parameters
-#include "../multigrid/multigrid_input_parameters.h"
+#include "../multigrid_input_parameters.h"
 
 template<typename Operator, typename VectorType>
-class GMRESSmoother : public SmootherBase<VectorType>
+class CGSmoother : public SmootherBase<VectorType>
 {
 public:
-  GMRESSmoother() : underlying_operator(nullptr), preconditioner(nullptr)
+  CGSmoother() : underlying_operator(nullptr), preconditioner(nullptr)
   {
   }
 
-  ~GMRESSmoother()
+  ~CGSmoother()
   {
     delete preconditioner;
     preconditioner = nullptr;
   }
 
-  GMRESSmoother(GMRESSmoother const &) = delete;
+  CGSmoother(CGSmoother const &) = delete;
 
-  GMRESSmoother &
-  operator=(GMRESSmoother const &) = delete;
+  CGSmoother &
+  operator=(CGSmoother const &) = delete;
 
   struct AdditionalData
   {
@@ -52,7 +49,7 @@ public:
     // preconditioner
     PreconditionerSmoother preconditioner;
 
-    // number of GMRES iterations per smoothing step
+    // number of CG iterations per smoothing step
     unsigned int number_of_iterations;
   };
 
@@ -60,8 +57,7 @@ public:
   initialize(Operator & operator_in, AdditionalData const & additional_data_in)
   {
     underlying_operator = &operator_in;
-
-    data = additional_data_in;
+    data                = additional_data_in;
 
     if(data.preconditioner == PreconditionerSmoother::PointJacobi)
     {
@@ -74,7 +70,7 @@ public:
     else
     {
       AssertThrow(data.preconditioner == PreconditionerSmoother::None,
-                  ExcMessage("Specified preconditioner not implemented for GMRES smoother"));
+                  ExcMessage("Specified preconditioner not implemented for CG smoother"));
     }
   }
 
@@ -98,9 +94,7 @@ public:
   {
     IterationNumberControl control(data.number_of_iterations, 1.e-20, 1.e-10);
 
-    typename SolverGMRES<VectorType>::AdditionalData additional_data;
-    additional_data.right_preconditioning = true;
-    SolverGMRES<VectorType> solver(control, additional_data);
+    SolverCG<VectorType> solver(control);
 
     if(preconditioner != nullptr)
       solver.solve(*underlying_operator, dst, src, *preconditioner);
@@ -109,12 +103,11 @@ public:
   }
 
 private:
-  Operator * underlying_operator;
-
+  Operator *     underlying_operator;
   AdditionalData data;
 
   PreconditionerBase<typename Operator::value_type> * preconditioner;
 };
 
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_GMRESSMOOTHER_H_ */
+#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_CG_SMOOTHER_H_ */

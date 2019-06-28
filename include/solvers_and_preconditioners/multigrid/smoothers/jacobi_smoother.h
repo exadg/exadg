@@ -8,15 +8,12 @@
 #ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
 #define INCLUDE_SOLVERS_AND_PRECONDITIONERS_JACOBISMOOTHER_H_
 
-// parent class
 #include "smoother_base.h"
 
-// preconditioner
-#include "../preconditioner/block_jacobi_preconditioner.h"
-#include "../preconditioner/jacobi_preconditioner.h"
+#include "../../preconditioner/block_jacobi_preconditioner.h"
+#include "../../preconditioner/jacobi_preconditioner.h"
 
-// parameters
-#include "../multigrid/multigrid_input_parameters.h"
+#include "../multigrid_input_parameters.h"
 
 template<typename Operator, typename VectorType>
 class JacobiSmoother : public SmootherBase<VectorType>

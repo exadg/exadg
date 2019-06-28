@@ -5,13 +5,13 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_TRANSFER_MG_TRANSFER_MF_H_H_
-#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_TRANSFER_MG_TRANSFER_MF_H_H_
+#ifndef INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_MG_TRANSFER_MF_H_H_
+#define INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_MG_TRANSFER_MF_H_H_
 
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/multigrid/mg_transfer_matrix_free.h>
 
-#include "../../operators/multigrid_operator_base.h"
+#include "../../../operators/multigrid_operator_base.h"
 #include "mg_transfer_mf.h"
 
 using namespace dealii;
@@ -141,4 +141,4 @@ private:
 };
 
 
-#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_TRANSFER_MG_TRANSFER_MF_H_H_ */
+#endif /* INCLUDE_SOLVERS_AND_PRECONDITIONERS_MULTIGRID_TRANSFER_MG_TRANSFER_MF_H_H_ */

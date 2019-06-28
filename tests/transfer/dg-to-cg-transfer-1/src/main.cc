@@ -48,7 +48,7 @@
 #include <deal.II/lac/solver_cg.h>
 #include <vector>
 
-#include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
+#include "../../../../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.h"
 #include "../../../operators/operation-base-util/l2_norm.h"
 
 #include "../../../operators/operation-base-util/interpolate.h"
