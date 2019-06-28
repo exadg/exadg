@@ -3,7 +3,7 @@ include_directories(BEFORE ../../../)
 
 SET(TARGET_SRC
   ../../../include/poisson/spatial_discretization/laplace_operator.cpp
-  ../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.cpp
+  ../../../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.cpp
   src/main.cc
   )
 

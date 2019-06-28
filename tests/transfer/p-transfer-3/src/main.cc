@@ -58,8 +58,8 @@ using namespace dealii;
 #include "../../../operators/operation-base-util/interpolate.h"
 
 #include "../../../../applications/grid_tools/deformed_cube_manifold.h"
-#include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
-#include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_p.h"
+#include "../../../../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.h"
+#include "../../../../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_p.h"
 
 #include "../../../../include/solvers_and_preconditioners/multigrid/multigrid_preconditioner_base.h"
 #include "../../../../include/solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"

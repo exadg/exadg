@@ -33,7 +33,7 @@ public:
          int                                 degree_2,
          int                                 dof_handler_index = 0);
 
-  ~MGTransferMFP();
+  virtual ~MGTransferMFP();
 
   virtual void
   interpolate(const unsigned int level, VectorType & dst, const VectorType & src) const;

@@ -54,7 +54,7 @@
 #include "../../../operators/operation-base-util/interpolate.h"
 
 #include "../../../../applications/grid_tools/deformed_cube_manifold.h"
-#include "../../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
+#include "../../../../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.h"
 
 //#define DETAIL_OUTPUT
 const int PATCHES = 10;

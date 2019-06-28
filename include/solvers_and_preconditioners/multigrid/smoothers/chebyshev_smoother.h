@@ -11,8 +11,7 @@
 // deal.II
 #include <deal.II/lac/precondition.h>
 
-// parent class
-#include "smoother_base.h"
+#include "../smoothers/smoother_base.h"
 
 using namespace dealii;
 

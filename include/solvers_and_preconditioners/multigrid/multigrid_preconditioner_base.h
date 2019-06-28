@@ -17,18 +17,21 @@
 // multigrid algorithm
 #include "multigrid_algorithm.h"
 
+// level definition
+#include "levels_hybrid_multigrid.h"
+
 // smoother
-#include "../smoother/cg_smoother.h"
-#include "../smoother/chebyshev_smoother.h"
-#include "../smoother/gmres_smoother.h"
-#include "../smoother/jacobi_smoother.h"
-#include "../smoother/smoother_base.h"
+#include "smoothers/cg_smoother.h"
+#include "smoothers/chebyshev_smoother.h"
+#include "smoothers/gmres_smoother.h"
+#include "smoothers/jacobi_smoother.h"
+#include "smoothers/smoother_base.h"
 
 // transfer
-#include "../transfer/mg_transfer_mf_c.h"
-#include "../transfer/mg_transfer_mf_h.h"
-#include "../transfer/mg_transfer_mf_mg_level_object.h"
-#include "../transfer/mg_transfer_mf_p.h"
+#include "transfer/mg_transfer_mf_c.h"
+#include "transfer/mg_transfer_mf_h.h"
+#include "transfer/mg_transfer_mf_mg_level_object.h"
+#include "transfer/mg_transfer_mf_p.h"
 
 // coarse grid solvers
 #include "coarse_grid_solvers.h"

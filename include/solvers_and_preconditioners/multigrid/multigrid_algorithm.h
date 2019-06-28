@@ -18,7 +18,7 @@
 
 #include "../../functionalities/dynamic_convergence_table.h"
 
-#include "../transfer/mg_transfer_mf.h"
+#include "transfer/mg_transfer_mf.h"
 
 using namespace dealii;
 

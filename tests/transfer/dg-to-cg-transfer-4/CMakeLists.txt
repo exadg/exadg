@@ -2,7 +2,7 @@ include_directories(BEFORE include)
 include_directories(BEFORE ../../../)
 
 SET(TARGET_SRC
-  ../../../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.cpp
+  ../../../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.cpp
   src/main.cc
   )
 
