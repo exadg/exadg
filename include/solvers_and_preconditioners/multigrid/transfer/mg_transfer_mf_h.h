@@ -87,10 +87,8 @@ public:
         std::fill(dof_values_coarse.begin(), dof_values_coarse.end(), 0.);
         for(unsigned int child = 0; child < cell->n_children(); ++child)
         {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
           cell->child(child)->get_mg_dof_indices(dof_indices);
-#pragma GCC diagnostic pop
+
           for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
             dof_values_fine(i) = src_ghosted(dof_indices[i]);
           fe.get_restriction_matrix(child, cell->refinement_case()).vmult(tmp, dof_values_fine);
@@ -100,10 +98,7 @@ public:
             else if(tmp(i) != 0.)
               dof_values_coarse[i] = tmp[i];
         }
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
         cell->get_mg_dof_indices(dof_indices);
-#pragma GCC diagnostic pop
         for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
           dst(dof_indices[i]) = dof_values_coarse[i];
       }

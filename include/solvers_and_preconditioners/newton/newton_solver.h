@@ -1,5 +1,5 @@
 /*
- * NewtonSolver.h
+ * newton_solver.h
  *
  *  Created on: Jun 29, 2016
  *      Author: fehn
@@ -58,7 +58,7 @@ public:
       // reset increment
       increment = 0.0;
 
-      // multiply by -1.0 since the linearized problem is "LinearMatrix * increment = - residual"
+      // multiply by -1.0 since the linearized problem is "matrix * increment = - residual"
       residual *= -1.0;
 
       // solve linear problem
@@ -75,11 +75,9 @@ public:
 
       do
       {
-        // calculate temporary solution
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-        tmp.equ(1.0, dst, omega, increment);
-#pragma GCC diagnostic pop
+        // add increment to dst vector but scale by a factor omega <= 1
+        tmp = dst;
+        tmp.add(omega, increment);
 
         // evaluate residual using the temporary solution
         nonlinear_operator.evaluate_nonlinear_residual(residual, tmp);
@@ -98,13 +96,6 @@ public:
                   ExcMessage("Damped Newton iteration did not converge. "
                              "Maximum number of iterations exceeded!"));
 
-      //      if(norm_r_tmp >= (1.0-tau*omega)*norm_r)
-      //      {
-      //        if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-      //          std::cout << "Damped Newton iteration did not converge." << std::endl
-      //                    << "Maximum number of iterations exceeded!" << std::endl;
-      //      }
-
       // update solution and residual
       dst    = tmp;
       norm_r = norm_r_tmp;
@@ -116,14 +107,6 @@ public:
     AssertThrow(norm_r <= this->solver_data.abs_tol || norm_r / norm_r_0 <= solver_data.rel_tol,
                 ExcMessage("Newton solver failed to solve nonlinear problem to given tolerance. "
                            "Maximum number of iterations exceeded!"));
-
-    //    if(norm_r > this->solver_data.abs_tol && norm_r/norm_r_0 > solver_data.rel_tol)
-    //    {
-    //      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD)==0)
-    //        std::cout << "Newton solver failed to solve nonlinear problem to given tolerance." <<
-    //        std::endl
-    //                  << "Maximum number of iterations exceeded!" << std::endl;
-    //    }
 
     newton_iterations = n_iter;
 

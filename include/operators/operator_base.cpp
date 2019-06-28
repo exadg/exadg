@@ -1581,14 +1581,11 @@ OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_calculate_sys
     {
       auto cell_v = matrix_free.get_cell_iterator(cell, v);
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
       else
         cell_v->get_dof_indices(dof_indices);
-#  pragma GCC diagnostic pop
 
       if(!is_dg)
       {
@@ -1681,8 +1678,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_calculate_sys
       auto cell_p = matrix_free.get_cell_iterator(cell_number_p / vectorization_length,
                                                   cell_number_p % vectorization_length);
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
       std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
@@ -1696,7 +1691,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_calculate_sys
         cell_m->get_dof_indices(dof_indices_m);
         cell_p->get_dof_indices(dof_indices_p);
       }
-#  pragma GCC diagnostic pop
 
       // save M_mm
       constraint->distribute_local_to_global(matrices_m[v], dof_indices_m, dof_indices_m, dst);
@@ -1745,8 +1739,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_calculate_sys
       auto cell_p = matrix_free.get_cell_iterator(cell_number_p / vectorization_length,
                                                   cell_number_p % vectorization_length);
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       // get position in global matrix
       std::vector<types::global_dof_index> dof_indices_m(dofs_per_cell);
       std::vector<types::global_dof_index> dof_indices_p(dofs_per_cell);
@@ -1760,7 +1752,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::face_loop_calculate_sys
         cell_m->get_dof_indices(dof_indices_m);
         cell_p->get_dof_indices(dof_indices_p);
       }
-#  pragma GCC diagnostic pop
 
       // save M_mp
       constraint->distribute_local_to_global(matrices_m[v], dof_indices_m, dof_indices_p, dst);
@@ -1819,14 +1810,11 @@ OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_calc
       auto cell_v = matrix_free.get_cell_iterator(cell_number / vectorization_length,
                                                   cell_number % vectorization_length);
 
-#  pragma GCC diagnostic push
-#  pragma GCC diagnostic ignored "-Wdeprecated-declarations"
       std::vector<types::global_dof_index> dof_indices(dofs_per_cell);
       if(is_mg)
         cell_v->get_mg_dof_indices(dof_indices);
       else
         cell_v->get_dof_indices(dof_indices);
-#  pragma GCC diagnostic pop
 
       constraint->distribute_local_to_global(matrices[v], dof_indices, dof_indices, dst);
     }
