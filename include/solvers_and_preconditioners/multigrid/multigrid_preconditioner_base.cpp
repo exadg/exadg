@@ -659,24 +659,14 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_chebyshev_
   typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
   typename CHEBYSHEV_SMOOTHER::AdditionalData       smoother_data;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  mg_operator.initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
-  mg_operator.calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
-#pragma GCC diagnostic pop
+  std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix;
+  diagonal_matrix.reset(new DiagonalMatrix<VectorTypeMG>());
+  VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
 
-  /*
-  std::pair<double,double> eigenvalues = compute_eigenvalues(operators[level],
-  smoother_data.matrix_diagonal_inverse);
-  if (Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-  {
-    std::cout << "Eigenvalues on level l = " << level << std::endl;
-    std::cout << std::scientific << std::setprecision(3)
-              <<"Max EV = " << eigenvalues.second << " : Min EV = " <<
-  eigenvalues.first << std::endl;
-  }
-  */
+  mg_operator.initialize_dof_vector(diagonal_vector);
+  mg_operator.calculate_inverse_diagonal(diagonal_vector);
 
+  smoother_data.preconditioner      = diagonal_matrix;
   smoother_data.smoothing_range     = data.smoother_data.smoothing_range;
   smoother_data.degree              = data.smoother_data.iterations;
   smoother_data.eig_cg_n_iterations = data.smoother_data.iterations_eigenvalue_estimation;
@@ -697,21 +687,19 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
   typedef ChebyshevSmoother<Operator, VectorTypeMG> CHEBYSHEV_SMOOTHER;
   typename CHEBYSHEV_SMOOTHER::AdditionalData       smoother_data;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  coarse_operator.initialize_dof_vector(smoother_data.matrix_diagonal_inverse);
-  coarse_operator.calculate_inverse_diagonal(smoother_data.matrix_diagonal_inverse);
-#pragma GCC diagnostic pop
+  std::shared_ptr<DiagonalMatrix<VectorTypeMG>> diagonal_matrix;
+  diagonal_matrix.reset(new DiagonalMatrix<VectorTypeMG>());
+  VectorTypeMG & diagonal_vector = diagonal_matrix->get_vector();
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  std::pair<double, double> eigenvalues = compute_eigenvalues(coarse_operator,
-                                                              smoother_data.matrix_diagonal_inverse,
-                                                              operator_is_singular);
-#pragma GCC diagnostic pop
+  coarse_operator.initialize_dof_vector(diagonal_vector);
+  coarse_operator.calculate_inverse_diagonal(diagonal_vector);
+
+  std::pair<double, double> eigenvalues =
+    compute_eigenvalues(coarse_operator, diagonal_vector, operator_is_singular);
 
   double const factor = 1.1;
 
+  smoother_data.preconditioner  = diagonal_matrix;
   smoother_data.max_eigenvalue  = factor * eigenvalues.second;
   smoother_data.smoothing_range = eigenvalues.second / eigenvalues.first * factor;
 
