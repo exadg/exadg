@@ -256,27 +256,24 @@ public:
     double const c3 = b1 + a32;
     double const c4 = b1 + b2 + a43;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // stage 1
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_1 */, time + c1 * time_step);
-    vec_n.add(a21 * time_step, vec_tmp1);                    /* = u_2 */
-    vec_np.equ(1., vec_n, (b1 - a21) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a21 * time_step, vec_tmp1);                         /* = u_2 */
+    vec_np = vec_n; vec_np.add((b1 - a21) * time_step, vec_tmp1); /* = u_p */
 
     // stage 2
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_2 */, time + c2 * time_step);
-    vec_np.add(a32 * time_step, vec_tmp1);                   /* = u_3 */
-    vec_n.equ(1., vec_np, (b2 - a32) * time_step, vec_tmp1); /* = u_p */
+    vec_np.add(a32 * time_step, vec_tmp1);                       /* = u_3 */
+    vec_n = vec_np; vec_n.add((b2 - a32) * time_step, vec_tmp1); /* = u_p */
 
     // stage 3
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_3 */, time + c3 * time_step);
-    vec_n.add(a43 * time_step, vec_tmp1);                    /* = u_4 */
-    vec_np.equ(1., vec_n, (b3 - a43) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a43 * time_step, vec_tmp1);                         /* = u_4 */
+    vec_np = vec_n; vec_np.add((b3 - a43) * time_step, vec_tmp1); /* = u_p */
 
     // stage 4
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_3 */, time + c4 * time_step);
     vec_np.add(b4 * time_step, vec_tmp1); /* = u_p */
-#pragma GCC diagnostic pop
   }
 
   unsigned int
@@ -342,32 +339,29 @@ public:
     double const c4 = b1 + b2 + a43;
     double const c5 = b1 + b2 + b3 + a54;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // stage 1
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_1 */, time + c1 * time_step);
-    vec_n.add(a21 * time_step, vec_tmp1);                    /* = u_2 */
-    vec_np.equ(1., vec_n, (b1 - a21) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a21 * time_step, vec_tmp1);                         /* = u_2 */
+    vec_np = vec_n; vec_np.add((b1 - a21) * time_step, vec_tmp1); /* = u_p */
 
     // stage 2
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_2 */, time + c2 * time_step);
-    vec_np.add(a32 * time_step, vec_tmp1);                   /* = u_3 */
-    vec_n.equ(1., vec_np, (b2 - a32) * time_step, vec_tmp1); /* = u_p */
+    vec_np.add(a32 * time_step, vec_tmp1);                       /* = u_3 */
+    vec_n = vec_np; vec_n.add((b2 - a32) * time_step, vec_tmp1); /* = u_p */
 
     // stage 3
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_3 */, time + c3 * time_step);
-    vec_n.add(a43 * time_step, vec_tmp1);                    /* = u_4 */
-    vec_np.equ(1., vec_n, (b3 - a43) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a43 * time_step, vec_tmp1);                         /* = u_4 */
+    vec_np = vec_n; vec_np.add((b3 - a43) * time_step, vec_tmp1); /* = u_p */
 
     // stage 4
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_3 */, time + c4 * time_step);
-    vec_np.add(a54 * time_step, vec_tmp1);                   /* = u_5 */
-    vec_n.equ(1., vec_np, (b4 - a54) * time_step, vec_tmp1); /* = u_p */
+    vec_np.add(a54 * time_step, vec_tmp1);                       /* = u_5 */
+    vec_n = vec_np; vec_n.add((b4 - a54) * time_step, vec_tmp1); /* = u_p */
 
     // stage 5
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_4 */, time + c5 * time_step);
-    vec_np.equ(1., vec_n, b5 * time_step, vec_tmp1);
-#pragma GCC diagnostic pop
+    vec_np = vec_n; vec_np.add(b5 * time_step, vec_tmp1);
   }
 
   unsigned int
@@ -557,52 +551,49 @@ public:
     double const c8 = b1 + b2 + b3 + b4 + b5 + b6 + a87;
     double const c9 = b1 + b2 + b3 + b4 + b5 + b6 + b7 + a98;
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // stage 1
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_1 */, time + c1 * time_step);
-    vec_n.add(a21 * time_step, vec_tmp1);                    /* = u_2 */
-    vec_np.equ(1., vec_n, (b1 - a21) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a21 * time_step, vec_tmp1);                         /* = u_2 */
+    vec_np = vec_n; vec_np.add((b1 - a21) * time_step, vec_tmp1); /* = u_p */
 
     // stage 2
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_2 */, time + c2 * time_step);
-    vec_np.add(a32 * time_step, vec_tmp1);                   /* = u_3 */
-    vec_n.equ(1., vec_np, (b2 - a32) * time_step, vec_tmp1); /* = u_p */
+    vec_np.add(a32 * time_step, vec_tmp1);                       /* = u_3 */
+    vec_n = vec_np; vec_n.add((b2 - a32) * time_step, vec_tmp1); /* = u_p */
 
     // stage 3
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_3 */, time + c3 * time_step);
-    vec_n.add(a43 * time_step, vec_tmp1);                    /* = u_4 */
-    vec_np.equ(1., vec_n, (b3 - a43) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a43 * time_step, vec_tmp1);                         /* = u_4 */
+    vec_np = vec_n; vec_np.add((b3 - a43) * time_step, vec_tmp1); /* = u_p */
 
     // stage 4
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_4 */, time + c4 * time_step);
-    vec_np.add(a54 * time_step, vec_tmp1);                   /* = u_5 */
-    vec_n.equ(1., vec_np, (b4 - a54) * time_step, vec_tmp1); /* = u_p */
+    vec_np.add(a54 * time_step, vec_tmp1);                       /* = u_5 */
+    vec_n = vec_np; vec_n.add((b4 - a54) * time_step, vec_tmp1); /* = u_p */
 
     // stage 5
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_5 */, time + c5 * time_step);
-    vec_n.add(a65 * time_step, vec_tmp1);                    /* = u_6 */
-    vec_np.equ(1., vec_n, (b5 - a65) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a65 * time_step, vec_tmp1);                         /* = u_6 */
+    vec_np = vec_n; vec_np.add((b5 - a65) * time_step, vec_tmp1); /* = u_p */
 
     // stage 6
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_6 */, time + c6 * time_step);
-    vec_np.add(a76 * time_step, vec_tmp1);                   /* = u_7 */
-    vec_n.equ(1., vec_np, (b6 - a76) * time_step, vec_tmp1); /* = u_p */
+    vec_np.add(a76 * time_step, vec_tmp1);                       /* = u_7 */
+    vec_n = vec_np; vec_n.add((b6 - a76) * time_step, vec_tmp1); /* = u_p */
 
     // stage 7
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_7 */, time + c7 * time_step);
-    vec_n.add(a87 * time_step, vec_tmp1);                    /* = u_8 */
-    vec_np.equ(1., vec_n, (b7 - a87) * time_step, vec_tmp1); /* = u_p */
+    vec_n.add(a87 * time_step, vec_tmp1);                         /* = u_8 */
+    vec_np = vec_n; vec_np.add((b7 - a87) * time_step, vec_tmp1); /* = u_p */
 
     // stage 8
     this->underlying_operator->evaluate(vec_tmp1, vec_n /* u_8 */, time + c8 * time_step);
-    vec_np.add(a98 * time_step, vec_tmp1);                   /* = u_9 */
-    vec_n.equ(1., vec_np, (b8 - a98) * time_step, vec_tmp1); /* = u_p */
+    vec_np.add(a98 * time_step, vec_tmp1);                       /* = u_9 */
+    vec_n = vec_np; vec_n.add((b8 - a98) * time_step, vec_tmp1); /* = u_p */
 
     // stage 9
     this->underlying_operator->evaluate(vec_tmp1, vec_np /* u_9 */, time + c9 * time_step);
-    vec_np.equ(1., vec_n, b9 * time_step, vec_tmp1);
-#pragma GCC diagnostic pop
+    vec_np = vec_n; vec_np.add(b9 * time_step, vec_tmp1);
   }
 
   unsigned int
