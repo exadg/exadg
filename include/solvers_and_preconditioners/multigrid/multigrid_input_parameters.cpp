@@ -103,9 +103,6 @@ enum_to_string(MultigridSmoother const enum_type)
     case MultigridSmoother::Chebyshev:
       string_type = "Chebyshev";
       break;
-    case MultigridSmoother::ChebyshevNonsymmetricOperator:
-      string_type = "ChebyshevNonsymmetricOperator";
-      break;
     case MultigridSmoother::GMRES:
       string_type = "GMRES";
       break;
@@ -132,9 +129,6 @@ enum_to_string(MultigridCoarseGridSolver const enum_type)
   {
     case MultigridCoarseGridSolver::Chebyshev:
       string_type = "Chebyshev";
-      break;
-    case MultigridCoarseGridSolver::ChebyshevNonsymmetricOperator:
-      string_type = "ChebyshevNonsymmetricOperator";
       break;
     case MultigridCoarseGridSolver::CG:
       string_type = "CG";

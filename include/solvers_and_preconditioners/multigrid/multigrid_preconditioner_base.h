@@ -31,7 +31,7 @@
 #include "../transfer/mg_transfer_mf_p.h"
 
 // coarse grid solvers
-#include "../mg_coarse/mg_coarse_grid_solvers.h"
+#include "coarse_grid_solvers.h"
 
 // parameters
 #include "multigrid_input_parameters.h"
@@ -196,9 +196,6 @@ private:
   void
   initialize_chebyshev_smoother(Operator & matrix, unsigned int level);
 
-  void
-  initialize_chebyshev_smoother_nonsymmetric_operator(Operator & matrix, unsigned int level);
-
   /*
    * Coarse grid solver.
    */
@@ -209,11 +206,6 @@ private:
   initialize_chebyshev_smoother_coarse_grid(Operator &         matrix,
                                             SolverData const & solver_data,
                                             bool const         operator_is_singular);
-
-  void
-  initialize_chebyshev_smoother_nonsymmetric_operator_coarse_grid(Operator &         matrix,
-                                                                  SolverData const & solver_data,
-                                                                  bool const operator_is_singular);
 
   /*
    * Initialization of actual multigrid algorithm.

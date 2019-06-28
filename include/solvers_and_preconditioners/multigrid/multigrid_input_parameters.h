@@ -56,7 +56,6 @@ enum_to_string(DG_To_CG_Transfer const enum_type);
 enum class MultigridSmoother
 {
   Chebyshev,
-  ChebyshevNonsymmetricOperator,
   GMRES,
   CG,
   Jacobi
@@ -69,7 +68,6 @@ enum_to_string(MultigridSmoother const enum_type);
 enum class MultigridCoarseGridSolver
 {
   Chebyshev,
-  ChebyshevNonsymmetricOperator,
   CG,
   GMRES,
   AMG
@@ -198,8 +196,7 @@ struct SmootherData
       print_parameter(pcout, "Relaxation factor", relaxation_factor);
     }
 
-    if(smoother == MultigridSmoother::Chebyshev ||
-       smoother == MultigridSmoother::ChebyshevNonsymmetricOperator)
+    if(smoother == MultigridSmoother::Chebyshev)
     {
       print_parameter(pcout, "Smoothing range", smoothing_range);
       print_parameter(pcout, "Iterations eigenvalue estimation", iterations_eigenvalue_estimation);
