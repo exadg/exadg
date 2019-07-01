@@ -327,9 +327,12 @@ DGOperator<dim, Number>::setup_operators_and_solver(double const       scaling_f
 
   setup_operators(scaling_factor_mass_matrix, velocity);
 
-  initialize_preconditioner();
+  if(param.linear_system_has_to_be_solved())
+  {
+    initialize_preconditioner();
 
-  initialize_solver();
+    initialize_solver();
+  }
 
   pcout << std::endl << "... done!" << std::endl;
 }

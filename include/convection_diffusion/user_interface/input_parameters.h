@@ -35,6 +35,9 @@ public:
   bool
   linear_system_including_convective_term_has_to_be_solved() const;
 
+  bool
+  linear_system_has_to_be_solved() const;
+
   TypeVelocityField
   get_type_velocity_field() const;
 

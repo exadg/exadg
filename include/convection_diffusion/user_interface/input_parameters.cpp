@@ -290,6 +290,16 @@ InputParameters::linear_system_including_convective_term_has_to_be_solved() cons
   return (equation_with_convective_term && solver_with_convective_term);
 }
 
+bool
+InputParameters::linear_system_has_to_be_solved() const
+{
+  bool linear_solver_needed =
+    problem_type == ProblemType::Steady || (problem_type == ProblemType::Unsteady &&
+                                            temporal_discretization == TemporalDiscretization::BDF);
+
+  return linear_solver_needed;
+}
+
 TypeVelocityField
 InputParameters::get_type_velocity_field() const
 {
