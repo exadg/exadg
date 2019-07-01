@@ -92,7 +92,7 @@ TimeIntExplRK<Number>::calculate_time_step_size()
 
     // maximum velocity
     double max_velocity = 0.0;
-    if(param.type_velocity_field == TypeVelocityField::Analytical)
+    if(param.analytical_velocity_field)
     {
       max_velocity = pde_operator->calculate_maximum_velocity(this->get_time());
     }
@@ -118,18 +118,14 @@ TimeIntExplRK<Number>::calculate_time_step_size()
     {
       double time_step_adap = std::numeric_limits<double>::max();
 
-      if(param.type_velocity_field == TypeVelocityField::Analytical)
+      if(param.analytical_velocity_field)
       {
         time_step_adap = pde_operator->calculate_time_step_cfl_analytical_velocity(
           this->get_time(), cfl, param.exponent_fe_degree_convection);
       }
-      else if(param.type_velocity_field == TypeVelocityField::Numerical)
-      {
-        // do nothing (the numerical velocity field is not known at this point)
-      }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        // do nothing (the velocity field is not known at this point)
       }
 
       // use adaptive time step size only if it is smaller, otherwise use global time step size
@@ -231,12 +227,12 @@ TimeIntExplRK<Number>::recalculate_time_step_size() const
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
   double new_time_step_size = std::numeric_limits<double>::max();
-  if(param.type_velocity_field == TypeVelocityField::Analytical)
+  if(param.analytical_velocity_field)
   {
     new_time_step_size = pde_operator->calculate_time_step_cfl_analytical_velocity(
       this->get_time(), cfl, param.exponent_fe_degree_convection);
   }
-  else if(param.type_velocity_field == TypeVelocityField::Numerical)
+  else
   {
     AssertThrow(velocities[0] != nullptr, ExcMessage("Pointer velocities[0] is not initialized."));
 
@@ -244,10 +240,6 @@ TimeIntExplRK<Number>::recalculate_time_step_size() const
       pde_operator->calculate_time_step_cfl_numerical_velocity(*velocities[0],
                                                                cfl,
                                                                param.exponent_fe_degree_convection);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
   // make sure that time step size does not exceed maximum allowable time step size
@@ -277,58 +269,57 @@ TimeIntExplRK<Number>::initialize_time_integrator()
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    if(this->param.type_velocity_field == TypeVelocityField::Numerical)
-      numerical_velocity_field = true;
+    numerical_velocity_field = (param.get_type_velocity_field() == TypeVelocityField::DoFVector);
   }
 
   expl_rk_operator.reset(new ExplRKOperator(pde_operator, numerical_velocity_field));
 
-  if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK1Stage1)
+  if(param.time_integrator_rk == TimeIntegratorRK::ExplRK1Stage1)
   {
     rk_time_integrator.reset(
       new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(1, expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK2Stage2)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK2Stage2)
   {
     rk_time_integrator.reset(
       new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(2, expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage3)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage3)
   {
     rk_time_integrator.reset(
       new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(3, expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage4)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage4)
   {
     rk_time_integrator.reset(
       new ExplicitRungeKuttaTimeIntegrator<ExplRKOperator, VectorType>(4, expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage4Reg2C)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage4Reg2C)
   {
     rk_time_integrator.reset(
       new LowStorageRK3Stage4Reg2C<ExplRKOperator, VectorType>(expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg2C)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg2C)
   {
     rk_time_integrator.reset(
       new LowStorageRK4Stage5Reg2C<ExplRKOperator, VectorType>(expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg3C)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage5Reg3C)
   {
     rk_time_integrator.reset(
       new LowStorageRK4Stage5Reg3C<ExplRKOperator, VectorType>(expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK5Stage9Reg2S)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK5Stage9Reg2S)
   {
     rk_time_integrator.reset(
       new LowStorageRK5Stage9Reg2S<ExplRKOperator, VectorType>(expl_rk_operator));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage7Reg2)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK3Stage7Reg2)
   {
     rk_time_integrator.reset(
       new LowStorageRKTD<ExplRKOperator, VectorType>(expl_rk_operator, 3, 7));
   }
-  else if(this->param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage8Reg2)
+  else if(param.time_integrator_rk == TimeIntegratorRK::ExplRK4Stage8Reg2)
   {
     rk_time_integrator.reset(
       new LowStorageRKTD<ExplRKOperator, VectorType>(expl_rk_operator, 4, 8));
@@ -358,7 +349,7 @@ TimeIntExplRK<Number>::solve_timestep()
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    if(param.type_velocity_field == TypeVelocityField::Numerical)
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
       expl_rk_operator->set_velocities_and_times(velocities, times);
     }

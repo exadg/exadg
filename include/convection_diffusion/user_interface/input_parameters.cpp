@@ -16,7 +16,7 @@ InputParameters::InputParameters()
     dim(2),
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
-    type_velocity_field(TypeVelocityField::Analytical),
+    analytical_velocity_field(true),
     right_hand_side(false),
 
     // PHYSICAL QUANTITIES
@@ -73,7 +73,8 @@ InputParameters::InputParameters()
 
     // NUMERICAL PARAMETERS
     use_cell_based_face_loops(false),
-    use_combined_operator(true)
+    use_combined_operator(true),
+    store_analytical_velocity_in_dof_vector(false)
 {
 }
 
@@ -96,87 +97,94 @@ InputParameters::check_input_parameters()
 
 
   // TEMPORAL DISCRETIZATION
-  AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
-              ExcMessage("parameter must be defined"));
-
-  if(temporal_discretization == TemporalDiscretization::BDF)
+  if(problem_type == ProblemType::Unsteady)
   {
-    AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
+    AssertThrow(temporal_discretization != TemporalDiscretization::Undefined,
                 ExcMessage("parameter must be defined"));
-  }
 
-  if(temporal_discretization == TemporalDiscretization::ExplRK)
-  {
-    AssertThrow(time_integrator_rk != TimeIntegratorRK::Undefined,
-                ExcMessage("parameter must be defined"));
-  }
-
-  AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
-              ExcMessage("parameter must be defined"));
-
-  if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
-    AssertThrow(time_step_size > 0.0, ExcMessage("parameter must be defined"));
-
-  if(calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
-    AssertThrow(c_eff > 0., ExcMessage("parameter must be defined"));
-
-  if(calculation_of_time_step_size == TimeStepCalculation::CFL)
-  {
-    AssertThrow(
-      equation_type == EquationType::Convection ||
-        equation_type == EquationType::ConvectionDiffusion,
-      ExcMessage(
-        "Type of time step calculation CFL does not make sense for the specified equation type."));
-  }
-
-  if(calculation_of_time_step_size == TimeStepCalculation::Diffusion)
-  {
-    AssertThrow(
-      equation_type == EquationType::Diffusion ||
-        equation_type == EquationType::ConvectionDiffusion,
-      ExcMessage(
-        "Type of time step calculation Diffusion does not make sense for the specified equation type."));
-  }
-
-  if(calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
-  {
-    AssertThrow(
-      equation_type == EquationType::ConvectionDiffusion,
-      ExcMessage(
-        "Type of time step calculation CFLAndDiffusion does not make sense for the specified equation type."));
-  }
-
-  if(adaptive_time_stepping == true)
-  {
-    AssertThrow(calculation_of_time_step_size == TimeStepCalculation::CFL ||
-                  calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion,
-                ExcMessage(
-                  "Adaptive time stepping can only be used in combination with CFL condition."));
-  }
-
-  if(temporal_discretization == TemporalDiscretization::ExplRK)
-  {
-    AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
-                ExcMessage("Specified order of time integrator ExplRK not implemented!"));
-
-    // for the explicit RK method both the convective and the diffusive term are
-    // treated explicitly -> one has to specify both the CFL-number and the Diffusion-number
-    AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
-    AssertThrow(diffusion_number > 0., ExcMessage("parameter must be defined"));
-  }
-
-  if(temporal_discretization == TemporalDiscretization::BDF)
-  {
-    AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
-                ExcMessage("Specified order of time integrator BDF not implemented!"));
-
-    if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+    if(temporal_discretization == TemporalDiscretization::BDF)
     {
-      AssertThrow(time_integrator_oif != TimeIntegratorRK::Undefined,
-                  ExcMessage("parameter must be defined"));
+      if(equation_type == EquationType::Convection ||
+         equation_type == EquationType::ConvectionDiffusion)
+      {
+        AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
+                    ExcMessage("parameter must be defined"));
+      }
+    }
 
+    if(temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      AssertThrow(time_integrator_rk != TimeIntegratorRK::Undefined,
+                  ExcMessage("parameter must be defined"));
+    }
+
+    AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
+                ExcMessage("parameter must be defined"));
+
+    if(calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
+      AssertThrow(time_step_size > 0.0, ExcMessage("parameter must be defined"));
+
+    if(calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
+      AssertThrow(c_eff > 0., ExcMessage("parameter must be defined"));
+
+    if(calculation_of_time_step_size == TimeStepCalculation::CFL)
+    {
+      AssertThrow(
+        equation_type == EquationType::Convection ||
+          equation_type == EquationType::ConvectionDiffusion,
+        ExcMessage(
+          "Type of time step calculation CFL does not make sense for the specified equation type."));
+    }
+
+    if(calculation_of_time_step_size == TimeStepCalculation::Diffusion)
+    {
+      AssertThrow(
+        equation_type == EquationType::Diffusion ||
+          equation_type == EquationType::ConvectionDiffusion,
+        ExcMessage(
+          "Type of time step calculation Diffusion does not make sense for the specified equation type."));
+    }
+
+    if(calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion)
+    {
+      AssertThrow(
+        equation_type == EquationType::ConvectionDiffusion,
+        ExcMessage(
+          "Type of time step calculation CFLAndDiffusion does not make sense for the specified equation type."));
+    }
+
+    if(adaptive_time_stepping == true)
+    {
+      AssertThrow(calculation_of_time_step_size == TimeStepCalculation::CFL ||
+                    calculation_of_time_step_size == TimeStepCalculation::CFLAndDiffusion,
+                  ExcMessage(
+                    "Adaptive time stepping can only be used in combination with CFL condition."));
+    }
+
+    if(temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
+                  ExcMessage("Specified order of time integrator ExplRK not implemented!"));
+
+      // for the explicit RK method both the convective and the diffusive term are
+      // treated explicitly -> one has to specify both the CFL-number and the Diffusion-number
       AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
-      AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+      AssertThrow(diffusion_number > 0., ExcMessage("parameter must be defined"));
+    }
+
+    if(temporal_discretization == TemporalDiscretization::BDF)
+    {
+      AssertThrow(order_time_integrator >= 1 && order_time_integrator <= 4,
+                  ExcMessage("Specified order of time integrator BDF not implemented!"));
+
+      if(treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+      {
+        AssertThrow(time_integrator_oif != TimeIntegratorRK::Undefined,
+                    ExcMessage("parameter must be defined"));
+
+        AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
+        AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+      }
     }
   }
 
@@ -187,7 +195,7 @@ InputParameters::check_input_parameters()
   AssertThrow(degree > 0, ExcMessage("Invalid parameter."));
 
   if(equation_type == EquationType::Convection ||
-     equation_type == EquationType::ConvectionDiffusion || use_combined_operator == true)
+     equation_type == EquationType::ConvectionDiffusion)
   {
     AssertThrow(numerical_flux_convective_operator != NumericalFluxConvectiveOperator::Undefined,
                 ExcMessage("parameter must be defined"));
@@ -195,7 +203,7 @@ InputParameters::check_input_parameters()
 
 
   // SOLVER
-  if(temporal_discretization != TemporalDiscretization::ExplRK)
+  if(temporal_discretization == TemporalDiscretization::BDF)
   {
     AssertThrow(solver != Solver::Undefined, ExcMessage("parameter must be defined"));
 
@@ -234,6 +242,11 @@ InputParameters::check_input_parameters()
       }
     }
   }
+  else
+  {
+    AssertThrow(temporal_discretization == TemporalDiscretization::ExplRK,
+                ExcMessage("Not implemented"));
+  }
 
   if(implement_block_diagonal_preconditioner_matrix_free)
   {
@@ -249,6 +262,41 @@ InputParameters::check_input_parameters()
   }
 
   // NUMERICAL PARAMETERS
+
+  if(equation_type == EquationType::Convection ||
+     equation_type == EquationType::ConvectionDiffusion)
+  {
+    if(analytical_velocity_field == true && store_analytical_velocity_in_dof_vector == true)
+    {
+      AssertThrow(linear_system_including_convective_term_has_to_be_solved() == true,
+                  ExcMessage("Invalid parameter. Check parameters analytical_velocity_field and "
+                             "store_analytical_velocity_in_dof_vector."));
+    }
+  }
+}
+
+bool
+InputParameters::linear_system_including_convective_term_has_to_be_solved() const
+{
+  bool equation_with_convective_term =
+    equation_type == EquationType::Convection || equation_type == EquationType::ConvectionDiffusion;
+
+  bool solver_with_convective_term =
+    problem_type == ProblemType::Steady ||
+    (problem_type == ProblemType::Unsteady &&
+     temporal_discretization == TemporalDiscretization::BDF &&
+     treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit);
+
+  return (equation_with_convective_term && solver_with_convective_term);
+}
+
+TypeVelocityField
+InputParameters::get_type_velocity_field() const
+{
+  if(analytical_velocity_field == true && store_analytical_velocity_in_dof_vector == false)
+    return TypeVelocityField::Function;
+  else
+    return TypeVelocityField::DoFVector;
 }
 
 void
@@ -286,7 +334,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
-  print_parameter(pcout, "Type of velocity field", enum_to_string(type_velocity_field));
+  print_parameter(pcout, "Analytical velocity field", analytical_velocity_field);
   print_parameter(pcout, "Right-hand side", right_hand_side);
 }
 
@@ -450,6 +498,17 @@ InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcou
 
   if(temporal_discretization == TemporalDiscretization::ExplRK)
     print_parameter(pcout, "Use combined operator", use_combined_operator);
+
+  if(analytical_velocity_field)
+  {
+    if(temporal_discretization == TemporalDiscretization::BDF &&
+       treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    {
+      print_parameter(pcout,
+                      "Store velocity in DoF vector",
+                      store_analytical_velocity_in_dof_vector);
+    }
+  }
 }
 
 } // namespace ConvDiff

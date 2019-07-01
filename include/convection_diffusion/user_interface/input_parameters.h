@@ -32,6 +32,12 @@ public:
   void
   check_input_parameters();
 
+  bool
+  linear_system_including_convective_term_has_to_be_solved() const;
+
+  TypeVelocityField
+  get_type_velocity_field() const;
+
   // print functions
   void
   print(ConditionalOStream & pcout, std::string const & name);
@@ -71,8 +77,8 @@ public:
   // description: see enum declaration
   EquationType equation_type;
 
-  // description: see enum declaration
-  TypeVelocityField type_velocity_field;
+  // Use true if an analytical function is used to prescribe the velocity field
+  bool analytical_velocity_field;
 
   // set right_hand_side = true if the right-hand side f is unequal zero
   bool right_hand_side;
@@ -103,7 +109,7 @@ public:
   // temporal discretization method
   TemporalDiscretization temporal_discretization;
 
-  // description: see enum declaration (only relevant explicit time integration ExplRK)
+  // description: see enum declaration (only relevant for explicit time integration)
   TimeIntegratorRK time_integrator_rk;
 
   // order of time integration scheme (only relevant for BDF time integration)
@@ -112,7 +118,9 @@ public:
   // start with low order (only relevant for BDF time integration)
   bool start_with_low_order;
 
-  // description: see enum declaration (only relevant for BDF time integration)
+  // description: see enum declaration (this parameter is ignored for steady problems or
+  // unsteady problems with explicit Runge-Kutta time integration scheme). In case of
+  // a purely diffusive problem, one also does not have to specify this parameter.
   TreatmentOfConvectiveTerm treatment_of_convective_term;
 
   // calculation of time step size
@@ -278,6 +286,17 @@ public:
   // operator separately and subsequently looping over all operators. This parameter is
   // only relevant in case of fully explicit time integration.
   bool use_combined_operator;
+
+  // In case that the velocity field is prescribed analytically, it might be advantageous
+  // from the point of view of computational costs to store the velocity field in a DoF
+  // vector instead of repeatedly calling Function<dim>::value() whenever evaluating the
+  // operator in iterative solvers. In other words, depending on the computer hardware it
+  // might be more efficient to load a DoF vector and interpolate into the quadrature points
+  // than calculating the velocity field by means of Function<dim>::value().
+  // This strategy makes only sense in case of steady state problems or unsteady problems
+  // with an implicit treatment of the convective term, i.e., in cases where the convective
+  // term has to be evaluated more than once at a given time t.
+  bool store_analytical_velocity_in_dof_vector;
 };
 
 } // namespace ConvDiff

@@ -72,19 +72,22 @@ public:
   virtual void
   apply_mass_matrix_add(VectorType & dst, VectorType const & src) const = 0;
 
-  // time integration: initialize dof vectors
+  // time integration: initialize dof vector
   virtual void
   initialize_dof_vector(VectorType & src) const = 0;
 
   virtual void
   initialize_dof_vector_velocity(VectorType & src) const = 0;
 
+  virtual void
+  project_velocity(VectorType & velocity, double const time) const = 0;
+
   // time integration: prescribe initial conditions
   virtual void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const = 0;
 
   // time step calculation: CFL condition (has to loop over all cells and evaluate quantities
-  // related to spatial discretization (which is why this function can be found in this interface
+  // related to spatial discretization (which is why this function is part of this interface
   // class)
   virtual double
   calculate_time_step_cfl_analytical_velocity(double const time,

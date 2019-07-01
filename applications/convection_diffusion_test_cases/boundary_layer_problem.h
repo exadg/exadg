@@ -87,7 +87,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver_data = SolverData(1e4, 1.e-20, 1.e-8, 100);
   param.preconditioner = Preconditioner::Multigrid; //PointJacobi;
   param.mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
-  param.multigrid_data.type = MultigridType::hMG;
+  param.multigrid_data.type = MultigridType::phMG;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi; //Chebyshev;
   // MG smoother data

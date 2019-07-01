@@ -16,19 +16,19 @@ template<int dim>
 struct ConvectiveKernelData
 {
   ConvectiveKernelData()
-    : type_velocity_field(TypeVelocityField::Analytical),
+    : velocity_type(TypeVelocityField::Function),
       dof_index_velocity(1),
       numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
   {
   }
 
   // analytical vs. numerical velocity field
-  TypeVelocityField type_velocity_field;
+  TypeVelocityField velocity_type;
 
-  // TypeVelocityField::Numerical
+  // TypeVelocityField::DoFVector
   unsigned int dof_index_velocity;
 
-  // TypeVelocityField::Analytical
+  // TypeVelocityField::Function
   std::shared_ptr<Function<dim>> velocity;
 
   // numerical flux (e.g., central flux vs. Lax-Friedrichs flux)
@@ -59,7 +59,7 @@ public:
   {
     data = data_in;
 
-    if(data_in.type_velocity_field == TypeVelocityField::Numerical)
+    if(data_in.velocity_type == TypeVelocityField::DoFVector)
     {
       integrator_velocity.reset(
         new CellIntegratorVelocity(matrix_free, data_in.dof_index_velocity, quad_index));
@@ -116,8 +116,8 @@ public:
   void
   set_velocity_copy(VectorType const & velocity_in) const
   {
-    AssertThrow(data.type_velocity_field == TypeVelocityField::Numerical,
-                ExcMessage("Invalid parameter type_velocity_field."));
+    AssertThrow(data.velocity_type == TypeVelocityField::DoFVector,
+                ExcMessage("Invalid parameter velocity_type."));
 
     velocity.own() = velocity_in;
 
@@ -127,8 +127,8 @@ public:
   void
   set_velocity_ptr(VectorType const & velocity_in) const
   {
-    AssertThrow(data.type_velocity_field == TypeVelocityField::Numerical,
-                ExcMessage("Invalid parameter type_velocity_field."));
+    AssertThrow(data.velocity_type == TypeVelocityField::DoFVector,
+                ExcMessage("Invalid parameter velocity_type."));
 
     velocity.reset(velocity_in);
 
@@ -138,7 +138,7 @@ public:
   void
   reinit_cell(unsigned int const cell) const
   {
-    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       integrator_velocity->reinit(cell);
       integrator_velocity->gather_evaluate(*velocity, true, false, false);
@@ -148,7 +148,7 @@ public:
   void
   reinit_face(unsigned int const face) const
   {
-    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       integrator_velocity_m->reinit(face);
       integrator_velocity_m->gather_evaluate(*velocity, true, false);
@@ -161,7 +161,7 @@ public:
   void
   reinit_boundary_face(unsigned int const face) const
   {
-    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       integrator_velocity_m->reinit(face);
       integrator_velocity_m->gather_evaluate(*velocity, true, false);
@@ -173,7 +173,7 @@ public:
                          unsigned int const       face,
                          types::boundary_id const boundary_id) const
   {
-    if(data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       integrator_velocity_m->reinit(cell, face);
       integrator_velocity_m->gather_evaluate(*velocity, true, false);
@@ -264,7 +264,7 @@ public:
     vector normal = integrator.get_normal_vector(q);
     scalar flux   = make_vectorized_array<Number>(0.0);
 
-    if(data.type_velocity_field == TypeVelocityField::Analytical)
+    if(data.velocity_type == TypeVelocityField::Function)
     {
       Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -281,7 +281,7 @@ public:
         flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity);
       }
     }
-    else if(data.type_velocity_field == TypeVelocityField::Numerical)
+    else if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       vector velocity_m = integrator_velocity_m->get_value(q);
       vector velocity_p =
@@ -320,11 +320,11 @@ public:
   {
     vector velocity;
 
-    if(data.type_velocity_field == TypeVelocityField::Analytical)
+    if(data.velocity_type == TypeVelocityField::Function)
     {
       velocity = evaluate_vectorial_function(data.velocity, integrator.quadrature_point(q), time);
     }
-    else if(data.type_velocity_field == TypeVelocityField::Numerical)
+    else if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       velocity = integrator_velocity->get_value(q);
     }

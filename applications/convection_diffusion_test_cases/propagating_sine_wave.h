@@ -42,6 +42,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::Convection;
+  param.analytical_velocity_field = true;
   param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -53,6 +54,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
   param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF; //Explicit;
+  param.time_integrator_oif = TimeIntegratorRK::ExplRK3Stage7Reg2;
   param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -92,6 +94,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // NUMERICAL PARAMETERS
   param.use_combined_operator = true;
+  param.store_analytical_velocity_in_dof_vector = false;
 }
 }
 
@@ -211,7 +214,7 @@ std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(ConvDiff::InputParameters const &param)
 {
   PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = false; //true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = "output_conv_diff/propagating_sine_wave/";
   pp_data.output_data.output_name = "propagating_sine_wave";
   pp_data.output_data.output_start_time = param.start_time;

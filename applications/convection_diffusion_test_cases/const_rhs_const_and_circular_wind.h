@@ -36,8 +36,8 @@ const double DIFFUSIVITY = 1.0e0;
 double const START_TIME = 0.0;
 double const END_TIME = 1.0;
 
-enum class TypeVelocityField { Constant, Circular, CircularZeroAtBoundary };
-TypeVelocityField const TYPE_VELOCITY_FIELD = TypeVelocityField::Constant; //Circular;
+enum class VelocityType { Constant, Circular, CircularZeroAtBoundary };
+VelocityType const VELOCITY_TYPE = VelocityType::Constant; //CircularZeroAtBoundary; //Constant; //Circular;
 
 namespace ConvDiff
 {
@@ -48,6 +48,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.dim = 2;
   param.problem_type = ProblemType::Steady;
   param.equation_type = EquationType::ConvectionDiffusion;
+  param.analytical_velocity_field = true;
   param.right_hand_side = true;
 
   // PHYSICAL QUANTITIES
@@ -89,8 +90,12 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.solver = Solver::GMRES;
   param.solver_data = SolverData(1e4,1.e-20, 1.e-8, 100);
   param.preconditioner = Preconditioner::Multigrid; //PointJacobi; //BlockJacobi;
+  param.implement_block_diagonal_preconditioner_matrix_free = false;
+  param.use_cell_based_face_loops = false;
+  param.solver_block_diagonal = Elementwise::Solver::GMRES;
+  param.update_preconditioner = true;
+
   param.multigrid_data.type = MultigridType::phMG;
-  param.use_cell_based_face_loops = true;
   param.mg_operator_type = MultigridOperatorType::ReactionConvectionDiffusion;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Jacobi;
@@ -110,14 +115,13 @@ set_input_parameters(ConvDiff::InputParameters &param)
   // MG coarse grid solver
   param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::AMG; //GMRES;
 
-  param.update_preconditioner = false;
-
   // output of solver information
   param.solver_info_data.print_to_screen = true;
   param.solver_info_data.interval_time = (param.end_time-param.start_time)/10;
 
   // NUMERICAL PARAMETERS
   param.use_combined_operator = true;
+  param.store_analytical_velocity_in_dof_vector = true;
 }
 }
 
@@ -212,12 +216,12 @@ public:
   {
     double value = 0.0;
 
-    if(TYPE_VELOCITY_FIELD == TypeVelocityField::Constant)
+    if(VELOCITY_TYPE == VelocityType::Constant)
     {
       // constant velocity field (u,v) = (1,1)
       value = 1.0;
     }
-    else if(TYPE_VELOCITY_FIELD == TypeVelocityField::Circular)
+    else if(VELOCITY_TYPE == VelocityType::Circular)
     {
       // circular velocity field (u,v) = (-y,x)
       if(component == 0)
@@ -227,7 +231,7 @@ public:
       else
         AssertThrow(component <= 1, ExcMessage("Velocity field for 3-dimensional problem is not implemented!"));
     }
-    else if(TYPE_VELOCITY_FIELD == TypeVelocityField::CircularZeroAtBoundary)
+    else if(VELOCITY_TYPE == VelocityType::CircularZeroAtBoundary)
     {
       const double pi = numbers::PI;
       double sinx = std::sin(pi*point[0]);

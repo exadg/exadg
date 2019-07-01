@@ -205,7 +205,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::ConvectionDiffusion;
-  param.type_velocity_field = TypeVelocityField::Numerical;
+  param.analytical_velocity_field = false;
   param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -264,7 +264,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   // SOLVER
   param.solver = Solver::GMRES;
   param.solver_data = SolverData(1e4, 1.e-12, 1.e-6, 100);
-  param.preconditioner = Preconditioner::BlockJacobi; //InverseMassMatrix; //BlockJacobi; //Multigrid;
+  param.preconditioner = Preconditioner::Multigrid; //InverseMassMatrix; //BlockJacobi; //Multigrid;
   param.implement_block_diagonal_preconditioner_matrix_free = true;
   param.solver_block_diagonal = Elementwise::Solver::GMRES;
   param.preconditioner_block_diagonal = Elementwise::Preconditioner::InverseMassMatrix;

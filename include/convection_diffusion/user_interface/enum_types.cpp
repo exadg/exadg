@@ -71,27 +71,6 @@ enum_to_string(EquationType const enum_type)
   return string_type;
 }
 
-std::string
-enum_to_string(TypeVelocityField const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    case TypeVelocityField::Analytical:
-      string_type = "Analytical";
-      break;
-    case TypeVelocityField::Numerical:
-      string_type = "Numerical";
-      break;
-    default:
-      AssertThrow(false, ExcMessage("Not implemented."));
-      break;
-  }
-
-  return string_type;
-}
-
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 PHYSICAL QUANTITIES                                */

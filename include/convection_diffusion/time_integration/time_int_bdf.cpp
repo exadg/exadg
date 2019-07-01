@@ -62,9 +62,8 @@ TimeIntBDF<Number>::initialize_oif()
                   param.equation_type == EquationType::ConvectionDiffusion,
                 ExcMessage("Invalid parameters"));
 
-    bool numerical_velocity_field = false;
-    if(this->param.type_velocity_field == TypeVelocityField::Numerical)
-      numerical_velocity_field = true;
+    bool numerical_velocity_field =
+      (param.get_type_velocity_field() == TypeVelocityField::DoFVector);
 
     convective_operator_OIF.reset(
       new Interface::OperatorOIF<Number>(pde_operator, numerical_velocity_field));
@@ -219,7 +218,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
     double const h_min = pde_operator->calculate_minimum_element_length();
 
     double max_velocity = 0.0;
-    if(param.type_velocity_field == TypeVelocityField::Analytical)
+    if(param.analytical_velocity_field)
     {
       max_velocity = pde_operator->calculate_maximum_velocity(this->get_time());
     }
@@ -242,18 +241,14 @@ TimeIntBDF<Number>::calculate_time_step_size()
     {
       double time_step_adap = std::numeric_limits<double>::max();
 
-      if(param.type_velocity_field == TypeVelocityField::Analytical)
+      if(param.analytical_velocity_field)
       {
         time_step_adap = pde_operator->calculate_time_step_cfl_analytical_velocity(
           this->get_time(), cfl, param.exponent_fe_degree_convection);
       }
-      else if(param.type_velocity_field == TypeVelocityField::Numerical)
-      {
-        // do nothing (the numerical velocity field is not known at this point)
-      }
       else
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        // do nothing (the velocity field is not known at this point)
       }
 
       // use adaptive time step size only if it is smaller, otherwise use global time step size
@@ -321,12 +316,12 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
   double new_time_step_size = std::numeric_limits<double>::max();
-  if(param.type_velocity_field == TypeVelocityField::Analytical)
+  if(param.analytical_velocity_field)
   {
     new_time_step_size = pde_operator->calculate_time_step_cfl_analytical_velocity(
       this->get_time(), cfl, param.exponent_fe_degree_convection);
   }
-  else if(param.type_velocity_field == TypeVelocityField::Numerical)
+  else
   {
     AssertThrow(velocities[0] != nullptr, ExcMessage("Pointer velocities[0] is not initialized."));
 
@@ -334,10 +329,6 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
       pde_operator->calculate_time_step_cfl_numerical_velocity(*velocities[0],
                                                                cfl,
                                                                param.exponent_fe_degree_convection);
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
   // make sure that time step size does not exceed maximum allowable time step size
@@ -406,52 +397,65 @@ TimeIntBDF<Number>::solve_timestep()
   Timer timer;
   timer.restart();
 
-  // calculate rhs (rhs-vector f and inhomogeneous boundary face integrals)
-  if((param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion) &&
-     param.type_velocity_field == TypeVelocityField::Numerical)
-  {
-    AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12,
-                ExcMessage("Invalid assumption."));
-    pde_operator->rhs(rhs_vector, this->get_next_time(), velocities[0]);
-  }
-  else
-  {
-    pde_operator->rhs(rhs_vector, this->get_next_time());
-  }
+  // prepare pointer for velocity field, but only if necessary
+  VectorType const * velocity_ptr = nullptr;
+  VectorType         velocity_vector;
 
-  // add the convective term to the right-hand side of the equations
-  // if the convective term is treated explicitly (additive decomposition)
-  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(param.linear_system_including_convective_term_has_to_be_solved())
   {
-    // only if convective term is really involved
-    if(param.equation_type == EquationType::Convection ||
-       param.equation_type == EquationType::ConvectionDiffusion)
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      if(param.analytical_velocity_field)
       {
-        AssertThrow(std::abs(times[1] - this->get_time()) < 1.e-12,
-                    ExcMessage("Invalid assumption."));
-        pde_operator->evaluate_convective_term(vec_convective_term[0],
-                                               solution[0],
-                                               this->get_time(),
-                                               velocities[1]);
+        pde_operator->initialize_dof_vector_velocity(velocity_vector);
+        pde_operator->project_velocity(velocity_vector, this->get_next_time());
+
+        velocity_ptr = &velocity_vector;
       }
       else
       {
-        pde_operator->evaluate_convective_term(vec_convective_term[0],
-                                               solution[0],
-                                               this->get_time());
-      }
+        AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12,
+                    ExcMessage("Invalid assumption."));
 
-      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-        rhs_vector.add(-extra.get_beta(i), vec_convective_term[i]);
+        velocity_ptr = velocities[0];
+      }
     }
   }
 
-  // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
-  // and operator-integration-factor splitting
-  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
+  // calculate rhs (rhs-vector f and inhomogeneous boundary face integrals)
+  pde_operator->rhs(rhs_vector, this->get_next_time(), velocity_ptr);
+
+  // if the convective term is involved in the equations:
+  // add the convective term to the right-hand side of the equations
+  // if this term is treated explicitly (additive decomposition)
+  if((param.equation_type == EquationType::Convection ||
+      param.equation_type == EquationType::ConvectionDiffusion) &&
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    {
+      AssertThrow(std::abs(times[1] - this->get_time()) < 1.e-12,
+                  ExcMessage("Invalid assumption."));
+
+      pde_operator->evaluate_convective_term(vec_convective_term[0],
+                                             solution[0],
+                                             this->get_time(),
+                                             velocities[1]);
+    }
+    else
+    {
+      pde_operator->evaluate_convective_term(vec_convective_term[0], solution[0], this->get_time());
+    }
+
+    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+      rhs_vector.add(-extra.get_beta(i), vec_convective_term[i]);
+  }
+
+  // calculate sum (alpha_i/dt * u_tilde_i) if operator-integration-factor splitting
+  // is used to integrate the convective term
+  if((param.equation_type == EquationType::Convection ||
+      param.equation_type == EquationType::ConvectionDiffusion) &&
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);
   }
@@ -463,7 +467,7 @@ TimeIntBDF<Number>::solve_timestep()
       sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution[i]);
   }
 
-  // apply mass matrix to sum_alphai_ui and add to rhs vector
+  // apply mass matrix to sum_alphai_ui and add to rhs_vector
   pde_operator->apply_mass_matrix_add(rhs_vector, sum_alphai_ui);
 
   // extrapolate old solution to obtain a good initial guess for the solver
@@ -475,19 +479,6 @@ TimeIntBDF<Number>::solve_timestep()
   bool const update_preconditioner =
     this->param.update_preconditioner &&
     (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
-
-  VectorType const * velocity_ptr = nullptr;
-
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
-  {
-    if(param.type_velocity_field == TypeVelocityField::Numerical)
-    {
-      AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12,
-                  ExcMessage("Invalid assumption."));
-      velocity_ptr = velocities[0];
-    }
-  }
 
   unsigned int const N_iter = pde_operator->solve(solution_np,
                                                   rhs_vector,
@@ -512,7 +503,7 @@ template<typename Number>
 void
 TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif)
 {
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     this->convective_operator_OIF->set_velocities_and_times(velocities, times);
   }
