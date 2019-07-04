@@ -143,7 +143,7 @@ public:
                                           this->level_info[level].h_level());
     }
 
-    if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Analytical)
+    if(data.convective_kernel_data.velocity_type == TypeVelocityField::Function)
     {
       QGauss<1> quadrature(this->level_info[level].degree() + 1);
       matrix_free->reinit(mapping,
@@ -153,7 +153,7 @@ public:
                           additional_data);
     }
     // we need two dof-handlers in case the velocity field comes from the fluid solver.
-    else if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
+    else if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
     {
       // collect dof-handlers
       std::vector<const DoFHandler<dim> *> dof_handler_vec;
@@ -193,7 +193,7 @@ public:
     Base::initialize_dof_handler_and_constraints(
       operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
-    if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
     {
       FESystem<dim> fe_velocity(FE_DGQ<dim>(fe.degree), dim);
       Map           dirichlet_bc_velocity;
@@ -215,7 +215,7 @@ public:
   {
     Base::initialize_transfer_operators();
 
-    if(data.convective_kernel_data.type_velocity_field == TypeVelocityField::Numerical)
+    if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
       this->transfers_velocity.template reinit<MultigridNumber>(this->matrix_free_objects,
                                                                 this->constraints_velocity,
                                                                 this->constrained_dofs_velocity,
@@ -228,10 +228,9 @@ public:
   virtual void
   update()
   {
-    TypeVelocityField type_velocity_field =
-      pde_operator->get_data().convective_kernel_data.type_velocity_field;
+    TypeVelocityField velocity_type = pde_operator->get_data().convective_kernel_data.velocity_type;
 
-    if(type_velocity_field == TypeVelocityField::Numerical &&
+    if(velocity_type == TypeVelocityField::DoFVector &&
        (mg_operator_type == MultigridOperatorType::ReactionConvection ||
         mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion))
     {

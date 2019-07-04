@@ -51,6 +51,7 @@ RHSOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
   {
     integrator.submit_value(kernel.get_volume_flux(integrator, q, time), q);
   }
+
   integrator.integrate(true, false);
 }
 

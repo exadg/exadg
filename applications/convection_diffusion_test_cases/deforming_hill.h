@@ -39,7 +39,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::Convection;
-  param.type_velocity_field = TypeVelocityField::Analytical;
+  param.analytical_velocity_field = true;
   param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES

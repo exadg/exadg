@@ -93,6 +93,18 @@ public:
   initialize_dof_vector_velocity(VectorType & src) const;
 
   /*
+   * Obtain velocity dof-vector by interpolation of specified analytical velocity field.
+   */
+  void
+  interpolate_velocity(VectorType & velocity, double const time) const;
+
+  /*
+   * Obtain velocity dof-vector by L2-projection using the specified analytical velocity field.
+   */
+  void
+  project_velocity(VectorType & velocity, double const time) const;
+
+  /*
    * Prescribe initial conditions using a specified analytical function.
    */
   void

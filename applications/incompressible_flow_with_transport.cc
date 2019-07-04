@@ -530,8 +530,8 @@ Problem<dim, Number>::run_timeloop() const
 {
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    AssertThrow(scalar_param[i].type_velocity_field == ConvDiff::TypeVelocityField::Numerical,
-                ExcMessage("Type of velocity field has to be TypeVelocityField::Numerical."));
+    AssertThrow(scalar_param[i].analytical_velocity_field == false,
+                ExcMessage("For this coupled solver, no analytical velocity field is known."));
   }
 
   bool              finished_fluid = false;

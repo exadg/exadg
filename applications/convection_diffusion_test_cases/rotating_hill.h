@@ -20,8 +20,8 @@
 unsigned int const DEGREE_MIN = 5;
 unsigned int const DEGREE_MAX = 5;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -39,6 +39,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::Convection;
+  param.analytical_velocity_field = true;
   param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -124,6 +125,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // NUMERICAL PARAMETERS
   param.use_cell_based_face_loops = true;
+  param.store_analytical_velocity_in_dof_vector = false;
 }
 }
 

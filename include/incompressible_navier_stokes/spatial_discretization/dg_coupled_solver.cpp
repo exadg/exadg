@@ -840,8 +840,8 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   // mimic the upwind-like discretization of the linearized convective term in the Navier-Stokes
   // equations.
   ConvDiff::Operators::ConvectiveKernelData<dim> convective_kernel_data;
-  convective_kernel_data.type_velocity_field = ConvDiff::TypeVelocityField::Numerical;
-  convective_kernel_data.dof_index_velocity  = this->get_dof_index_velocity();
+  convective_kernel_data.velocity_type      = ConvDiff::TypeVelocityField::DoFVector;
+  convective_kernel_data.dof_index_velocity = this->get_dof_index_velocity();
   convective_kernel_data.numerical_flux_formulation =
     ConvDiff::NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
 

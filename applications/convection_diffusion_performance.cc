@@ -221,7 +221,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    if(param.type_velocity_field == TypeVelocityField::Numerical)
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
       conv_diff_operator->initialize_dof_vector_velocity(velocity);
       velocity = 1.0;
@@ -248,7 +248,7 @@ Problem<dim, Number>::apply_operator()
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    if(param.type_velocity_field == TypeVelocityField::Numerical)
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
       velocity_ptr = &velocity;
     }

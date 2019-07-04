@@ -7,6 +7,7 @@
 
 #include "dg_operator.h"
 
+#include "project_velocity.h"
 #include "time_integration/time_step_calculation.h"
 
 namespace ConvDiff
@@ -39,7 +40,7 @@ DGOperator<dim, Number>::DGOperator(
 
   mapping.reset(new MappingQGeneric<dim>(mapping_degree));
 
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
     dof_handler_velocity.reset(new DoFHandler<dim>(triangulation));
@@ -76,7 +77,7 @@ DGOperator<dim, Number>::create_dofs()
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
 
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     dof_handler_velocity->distribute_dofs(*fe_velocity);
     dof_handler_velocity->distribute_mg_dofs();
@@ -137,18 +138,8 @@ DGOperator<dim, Number>::initialize_matrix_free()
     Categorization::do_cell_based_loops(*tria, additional_data);
   }
 
-  if(param.type_velocity_field == TypeVelocityField::Analytical)
-  {
-    AffineConstraints<double> constraint_dummy;
-    constraint_dummy.close();
-
-    // quadrature formula used to perform integrals
-    QGauss<1> quadrature(param.degree + 1);
-
-    matrix_free.reinit(*mapping, dof_handler, constraint_dummy, quadrature, additional_data);
-  }
-  // we need two dof-handlers in case the velocity field comes from the fluid solver.
-  else if(param.type_velocity_field == TypeVelocityField::Numerical)
+  // we need two dof-handlers in case the velocity field is stored in a DoF vector
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     std::vector<const DoFHandler<dim> *> dof_handler_vec;
     dof_handler_vec.resize(2);
@@ -170,7 +161,15 @@ DGOperator<dim, Number>::initialize_matrix_free()
   }
   else
   {
-    AssertThrow(false, ExcMessage("Not implemented."));
+    AssertThrow(param.analytical_velocity_field == true, ExcMessage("Invalid parameter."));
+
+    AffineConstraints<double> constraint_dummy;
+    constraint_dummy.close();
+
+    // quadrature formula used to perform integrals
+    QGauss<1> quadrature(param.degree + 1);
+
+    matrix_free.reinit(*mapping, dof_handler, constraint_dummy, quadrature, additional_data);
   }
 }
 
@@ -202,7 +201,7 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
 
   // convective operator
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
-  convective_kernel_data.type_velocity_field        = param.type_velocity_field;
+  convective_kernel_data.velocity_type              = param.get_type_velocity_field();
   convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
   convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
   convective_kernel_data.velocity                   = field_functions->velocity;
@@ -306,9 +305,10 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
 
   combined_operator.reinit(matrix_free, constraint_matrix, combined_operator_data);
 
-  // The velocity vector needs to be set in case of numerical velocity field. Otherwise, certain
-  // preconditioners requiring the velocity field during initialization can not be initialized.
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  // The velocity vector needs to be set in case the velocity field is stored in DoF Vector.
+  // Otherwise, certain preconditioners requiring the velocity field during initialization can not
+  // be initialized.
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     AssertThrow(velocity != nullptr,
                 ExcMessage(
@@ -327,9 +327,12 @@ DGOperator<dim, Number>::setup_operators_and_solver(double const       scaling_f
 
   setup_operators(scaling_factor_mass_matrix, velocity);
 
-  initialize_preconditioner();
+  if(param.linear_system_has_to_be_solved())
+  {
+    initialize_preconditioner();
 
-  initialize_solver();
+    initialize_solver();
+  }
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -363,7 +366,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
                     "Invalid solver parameters. The convective term is treated explicitly."));
     }
 
-    if(param.type_velocity_field == TypeVelocityField::Numerical)
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
       AssertThrow(dof_handler_velocity.get() != 0,
                   ExcMessage("dof_handler_velocity is not initialized."));
@@ -482,6 +485,39 @@ DGOperator<dim, Number>::initialize_dof_vector_velocity(VectorType & velocity) c
 
 template<int dim, typename Number>
 void
+DGOperator<dim, Number>::interpolate_velocity(VectorType & velocity, double const time) const
+{
+  field_functions->velocity->set_time(time);
+
+  // This is necessary if Number == float
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+
+  VectorTypeDouble vector_double;
+  vector_double = velocity;
+
+  VectorTools::interpolate(*dof_handler_velocity, *(field_functions->velocity), vector_double);
+
+  velocity = vector_double;
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::project_velocity(VectorType & velocity, double const time) const
+{
+  VelocityProjection<dim, Number> l2_projection;
+
+  unsigned int const quad_index = 0;
+  l2_projection.apply(matrix_free,
+                      get_dof_index_velocity(),
+                      quad_index,
+                      param.degree,
+                      field_functions->velocity,
+                      time,
+                      velocity);
+}
+
+template<int dim, typename Number>
+void
 DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src, double const time) const
 {
   field_functions->initial_solution->set_time(time);
@@ -522,7 +558,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     if(param.equation_type == EquationType::Convection ||
        param.equation_type == EquationType::ConvectionDiffusion)
     {
-      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
         AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
@@ -549,7 +585,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     if(param.equation_type == EquationType::Convection ||
        param.equation_type == EquationType::ConvectionDiffusion)
     {
-      if(param.type_velocity_field == TypeVelocityField::Numerical)
+      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
         AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
@@ -580,7 +616,7 @@ DGOperator<dim, Number>::evaluate_convective_term(VectorType &       dst,
                                                   double const       time,
                                                   VectorType const * velocity) const
 {
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
@@ -598,7 +634,7 @@ DGOperator<dim, Number>::evaluate_oif(VectorType &       dst,
                                       double const       time,
                                       VectorType const * velocity) const
 {
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
@@ -633,23 +669,17 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType con
     }
 
     // convective operator
-    if(param.equation_type == EquationType::Convection ||
-       param.equation_type == EquationType::ConvectionDiffusion)
+    if(param.linear_system_including_convective_term_has_to_be_solved())
     {
-      if(param.problem_type == ProblemType::Steady ||
-         (param.problem_type == ProblemType::Unsteady &&
-          param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
-        if(param.type_velocity_field == TypeVelocityField::Numerical)
-        {
-          AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
-          convective_operator.set_velocity_ptr(*velocity);
-        }
-
-        convective_operator.set_time(time);
-        convective_operator.rhs_add(dst);
+        convective_operator.set_velocity_ptr(*velocity);
       }
+
+      convective_operator.set_time(time);
+      convective_operator.rhs_add(dst);
     }
   }
   else // param.use_combined_operator == true
@@ -657,19 +687,13 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType con
     // no need to set scaling_factor_mass_matrix because the mass matrix does not contribute to the
     // rhs
 
-    if(param.equation_type == EquationType::Convection ||
-       param.equation_type == EquationType::ConvectionDiffusion)
+    if(param.linear_system_including_convective_term_has_to_be_solved())
     {
-      if(param.problem_type == ProblemType::Steady ||
-         (param.problem_type == ProblemType::Unsteady &&
-          param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
-        if(param.type_velocity_field == TypeVelocityField::Numerical)
-        {
-          AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
-          combined_operator.set_velocity_ptr(*velocity);
-        }
+        combined_operator.set_velocity_ptr(*velocity);
       }
     }
 
@@ -710,7 +734,7 @@ void
 DGOperator<dim, Number>::update_convective_term(double const       time,
                                                 VectorType const * velocity) const
 {
-  if(param.type_velocity_field == TypeVelocityField::Numerical)
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
@@ -743,19 +767,13 @@ DGOperator<dim, Number>::update_conv_diff_operator(double const       time,
   combined_operator.set_scaling_factor_mass_matrix(scaling_factor);
   combined_operator.set_time(time);
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.linear_system_including_convective_term_has_to_be_solved())
   {
-    if(param.problem_type == ProblemType::Steady ||
-       (param.problem_type == ProblemType::Unsteady &&
-        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      if(param.type_velocity_field == TypeVelocityField::Numerical)
-      {
-        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+      AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
-        combined_operator.set_velocity_ptr(*velocity);
-      }
+      combined_operator.set_velocity_ptr(*velocity);
     }
   }
 }
@@ -773,19 +791,13 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
   combined_operator.set_scaling_factor_mass_matrix(scaling_factor);
   combined_operator.set_time(time);
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.linear_system_including_convective_term_has_to_be_solved())
   {
-    if(param.problem_type == ProblemType::Steady ||
-       (param.problem_type == ProblemType::Unsteady &&
-        param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit))
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      if(param.type_velocity_field == TypeVelocityField::Numerical)
-      {
-        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
+      AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
-        combined_operator.set_velocity_ptr(*velocity);
-      }
+      combined_operator.set_velocity_ptr(*velocity);
     }
   }
 

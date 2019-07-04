@@ -42,7 +42,8 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::ConvectionDiffusion;
   param.right_hand_side = false;
-  param.type_velocity_field = TypeVelocityField::Numerical;
+  // Note: set parameter store_analytical_velocity_in_dof_vector to test different implementation variants
+  param.analytical_velocity_field = true;
 
   // PHYSICAL QUANTITIES
   param.start_time = 0.0;
@@ -79,6 +80,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // NUMERICAL PARAMETERS
   param.use_cell_based_face_loops = false;
+  param.store_analytical_velocity_in_dof_vector = true; // true; // false;
 }
 }
 

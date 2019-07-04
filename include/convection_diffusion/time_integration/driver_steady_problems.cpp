@@ -8,6 +8,7 @@
 #include "driver_steady_problems.h"
 
 #include "../spatial_discretization/interface.h"
+#include "../user_interface/input_parameters.h"
 
 namespace ConvDiff
 {
@@ -71,12 +72,38 @@ DriverSteadyProblems<Number>::solve()
   Timer timer;
   timer.restart();
 
+  // prepare pointer for velocity field, but only if necessary
+  VectorType const * velocity_ptr = nullptr;
+  VectorType         velocity_vector;
+
+  if(param.linear_system_including_convective_term_has_to_be_solved())
+  {
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    {
+      if(param.analytical_velocity_field)
+      {
+        pde_operator->initialize_dof_vector_velocity(velocity_vector);
+        pde_operator->project_velocity(velocity_vector, 0.0 /* time */);
+
+        velocity_ptr = &velocity_vector;
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
+    }
+  }
+
   // calculate rhs vector
-  pde_operator->rhs(rhs_vector);
+  pde_operator->rhs(rhs_vector, 0.0 /* time */, velocity_ptr);
 
   // solve linear system of equations
-  unsigned int iterations =
-    pde_operator->solve(solution, rhs_vector, /* update_preconditioner = */ false);
+  unsigned int iterations = pde_operator->solve(solution,
+                                                rhs_vector,
+                                                param.update_preconditioner,
+                                                1.0 /* scaling_factor */,
+                                                0.0 /* time */,
+                                                velocity_ptr);
 
   computing_times[0] += timer.wall_time();
 

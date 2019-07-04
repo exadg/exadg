@@ -48,19 +48,16 @@ enum_to_string(EquationType const enum_type);
 
 /*
  * This parameter describes the type of velocity field for the convective term.
- * Analytical means that an analytical velocity field is prescribed, while Numerical
- * means that a discrete (potentially discontinuous) velocity field is prescribed that
- * is the result of numerical computations, e.g., the velocity field obtained as the
- * solution of the incompressible Navier-Stokes equations.
+ * Function means that an analytical velocity field is prescribed, while DoFVector
+ * means that the velocity field is read and interpolated from a DoFVector, e.g.,
+ * the velocity field obtained as the solution of the incompressible Navier-Stokes
+ * equations.
  */
 enum class TypeVelocityField
 {
-  Analytical,
-  Numerical
+  Function,
+  DoFVector
 };
-
-std::string
-enum_to_string(TypeVelocityField const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */

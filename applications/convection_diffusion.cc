@@ -223,6 +223,10 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented"));
   }
 
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  VectorType const * velocity_ptr = nullptr;
+  VectorType velocity;
+
   // setup solvers in case of BDF time integration or steady problems
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -236,8 +240,16 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       std::shared_ptr<TimeIntBDF<Number>> time_integrator_bdf =
         std::dynamic_pointer_cast<TimeIntBDF<Number>>(time_integrator);
 
+      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+      {
+        conv_diff_operator->initialize_dof_vector_velocity(velocity);
+        conv_diff_operator->interpolate_velocity(velocity, time_integrator->get_time());
+        velocity_ptr = &velocity;
+      }
+
       conv_diff_operator->setup_operators_and_solver(
-        time_integrator_bdf->get_scaling_factor_time_derivative_term());
+        time_integrator_bdf->get_scaling_factor_time_derivative_term(),
+        velocity_ptr);
     }
     else
     {
@@ -248,8 +260,16 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
   else if(param.problem_type == ProblemType::Steady)
   {
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    {
+      conv_diff_operator->initialize_dof_vector_velocity(velocity);
+      conv_diff_operator->interpolate_velocity(velocity, 0.0 /* time */);
+      velocity_ptr = &velocity;
+    }
+
     conv_diff_operator->setup_operators_and_solver(
-      /* no parameter since this is a steady problem */);
+      1.0 /* scaling_factor_time_derivative_term */,
+      velocity_ptr);
   }
   else
   {
