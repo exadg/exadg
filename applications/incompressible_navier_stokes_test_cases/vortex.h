@@ -23,11 +23,11 @@
 unsigned int const DEGREE_MIN = 4;
 unsigned int const DEGREE_MAX = 4;
 
-unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MIN = 2;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MIN = 4;
+unsigned int const REFINE_TIME_MAX = 4;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -47,7 +47,7 @@ void set_input_parameters(InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = false;
 
 
@@ -59,17 +59,17 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping = false;
   param.max_velocity = 1.4 * U_X_MAX;
   param.cfl = 0.4;
   param.cfl_oif = param.cfl/1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
-  param.time_step_size = 5.e-5;
+  param.time_step_size = 0.5;
   param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;

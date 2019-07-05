@@ -169,23 +169,48 @@ TimeIntBDF<Number>::calculate_time_step_size()
   {
     double time_step = 1.0;
 
-    double const h_min = operator_base->calculate_minimum_element_length();
+    double h_min = operator_base->calculate_minimum_element_length();
+
+    double max_velocity_temp =  param.max_velocity;
+
+    if (param.ale_formulation==true){
+      //adjust maximum velocity and maximum element size that are reached during the simulation
+      max_velocity_temp += param.max_grid_velocity;
+      h_min -= param.grid_movement_amplitude ;
+    }
 
     double time_step_global = calculate_time_step_cfl_global(
-      cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
+      cfl, max_velocity_temp, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
 
     pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
     print_parameter(pcout, "h_min", h_min);
     print_parameter(pcout, "U_max", param.max_velocity);
+    if (param.ale_formulation==true){
+      print_parameter(pcout, "U_max_grid",param.max_grid_velocity);
+        }
     print_parameter(pcout, "CFL", cfl);
     print_parameter(pcout, "exponent fe_degree", param.cfl_exponent_fe_degree_velocity);
     print_parameter(pcout, "Time step size (global)", time_step_global);
 
     if(adaptive_time_stepping == true)
     {
+
+      VectorType u_temp = get_velocity();
+      if(param.ale_formulation==true)
+      {
+      VectorType u_grid_temp;
+      operator_base->initialize_vector_grid_velocity(u_grid_temp);
+      operator_base->get_grid_velocity(u_grid_temp, get_time());
+      //TODO: CFL, Check why in previous version u_temp -= u_grid_temp;
+      u_temp += u_grid_temp;
+      }
+
+
+
+
       // if u(x,t=0)=0, this time step size will tend to infinity
       double time_step_adap =
-        operator_base->calculate_time_step_cfl(get_velocity(),
+        operator_base->calculate_time_step_cfl(u_temp,
                                                cfl,
                                                param.cfl_exponent_fe_degree_velocity);
 
@@ -249,8 +274,22 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
               ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
+
+  VectorType u_temp = get_velocity();
+
+  if(param.ale_formulation==true)
+  {
+    VectorType u_grid_temp;
+    operator_base->initialize_vector_grid_velocity(u_grid_temp);
+    operator_base->get_grid_velocity(u_grid_temp, get_time());
+    //TODO: CFL, Check why in previous version u_temp -= u_grid_temp;
+    u_temp += u_grid_temp;
+  }
+
+
+
   double new_time_step_size =
-    operator_base->calculate_time_step_cfl(get_velocity(),
+    operator_base->calculate_time_step_cfl(u_temp,
                                            cfl,
                                            param.cfl_exponent_fe_degree_velocity);
 

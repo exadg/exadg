@@ -44,6 +44,11 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
+    if(this->param.ale_formulation==true){
+      this->operator_base->initialize_vector_velocity(vec_convective_np);
+    }
+
+
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
   }
@@ -95,8 +100,7 @@ TimeIntBDFCoupled<Number>::setup_derived()
 
   // convective term treated explicitly (additive decomposition)
   if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
-     this->param.start_with_low_order == false)
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     initialize_vec_convective_term();
   }
@@ -106,6 +110,18 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
 {
+  if (this->param.ale_formulation == true && this->param.treatment_of_convective_term==TreatmentOfConvectiveTerm::Explicit)
+  {
+
+    //TODO: For start_with_lower_order==false: previous times have to be initialized not with 0 but on old meshes, see also initialize_former_solutions
+
+  this->operator_base->evaluate_convective_term(vec_convective_term[0],
+                                                solution[0].block(0),
+                                                this->get_time());
+  }
+
+if (this->param.start_with_low_order == false)
+{
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
   {
@@ -113,6 +129,7 @@ TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
                                                   solution[i].block(0),
                                                   this->get_previous_time(i));
   }
+}
 }
 
 template<typename Number>
@@ -235,9 +252,15 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
+
+      if (this->param.ale_formulation == false || this->param.treatment_of_convective_term==TreatmentOfConvectiveTerm::Implicit)
+      {
+
       this->operator_base->evaluate_convective_term(vec_convective_term[0],
                                                     solution[0].block(0),
                                                     this->get_time());
+      }
+
 
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         rhs_vector.block(0).add(-this->extra.get_beta(i), vec_convective_term[i]);
@@ -303,6 +326,7 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     // Newton solver
     unsigned int newton_iterations = 0;
     unsigned int linear_iterations = 0;
+
 
     pde_operator->solve_nonlinear_problem(solution_np,
                                           rhs,
@@ -374,6 +398,16 @@ TimeIntBDFCoupled<Number>::solve_timestep()
       computing_times[1] += timer.wall_time();
     }
   }
+
+  //convective term for next timestep on current mesh
+  if (this->param.ale_formulation == true && this->param.treatment_of_convective_term==TreatmentOfConvectiveTerm::Explicit)
+  {
+    this->operator_base->evaluate_convective_term(vec_convective_np,
+                                                  solution_np.block(0),
+                                                  this->get_next_time());
+  }
+
+
 }
 
 template<typename Number>
@@ -507,6 +541,11 @@ TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     push_back(vec_convective_term);
+    //ALE
+    if (this->param.ale_formulation==true){
+    //  std::cout<<"TEST"<<std::endl;
+    vec_convective_term[0].swap(vec_convective_np);
+    }
   }
 }
 

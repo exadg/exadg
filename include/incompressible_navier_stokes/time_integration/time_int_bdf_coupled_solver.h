@@ -115,6 +115,9 @@ private:
 
   std::vector<VectorType> vec_convective_term;
 
+  //ALE:
+  VectorType vec_convective_np;
+
   // performance analysis: average number of iterations and solver time
   std::vector<Number>       computing_times;
   std::vector<unsigned int> iterations;

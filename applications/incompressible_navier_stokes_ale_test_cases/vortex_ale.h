@@ -23,11 +23,11 @@
 unsigned int const DEGREE_MIN = 4;
 unsigned int const DEGREE_MAX = 4;
 
-unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MIN = 2;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MIN = 4;
+unsigned int const REFINE_TIME_MAX = 4;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -35,41 +35,59 @@ const double U_X_MAX = 1.0;
 const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
-enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear; //UniformCartesian;
+enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold, Curvilinear};
+const MeshType MESH_TYPE = MeshType::UniformCartesian;
+
+const double TRIANGULATION_LEFT = -0.5;
+const double TRIANGULATION_RIGHT = 0.5;
+const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
+
+const double START_TIME = 0.0;
+const double END_TIME = 0.5;
+
 
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
 {
+  //ALE
+  param.ale_formulation = true;
+  param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
+  param.triangulation_left = TRIANGULATION_LEFT;
+  param.triangulation_right = TRIANGULATION_RIGHT;
+  param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
+  param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
+
+
   // MATHEMATICAL MODEL
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = false;
 
 
   // PHYSICAL QUANTITIES
-  param.start_time = 0.0;
-  param.end_time = 1.0;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
   param.viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping = false;
   param.max_velocity = 1.4 * U_X_MAX;
   param.cfl = 0.4;
   param.cfl_oif = param.cfl/1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
-  param.time_step_size = 5.e-5;
+  param.time_step_size = 0.5;
   param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;
@@ -80,7 +98,7 @@ void set_input_parameters(InputParameters &param)
 
   // restart
   param.restarted_simulation = false;
-  param.restart_data.write_restart = true;
+  param.restart_data.write_restart = false;
   param.restart_data.interval_time = 0.25;
   param.restart_data.interval_wall_time = 1.e6;
   param.restart_data.interval_time_steps = 1e8;
@@ -195,6 +213,11 @@ void set_input_parameters(InputParameters &param)
   // preconditioner Schur-complement block
   param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+
+//TEST
+ /* param.solver_info_data.print_to_screen = false;
+  param.solver_info_data.interval_wall_time = 2 *3600;
+*/
 }
 }
 
@@ -214,7 +237,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
 {
   (void)periodic_faces;
 
-  const double left = -0.5, right = 0.5;
+  const double left = TRIANGULATION_LEFT, right = TRIANGULATION_RIGHT;
 
   if(MESH_TYPE == MeshType::UniformCartesian)
   {
@@ -347,11 +370,171 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   triangulation->refine_global(n_refine_space);
 }
 
+#include "../grid_tools/cube_moving_manifold.h"
+
+template<int dim>
+void time_dependent_mesh_generation(double t,
+                                    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+                                    unsigned int const                                n_refine_space,
+                                    std::vector<GridTools::PeriodicFacePair<typename
+                                          Triangulation<dim>::cell_iterator> >            /*periodic_faces*/)
+ { //TODO:incorporate into create_grid_and_set_boundary_ids
+      GridGenerator::subdivided_hyper_cube(*triangulation,2,
+                                           TRIANGULATION_LEFT,
+                                           TRIANGULATION_RIGHT);
+
+      triangulation->set_all_manifold_ids(1);
+
+
+      static CubeMovingManifold<dim> manifold(&t,
+                                              TRIANGULATION_LEFT,
+                                              TRIANGULATION_RIGHT,
+                                              TRIANGULATION_MOVEMENT_AMPLITUDE,
+                                              END_TIME - START_TIME,
+                                              TRIANGULATION_MOVEMENT_FREQUENCY);
+
+      triangulation->set_manifold(1, manifold);
+
+      typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+      for(;cell!=endc;++cell)
+      {
+        for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+        {
+          if (((std::fabs(cell->face(face_number)->center()(0) - TRIANGULATION_RIGHT)< 1e-12) && (cell->face(face_number)->center()(1)<0))||
+             ((std::fabs(cell->face(face_number)->center()(0) - TRIANGULATION_LEFT)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
+             ((std::fabs(cell->face(face_number)->center()(1) - TRIANGULATION_LEFT)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
+             ((std::fabs(cell->face(face_number)->center()(1) - TRIANGULATION_RIGHT)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
+                cell->face(face_number)->set_boundary_id (1);
+        }
+      }
+      triangulation->refine_global(n_refine_space);
+
+      typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+}
+
+
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
 /*                                                                                                          */
 /************************************************************************************************************/
+
+template<int dim>
+class AnalyticalSolutionGridVelocity : public Function<dim>
+{
+public:
+  AnalyticalSolutionGridVelocity (const unsigned int  n_components = dim,
+                                  const double        time = 0.)
+  :
+  Function<dim>(n_components, time)
+  {}
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double t = this->get_time();
+
+    double result = 0.0;
+    double frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
+    double amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
+    double delta_t = END_TIME - START_TIME;
+    double T = delta_t / frequency;
+    double left = TRIANGULATION_LEFT;
+    double right = TRIANGULATION_RIGHT;
+    double width = right - left;
+
+    const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
+    //const double sin_t=std::sin(2*numbers::PI*t/T);
+
+    Point<dim> X = p;
+    Tensor<1,dim>  R; //Residual
+
+
+          //Damping---------------------------------------
+          //linear
+          //double damp0 = (1- std::abs(X(0))/right );
+          //double damp1 = (1- std::abs(X(1))/right );
+          //quadratic
+          double damp0 = (1- std::pow(X(0)/right,2) );
+          double damp1 = (1- std::pow(X(1)/right,2) );
+          //----------------------------------------------
+
+          R[0] = p(0)- X(0)- amplitude*sin_t*std::sin(2*numbers::PI*(X(1)-left)/width)*damp0;
+          R[1] = p(1)- X(1)- amplitude*sin_t*std::sin(2*numbers::PI*(X(0)-left)/width)*damp1;
+
+
+          unsigned int its = 0;
+          while (R.norm() > 1e-12 && its < 100)
+          {
+
+            //Damping---------------------------------------
+            //linear
+            //double damp0 = (1- std::abs(X(0))/right );
+            //double damp1 = (1- std::abs(X(1))/right );
+            //double damp0_dX0 =(-X(0)/std::abs(X(0)) *right);
+            //double damp1_dX1 =(-X(1)/std::abs(X(0)) *right);
+            //quadratic
+                   damp0 = (1- std::pow(X(0)/right,2) );
+                   damp1 = (1- std::pow(X(1)/right,2) );
+            double damp0_dX0 =(-2*X(0)/std::pow(right,2));
+            double damp1_dX1 =(-2*X(1)/std::pow(right,2));
+            //----------------------------------------------
+
+            Tensor<2,dim> J;
+
+            J[0][0]= - 1 - amplitude*sin_t*std::sin(2*numbers::PI*(X(1)-left)/width) * damp0_dX0; //dR0/dX0
+            J[0][1]= - amplitude*sin_t*2*numbers::PI/width* std::cos(2*numbers::PI*(X(1)-left)/width)*damp0; //dR0/dX1
+            J[1][0]= - amplitude*sin_t*2*numbers::PI/width* std::cos(2*numbers::PI*(X(0)-left)/width)*damp1; //dR1/dX0
+            J[1][1]= - 1 - amplitude*sin_t*std::sin(2*numbers::PI*(X(0)-left)/width) * damp1_dX1; //dR1/dX1
+
+            Tensor<1,dim> D; //Displacement
+            D = invert(J)*-1*R;
+            X+=D;
+
+            R[0] = p(0)- X(0)- amplitude*sin_t*std::sin(2*numbers::PI*(X(1)-left)/width)*damp0;
+            R[1] = p(1)- X(1)- amplitude*sin_t*std::sin(2*numbers::PI*(X(0)-left)/width)*damp1;
+
+            ++its;
+          }
+
+          AssertThrow (R.norm() < 1e-12,
+                       ExcMessage("Newton for point did not converge."));
+
+          //Damping---------------------------------------
+          //linear:
+          //double damp0 = (1- std::abs(X(0))/right );
+          //double damp1 = (1- std::abs(X(1))/right );
+          //double damp0_dX0 =(-X(0)/std::abs(p(0)) *right);
+          //double damp1_dX1 =(-X(1)/std::abs(p(0)) *right);
+          //quadratic:
+                 damp0 = (1- std::pow(X(0)/right,2) );
+                 damp1 = (1- std::pow(X(1)/right,2) );
+          //double damp0_dX0 =(-2*X(0)/std::pow(right,2));
+          //double damp1_dX1 =(-2*X(1)/std::pow(right,2));
+          //----------------------------------------------
+
+          double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
+          //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
+
+          if(component == 0)
+            {
+              result = amplitude*std::sin(2*numbers::PI*(X(1)-left)/width)*damp0  *dsin_t_dt;
+            }
+          else if(component == 1)
+            {
+              result = amplitude*std::sin(2*numbers::PI*(X(0)-left)/width)*damp1  *dsin_t_dt;
+            }
+          if (t<=0)
+            return 0.0;//for initialization //TODO: change if further timesteps are initialized with deformed mesh
+          else
+            return result;
+
+   }
+
+};
+
+
+
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -510,6 +693,7 @@ void set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
+  field_functions->analytical_solution_grid_velocity.reset(new AnalyticalSolutionGridVelocity<dim>());
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -531,7 +715,7 @@ construct_postprocessor(InputParameters const &param)
   // write output for visualization of results
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = "output/vortex/vtu/";
-  pp_data.output_data.output_name = "vortex_curvilinear";
+  pp_data.output_data.output_name = "vortex";
   pp_data.output_data.output_start_time = param.start_time;
   pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
   pp_data.output_data.write_vorticity = true;

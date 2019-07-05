@@ -14,6 +14,11 @@
 
 #include "time_integration/interpolate.h"
 
+
+//TEST:
+#include <deal.II/matrix_free/operators.h>
+
+
 using namespace dealii;
 
 namespace IncNS
@@ -23,9 +28,10 @@ namespace Interface
 /*
  * Base operator for incompressible Navier-Stokes solvers.
  */
-template<typename Number>
+template< typename Number>
 class OperatorBase
 {
+
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
@@ -50,6 +56,13 @@ public:
 
   virtual void
   initialize_vector_velocity(VectorType & src) const = 0;
+
+  virtual void
+  initialize_vector_grid_velocity(VectorType & src) const = 0;
+
+  virtual void
+  get_grid_velocity(VectorType & grid_velocity,
+      double const evaluation_time) const = 0;
 
   virtual void
   initialize_vector_velocity_scalar(VectorType & src) const = 0;
@@ -118,6 +131,7 @@ public:
 
   virtual void
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
+
 };
 
 /*

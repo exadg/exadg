@@ -86,12 +86,13 @@ public:
   virtual void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const = 0;
 
-protected:
   /*
    * Get time at the end of the current time step t_{n+1}.
    */
   double
   get_next_time() const;
+
+protected:
 
   /*
    * Get time at the end of the current time step.

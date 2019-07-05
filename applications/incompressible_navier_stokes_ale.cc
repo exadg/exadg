@@ -84,6 +84,9 @@ private:
   void
   print_header() const;
 
+  void
+  move_mesh(double t) const;
+
   ConditionalOStream pcout;
 
   std::shared_ptr<parallel::Triangulation<dim>> triangulation;
@@ -126,13 +129,20 @@ private:
   Timer          timer;
   mutable double overall_time;
   double         setup_time;
+  mutable double         update_time;
+  mutable double         move_mesh_time;
+  mutable double         timer_help;
+
 };
 
 template<int dim, typename Number>
 Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     overall_time(0.0),
-    setup_time(0.0)
+    setup_time(0.0),
+    update_time(0.0),
+    move_mesh_time(0.0),
+    timer_help(0.0)
 {
 }
 
@@ -293,6 +303,19 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   setup_time = timer.wall_time();
 }
 
+
+template<int dim, typename Number>
+void
+Problem<dim, Number>::move_mesh(double t) const
+{
+  triangulation->clear();
+
+  time_dependent_mesh_generation(t, triangulation, param.h_refinements, periodic_faces);
+
+  }
+
+
+
 template<int dim, typename Number>
 void
 Problem<dim, Number>::solve() const
@@ -305,8 +328,27 @@ Problem<dim, Number>::solve() const
     // run time loop
     if(this->param.problem_type == ProblemType::Steady)
       time_integrator->timeloop_steady_problem();
-    else if(this->param.problem_type == ProblemType::Unsteady)
+    else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == false)
       time_integrator->timeloop();
+    else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == true )
+        {
+          bool timeloop_finished=false;
+          while(!timeloop_finished)
+          {
+            navier_stokes_operation->set_grid_velocity_in_convective_operator_kernel(time_integrator->get_next_time());
+
+            timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
+
+            timer_help = timer.wall_time();
+            //navier_stokes_operation->move_mesh(time_integrator->get_time()+ time_integrator->get_time_step_size());
+            move_mesh(time_integrator->get_next_time());
+            move_mesh_time += timer.wall_time() - timer_help;
+
+            timer_help = timer.wall_time();
+            navier_stokes_operation->update();
+            update_time += timer.wall_time() - timer_help;
+          }
+        }
     else
       AssertThrow(false, ExcMessage("Not implemented."));
   }
@@ -405,11 +447,29 @@ Problem<dim, Number>::analyze_computing_times() const
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
               << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
+
+  Utilities::MPI::MinMaxAvg move_mesh_time_data =
+      Utilities::MPI::min_max_avg(move_mesh_time, MPI_COMM_WORLD);
+  double const move_mesh = move_mesh_time_data.avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << move_mesh << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << move_mesh / overall_time_avg * 100 << " %" << std::endl;
+
+  Utilities::MPI::MinMaxAvg update_time_data =
+      Utilities::MPI::min_max_avg(update_time, MPI_COMM_WORLD);
+  double const update = update_time_data.avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
+              << std::scientific << std::setw(10) << std::right << update << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << update / overall_time_avg * 100 << " %" << std::endl;
+
+  double const other = overall_time_avg - sum_of_substeps - setup_time_avg - update - move_mesh;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
               << std::scientific << std::setw(10) << std::right << other << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
               << other / overall_time_avg * 100 << " %" << std::endl;
+
 
   this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
               << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "

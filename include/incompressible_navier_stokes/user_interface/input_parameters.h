@@ -598,6 +598,21 @@ public:
   // solver data for schur complement
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
+
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                                        ALE                                         */
+  /*                                                                                    */
+  /**************************************************************************************/
+
+  bool ale_formulation;
+  double max_grid_velocity;
+  double triangulation_left;
+  double triangulation_right;
+  double grid_movement_amplitude;
+  double grid_movement_frequency;
+
+
 };
 
 } // namespace IncNS

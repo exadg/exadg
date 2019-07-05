@@ -27,7 +27,8 @@ struct ConvectiveKernelData
     : formulation(FormulationConvectiveTerm::DivergenceFormulation),
       upwind_factor(1.0),
       use_outflow_bc(false),
-      type_dirichlet_bc(TypeDirichletBCs::Mirror)
+      type_dirichlet_bc(TypeDirichletBCs::Mirror),
+      ale(false)
   {
   }
 
@@ -38,6 +39,8 @@ struct ConvectiveKernelData
   bool use_outflow_bc;
 
   TypeDirichletBCs type_dirichlet_bc;
+
+  bool ale;
 };
 
 template<int dim, typename Number>
@@ -62,6 +65,9 @@ public:
          bool const                      is_mg)
   {
     this->data = data;
+
+    matrix_free.initialize_dof_vector(velocity_grid, dof_index);
+
 
     // integrators for linearized problem
     integrator_velocity.reset(new IntegratorCell(matrix_free, dof_index, quad_index_linearized));
@@ -157,6 +163,31 @@ public:
     velocity.reset(src);
 
     velocity->update_ghost_values();
+  }
+
+  void
+  set_velocity_grid_ptr(VectorType const & src) const
+  {
+    //velocity_grid.reset(src);
+    //velocity_grid->update_ghost_values();
+    velocity_grid = src;
+    velocity_grid.update_ghost_values();
+
+
+    //std::cout<<src.l2_norm()<<std::endl;//TEST
+
+
+  }
+
+  VectorType const &
+  get_grid_velocity() const
+  {
+
+    //std::cout<<velocity_grid.l2_norm()<<std::endl;//TEST
+
+    //return *velocity_grid;
+      return velocity_grid;
+
   }
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -275,7 +306,8 @@ public:
     std::tuple<vector, vector>
     calculate_flux_nonlinear_interior_and_neighbor(vector const & uM,
                                                    vector const & uP,
-                                                   vector const & normalM) const
+                                                   vector const & normalM,
+                                                   vector const & ugrid) const
   {
     vector flux_m, flux_p;
 
@@ -288,11 +320,23 @@ public:
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      vector flux = calculate_upwind_flux(uM, uP, normalM);
-
+      vector flux;
+      scalar average_u_normal;
+      if (data.ale==false){
+      flux = calculate_upwind_flux(uM, uP, normalM);
       // a second term is needed since the strong formulation is implemented (integration by parts
       // twice)
-      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+      average_u_normal = 0.5 * (uM + uP) * normalM;
+      }
+      else if (data.ale==true){
+        flux = calculate_upwind_flux_ale(uM, uP, normalM, ugrid);
+
+        vector wM    = uM - ugrid;
+        vector wP    = uP - ugrid;
+        average_u_normal = 0.5 * (wM + wP) * normalM;
+        //std::cout<<"TEST"<<std::endl;
+      }
+
       flux_m                  = flux - average_u_normal * uM;
       flux_p                  = -flux + average_u_normal * uP; // opposite signs since n⁺ = - n⁻
     }
@@ -678,6 +722,30 @@ public:
             data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
   }
 
+  //ale
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_upwind_flux_ale(vector const & uM, vector const & uP, vector const & normalM, vector const & ugrid) const
+  {
+
+    vector average_velocity = 0.5 * (uM + uP);
+
+    vector wM = uM - ugrid;
+    vector wP = uP - ugrid;
+
+    scalar average_normal_velocity = 0.5 * (wM + wP) * normalM;//(average_velocity - ugrid) *normalM;
+
+    vector jump_value = uM - uP;
+
+
+    //  std::cout<<ugrid[0][0]<<std::endl;//TEST
+
+    return (average_normal_velocity * average_velocity + data.upwind_factor * 0.5 *
+                                                           std::abs(average_normal_velocity) *
+                                                           jump_value);
+
+  }
+
   /*
    *  Calculate upwind flux for convective operator (linear transport, OIF splitting).
    */
@@ -873,6 +941,8 @@ private:
   ConvectiveKernelData data;
 
   mutable lazy_ptr<VectorType> velocity;
+ // mutable lazy_ptr<VectorType> velocity_grid;
+  mutable VectorType velocity_grid;
 
   std::shared_ptr<IntegratorCell> integrator_velocity;
   std::shared_ptr<IntegratorFace> integrator_velocity_m;
@@ -1006,11 +1076,13 @@ private:
                                         Range const &                   face_range) const;
 
   void
-  do_cell_integral_nonlinear_operator(IntegratorCell & integrator) const;
+  do_cell_integral_nonlinear_operator(IntegratorCell & integrator,
+                                      IntegratorCell & integrator_u_grid) const;
 
   void
   do_face_integral_nonlinear_operator(IntegratorFace & integrator_m,
-                                      IntegratorFace & integrator_p) const;
+                                      IntegratorFace & integrator_p,
+                                      IntegratorFace & integrator_grid_velocity) const;
 
   void
   do_boundary_integral_nonlinear_operator(IntegratorFace &           integrator,

@@ -92,6 +92,7 @@ public:
   {
   }
 
+
   virtual void
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,

@@ -199,7 +199,15 @@ InputParameters::InputParameters()
     discretization_of_laplacian(DiscretizationOfLaplacian::Classical),
     multigrid_data_pressure_block(MultigridData()),
     exact_inversion_of_laplace_operator(false),
-    solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100))
+    solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
+
+    //ale
+    ale_formulation(false),
+    max_grid_velocity(0.0),
+    triangulation_left(-0.5),
+    triangulation_right(0.5),
+    grid_movement_amplitude(0.0),
+    grid_movement_frequency(0.0)
 {
 }
 
@@ -422,6 +430,12 @@ InputParameters::check_input_parameters()
     AssertThrow(turbulence_model != TurbulenceEddyViscosityModel::Undefined,
                 ExcMessage("parameter must be defined"));
     AssertThrow(turbulence_model_constant > 0, ExcMessage("parameter must be greater than zero"));
+  }
+
+  //ALE
+  if(ale_formulation)
+  {
+    AssertThrow(formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation, ExcMessage("divergence formulation of convective operator has to be used since the grid velocity might not be divergence free"));
   }
 }
 
