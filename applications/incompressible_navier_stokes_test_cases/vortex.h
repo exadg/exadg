@@ -47,7 +47,7 @@ void set_input_parameters(InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;//DivergenceFormulation
   param.right_hand_side = false;
 
 
@@ -59,7 +59,7 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
