@@ -168,26 +168,14 @@ public:
   void
   set_velocity_grid_ptr(VectorType const & src) const
   {
-    //velocity_grid.reset(src);
-    //velocity_grid->update_ghost_values();
     velocity_grid = src;
     velocity_grid.update_ghost_values();
-
-
-    //std::cout<<src.l2_norm()<<std::endl;//TEST
-
-
   }
 
   VectorType const &
   get_grid_velocity() const
   {
-
-    //std::cout<<velocity_grid.l2_norm()<<std::endl;//TEST
-
-    //return *velocity_grid;
       return velocity_grid;
-
   }
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -334,7 +322,6 @@ public:
         vector wM    = uM - ugrid;
         vector wP    = uP - ugrid;
         average_u_normal = 0.5 * (wM + wP) * normalM;
-        //std::cout<<"TEST"<<std::endl;
       }
 
       flux_m                  = flux - average_u_normal * uM;
@@ -733,12 +720,9 @@ public:
     vector wM = uM - ugrid;
     vector wP = uP - ugrid;
 
-    scalar average_normal_velocity = 0.5 * (wM + wP) * normalM;//(average_velocity - ugrid) *normalM;
+    scalar average_normal_velocity = 0.5 * (wM + wP) * normalM;
 
     vector jump_value = uM - uP;
-
-
-    //  std::cout<<ugrid[0][0]<<std::endl;//TEST
 
     return (average_normal_velocity * average_velocity + data.upwind_factor * 0.5 *
                                                            std::abs(average_normal_velocity) *
@@ -941,7 +925,6 @@ private:
   ConvectiveKernelData data;
 
   mutable lazy_ptr<VectorType> velocity;
- // mutable lazy_ptr<VectorType> velocity_grid;
   mutable VectorType velocity_grid;
 
   std::shared_ptr<IntegratorCell> integrator_velocity;

@@ -20,14 +20,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 4;
-unsigned int const DEGREE_MAX = 4;
+unsigned int const DEGREE_MIN = 2;
+unsigned int const DEGREE_MAX = 2;
 
 unsigned int const REFINE_SPACE_MIN = 2;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 4;
-unsigned int const REFINE_TIME_MAX = 4;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -80,21 +80,21 @@ void set_input_parameters(InputParameters &param)
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;//BDFCoupledSolution
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = false;
   param.max_velocity = 1.4 * U_X_MAX;
   param.cfl = 0.4;
   param.cfl_oif = param.cfl/1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
-  param.time_step_size = 0.5;
+  param.time_step_size = 2.2727e-02;
   param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
   param.solver_info_data.print_to_screen = true;
-  param.solver_info_data.interval_time = 0.1;
+  param.solver_info_data.interval_wall_time = 2 *3600;
 
   // restart
   param.restarted_simulation = false;
@@ -214,10 +214,8 @@ void set_input_parameters(InputParameters &param)
   param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 
-//TEST
- /* param.solver_info_data.print_to_screen = false;
-  param.solver_info_data.interval_wall_time = 2 *3600;
-*/
+
+
 }
 }
 
@@ -713,7 +711,7 @@ construct_postprocessor(InputParameters const &param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = "output/vortex/vtu/";
   pp_data.output_data.output_name = "vortex";
   pp_data.output_data.output_start_time = param.start_time;
@@ -735,7 +733,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>());
   pp_data.error_data_u.calculate_relative_errors = true;
   pp_data.error_data_u.error_calc_start_time = param.start_time;
-  pp_data.error_data_u.error_calc_interval_time = (param.end_time - param.start_time)/20;
+  pp_data.error_data_u.error_calc_interval_time = (param.end_time - param.start_time);
   pp_data.error_data_u.name = "velocity";
 
   // ... pressure error
@@ -743,7 +741,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>());
   pp_data.error_data_p.calculate_relative_errors = true;
   pp_data.error_data_p.error_calc_start_time = param.start_time;
-  pp_data.error_data_p.error_calc_interval_time = (param.end_time - param.start_time)/20;
+  pp_data.error_data_p.error_calc_interval_time = (param.end_time - param.start_time);
   pp_data.error_data_p.name = "pressure";
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;

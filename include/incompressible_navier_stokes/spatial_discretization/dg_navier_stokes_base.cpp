@@ -1191,21 +1191,21 @@ DGNavierStokesBase<dim, Number>::update(){
   additional_data.initialize_indices = false; //connectivity of elements stays the same
   additional_data.initialize_mapping = true;
 
+  //TODO: Rewrite this routine to avoid code duplication
+
   /*
   additional_data.mapping_update_flags_faces_by_cells =
           (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values)
   */
 
-  //TODO:| update_jacobians /*GCL*/|update_volume_elements /*GCL*/ not needed
-
   additional_data.mapping_update_flags =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/| update_jacobians /*GCL*/|update_volume_elements /*GCL*/);
+          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/);
 
   additional_data.mapping_update_flags_inner_faces =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/| update_jacobians /*GCL*/|update_volume_elements /*GCL*/);
+          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/);
 
   additional_data.mapping_update_flags_boundary_faces =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/| update_jacobians /*GCL*/|update_volume_elements /*GCL*/);
+          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/);
 
 
   if(param.use_cell_based_face_loops)
@@ -1245,260 +1245,6 @@ DGNavierStokesBase<dim, Number>::update(){
   quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
 
   matrix_free.reinit(*mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
-
-  // depending on MatrixFree
-
-  //TODO: CHECK IF IMPORTANT
-  //initialize_operators();
-
-/*
-reinit matrix free in operator base
-
-  operator_base.set_matrix_free(matrix_free);
-convective_kernel->
-
-  this->set_matrix_free(matrix_free);
-*/
-
-/*
-  // operator kernels
-  Operators::ConvectiveKernelData convective_kernel_data;
-  convective_kernel_data.formulation       = param.formulation_convective_term;
-  convective_kernel_data.upwind_factor     = param.upwind_factor;
-  convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
-  convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
-  convective_kernel_data.ale               = param.ale_formulation;
-  convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-  convective_kernel->reinit(matrix_free,
-                            convective_kernel_data,
-                            dof_index_u,
-                            get_quad_index_velocity_linearized(),
-                            false );
-*/
-  /*
-  Operators::ViscousKernelData viscous_kernel_data;
-  viscous_kernel_data.degree                       = param.degree_u;
-  viscous_kernel_data.degree_mapping               = mapping_degree;
-  viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
-  viscous_kernel_data.viscosity                    = param.viscosity;
-  viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
-  viscous_kernel_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
-  viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
-  viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
-  viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-  viscous_kernel->reinit(matrix_free, viscous_kernel_data, dof_index_u);
-
-  AffineConstraints<double> constraint_dummy;
-  constraint_dummy.close();
-
-  // mass matrix operator
-  MassMatrixOperatorData mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index  = dof_index_u;
-  mass_matrix_operator_data.quad_index = quad_index_u;
-  mass_matrix_operator.reinit(matrix_free, constraint_dummy, mass_matrix_operator_data);
-
-  // inverse mass matrix operator
-  inverse_mass_velocity.initialize(matrix_free, param.degree_u, dof_index_u, quad_index_u);
-
-  // inverse mass matrix operator velocity scalar
-  inverse_mass_velocity_scalar.initialize(matrix_free,
-                                          param.degree_u,
-                                          dof_index_u_scalar,
-                                          quad_index_u);
-
-  // body force operator
-  RHSOperatorData<dim> rhs_data;
-  rhs_data.dof_index     = dof_index_u;
-  rhs_data.quad_index    = quad_index_u;
-  rhs_data.kernel_data.f = field_functions->right_hand_side;
-  rhs_operator.reinit(matrix_free, rhs_data);
-
-  // gradient operator
-  GradientOperatorData<dim> gradient_operator_data;
-  gradient_operator_data.dof_index_velocity   = dof_index_u;
-  gradient_operator_data.dof_index_pressure   = dof_index_p;
-  gradient_operator_data.quad_index           = quad_index_u;
-  gradient_operator_data.integration_by_parts = param.gradp_integrated_by_parts;
-  gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
-  gradient_operator_data.bc                   = boundary_descriptor_pressure;
-  gradient_operator.reinit(matrix_free, gradient_operator_data);
-
-  // divergence operator
-  DivergenceOperatorData<dim> divergence_operator_data;
-  divergence_operator_data.dof_index_velocity   = dof_index_u;
-  divergence_operator_data.dof_index_pressure   = dof_index_p;
-  divergence_operator_data.quad_index           = quad_index_u;
-  divergence_operator_data.integration_by_parts = param.divu_integrated_by_parts;
-  divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
-  divergence_operator_data.bc                   = boundary_descriptor_velocity;
-  divergence_operator.reinit(matrix_free, divergence_operator_data);
-
-  // convective operator
-  ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.kernel_data          = convective_kernel_data;
-  convective_operator_data.dof_index            = dof_index_u;
-  convective_operator_data.quad_index           = this->get_quad_index_velocity_linearized();
-  convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  convective_operator_data.quad_index_nonlinear = quad_index_u_nonlinear;
-  convective_operator_data.bc                   = boundary_descriptor_velocity;
-  convective_operator.reinit(matrix_free,
-                             constraint_dummy,
-                             convective_operator_data,
-                             convective_kernel);
-
-  // viscous operator
-  ViscousOperatorData<dim> viscous_operator_data;
-  viscous_operator_data.kernel_data          = viscous_kernel_data;
-  viscous_operator_data.bc                   = boundary_descriptor_velocity;
-  viscous_operator_data.dof_index            = dof_index_u;
-  viscous_operator_data.quad_index           = quad_index_u;
-  viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  viscous_operator.reinit(matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
-
-  if(param.use_divergence_penalty)
-  {
-    // Kernel
-    Operators::DivergencePenaltyKernelData div_penalty_data;
-    div_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
-    div_penalty_data.viscosity              = param.viscosity;
-    div_penalty_data.degree                 = param.degree_u;
-    div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
-
-    div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
-    div_penalty_kernel->reinit(matrix_free,
-                               get_dof_index_velocity(),
-                               get_quad_index_velocity_linear(),
-                               div_penalty_data);
-
-    // Operator
-    DivergencePenaltyData operator_data;
-    operator_data.dof_index  = get_dof_index_velocity();
-    operator_data.quad_index = get_quad_index_velocity_linear();
-
-    div_penalty_operator.reinit(matrix_free, operator_data, div_penalty_kernel);
-  }
-
-  if(param.use_continuity_penalty)
-  {
-    // Kernel
-    Operators::ContinuityPenaltyKernelData conti_penalty_data;
-
-    conti_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
-    conti_penalty_data.which_components       = param.continuity_penalty_components;
-    conti_penalty_data.viscosity              = param.viscosity;
-    conti_penalty_data.degree                 = param.degree_u;
-    conti_penalty_data.penalty_factor         = param.continuity_penalty_factor;
-
-    conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
-    conti_penalty_kernel->reinit(matrix_free,
-                                 get_dof_index_velocity(),
-                                 get_quad_index_velocity_linear(),
-                                 conti_penalty_data);
-
-    // Operator
-    ContinuityPenaltyData operator_data;
-    operator_data.dof_index  = get_dof_index_velocity();
-    operator_data.quad_index = get_quad_index_velocity_linear();
-
-    conti_penalty_operator.reinit(matrix_free, operator_data, conti_penalty_kernel);
-  }
-
-  if(param.use_divergence_penalty || param.use_continuity_penalty)
-  {
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
-       param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
-       (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution &&
-        param.add_penalty_terms_to_monolithic_system == false))
-    {
-      // setup projection operator
-      ProjectionOperatorData data;
-      data.use_divergence_penalty = param.use_divergence_penalty;
-      data.use_continuity_penalty = param.use_continuity_penalty;
-      data.dof_index              = get_dof_index_velocity();
-      data.quad_index             = get_quad_index_velocity_linear();
-      data.use_cell_based_loops   = param.use_cell_based_face_loops;
-      data.implement_block_diagonal_preconditioner_matrix_free =
-        param.implement_block_diagonal_preconditioner_matrix_free;
-      data.solver_block_diagonal         = Elementwise::Solver::CG;
-      data.preconditioner_block_diagonal = param.preconditioner_block_diagonal_projection;
-      data.solver_data_block_diagonal    = param.solver_data_block_diagonal_projection;
-
-
-      //TODO: initialize somewhere else to avoid code duplication
-      //projection_operator.reset(new PROJ_OPERATOR());
-
-      projection_operator->reinit(
-        matrix_free, constraint_dummy, data, div_penalty_kernel, conti_penalty_kernel);
-    }
-  }
-  */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  // depending on MatrixFree
-  //initialize_calculators_for_derived_quantities();
-/*
-  if(this->param.pure_dirichlet_bc == true &&
-     this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
-  {
-    initialization_pure_dirichlet_bc();
-  }*/
 
 }
 
@@ -1551,7 +1297,7 @@ DGNavierStokesBase<dim, Number>::move_mesh(double t){
 
       //Mapping
 //TODO: not required in every step??!
- //     mapping_new = std::make_shared< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> >(dof_handler_grid, position_grid_new);
+      //mapping = std::make_shared< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> >(dof_handler_grid, position_grid_new);
 
 }
 

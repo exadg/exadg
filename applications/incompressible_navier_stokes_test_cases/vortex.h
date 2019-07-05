@@ -36,7 +36,7 @@ const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear; //UniformCartesian;
+const MeshType MESH_TYPE = MeshType::UniformCartesian; //UniformCartesian;
 
 namespace IncNS
 {
@@ -47,7 +47,7 @@ void set_input_parameters(InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;//DivergenceFormulation
+  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
   param.right_hand_side = false;
 
 
@@ -59,10 +59,10 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = false;
   param.max_velocity = 1.4 * U_X_MAX;
   param.cfl = 0.4;

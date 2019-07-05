@@ -437,7 +437,7 @@ protected:
   VectorType displacement_grid;
   VectorType position_grid_new;
 
-  //std::shared_ptr<MappingQGeneric<dim>> mapping_original;
+  //std::shared_ptr<MappingQGeneric<dim>> mapping_old;
   std::shared_ptr< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> > mapping_new;
 
 

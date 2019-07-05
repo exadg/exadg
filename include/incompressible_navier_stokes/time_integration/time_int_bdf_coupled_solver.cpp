@@ -543,7 +543,6 @@ TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
     push_back(vec_convective_term);
     //ALE
     if (this->param.ale_formulation==true){
-    //  std::cout<<"TEST"<<std::endl;
     vec_convective_term[0].swap(vec_convective_np);
     }
   }
