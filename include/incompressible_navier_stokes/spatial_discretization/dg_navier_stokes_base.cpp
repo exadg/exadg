@@ -80,7 +80,7 @@ DGNavierStokesBase<dim, Number>::initialize_mapping_field()
                   }
               }
           position_grid_new=position_grid_init;
-          mapping_new.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>>(dof_handler_grid, position_grid_new));
+          mapping_field.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>>(dof_handler_grid, position_grid_new));
         }
 
 
@@ -188,6 +188,7 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_u_grid.distribute_dofs(*fe_u_grid);
   dof_handler_grid.distribute_dofs(*fe_grid);
   DoFTools::extract_locally_relevant_dofs(dof_handler_grid, relevant_dofs_grid);
+  //TEST
   std::cout<<"MPI_COMM_SELF??"<<std::endl;
    position_grid_init.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
    displacement_grid.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
@@ -1297,7 +1298,7 @@ DGNavierStokesBase<dim, Number>::move_mesh(double t){
 
       //Mapping
 //TODO: not required in every step??!
-      //mapping = std::make_shared< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> >(dof_handler_grid, position_grid_new);
+      mapping_field = std::make_shared< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> >(dof_handler_grid, position_grid_new);
 
 }
 

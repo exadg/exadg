@@ -20,14 +20,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 2;
-unsigned int const DEGREE_MAX = 2;
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
-unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MIN = 1;
+unsigned int const REFINE_TIME_MAX = 1;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -40,8 +40,8 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 const double TRIANGULATION_LEFT = -0.5;
 const double TRIANGULATION_RIGHT = 0.5;
-const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
+const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.49;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
@@ -80,14 +80,14 @@ void set_input_parameters(InputParameters &param)
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;//BDFCoupledSolution
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping = false;
   param.max_velocity = 1.4 * U_X_MAX;
   param.cfl = 0.4;
   param.cfl_oif = param.cfl/1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
-  param.time_step_size = 2.2727e-02;
+  param.time_step_size = 5e-5;
   param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;
@@ -711,7 +711,7 @@ construct_postprocessor(InputParameters const &param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = false;
+  pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = "output/vortex/vtu/";
   pp_data.output_data.output_name = "vortex";
   pp_data.output_data.output_start_time = param.start_time;
