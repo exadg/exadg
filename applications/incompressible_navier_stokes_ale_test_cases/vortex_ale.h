@@ -10,6 +10,7 @@
 
 #include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 #include "../grid_tools/deformed_cube_manifold.h"
+#include "../grid_tools/cube_moving_manifold.h"
 #include "../grid_tools/dealii_extensions.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
@@ -20,14 +21,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
+unsigned int const DEGREE_MIN = 2;
+unsigned int const DEGREE_MAX = 2;
 
-unsigned int const REFINE_SPACE_MIN = 0;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MAX = 5;
 
-unsigned int const REFINE_TIME_MIN = 1;
-unsigned int const REFINE_TIME_MAX = 1;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -40,8 +41,8 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 const double TRIANGULATION_LEFT = -0.5;
 const double TRIANGULATION_RIGHT = 0.5;
-const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.49;
+const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
@@ -80,7 +81,7 @@ void set_input_parameters(InputParameters &param)
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;//BDFCoupledSolution
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping = false;
   param.max_velocity = 1.4 * U_X_MAX;
   param.cfl = 0.4;
@@ -226,6 +227,8 @@ void set_input_parameters(InputParameters &param)
 /*                                                                                                          */
 /************************************************************************************************************/
 
+const double left = TRIANGULATION_LEFT, right = TRIANGULATION_RIGHT;
+
 template<int dim>
 void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
@@ -235,7 +238,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
 {
   (void)periodic_faces;
 
-  const double left = TRIANGULATION_LEFT, right = TRIANGULATION_RIGHT;
+
 
   if(MESH_TYPE == MeshType::UniformCartesian)
   {
@@ -368,7 +371,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   triangulation->refine_global(n_refine_space);
 }
 
-#include "../grid_tools/cube_moving_manifold.h"
+
 
 template<int dim>
 void time_dependent_mesh_generation(double t,
@@ -410,13 +413,11 @@ void time_dependent_mesh_generation(double t,
       typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 }
 
-
-/************************************************************************************************************/
-/*                                                                                                          */
-/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
-/*                                                                                                          */
-/************************************************************************************************************/
-
+/**************************************************************************************/
+/*                                                                                    */
+/*          FUNCTIONS (ANALYTICAL/INITIAL SOLUTION, BOUNDARY CONDITIONS, etc.)        */
+/*                                                                                    */
+/**************************************************************************************/
 template<int dim>
 class AnalyticalSolutionGridVelocity : public Function<dim>
 {
@@ -443,7 +444,7 @@ public:
 
     const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
     //const double sin_t=std::sin(2*numbers::PI*t/T);
-
+/*
     Point<dim> X = p;
     Tensor<1,dim>  R; //Residual
 
@@ -523,15 +524,36 @@ public:
               result = amplitude*std::sin(2*numbers::PI*(X(0)-left)/width)*damp1  *dsin_t_dt;
             }
           if (t<=0)
-            return 0.0;//for initialization //TODO: change if further timesteps are initialized with deformed mesh
+            return 0.0;//for initialization
           else
             return result;
 
+*/
+
+          //TEST:
+          double damp0     = (1- std::pow(p(0)/right,2) );
+          double damp1     = (1- std::pow(p(1)/right,2) );
+          double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
+          //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
+
+   if(component == 0)
+     {
+       result = amplitude*std::sin(2*numbers::PI*(p(1)-left)/width)*damp0  *dsin_t_dt;
+     }
+   else if(component == 1)
+     {
+       result = amplitude*std::sin(2*numbers::PI*(p(0)-left)/width)*damp1  *dsin_t_dt;
+     }
+   if (t<=0)
+     return 0.0;//for initialization
+   else
+   { //std::cout<<"warning: at the moment grid velocity is set to 0 in file vortex.h"<<std::endl;
+     return result;
    }
 
+  }
+
 };
-
-
 
 
 template<int dim>
@@ -711,7 +733,7 @@ construct_postprocessor(InputParameters const &param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = "output/vortex/vtu/";
   pp_data.output_data.output_name = "vortex";
   pp_data.output_data.output_start_time = param.start_time;

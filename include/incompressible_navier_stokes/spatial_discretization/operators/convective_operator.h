@@ -311,12 +311,14 @@ public:
       vector flux;
       scalar average_u_normal;
       if (data.ale==false){
+
       flux = calculate_upwind_flux(uM, uP, normalM);
       // a second term is needed since the strong formulation is implemented (integration by parts
       // twice)
       average_u_normal = 0.5 * (uM + uP) * normalM;
       }
       else if (data.ale==true){
+
         flux = calculate_upwind_flux_ale(uM, uP, normalM, ugrid);
 
         vector wM    = uM - ugrid;
@@ -717,16 +719,14 @@ public:
 
     vector average_velocity = 0.5 * (uM + uP);
 
-    vector wM = uM - ugrid;
-    vector wP = uP - ugrid;
+     scalar average_normal_velocity_g = (average_velocity - ugrid) *normalM;
 
-    scalar average_normal_velocity = 0.5 * (wM + wP) * normalM;
+     vector jump_value = uM - uP;
 
-    vector jump_value = uM - uP;
+     return (average_normal_velocity_g * average_velocity + data.upwind_factor * 0.5 *
+                                                            std::abs(average_normal_velocity_g) *
+                                                            jump_value);
 
-    return (average_normal_velocity * average_velocity + data.upwind_factor * 0.5 *
-                                                           std::abs(average_normal_velocity) *
-                                                           jump_value);
 
   }
 

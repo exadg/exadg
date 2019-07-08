@@ -1194,10 +1194,10 @@ DGNavierStokesBase<dim, Number>::update(){
 
   //TODO: Rewrite this routine to avoid code duplication
 
-  /*
-  additional_data.mapping_update_flags_faces_by_cells =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values)
-  */
+
+ // additional_data.mapping_update_flags_faces_by_cells =
+ //         (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values| update_inverse_jacobians /*CFL*/);
+
 
   additional_data.mapping_update_flags =
           (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/);

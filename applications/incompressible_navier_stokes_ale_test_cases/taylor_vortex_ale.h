@@ -29,27 +29,43 @@ unsigned int const REFINE_TIME_MAX = 6;
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.e-2;
 
+const double TRIANGULATION_LEFT = -0.5;
+const double TRIANGULATION_RIGHT = 0.5;
+const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
+
+const double START_TIME = 0.0;
+const double END_TIME = 0.5;
+
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
 {
+  //ALE
+  param.ale_formulation = true;
+  param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
+  param.triangulation_left = TRIANGULATION_LEFT;
+  param.triangulation_right = TRIANGULATION_RIGHT;
+  param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
+  param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
+
   // MATHEMATICAL MODEL
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
-  param.start_time = 0.0;
-  param.end_time = 3.0;
+  param.start_time = START_TIME;
+  param.end_time = END_TIME;
   param.viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -182,11 +198,116 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   triangulation->refine_global(n_refine_space);
 }
 
+template<int dim>
+void time_dependent_mesh_generation(double t,
+                                    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+                                    unsigned int const                                n_refine_space,
+                                    std::vector<GridTools::PeriodicFacePair<typename
+                                    Triangulation<dim>::cell_iterator> >             periodic_faces)
+{
+
+  GridGenerator::hyper_cube(*triangulation,
+                                       TRIANGULATION_LEFT,
+                                       TRIANGULATION_RIGHT);
+
+  triangulation->set_all_manifold_ids(1);
+
+
+  static CubeMovingManifold<dim> manifold(&t,
+                                          TRIANGULATION_LEFT,
+                                          TRIANGULATION_RIGHT,
+                                          TRIANGULATION_MOVEMENT_AMPLITUDE,
+                                          END_TIME - START_TIME,
+                                          TRIANGULATION_MOVEMENT_FREQUENCY);
+
+  triangulation->set_manifold(1, manifold);
+
+  triangulation->add_periodicity(periodic_faces);
+
+  triangulation->refine_global(n_refine_space);
+}
+
+
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
 /*                                                                                                          */
 /************************************************************************************************************/
+
+template<int dim>
+class AnalyticalSolutionGridVelocity : public Function<dim>
+{
+public:
+  AnalyticalSolutionGridVelocity (const unsigned int  n_components = dim,
+                                  const double        time = 0.)
+  :
+  Function<dim>(n_components, time)
+  {}
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double t = this->get_time();
+
+    double result = 0.0;
+    double frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
+    double amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
+    double delta_t = END_TIME - START_TIME;
+    double T = delta_t / frequency;
+    double left = TRIANGULATION_LEFT;
+    double right = TRIANGULATION_RIGHT;
+
+    const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
+
+    Point<dim> X = p;
+    Tensor<1,dim>  R; //Residual
+
+          //----------------------------------------------
+
+            R[0] = p(0)- X(0)- amplitude*sin_t* (1- std::pow(X(0)/right ,2) );
+            R[1] = p(1)- X(1);
+
+
+          unsigned int its = 0;
+          while (R.norm() > 1e-12 && its < 100)
+          {
+
+            Tensor<2,dim> J;
+
+            J[0][0]= - 1 - amplitude*sin_t * (-2*X(0)/(std::pow(right,2))); //dR0/dX0
+            J[0][1]= 0; //dR0/dX1
+            J[1][0]= 0; //dR1/dX0
+            J[1][1]= - 1; //dR1/dX1
+
+            Tensor<1,dim> D; //Displacement
+            D = invert(J)*-1*R;
+            X+=D;
+
+            R[0] = p(0)- X(0)- amplitude*sin_t* (1- std::pow(X(0)/right ,2) );
+            R[1] = p(1)- X(1);
+
+
+            ++its;
+          }
+
+          AssertThrow (R.norm() < 1e-12,
+                       ExcMessage("Newton for point did not converge."));
+
+          double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
+          //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
+
+          if(component == 0)
+            result = dsin_t_dt*amplitude * (1- std::pow(X(0)/right ,2) );//dX0/dt
+          else if(component == 1)
+            result = 0;//dX1/dt
+
+          if (t<=0)
+            return 0.0;//for initialization
+          else
+            return result;
+  }
+
+};
 
 namespace IncNS
 {
@@ -284,6 +405,7 @@ void set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
+  field_functions->analytical_solution_grid_velocity.reset(new AnalyticalSolutionGridVelocity<dim>());
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
