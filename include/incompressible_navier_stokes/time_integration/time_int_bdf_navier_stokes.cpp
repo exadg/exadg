@@ -201,8 +201,8 @@ TimeIntBDF<Number>::calculate_time_step_size()
       VectorType u_grid_temp;
       operator_base->initialize_vector_grid_velocity(u_grid_temp);
       operator_base->get_grid_velocity(u_grid_temp, get_time());
-      //TODO: CFL, Check why in previous version u_temp -= u_grid_temp;
-      u_temp += u_grid_temp;
+
+      u_temp -= u_grid_temp;
       }
 
 
@@ -282,8 +282,7 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
     VectorType u_grid_temp;
     operator_base->initialize_vector_grid_velocity(u_grid_temp);
     operator_base->get_grid_velocity(u_grid_temp, get_time());
-    //TODO: CFL, Check why in previous version u_temp -= u_grid_temp;
-    u_temp += u_grid_temp;
+    u_temp -= u_grid_temp;
   }
 
 

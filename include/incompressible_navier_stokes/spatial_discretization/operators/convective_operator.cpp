@@ -305,16 +305,20 @@ ConvectiveOperator<dim, Number>::do_cell_integral_nonlinear_operator(
     {
       // convective formulation: (u * grad) u = grad(u) * u
       tensor gradient_u = integrator.get_gradient(q);
-
+      vector u_temp;
       if (this->data.kernel_data.ale == true)
       {
-
+        //TEST//TODO
         vector ugrid = integrator_u_grid.get_value(q);
-        u-=ugrid;
+        u_temp=u-ugrid;
 
       }
+      else
+    {
+        u_temp=u;
+    }
 
-      vector F          = gradient_u * u;
+      vector F          = gradient_u * u_temp;
 
       // plus sign since the strong formulation is used, i.e.
       // integration by parts is performed twice
