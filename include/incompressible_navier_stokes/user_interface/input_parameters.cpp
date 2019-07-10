@@ -202,6 +202,7 @@ InputParameters::InputParameters()
     solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
     //ale
+    mesh_movement_mappingfefield(true),
     ale_formulation(false),
     max_grid_velocity(0.0),
     triangulation_left(-0.5),

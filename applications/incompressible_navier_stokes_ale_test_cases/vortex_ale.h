@@ -27,8 +27,8 @@ unsigned int const DEGREE_MAX = 6;
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 7;
-unsigned int const REFINE_TIME_MAX = 7;
+unsigned int const REFINE_TIME_MIN = 4;
+unsigned int const REFINE_TIME_MAX = 4;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -46,6 +46,7 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
+bool MOVE_MESH_MAPPINGFEFIELD=true;
 
 
 namespace IncNS
@@ -53,6 +54,7 @@ namespace IncNS
 void set_input_parameters(InputParameters &param)
 {
   //ALE
+  param.mesh_movement_mappingfefield = MOVE_MESH_MAPPINGFEFIELD;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
@@ -66,7 +68,7 @@ void set_input_parameters(InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FORMULATION_VISCOUS_TERM;
-  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;//ConvectiveFormulation
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = false;
 
 
@@ -78,7 +80,17 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;//BDFCoupledSolution
+
+  if (MOVE_MESH_MAPPINGFEFIELD==false)
+  {
+    param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;//BDFDualSplittingScheme;//BDFCoupledSolution as soon as MappingQEulerian works for this case
+  }
+  else
+  {
+    std::cout<<"WARNING: SETTINGS FOR MESH MOVEMENT WITH MAPPINGFEFIELD YIELD WRONG RESULTS AND HAVE TO BE THE SAME AS FOR ANY MESH MOVEMENT! ADAPT THIS WHEN DEAL IS CAPABLE OF MULTIGRID STUFF IN COMBINATION WITH MAPPINGFEFIELD."<<std::endl;
+    param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;//BDFCoupledSolution as soon as MappingQEulerian works for this case
+  }
+
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
@@ -131,7 +143,16 @@ void set_input_parameters(InputParameters &param)
   // pressure Poisson equation
   param.solver_pressure_poisson = SolverPressurePoisson::CG;
   param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
-  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+
+  if (MOVE_MESH_MAPPINGFEFIELD==false)
+  {
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;//PointJacobi;//Multigrid as soon as MappingQEulerian works for this case
+  }
+  else
+  {
+    param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::PointJacobi;
+  }
+
   param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 
@@ -179,11 +200,11 @@ void set_input_parameters(InputParameters &param)
   param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
 
   // Chebyshev smoother data
-//  param.multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
-//  param.multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+   //  param.multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
+   //  param.multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
 
   // GMRES smoother data
-//    param.multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
+   //  param.multigrid_data_momentum.gmres_smoother_data.preconditioner = PreconditionerGMRESSmoother::BlockJacobi;
 
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -201,7 +222,18 @@ void set_input_parameters(InputParameters &param)
   param.update_preconditioner_coupled = true;
 
   // preconditioner momentum block
-  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid; // InverseMassMatrix;
+
+  if (MOVE_MESH_MAPPINGFEFIELD==false)
+  {
+  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;//InverseMassMatrix;//Multigrid as soon as MappingQEulerian works for this case
+  }
+  else
+  {
+    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
+  }
+
+
+
   param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data_velocity_block.type = MultigridType::phMG;
   param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
@@ -212,7 +244,16 @@ void set_input_parameters(InputParameters &param)
   param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
 
   // preconditioner Schur-complement block
-  param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  if (MOVE_MESH_MAPPINGFEFIELD==false)
+  {
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;//None; //PressureConvectionDiffusion as soon as MappingQEulerian works for this case
+  }
+  else
+  {
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::None;
+  }
+
+
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 
 
@@ -715,7 +756,7 @@ construct_postprocessor(InputParameters const &param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = false;
+  pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = "output/vortex/vtu/";
   pp_data.output_data.output_name = "vortex";
   pp_data.output_data.output_start_time = param.start_time;

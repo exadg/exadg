@@ -23,7 +23,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     fe_u_grid(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
     fe_p(param.get_degree_p()),
     fe_u_scalar(param.degree_u),
-    fe_grid(new FESystem<dim>(FE_Q<dim>(param.degree_u), dim)),
+    fe_grid(new FESystem<dim>(FE_Q<dim>(param.degree_u), dim)),//TEST <--check if FE_DGQ is needed; FE_Q should be sufficient
     mapping_degree(1),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
@@ -47,8 +47,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     AssertThrow(false, ExcMessage("Not implemented"));
   }
 
-      mapping.reset(new MappingQGeneric<dim>(mapping_degree));
-
+      mapping_init.reset(new MappingQGeneric<dim>(mapping_degree));
 
 }
 
@@ -62,7 +61,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_mapping_field()
 {
-  FEValues<dim> fe_values(*mapping, *fe_grid,
+  FEValues<dim> fe_values(*mapping_init, *fe_grid,
                                   Quadrature<dim>(fe_grid->get_unit_support_points()),
                                   update_quadrature_points);
           std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
@@ -79,8 +78,8 @@ DGNavierStokesBase<dim, Number>::initialize_mapping_field()
                     position_grid_init(dof_indices[i]) = point[coordinate_direction];
                   }
               }
-          position_grid_new=position_grid_init;
-          mapping_field.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>>(dof_handler_grid, position_grid_new));
+          position_grid_new = position_grid_init;
+          mapping.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> (dof_handler_grid, position_grid_new));
         }
 
 
@@ -106,15 +105,16 @@ DGNavierStokesBase<dim, Number>::setup(
 
   if(param.ale_formulation == true)
   {
+    //TEST
+    //temporäre schleife:
+    if(param.mesh_movement_mappingfefield==true){
     initialize_mapping_field();
+    }
   }
-
   // depending on DoFHandler
   initialize_matrix_free();
-
   // depending on MatrixFree
   initialize_operators();
-
   // turbulence model
   if(param.use_turbulence_model == true)
   {
@@ -186,15 +186,16 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
   dof_handler_u_grid.distribute_dofs(*fe_u_grid);
+  if(param.ale_formulation == true && param.mesh_movement_mappingfefield == true){
   dof_handler_grid.distribute_dofs(*fe_grid);
   DoFTools::extract_locally_relevant_dofs(dof_handler_grid, relevant_dofs_grid);
-  //TEST
-  std::cout<<"MPI_COMM_SELF??"<<std::endl;
-   position_grid_init.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
-   displacement_grid.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
-   position_grid_new.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
-
-
+  position_grid_init.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
+  position_grid_init.update_ghost_values();
+  displacement_grid.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
+  displacement_grid.update_ghost_values();
+  position_grid_new.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
+  position_grid_new.update_ghost_values();
+  }
 
   unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
   unsigned int const ndofs_per_cell_pressure = Utilities::pow(param.get_degree_p() + 1, dim);
@@ -305,9 +306,8 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   // exact integration of nonlinear convective term
   quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
 
-  // reinit
   matrix_free.reinit(
-    *mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+    get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
 template<int dim, typename Number>
@@ -686,8 +686,16 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGNavierStokesBase<dim, Number>::get_mapping() const
 {
-  return *mapping;
+  if(param.ale_formulation == true && param.mesh_movement_mappingfefield ==true)
+  {
+    return *mapping;
+  }
+  else
+  {
+    return *mapping_init;
+  }
 }
+
 
 template<int dim, typename Number>
 FESystem<dim> const &
@@ -798,12 +806,12 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
   velocity_double = velocity;
   pressure_double = pressure;
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(get_mapping(),
                            dof_handler_u,
                            *(field_functions->initial_solution_velocity),
                            velocity_double);
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(get_mapping(),
                            dof_handler_p,
                            *(field_functions->initial_solution_pressure),
                            pressure_double);
@@ -879,7 +887,7 @@ DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressu
   vec_double = pressure; // initialize
 
   field_functions->analytical_solution_pressure->set_time(time);
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(get_mapping(),
                            dof_handler_p,
                            *(field_functions->analytical_solution_pressure),
                            vec_double);
@@ -1012,7 +1020,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   mg_preconditioner->initialize(mg_data,
                                 tria,
                                 fe,
-                                *mapping,
+                                get_mapping(),
                                 laplace_operator.get_data(),
                                 &laplace_operator.get_data().bc->dirichlet_bc,
                                 &periodic_face_pairs);
@@ -1245,7 +1253,7 @@ DGNavierStokesBase<dim, Number>::update(){
   // exact integration of nonlinear convective term
   quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
 
-  matrix_free.reinit(*mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+  matrix_free.reinit(get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 
 }
 
@@ -1253,18 +1261,18 @@ DGNavierStokesBase<dim, Number>::update(){
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::move_mesh(double t){
-  const double left=-0.5;
-    const double right=0.5;
-    const double amplitude=0.04;
-    const double delta_t =1.0;
-    const double frequency=0.25;
-    const double width = 1.0;
+    const double left = param.triangulation_left;
+    const double right = param.triangulation_right;
+    const double amplitude = param.grid_movement_amplitude;
+    const double delta_t = param.end_time - param.start_time;
+    const double frequency = param.grid_movement_frequency;
+    const double width = right-left;
     const double T = delta_t/frequency; //duration of a period
     const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
 
 
       {
-        FEValues<dim> fe_values(*mapping, *fe_grid,
+        FEValues<dim> fe_values(*mapping_init, *fe_grid,
                                 Quadrature<dim>(fe_grid->get_unit_support_points()),
                                 update_quadrature_points);
         std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
@@ -1295,11 +1303,6 @@ DGNavierStokesBase<dim, Number>::move_mesh(double t){
       }
       position_grid_new  = position_grid_init;
       position_grid_new += displacement_grid;
-
-      //Mapping
-//TODO: not required in every step??!
-      mapping_field = std::make_shared< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> >(dof_handler_grid, position_grid_new);
-
 }
 
 
@@ -1325,7 +1328,7 @@ DGNavierStokesBase<dim, Number>::get_grid_velocity(VectorType & grid_velocity,
   VectorTypeDouble grid_velocity_double;
   grid_velocity_double = grid_velocity;
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(get_mapping(),
                            dof_handler_u_grid,
                            *(field_functions->analytical_solution_grid_velocity),
                            grid_velocity_double);

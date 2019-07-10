@@ -421,7 +421,7 @@ protected:
   std::shared_ptr<FESystem<dim>> fe_grid;
 
   unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
+  std::shared_ptr<MappingQGeneric<dim>> mapping_init;
 
 
   DoFHandler<dim> dof_handler_u;
@@ -438,7 +438,7 @@ protected:
   VectorType position_grid_new;
 
 
-  std::shared_ptr< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> > mapping_field;
+  std::shared_ptr< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> > mapping;
 
 
 
@@ -550,6 +550,7 @@ protected:
   ConditionalOStream pcout;
 
 private:
+
   /*
    * Initialization functions called during setup phase.
    */

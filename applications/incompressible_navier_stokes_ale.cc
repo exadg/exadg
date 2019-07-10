@@ -340,8 +340,14 @@ Problem<dim, Number>::solve() const
             timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
 
             timer_help = timer.wall_time();
-            //navier_stokes_operation->move_mesh(time_integrator->get_time()+ time_integrator->get_time_step_size());
-            move_mesh(time_integrator->get_next_time());
+            if(param.mesh_movement_mappingfefield==true)
+            {
+              navier_stokes_operation->move_mesh(time_integrator->get_next_time());
+            }
+            else
+            {
+              move_mesh(time_integrator->get_next_time());
+            }
             move_mesh_time += timer.wall_time() - timer_help;
 
             timer_help = timer.wall_time();
