@@ -35,6 +35,8 @@
 
 #include "../include/functionalities/print_general_infos.h"
 
+#include "../include/time_integration/push_back_vectors.h"
+
 using namespace dealii;
 using namespace IncNS;
 
@@ -59,7 +61,7 @@ public:
   setup(InputParameters const & param) = 0;
 
   virtual void
-  solve() const = 0;
+  solve() = 0;
 
   virtual void
   analyze_computing_times() const = 0;
@@ -75,7 +77,7 @@ public:
   setup(InputParameters const & param);
 
   void
-  solve() const;
+  solve();
 
   void
   analyze_computing_times() const;
@@ -86,6 +88,18 @@ private:
 
   void
   move_mesh(double t) const;
+
+  void
+  compute_grid_velocity();
+
+  void
+  initialize_d_grid_and_u_grid_np();
+
+  void
+  fill_d_grid();
+
+  void
+  fill_d_grid_analytical(LinearAlgebra::distributed::Vector<Number> & d_grid, double t);
 
   ConditionalOStream pcout;
 
@@ -133,6 +147,9 @@ private:
   mutable double         move_mesh_time;
   mutable double         timer_help;
 
+  LinearAlgebra::distributed::Vector<Number> u_grid_np;
+  std::vector<LinearAlgebra::distributed::Vector<Number>> d_grid;
+
 };
 
 template<int dim, typename Number>
@@ -142,7 +159,8 @@ Problem<dim, Number>::Problem()
     setup_time(0.0),
     update_time(0.0),
     move_mesh_time(0.0),
-    timer_help(0.0)
+    timer_help(0.0),
+    d_grid(ORDER_TIME_INTEGRATOR + 1)
 {
 }
 
@@ -300,6 +318,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  initialize_d_grid_and_u_grid_np();
+
+
   setup_time = timer.wall_time();
 }
 
@@ -314,11 +335,120 @@ Problem<dim, Number>::move_mesh(double t) const
 
   }
 
+template<int dim, typename Number>
+void
+Problem<dim, Number>::compute_grid_velocity()
+{
+  push_back(d_grid);
+  fill_d_grid();
+
+  time_integrator->compute_BDF_time_derivative(u_grid_np, d_grid);
+
+}
 
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::solve() const
+Problem<dim, Number>::initialize_d_grid_and_u_grid_np()
+{
+
+  for(unsigned int i = 0; i < d_grid.size(); ++i)
+    navier_stokes_operation->initialize_vector_velocity(d_grid[i]);
+  navier_stokes_operation->initialize_vector_velocity(u_grid_np);
+
+  fill_d_grid();
+
+  if (param.start_with_low_order==false)
+  {//only possible when analytical. otherwise lower_order has to be true
+    for(unsigned int i = 1; i < d_grid.size(); ++i)
+    {
+      fill_d_grid_analytical(d_grid[i], time_integrator->get_previous_time(i));
+    }
+  }
+}
+
+
+template<int dim, typename Number>
+void
+Problem<dim, Number>::fill_d_grid()
+{
+  FESystem<dim> fe_grid = navier_stokes_operation->get_fe_u_grid(); //we need DGQ to determine the right velocitys in any point
+  DoFHandler<dim> dof_handler_grid(*triangulation);
+  dof_handler_grid.distribute_dofs(fe_grid);
+  FEValues<dim> fe_values(navier_stokes_operation->get_mapping(), fe_grid,
+                          Quadrature<dim>(fe_grid.get_unit_support_points()),
+                          update_quadrature_points);
+  std::vector<types::global_dof_index> dof_indices(fe_grid.dofs_per_cell);
+  for (const auto & cell : dof_handler_grid.active_cell_iterators())
+    if (!cell->is_artificial())
+      {
+        fe_values.reinit(cell);
+        cell->get_dof_indices(dof_indices);
+        for (unsigned int i=0; i<fe_grid.dofs_per_cell; ++i)
+          {
+            const unsigned int coordinate_direction =
+                fe_grid.system_to_component_index(i).first;
+            const Point<dim> point = fe_values.quadrature_point(i);
+            d_grid[0](dof_indices[i]) = point[coordinate_direction];
+          }
+      }
+}
+
+template<int dim, typename Number>
+void
+Problem<dim, Number>::fill_d_grid_analytical(LinearAlgebra::distributed::Vector<Number> & d_grid, double t)
+{
+//TODO: Code duplication
+  FESystem<dim> fe_grid = navier_stokes_operation->get_fe_u_grid(); //we need DGQ to determine the right velocitys in any point
+  DoFHandler<dim> dof_handler_grid(*triangulation);
+  dof_handler_grid.distribute_dofs(fe_grid);
+
+  const double left = param.triangulation_left;
+  const double right = param.triangulation_right;
+  const double amplitude = param.grid_movement_amplitude;
+  const double delta_t = param.end_time - param.start_time;
+  const double frequency = param.grid_movement_frequency;
+  const double width = right-left;
+  const double T = delta_t/frequency; //duration of a period
+  const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
+    {
+      FEValues<dim> fe_values(navier_stokes_operation->get_mapping(), fe_grid,
+                              Quadrature<dim>(fe_grid.get_unit_support_points()),
+                              update_quadrature_points);
+      std::vector<types::global_dof_index> dof_indices(fe_grid.dofs_per_cell);
+      for (const auto & cell : dof_handler_grid.active_cell_iterators())
+        if (!cell->is_artificial())
+          {
+            fe_values.reinit(cell);
+            cell->get_dof_indices(dof_indices);
+            for (unsigned int i=0; i<fe_grid.dofs_per_cell; ++i)
+              {
+                const unsigned int coordinate_direction =
+                    fe_grid.system_to_component_index(i).first;
+                const Point<dim> point = fe_values.quadrature_point(i);
+                double displacement=0;
+                for (unsigned int d=0; d<dim; ++d)
+                 if (coordinate_direction == 0)
+                 {
+                   displacement = std::sin(2* numbers::PI*(point(1)-left)/width)*sin_t*amplitude*(1- std::pow(point(0)/right,2));
+                 }
+                   else if (coordinate_direction == 1)
+                 {
+                   displacement = std::sin(2* numbers::PI*(point(0)-left)/width)*sin_t*amplitude*(1- std::pow(point(1)/right,2));
+                 }
+                d_grid(dof_indices[i]) = point[coordinate_direction];
+                d_grid(dof_indices[i]) += displacement;
+              }
+          }
+    }
+
+
+
+}
+
+template<int dim, typename Number>
+void
+Problem<dim, Number>::solve()
 {
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -333,9 +463,32 @@ Problem<dim, Number>::solve() const
     else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == true )
         {
           bool timeloop_finished=false;
+
+          if(param.grid_velocity_analytical==false)
+
+          if(param.mesh_movement_mappingfefield==true)
+          {
+            //Start at mesh t^n+1 //TODO: Check why leaving out leads to smaller errors
+            navier_stokes_operation->move_mesh(time_integrator->get_next_time());
+          }
+          else
+          {
+            //Start at mesh t^n+1
+            move_mesh(time_integrator->get_next_time());
+          }
+          navier_stokes_operation->update();
+
           while(!timeloop_finished)
           {
-            navier_stokes_operation->set_grid_velocity_in_convective_operator_kernel(time_integrator->get_next_time());
+            if(param.grid_velocity_analytical==true)
+            {
+              navier_stokes_operation->set_analytical_grid_velocity_in_convective_operator_kernel(time_integrator->get_next_time());
+            }
+            else
+            {
+             compute_grid_velocity();
+             navier_stokes_operation->set_grid_velocity_in_convective_operator_kernel(u_grid_np);
+            }
 
             timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
 
@@ -526,6 +679,8 @@ Problem<dim, Number>::analyze_computing_times() const
   this->pcout << "_________________________________________________________________________________"
               << std::endl
               << std::endl;
+
+
 }
 
 int

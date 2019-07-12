@@ -27,8 +27,8 @@ unsigned int const DEGREE_MAX = 6;
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 4;
-unsigned int const REFINE_TIME_MAX = 4;
+unsigned int const REFINE_TIME_MIN = 6;
+unsigned int const REFINE_TIME_MAX = 6;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -46,14 +46,16 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
-bool MOVE_MESH_MAPPINGFEFIELD=true;
+bool MOVE_MESH_MAPPINGFEFIELD=false;
 
+const int ORDER_TIME_INTEGRATOR = 2;
 
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
 {
   //ALE
+  param.grid_velocity_analytical = false;
   param.mesh_movement_mappingfefield = MOVE_MESH_MAPPINGFEFIELD;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
@@ -101,7 +103,7 @@ void set_input_parameters(InputParameters &param)
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
   param.time_step_size = 0.5;//5e-5;
-  param.order_time_integrator = 2;
+  param.order_time_integrator = ORDER_TIME_INTEGRATOR;
   param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;
 

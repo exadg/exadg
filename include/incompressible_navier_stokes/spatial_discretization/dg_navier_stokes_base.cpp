@@ -712,10 +712,24 @@ DGNavierStokesBase<dim, Number>::get_fe_p() const
 }
 
 template<int dim, typename Number>
+FESystem<dim>
+DGNavierStokesBase<dim, Number>::get_fe_u_grid()
+{
+  return *fe_u_grid;
+}
+
+template<int dim, typename Number>
 DoFHandler<dim> const &
 DGNavierStokesBase<dim, Number>::get_dof_handler_u() const
 {
   return dof_handler_u;
+}
+
+template<int dim, typename Number>
+DoFHandler<dim> const &
+DGNavierStokesBase<dim, Number>::get_dof_handler_grid() const
+{
+  return dof_handler_grid;
 }
 
 template<int dim, typename Number>
@@ -1269,8 +1283,6 @@ DGNavierStokesBase<dim, Number>::move_mesh(double t){
     const double width = right-left;
     const double T = delta_t/frequency; //duration of a period
     const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-
-
       {
         FEValues<dim> fe_values(*mapping_init, *fe_grid,
                                 Quadrature<dim>(fe_grid->get_unit_support_points()),
@@ -1339,7 +1351,7 @@ DGNavierStokesBase<dim, Number>::get_grid_velocity(VectorType & grid_velocity,
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_grid_velocity_in_convective_operator_kernel(double const time_in) const
+DGNavierStokesBase<dim, Number>::set_analytical_grid_velocity_in_convective_operator_kernel(double const time_in) const
 {
 
     VectorType grid_velocity;
@@ -1350,6 +1362,13 @@ DGNavierStokesBase<dim, Number>::set_grid_velocity_in_convective_operator_kernel
     convective_kernel->set_velocity_grid_ptr(grid_velocity);
 }
 
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::set_grid_velocity_in_convective_operator_kernel(VectorType grid_velocity) const
+{
+    convective_kernel->set_velocity_grid_ptr(grid_velocity);
+}
 
 
 template<int dim, typename Number>

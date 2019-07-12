@@ -13,6 +13,8 @@
 #include "time_integration/bdf_time_integration.h"
 #include "time_integration/extrapolation_scheme.h"
 
+#include <deal.II/lac/la_parallel_vector.h>
+
 using namespace dealii;
 
 class TimeIntBDFBase : public TimeIntBase
@@ -86,13 +88,16 @@ public:
   virtual void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const = 0;
 
+  void
+  compute_BDF_time_derivative( LinearAlgebra::distributed::Vector<double> & dst, std::vector<LinearAlgebra::distributed::Vector<double>> src);
+
   /*
    * Get time at the end of the current time step t_{n+1}.
    */
   double
   get_next_time() const;
 
-protected:
+
 
   /*
    * Get time at the end of the current time step.
@@ -100,6 +105,7 @@ protected:
   double
   get_previous_time(int const i /* t_{n-i} */) const;
 
+protected:
   /*
    * Do one time step including different updates before and after the actual solution of the
    * current time step.

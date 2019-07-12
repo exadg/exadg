@@ -604,6 +604,7 @@ public:
   /*                                        ALE                                         */
   /*                                                                                    */
   /**************************************************************************************/
+  bool grid_velocity_analytical;
   bool mesh_movement_mappingfefield;
   bool ale_formulation;
   double max_grid_velocity;

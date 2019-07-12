@@ -189,8 +189,14 @@ public:
   FE_DGQ<dim> const &
   get_fe_p() const;
 
+  FESystem<dim>
+  get_fe_u_grid();
+
   DoFHandler<dim> const &
   get_dof_handler_u() const;
+
+  DoFHandler<dim> const &
+  get_dof_handler_grid() const;
 
   DoFHandler<dim> const &
   get_dof_handler_u_scalar() const;
@@ -393,7 +399,10 @@ public:
                             double const evaluation_time) const;
 
   void
-  set_grid_velocity_in_convective_operator_kernel(double const time_in) const;
+  set_analytical_grid_velocity_in_convective_operator_kernel(double const time_in) const;
+
+  void
+  set_grid_velocity_in_convective_operator_kernel(VectorType grid_velocity) const;
 
 
 protected:
