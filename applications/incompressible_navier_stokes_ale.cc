@@ -464,8 +464,6 @@ Problem<dim, Number>::solve()
         {
           bool timeloop_finished=false;
 
-          if(param.grid_velocity_analytical==false)
-
           if(param.mesh_movement_mappingfefield==true)
           {
             //Start at mesh t^n+1 //TODO: Check why leaving out leads to smaller errors
