@@ -25,14 +25,44 @@ enum_to_string(MultigridType const enum_type)
     case MultigridType::hMG:
       string_type = "h-MG";
       break;
+    case MultigridType::chMG:
+      string_type = "ch-MG";
+      break;
+    case MultigridType::hcMG:
+      string_type = "hc-MG";
+      break;
     case MultigridType::pMG:
       string_type = "p-MG";
+      break;
+    case MultigridType::cpMG:
+      string_type = "cp-MG";
+      break;
+    case MultigridType::pcMG:
+      string_type = "pc-MG";
       break;
     case MultigridType::hpMG:
       string_type = "hp-MG";
       break;
+    case MultigridType::chpMG:
+      string_type = "chp-MG";
+      break;
+    case MultigridType::hcpMG:
+      string_type = "hcp-MG";
+      break;
+    case MultigridType::hpcMG:
+      string_type = "hpc-MG";
+      break;
     case MultigridType::phMG:
       string_type = "ph-MG";
+      break;
+    case MultigridType::cphMG:
+      string_type = "cph-MG";
+      break;
+    case MultigridType::pchMG:
+      string_type = "pch-MG";
+      break;
+    case MultigridType::phcMG:
+      string_type = "phc-MG";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));
@@ -60,30 +90,6 @@ enum_to_string(PSequenceType const enum_type)
       break;
     case PSequenceType::Manual:
       string_type = "Manual";
-      break;
-    default:
-      AssertThrow(false, ExcMessage("Not implemented."));
-      break;
-  }
-
-  return string_type;
-}
-
-std::string
-enum_to_string(DG_To_CG_Transfer const enum_type)
-{
-  std::string string_type;
-
-  switch(enum_type)
-  {
-    case DG_To_CG_Transfer::None:
-      string_type = "None";
-      break;
-    case DG_To_CG_Transfer::Fine:
-      string_type = "Fine";
-      break;
-    case DG_To_CG_Transfer::Coarse:
-      string_type = "Coarse";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));

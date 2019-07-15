@@ -87,28 +87,50 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
 {
   MultigridType const mg_type = data.type;
 
+  std::vector<unsigned int> h_levels;
+
   // setup h-levels
-  if(mg_type == MultigridType::pMG) // p-MG is only working on the finest h-level
+  if(mg_type == MultigridType::pMG || mg_type == MultigridType::cpMG ||
+     mg_type == MultigridType::pcMG)
   {
     h_levels.push_back(tria->n_levels() - 1);
   }
-  else // h-MG, hp-MG, and ph-MG are working on all h-levels
+  else // h-MG is involved working on all mesh levels
   {
     for(unsigned int h = 0; h < tria->n_levels(); h++)
       h_levels.push_back(h);
   }
 
   // setup p-levels
-  if(mg_type == MultigridType::hMG) // h-MG is only working on high-order elements
+  if(mg_type == MultigridType::hMG)
   {
     p_levels.push_back({degree, is_dg});
   }
-  else // p-MG, hp-MG, and ph-MG involve high- and low-order elements
+  else if(mg_type == MultigridType::chMG || mg_type == MultigridType::hcMG)
+  {
+    p_levels.push_back({degree, false});
+    p_levels.push_back({degree, is_dg});
+  }
+  else // p-MG is involved with high- and low-order elements
   {
     unsigned int p = degree;
+
+    bool discontinuous = is_dg;
+
+    // c-transfer before p-coarsening
+    if(is_dg)
+    {
+      if(mg_type == MultigridType::cpMG || mg_type == MultigridType::hcpMG ||
+         mg_type == MultigridType::chpMG || mg_type == MultigridType::cphMG)
+      {
+        p_levels.push_back({p, discontinuous});
+        discontinuous = false;
+      }
+    }
+
     do
     {
-      p_levels.push_back({p, is_dg});
+      p_levels.push_back({p, discontinuous});
       switch(data.p_sequence)
       {
           // clang-format off
@@ -122,45 +144,90 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
       }
     } while(p != p_levels.back().degree);
 
+    // c-transfer after p-coarsening
+    if(is_dg)
+    {
+      if(mg_type == MultigridType::pcMG || mg_type == MultigridType::hpcMG ||
+         mg_type == MultigridType::phcMG || mg_type == MultigridType::pchMG)
+      {
+        p_levels.push_back({p, false});
+      }
+    }
+
+    // sort p levels from coarse to fine
     std::reverse(std::begin(p_levels), std::end(p_levels));
   }
 
-  if(data.dg_to_cg_transfer == DG_To_CG_Transfer::Coarse && is_dg)
+  // setup global-levels from coarse to fine and inserting via push_back
+  if(mg_type == MultigridType::hMG)
   {
-    p_levels.insert(p_levels.begin(), {p_levels.front().degree, false});
+    for(unsigned int h = 0; h < h_levels.size(); h++)
+      level_info.push_back({h_levels[h], p_levels.front()});
   }
-
-  if(data.dg_to_cg_transfer == DG_To_CG_Transfer::Fine && is_dg)
+  else if(mg_type == MultigridType::chMG)
   {
-    for(auto & p : p_levels)
-      p.is_dg = false;
-    p_levels.push_back({p_levels.back().degree, true});
+    for(unsigned int h = 0; h < h_levels.size(); h++)
+      level_info.push_back({h_levels[h], p_levels.front()});
+
+    level_info.push_back({h_levels.back(), p_levels.back()});
   }
-
-  // setup global-levels
-  if(mg_type == MultigridType::pMG || mg_type == MultigridType::phMG)
+  else if(mg_type == MultigridType::hcMG)
   {
-    // top level: p-MG
-    if(mg_type == MultigridType::phMG) // low level: h-MG
-      for(unsigned int h = 0; h < h_levels.size() - 1; h++)
-        level_info.push_back({h_levels[h], p_levels.front()});
+    level_info.push_back({h_levels.front(), p_levels.front()});
+
+    for(unsigned int h = 0; h < h_levels.size(); h++)
+      level_info.push_back({h_levels[h], p_levels.back()});
+  }
+  else if(mg_type == MultigridType::pMG || mg_type == MultigridType::pcMG ||
+          mg_type == MultigridType::cpMG)
+  {
+    for(unsigned int p = 0; p < p_levels.size(); p++)
+      level_info.push_back({h_levels.front(), p_levels[p]});
+  }
+  else if(mg_type == MultigridType::phMG || mg_type == MultigridType::cphMG ||
+          mg_type == MultigridType::pchMG)
+  {
+    for(unsigned int h = 0; h < h_levels.size() - 1; h++)
+      level_info.push_back({h_levels[h], p_levels.front()});
 
     for(auto p : p_levels)
       level_info.push_back({h_levels.back(), p});
   }
-  else if(mg_type == MultigridType::hMG || mg_type == MultigridType::hpMG)
+  else if(mg_type == MultigridType::hpMG || mg_type == MultigridType::hcpMG ||
+          mg_type == MultigridType::hpcMG)
   {
-    // top level: h-MG
-    if(mg_type == MultigridType::hpMG) // low level: p-MG
-      for(unsigned int p = 0; p < p_levels.size() - 1; p++)
-        level_info.push_back({h_levels.front(), p_levels[p]});
+    for(unsigned int p = 0; p < p_levels.size() - 1; p++)
+      level_info.push_back({h_levels.front(), p_levels[p]});
 
     for(auto h : h_levels)
       level_info.push_back({h, p_levels.back()});
   }
+  else if(mg_type == MultigridType::phcMG)
+  {
+    level_info.push_back({h_levels.front(), p_levels.front()});
+
+    std::vector<MGDoFHandlerIdentifier>::iterator it = p_levels.begin();
+    ++it;
+
+    for(unsigned int h = 0; h < h_levels.size() - 1; h++)
+      level_info.push_back({h_levels[h], *it});
+
+    for(; it != p_levels.end(); ++it)
+      level_info.push_back({h_levels.back(), *it});
+  }
+  else if(mg_type == MultigridType::chpMG)
+  {
+    for(unsigned int p = 0; p < p_levels.size() - 2; p++)
+      level_info.push_back({h_levels.front(), p_levels[p]});
+
+    for(auto h : h_levels)
+      level_info.push_back({h, p_levels[p_levels.size() - 2]});
+
+    level_info.push_back({h_levels.back(), p_levels.back()});
+  }
   else
   {
-    AssertThrow(false, ExcMessage("This multigrid type does not exist!"));
+    AssertThrow(false, ExcMessage("This multigrid type is not implemented!"));
   }
 
   this->n_levels     = level_info.size(); // number of actual multigrid levels
@@ -194,6 +261,20 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::check_levels(
 }
 
 template<int dim, typename Number, typename MultigridNumber>
+bool
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::mg_transfer_to_continuous_elements()
+  const
+{
+  MultigridType const mg_type = data.type;
+
+  if(mg_type == MultigridType::hMG || mg_type == MultigridType::pMG ||
+     mg_type == MultigridType::hpMG || mg_type == MultigridType::phMG)
+    return false;
+  else
+    return true;
+}
+
+template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_dof_handler_and_constraints(
   bool const                           operator_is_singular,
@@ -203,14 +284,15 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_dof_handle
   Map const *                          dirichlet_bc_in)
 {
   bool const is_dg = fe.dofs_per_vertex == 0;
-  if((!is_dg || (is_dg && (data.dg_to_cg_transfer != DG_To_CG_Transfer::None)) ||
-      data.coarse_problem.solver == MultigridCoarseGridSolver::AMG) &&
-     ((dirichlet_bc_in == nullptr) || (periodic_face_pairs_in == nullptr)))
+
+  if(data.coarse_problem.preconditioner == MultigridCoarseGridPreconditioner::AMG ||
+     data.coarse_problem.solver == MultigridCoarseGridSolver::AMG || !is_dg ||
+     this->mg_transfer_to_continuous_elements())
   {
     AssertThrow(
-      data.coarse_problem.solver != MultigridCoarseGridSolver::AMG,
+      dirichlet_bc_in != nullptr && periodic_face_pairs_in != nullptr,
       ExcMessage(
-        "You have to provide Dirichlet BCs and periodic face pairs if you want to use CG or AMG!"));
+        "You have to provide Dirichlet BCs and periodic face pairs if you want to use continuous elements or AMG!"));
   }
 
   // In the case of nullptr, these data structures simply remain empty.
