@@ -96,7 +96,7 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
     if(coarse_level.h_level() != fine_level.h_level()) // h-transfer
     {
 #ifdef DEBUG
-      printf("  h-MG (l=%2d,k=%2d,dg=%2d) -> (l=%2d,k=%2d,dg=%2d)\n",
+      printf("  h-MG (l = %d, k = %d, dg = %d) -> (l = %d, k = %d, dg = %d)\n",
              coarse_level.h_level(),
              coarse_level.degree(),
              coarse_level.is_dg(),
@@ -111,7 +111,7 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
     else if(coarse_level.degree() != fine_level.degree()) // p-transfer
     {
 #ifdef DEBUG
-      printf("  p-MG (l=%2d,k=%2d,dg=%2d) -> (l=%2d,k=%2d,dg=%2d)\n",
+      printf("  p-MG (l = %d, k = %d, dg = %d) -> (l = %d, k = %d, dg = %d)\n",
              coarse_level.h_level(),
              coarse_level.degree(),
              coarse_level.is_dg(),
@@ -138,7 +138,7 @@ MGTransferMF_MGLevelObject<dim, VectorType>::reinit(
     else if(coarse_level.is_dg() != fine_level.is_dg()) // c-transfer
     {
 #ifdef DEBUG
-      printf("  c-MG (l=%2d,k=%2d,dg=%2d) -> (l=%2d,k=%2d,dg=%2d)\n",
+      printf("  c-MG (l = %d, k = %d, dg = %d) -> (l = %d, k = %d, dg = %d)\n",
              coarse_level.h_level(),
              coarse_level.degree(),
              coarse_level.is_dg(),
