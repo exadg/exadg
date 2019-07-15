@@ -9,8 +9,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
+unsigned int const DEGREE_MIN = 1;
+unsigned int const DEGREE_MAX = 15;
 
 unsigned int const REFINE_SPACE_MIN = 5;
 unsigned int const REFINE_SPACE_MAX = 5;
@@ -46,17 +46,19 @@ set_input_parameters(Poisson::InputParameters &param)
   // SOLVER
   param.solver = Poisson::Solver::CG;
   param.solver_data.abs_tol = 1.e-20;
-  param.solver_data.rel_tol = 1.e-8;
+  param.solver_data.rel_tol = 1.e-10;
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::phMG;
-  param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
+  param.multigrid_data.type = MultigridType::chpMG;
+  param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data.smoother_data.iterations = 5;
   // MG coarse grid solver
   param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
 }
 }
 
