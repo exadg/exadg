@@ -38,7 +38,7 @@ using namespace IncNS;
 
 // specify the flow problem to be used for throughput measurements
 
-#include "incompressible_navier_stokes_test_cases/deformed_cube.h"
+#include "incompressible_navier_stokes_test_cases/periodic_box.h"
 
 // refinement level: l = REFINE_LEVELS[fe_degree-1]
 std::vector<int> REFINE_LEVELS = {
