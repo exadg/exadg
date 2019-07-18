@@ -22,9 +22,19 @@ enum class MultigridType
 {
   Undefined,
   hMG,
+  chMG,
+  hcMG,
   pMG,
+  cpMG,
+  pcMG,
   hpMG,
-  phMG
+  chpMG,
+  hcpMG,
+  hpcMG,
+  phMG,
+  cphMG,
+  pchMG,
+  phcMG
 };
 
 std::string
@@ -41,17 +51,6 @@ enum class PSequenceType
 
 std::string
 enum_to_string(PSequenceType const enum_type);
-
-
-enum class DG_To_CG_Transfer
-{
-  None,
-  Fine,
-  Coarse
-};
-
-std::string
-enum_to_string(DG_To_CG_Transfer const enum_type);
 
 enum class MultigridSmoother
 {
@@ -265,7 +264,6 @@ struct MultigridData
 {
   MultigridData()
     : type(MultigridType::hMG),
-      dg_to_cg_transfer(DG_To_CG_Transfer::None),
       p_sequence(PSequenceType::Bisect),
       smoother_data(SmootherData()),
       coarse_problem(CoarseGridData())
@@ -276,8 +274,6 @@ struct MultigridData
   print(ConditionalOStream & pcout)
   {
     print_parameter(pcout, "Multigrid type", enum_to_string(type));
-
-    print_parameter(pcout, "DG to CG transfer", enum_to_string(dg_to_cg_transfer));
 
     if(type != MultigridType::hMG)
     {
@@ -290,9 +286,6 @@ struct MultigridData
 
   // Multigrid type: p-MG vs. h-MG
   MultigridType type;
-
-  // Transfer from discontinuous space (FE_DGQ) to continuous space (FE_Q)
-  DG_To_CG_Transfer dg_to_cg_transfer;
 
   // Sequence of polynomial degrees during p-multigrid
   PSequenceType p_sequence;

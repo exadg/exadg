@@ -100,7 +100,20 @@ Next, adapt the directory settings at the top of the script and run the script
 ```bash
 bash ./config_trilinos.sh
 ```
-Build the code
+
+For clusters @LNM: Load modules
+```bash
+module load mpi/openmpi-4.0.1
+module load gcc/8
+```
+and adapt MPIDIR in *config_trilinos.sh*. Find out the path by
+```bash
+module show mpi/openmpi-4.0.1
+```
+
+
+
+Next, build the code
 
 ```bash
 make -j2

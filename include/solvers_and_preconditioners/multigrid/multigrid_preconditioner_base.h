@@ -137,7 +137,6 @@ protected:
   MGLevelObject<std::shared_ptr<Operator>>                         operators;
   MGTransferMF_MGLevelObject<dim, VectorTypeMG>                    transfers;
 
-  std::vector<unsigned int>           h_levels;
   std::vector<MGDoFHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            level_info;
   unsigned int                        n_levels;
@@ -145,6 +144,9 @@ protected:
   unsigned int                        fine_level;
 
 private:
+  bool
+  mg_transfer_to_continuous_elements() const;
+
   /*
    * Multigrid levels (i.e. coarsening strategy, h-/p-/hp-/ph-MG).
    */
