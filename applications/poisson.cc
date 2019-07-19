@@ -30,11 +30,11 @@
 // specify the test case that has to be solved
 
 // template
-#include "poisson_test_cases/template.h"
+//#include "poisson_test_cases/template.h"
 
 //#include "poisson_test_cases/gaussian.h"
 //#include "poisson_test_cases/slit.h"
-//#include "poisson_test_cases/cosinus.h"
+#include "poisson_test_cases/sine.h"
 //#include "poisson_test_cases/torus.h"
 //#include "poisson_test_cases/lung.h"
 
@@ -56,7 +56,7 @@ RunType const RUN_TYPE = RunType::IncreasingProblemSize;
  *  RunType::IncreasingProblemSize
  */
 types::global_dof_index N_DOFS_MIN = 1e0;
-types::global_dof_index N_DOFS_MAX = 1e7;
+types::global_dof_index N_DOFS_MAX = 3e6;
 
 /*
  * Enable hyper_cube meshes with number of cells per direction other than multiples of 2.
@@ -64,8 +64,8 @@ types::global_dof_index N_DOFS_MAX = 1e7;
  *  RunType::FixedProblemSize
  *  RunType::IncreasingProblemSize
  */
-//#define ENABLE_SUBDIVIDED_HYPERCUBE
-// unsigned int SUBDIVISIONS_MESH;
+#define ENABLE_SUBDIVIDED_HYPERCUBE
+unsigned int SUBDIVISIONS_MESH;
 
 struct Timings
 {
