@@ -46,7 +46,7 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
-bool MOVE_MESH_MAPPINGFEFIELD=false;
+bool MOVE_MESH_MAPPINGFEFIELD=true;
 
 const int ORDER_TIME_INTEGRATOR = 2;
 
@@ -137,6 +137,7 @@ void set_input_parameters(InputParameters &param)
   param.solver_pressure_poisson = SolverPressurePoisson::CG;
   param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+ // param.multigrid_data_pressure_poisson.type = MultigridType::hMG;//TEST, default
   param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 
@@ -218,6 +219,7 @@ void set_input_parameters(InputParameters &param)
 
   // preconditioner Schur-complement block
   param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
+
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 
 

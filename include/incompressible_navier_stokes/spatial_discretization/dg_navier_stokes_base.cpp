@@ -70,22 +70,19 @@ DGNavierStokesBase<dim, Number>::initialize_mapping_field()
         relevant_dofs_grid);
 
     position_grid_init.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-    position_grid_init.update_ghost_values();
     displacement_grid.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-    displacement_grid.update_ghost_values();
     position_grid_new.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-    position_grid_new.update_ghost_values();
 
 
   FEValues<dim> fe_values(*mapping_init, *fe_grid,
                                   Quadrature<dim>(fe_grid->get_unit_support_points()),
                                   update_quadrature_points);
           std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
-          for (const auto & cell : dof_handler_grid.active_cell_iterators_on_level(level))
-            if (!cell->is_artificial())
+          for (const auto & cell : dof_handler_grid.mg_cell_iterators_on_level(level))
+            if (cell->level_subdomain_id() != numbers::artificial_subdomain_id)
               {
                 fe_values.reinit(cell);
-                cell->get_dof_indices(dof_indices);
+                cell->get_active_or_mg_dof_indices(dof_indices);
                 for (unsigned int i=0; i<fe_grid->dofs_per_cell; ++i)
                   {
                     const unsigned int coordinate_direction =
@@ -94,8 +91,10 @@ DGNavierStokesBase<dim, Number>::initialize_mapping_field()
                     position_grid_init(dof_indices[i]) = point[coordinate_direction];
                   }
               }
+          position_grid_init.update_ghost_values();
           position_grid_new = position_grid_init;
           position_grid_new_multigrid[level]=position_grid_new;
+          position_grid_new_multigrid[level].update_ghost_values();
           std::cout<<"Level:"<<level<<std::endl;
           std::cout<<"n_dofs(level):"<<dof_handler_grid.n_dofs(level)<<std::endl;
           std::cout<<"position_grid_new(level).size:"<<position_grid_new.size()<<std::endl;
@@ -1308,16 +1307,22 @@ DGNavierStokesBase<dim, Number>::move_mesh(double t){
       {
       DoFTools::extract_locally_relevant_level_dofs(dof_handler_grid, level,
           relevant_dofs_grid);
+
+      position_grid_init.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+      displacement_grid.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+      position_grid_new.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+
+
       //TEST: store relevant_dofs_grid in vector
         FEValues<dim> fe_values(*mapping_init, *fe_grid,
                                 Quadrature<dim>(fe_grid->get_unit_support_points()),
                                 update_quadrature_points);
         std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
-        for (const auto & cell : dof_handler_grid.active_cell_iterators_on_level(level))
-          if (!cell->is_artificial())
+        for (const auto & cell : dof_handler_grid.mg_cell_iterators_on_level(level))
+          if (cell->level_subdomain_id() != numbers::artificial_subdomain_id)
             {
               fe_values.reinit(cell);
-              cell->get_dof_indices(dof_indices);
+              cell->get_active_or_mg_dof_indices(dof_indices);
               for (unsigned int i=0; i<fe_grid->dofs_per_cell; ++i)
                 {
                   const unsigned int coordinate_direction =
@@ -1375,7 +1380,7 @@ DGNavierStokesBase<dim, Number>::collect_current_coordinates()
                              update_quadrature_points);
      std::vector<types::global_dof_index> dof_indices(fe_u_grid->dofs_per_cell);
      for (const auto & cell : dof_handler_u_grid.active_cell_iterators())
-       if (!cell->is_artificial())
+       if (cell->subdomain_id() != numbers::artificial_subdomain_id)
          {
            fe_values.reinit(cell);
            cell->get_dof_indices(dof_indices);
