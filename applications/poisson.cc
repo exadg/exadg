@@ -34,7 +34,8 @@
 
 //#include "poisson_test_cases/gaussian.h"
 //#include "poisson_test_cases/slit.h"
-#include "poisson_test_cases/sine.h"
+//#include "poisson_test_cases/sine.h"
+#include "poisson_test_cases/nozzle.h"
 //#include "poisson_test_cases/torus.h"
 //#include "poisson_test_cases/lung.h"
 
@@ -48,7 +49,7 @@ enum class RunType
   IncreasingProblemSize // run at fixed polynomial degree
 };
 
-RunType const RUN_TYPE = RunType::IncreasingProblemSize;
+RunType const RUN_TYPE = RunType::RefineHAndP;
 
 /*
  * Specify minimum and maximum problem size for
@@ -64,8 +65,8 @@ types::global_dof_index N_DOFS_MAX = 3e6;
  *  RunType::FixedProblemSize
  *  RunType::IncreasingProblemSize
  */
-#define ENABLE_SUBDIVIDED_HYPERCUBE
-unsigned int SUBDIVISIONS_MESH;
+//#define ENABLE_SUBDIVIDED_HYPERCUBE
+//unsigned int SUBDIVISIONS_MESH;
 
 struct Timings
 {
