@@ -275,11 +275,13 @@ struct MultigridData
   {
     print_parameter(pcout, "Multigrid type", enum_to_string(type));
 
-    if(type != MultigridType::hMG)
+    if(type != MultigridType::hMG || type != MultigridType::hcMG || type != MultigridType::chMG)
     {
       std::string str_type[] = {"Go to one", "Decrease by one", "Bisect", "Manual"};
       print_parameter(pcout, "p-sequence", enum_to_string(p_sequence));
     }
+
+    smoother_data.print(pcout);
 
     coarse_problem.print(pcout);
   }

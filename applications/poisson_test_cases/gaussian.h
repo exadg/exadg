@@ -90,7 +90,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   {
     double const deformation = 0.1;
     unsigned int const frequency = 2;
-    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+    DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
     triangulation->set_all_manifold_ids(1);
     triangulation->set_manifold(1, manifold);
 
