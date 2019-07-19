@@ -172,6 +172,13 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const time) const
 }
 
 template<int dim, typename Number>
+void
+DGOperator<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
+{
+  laplace_operator.vmult(dst, src);
+}
+
+template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
 {
@@ -200,6 +207,46 @@ DGOperator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
+
+template<int dim, typename Number>
+double
+DGOperator<dim, Number>::get_n10() const
+{
+  return iterative_solver->n10;
+}
+
+template<int dim, typename Number>
+double
+DGOperator<dim, Number>::get_average_convergence_rate() const
+{
+  return iterative_solver->rho;
+}
+
+#ifdef DEAL_II_WITH_TRILINOS
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+{
+  laplace_operator.init_system_matrix(system_matrix);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::calculate_system_matrix(
+  TrilinosWrappers::SparseMatrix & system_matrix) const
+{
+  laplace_operator.calculate_system_matrix(system_matrix);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::vmult_matrix_based(VectorTypeDouble &                     dst,
+                                            TrilinosWrappers::SparseMatrix const & system_matrix,
+                                            VectorTypeDouble const &               src) const
+{
+  system_matrix.vmult(dst, src);
+}
+#endif
 
 template<int dim, typename Number>
 void

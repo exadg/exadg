@@ -8,6 +8,8 @@
 #ifndef INCLUDE_POSTPROCESSOR_SOLUTION_FIELD_H_
 #define INCLUDE_POSTPROCESSOR_SOLUTION_FIELD_H_
 
+#include <deal.II/lac/la_parallel_vector.h>
+
 using namespace dealii;
 
 enum class SolutionFieldType

@@ -40,8 +40,8 @@ public:
 
     // compute some derived performance metrics
     this->rho = std::pow(l2_n / l2_0, 1.0 / n);
-    this->r   = -log(rho) / std::log(10.0);
-    this->n10 = std::ceil(-10.0 * std::log(10.0) / log(rho));
+    this->r   = -std::log(rho) / std::log(10.0);
+    this->n10 = -10.0 * std::log(10.0) / std::log(rho);
   }
 
   // performance metrics
@@ -51,7 +51,7 @@ public:
   mutable unsigned int n;    // number of iterations
   mutable double       rho;  // average convergence rate
   mutable double       r;    // logarithmic convergence rate
-  mutable int          n10;  // number of cycles needed to reduce the residual by 1e10
+  mutable double       n10;  // number of iterations needed to reduce the residual by 1e10
 };
 
 struct CGSolverData

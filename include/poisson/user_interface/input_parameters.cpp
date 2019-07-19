@@ -96,7 +96,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
   print_parameter(pcout, "Element type", enum_to_string(spatial_discretization));
 
   if(spatial_discretization == SpatialDiscretization::DG)
-    print_parameter(pcout, "IP factor viscous term", IP_factor);
+    print_parameter(pcout, "IP factor", IP_factor);
 }
 
 void

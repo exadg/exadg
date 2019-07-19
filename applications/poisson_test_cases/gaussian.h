@@ -9,11 +9,11 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 15;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 5;
-unsigned int const REFINE_SPACE_MAX = 5;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
@@ -22,10 +22,10 @@ std::string OUTPUT_NAME       = "gaussian";
 
 enum class MeshType{
   Cartesian,
-  DeformedCubeManifold
+  Curvilinear
 };
 
-MeshType const MESH_TYPE = MeshType::DeformedCubeManifold;
+MeshType const MESH_TYPE = MeshType::Cartesian;
 
 namespace Poisson
 {
@@ -41,7 +41,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.degree = DEGREE_MIN;
   param.mapping = MappingType::Isoparametric;
   param.spatial_discretization = SpatialDiscretization::DG;
-  param.IP_factor = 1.0;
+  param.IP_factor = 1.0e0;
 
   // SOLVER
   param.solver = Poisson::Solver::CG;
@@ -50,7 +50,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::chpMG;
+  param.multigrid_data.type = MultigridType::phMG;
   param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -73,19 +73,43 @@ void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
-                                   Triangulation<dim>::cell_iterator> >         &/*periodic_faces*/)
+                                   Triangulation<dim>::cell_iterator> >         &periodic_faces,
+                                 unsigned int const n_subdivisions = 1)
 {
-  // hypercube: [left,right]^dim
+  (void)periodic_faces;
+
   const double length = 1.0;
   const double left = -length, right = length;
-  const double deformation = +0.1, frequnency = +2.0;
-  GridGenerator::hyper_cube(*triangulation, left, right);
+  GridGenerator::subdivided_hyper_cube(*triangulation,n_subdivisions,left,right);
 
-  if(MESH_TYPE == MeshType::DeformedCubeManifold)
+  if(MESH_TYPE == MeshType::Cartesian)
   {
-    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequnency);
+    // do nothing
+  }
+  else if(MESH_TYPE == MeshType::Curvilinear)
+  {
+    double const deformation = 0.1;
+    unsigned int const frequency = 2;
+    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
     triangulation->set_all_manifold_ids(1);
     triangulation->set_manifold(1, manifold);
+
+    std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
+
+    for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
+        cell != triangulation->end(); ++cell)
+    {
+      for (unsigned int v=0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+      {
+        if (vertex_touched[cell->vertex_index(v)]==false)
+        {
+          Point<dim> &vertex = cell->vertex(v);
+          Point<dim> new_point = manifold.push_forward(vertex);
+          vertex = new_point;
+          vertex_touched[cell->vertex_index(v)] = true;
+        }
+      }
+    }
   }
 
   triangulation->refine_global(n_refine_space);
@@ -264,11 +288,11 @@ std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
 construct_postprocessor()
 {
   ConvDiff::PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false; //true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
 
-  pp_data.error_data.analytical_solution_available = true;
+  pp_data.error_data.analytical_solution_available = false; //true;
   pp_data.error_data.analytical_solution.reset(new Solution<dim>());
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;

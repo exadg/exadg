@@ -24,7 +24,7 @@
 #include "../include/functionalities/dynamic_convergence_table.h"
 #include "../include/functionalities/measure_minimum_time.h"
 #include "../include/poisson/spatial_discretization/operator.h"
-#include "../include/solvers_and_preconditioners/transfer/mg_transfer_mf_c.h"
+#include "../include/solvers_and_preconditioners/multigrid/transfer/mg_transfer_mf_c.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 
