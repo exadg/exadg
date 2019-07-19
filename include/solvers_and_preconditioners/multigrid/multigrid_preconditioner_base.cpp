@@ -93,11 +93,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
   if(mg_type == MultigridType::pMG || mg_type == MultigridType::cpMG ||
      mg_type == MultigridType::pcMG)
   {
-    h_levels.push_back(tria->n_levels() - 1);
+    h_levels.push_back(tria->n_global_levels() - 1);
   }
   else // h-MG is involved working on all mesh levels
   {
-    for(unsigned int h = 0; h < tria->n_levels(); h++)
+    for(unsigned int h = 0; h < tria->n_global_levels(); h++)
       h_levels.push_back(h);
   }
 
