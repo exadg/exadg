@@ -79,10 +79,17 @@ TimeIntBDFCoupled<Number>::initialize_former_solutions()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
+    //TODO: only possible if analytical solution of grid velocity can be provided
+    /*move_mesh(this->get_previous_time(i));
+    update();*/
     this->operator_base->prescribe_initial_conditions(solution[i].block(0),
                                                       solution[i].block(1),
                                                       this->get_previous_time(i));
   }
+  //TODO: only possible if analytical solution of grid velocity can be provided
+  /*move_mesh(this->get_time());
+  update();
+  */
 }
 
 template<typename Number>
@@ -113,8 +120,6 @@ TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
   if (this->param.ale_formulation == true && this->param.treatment_of_convective_term==TreatmentOfConvectiveTerm::Explicit)
   {
 
-    //TODO: For start_with_lower_order==false: previous times have to be initialized not with 0 but on old meshes, see also initialize_former_solutions
-
   this->operator_base->evaluate_convective_term(vec_convective_term[0],
                                                 solution[0].block(0),
                                                 this->get_time());
@@ -125,10 +130,19 @@ if (this->param.start_with_low_order == false)
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
   {
+    //TODO: only possible if analytical solution of grid velocity can be provided
+    /*move_mesh(this->get_previous_time(i));
+    update();
+    set_analytical_grid_velocity_in_convective_operator_kernel(this->get_previous_time(i-1?));*/
+
     this->operator_base->evaluate_convective_term(vec_convective_term[i],
                                                   solution[i].block(0),
                                                   this->get_previous_time(i));
   }
+  //TODO: only possible if analytical solution of grid velocity can be provided
+  /*move_mesh(this->get_time());
+  update();
+  */
 }
 }
 

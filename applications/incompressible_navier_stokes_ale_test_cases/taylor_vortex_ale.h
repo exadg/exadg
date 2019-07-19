@@ -9,6 +9,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_TAYLOR_VORTEX_H_
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/cube_moving_manifold.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -35,13 +36,18 @@ const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
 const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
-const double END_TIME = 0.5;
+const double END_TIME = 2;
+bool MOVE_MESH_MAPPINGFEFIELD=false;
+
+const int ORDER_TIME_INTEGRATOR = 2;
 
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
 {
   //ALE
+  param.grid_velocity_analytical = false;
+  param.mesh_movement_mappingfefield = MOVE_MESH_MAPPINGFEFIELD;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
@@ -75,7 +81,7 @@ void set_input_parameters(InputParameters &param)
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-4;
   param.order_time_integrator = 2; // 1; // 2; // 3;
-  param.start_with_low_order = false; // true; // false;
+  param.start_with_low_order = true; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
@@ -425,7 +431,7 @@ construct_postprocessor(InputParameters const &param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = false;
+  pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = "output/taylor_vortex/";
   pp_data.output_data.output_name = "taylor_vortex";
   pp_data.output_data.output_start_time = param.start_time;

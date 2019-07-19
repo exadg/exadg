@@ -27,8 +27,8 @@ unsigned int const DEGREE_MAX = 6;
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 6;
-unsigned int const REFINE_TIME_MAX = 6;
+unsigned int const REFINE_TIME_MIN = 4;
+unsigned int const REFINE_TIME_MAX = 4;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -83,16 +83,7 @@ void set_input_parameters(InputParameters &param)
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
 
-  if (MOVE_MESH_MAPPINGFEFIELD==false)
-  {
-    param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;//BDFDualSplittingScheme;//BDFCoupledSolution as soon as MappingQEulerian works for this case
-  }
-  else
-  {
-    std::cout<<"WARNING: SETTINGS FOR MESH MOVEMENT WITH MAPPINGFEFIELD YIELD WRONG RESULTS AND HAVE TO BE THE SAME AS FOR ANY MESH MOVEMENT! ADAPT THIS WHEN DEAL IS CAPABLE OF MULTIGRID STUFF IN COMBINATION WITH MAPPINGFEFIELD."<<std::endl;
-    param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;//BDFCoupledSolution as soon as MappingQEulerian works for this case
-  }
-
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
@@ -104,7 +95,7 @@ void set_input_parameters(InputParameters &param)
   param.c_eff = 8.0;
   param.time_step_size = 0.5;//5e-5;
   param.order_time_integrator = ORDER_TIME_INTEGRATOR;
-  param.start_with_low_order = false;
+  param.start_with_low_order = true;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
@@ -145,16 +136,7 @@ void set_input_parameters(InputParameters &param)
   // pressure Poisson equation
   param.solver_pressure_poisson = SolverPressurePoisson::CG;
   param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
-
-  if (MOVE_MESH_MAPPINGFEFIELD==false)
-  {
-  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;//PointJacobi;//Multigrid as soon as MappingQEulerian works for this case
-  }
-  else
-  {
-    param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::PointJacobi;
-  }
-
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 
@@ -224,18 +206,7 @@ void set_input_parameters(InputParameters &param)
   param.update_preconditioner_coupled = true;
 
   // preconditioner momentum block
-
-  if (MOVE_MESH_MAPPINGFEFIELD==false)
-  {
-  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;//InverseMassMatrix;//Multigrid as soon as MappingQEulerian works for this case
-  }
-  else
-  {
-    param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
-  }
-
-
-
+  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
   param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data_velocity_block.type = MultigridType::phMG;
   param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
@@ -246,16 +217,7 @@ void set_input_parameters(InputParameters &param)
   param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
 
   // preconditioner Schur-complement block
-  if (MOVE_MESH_MAPPINGFEFIELD==false)
-  {
-  param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;//None; //PressureConvectionDiffusion as soon as MappingQEulerian works for this case
-  }
-  else
-  {
-  param.preconditioner_pressure_block = SchurComplementPreconditioner::None;
-  }
-
-
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 
 

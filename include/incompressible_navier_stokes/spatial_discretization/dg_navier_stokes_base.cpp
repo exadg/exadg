@@ -30,6 +30,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     dof_handler_u_scalar(triangulation),
     dof_handler_u_grid(triangulation),
     dof_handler_grid(triangulation),
+    position_grid_new_multigrid(dof_handler_grid.get_triangulation().n_global_levels()),
     dof_index_first_point(0),
     postprocessor(postprocessor_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -61,11 +62,26 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_mapping_field()
 {
+  unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
+  for (unsigned int level=0; level<nlevel; ++level)
+  {
+    //IndexSet relevant_dofs_grid;
+    DoFTools::extract_locally_relevant_level_dofs(dof_handler_grid, level,
+        relevant_dofs_grid);
+
+    position_grid_init.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+    position_grid_init.update_ghost_values();
+    displacement_grid.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+    displacement_grid.update_ghost_values();
+    position_grid_new.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+    position_grid_new.update_ghost_values();
+
+
   FEValues<dim> fe_values(*mapping_init, *fe_grid,
                                   Quadrature<dim>(fe_grid->get_unit_support_points()),
                                   update_quadrature_points);
           std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
-          for (const auto & cell : dof_handler_grid.active_cell_iterators())
+          for (const auto & cell : dof_handler_grid.active_cell_iterators_on_level(level))
             if (!cell->is_artificial())
               {
                 fe_values.reinit(cell);
@@ -79,8 +95,16 @@ DGNavierStokesBase<dim, Number>::initialize_mapping_field()
                   }
               }
           position_grid_new = position_grid_init;
-          mapping.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> (dof_handler_grid, position_grid_new));
-        }
+          position_grid_new_multigrid[level]=position_grid_new;
+          std::cout<<"Level:"<<level<<std::endl;
+          std::cout<<"n_dofs(level):"<<dof_handler_grid.n_dofs(level)<<std::endl;
+          std::cout<<"position_grid_new(level).size:"<<position_grid_new.size()<<std::endl;
+   }
+          mapping.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> (dof_handler_grid, position_grid_new_multigrid));
+
+std::cout<<"MappingFEFieldInitialization done"<<std::endl;
+
+}
 
 
 template<int dim, typename Number>
@@ -186,15 +210,10 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
   dof_handler_u_grid.distribute_dofs(*fe_u_grid);
+  dof_handler_u_grid.distribute_mg_dofs();
   if(param.ale_formulation == true && param.mesh_movement_mappingfefield == true){
   dof_handler_grid.distribute_dofs(*fe_grid);
-  DoFTools::extract_locally_relevant_dofs(dof_handler_grid, relevant_dofs_grid);
-  position_grid_init.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
-  position_grid_init.update_ghost_values();
-  displacement_grid.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
-  displacement_grid.update_ghost_values();
-  position_grid_new.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
-  position_grid_new.update_ghost_values();
+  dof_handler_grid.distribute_mg_dofs();
   }
 
   unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
@@ -540,7 +559,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.dof_index           = dof_index_u;
   model_data.quad_index          = quad_index_u;
   model_data.degree              = param.degree_u;
-  turbulence_model.initialize(matrix_free, *mapping, viscous_kernel, model_data);
+  turbulence_model.initialize(matrix_free, get_mapping(), viscous_kernel, model_data);//TEST get mapping?<->*mapping
 }
 
 template<int dim, typename Number>
@@ -1271,7 +1290,6 @@ DGNavierStokesBase<dim, Number>::update(){
 
 }
 
-
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::move_mesh(double t){
@@ -1283,12 +1301,19 @@ DGNavierStokesBase<dim, Number>::move_mesh(double t){
     const double width = right-left;
     const double T = delta_t/frequency; //duration of a period
     const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
+
+
+      unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
+      for (unsigned int level=0; level<nlevel; ++level)
       {
+      DoFTools::extract_locally_relevant_level_dofs(dof_handler_grid, level,
+          relevant_dofs_grid);
+      //TEST: store relevant_dofs_grid in vector
         FEValues<dim> fe_values(*mapping_init, *fe_grid,
                                 Quadrature<dim>(fe_grid->get_unit_support_points()),
                                 update_quadrature_points);
         std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
-        for (const auto & cell : dof_handler_grid.active_cell_iterators())
+        for (const auto & cell : dof_handler_grid.active_cell_iterators_on_level(level))
           if (!cell->is_artificial())
             {
               fe_values.reinit(cell);
@@ -1312,12 +1337,20 @@ DGNavierStokesBase<dim, Number>::move_mesh(double t){
                   displacement_grid(dof_indices[i]) = displacement;
                 }
             }
-      }
+
       position_grid_new  = position_grid_init;
       position_grid_new += displacement_grid;
+      position_grid_new_multigrid[level] = position_grid_new;
+
+      }
 }
-
-
+/*
+template<int dim, typename Number>
+DoFHandler<dim>
+DGNavierStokesBase<dim, Number>::get_dof_handler(){
+  return dof_handler_u_grid;
+}
+*/
 
 template<int dim, typename Number>
 void
@@ -1326,6 +1359,37 @@ DGNavierStokesBase<dim, Number>::initialize_vector_grid_velocity(VectorType & sr
   matrix_free.initialize_dof_vector(src, dof_index_u);
 }
 
+template<int dim, typename Number>
+LinearAlgebra::distributed::Vector<Number>
+DGNavierStokesBase<dim, Number>::collect_current_coordinates()
+{
+
+  position_grid_init.reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
+  position_grid_init.update_ghost_values();
+
+   DoFTools::extract_locally_relevant_dofs(dof_handler_u_grid,
+       relevant_dofs_grid);
+   //TEST: store relevant_dofs_grid in vector
+     FEValues<dim> fe_values(get_mapping(), *fe_u_grid,
+                             Quadrature<dim>(fe_u_grid->get_unit_support_points()),
+                             update_quadrature_points);
+     std::vector<types::global_dof_index> dof_indices(fe_u_grid->dofs_per_cell);
+     for (const auto & cell : dof_handler_u_grid.active_cell_iterators())
+       if (!cell->is_artificial())
+         {
+           fe_values.reinit(cell);
+           cell->get_dof_indices(dof_indices);
+           for (unsigned int i=0; i<fe_u_grid->dofs_per_cell; ++i)
+             {
+               const unsigned int coordinate_direction =
+                   fe_u_grid->system_to_component_index(i).first;
+               const Point<dim> point = fe_values.quadrature_point(i);
+
+               position_grid_init(dof_indices[i]) = point[coordinate_direction];
+             }
+         }
+     return position_grid_init;
+}
 
 template<int dim, typename Number>
 void

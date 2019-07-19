@@ -51,6 +51,7 @@ TimeIntBase::advance_one_timestep(bool write_final_output)
   if(!started)
   {
     time += get_time_step_size();
+    std::cout<<"TIMESTEP0"<<std::endl;//TEST
   }
 
   if(started && time_step_number == 1)
