@@ -356,6 +356,7 @@ public:
     calculate_flux_nonlinear_boundary(vector const &        uM,
                                       vector const &        uP,
                                       vector const &        normalM,
+                                      vector const &        u_grid,
                                       BoundaryTypeU const & boundary_type) const
   {
     vector flux;
@@ -369,13 +370,23 @@ public:
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
+
+      if (data.ale==false){
       flux = calculate_upwind_flux(uM, uP, normalM);
+      }
+      else if (data.ale==true){
+      flux = calculate_upwind_flux_ale(uM, uP, normalM, u_grid);
+      }
 
       if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
         apply_outflow_bc(flux, uM * normalM);
-
-      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
-
+      vector uM_temp = uM;
+      vector uP_temp = uP;
+     if (data.ale==true){
+        uM_temp -= u_grid;
+        uP_temp -= u_grid;
+            }
+      scalar average_u_normal = 0.5 * (uM_temp + uP_temp) * normalM;
       // second term appears since the strong formulation is implemented (integration by parts
       // is performed twice)
       flux = flux - average_u_normal * uM;
@@ -1069,6 +1080,7 @@ private:
 
   void
   do_boundary_integral_nonlinear_operator(IntegratorFace &           integrator,
+                                          IntegratorFace & integrator_grid_velocity,
                                           types::boundary_id const & boundary_id) const;
 
   /*

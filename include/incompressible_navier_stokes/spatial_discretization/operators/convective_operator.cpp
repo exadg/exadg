@@ -267,9 +267,15 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
                               this->data.dof_index,
                               this->data.quad_index_nonlinear);
 
+  IntegratorFace integrator_grid_velocity(matrix_free,
+                              true,
+                              this->data.dof_index,
+                              this->data.quad_index_nonlinear);
+
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     integrator_m.reinit(face);
+    integrator_grid_velocity.reinit(face);
 
     // Strictly speaking, the variable integrator_flags refers to the linearized operator, but
     // integrator_flags is also valid for the nonlinear operator.
@@ -277,7 +283,9 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
                                  this->integrator_flags.face_evaluate.value,
                                  this->integrator_flags.face_evaluate.gradient);
 
-    do_boundary_integral_nonlinear_operator(integrator_m, matrix_free.get_boundary_id(face));
+    integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false);
+
+    do_boundary_integral_nonlinear_operator(integrator_m, integrator_grid_velocity, matrix_free.get_boundary_id(face));
 
     integrator_m.integrate_scatter(this->integrator_flags.face_integrate.value,
                                    this->integrator_flags.face_integrate.gradient,
@@ -361,6 +369,7 @@ template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
   IntegratorFace &           integrator,
+  IntegratorFace & integrator_grid_velocity,
   types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
@@ -368,12 +377,15 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector u_m = integrator.get_value(q);
+    vector u_grid   = integrator_grid_velocity.get_value(q);
     vector u_p = kernel->calculate_exterior_value_nonlinear(
       u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
 
     vector normal_m = integrator.get_normal_vector(q);
 
-    vector flux = kernel->calculate_flux_nonlinear_boundary(u_m, u_p, normal_m, boundary_type);
+    //u_p=u_p-u_grid-u_grid;//TEST
+
+    vector flux = kernel->calculate_flux_nonlinear_boundary(u_m, u_p, normal_m, u_grid, boundary_type);
 
     integrator.submit_value(flux, q);
   }

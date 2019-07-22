@@ -21,11 +21,11 @@
 unsigned int const DEGREE_MIN = 6;
 unsigned int const DEGREE_MAX = 6;
 
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
 unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 6;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.e-2;
@@ -37,7 +37,7 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
 const double END_TIME = 2;
-bool MOVE_MESH_MAPPINGFEFIELD=false;
+bool MOVE_MESH_MAPPINGFEFIELD=true;
 
 const int ORDER_TIME_INTEGRATOR = 2;
 
@@ -102,7 +102,7 @@ void set_input_parameters(InputParameters &param)
 
   // special case: pure DBC's
   param.pure_dirichlet_bc = true;
-  param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalMeanValue;
+  param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalSolutionInPoint;
 
   // PROJECTION METHODS
 
