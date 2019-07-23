@@ -21,11 +21,11 @@
 unsigned int const DEGREE_MIN = 6;
 unsigned int const DEGREE_MAX = 6;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
 unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 5;
+unsigned int const REFINE_TIME_MAX = 0;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.e-2;
@@ -39,14 +39,14 @@ const double START_TIME = 0.0;
 const double END_TIME = 0.5;
 bool MOVE_MESH_MAPPINGFEFIELD=true;
 
-const int ORDER_TIME_INTEGRATOR = 3;
+const int ORDER_TIME_INTEGRATOR = 2;
 
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = false;
+  param.grid_velocity_analytical = true;
   param.mesh_movement_mappingfefield = MOVE_MESH_MAPPINGFEFIELD;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
@@ -79,7 +79,7 @@ void set_input_parameters(InputParameters &param)
   param.cfl = 4.0;
   param.cfl_oif = param.cfl/8.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
-  param.time_step_size = 2.0e-2;//1e-4
+  param.time_step_size = 1.0e-4;//1e-4
   param.order_time_integrator = ORDER_TIME_INTEGRATOR; // 1; // 2; // 3;
   param.start_with_low_order = false; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
@@ -262,55 +262,30 @@ public:
     double T = delta_t / frequency;
     double left = TRIANGULATION_LEFT;
     double right = TRIANGULATION_RIGHT;
+    double width = right - left;
 
-    const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-
-    Point<dim> X = p;
-    Tensor<1,dim>  R; //Residual
-
-          //----------------------------------------------
-
-            R[0] = p(0)- X(0)- amplitude*sin_t* (1- std::pow(X(0)/right ,2) );
-            R[1] = p(1)- X(1);
+    double damp0 = (1- std::pow(p(0)/right,2) );
+    double damp1 = (1- std::pow(p(1)/right,2) );
 
 
-          unsigned int its = 0;
-          while (R.norm() > 1e-12 && its < 100)
-          {
+      double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
+      //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
 
-            Tensor<2,dim> J;
+   if(component == 0)
+     {
+       result = amplitude*std::sin(2*numbers::PI*(p(1)-left)/width)*damp0  *dsin_t_dt;
+     }
+   else if(component == 1)
+     {
+       result = amplitude*std::sin(2*numbers::PI*(p(0)-left)/width)*damp1  *dsin_t_dt;
+     }
 
-            J[0][0]= - 1 - amplitude*sin_t * (-2*X(0)/(std::pow(right,2))); //dR0/dX0
-            J[0][1]= 0; //dR0/dX1
-            J[1][0]= 0; //dR1/dX0
-            J[1][1]= - 1; //dR1/dX1
-
-            Tensor<1,dim> D; //Displacement
-            D = invert(J)*-1*R;
-            X+=D;
-
-            R[0] = p(0)- X(0)- amplitude*sin_t* (1- std::pow(X(0)/right ,2) );
-            R[1] = p(1)- X(1);
-
-
-            ++its;
-          }
-
-          AssertThrow (R.norm() < 1e-12,
-                       ExcMessage("Newton for point did not converge."));
-
-          double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
-          //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
-
-          if(component == 0)
-            result = dsin_t_dt*amplitude * (1- std::pow(X(0)/right ,2) );//dX0/dt
-          else if(component == 1)
-            result = 0;//dX1/dt
-
-          if (t<=0)
-            return 0.0;//for initialization
-          else
-            return result;
+   if (t<=0)
+     return 0.0;//for initialization
+   else
+   {
+     return result;
+   }
   }
 
 };

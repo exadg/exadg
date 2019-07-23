@@ -1372,7 +1372,7 @@ DGNavierStokesBase<dim, Number>::get_grid_velocity(VectorType & grid_velocity,
   VectorTypeDouble grid_velocity_double;
   grid_velocity_double = grid_velocity;
 
-  VectorTools::interpolate(get_mapping(),
+  VectorTools::interpolate(*mapping_init,
                            dof_handler_u_grid,
                            *(field_functions->analytical_solution_grid_velocity),
                            grid_velocity_double);

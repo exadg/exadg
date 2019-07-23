@@ -21,8 +21,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 6;
-unsigned int const DEGREE_MAX = 6;
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
@@ -55,7 +55,7 @@ namespace IncNS
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = false;
+  param.grid_velocity_analytical = true;
   param.mesh_movement_mappingfefield = MOVE_MESH_MAPPINGFEFIELD;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
@@ -95,7 +95,7 @@ void set_input_parameters(InputParameters &param)
   param.c_eff = 8.0;
   param.time_step_size = 0.5;//5e-5;
   param.order_time_integrator = ORDER_TIME_INTEGRATOR;
-  param.start_with_low_order = true;
+  param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
@@ -251,7 +251,8 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   if(MESH_TYPE == MeshType::UniformCartesian)
   {
     // Uniform Cartesian grid
-    GridGenerator::subdivided_hyper_cube(*triangulation,2,left,right);
+    //GridGenerator::subdivided_hyper_cube(*triangulation,2,left,right);
+    GridGenerator::hyper_cube(*triangulation,left,right);
   }
   else if(MESH_TYPE == MeshType::ComplexSurfaceManifold)
   {
@@ -450,94 +451,26 @@ public:
     double right = TRIANGULATION_RIGHT;
     double width = right - left;
 
-    const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-    //const double sin_t=std::sin(2*numbers::PI*t/T);
+    double damp0 = (1- std::pow(p(0)/right,2) );
+    double damp1 = (1- std::pow(p(1)/right,2) );
 
 
-
-
-    Point<dim> X = p;
-
-       Tensor<1,dim> R; //Residual
-
-       //Damping---------------------------------------
-       //linear
-       //double damp0 = (1- std::abs(X(0))/right );
-       //double damp1 = (1- std::abs(X(1))/right );
-       //quadratic
-       double damp0 = (1- std::pow(X(0)/right,2) );
-       double damp1 = (1- std::pow(X(1)/right,2) );
-       //----------------------------------------------
-       double damp0_dX0 = 0.0;
-       double damp1_dX1 = 0.0;
-
-         R[0] = p(0)- X(0)- amplitude*sin_t*std::sin(2*numbers::PI*(X(1)-left)/width)*damp0;
-         R[1] = p(1)- X(1)- amplitude*sin_t*std::sin(2*numbers::PI*(X(0)-left)/width)*damp1;
-
-
-       unsigned int its = 0;
-       while (R.norm() > 1e-12 && its < 100)
-       {
-
-         //Damping---------------------------------------
-         //linear
-         //double damp0 = (1- std::abs(X(0))/right );
-         //double damp1 = (1- std::abs(X(1))/right );
-         //double damp0_dX0 =(-X(0)/std::abs(X(0)) *right);
-         //double damp1_dX1 =(-X(1)/std::abs(X(0)) *right);
-         //quadratic
-         damp0 = (1- std::pow(X(0)/right,2) );
-         damp1 = (1- std::pow(X(1)/right,2) );
-         damp0_dX0 =(-2*X(0)/std::pow(right,2));
-         damp1_dX1 =(-2*X(1)/std::pow(right,2));
-         //----------------------------------------------
-
-         Tensor<2,dim> J;
-
-         J[0][0]= - 1 - amplitude*sin_t*std::sin(2*numbers::PI*(X(1)-left)/width) * damp0_dX0; //dR0/dX0
-         J[0][1]= - amplitude*sin_t*2*numbers::PI/width* std::cos(2*numbers::PI*(X(1)-left)/width)*damp0; //dR0/dX1
-         J[1][0]= - amplitude*sin_t*2*numbers::PI/width* std::cos(2*numbers::PI*(X(0)-left)/width)*damp1; //dR1/dX0
-         J[1][1]= - 1 - amplitude*sin_t*std::sin(2*numbers::PI*(X(0)-left)/width) * damp1_dX1; //dR1/dX1
-
-         Tensor<1,dim> D; //Displacement
-         D = invert(J)*-1*R;
-         X+=D;
-
-         R[0] = p(0)- X(0)- amplitude*sin_t*std::sin(2*numbers::PI*(X(1)-left)/width)*damp0;
-         R[1] = p(1)- X(1)- amplitude*sin_t*std::sin(2*numbers::PI*(X(0)-left)/width)*damp1;
-
-
-         ++its;
-       }
-       AssertThrow (R.norm() < 1e-12,
-                    ExcMessage("Newton for point did not converge."));
-
-
-
-
-
-
-
-
-
-
-          damp0     = (1- std::pow(X(0)/right,2) );
-          damp1     = (1- std::pow(X(1)/right,2) );
-          double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
-          //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
+      double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
+      //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
 
    if(component == 0)
      {
-       result = amplitude*std::sin(2*numbers::PI*(X(1)-left)/width)*damp0  *dsin_t_dt;
+       result = amplitude*std::sin(2*numbers::PI*(p(1)-left)/width)*damp0  *dsin_t_dt;
      }
    else if(component == 1)
      {
-       result = amplitude*std::sin(2*numbers::PI*(X(0)-left)/width)*damp1  *dsin_t_dt;
+       result = amplitude*std::sin(2*numbers::PI*(p(0)-left)/width)*damp1  *dsin_t_dt;
      }
+
    if (t<=0)
      return 0.0;//for initialization
    else
-   { //std::cout<<"warning: at the moment grid velocity is set to 0 in file vortex.h"<<std::endl;
+   {
      return result;
    }
 
