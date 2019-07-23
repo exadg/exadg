@@ -37,7 +37,6 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
-bool MOVE_MESH_MAPPINGFEFIELD=true;
 
 const int ORDER_TIME_INTEGRATOR = 2;
 
@@ -47,7 +46,6 @@ void set_input_parameters(InputParameters &param)
 {
   //ALE
   param.grid_velocity_analytical = true;
-  param.mesh_movement_mappingfefield = MOVE_MESH_MAPPINGFEFIELD;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
@@ -199,35 +197,6 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
   GridTools::collect_periodic_faces(*tria, 0+10, 1+10, 0, periodic_faces);
   GridTools::collect_periodic_faces(*tria, 2+10, 3+10, 1, periodic_faces);
-  triangulation->add_periodicity(periodic_faces);
-
-  triangulation->refine_global(n_refine_space);
-}
-
-template<int dim>
-void time_dependent_mesh_generation(double t,
-                                    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-                                    unsigned int const                                n_refine_space,
-                                    std::vector<GridTools::PeriodicFacePair<typename
-                                    Triangulation<dim>::cell_iterator> >             periodic_faces)
-{
-
-  GridGenerator::hyper_cube(*triangulation,
-                                       TRIANGULATION_LEFT,
-                                       TRIANGULATION_RIGHT);
-
-  triangulation->set_all_manifold_ids(1);
-
-
-  static CubeMovingManifold<dim> manifold(&t,
-                                          TRIANGULATION_LEFT,
-                                          TRIANGULATION_RIGHT,
-                                          TRIANGULATION_MOVEMENT_AMPLITUDE,
-                                          END_TIME - START_TIME,
-                                          TRIANGULATION_MOVEMENT_FREQUENCY);
-
-  triangulation->set_manifold(1, manifold);
-
   triangulation->add_periodicity(periodic_faces);
 
   triangulation->refine_global(n_refine_space);

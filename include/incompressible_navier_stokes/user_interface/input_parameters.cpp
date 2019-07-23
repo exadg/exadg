@@ -203,7 +203,6 @@ InputParameters::InputParameters()
 
     //ale
     grid_velocity_analytical(true),
-    mesh_movement_mappingfefield(true),
     ale_formulation(false),
     max_grid_velocity(0.0),
     triangulation_left(-0.5),

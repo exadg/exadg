@@ -87,9 +87,6 @@ private:
   print_header() const;
 
   void
-  move_mesh(double t) const;
-
-  void
   compute_grid_velocity();
 
   void
@@ -324,17 +321,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   setup_time = timer.wall_time();
 }
 
-
-template<int dim, typename Number>
-void
-Problem<dim, Number>::move_mesh(double t) const
-{
-  triangulation->clear();
-
-  time_dependent_mesh_generation(t, triangulation, param.h_refinements, periodic_faces);
-
-  }
-
 template<int dim, typename Number>
 void
 Problem<dim, Number>::compute_grid_velocity()
@@ -438,18 +424,11 @@ Problem<dim, Number>::solve()
           {
 
             timer_help = timer.wall_time();
-            if(param.mesh_movement_mappingfefield==true)
-            {
               navier_stokes_operation->move_mesh(time_integrator->get_next_time());
-            }
-            else
-            {
-              move_mesh(time_integrator->get_next_time());
-            }
             move_mesh_time += timer.wall_time() - timer_help;
 
             timer_help = timer.wall_time();
-            navier_stokes_operation->update();
+              navier_stokes_operation->update();
             update_time += timer.wall_time() - timer_help;
 
             timer_help = timer.wall_time();

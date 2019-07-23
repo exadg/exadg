@@ -122,9 +122,7 @@ DGNavierStokesBase<dim, Number>::setup(
 
   if(param.ale_formulation == true)
   {
-    if(param.mesh_movement_mappingfefield==true){
     initialize_mapping_field();
-    }
   }
   // depending on DoFHandler
   initialize_matrix_free();
@@ -202,7 +200,7 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
   dof_handler_u_grid.distribute_dofs(*fe_u_grid);
   dof_handler_u_grid.distribute_mg_dofs();
-  if(param.ale_formulation == true && param.mesh_movement_mappingfefield == true){
+  if(param.ale_formulation == true){
   dof_handler_grid.distribute_dofs(*fe_grid);
   dof_handler_grid.distribute_mg_dofs();
   }
@@ -696,7 +694,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGNavierStokesBase<dim, Number>::get_mapping() const
 {
-  if(param.ale_formulation == true && param.mesh_movement_mappingfefield ==true)
+  if(param.ale_formulation == true)
   {
     return *mapping;
   }

@@ -46,7 +46,6 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
-bool MOVE_MESH_MAPPINGFEFIELD=true;
 
 const int ORDER_TIME_INTEGRATOR = 2;
 
@@ -55,8 +54,7 @@ namespace IncNS
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = true;
-  param.mesh_movement_mappingfefield = MOVE_MESH_MAPPINGFEFIELD;
+  param.grid_velocity_analytical = false;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
@@ -251,8 +249,8 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   if(MESH_TYPE == MeshType::UniformCartesian)
   {
     // Uniform Cartesian grid
-    //GridGenerator::subdivided_hyper_cube(*triangulation,2,left,right);
-    GridGenerator::hyper_cube(*triangulation,left,right);
+    GridGenerator::subdivided_hyper_cube(*triangulation,2,left,right);
+    //GridGenerator::hyper_cube(*triangulation,left,right);
   }
   else if(MESH_TYPE == MeshType::ComplexSurfaceManifold)
   {
@@ -378,48 +376,6 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
     }
   }
   triangulation->refine_global(n_refine_space);
-}
-
-
-
-template<int dim>
-void time_dependent_mesh_generation(double t,
-                                    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-                                    unsigned int const                                n_refine_space,
-                                    std::vector<GridTools::PeriodicFacePair<typename
-                                          Triangulation<dim>::cell_iterator> >            /*periodic_faces*/)
- { //TODO:incorporate into create_grid_and_set_boundary_ids
-      GridGenerator::subdivided_hyper_cube(*triangulation,2,
-                                           TRIANGULATION_LEFT,
-                                           TRIANGULATION_RIGHT);
-
-      triangulation->set_all_manifold_ids(1);
-
-
-      static CubeMovingManifold<dim> manifold(&t,
-                                              TRIANGULATION_LEFT,
-                                              TRIANGULATION_RIGHT,
-                                              TRIANGULATION_MOVEMENT_AMPLITUDE,
-                                              END_TIME - START_TIME,
-                                              TRIANGULATION_MOVEMENT_FREQUENCY);
-
-      triangulation->set_manifold(1, manifold);
-
-      typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-      for(;cell!=endc;++cell)
-      {
-        for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-        {
-          if (((std::fabs(cell->face(face_number)->center()(0) - TRIANGULATION_RIGHT)< 1e-12) && (cell->face(face_number)->center()(1)<0))||
-             ((std::fabs(cell->face(face_number)->center()(0) - TRIANGULATION_LEFT)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
-             ((std::fabs(cell->face(face_number)->center()(1) - TRIANGULATION_LEFT)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
-             ((std::fabs(cell->face(face_number)->center()(1) - TRIANGULATION_RIGHT)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
-                cell->face(face_number)->set_boundary_id (1);
-        }
-      }
-      triangulation->refine_global(n_refine_space);
-
-      typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 }
 
 /**************************************************************************************/
