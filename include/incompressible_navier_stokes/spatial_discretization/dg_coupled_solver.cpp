@@ -49,11 +49,11 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
   Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
-  this->pcout << std::endl << "setup_solvers()... done" << std::endl;//TEST
+
   initialize_block_preconditioner();
-  this->pcout << std::endl << "initialize_block_preconditioner()... done" << std::endl;//TEST
+
   initialize_solver_coupled();
-  this->pcout << std::endl << "initialize_solver_coupled()... done" << std::endl;//TEST
+
   if(this->param.add_penalty_terms_to_monolithic_system == false)
     this->setup_projection_solver();
 
@@ -431,13 +431,13 @@ void
 DGNavierStokesCoupled<dim, Number>::initialize_block_preconditioner()
 {
   block_preconditioner.initialize(this);
-  this->pcout << std::endl << "initialize(this)... done" << std::endl;//TEST
+
   initialize_vectors();
-  this->pcout << std::endl << "initialize_vectors()... done" << std::endl;//TEST
+
   initialize_preconditioner_velocity_block();
-  this->pcout << std::endl << "initialize_preconditioner_velocity_block()... done" << std::endl;//TEST
+
   initialize_preconditioner_pressure_block();
-  this->pcout << std::endl << "initialize_preconditioner_pressure_block()... done" << std::endl;//TEST
+
 }
 
 template<int dim, typename Number>

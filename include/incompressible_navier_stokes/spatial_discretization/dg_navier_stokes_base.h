@@ -18,9 +18,6 @@
 
 #include <deal.II/matrix_free/operators.h>
 
-//TEST
-#include <deal.II/multigrid/multigrid.h>
-
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../incompressible_navier_stokes/user_interface/field_functions.h"
@@ -396,14 +393,6 @@ public:
 
   void
   move_mesh(double t);
-
-  /*
-  DoFHandler<dim>
-  get_dof_handler();
-  */
-
-  LinearAlgebra::distributed::Vector<Number>
-  collect_current_coordinates();
 
   void
   get_grid_velocity(VectorType & grid_velocity,

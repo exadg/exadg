@@ -383,8 +383,6 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
 
     vector normal_m = integrator.get_normal_vector(q);
 
-    //u_p=u_p-u_grid-u_grid;//TEST
-
     vector flux = kernel->calculate_flux_nonlinear_boundary(u_m, u_p, normal_m, u_grid, boundary_type);
 
     integrator.submit_value(flux, q);

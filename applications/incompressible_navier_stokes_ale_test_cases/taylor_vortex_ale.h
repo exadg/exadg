@@ -25,21 +25,21 @@ unsigned int const REFINE_SPACE_MIN = 4;
 unsigned int const REFINE_SPACE_MAX = 4;
 
 unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MAX = 5;
 
 // set problem specific parameters like physical dimensions, etc.
 const double VISCOSITY = 1.e-2;
 
-const double TRIANGULATION_LEFT = -0.5;
-const double TRIANGULATION_RIGHT = 0.5;
+const double TRIANGULATION_LEFT = -1.0;
+const double TRIANGULATION_RIGHT = 1.0;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
 const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 
 const double START_TIME = 0.0;
-const double END_TIME = 2;
+const double END_TIME = 0.5;
 bool MOVE_MESH_MAPPINGFEFIELD=true;
 
-const int ORDER_TIME_INTEGRATOR = 2;
+const int ORDER_TIME_INTEGRATOR = 3;
 
 namespace IncNS
 {
@@ -74,14 +74,14 @@ void set_input_parameters(InputParameters &param)
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.max_velocity = 1.0;
   param.cfl = 4.0;
   param.cfl_oif = param.cfl/8.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
-  param.time_step_size = 1.0e-4;
-  param.order_time_integrator = 2; // 1; // 2; // 3;
-  param.start_with_low_order = true; // true; // false;
+  param.time_step_size = 2.0e-2;//1e-4
+  param.order_time_integrator = ORDER_TIME_INTEGRATOR; // 1; // 2; // 3;
+  param.start_with_low_order = false; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
@@ -185,7 +185,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
-  const double left = -1.0, right = 1.0;
+  const double left = TRIANGULATION_LEFT, right = TRIANGULATION_RIGHT;
   GridGenerator::hyper_cube(*triangulation,left,right);
 
   // use periodic boundary conditions

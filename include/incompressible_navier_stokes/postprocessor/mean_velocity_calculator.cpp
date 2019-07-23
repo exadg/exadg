@@ -31,7 +31,7 @@ MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
 template<int dim, typename Number>
 Number
 MeanVelocityCalculator<dim, Number>::calculate_mean_velocity_area(VectorType const & velocity,
-                                                                  double const &     time)
+    double const &     time)
 {
   if(data.calculate == true)
   {

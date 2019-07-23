@@ -27,8 +27,8 @@ unsigned int const DEGREE_MAX = 6;
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 4;
-unsigned int const REFINE_TIME_MAX = 4;
+unsigned int const REFINE_TIME_MIN = 7;
+unsigned int const REFINE_TIME_MAX = 7;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -125,7 +125,9 @@ void set_input_parameters(InputParameters &param)
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // special case: pure DBC's
-  param.pure_dirichlet_bc = false;
+  param.pure_dirichlet_bc = true;
+  param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalSolutionInPoint;
+
 
   // NUMERICAL PARAMETERS
   param.implement_block_diagonal_preconditioner_matrix_free = true;
@@ -137,7 +139,6 @@ void set_input_parameters(InputParameters &param)
   param.solver_pressure_poisson = SolverPressurePoisson::CG;
   param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
- // param.multigrid_data_pressure_poisson.type = MultigridType::hMG;//TEST, default
   param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
 
@@ -732,7 +733,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.write_velocity_magnitude = true;
   pp_data.output_data.write_vorticity_magnitude = true;
   pp_data.output_data.write_processor_id = true;
-  pp_data.output_data.mean_velocity.calculate = true;
+  pp_data.output_data.mean_velocity.calculate = false;
   pp_data.output_data.mean_velocity.sample_start_time = param.start_time;
   pp_data.output_data.mean_velocity.sample_end_time = param.end_time;
   pp_data.output_data.mean_velocity.sample_every_timesteps = 1;

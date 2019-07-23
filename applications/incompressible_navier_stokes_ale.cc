@@ -45,8 +45,8 @@ using namespace IncNS;
 
 // 2D Navier-Stokes flow
 //#include "incompressible_navier_stokes_ale_test_cases/poiseuille_ale.h"
-#include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
-//#include "incompressible_navier_stokes_ale_test_cases/taylor_vortex_ale.h"
+//#include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
+#include "incompressible_navier_stokes_ale_test_cases/taylor_vortex_ale.h"
 
 
 template<typename Number>
@@ -98,9 +98,6 @@ private:
   void
   fill_d_grid();
 
-  void
-  fill_d_grid_analytical(LinearAlgebra::distributed::Vector<Number> & d_grid, double t);
-
   ConditionalOStream pcout;
 
   std::shared_ptr<parallel::Triangulation<dim>> triangulation;
@@ -146,7 +143,6 @@ private:
   mutable double         update_time;
   mutable double         move_mesh_time;
   mutable double         timer_help;
-  int jjj=0;//TEST
 
   LinearAlgebra::distributed::Vector<Number> u_grid_np;
   std::vector<LinearAlgebra::distributed::Vector<Number>> d_grid;
@@ -357,32 +353,22 @@ Problem<dim, Number>::initialize_d_grid_and_u_grid_np()
   for(unsigned int i = 0; i < d_grid.size(); ++i)
     {//TODO: Fix MPI error for 6 processes when d_grid[i] is filled
     navier_stokes_operation->initialize_vector_velocity(d_grid[i]);
-    //d_grid[i].update_ghost_values();
+    d_grid[i].update_ghost_values();
     }
   navier_stokes_operation->initialize_vector_velocity(u_grid_np);
 
- /* FESystem<dim> fe_grid = navier_stokes_operation->get_fe_u_grid(); //we need DGQ to determine the right velocitys in any point
-  DoFHandler<dim> dof_handler_grid(*triangulation);
-  dof_handler_grid.distribute_dofs(fe_grid);*/
-
- /* initial_coordinates = std::make_shared<std::vector< Point< dim > >>(?);
-
-  DoFTools::map_dofs_to_support_points  (navier_stokes_operation->get_mapping(),
-                                          dof_handler_grid,
-                                            *initial_coordinates
-    );
-*/
   fill_d_grid();
 
   if (param.start_with_low_order==false)
   {//only possible when analytical. otherwise lower_order has to be true
     for(unsigned int i = 1; i < d_grid.size(); ++i)
     {
-      fill_d_grid_analytical(d_grid[i], time_integrator->get_previous_time(i));
+      //TODO: only possible if analytical solution of grid displacement can be provided
+     /* move_mesh(time_integrator->get_time());
+      update();*/
+      push_back(d_grid);
+      fill_d_grid();
     }
-    //TODO: only possible if analytical solution of grid displacement can be provided
-   /* move_mesh(time_integrator->get_time());
-    update();*/
   }
 }
 
@@ -391,7 +377,6 @@ template<int dim, typename Number>
 void
 Problem<dim, Number>::fill_d_grid()
 {
-
 
   FESystem<dim> fe_grid = navier_stokes_operation->get_fe_u_grid(); //DGQ is needed to determine the right velocitys in any point
   auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation);
@@ -406,11 +391,6 @@ Problem<dim, Number>::fill_d_grid()
 
   d_grid[0].reinit(dof_handler_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
   d_grid[0].update_ghost_values();
-
- // DoFHandler<dim> dof_handler_grid(navier_stokes_operation.tria) = navier_stokes_operation->get_dof_handler;
-
-
-
 
   FEValues<dim> fe_values(navier_stokes_operation->get_mapping(), fe_grid,
                           Quadrature<dim>(fe_grid.get_unit_support_points()),
@@ -432,74 +412,6 @@ Problem<dim, Number>::fill_d_grid()
           }
       }
   }
-
-  /*
-
-  if (jjj>4){
-    d_grid[0]=navier_stokes_operation->collect_current_coordinates();
-    std::cout<<"FILLL"<<std::endl;
-  }
-  ++jjj;
-*/
-
-}
-
-template<int dim, typename Number>
-void
-Problem<dim, Number>::fill_d_grid_analytical(LinearAlgebra::distributed::Vector<Number> & d_grid, double t)
-{
-  //TODO: only possible if analytical solution of grid displacement can be provided
-  /*
-  move_mesh(t);
-  update();
-  fill_d_grid()
-  */
-  FESystem<dim> fe_grid = navier_stokes_operation->get_fe_u_grid(); //we need DGQ to determine the right velocitys in any point
-  DoFHandler<dim> dof_handler_grid(*triangulation);
-  dof_handler_grid.distribute_dofs(fe_grid);
-
-  const double left = param.triangulation_left;
-  const double right = param.triangulation_right;
-  const double amplitude = param.grid_movement_amplitude;
-  const double delta_t = param.end_time - param.start_time;
-  const double frequency = param.grid_movement_frequency;
-  const double width = right-left;
-  const double T = delta_t/frequency; //duration of a period
-  const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-    {
-      FEValues<dim> fe_values(navier_stokes_operation->get_mapping(), fe_grid,
-                              Quadrature<dim>(fe_grid.get_unit_support_points()),
-                              update_quadrature_points);
-      std::vector<types::global_dof_index> dof_indices(fe_grid.dofs_per_cell);
-      for (const auto & cell : dof_handler_grid.active_cell_iterators())
-        if (!cell->is_artificial())
-          {
-            fe_values.reinit(cell);
-            cell->get_dof_indices(dof_indices);
-            for (unsigned int i=0; i<fe_grid.dofs_per_cell; ++i)
-              {
-                const unsigned int coordinate_direction =
-                    fe_grid.system_to_component_index(i).first;
-                const Point<dim> point = fe_values.quadrature_point(i);
-                double displacement=0;
-                for (unsigned int d=0; d<dim; ++d)
-                 if (coordinate_direction == 0)
-                 {
-                   displacement = std::sin(2* numbers::PI*(point(1)-left)/width)*sin_t*amplitude*(1- std::pow(point(0)/right,2));
-                 }
-                   else if (coordinate_direction == 1)
-                 {
-                   displacement = std::sin(2* numbers::PI*(point(0)-left)/width)*sin_t*amplitude*(1- std::pow(point(1)/right,2));
-                 }
-                d_grid(dof_indices[i]) = point[coordinate_direction];
-                d_grid(dof_indices[i]) += displacement;
-              }
-          }
-
-    }
-
-
-
 }
 
 template<int dim, typename Number>
@@ -530,7 +442,6 @@ Problem<dim, Number>::solve()
             //Start at mesh t^n+1
             move_mesh(time_integrator->get_next_time());
           }
-          std::cout<<"timestep1"<<std::endl;//TEST
           navier_stokes_operation->update();
 
           while(!timeloop_finished)
