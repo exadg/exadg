@@ -40,6 +40,8 @@ class DGOperator : public dealii::Subscriptor
 {
 public:
   typedef float MultigridNumber;
+  // use this line for double-precision multigrid
+  //  typedef Number MultigridNumber;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 #ifdef DEAL_II_WITH_TRILINOS

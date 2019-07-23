@@ -192,7 +192,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>();
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize Poisson operator
   poisson_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));

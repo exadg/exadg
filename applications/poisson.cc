@@ -30,12 +30,12 @@
 // specify the test case that has to be solved
 
 // template
-//#include "poisson_test_cases/template.h"
+#include "poisson_test_cases/template.h"
 
 //#include "poisson_test_cases/gaussian.h"
 //#include "poisson_test_cases/slit.h"
 //#include "poisson_test_cases/sine.h"
-#include "poisson_test_cases/nozzle.h"
+//#include "poisson_test_cases/nozzle.h"
 //#include "poisson_test_cases/torus.h"
 //#include "poisson_test_cases/lung.h"
 
@@ -44,7 +44,7 @@ using namespace Poisson;
 
 enum class RunType
 {
-  RefineHAndP,          // keep problem size approximately constant
+  RefineHAndP,          // run simulation for a specified range of mesh refiments and polynomial degrees
   FixedProblemSize,     // increase polynomial degree and keep problem size approximately constant
   IncreasingProblemSize // run at fixed polynomial degree
 };
@@ -266,7 +266,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>();
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize Poisson operator
   poisson_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));

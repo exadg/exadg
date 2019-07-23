@@ -9,11 +9,11 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
+unsigned int const DEGREE_MIN = 1;
+unsigned int const DEGREE_MAX = 5;
 
 unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 5;
+unsigned int const REFINE_SPACE_MAX = 3;
 
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
@@ -41,12 +41,12 @@ set_input_parameters(Poisson::InputParameters &param)
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
-  param.mapping = MappingType::Isoparametric;
+  param.mapping = MappingType::Affine; //Cubic; //Isoparametric;
   param.spatial_discretization = SpatialDiscretization::DG;
   param.IP_factor = 1.0e0;
 
   // SOLVER
-  param.solver = Poisson::Solver::CG;
+  param.solver = Solver::CG;
   param.solver_data.abs_tol = 1.e-20;
   param.solver_data.rel_tol = 1.e-10;
   param.solver_data.max_iter = 1e4;
@@ -60,7 +60,7 @@ set_input_parameters(Poisson::InputParameters &param)
   // MG coarse grid solver
   param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
-  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
+  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
 }
 
 }
@@ -92,7 +92,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   }
   else if(MESH_TYPE == MeshType::Curvilinear)
   {
-    double const deformation = 0.1;
+    double const deformation = 0.15;
     unsigned int const frequency = 2;
     DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
     triangulation->set_all_manifold_ids(1);
@@ -192,15 +192,18 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(Poisson::InputParameters const &param)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
+  pp_data.output_data.write_higher_order = true;
+  pp_data.output_data.degree = param.degree;
 
   pp_data.error_data.analytical_solution_available = true;
   pp_data.error_data.analytical_solution.reset(new Solution<dim>());
+  pp_data.error_data.calculate_relative_errors = true;
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
   pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));

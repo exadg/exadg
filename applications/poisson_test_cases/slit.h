@@ -118,12 +118,14 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(Poisson::InputParameters const &param)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
+  pp_data.output_data.write_higher_order = true;
+  pp_data.output_data.degree = param.degree;
 
   pp_data.error_data.analytical_solution_available = true;
   pp_data.error_data.analytical_solution.reset(new Solution<dim>());
