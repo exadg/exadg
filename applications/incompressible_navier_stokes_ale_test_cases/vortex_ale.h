@@ -47,7 +47,7 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
 
-const int ORDER_TIME_INTEGRATOR = 2;
+bool PURE_DIRICHLET = true;
 
 namespace IncNS
 {
@@ -92,7 +92,7 @@ void set_input_parameters(InputParameters &param)
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
   param.time_step_size = 0.5;//5e-5;
-  param.order_time_integrator = ORDER_TIME_INTEGRATOR;
+  param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;
 
@@ -123,7 +123,7 @@ void set_input_parameters(InputParameters &param)
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // special case: pure DBC's
-  param.pure_dirichlet_bc = true;
+  param.pure_dirichlet_bc = PURE_DIRICHLET;
   param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalSolutionInPoint;
 
 
@@ -250,7 +250,6 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   {
     // Uniform Cartesian grid
     GridGenerator::subdivided_hyper_cube(*triangulation,2,left,right);
-    //GridGenerator::hyper_cube(*triangulation,left,right);
   }
   else if(MESH_TYPE == MeshType::ComplexSurfaceManifold)
   {
@@ -360,7 +359,8 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
     triangulation->set_manifold(1, manifold);
   }
-
+  if (PURE_DIRICHLET==false)
+  {
   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
   for(;cell!=endc;++cell)
   {
@@ -370,10 +370,12 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
            ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12) && (cell->face(face_number)->center()(1)>0))||
            ((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12) && (cell->face(face_number)->center()(0)<0))||
            ((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12) && (cell->face(face_number)->center()(0)>0)))
+
        {
          cell->face(face_number)->set_boundary_id (1);
        }
     }
+  }
   }
   triangulation->refine_global(n_refine_space);
 }
@@ -496,6 +498,14 @@ public:
   {
     double t = this->get_time();
     double result = 0.0;
+    /*
+    const double T = (END_TIME-START_TIME)/TRIANGULATION_MOVEMENT_FREQUENCY;
+    double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
+    double grad_displacement0 = -std::cos(2* numbers::PI*(p(1)-left)/(2*left))*2* (numbers::PI/(2*left))   *sin_t*TRIANGULATION_MOVEMENT_AMPLITUDE;
+    double grad_displacement1 = -std::cos(2* numbers::PI*(p(0)-left)/(2*left))*2* (numbers::PI/(2*left))   *sin_t*TRIANGULATION_MOVEMENT_AMPLITUDE;
+    double n0 = 1/(std::pow(grad_displacement0,2)+std::pow(grad_displacement1,2))*std::abs(grad_displacement1);
+    double n1 = 1/(std::pow(grad_displacement0,2)+std::pow(grad_displacement1,2))*std::abs(grad_displacement0);
+     */
 
     if(FORMULATION_VISCOUS_TERM == FormulationViscousTerm::LaplaceFormulation)
     {
@@ -503,16 +513,16 @@ public:
       if(component==0)
       {
         if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
-          result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);// *n0;
         else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
-          result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n0;
       }
       else if(component==1)
       {
         if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
-          result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
         else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
-          result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
       }
     }
     else if(FORMULATION_VISCOUS_TERM == FormulationViscousTerm::DivergenceFormulation)
@@ -521,16 +531,16 @@ public:
       if(component==0)
       {
         if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
-          result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n0;
         else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
-          result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n0;
       }
       else if(component==1)
       {
         if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
-          result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
         else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
-          result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);
+          result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
       }
     }
     else
