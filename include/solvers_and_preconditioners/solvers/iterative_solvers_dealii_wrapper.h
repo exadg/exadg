@@ -16,7 +16,7 @@ class IterativeSolverBase
 {
 public:
   IterativeSolverBase()
-    : performance_metrics_available(false), l2_0(1.0), l2_n(1.0), n(1), rho(1.0), r(1.0), n10(1)
+    : performance_metrics_available(false), l2_0(1.0), l2_n(1.0), n(0), rho(1.0), r(1.0), n10(0)
   {
   }
 
@@ -39,6 +39,7 @@ public:
     this->n    = solver_control.last_step();
 
     // compute some derived performance metrics
+    AssertThrow(n != 0, ExcMessage("Division by zero."));
     this->rho = std::pow(l2_n / l2_0, 1.0 / n);
     this->r   = -std::log(rho) / std::log(10.0);
     this->n10 = -10.0 * std::log(10.0) / std::log(rho);

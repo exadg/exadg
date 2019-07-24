@@ -10,10 +10,10 @@
 
 // convergence studies in space
 unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 5;
+unsigned int const DEGREE_MAX = 15;
 
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MAX = 2;
 
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
@@ -27,7 +27,7 @@ enum class MeshType{
   Curvilinear
 };
 
-MeshType const MESH_TYPE = MeshType::Cartesian;
+MeshType const MESH_TYPE = MeshType::Curvilinear;
 
 namespace Poisson
 {
@@ -41,7 +41,7 @@ set_input_parameters(Poisson::InputParameters &param)
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
-  param.mapping = MappingType::Affine; //Cubic; //Isoparametric;
+  param.mapping = MappingType::Cubic; //Isoparametric;
   param.spatial_discretization = SpatialDiscretization::DG;
   param.IP_factor = 1.0e0;
 
@@ -52,11 +52,12 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::cphMG;
+  param.multigrid_data.type = MultigridType::chpMG;
   param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data.smoother_data.iterations = 5;
+  param.multigrid_data.smoother_data.smoothing_range = 20;
   // MG coarse grid solver
   param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
@@ -78,7 +79,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >         &periodic_faces,
-                                 unsigned int const n_subdivisions = 1)
+                                 unsigned int const n_subdivisions = 2)
 {
   (void)periodic_faces;
 
