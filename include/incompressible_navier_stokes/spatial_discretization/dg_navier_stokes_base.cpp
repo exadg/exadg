@@ -20,7 +20,6 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   : dealii::Subscriptor(),
     param(parameters_in),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
-    fe_u_grid(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
     fe_p(param.get_degree_p()),
     fe_u_scalar(param.degree_u),
     fe_grid(new FESystem<dim>(FE_Q<dim>(param.degree_u), dim)),//FE_Q is enough
@@ -67,10 +66,8 @@ DGNavierStokesBase<dim, Number>::initialize_mapping_field()
   {
     DoFTools::extract_locally_relevant_level_dofs(dof_handler_grid, level,
         relevant_dofs_grid);
-
-    position_grid_init.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-    displacement_grid.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-    position_grid_new.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+    VectorType position_grid_init_temp;
+    position_grid_init_temp.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
 
 
   FEValues<dim> fe_values(*mapping_init, *fe_grid,
@@ -87,16 +84,14 @@ DGNavierStokesBase<dim, Number>::initialize_mapping_field()
                     const unsigned int coordinate_direction =
                         fe_grid->system_to_component_index(i).first;
                     const Point<dim> point = fe_values.quadrature_point(i);
-                    position_grid_init(dof_indices[i]) = point[coordinate_direction];
+                    position_grid_init_temp(dof_indices[i]) = point[coordinate_direction];
                   }
               }
-          position_grid_init.update_ghost_values();
-          position_grid_new = position_grid_init;
-          position_grid_new_multigrid[level]=position_grid_new;
+          position_grid_init_temp.update_ghost_values();
+          position_grid_new_multigrid[level]=position_grid_init_temp;
           position_grid_new_multigrid[level].update_ghost_values();
    }
           mapping.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> (dof_handler_grid, position_grid_new_multigrid));
-
 }
 
 
@@ -122,7 +117,7 @@ DGNavierStokesBase<dim, Number>::setup(
 
   if(param.ale_formulation == true)
   {
-    initialize_mapping_field();
+    initialize_mapping_field(); //TODO: move_mesh->init?
   }
   // depending on DoFHandler
   initialize_matrix_free();
@@ -198,8 +193,6 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_p.distribute_mg_dofs();
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
-  dof_handler_u_grid.distribute_dofs(*fe_u_grid);
-  dof_handler_u_grid.distribute_mg_dofs();
   if(param.ale_formulation == true){
   dof_handler_grid.distribute_dofs(*fe_grid);
   dof_handler_grid.distribute_mg_dofs();
@@ -692,7 +685,7 @@ DGNavierStokesBase<dim, Number>::get_quad_index_pressure() const
 
 template<int dim, typename Number>
 Mapping<dim> const &
-DGNavierStokesBase<dim, Number>::get_mapping() const
+DGNavierStokesBase<dim, Number>::get_mapping() const //TODO: always hand back mapping, only works if mappingfield is also used for non ale simulations
 {
   if(param.ale_formulation == true)
   {
@@ -704,6 +697,19 @@ DGNavierStokesBase<dim, Number>::get_mapping() const
   }
 }
 
+template<int dim, typename Number>
+Mapping<dim> const &
+DGNavierStokesBase<dim, Number>::get_mapping_init() const
+{
+    return *mapping_init;
+}
+
+template<int dim, typename Number>
+MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> &
+DGNavierStokesBase<dim, Number>::get_mapping_field() const
+{
+    return *mapping;
+}
 
 template<int dim, typename Number>
 FESystem<dim> const &
@@ -717,13 +723,6 @@ FE_DGQ<dim> const &
 DGNavierStokesBase<dim, Number>::get_fe_p() const
 {
   return fe_p;
-}
-
-template<int dim, typename Number>
-FESystem<dim>
-DGNavierStokesBase<dim, Number>::get_fe_u_grid()
-{
-  return *fe_u_grid;
 }
 
 template<int dim, typename Number>
@@ -788,6 +787,13 @@ void
 DGNavierStokesBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
   convective_kernel->set_velocity_ptr(velocity);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::set_position_grid_new_multigrid(std::vector<VectorType> position_grid_new_multigrid_in)
+{
+  position_grid_new_multigrid = position_grid_new_multigrid_in;
 }
 
 template<int dim, typename Number>
@@ -1210,7 +1216,6 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
   }
 }
 
-
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::update(){
@@ -1218,25 +1223,19 @@ DGNavierStokesBase<dim, Number>::update(){
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
 
   additional_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::partition_partition;
-
   additional_data.initialize_indices = false; //connectivity of elements stays the same
   additional_data.initialize_mapping = true;
 
-  //TODO: Rewrite this routine to avoid code duplication
+  UpdateFlags ale_update_flags= (update_gradients |
+                                 update_JxW_values |
+                                 update_quadrature_points |
+                                 update_normal_vectors |
+                                 update_values |
+                                 update_inverse_jacobians /*CFL*/);
 
-
- // additional_data.mapping_update_flags_faces_by_cells =
- //         (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values| update_inverse_jacobians /*CFL*/);
-
-
-  additional_data.mapping_update_flags =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/);
-
-  additional_data.mapping_update_flags_inner_faces =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/);
-
-  additional_data.mapping_update_flags_boundary_faces =
-          (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors | update_values | update_inverse_jacobians /*CFL*/);
+  additional_data.mapping_update_flags =ale_update_flags;
+  additional_data.mapping_update_flags_inner_faces = ale_update_flags;
+  additional_data.mapping_update_flags_boundary_faces =ale_update_flags;
 
 
   if(param.use_cell_based_face_loops)
@@ -1252,7 +1251,6 @@ DGNavierStokesBase<dim, Number>::update(){
   dof_handler_vec[dof_index_p]        = &dof_handler_p;
   dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
-        // constraint
   std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
   constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
@@ -1278,120 +1276,6 @@ DGNavierStokesBase<dim, Number>::update(){
   matrix_free.reinit(get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 
 }
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::move_mesh(double t){
-    const double left = param.triangulation_left;
-    const double right = param.triangulation_right;
-    const double amplitude = param.grid_movement_amplitude;
-    const double delta_t = param.end_time - param.start_time;
-    const double frequency = param.grid_movement_frequency;
-    const double width = right-left;
-    const double T = delta_t/frequency;
-    const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-
-
-      unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
-      for (unsigned int level=0; level<nlevel; ++level)
-      {
-      DoFTools::extract_locally_relevant_level_dofs(dof_handler_grid, level,
-          relevant_dofs_grid);
-
-      position_grid_init.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-      displacement_grid.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-      position_grid_new.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-
-      FEValues<dim> fe_values(*mapping_init, *fe_grid,
-                                Quadrature<dim>(fe_grid->get_unit_support_points()),
-                                update_quadrature_points);
-        std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
-        for (const auto & cell : dof_handler_grid.mg_cell_iterators_on_level(level))
-          if (cell->level_subdomain_id() != numbers::artificial_subdomain_id)
-            {
-              fe_values.reinit(cell);
-              cell->get_active_or_mg_dof_indices(dof_indices);
-              for (unsigned int i=0; i<fe_grid->dofs_per_cell; ++i)
-                {
-                  const unsigned int coordinate_direction =
-                      fe_grid->system_to_component_index(i).first;
-                  const Point<dim> point = fe_values.quadrature_point(i);
-                  double displacement=0;
-                  for (unsigned int d=0; d<dim; ++d)
-                   if (coordinate_direction == 0)
-                   {
-                     //MOVING BOUNDARIE SIN_COS
-                     displacement = std::sin(2* numbers::PI*(point(1)-left)/width)*sin_t*amplitude;
-                     //MOVING BOUNDARIE X^2
-                     //displacement = std::pow(point(1),2)* std::pow((right-std::abs(point(1))),2)*sin_t*amplitude;
-
-                     //NO MOVING BOUNDARIE SIN_COS
-                     //displacement = std::sin(2* numbers::PI*(point(1)-left)/width)*sin_t*amplitude*(1- std::pow(point(0)/right,2));
-                   }
-                     else if (coordinate_direction == 1)
-                   {
-                     //MOVING BOUNDARIE SIN_COS
-                     displacement = std::sin(2* numbers::PI*(point(0)-left)/width)*sin_t*amplitude;
-                     //MOVING BOUNDARIE X^2
-                     //displacement = std::pow(point(0),2)* std::pow((right-std::abs(point(0))),2)*sin_t*amplitude;
-
-                     //NO MOVING BOUNDARIE SIN_COS
-                     //displacement = std::sin(2* numbers::PI*(point(0)-left)/width)*sin_t*amplitude*(1- std::pow(point(1)/right,2));
-                   }
-                  position_grid_init(dof_indices[i]) = point[coordinate_direction];
-                  displacement_grid(dof_indices[i]) = displacement;
-                }
-            }
-
-      position_grid_new  = position_grid_init;
-      position_grid_new += displacement_grid;
-      position_grid_new_multigrid[level] = position_grid_new;
-
-      }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::initialize_vector_grid_velocity(VectorType & src) const
-{
-  matrix_free.initialize_dof_vector(src, dof_index_u);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::get_grid_velocity(VectorType & grid_velocity,
-                                                           double const evaluation_time) const
-{
-  field_functions->analytical_solution_grid_velocity->set_time(evaluation_time);
-
-  // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble grid_velocity_double;
-  grid_velocity_double = grid_velocity;
-
-  VectorTools::interpolate(*mapping_init,
-                           dof_handler_u_grid,
-                           *(field_functions->analytical_solution_grid_velocity),
-                           grid_velocity_double);
-
-  grid_velocity = grid_velocity_double;
-}
-
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::set_analytical_grid_velocity_in_convective_operator_kernel(double const time_in) const
-{
-
-    VectorType grid_velocity;
-    initialize_vector_grid_velocity(grid_velocity);
-
-    get_grid_velocity(grid_velocity, time_in);
-
-    convective_kernel->set_velocity_grid_ptr(grid_velocity);
-}
-
 
 template<int dim, typename Number>
 void

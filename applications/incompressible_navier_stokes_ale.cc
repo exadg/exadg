@@ -132,10 +132,6 @@ private:
   Timer          timer;
   mutable double overall_time;
   double         setup_time;
-  mutable double         update_time;
-  mutable double         move_mesh_time;
-  mutable double         compute_and_set_mesh_velocity_time;
-  mutable double         timer_help;
 
 };
 
@@ -143,11 +139,7 @@ template<int dim, typename Number>
 Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     overall_time(0.0),
-    setup_time(0.0),
-    update_time(0.0),
-    move_mesh_time(0.0),
-    compute_and_set_mesh_velocity_time(0.0),
-    timer_help(0.0)
+    setup_time(0.0)
 {
 }
 
@@ -305,7 +297,10 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  move_mesh = std::make_shared<MoveMesh>(param,navier_stokes_operation, time_integrator,triangulation);
+  move_mesh = std::make_shared<MoveMesh>( param,navier_stokes_operation,
+                                          time_integrator,
+                                          triangulation,
+                                          field_functions);
 
   setup_time = timer.wall_time();
 }
@@ -330,25 +325,7 @@ Problem<dim, Number>::solve()
 
           while(!timeloop_finished)
           {
-            timer_help = timer.wall_time();
-              navier_stokes_operation->move_mesh(time_integrator->get_next_time());
-            move_mesh_time += timer.wall_time() - timer_help;
-
-            timer_help = timer.wall_time();
-              navier_stokes_operation->update();
-            update_time += timer.wall_time() - timer_help;
-
-            timer_help = timer.wall_time();
-            if(param.grid_velocity_analytical==true)
-            {
-              navier_stokes_operation->set_analytical_grid_velocity_in_convective_operator_kernel(time_integrator->get_next_time());
-            }
-            else
-            {
-             move_mesh->compute_grid_velocity();
-             //navier_stokes_operation->set_grid_velocity_in_convective_operator_kernel(u_grid_np);//TEST
-            }
-            compute_and_set_mesh_velocity_time += timer.wall_time() - timer_help;
+            move_mesh->advance_mesh_to_next_timestep_and_set_grid_velocities();
 
             timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
 
@@ -454,15 +431,15 @@ Problem<dim, Number>::analyze_computing_times() const
 
 
   Utilities::MPI::MinMaxAvg move_mesh_time_data =
-      Utilities::MPI::min_max_avg(move_mesh_time, MPI_COMM_WORLD);
-  double const move_mesh = move_mesh_time_data.avg;
+      Utilities::MPI::min_max_avg(move_mesh->get_move_mesh_time(), MPI_COMM_WORLD);
+  double const move_mesh_t = move_mesh_time_data.avg;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
-              << std::scientific << std::setw(25) << std::right << move_mesh << " s  "
+              << std::scientific << std::setw(25) << std::right << move_mesh_t << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << move_mesh / overall_time_avg * 100 << " %" << std::endl;
+              << move_mesh_t / overall_time_avg * 100 << " %" << std::endl;
 
   Utilities::MPI::MinMaxAvg update_time_data =
-      Utilities::MPI::min_max_avg(update_time, MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(move_mesh->get_update_time(), MPI_COMM_WORLD);
   double const update = update_time_data.avg;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
               << std::scientific << std::setw(25) << std::right << update << " s  "
@@ -470,7 +447,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << update / overall_time_avg * 100 << " %" << std::endl;
 
   Utilities::MPI::MinMaxAvg compute_and_set_mesh_velocity_time_data =
-      Utilities::MPI::min_max_avg(compute_and_set_mesh_velocity_time, MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(move_mesh->get_compute_and_set_mesh_velocity_time(), MPI_COMM_WORLD);
   double const compute_and_set_mesh_velocity = compute_and_set_mesh_velocity_time_data.avg;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Compute and set mesh velocity" << std::setprecision(2)
               << std::scientific << std::setw(12) << std::right << compute_and_set_mesh_velocity << " s  "
@@ -478,7 +455,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << compute_and_set_mesh_velocity / overall_time_avg * 100 << " %" << std::endl;
 
 
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg - update - move_mesh - compute_and_set_mesh_velocity;
+  double const other = overall_time_avg - sum_of_substeps - setup_time_avg - update - move_mesh_t - compute_and_set_mesh_velocity;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
               << std::scientific << std::setw(25) << std::right << other << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right

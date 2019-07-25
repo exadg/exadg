@@ -74,6 +74,7 @@ class DGNavierStokesBase : public dealii::Subscriptor, public Interface::Operato
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> MappingField;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
@@ -183,14 +184,17 @@ public:
   Mapping<dim> const &
   get_mapping() const;
 
+  Mapping<dim> const &
+  get_mapping_init() const;
+
+  MappingField &
+  get_mapping_field()const;//TEST
+
   FESystem<dim> const &
   get_fe_u() const;
 
   FE_DGQ<dim> const &
   get_fe_p() const;
-
-  FESystem<dim>
-  get_fe_u_grid();
 
   DoFHandler<dim> const &
   get_dof_handler_u() const;
@@ -223,8 +227,6 @@ public:
   /*
    * Initialization of vectors.
    */
-  void
-  initialize_vector_grid_velocity(VectorType & src) const;
 
   void
   initialize_vector_velocity(VectorType & src) const;
@@ -388,22 +390,15 @@ public:
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
   //ALE
+
   void
   update();
 
   void
-  move_mesh(double t);
-
-  void
-  get_grid_velocity(VectorType & grid_velocity,
-                            double const evaluation_time) const;
-
-  void
-  set_analytical_grid_velocity_in_convective_operator_kernel(double const time_in) const;
-
-  void
   set_grid_velocity_in_convective_operator_kernel(VectorType grid_velocity) const;
 
+  void
+  set_position_grid_new_multigrid(std::vector<VectorType> position_grid_new_multigrid_in);
 
 protected:
   /*
@@ -424,7 +419,6 @@ protected:
    * Basic finite element ingredients.
    */
   std::shared_ptr<FESystem<dim>> fe_u;
-  std::shared_ptr<FESystem<dim>> fe_u_grid;
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
   std::shared_ptr<FESystem<dim>> fe_grid;
@@ -442,17 +436,10 @@ protected:
   DoFHandler<dim> dof_handler_grid;
   IndexSet relevant_dofs_grid;
 
-  VectorType position_grid_init;
-  VectorType displacement_grid;
-  VectorType position_grid_new;
   std::vector<VectorType> position_grid_new_multigrid;
 
 
-  std::shared_ptr< MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> > mapping;
-
-
-
-
+  std::shared_ptr<MappingField> mapping;
 
   MatrixFree<dim, Number> matrix_free;
 

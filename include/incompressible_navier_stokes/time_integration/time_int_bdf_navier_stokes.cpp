@@ -196,14 +196,15 @@ TimeIntBDF<Number>::calculate_time_step_size()
     {
 
       VectorType u_temp = get_velocity();
-      if(param.ale_formulation==true)
+      /*if(param.ale_formulation==true)
       {
       VectorType u_grid_temp;
       operator_base->initialize_vector_grid_velocity(u_grid_temp);
       operator_base->get_grid_velocity(u_grid_temp, get_time());
 
       u_temp -= u_grid_temp;
-      }
+      }*/
+      //TODO: incorporate new get grid velocity and check if this is even true
 
 
 
@@ -277,13 +278,14 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
 
   VectorType u_temp = get_velocity();
 
-  if(param.ale_formulation==true)
+  /*if(param.ale_formulation==true)
   {
     VectorType u_grid_temp;
     operator_base->initialize_vector_grid_velocity(u_grid_temp);
     operator_base->get_grid_velocity(u_grid_temp, get_time());
     u_temp -= u_grid_temp;
-  }
+  }*/
+  //TODO: incorporate new get grid velocity and check if this is even true
 
 
 
