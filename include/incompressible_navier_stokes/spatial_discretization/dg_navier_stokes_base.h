@@ -398,7 +398,7 @@ public:
   set_grid_velocity_in_convective_operator_kernel(VectorType grid_velocity) const;
 
   void
-  set_position_grid_new_multigrid(std::vector<VectorType> position_grid_new_multigrid_in);
+  set_position_grid_new_multigrid(unsigned int level, VectorType position_grid_new_in);
 
 protected:
   /*
@@ -421,7 +421,7 @@ protected:
   std::shared_ptr<FESystem<dim>> fe_u;
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
-  std::shared_ptr<FESystem<dim>> fe_grid;
+  std::shared_ptr<FESystem<dim>> fe_grid;//TEST
 
   unsigned int                          mapping_degree;
   std::shared_ptr<MappingQGeneric<dim>> mapping_init;
@@ -430,11 +430,9 @@ protected:
   DoFHandler<dim> dof_handler_u;
   DoFHandler<dim> dof_handler_p;
   DoFHandler<dim> dof_handler_u_scalar;
-  DoFHandler<dim> dof_handler_u_grid;
 
 
-  DoFHandler<dim> dof_handler_grid;
-  IndexSet relevant_dofs_grid;
+  DoFHandler<dim> dof_handler_grid;//TEST
 
   std::vector<VectorType> position_grid_new_multigrid;
 

@@ -27,7 +27,6 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
     dof_handler_u_scalar(triangulation),
-    dof_handler_u_grid(triangulation),
     dof_handler_grid(triangulation),
     position_grid_new_multigrid(dof_handler_grid.get_triangulation().n_global_levels()),
     dof_index_first_point(0),
@@ -61,6 +60,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_mapping_field()
 {
+  IndexSet relevant_dofs_grid;
   unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
   for (unsigned int level=0; level<nlevel; ++level)
   {
@@ -791,9 +791,9 @@ DGNavierStokesBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) c
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_position_grid_new_multigrid(std::vector<VectorType> position_grid_new_multigrid_in)
+DGNavierStokesBase<dim, Number>::set_position_grid_new_multigrid(unsigned int level,VectorType position_grid_new_in)
 {
-  position_grid_new_multigrid = position_grid_new_multigrid_in;
+  position_grid_new_multigrid[level] = position_grid_new_in;
 }
 
 template<int dim, typename Number>

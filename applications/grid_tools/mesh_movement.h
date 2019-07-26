@@ -33,8 +33,8 @@ public:
   dof_handler_grid(*triangulation_in),
   fe_u_grid(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
   fe_grid(new FESystem<dim>(FE_Q<dim>(param.degree_u), dim)),//FE_Q is enough
-  field_functions(field_functions_in),
-  position_grid_new_multigrid(dof_handler_grid.get_triangulation().n_global_levels())
+  field_functions(field_functions_in)//,
+  //position_grid_new_multigrid(dof_handler_grid.get_triangulation().n_global_levels())
   {
     initialize_d_grid_and_u_grid_np();
     dof_handler_u_grid.distribute_dofs(*fe_u_grid);
@@ -244,12 +244,9 @@ protected:
 
         position_grid_new  = position_grid_init;
         position_grid_new += displacement_grid;
-        position_grid_new_multigrid[level] = position_grid_new;
-
-
+        navier_stokes_operation->set_position_grid_new_multigrid(level,position_grid_new);
 
         }
-        navier_stokes_operation->set_position_grid_new_multigrid(position_grid_new_multigrid);
   }
 
 
@@ -290,7 +287,7 @@ private:
   VectorType position_grid_init;
   VectorType displacement_grid;
   VectorType position_grid_new;
-  std::vector<VectorType> position_grid_new_multigrid;
+  //std::vector<VectorType> position_grid_new_multigrid;
 
 };
 
