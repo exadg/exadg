@@ -611,6 +611,7 @@ public:
   double triangulation_right;
   double grid_movement_amplitude;
   double grid_movement_frequency;
+  bool NBC_prescribed_with_known_normal_vectors;
 
 
 };

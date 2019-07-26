@@ -47,7 +47,7 @@ const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
 
-bool PURE_DIRICHLET = true;
+bool PURE_DIRICHLET = false;
 
 namespace IncNS
 {
@@ -61,6 +61,7 @@ void set_input_parameters(InputParameters &param)
   param.triangulation_right = TRIANGULATION_RIGHT;
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
+  param.NBC_prescribed_with_known_normal_vectors = false;
 
 
   // MATHEMATICAL MODEL
@@ -498,50 +499,34 @@ public:
   {
     double t = this->get_time();
     double result = 0.0;
-    /*
-    const double T = (END_TIME-START_TIME)/TRIANGULATION_MOVEMENT_FREQUENCY;
-    double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-    double grad_displacement0 = -std::cos(2* numbers::PI*(p(1)-left)/(2*left))*2* (numbers::PI/(2*left))   *sin_t*TRIANGULATION_MOVEMENT_AMPLITUDE;
-    double grad_displacement1 = -std::cos(2* numbers::PI*(p(0)-left)/(2*left))*2* (numbers::PI/(2*left))   *sin_t*TRIANGULATION_MOVEMENT_AMPLITUDE;
-    double n0 = 1/(std::pow(grad_displacement0,2)+std::pow(grad_displacement1,2))*std::abs(grad_displacement1);
-    double n1 = 1/(std::pow(grad_displacement0,2)+std::pow(grad_displacement1,2))*std::abs(grad_displacement0);
-     */
+    const double pi = numbers::PI;
 
     if(FORMULATION_VISCOUS_TERM == FormulationViscousTerm::LaplaceFormulation)
     {
-      const double pi = numbers::PI;
+      //h = h_u - g_p*n;
+      //h_u/nu :=
       if(component==0)
-      {
-        if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
-          result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);// *n0;
-        else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
-          result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n0;
-      }
-      else if(component==1)
-      {
-        if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
-          result = -U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
-        else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
-          result = U_X_MAX*2.0*pi*std::cos(2.0*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
-      }
+        result=0;//(grad u)_{11}
+      else if (component==1)
+        result=-U_X_MAX*2.0*pi*std::cos(2*pi*p[1])*std::exp(-4.0*pi*pi*VISCOSITY*t);//(grad u)_{12}
+      else if(component==2)
+        result=U_X_MAX*2.0*pi*std::cos(2*pi*p[0])*std::exp(-4.0*pi*pi*VISCOSITY*t);//(grad u)_{21}
+      else if (component==3)
+        result=0;//(grad u)_{22}
+
     }
     else if(FORMULATION_VISCOUS_TERM == FormulationViscousTerm::DivergenceFormulation)
     {
-      const double pi = numbers::PI;
+
       if(component==0)
-      {
-        if( (std::abs(p[1]+0.5)< 1e-12) && (p[0]<0) )
-          result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n0;
-        else if( (std::abs(p[1]-0.5)< 1e-12) && (p[0]>0) )
-          result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n0;
-      }
-      else if(component==1)
-      {
-        if( (std::abs(p[0]+0.5)< 1e-12) && (p[1]>0) )
-          result = -U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
-        else if((std::abs(p[0]-0.5)< 1e-12) && (p[1]<0) )
-          result = U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//*n1;
-      }
+        result=0;//0.5*(grad u+ (grad u)^T)_{11}
+      else if (component==1)
+        result=U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//0.5*(grad u+ (grad u)^T)_{12}
+      else if(component==2)
+        result=U_X_MAX*2.0*pi*(std::cos(2.0*pi*p[0]) - std::cos(2.0*pi*p[1]))*std::exp(-4.0*pi*pi*VISCOSITY*t);//0.5*(grad u+ (grad u)^T)_{21}
+      else if (component==3)
+        result=0;//0.5*(grad u+ (grad u)^T)_{22}
+
     }
     else
     {
@@ -549,7 +534,6 @@ public:
                   FORMULATION_VISCOUS_TERM == FormulationViscousTerm::DivergenceFormulation,
                   ExcMessage("Specified formulation of viscous term is not implemented!"));
     }
-
     return result;
   }
 };

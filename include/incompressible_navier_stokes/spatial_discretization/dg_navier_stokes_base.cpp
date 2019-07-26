@@ -338,6 +338,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_kernel_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
+  viscous_kernel_data.known_normal_vector          = param.NBC_prescribed_with_known_normal_vectors;
   viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
   viscous_kernel->reinit(matrix_free, viscous_kernel_data, dof_index_u);
 

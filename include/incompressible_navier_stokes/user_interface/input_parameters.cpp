@@ -208,7 +208,8 @@ InputParameters::InputParameters()
     triangulation_left(-0.5),
     triangulation_right(0.5),
     grid_movement_amplitude(0.0),
-    grid_movement_frequency(0.0)
+    grid_movement_frequency(0.0),
+    NBC_prescribed_with_known_normal_vectors(true)
 {
 }
 

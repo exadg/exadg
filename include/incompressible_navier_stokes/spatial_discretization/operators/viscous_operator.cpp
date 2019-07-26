@@ -192,14 +192,26 @@ ViscousOperator<dim, Number>::do_boundary_integral(IntegratorFace &           in
 
     vector normal_gradient_m =
       kernel->calculate_interior_normal_gradient(q, integrator, operator_type);
-    vector normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
-                                                                  q,
-                                                                  integrator,
-                                                                  operator_type,
-                                                                  boundary_type,
-                                                                  boundary_id,
-                                                                  this->data.bc,
-                                                                  this->time);
+
+    vector normal_gradient_p;
+    if (kernel->get_data().known_normal_vector==true)
+      normal_gradient_p= calculate_exterior_normal_gradient(normal_gradient_m,
+                                                            q,
+                                                            integrator,
+                                                            operator_type,
+                                                            boundary_type,
+                                                            boundary_id,
+                                                            this->data.bc,
+                                                            this->time);
+    else if (kernel->get_data().known_normal_vector==false)
+      normal_gradient_p = calculate_exterior_normal_gradient_without_known_normal_vectors(normal_gradient_m,
+                                                                      q,
+                                                                      integrator,
+                                                                      operator_type,
+                                                                      boundary_type,
+                                                                      boundary_id,
+                                                                      this->data.bc,
+                                                                      this->time);
 
     vector value_flux = kernel->calculate_value_flux(
       normal_gradient_m, normal_gradient_p, value_m, value_p, normal, viscosity);
