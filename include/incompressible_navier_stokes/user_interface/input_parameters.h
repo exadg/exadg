@@ -612,6 +612,7 @@ public:
   double grid_movement_amplitude;
   double grid_movement_frequency;
   bool NBC_prescribed_with_known_normal_vectors;
+  AnalyicMeshMovement analytical_mesh_movement;
 
 
 };

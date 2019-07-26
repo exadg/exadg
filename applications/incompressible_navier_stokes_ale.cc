@@ -200,7 +200,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   // field functions and boundary conditions
   field_functions.reset(new FieldFunctions<dim>());
-  set_field_functions(field_functions);
+  set_field_functions(field_functions,param);
 
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);

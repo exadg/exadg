@@ -54,7 +54,7 @@ namespace IncNS
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = false;
+  param.grid_velocity_analytical = true;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
@@ -62,6 +62,7 @@ void set_input_parameters(InputParameters &param)
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
   param.NBC_prescribed_with_known_normal_vectors = false;
+  param.analytical_mesh_movement = AnalyicMeshMovement::DoubleSinCosWithBoundaries;
 
 
   // MATHEMATICAL MODEL
@@ -427,7 +428,7 @@ public:
      }
 
    if (t<=0)
-     return 0.0;//for initialization
+     return 0.0;//for initialization //TODO: delete, if initialization does not require no mesh movement before time =0
    else
    {
      return result;
@@ -437,6 +438,7 @@ public:
 
 };
 
+#include "../grid_tools/function_mesh_movement.h"
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -584,9 +586,9 @@ void set_boundary_conditions(
 }
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, InputParameters param_in)
 {
-  field_functions->analytical_solution_grid_velocity.reset(new AnalyticalSolutionGridVelocity<dim>());
+  field_functions->analytical_solution_grid_velocity.reset(new FunctionMeshMovement<dim>(param_in));
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());

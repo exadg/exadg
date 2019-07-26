@@ -1,5 +1,10 @@
+#ifndef INCLUDE_INCLUDE_MESH_MOVEMENT_H_
+#define INCLUDE_INCLUDE_MESH_MOVEMENT_H_
+
 #include "../include/time_integration/push_back_vectors.h"
+#include "../../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include <deal.II/fe/mapping_fe_field.h>
+#include "function_mesh_movement.h"
 
 namespace IncNS
 {
@@ -42,8 +47,13 @@ public:
     dof_handler_grid.distribute_dofs(*fe_grid);
     dof_handler_grid.distribute_mg_dofs();
     //matrix_free = navier_stokes_operation_in->get_matrix_free();
+
+
+    mesh_movement = std::make_shared<FunctionMeshMovement<dim>>(param_in);
   }
 
+  ~MeshMovement()
+  {}
 
 
   void
@@ -189,7 +199,7 @@ protected:
   move_mesh(double t){
 
       const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-
+      mesh_movement->set_time_displacement(t);
 
         unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
         for (unsigned int level=0; level<nlevel; ++level)
@@ -217,26 +227,8 @@ protected:
                     const Point<dim> point = fe_values.quadrature_point(i);
                     double displacement=0;
                     for (unsigned int d=0; d<dim; ++d)
-                     if (coordinate_direction == 0)
-                     {
-                       //MOVING BOUNDARIE SIN_COS
-                       displacement = std::sin(2* numbers::PI*(point(1)-left)/width)*sin_t*amplitude;
-                       //MOVING BOUNDARIE X^2
-                       //displacement = std::pow(point(1),2)* std::pow((right-std::abs(point(1))),2)*sin_t*amplitude;
+                      displacement = mesh_movement->displacement(point, coordinate_direction);
 
-                       //NO MOVING BOUNDARIE SIN_COS
-                       //displacement = std::sin(2* numbers::PI*(point(1)-left)/width)*sin_t*amplitude*(1- std::pow(point(0)/right,2));
-                     }
-                       else if (coordinate_direction == 1)
-                     {
-                       //MOVING BOUNDARIE SIN_COS
-                       displacement = std::sin(2* numbers::PI*(point(0)-left)/width)*sin_t*amplitude;
-                       //MOVING BOUNDARIE X^2
-                       //displacement = std::pow(point(0),2)* std::pow((right-std::abs(point(0))),2)*sin_t*amplitude;
-
-                       //NO MOVING BOUNDARIE SIN_COS
-                       //displacement = std::sin(2* numbers::PI*(point(0)-left)/width)*sin_t*amplitude*(1- std::pow(point(1)/right,2));
-                     }
                     position_grid_init(dof_indices[i]) = point[coordinate_direction];
                     displacement_grid(dof_indices[i]) = displacement;
                   }
@@ -289,6 +281,11 @@ private:
   VectorType position_grid_new;
   //std::vector<VectorType> position_grid_new_multigrid;
 
+  std::shared_ptr<FunctionMeshMovement<dim>> mesh_movement;
+
+
 };
 
 }
+
+#endif /*INCLUDE_MESH_MOVEMENT_H_*/
