@@ -1,5 +1,9 @@
 
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
+#include "../grid_tools/deformed_cube_manifold.h"
+
+// nozzle geometry
+#include "../grid_tools/fda_benchmark/nozzle.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -9,15 +13,15 @@
 
 // convergence studies in space
 unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 15;
+unsigned int const DEGREE_MAX = 1;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MAX = 0;
 
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME       = "slit";
+std::string OUTPUT_NAME       = "nozzle";
 
 namespace Poisson
 {
@@ -25,7 +29,7 @@ void
 set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  param.dim = 2;
+  param.dim = 3;
   param.right_hand_side = false;
 
   // SPATIAL DISCRETIZATION
@@ -42,7 +46,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::hcpMG;
+  param.multigrid_data.type = MultigridType::phcMG;
   param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -52,7 +56,9 @@ set_input_parameters(Poisson::InputParameters &param)
   param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
   param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
 }
+
 }
+
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -65,15 +71,11 @@ void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
-                                   Triangulation<dim>::cell_iterator> >         &/*periodic_faces*/)
+                                   Triangulation<dim>::cell_iterator> >         &periodic_faces)
 {
-  const double length = 1.0;
-  const double left = -length, right = length;
-
-  GridGenerator::hyper_cube_slit (*triangulation, left, right);
-
-  triangulation->refine_global(n_refine_space);
+  create_grid_and_set_boundary_ids_nozzle(triangulation, n_refine_space, periodic_faces);
 }
+
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -81,13 +83,22 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
 /*                                                                                                          */
 /************************************************************************************************************/
 
-#include <deal.II/base/function_lib.h>
-
-template <int dim>
-class Solution : public Functions::SlitSingularityFunction<dim>
+template<int dim>
+class Solution : public Function<dim>
 {
 public:
-  Solution() : Functions::SlitSingularityFunction<dim>() {}
+  Solution(const unsigned int n_components = 1, const double time = 0.)
+    : Function<dim>(n_components, time)
+  {
+  }
+
+  double
+  value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
+  {
+    double result = 1.0;
+
+    return result;
+  }
 };
 
 namespace Poisson
@@ -99,7 +110,14 @@ set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descri
 {
   typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-  boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
+  // inflow
+  boundary_descriptor->dirichlet_bc.insert(pair(1, new Solution<dim>()));
+
+  // outflow
+  boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));
+
+  // walls
+  boundary_descriptor->neumann_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
 }
 
 template<int dim>
@@ -110,25 +128,15 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
 }
 
-/************************************************************************************************************/
-/*                                                                                                          */
-/*                                              POSTPROCESSOR                                               */
-/*                                                                                                          */
-/************************************************************************************************************/
-
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
 construct_postprocessor(Poisson::InputParameters const &param)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = false;
+  pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
-  pp_data.output_data.write_higher_order = true;
   pp_data.output_data.degree = param.degree;
-
-  pp_data.error_data.analytical_solution_available = true;
-  pp_data.error_data.analytical_solution.reset(new Solution<dim>());
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
   pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));

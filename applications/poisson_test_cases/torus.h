@@ -39,7 +39,6 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data = SolverData(1e4, 1.e-20, 1.e-8);
   param.preconditioner = Preconditioner::Multigrid;
   param.multigrid_data.type = MultigridType::pMG;
-  param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::None;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG coarse grid solver
@@ -128,13 +127,13 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(Poisson::InputParameters const &param)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
-  pp_data.output_data.degree = DEGREE_MIN;
+  pp_data.output_data.degree = param.degree;
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
   pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));

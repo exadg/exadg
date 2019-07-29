@@ -26,7 +26,7 @@ std::string const FOLDER_LUNG_FILES = "lung/02_BronchialTreeGrowing_child/output
 
 // outlet boundary IDs
 types::boundary_id const OUTLET_ID_FIRST = 2;
-types::boundary_id OUTLET_ID_LAST = 2;
+types::boundary_id OUTLET_ID_LAST = OUTLET_ID_FIRST; // initialization
 
 // number of lung generations
 unsigned int const N_GENERATIONS = 8;
@@ -54,8 +54,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::phMG;
-  param.multigrid_data.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
+  param.multigrid_data.type = MultigridType::cphMG;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG coarse grid solver
@@ -173,12 +172,13 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(Poisson::InputParameters const &param)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
+  pp_data.output_data.degree = param.degree;
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
   pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));

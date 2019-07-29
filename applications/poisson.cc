@@ -35,6 +35,7 @@
 //#include "poisson_test_cases/gaussian.h"
 //#include "poisson_test_cases/slit.h"
 #include "poisson_test_cases/sine.h"
+//#include "poisson_test_cases/nozzle.h"
 //#include "poisson_test_cases/torus.h"
 //#include "poisson_test_cases/lung.h"
 
@@ -43,20 +44,20 @@ using namespace Poisson;
 
 enum class RunType
 {
-  RefineHAndP,          // keep problem size approximately constant
-  FixedProblemSize,     // increase polynomial degree and keep problem size approximately constant
+  RefineHAndP,      // run simulation for a specified range of mesh refiments and polynomial degrees
+  FixedProblemSize, // increase polynomial degree and keep problem size approximately constant
   IncreasingProblemSize // run at fixed polynomial degree
 };
 
-RunType const RUN_TYPE = RunType::IncreasingProblemSize;
+RunType const RUN_TYPE = RunType::FixedProblemSize;
 
 /*
  * Specify minimum and maximum problem size for
  *  RunType::FixedProblemSize
  *  RunType::IncreasingProblemSize
  */
-types::global_dof_index N_DOFS_MIN = 1e0;
-types::global_dof_index N_DOFS_MAX = 3e6;
+types::global_dof_index N_DOFS_MIN = 2.5e5;
+types::global_dof_index N_DOFS_MAX = 7.5e5;
 
 /*
  * Enable hyper_cube meshes with number of cells per direction other than multiples of 2.
@@ -265,7 +266,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>();
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize Poisson operator
   poisson_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
@@ -460,7 +461,21 @@ do_run(Poisson::InputParameters const & param)
 
   problem->setup(param);
 
-  problem->solve();
+  try
+  {
+    problem->solve();
+  }
+  catch(...)
+  {
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cerr << std::endl
+                << std::endl
+                << "----------------------------------------------------" << std::endl;
+      std::cerr << "Solver failed to converge!" << std::endl
+                << "----------------------------------------------------" << std::endl;
+    }
+  }
 
   problem->analyze_computing_times();
 }
@@ -550,15 +565,16 @@ main(int argc, char ** argv)
             }
           }
 
-          // coarse grid with only a single cell, and refine_level uniform refinements
+          // coarse grid with 2^dim cells, and refine_level-1 uniform refinements
           {
-            SUBDIVISIONS_MESH = 1;
-            n_cells           = std::pow(2., refine_level * param.dim);
+            SUBDIVISIONS_MESH = 2;
+            n_cells =
+              std::pow(SUBDIVISIONS_MESH, param.dim) * std::pow(2., (refine_level - 1) * param.dim);
 
             if(n_cells >= n_cells_min && n_cells <= n_cells_max)
             {
               // reset mesh refinement
-              param.h_refinements = refine_level;
+              param.h_refinements = refine_level - 1;
 
               if(RUN_TYPE == RunType::FixedProblemSize)
                 break;

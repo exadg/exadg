@@ -35,6 +35,8 @@ enum_to_string(TriangulationType const enum_type);
 enum class MappingType
 {
   Affine,
+  Quadratic,
+  Cubic,
   Isoparametric
 };
 
@@ -66,7 +68,8 @@ enum_to_string(SpatialDiscretization const enum_type);
 enum class Solver
 {
   Undefined,
-  CG
+  CG,
+  FGMRES
 };
 
 std::string

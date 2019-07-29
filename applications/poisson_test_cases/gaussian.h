@@ -9,8 +9,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
+unsigned int const DEGREE_MIN = 1;
+unsigned int const DEGREE_MAX = 15;
 
 unsigned int const REFINE_SPACE_MIN = 4;
 unsigned int const REFINE_SPACE_MAX = 4;
@@ -50,7 +50,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::phMG;
+  param.multigrid_data.type = MultigridType::chpMG;
   param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -285,12 +285,14 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
-construct_postprocessor()
+construct_postprocessor(Poisson::InputParameters const &param)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = false; //true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
+  pp_data.output_data.write_higher_order = true;
+  pp_data.output_data.degree = param.degree;
 
   pp_data.error_data.analytical_solution_available = false; //true;
   pp_data.error_data.analytical_solution.reset(new Solution<dim>());
