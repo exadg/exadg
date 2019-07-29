@@ -20,11 +20,6 @@ public:
                std::shared_ptr<parallel::Triangulation<dim>> triangulation_in,
                std::shared_ptr<FieldFunctions<dim>>      field_functions_in)
   :
-  left(param_in.triangulation_left),
-  right(param_in.triangulation_right),
-  amplitude(param_in.grid_movement_amplitude),
-  delta_t(param_in.end_time - param_in.start_time),
-  frequency(param_in.grid_movement_frequency),
   navier_stokes_operation(navier_stokes_operation_in),
   time_integrator(time_integrator_in),
   d_grid(param_in.order_time_integrator + 1),
@@ -38,15 +33,13 @@ public:
   dof_handler_grid(*triangulation_in),
   fe_u_grid(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
   fe_grid(new FESystem<dim>(FE_Q<dim>(param.degree_u), dim)),//FE_Q is enough
-  field_functions(field_functions_in)//,
-  //position_grid_new_multigrid(dof_handler_grid.get_triangulation().n_global_levels())
+  field_functions(field_functions_in)
   {
     initialize_d_grid_and_u_grid_np();
     dof_handler_u_grid.distribute_dofs(*fe_u_grid);
     dof_handler_u_grid.distribute_mg_dofs();
     dof_handler_grid.distribute_dofs(*fe_grid);
     dof_handler_grid.distribute_mg_dofs();
-    //matrix_free = navier_stokes_operation_in->get_matrix_free();
 
 
     mesh_movement = std::make_shared<FunctionMeshMovement<dim>>(param_in);
@@ -60,7 +53,6 @@ public:
   advance_mesh_to_next_timestep_and_set_grid_velocities()
   {
     timer_help = timer_mesh.wall_time();
-    //navier_stokes_operation->move_mesh(time_integrator->get_next_time());
     move_mesh(time_integrator->get_next_time());
     move_mesh_time += timer_mesh.wall_time() - timer_help;
 
@@ -198,7 +190,7 @@ protected:
   void
   move_mesh(double t){
 
-      const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
+      //const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
       mesh_movement->set_time_displacement(t);
 
         unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
@@ -246,14 +238,6 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
   typedef MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> MappingField;
 
-  const double left;
-  const double right;
-  const double amplitude;
-  const double delta_t;
-  const double frequency;
-  const double width = right-left;
-  const double T = delta_t/frequency; //duration of a period
-  //const double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
   std::shared_ptr<DGNavierStokesBase<dim, Number>> navier_stokes_operation;
   std::shared_ptr<TimeIntBDF<Number>> time_integrator;
 
@@ -279,7 +263,6 @@ private:
   VectorType position_grid_init;
   VectorType displacement_grid;
   VectorType position_grid_new;
-  //std::vector<VectorType> position_grid_new_multigrid;
 
   std::shared_ptr<FunctionMeshMovement<dim>> mesh_movement;
 

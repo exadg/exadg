@@ -20,14 +20,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 4;
-unsigned int const DEGREE_MAX = 4;
+unsigned int const DEGREE_MIN = 6;
+unsigned int const DEGREE_MAX = 6;
 
-unsigned int const REFINE_SPACE_MIN = 2;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
-unsigned int const REFINE_TIME_MIN = 4;
-unsigned int const REFINE_TIME_MAX = 4;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 7;
 
 
 // set problem specific parameters like physical dimensions, etc.
