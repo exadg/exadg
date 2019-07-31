@@ -43,7 +43,7 @@ public:
     dof_handler_grid.distribute_mg_dofs();
 
 
-    mesh_movement = std::make_shared<MeshMovementFunctions<dim>>(param_in);
+   // mesh_movement = std::make_shared<MeshMovementFunctions<dim>>(param_in);
   }
 
   ~MeshMovement()

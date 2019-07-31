@@ -13,12 +13,27 @@ namespace IncNS
 struct MovingMeshData
 {
   MovingMeshData()
-  :analytical_mesh_movement(AnalyicMeshMovement::InteriorSinCos)//TODO:ADD UNDEFINED
+  :type(AnalyicMeshMovement::InteriorSinCos),//TODO:ADD UNDEFINED
+   left(0.0),
+   right(0.0),
+   f(0.0),
+   A(0.0),
+   Dt(0.0),
+   width(0.0),
+   T(0.0)
   {
   }
 
-  AnalyicMeshMovement analytical_mesh_movement;
-}
+  AnalyicMeshMovement type;
+  double left;
+  double right;
+  double f;
+  double A;
+  double Dt;
+  double width;
+  double T;
+
+};
 
 
 
@@ -31,7 +46,7 @@ public:
   setup(MovingMeshData const & data_in)
   {
     mesh_moving_data = data_in;
-    mesh_movement_function = std::make_shared<MeshMovementFunctions<dim>> (mesh_moving_data);
+   // mesh_movement_function = std::make_shared<MeshMovementFunctions<dim>> (mesh_moving_data);
   }
 
   void
@@ -100,9 +115,9 @@ private:
 
 
 
-  MeshMovingData mesh_moving_data;
+  MovingMeshData mesh_moving_data;
 
-  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
+ // std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
 
 };
 

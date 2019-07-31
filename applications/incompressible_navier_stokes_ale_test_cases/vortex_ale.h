@@ -10,7 +10,6 @@
 
 #include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 #include "../grid_tools/deformed_cube_manifold.h"
-#include "../grid_tools/cube_moving_manifold.h"
 #include "../grid_tools/dealii_extensions.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
@@ -387,58 +386,9 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
 /*          FUNCTIONS (ANALYTICAL/INITIAL SOLUTION, BOUNDARY CONDITIONS, etc.)        */
 /*                                                                                    */
 /**************************************************************************************/
-template<int dim>
-class AnalyticalSolutionGridVelocity : public Function<dim>
-{
-public:
-  AnalyticalSolutionGridVelocity (const unsigned int  n_components = dim,
-                                  const double        time = 0.)
-  :
-  Function<dim>(n_components, time)
-  {}
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    double t = this->get_time();
-
-    double result = 0.0;
-    double frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
-    double amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
-    double delta_t = END_TIME - START_TIME;
-    double T = delta_t / frequency;
-    double left = TRIANGULATION_LEFT;
-    double right = TRIANGULATION_RIGHT;
-    double width = right - left;
-
-    double damp0 = (1- std::pow(p(0)/right,2) );
-    double damp1 = (1- std::pow(p(1)/right,2) );
-
-
-      double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
-      //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
-
-   if(component == 0)
-     {
-       result = amplitude*std::sin(2*numbers::PI*(p(1)-left)/width)*damp0  *dsin_t_dt;
-     }
-   else if(component == 1)
-     {
-       result = amplitude*std::sin(2*numbers::PI*(p(0)-left)/width)*damp1  *dsin_t_dt;
-     }
-
-   if (t<=0)
-     return 0.0;//for initialization //TODO: delete, if initialization does not require no mesh movement before time =0
-   else
-   {
-     return result;
-   }
-
-  }
-
-};
 
 #include "../grid_tools/mesh_movement_functions.h"
+
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -588,7 +538,40 @@ void set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, InputParameters param_in)
 {
-  field_functions->analytical_solution_grid_velocity.reset(new MeshMovementFunctions<dim>(param_in));
+
+  MovingMeshData moving_mesh_data;
+  moving_mesh_data.type = param_in.analytical_mesh_movement;
+  moving_mesh_data.left = param_in.triangulation_left;
+  moving_mesh_data.right = param_in.triangulation_right;
+  moving_mesh_data.f= param_in.grid_movement_frequency;
+  moving_mesh_data.A = param_in.grid_movement_amplitude;
+  moving_mesh_data.Dt = param_in.end_time - param_in.start_time;
+
+  if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCos<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosOnlyX)
+    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosOnlyX<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosOnlyY)
+    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosOnlyY<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundaries<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundariesOnlyX)
+    field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundariesOnlyX<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundariesOnlyY)
+    field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundariesOnlyY<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosWithSinInTime)
+    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosWithSinInTime<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::XSquaredWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new XSquaredWithBoundaries<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::DoubleInteriorSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new DoubleInteriorSinCos<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::DoubleSinCosWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new DoubleSinCosWithBoundaries<dim>(moving_mesh_data));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::None)
+    field_functions->analytical_solution_grid_velocity.reset(new None<dim>(moving_mesh_data));
+  else
+    AssertThrow(false, ExcMessage("This kind of Mesh Movement can not be applied to vortex_ale"));
+
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());

@@ -209,7 +209,8 @@ InputParameters::InputParameters()
     triangulation_right(0.5),
     grid_movement_amplitude(0.0),
     grid_movement_frequency(0.0),
-    NBC_prescribed_with_known_normal_vectors(true)
+    NBC_prescribed_with_known_normal_vectors(true),
+    analytical_mesh_movement(AnalyicMeshMovement::Undefined)
 {
 }
 
@@ -439,6 +440,7 @@ InputParameters::check_input_parameters()
   {
     AssertThrow(formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation, ExcMessage("divergence formulation of convective operator has to be used since the grid velocity might not be divergence free"));
     AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution, ExcMessage("only BDFCoupledSolution has been implemented on moving meshes"));
+    AssertThrow(analytical_mesh_movement != AnalyicMeshMovement::Undefined, ExcMessage("Analytical functions have to be applied to move the mesh"));
   }
 }
 

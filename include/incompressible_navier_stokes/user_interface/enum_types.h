@@ -676,7 +676,9 @@ enum class AnalyicMeshMovement
   InteriorSinCosWithSinInTime,
   XSquaredWithBoundaries,
   DoubleInteriorSinCos,
-  DoubleSinCosWithBoundaries
+  DoubleSinCosWithBoundaries,
+  Undefined,
+  None
 };
 
 std::string
