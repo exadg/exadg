@@ -5,11 +5,11 @@ namespace IncNS
 {
 
 template<int dim>
-class FunctionMeshMovement : public Function<dim>
+class MeshMovementFunctions : public Function<dim>
 {
 
 public:
-  FunctionMeshMovement(InputParameters & param_in)
+  MeshMovementFunctions(InputParameters & param_in)
   :Function<dim>(dim, 0.0),
    param(param_in),
    left(param_in.triangulation_left),

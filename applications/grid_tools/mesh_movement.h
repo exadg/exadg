@@ -4,7 +4,8 @@
 #include "../include/time_integration/push_back_vectors.h"
 #include "../../include/incompressible_navier_stokes/spatial_discretization/dg_navier_stokes_base.h"
 #include <deal.II/fe/mapping_fe_field.h>
-#include "function_mesh_movement.h"
+
+#include "mesh_movement_functions.h"
 
 namespace IncNS
 {
@@ -42,7 +43,7 @@ public:
     dof_handler_grid.distribute_mg_dofs();
 
 
-    mesh_movement = std::make_shared<FunctionMeshMovement<dim>>(param_in);
+    mesh_movement = std::make_shared<MeshMovementFunctions<dim>>(param_in);
   }
 
   ~MeshMovement()
@@ -264,7 +265,7 @@ private:
   VectorType displacement_grid;
   VectorType position_grid_new;
 
-  std::shared_ptr<FunctionMeshMovement<dim>> mesh_movement;
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement;
 
 
 };

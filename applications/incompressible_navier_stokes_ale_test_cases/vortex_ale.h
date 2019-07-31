@@ -438,7 +438,7 @@ public:
 
 };
 
-#include "../grid_tools/function_mesh_movement.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -588,7 +588,7 @@ void set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, InputParameters param_in)
 {
-  field_functions->analytical_solution_grid_velocity.reset(new FunctionMeshMovement<dim>(param_in));
+  field_functions->analytical_solution_grid_velocity.reset(new MeshMovementFunctions<dim>(param_in));
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
