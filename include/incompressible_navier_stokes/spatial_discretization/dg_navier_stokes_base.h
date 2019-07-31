@@ -45,6 +45,9 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
+//Moving mesh
+#include "moving_mesh.h"
+
 // interface space-time
 #include "interface.h"
 
@@ -392,6 +395,26 @@ public:
   //ALE
 
   void
+  setup_moving_mesh()
+  {
+    MovingMeshData moving_mesh_data;
+    moving_mesh_data.type = param.analytical_mesh_movement;
+    moving_mesh_data.left = param.triangulation_left;
+    moving_mesh_data.right = param.triangulation_right;
+    moving_mesh_data.f= param.grid_movement_frequency;
+    moving_mesh_data.A = param.grid_movement_amplitude;
+    moving_mesh_data.Dt = param.end_time - param.start_time;
+
+    moving_mesh.setup(moving_mesh_data);
+  }
+
+  void
+  move_mesh(double time_in)
+  {
+    moving_mesh.advance_mesh_and_set_grid_velocities(time_in);
+  }
+
+  void
   update();
 
   void
@@ -584,6 +607,11 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
+
+  /*
+   * Moving Mesh
+   */
+  MovingMesh<dim,Number> moving_mesh;
 };
 
 } // namespace IncNS

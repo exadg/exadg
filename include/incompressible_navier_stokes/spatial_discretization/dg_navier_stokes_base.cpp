@@ -118,6 +118,7 @@ DGNavierStokesBase<dim, Number>::setup(
   if(param.ale_formulation == true)
   {
     initialize_mapping_field(); //TODO: move_mesh->init?
+    setup_moving_mesh();
   }
   // depending on DoFHandler
   initialize_matrix_free();

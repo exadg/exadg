@@ -1,7 +1,7 @@
 #ifndef INCLUDE_MOVING_MESH_H_
 #define INCLUDE_MOVING_MESH_H_
 
-
+#include "moving_mesh_dat.h"
 #include "../../../applications/grid_tools/mesh_movement_functions.h"
 
 
@@ -9,33 +9,6 @@ using namespace dealii;
 
 namespace IncNS
 {
-
-struct MovingMeshData
-{
-  MovingMeshData()
-  :type(AnalyicMeshMovement::InteriorSinCos),//TODO:ADD UNDEFINED
-   left(0.0),
-   right(0.0),
-   f(0.0),
-   A(0.0),
-   Dt(0.0),
-   width(0.0),
-   T(0.0)
-  {
-  }
-
-  AnalyicMeshMovement type;
-  double left;
-  double right;
-  double f;
-  double A;
-  double Dt;
-  double width;
-  double T;
-
-};
-
-
 
 template<int dim, typename Number>
 class MovingMesh
@@ -45,8 +18,35 @@ public:
   void
   setup(MovingMeshData const & data_in)
   {
-    mesh_moving_data = data_in;
-   // mesh_movement_function = std::make_shared<MeshMovementFunctions<dim>> (mesh_moving_data);
+    moving_mesh_data = data_in;
+
+    if (data_in.type == AnalyicMeshMovement::InteriorSinCos)
+      mesh_movement_function.reset(new InteriorSinCos<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::InteriorSinCosOnlyX)
+      mesh_movement_function.reset(new InteriorSinCosOnlyX<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::InteriorSinCosOnlyY)
+      mesh_movement_function.reset(new InteriorSinCosOnlyY<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::SinCosWithBoundaries)
+      mesh_movement_function.reset(new SinCosWithBoundaries<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::SinCosWithBoundariesOnlyX)
+      mesh_movement_function.reset(new SinCosWithBoundariesOnlyX<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::SinCosWithBoundariesOnlyY)
+      mesh_movement_function.reset(new SinCosWithBoundariesOnlyY<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::InteriorSinCosWithSinInTime)
+      mesh_movement_function.reset(new InteriorSinCosWithSinInTime<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::XSquaredWithBoundaries)
+      mesh_movement_function.reset(new XSquaredWithBoundaries<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::DoubleInteriorSinCos)
+      mesh_movement_function.reset(new DoubleInteriorSinCos<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::DoubleSinCosWithBoundaries)
+      mesh_movement_function.reset(new DoubleSinCosWithBoundaries<dim>(moving_mesh_data));
+    else if (data_in.type == AnalyicMeshMovement::None)
+      mesh_movement_function.reset(new None<dim>(moving_mesh_data));
+
+
+
+
+
   }
 
   void
@@ -72,7 +72,8 @@ public:
 private:
   void
   move_mesh(double time_in){
-    //mesh_movement->set_time_displacement(t);
+
+    mesh_movement_function->set_time_displacement(time_in);
 
 //      unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
 //      for (unsigned int level=0; level<nlevel; ++level)
@@ -98,9 +99,9 @@ private:
 //                  const unsigned int coordinate_direction =
 //                      fe_grid->system_to_component_index(i).first;
 //                  const Point<dim> point = fe_values.quadrature_point(i);
-//                  double displacement=0;
+//                    double displacement=0;
 //                  for (unsigned int d=0; d<dim; ++d)
-//                    displacement = mesh_movement->displacement(point, coordinate_direction);
+//                      displacement = mesh_movement_function->displacement(point, coordinate_direction);
 //
 //                  position_grid_init(dof_indices[i]) = point[coordinate_direction];
 //                  displacement_grid(dof_indices[i]) = displacement;
@@ -113,11 +114,11 @@ private:
 
   }
 
+private:
 
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
+  MovingMeshData moving_mesh_data;
 
-  MovingMeshData mesh_moving_data;
-
- // std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
 
 };
 

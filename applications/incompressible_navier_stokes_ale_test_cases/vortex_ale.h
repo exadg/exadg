@@ -387,8 +387,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
 /*                                                                                    */
 /**************************************************************************************/
 
-#include "../grid_tools/mesh_movement_functions.h"
-
+#include "../../include/incompressible_navier_stokes/spatial_discretization/moving_mesh.h"
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>

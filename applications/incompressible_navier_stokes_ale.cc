@@ -326,6 +326,7 @@ Problem<dim, Number>::solve()
           while(!timeloop_finished)
           {
             //move_mesh->advance_mesh_to_next_timestep_and_set_grid_velocities();
+            navier_stokes_operation->move_mesh(time_integrator->get_next_time());
 
             timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
 

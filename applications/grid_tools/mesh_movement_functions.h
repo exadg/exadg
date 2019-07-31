@@ -1,13 +1,13 @@
-#ifndef INCLUDE_FUNCTION_MESH_MOVEMENT_H_
-#define INCLUDE_FUNCTION_MESH_MOVEMENT_H_
+#ifndef INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
+#define INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 
-#include "../../include/incompressible_navier_stokes/spatial_discretization/moving_mesh.h"
+#include "../../include/incompressible_navier_stokes/spatial_discretization/moving_mesh_dat.h"
 
 namespace IncNS
 {
 
 template<int dim>
-class MeshMovementFunctions //: public Function<dim>
+class MeshMovementFunctions
 {
 
 public:
@@ -21,7 +21,7 @@ public:
 
   virtual double
   displacement(const Point<dim>    &x,
-               const unsigned int  coordinate_direction = 0) const = 0;
+               const unsigned int  coordinate_direction = 0) const =0;
 
   void
   set_time_displacement(double const t)
@@ -383,4 +383,4 @@ class None : public Function<dim>,
 
 }
 
-#endif /*INCLUDE_FUNCTION_MESH_MOVEMENT_H_*/
+#endif /*INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_*/
