@@ -23,15 +23,10 @@ public:
   displacement(const Point<dim>    &x,
                const unsigned int  coordinate_direction = 0) const =0;
 
-  void
+  virtual void
   set_time_displacement(double const t)
   {
-    if(dat.type == AnalyicMeshMovement::InteriorSinCosWithSinInTime)
-      sin_t = std::sin(2*pi*t/dat.T);
-    else
       sin_t = std::pow(std::sin(2*pi*t/dat.T),2);
-
-
   }
 
   virtual void
@@ -196,7 +191,7 @@ class InteriorSinCosOnlyY : public Function<dim>,
     if (coordinate_direction == 0)
       solution = 0.0;
     else if (coordinate_direction == 1)
-      solution = solution = std::sin(2* pi*(x(0)-dat.left)/dat.width)*this->sin_t*dat.A*(1- std::pow(x(1)/dat.right,2));
+      solution = std::sin(2* pi*(x(0)-dat.left)/dat.width)*this->sin_t*dat.A*(1- std::pow(x(1)/dat.right,2));
 
     return solution;
   }
@@ -357,6 +352,12 @@ class InteriorSinCosWithSinInTime : public Function<dim>,
       this->sin_t = std::cos(2*pi*t/dat.T)*2*pi/dat.T;
   }
 
+  void
+  set_time_displacement(double const t) override
+  {
+      this->sin_t = std::sin(2*pi*t/dat.T);
+  }
+
   private:
   MovingMeshData dat;
   double pi = numbers::PI;
@@ -373,8 +374,8 @@ class None : public Function<dim>,
      {}
 
   double
-  displacement(const Point<dim>    &x,
-              const unsigned int  coordinate_direction = 0) const override
+  displacement(const Point<dim>    &/*x*/,
+              const unsigned int  /*coordinate_direction = 0*/) const override
   {
      return 0.0;
   }
