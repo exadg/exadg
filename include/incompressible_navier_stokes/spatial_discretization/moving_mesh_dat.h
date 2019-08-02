@@ -14,7 +14,17 @@ struct MovingMeshData
    A(0.0),
    Dt(0.0),
    width(0.0),
-   T(0.0)
+   T(0.0),
+   u_ana(false),
+   degree_u(0.0),
+   degree_p(0.0),
+   dof_index_u(0.0),
+   dof_index_p(0.0),
+   dof_index_u_scalar(0.0),
+   quad_index_u(0.0),
+   quad_index_p(0.0),
+   quad_index_u_nonlinear(0.0),
+   use_cell_based_face_loops(false)
   {
   }
 
@@ -26,7 +36,17 @@ struct MovingMeshData
   double Dt;
   double width;
   double T;
+  bool   u_ana;
+  unsigned int degree_u;
 
+  unsigned int degree_p;
+  unsigned int dof_index_u;
+  unsigned int dof_index_p;
+  unsigned int dof_index_u_scalar;
+  unsigned int quad_index_u;
+  unsigned int quad_index_p;
+  unsigned int quad_index_u_nonlinear;
+  bool use_cell_based_face_loops;
 };
 
 }/*IncNS*/

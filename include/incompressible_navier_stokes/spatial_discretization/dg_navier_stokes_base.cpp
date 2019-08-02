@@ -22,13 +22,10 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
     fe_p(param.get_degree_p()),
     fe_u_scalar(param.degree_u),
-    fe_grid(new FESystem<dim>(FE_Q<dim>(param.degree_u), dim)),//FE_Q is enough
     mapping_degree(1),
     dof_handler_u(triangulation),
     dof_handler_p(triangulation),
     dof_handler_u_scalar(triangulation),
-    dof_handler_grid(triangulation),
-    position_grid_new_multigrid(dof_handler_grid.get_triangulation().n_global_levels()),
     dof_index_first_point(0),
     postprocessor(postprocessor_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -48,6 +45,11 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 
       mapping_init.reset(new MappingQGeneric<dim>(mapping_degree));
 
+      if(param.ale_formulation == true)
+      {
+        setup_moving_mesh(triangulation);
+      }
+
 }
 
 template<int dim, typename Number>
@@ -56,43 +58,43 @@ DGNavierStokesBase<dim, Number>::~DGNavierStokesBase()
   matrix_free.clear();
 }
 
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::initialize_mapping_field()
-{
-  IndexSet relevant_dofs_grid;
-  unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
-  for (unsigned int level=0; level<nlevel; ++level)
-  {
-    DoFTools::extract_locally_relevant_level_dofs(dof_handler_grid, level,
-        relevant_dofs_grid);
-    VectorType position_grid_init_temp;
-    position_grid_init_temp.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
-
-
-  FEValues<dim> fe_values(*mapping_init, *fe_grid,
-                                  Quadrature<dim>(fe_grid->get_unit_support_points()),
-                                  update_quadrature_points);
-          std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
-          for (const auto & cell : dof_handler_grid.mg_cell_iterators_on_level(level))
-            if (cell->level_subdomain_id() != numbers::artificial_subdomain_id)
-              {
-                fe_values.reinit(cell);
-                cell->get_active_or_mg_dof_indices(dof_indices);
-                for (unsigned int i=0; i<fe_grid->dofs_per_cell; ++i)
-                  {
-                    const unsigned int coordinate_direction =
-                        fe_grid->system_to_component_index(i).first;
-                    const Point<dim> point = fe_values.quadrature_point(i);
-                    position_grid_init_temp(dof_indices[i]) = point[coordinate_direction];
-                  }
-              }
-          position_grid_init_temp.update_ghost_values();
-          position_grid_new_multigrid[level]=position_grid_init_temp;
-          position_grid_new_multigrid[level].update_ghost_values();
-   }
-          mapping.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> (dof_handler_grid, position_grid_new_multigrid));
-}
+//template<int dim, typename Number>
+//void
+//DGNavierStokesBase<dim, Number>::initialize_mapping_field()
+//{
+//  IndexSet relevant_dofs_grid;
+//  unsigned int nlevel = dof_handler_grid.get_triangulation().n_global_levels();
+//  for (unsigned int level=0; level<nlevel; ++level)
+//  {
+//    DoFTools::extract_locally_relevant_level_dofs(dof_handler_grid, level,
+//        relevant_dofs_grid);
+//    VectorType position_grid_init_temp;
+//    position_grid_init_temp.reinit(dof_handler_grid.locally_owned_mg_dofs(level), relevant_dofs_grid, MPI_COMM_WORLD);
+//
+//
+//  FEValues<dim> fe_values(*mapping_init, *fe_grid,
+//                                  Quadrature<dim>(fe_grid->get_unit_support_points()),
+//                                  update_quadrature_points);
+//          std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
+//          for (const auto & cell : dof_handler_grid.mg_cell_iterators_on_level(level))
+//            if (cell->level_subdomain_id() != numbers::artificial_subdomain_id)
+//              {
+//                fe_values.reinit(cell);
+//                cell->get_active_or_mg_dof_indices(dof_indices);
+//                for (unsigned int i=0; i<fe_grid->dofs_per_cell; ++i)
+//                  {
+//                    const unsigned int coordinate_direction =
+//                        fe_grid->system_to_component_index(i).first;
+//                    const Point<dim> point = fe_values.quadrature_point(i);
+//                    position_grid_init_temp(dof_indices[i]) = point[coordinate_direction];
+//                  }
+//              }
+//          position_grid_init_temp.update_ghost_values();
+//          position_grid_new_multigrid[level]=position_grid_init_temp;
+//          position_grid_new_multigrid[level].update_ghost_values();
+//   }
+//          mapping.reset(new MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> (dof_handler_grid, position_grid_new_multigrid));
+//}
 
 
 template<int dim, typename Number>
@@ -114,16 +116,16 @@ DGNavierStokesBase<dim, Number>::setup(
   initialize_boundary_descriptor_laplace();
 
   initialize_dof_handler();
-
-  if(param.ale_formulation == true)
-  {
-    initialize_mapping_field(); //TODO: move_mesh->init?
-    setup_moving_mesh();
-  }
-  // depending on DoFHandler
+  // depending on DoFHandler and Moving_Mesh
   initialize_matrix_free();
   // depending on MatrixFree
   initialize_operators();
+  //depending on MatrixFree
+  if(param.ale_formulation == true)
+  {
+    initialize_moving_mesh();
+  }
+
   // turbulence model
   if(param.use_turbulence_model == true)
   {
@@ -194,10 +196,10 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_p.distribute_mg_dofs();
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
   dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
-  if(param.ale_formulation == true){
-  dof_handler_grid.distribute_dofs(*fe_grid);
-  dof_handler_grid.distribute_mg_dofs();
-  }
+  //if(param.ale_formulation == true){
+  //dof_handler_grid.distribute_dofs(*fe_grid);
+  //dof_handler_grid.distribute_mg_dofs();
+  //}
 
   unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
   unsigned int const ndofs_per_cell_pressure = Utilities::pow(param.get_degree_p() + 1, dim);
@@ -308,8 +310,16 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   // exact integration of nonlinear convective term
   quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
 
+//  if (param.ale_formulation){
+//    moving_mesh->set_dof_handler_vec(dof_handler_vec);
+////    moving_mesh->set_constraint_matrix_vec(*constraint_matrix_vec);
+//    moving_mesh->set_test(std::move(constraint_u),std::move(constraint_p),std::move(constraint_u_scalar),dof_index_u,dof_index_p,dof_index_u_scalar);
+//    moving_mesh->set_quadratures(quadratures);
+//    moving_mesh->set_additional_data(additional_data);
+//  }
+
   matrix_free.reinit(
-    get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+    get_mapping_init(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
 template<int dim, typename Number>
@@ -543,7 +553,8 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.dof_index           = dof_index_u;
   model_data.quad_index          = quad_index_u;
   model_data.degree              = param.degree_u;
-  turbulence_model.initialize(matrix_free, get_mapping(), viscous_kernel, model_data);
+  turbulence_model.initialize(matrix_free, get_mapping_init(), viscous_kernel, model_data);
+  //TODO: check if different mappings influence turbulence functions
 }
 
 template<int dim, typename Number>
@@ -687,11 +698,11 @@ DGNavierStokesBase<dim, Number>::get_quad_index_pressure() const
 
 template<int dim, typename Number>
 Mapping<dim> const &
-DGNavierStokesBase<dim, Number>::get_mapping() const //TODO: always hand back mapping, only works if mappingfield is also used for non ale simulations
+DGNavierStokesBase<dim, Number>::get_mapping() const
 {
   if(param.ale_formulation == true)
   {
-    return *mapping;
+    return moving_mesh->get_mapping();
   }
   else
   {
@@ -706,12 +717,12 @@ DGNavierStokesBase<dim, Number>::get_mapping_init() const
     return *mapping_init;
 }
 
-template<int dim, typename Number>
-MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> &
-DGNavierStokesBase<dim, Number>::get_mapping_field() const
-{
-    return *mapping;
-}
+//template<int dim, typename Number>
+//MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> &
+//DGNavierStokesBase<dim, Number>::get_mapping_field() const
+//{
+//    return *mapping;
+//}
 
 template<int dim, typename Number>
 FESystem<dim> const &
@@ -734,12 +745,12 @@ DGNavierStokesBase<dim, Number>::get_dof_handler_u() const
   return dof_handler_u;
 }
 
-template<int dim, typename Number>
-DoFHandler<dim> const &
-DGNavierStokesBase<dim, Number>::get_dof_handler_grid() const
-{
-  return dof_handler_grid;
-}
+//template<int dim, typename Number>
+//DoFHandler<dim> const &
+//DGNavierStokesBase<dim, Number>::get_dof_handler_grid() const
+//{
+//  return dof_handler_grid;
+//}
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
@@ -791,12 +802,12 @@ DGNavierStokesBase<dim, Number>::set_velocity_ptr(VectorType const & velocity) c
   convective_kernel->set_velocity_ptr(velocity);
 }
 
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::set_position_grid_new_multigrid(unsigned int level,VectorType position_grid_new_in)
-{
-  position_grid_new_multigrid[level] = position_grid_new_in;
-}
+//template<int dim, typename Number>
+//void
+//DGNavierStokesBase<dim, Number>::set_position_grid_new_multigrid(unsigned int level,VectorType position_grid_new_in)
+//{
+//  position_grid_new_multigrid[level] = position_grid_new_in;
+//}
 
 template<int dim, typename Number>
 void
@@ -1218,73 +1229,73 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
   }
 }
 
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::update(){
+//template<int dim, typename Number>
+//void
+//DGNavierStokesBase<dim, Number>::update(){
+//
+//  typename MatrixFree<dim, Number>::AdditionalData additional_data;
+//
+//  additional_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::partition_partition;
+//  additional_data.initialize_indices = false; //connectivity of elements stays the same
+//  additional_data.initialize_mapping = true;
+//
+//  UpdateFlags ale_update_flags= (update_gradients |
+//                                 update_JxW_values |
+//                                 update_quadrature_points |
+//                                 update_normal_vectors |
+//                                 update_values |
+//                                 update_inverse_jacobians /*CFL*/);
+//
+//  additional_data.mapping_update_flags =ale_update_flags;
+//  additional_data.mapping_update_flags_inner_faces = ale_update_flags;
+//  additional_data.mapping_update_flags_boundary_faces =ale_update_flags;
+//
+//
+//  if(param.use_cell_based_face_loops)
+//  {
+//    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
+//      &dof_handler_u.get_triangulation());
+//    Categorization::do_cell_based_loops(*tria, additional_data);
+//  }
+//
+//  std::vector<const DoFHandler<dim> *> dof_handler_vec;
+//  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
+//  dof_handler_vec[dof_index_u]        = &dof_handler_u;
+//  dof_handler_vec[dof_index_p]        = &dof_handler_p;
+//  dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
+//
+//  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
+//  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
+//  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+//  constraint_u.close();
+//  constraint_p.close();
+//  constraint_u_scalar.close();
+//  constraint_matrix_vec[dof_index_u]        = &constraint_u;
+//  constraint_matrix_vec[dof_index_p]        = &constraint_p;
+//  constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
+//
+//  // quadrature
+//  std::vector<Quadrature<1>> quadratures;
+//
+//  // resize quadratures
+//  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::n_variants));
+//  // velocity
+//  quadratures[quad_index_u] = QGauss<1>(param.degree_u + 1);
+//  // pressure
+//  quadratures[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
+//  // exact integration of nonlinear convective term
+//  quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
+//
+//  matrix_free.reinit(get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+//
+//}
 
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-
-  additional_data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data.initialize_indices = false; //connectivity of elements stays the same
-  additional_data.initialize_mapping = true;
-
-  UpdateFlags ale_update_flags= (update_gradients |
-                                 update_JxW_values |
-                                 update_quadrature_points |
-                                 update_normal_vectors |
-                                 update_values |
-                                 update_inverse_jacobians /*CFL*/);
-
-  additional_data.mapping_update_flags =ale_update_flags;
-  additional_data.mapping_update_flags_inner_faces = ale_update_flags;
-  additional_data.mapping_update_flags_boundary_faces =ale_update_flags;
-
-
-  if(param.use_cell_based_face_loops)
-  {
-    auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
-      &dof_handler_u.get_triangulation());
-    Categorization::do_cell_based_loops(*tria, additional_data);
-  }
-
-  std::vector<const DoFHandler<dim> *> dof_handler_vec;
-  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
-  dof_handler_vec[dof_index_u]        = &dof_handler_u;
-  dof_handler_vec[dof_index_p]        = &dof_handler_p;
-  dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
-
-  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
-  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(DofHandlerSelector::n_variants));
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-  constraint_u.close();
-  constraint_p.close();
-  constraint_u_scalar.close();
-  constraint_matrix_vec[dof_index_u]        = &constraint_u;
-  constraint_matrix_vec[dof_index_p]        = &constraint_p;
-  constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
-
-  // quadrature
-  std::vector<Quadrature<1>> quadratures;
-
-  // resize quadratures
-  quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(QuadratureSelector::n_variants));
-  // velocity
-  quadratures[quad_index_u] = QGauss<1>(param.degree_u + 1);
-  // pressure
-  quadratures[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
-  // exact integration of nonlinear convective term
-  quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
-
-  matrix_free.reinit(get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
-
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::set_grid_velocity_in_convective_operator_kernel(VectorType grid_velocity) const
-{
-    convective_kernel->set_velocity_grid_ptr(grid_velocity);
-}
+//template<int dim, typename Number>
+//void
+//DGNavierStokesBase<dim, Number>::set_grid_velocity_in_convective_operator_kernel(VectorType grid_velocity) const
+//{
+//    convective_kernel->set_velocity_grid_ptr(grid_velocity);
+//}
 
 
 template<int dim, typename Number>

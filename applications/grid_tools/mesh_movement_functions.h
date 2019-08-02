@@ -7,12 +7,13 @@ namespace IncNS
 {
 
 template<int dim>
-class MeshMovementFunctions
+class MeshMovementFunctions: public Function<dim>
 {
 
 public:
   MeshMovementFunctions(MovingMeshData data_in)
-  :sin_t(0.0),
+  :Function<dim>(dim, 0.0),
+  sin_t(0.0),
    dat(data_in)
   {
   }
@@ -40,7 +41,6 @@ public:
   value(const Point<dim>    &p,
         const unsigned int  component = 0) const{
     //Since displacements are of shape const*f(t), code duplication can be avoided using f(t)=\partial_t f(t)
-    set_time_velocity(this->get_time());
     return displacement(p, component);
 
   }
@@ -52,12 +52,11 @@ protected:
 };
 
 template<int dim>
-class SinCosWithBoundaries : public Function<dim>,
-                             public MeshMovementFunctions<dim>
+class SinCosWithBoundaries :                            public MeshMovementFunctions<dim>
 {
   public:
     SinCosWithBoundaries(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -82,12 +81,11 @@ class SinCosWithBoundaries : public Function<dim>,
 };
 
 template<int dim>
-class SinCosWithBoundariesOnlyX : public Function<dim>,
-                                  public MeshMovementFunctions<dim>
+class SinCosWithBoundariesOnlyX :                                   public MeshMovementFunctions<dim>
 {
   public:
     SinCosWithBoundariesOnlyX(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -112,12 +110,11 @@ class SinCosWithBoundariesOnlyX : public Function<dim>,
 };
 
 template<int dim>
-class SinCosWithBoundariesOnlyY : public Function<dim>,
-                                  public MeshMovementFunctions<dim>
+class SinCosWithBoundariesOnlyY :                                   public MeshMovementFunctions<dim>
 {
   public:
     SinCosWithBoundariesOnlyY(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -142,12 +139,11 @@ class SinCosWithBoundariesOnlyY : public Function<dim>,
 };
 
 template<int dim>
-class InteriorSinCosOnlyX : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class InteriorSinCosOnlyX :                             public MeshMovementFunctions<dim>
 {
   public:
   InteriorSinCosOnlyX(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -172,12 +168,11 @@ class InteriorSinCosOnlyX : public Function<dim>,
 };
 
 template<int dim>
-class InteriorSinCosOnlyY : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class InteriorSinCosOnlyY :                            public MeshMovementFunctions<dim>
 {
   public:
   InteriorSinCosOnlyY(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -202,12 +197,11 @@ class InteriorSinCosOnlyY : public Function<dim>,
 };
 
 template<int dim>
-class XSquaredWithBoundaries : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class XSquaredWithBoundaries :                            public MeshMovementFunctions<dim>
 {
   public:
   XSquaredWithBoundaries(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -232,19 +226,18 @@ class XSquaredWithBoundaries : public Function<dim>,
 };
 
 template<int dim>
-class DoubleInteriorSinCos : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class DoubleInteriorSinCos :                             public MeshMovementFunctions<dim>
 {
   public:
   DoubleInteriorSinCos(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
 
   double
   displacement(const Point<dim>    &x,
-              const unsigned int  coordinate_direction = 0) const override
+               const unsigned int  coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -253,7 +246,7 @@ class DoubleInteriorSinCos : public Function<dim>,
       else if (coordinate_direction == 1)
         solution = std::sin(2* pi*(x(0)-dat.left)*2/dat.width)*this->sin_t*dat.A*(1- std::pow(x(1)/dat.right,2));
 
-    return solution;
+      return solution;
   }
 
   private:
@@ -262,12 +255,11 @@ class DoubleInteriorSinCos : public Function<dim>,
 };
 
 template<int dim>
-class DoubleSinCosWithBoundaries : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class DoubleSinCosWithBoundaries :                            public MeshMovementFunctions<dim>
 {
   public:
   DoubleSinCosWithBoundaries(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -292,12 +284,11 @@ class DoubleSinCosWithBoundaries : public Function<dim>,
 };
 
 template<int dim>
-class InteriorSinCos : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class InteriorSinCos :                            public MeshMovementFunctions<dim>
 {
   public:
   InteriorSinCos(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -322,12 +313,11 @@ class InteriorSinCos : public Function<dim>,
 };
 
 template<int dim>
-class InteriorSinCosWithSinInTime : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class InteriorSinCosWithSinInTime :                            public MeshMovementFunctions<dim>
 {
   public:
   InteriorSinCosWithSinInTime(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in),
      dat(data_in)
      {}
@@ -364,12 +354,11 @@ class InteriorSinCosWithSinInTime : public Function<dim>,
 };
 
 template<int dim>
-class None : public Function<dim>,
-                            public MeshMovementFunctions<dim>
+class None :                            public MeshMovementFunctions<dim>
 {
   public:
   None(MovingMeshData data_in)
-    :Function<dim>(dim, 0.0),
+    :
      MeshMovementFunctions<dim>(data_in)
      {}
 

@@ -455,7 +455,7 @@ public:
     if(FORMULATION_VISCOUS_TERM == FormulationViscousTerm::LaplaceFormulation)
     {
       //h = h_u - g_p*n;
-      //h_u/nu :=
+      //h_u/nu/n :=
       if(component==0)
         result=0;//(grad u)_{11}
       else if (component==1)
@@ -542,34 +542,35 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, 
   moving_mesh_data.type = param_in.analytical_mesh_movement;
   moving_mesh_data.left = param_in.triangulation_left;
   moving_mesh_data.right = param_in.triangulation_right;
+  moving_mesh_data.width = param_in.triangulation_right - param_in.triangulation_left;
   moving_mesh_data.f= param_in.grid_movement_frequency;
   moving_mesh_data.A = param_in.grid_movement_amplitude;
   moving_mesh_data.Dt = param_in.end_time - param_in.start_time;
+  moving_mesh_data.T = moving_mesh_data.Dt/moving_mesh_data.f;
 
-  if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCos)
+
+  if (moving_mesh_data.type == AnalyicMeshMovement::InteriorSinCos)
     field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCos<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosOnlyX)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::InteriorSinCosOnlyX)
     field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosOnlyX<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosOnlyY)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::InteriorSinCosOnlyY)
     field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosOnlyY<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundaries)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::SinCosWithBoundaries)
     field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundaries<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundariesOnlyX)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::SinCosWithBoundariesOnlyX)
     field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundariesOnlyX<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundariesOnlyY)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::SinCosWithBoundariesOnlyY)
     field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundariesOnlyY<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosWithSinInTime)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::InteriorSinCosWithSinInTime)
     field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosWithSinInTime<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::XSquaredWithBoundaries)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::XSquaredWithBoundaries)
     field_functions->analytical_solution_grid_velocity.reset(new XSquaredWithBoundaries<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::DoubleInteriorSinCos)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::DoubleInteriorSinCos)
     field_functions->analytical_solution_grid_velocity.reset(new DoubleInteriorSinCos<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::DoubleSinCosWithBoundaries)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::DoubleSinCosWithBoundaries)
     field_functions->analytical_solution_grid_velocity.reset(new DoubleSinCosWithBoundaries<dim>(moving_mesh_data));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::None)
+  else if (moving_mesh_data.type == AnalyicMeshMovement::None)
     field_functions->analytical_solution_grid_velocity.reset(new None<dim>(moving_mesh_data));
-  else
-    AssertThrow(false, ExcMessage("This kind of Mesh Movement can not be applied to vortex_ale"));
 
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());

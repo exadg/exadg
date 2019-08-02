@@ -8,13 +8,16 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
+#include "enum_types.h"
+#include "../../../applications/grid_tools/mesh_movement_functions.h"
+
 namespace IncNS
 {
 template<int dim>
 struct FieldFunctions
 {
 
-  std::shared_ptr<Function<dim>> analytical_solution_grid_velocity;
+  std::shared_ptr<MeshMovementFunctions<dim>> analytical_solution_grid_velocity;
   /*
    * The function initial_solution_velocity is used to initialize the velocity field at the
    * beginning of the simulation.
