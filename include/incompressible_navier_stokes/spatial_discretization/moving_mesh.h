@@ -5,6 +5,7 @@
 
 #include "moving_mesh_dat.h"
 #include "../../../applications/grid_tools/mesh_movement_functions.h"
+#include "../include/time_integration/push_back_vectors.h"
 
 
 
@@ -24,13 +25,15 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   MovingMesh(MovingMeshData const & data_in,
-              parallel::Triangulation<dim> const & triangulation)
+              parallel::Triangulation<dim> const & triangulation_in)
   :moving_mesh_data(data_in),
    fe_grid(new FESystem<dim>(FE_Q<dim>(data_in.degree_u), dim)),
    fe_u_grid(new FESystem<dim>(FE_DGQ<dim>(data_in.degree_u), dim)),
-   dof_handler_grid(triangulation),
-   dof_handler_u_grid(triangulation),
-   position_grid_new_multigrid(triangulation.n_global_levels())
+   dof_handler_grid(triangulation_in),
+   dof_handler_u_grid(triangulation_in),
+   position_grid_new_multigrid(triangulation_in.n_global_levels()),
+   d_grid(data_in.order_time_integrator + 1),
+   dof_handler_d_grid(triangulation_in)
   {
   }
 
@@ -49,10 +52,13 @@ public:
     dof_handler_grid.distribute_mg_dofs();
     dof_handler_u_grid.distribute_dofs(*fe_u_grid);
     dof_handler_u_grid.distribute_mg_dofs();
-
-    matrix_free.initialize_dof_vector(u_grid_np, moving_mesh_data.dof_index_u);
+    dof_handler_d_grid.distribute_dofs(*fe_u_grid);
+    dof_handler_d_grid.distribute_mg_dofs();
 
     initialize_mapping_field();
+
+    initialize_d_grid_and_u_grid_np();
+
 
 
   }
@@ -103,17 +109,17 @@ public:
   void
   advance_mesh_and_set_grid_velocities(double time_in)
   {
-    move_mesh2(time_in);
+    move_mesh(time_in);
 
-//    update2();
+//    update();
 
 
-//    if(moving_mesh_data.u_ana==true)
+    if(moving_mesh_data.u_ana==true)
       get_analytical_grid_velocity(time_in);
-//    else
-//     compute_grid_velocity();
+    else
+     compute_grid_velocity();
 //
-//    convective_kernel->set_velocity_grid_ptr(u_grid_np);
+    convective_kernel->set_velocity_grid_ptr(u_grid_np);
 
   }
 
@@ -146,13 +152,13 @@ private:
 
 
 //  void
-//  update2()
+//  update()
 //  {
    // matrix_free.reinit(get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 //  }
 
   void
-  move_mesh2(double time_in)
+  move_mesh(double time_in)
   {
     field_functions->analytical_solution_grid_velocity->set_time_displacement(time_in);
     interpolate_mg<MappingQ>(*mapping_init);
@@ -224,6 +230,71 @@ private:
           }
   }
 
+  void
+  compute_grid_velocity()
+  {
+    push_back(d_grid);
+    fill_d_grid();
+    //time_integrator->compute_BDF_time_derivative(u_grid_np, d_grid);
+  }
+  void
+  initialize_d_grid_and_u_grid_np()
+  {
+
+    for(unsigned int i = 0; i < d_grid.size(); ++i)
+      {
+      matrix_free.initialize_dof_vector(d_grid[i], moving_mesh_data.dof_index_u);
+      d_grid[i].update_ghost_values();
+      }
+    matrix_free.initialize_dof_vector(u_grid_np, moving_mesh_data.dof_index_u);
+
+    fill_d_grid();
+
+    if (moving_mesh_data.start_low_order==false)
+    {//only possible when analytical. otherwise lower_order has to be true
+      for(unsigned int i = 1; i < d_grid.size(); ++i)
+      {
+        //TODO: only possible if analytical solution of grid displacement can be provided
+       /* move_mesh(time_integrator->get_time());
+        update();*/
+        push_back(d_grid);
+        fill_d_grid();
+      }
+    }
+  }
+  void
+  fill_d_grid()
+  {
+
+
+    IndexSet relevant_dofs_grid;
+    DoFTools::extract_locally_relevant_dofs(dof_handler_d_grid,
+        relevant_dofs_grid);
+
+    d_grid[0].reinit(dof_handler_d_grid.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
+
+    FEValues<dim> fe_values(get_mapping(), *fe_u_grid,
+                            Quadrature<dim>((*fe_u_grid).get_unit_support_points()),
+                            update_quadrature_points);
+    std::vector<types::global_dof_index> dof_indices((*fe_u_grid).dofs_per_cell);
+    for (const auto & cell : dof_handler_d_grid.active_cell_iterators())
+    {
+
+      if (!cell->is_artificial())
+        {
+          fe_values.reinit(cell);
+          cell->get_dof_indices(dof_indices);
+          for (unsigned int i=0; i<(*fe_u_grid).dofs_per_cell; ++i)
+            {
+              const unsigned int coordinate_direction =
+                  (*fe_u_grid).system_to_component_index(i).first;
+              const Point<dim> point = fe_values.quadrature_point(i);
+              d_grid[0](dof_indices[i]) = point[coordinate_direction];
+            }
+        }
+    }
+    d_grid[0].update_ghost_values();
+  }
 
 
   MovingMeshData moving_mesh_data;
@@ -255,7 +326,7 @@ private:
   MatrixFree<dim, Number> matrix_free;
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   LinearAlgebra::distributed::Vector<Number> u_grid_np;
-
+  std::vector<LinearAlgebra::distributed::Vector<Number>> d_grid;
 //
 //  AffineConstraints<double> constraint_u;
 //        AffineConstraints<double> constraint_p;
@@ -263,7 +334,7 @@ private:
 //        unsigned int dof_index_u;
 //        unsigned int dof_index_p;
 //        unsigned int dof_index_u_scalar;
-
+  DoFHandler<dim> dof_handler_d_grid;
 
 
 };

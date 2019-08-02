@@ -415,6 +415,8 @@ public:
     moving_mesh_data.quad_index_p=quad_index_p;
     moving_mesh_data.quad_index_u_nonlinear=quad_index_u_nonlinear;
     moving_mesh_data.use_cell_based_face_loops =param.use_cell_based_face_loops;
+    moving_mesh_data.order_time_integrator = param.order_time_integrator;
+    moving_mesh_data.start_low_order=param.start_with_low_order;
 
     moving_mesh.reset(new MovingMesh<dim,Number>(moving_mesh_data,
                       triangulation ));
