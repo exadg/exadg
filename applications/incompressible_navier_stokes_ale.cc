@@ -285,6 +285,17 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
     navier_stokes_operation->setup_solvers(
       time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
+
+    //Initialize d_grid for high order start
+    if(param.ale_formulation == true && param.start_with_low_order==false && param.initialize_with_former_mesh_instances==true)
+      {
+      for(unsigned int i = param.order_time_integrator + 1/*d_grid.size()*/; i >1 ; --i)
+          {
+            navier_stokes_operation->init_ale_start_high_order(time_integrator->get_previous_time(i));
+          }
+          navier_stokes_operation->init_ale_start_high_order(time_integrator->get_time());
+      }
+
   }
   else if(param.solver_type == SolverType::Steady)
   {
@@ -296,11 +307,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
-//
-//  move_mesh = std::make_shared<MoveMesh>( param,navier_stokes_operation,
-//                                          time_integrator,
-//                                          triangulation,
-//                                          field_functions);
+
 
   setup_time = timer.wall_time();
 }
@@ -325,8 +332,16 @@ Problem<dim, Number>::solve()
 
           while(!timeloop_finished)
           {
-            //move_mesh->advance_mesh_to_next_timestep_and_set_grid_velocities();
+
             navier_stokes_operation->move_mesh(time_integrator->get_next_time());
+
+            if (param.grid_velocity_analytical==false)
+              navier_stokes_operation->set_grid_velocitys(
+              time_integrator->compute_BDF_time_derivative(navier_stokes_operation->get_u_grid_np(),
+                navier_stokes_operation->get_d_grid));
+
+
+            navier_stokes_operation->consider_grid_velocitys(time_integrator->get_next_time());
 
             timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
 

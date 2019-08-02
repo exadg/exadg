@@ -417,9 +417,12 @@ public:
     moving_mesh_data.use_cell_based_face_loops =param.use_cell_based_face_loops;
     moving_mesh_data.order_time_integrator = param.order_time_integrator;
     moving_mesh_data.start_low_order=param.start_with_low_order;
+    moving_mesh_data.initialize_with_former_mesh_instances = param.initialize_with_former_mesh_instances;
+
+
 
     moving_mesh.reset(new MovingMesh<dim,Number>(moving_mesh_data,
-                      triangulation ));
+                      triangulation));
   }
 
   void
@@ -437,7 +440,30 @@ public:
   void
   move_mesh(double time_in)
   {
-    moving_mesh->advance_mesh_and_set_grid_velocities(time_in);
+    moving_mesh->advance_mesh(time_in);
+  }
+
+  void
+  consider_grid_velocitys(double time_in)
+  {
+  moving_mesh->set_grid_velocitys(time_in)
+  }
+//RENAME PROPERLY AND THINK OF SMARTER SOLUTION
+                get_u_grid_np(){
+
+                }
+                  get_d_grid(){
+
+                }
+
+                  set_grid_velocitys(){
+
+                  }
+
+  void
+  init_ale_start_high_order(double time_in)
+  {
+  moving_mesh->initialize_velocity_high_order_start(time_in);
   }
 //
 //  void

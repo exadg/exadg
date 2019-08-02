@@ -26,7 +26,8 @@ struct MovingMeshData
    quad_index_u_nonlinear(0.0),
    use_cell_based_face_loops(false),
    order_time_integrator(2),
-   start_low_order(true)
+   start_low_order(true),
+   initialize_with_former_mesh_instances(false)
   {
   }
 
@@ -51,6 +52,7 @@ struct MovingMeshData
   bool use_cell_based_face_loops;
    unsigned int order_time_integrator;
   bool start_low_order;
+  bool initialize_with_former_mesh_instances;
 };
 
 }/*IncNS*/

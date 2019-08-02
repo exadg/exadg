@@ -80,16 +80,16 @@ TimeIntBDFCoupled<Number>::initialize_former_solutions()
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
     //TODO: only possible if analytical solution of grid velocity can be provided
-    /*move_mesh(this->get_previous_time(i));
-    update();*/
+    if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
+      this->operator_base->move_mesh(this->get_previous_time(i));
+
     this->operator_base->prescribe_initial_conditions(solution[i].block(0),
                                                       solution[i].block(1),
                                                       this->get_previous_time(i));
   }
   //TODO: only possible if analytical solution of grid velocity can be provided
-  /*move_mesh(this->get_time());
-  update();
-  */
+  if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
+    this->operator_base->move_mesh(this->get_time());
 }
 
 template<typename Number>
@@ -131,18 +131,16 @@ if (this->param.start_with_low_order == false)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
   {
     //TODO: only possible if analytical solution of grid velocity can be provided
-    /*move_mesh(this->get_previous_time(i));
-    update();
-    set_analytical_grid_velocity_in_convective_operator_kernel(this->get_previous_time(i-1?));*/
+    if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
+      this->operator_base->move_mesh(this->get_previous_time(i));
 
     this->operator_base->evaluate_convective_term(vec_convective_term[i],
                                                   solution[i].block(0),
                                                   this->get_previous_time(i));
   }
   //TODO: only possible if analytical solution of grid velocity can be provided
-  /*move_mesh(this->get_time());
-  update();
-  */
+  if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
+    this->operator_base->move_mesh(this->get_time());
 }
 }
 

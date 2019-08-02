@@ -62,6 +62,7 @@ void set_input_parameters(InputParameters &param)
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
   param.NBC_prescribed_with_known_normal_vectors = false;
   param.analytical_mesh_movement = AnalyicMeshMovement::DoubleSinCosWithBoundaries;
+  param.initialize_with_former_mesh_instances=false;
 
 
   // MATHEMATICAL MODEL

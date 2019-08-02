@@ -378,6 +378,23 @@ TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl, do
   TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);
 }
 
+
+
+template<typename Number>
+void
+TimeIntBDF<Number>::compute_BDF_time_derivative( LinearAlgebra::distributed::Vector<Number> & dst, std::vector<LinearAlgebra::distributed::Vector<Number>> src)
+{
+
+    update_time_integrator_constants();
+
+    dst.equ(this->bdf.get_gamma0()/this->get_time_step_size(),src[0]);
+
+    for(unsigned int i = 1; i < src.size(); ++i){
+      dst.add(-1*this->bdf.get_alpha(i-1)/this->get_time_step_size(),src[i]);
+    }
+}
+
+
 template<typename Number>
 void
 TimeIntBDF<Number>::update_sum_alphai_ui_oif_substepping(unsigned int i)

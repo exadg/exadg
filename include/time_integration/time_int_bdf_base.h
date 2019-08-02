@@ -15,6 +15,8 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../incompressible_navier_stokes/spatial_discretization/interface.h"
+
 using namespace dealii;
 
 class TimeIntBDFBase : public TimeIntBase
@@ -87,9 +89,6 @@ public:
    */
   virtual void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const = 0;
-
-  void
-  compute_BDF_time_derivative( LinearAlgebra::distributed::Vector<double> & dst, std::vector<LinearAlgebra::distributed::Vector<double>> src);
 
   /*
    * Get time at the end of the current time step t_{n+1}.

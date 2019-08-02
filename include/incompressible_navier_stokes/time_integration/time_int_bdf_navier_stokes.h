@@ -51,6 +51,11 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
+  virtual void
+  compute_BDF_time_derivative(
+      LinearAlgebra::distributed::Vector<Number> & dst,
+      std::vector<LinearAlgebra::distributed::Vector<Number>> src);
+
 protected:
   virtual void
   update_time_integrator_constants();
@@ -64,6 +69,9 @@ protected:
    */
   void
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
+
+
+
 
   InputParameters const & param;
 

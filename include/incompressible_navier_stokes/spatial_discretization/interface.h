@@ -120,6 +120,9 @@ public:
   virtual void
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
 
+  virtual void
+  move_mesh(double time_in) = 0;
+
 };
 
 /*
@@ -390,6 +393,7 @@ private:
   std::vector<double>             times;
   VectorType mutable solution_interpolated;
 };
+
 
 } // namespace Interface
 

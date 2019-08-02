@@ -6,7 +6,7 @@
 #include "moving_mesh_dat.h"
 #include "../../../applications/grid_tools/mesh_movement_functions.h"
 #include "../include/time_integration/push_back_vectors.h"
-
+//#include "interface.h"
 
 
 
@@ -15,6 +15,7 @@ using namespace dealii;
 
 namespace IncNS
 {
+
 
 template<int dim, typename Number>
 class MovingMesh
@@ -37,6 +38,20 @@ public:
   {
   }
 
+
+  void initialize_velocity_high_order_start(double time_in)
+  {
+
+        move_mesh(time_in);
+//        update();
+        get_analytical_grid_velocity(time_in);
+
+      push_back(d_grid);
+      fill_d_grid();
+
+}
+
+
   void
   initialize(std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel_in,
         std::shared_ptr<MappingQGeneric<dim>>     const &                     mapping_init_in,
@@ -47,6 +62,7 @@ public:
     matrix_free = matrix_free_in;
     convective_kernel = convective_kernel_in;
     mapping_init = mapping_init_in;
+   // time_operator_base = std::make_shared<Interface::TimeOperatorBase<Number>>();
 
     dof_handler_grid.distribute_dofs(*fe_grid);
     dof_handler_grid.distribute_mg_dofs();
@@ -107,12 +123,16 @@ public:
 //  }
 //
   void
-  advance_mesh_and_set_grid_velocities(double time_in)
+  advance_mesh(double time_in)
   {
     move_mesh(time_in);
 
 //    update();
+  }
 
+  void
+  set_grid_velocities(double time_in)
+  {
 
     if(moving_mesh_data.u_ana==true)
       get_analytical_grid_velocity(time_in);
@@ -120,7 +140,6 @@ public:
      compute_grid_velocity();
 //
     convective_kernel->set_velocity_grid_ptr(u_grid_np);
-
   }
 
   Mapping<dim> const &
@@ -235,7 +254,7 @@ private:
   {
     push_back(d_grid);
     fill_d_grid();
-    //time_integrator->compute_BDF_time_derivative(u_grid_np, d_grid);
+    //time_operator_base->compute_BDF_time_derivative(u_grid_np, d_grid);
   }
   void
   initialize_d_grid_and_u_grid_np()
@@ -250,18 +269,12 @@ private:
 
     fill_d_grid();
 
-    if (moving_mesh_data.start_low_order==false)
-    {//only possible when analytical. otherwise lower_order has to be true
-      for(unsigned int i = 1; i < d_grid.size(); ++i)
-      {
-        //TODO: only possible if analytical solution of grid displacement can be provided
-       /* move_mesh(time_integrator->get_time());
-        update();*/
-        push_back(d_grid);
-        fill_d_grid();
-      }
-    }
   }
+
+
+
+
+
   void
   fill_d_grid()
   {
@@ -336,6 +349,7 @@ private:
 //        unsigned int dof_index_u_scalar;
   DoFHandler<dim> dof_handler_d_grid;
 
+  //std::shared_ptr<Interface::TimeOperatorBase<Number>> time_operator_base;
 
 };
 
