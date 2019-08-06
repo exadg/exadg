@@ -276,6 +276,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   if(param.ale_formulation == true)
     ale_operation = std::make_shared<DGALE>(param, triangulation,field_functions, navier_stokes_operation);
 
+
   //Depends on mapping which is initialized in constructor of MovingMesh
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
@@ -285,7 +286,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   //depends on matrix free which is initialized in navier_stokes_operation->setup
   if(param.ale_formulation == true)
+  {
       ale_operation->setup();
+      if(param.calculation_of_time_step_size == TimeStepCalculation::CFL && param.adaptive_time_stepping == true)
+        time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
+  }
 
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -353,8 +358,9 @@ Problem<dim, Number>::solve()
             ale_operation->move_mesh(time_integrator->get_next_time(),
                                      time_integrator->get_time_step_size(),
                                      time_integrator->get_current_time_integrator_constants());
-     //       ale_operation->move_mesh(time_integrator->get_next_time());
 
+            if(param.calculation_of_time_step_size == TimeStepCalculation::CFL && param.adaptive_time_stepping == true)
+              time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
 
             timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
 

@@ -606,7 +606,6 @@ public:
   /**************************************************************************************/
   bool grid_velocity_analytical;
   bool ale_formulation;
-  double max_grid_velocity;
   double triangulation_left;
   double triangulation_right;
   double grid_movement_amplitude;

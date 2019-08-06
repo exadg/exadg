@@ -204,7 +204,6 @@ InputParameters::InputParameters()
     //ale
     grid_velocity_analytical(true),
     ale_formulation(false),
-    max_grid_velocity(0.0),
     triangulation_left(-0.5),
     triangulation_right(0.5),
     grid_movement_amplitude(0.0),

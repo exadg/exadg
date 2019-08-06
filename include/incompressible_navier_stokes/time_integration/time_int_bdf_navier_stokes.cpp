@@ -171,43 +171,25 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
     double h_min = operator_base->calculate_minimum_element_length();
 
-    double max_velocity_temp =  param.max_velocity;
-
-    if (param.ale_formulation==true){
-      //adjust maximum velocity and maximum element size that are reached during the simulation
-      max_velocity_temp += param.max_grid_velocity;
-      h_min -= param.grid_movement_amplitude ;
-    }
-
     double time_step_global = calculate_time_step_cfl_global(
-      cfl, max_velocity_temp, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
+      cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
 
     pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
     print_parameter(pcout, "h_min", h_min);
     print_parameter(pcout, "U_max", param.max_velocity);
-    if (param.ale_formulation==true){
-      print_parameter(pcout, "U_max_grid",param.max_grid_velocity);
-        }
     print_parameter(pcout, "CFL", cfl);
     print_parameter(pcout, "exponent fe_degree", param.cfl_exponent_fe_degree_velocity);
     print_parameter(pcout, "Time step size (global)", time_step_global);
 
     if(adaptive_time_stepping == true)
-    {
+    {//TODO
 
       VectorType u_temp = get_velocity();
-      /*if(param.ale_formulation==true)
+      if(param.ale_formulation==true)
       {
-      VectorType u_grid_temp;
-      operator_base->initialize_vector_grid_velocity(u_grid_temp);
-      operator_base->get_grid_velocity(u_grid_temp, get_time());
-
-      u_temp -= u_grid_temp;
-      }*/
-      //TODO: incorporate new get grid velocity and check if this is even true
-
-
-
+        //std::cout<<"u_grid_cfl_used_first:" << u_grid_cfl.l2_norm()<<std::endl;//TEST
+      u_temp -= u_grid_cfl;
+      }
 
       // if u(x,t=0)=0, this time step size will tend to infinity
       double time_step_adap =
@@ -278,18 +260,13 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
 
   VectorType u_temp = get_velocity();
 
-  /*if(param.ale_formulation==true)
+  if(param.ale_formulation==true)
   {
-    VectorType u_grid_temp;
-    operator_base->initialize_vector_grid_velocity(u_grid_temp);
-    operator_base->get_grid_velocity(u_grid_temp, get_time());
-    u_temp -= u_grid_temp;
-  }*/
-  //TODO: incorporate new get grid velocity and check if this is even true
+   //std::cout<<"u_grid_cfl_used:" << u_grid_cfl.l2_norm()<<std::endl;//TEST
+    u_temp -= u_grid_cfl;
+  }
 
-
-
-  double new_time_step_size =
+    double new_time_step_size =
     operator_base->calculate_time_step_cfl(u_temp,
                                            cfl,
                                            param.cfl_exponent_fe_degree_velocity);
@@ -377,23 +354,6 @@ TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl, do
   // call function implemented in base class for the actual OIF sub-stepping
   TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);
 }
-
-
-
-//template<typename Number>
-//void
-//TimeIntBDF<Number>::compute_BDF_time_derivative( LinearAlgebra::distributed::Vector<Number> & dst, std::vector<LinearAlgebra::distributed::Vector<Number>> src)
-//{
-//
-//    update_time_integrator_constants();
-//
-//    dst.equ(this->bdf.get_gamma0()/this->get_time_step_size(),src[0]);
-//
-//    for(unsigned int i = 1; i < src.size(); ++i){
-//      dst.add(-1*this->bdf.get_alpha(i-1)/this->get_time_step_size(),src[i]);
-//    }
-//}
-
 
 template<typename Number>
 void

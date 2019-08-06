@@ -20,14 +20,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 6;
-unsigned int const DEGREE_MAX = 6;
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
 unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 10;
+unsigned int const REFINE_TIME_MAX = 0;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -41,7 +41,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 const double TRIANGULATION_LEFT = -0.5;
 const double TRIANGULATION_RIGHT = 0.5;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 2;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
@@ -55,18 +55,19 @@ void set_input_parameters(InputParameters &param)
   //ALE
   param.grid_velocity_analytical = true;
   param.ale_formulation = true;
-  param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
   param.triangulation_right = TRIANGULATION_RIGHT;
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
   param.NBC_prescribed_with_known_normal_vectors = false;
-  param.analytical_mesh_movement = AnalyicMeshMovement::InteriorSinCosWithSinInTime;
+  param.analytical_mesh_movement = AnalyicMeshMovement::DoubleSinCosWithBoundaries;
   param.initialize_with_former_mesh_instances=true ;
   param.start_with_low_order = false;
   param.time_step_size = 0.5;//5e-5;
   param.order_time_integrator = 3;
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = true;
 
   // MATHEMATICAL MODEL
   param.dim = 2;
@@ -90,8 +91,7 @@ void set_input_parameters(InputParameters &param)
 
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  param.adaptive_time_stepping = false;
+
   param.max_velocity = 1.4 * U_X_MAX;
   param.cfl = 0.4;
   param.cfl_oif = param.cfl/1.0;

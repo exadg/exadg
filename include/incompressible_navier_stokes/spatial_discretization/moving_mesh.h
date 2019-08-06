@@ -135,6 +135,13 @@ public:
 
   }
 
+  VectorType
+  get_grid_velocity()
+  {
+    return u_grid_np;
+  }
+
+
 private:
   void initialize_dof_handler()
   {
@@ -192,7 +199,7 @@ private:
 
     u_grid_np = grid_velocity_double;
 
-   // std::cout<<"Set u_grid at time t=" <<evaluation_time<<" leats to L2 norm"<<u_grid_np.l2_norm()<<std::endl;//TEST
+   //std::cout<<"Set u_grid "<<u_grid_np.l2_norm()<<std::endl;//TEST
   }
 
   void

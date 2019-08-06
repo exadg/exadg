@@ -52,11 +52,6 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
-//  virtual void
-//  compute_BDF_time_derivative(
-//      LinearAlgebra::distributed::Vector<Number> & dst,
-//      std::vector<LinearAlgebra::distributed::Vector<Number>> src);
-
   std::vector<double>
   get_current_time_integrator_constants()
   {
@@ -74,6 +69,13 @@ public:
 
   virtual void
   reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> convective_term_in) = 0;
+
+  void
+  set_grid_velocity_cfl(VectorType u_grid_cfl_in)
+  {
+      u_grid_cfl = u_grid_cfl_in;
+      //std::cout<<"Set_grid_velocity_cfl:"<<u_grid_cfl_in.l2_norm()<<std::endl;//TEST
+  }
 
 
 protected:
@@ -160,6 +162,9 @@ private:
   // solution vectors needed for OIF substepping of convective term
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
+
+  //CFL ALE
+  VectorType u_grid_cfl;
 };
 
 } // namespace IncNS

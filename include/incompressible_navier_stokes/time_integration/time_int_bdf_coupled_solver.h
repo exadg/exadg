@@ -61,7 +61,6 @@ public:
       solution[i].block(0)=solution_in[i].block(0);
       solution[i].block(1)=solution_in[i].block(1);
     }
-    //TODO: CHECK IF OTHER QUANTITIES ARE INITIALIZED AT PREVIOUS TIMES
   }
 
   void
@@ -72,7 +71,6 @@ public:
     {
       vec_convective_term[i]=vec_convective_term_in[i];
     }
-    //TODO: CHECK IF OTHER QUANTITIES ARE INITIALIZED AT PREVIOUS TIMES
   }
 
 
