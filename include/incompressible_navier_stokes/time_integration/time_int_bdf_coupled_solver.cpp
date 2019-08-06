@@ -79,17 +79,10 @@ TimeIntBDFCoupled<Number>::initialize_former_solutions()
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
-    //TODO: only possible if analytical solution of grid velocity can be provided
-    if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
-      this->operator_base->move_mesh(this->get_previous_time(i));
-
     this->operator_base->prescribe_initial_conditions(solution[i].block(0),
                                                       solution[i].block(1),
                                                       this->get_previous_time(i));
   }
-  //TODO: only possible if analytical solution of grid velocity can be provided
-  if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
-    this->operator_base->move_mesh(this->get_time());
 }
 
 template<typename Number>
@@ -130,17 +123,10 @@ if (this->param.start_with_low_order == false)
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
   {
-    //TODO: only possible if analytical solution of grid velocity can be provided
-    if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
-      this->operator_base->move_mesh(this->get_previous_time(i));
-
     this->operator_base->evaluate_convective_term(vec_convective_term[i],
                                                   solution[i].block(0),
                                                   this->get_previous_time(i));
   }
-  //TODO: only possible if analytical solution of grid velocity can be provided
-  if(this->param.ale_formulation==true && this->param.initialize_with_former_mesh_instances==true)
-    this->operator_base->move_mesh(this->get_time());
 }
 }
 

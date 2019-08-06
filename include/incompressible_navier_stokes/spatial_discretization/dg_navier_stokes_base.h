@@ -46,7 +46,8 @@
 #include "turbulence_model.h"
 
 //Moving mesh
-#include "moving_mesh.h"
+//#include "moving_mesh.h"
+#include <deal.II/fe/mapping_fe_field.h>
 
 // interface space-time
 #include "interface.h"
@@ -76,6 +77,7 @@ class DGNavierStokesBase : public dealii::Subscriptor, public Interface::Operato
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> MappingField;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
@@ -185,8 +187,7 @@ public:
   Mapping<dim> const &
   get_mapping() const;
 
-  Mapping<dim> const &
-  get_mapping_init() const;
+
 
 //  MappingField &
 //  get_mapping_field()const;//TEST
@@ -392,88 +393,26 @@ public:
 
   //ALE
 
-  void
-  setup_moving_mesh(parallel::Triangulation<dim> const & triangulation)
+  void ALE_update(std::vector<const DoFHandler<dim> *> dof_handler_vec_ALE,
+                  std::vector<const AffineConstraints<double> *> constraint_matrix_vec_ALE,
+                  std::vector<Quadrature<1>> quadratures_ALE,
+                  typename MatrixFree<dim, Number>::AdditionalData  additional_data_ALE)
   {
-    MovingMeshData moving_mesh_data;
-    moving_mesh_data.type = param.analytical_mesh_movement;
-    moving_mesh_data.left = param.triangulation_left;
-    moving_mesh_data.right = param.triangulation_right;
-    moving_mesh_data.width = param.triangulation_right - param.triangulation_left;
-    moving_mesh_data.f= param.grid_movement_frequency;
-    moving_mesh_data.A = param.grid_movement_amplitude;
-    moving_mesh_data.Dt = param.end_time - param.start_time;
-    moving_mesh_data.u_ana = param.grid_velocity_analytical;
-    moving_mesh_data.degree_u = param.degree_u;
-    moving_mesh_data.T = moving_mesh_data.Dt/moving_mesh_data.f;
-
-    moving_mesh_data.degree_p=param.get_degree_p();
-    moving_mesh_data.dof_index_u=dof_index_u;
-    moving_mesh_data.dof_index_p=dof_index_p;
-    moving_mesh_data.dof_index_u_scalar=dof_index_u_scalar;
-    moving_mesh_data.quad_index_u=quad_index_u;
-    moving_mesh_data.quad_index_p=quad_index_p;
-    moving_mesh_data.quad_index_u_nonlinear=quad_index_u_nonlinear;
-    moving_mesh_data.use_cell_based_face_loops =param.use_cell_based_face_loops;
-    moving_mesh_data.order_time_integrator = param.order_time_integrator;
-    moving_mesh_data.start_low_order=param.start_with_low_order;
-    moving_mesh_data.initialize_with_former_mesh_instances = param.initialize_with_former_mesh_instances;
-
-
-
-    moving_mesh.reset(new MovingMesh<dim,Number>(moving_mesh_data,
-                      triangulation));
+      matrix_free.reinit(get_mapping(), dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
   }
 
-  void
-  initialize_moving_mesh()
+  void set_mapping_ALE(std::shared_ptr<MappingField> mapping_in)
   {
-  moving_mesh->initialize(convective_kernel,
-                     mapping_init,
-                     matrix_free,
-                     field_functions);//,
-//                       dof_handler_u,
-//                       dof_handler_p,
-//                       dof_handler_u_scalar);
+    mapping_ale = mapping_in;
   }
 
-  void
-  move_mesh(double time_in)
+  void set_grid_velocity(VectorType u_grid_in)
   {
-    moving_mesh->advance_mesh(time_in);
+    convective_kernel->set_velocity_grid_ptr(u_grid_in);
   }
 
-  void
-  consider_grid_velocitys(double time_in)
-  {
-  moving_mesh->set_grid_velocitys(time_in)
-  }
-//RENAME PROPERLY AND THINK OF SMARTER SOLUTION
-                get_u_grid_np(){
-
-                }
-                  get_d_grid(){
-
-                }
-
-                  set_grid_velocitys(){
-
-                  }
-
-  void
-  init_ale_start_high_order(double time_in)
-  {
-  moving_mesh->initialize_velocity_high_order_start(time_in);
-  }
-//
-//  void
-//  update();
-
-//  void
-//  set_grid_velocity_in_convective_operator_kernel(VectorType grid_velocity) const;
-
-//  void
-//  set_position_grid_new_multigrid(unsigned int level, VectorType position_grid_new_in);
+  std::shared_ptr<MappingQGeneric<dim>>
+  get_mapping_init() const;
 
 protected:
   /*
@@ -500,19 +439,12 @@ protected:
 
   unsigned int                          mapping_degree;
   std::shared_ptr<MappingQGeneric<dim>> mapping_init;
+  std::shared_ptr<MappingField> mapping_ale;
 
 
   DoFHandler<dim> dof_handler_u;
   DoFHandler<dim> dof_handler_p;
   DoFHandler<dim> dof_handler_u_scalar;
-
-
- // DoFHandler<dim> dof_handler_grid;//TEST
-
-//  std::vector<VectorType> position_grid_new_multigrid;
-
-
-  //std::shared_ptr<MappingField> mapping;
 
   MatrixFree<dim, Number> matrix_free;
 
@@ -630,9 +562,6 @@ private:
   void
   initialize_dof_handler();
 
-//  void
-//  initialize_mapping_field();
-
   void
   initialize_matrix_free();
 
@@ -660,10 +589,6 @@ private:
    */
   TurbulenceModel<dim, Number> turbulence_model;
 
-  /*
-   * Moving Mesh
-   */
-  std::shared_ptr<MovingMesh<dim,Number>> moving_mesh;
 };
 
 } // namespace IncNS

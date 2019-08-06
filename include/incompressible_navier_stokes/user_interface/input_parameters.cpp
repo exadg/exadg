@@ -443,8 +443,8 @@ InputParameters::check_input_parameters()
     AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution, ExcMessage("only BDFCoupledSolution has been implemented on moving meshes"));
     AssertThrow(analytical_mesh_movement != AnalyicMeshMovement::Undefined, ExcMessage("Analytical functions have to be applied to move the mesh"));
 
-  if (start_with_low_order==false && initialize_with_former_mesh_instances==true)
-    AssertThrow(grid_velocity_analytical==true , ExcMessage("Velocity has to be prescribed analytical to be able to start simulation with high order of time integration, if mesh instances at previous times have to be used."));
+ // if (start_with_low_order==false && initialize_with_former_mesh_instances==true)
+   // AssertThrow(grid_velocity_analytical==true , ExcMessage("Velocity has to be prescribed analytical to be able to start simulation with high order of time integration, if mesh instances at previous times have to be used."));
 
 
   }

@@ -8,7 +8,8 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 
-#include <deal.II/lac/la_parallel_vector.h>
+//#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
 
 #include "time_int_bdf_navier_stokes.h"
 
@@ -35,6 +36,7 @@ public:
   typedef TimeIntBDF<Number> Base;
 
   typedef typename Base::VectorType VectorType;
+  typedef typename Base::BlockVectorType BlockVectorType;
 
   typedef Interface::OperatorBase<Number>          InterfaceBase;
   typedef Interface::OperatorDualSplitting<Number> InterfacePDE;
@@ -51,6 +53,25 @@ public:
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
+
+  void
+  reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) override
+  {
+    for(unsigned int i = 1; i < velocity.size(); ++i)
+    {
+      velocity[i]=solution_in[i].block(0);
+      pressure[i]=solution_in[i].block(1);
+    }
+  }
+
+  void
+  reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> convective_term_in) override
+  {
+    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+    {
+      vec_convective_term[i]=convective_term_in[i];
+    }
+  }
 
 private:
   void

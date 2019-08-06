@@ -12,6 +12,7 @@
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
 
+
 // postprocessor
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
@@ -36,7 +37,8 @@
 #include "../include/functionalities/print_general_infos.h"
 
 //ALE
-#include "./grid_tools/mesh_movement.h"
+//#include "./grid_tools/mesh_movement.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/moving_mesh.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -123,8 +125,8 @@ private:
 
   std::shared_ptr<DriverSteady> driver_steady;
 
-//  typedef MeshMovement<dim,Number> MoveMesh;
-//  std::shared_ptr<MoveMesh> move_mesh;
+  typedef MovingMesh<dim,Number> DGALE;
+  std::shared_ptr<DGALE> ale_operation;
 
   /*
    * Computation time (wall clock time).
@@ -219,6 +221,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
                                                navier_stokes_operation_coupled,
                                                param));
+
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -270,11 +273,16 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  ale_operation = std::make_shared<DGALE>(param, triangulation,field_functions, navier_stokes_operation);
+
+  //Depends on mapping
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
                                  field_functions);
+  //depends on matrix free which is initialized with setup()
+  ale_operation->setup();
 
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -287,14 +295,14 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
 
     //Initialize d_grid for high order start
-    if(param.ale_formulation == true && param.start_with_low_order==false && param.initialize_with_former_mesh_instances==true)
-      {
-      for(unsigned int i = param.order_time_integrator + 1/*d_grid.size()*/; i >1 ; --i)
-          {
-            navier_stokes_operation->init_ale_start_high_order(time_integrator->get_previous_time(i));
-          }
-          navier_stokes_operation->init_ale_start_high_order(time_integrator->get_time());
-      }
+//    if(param.ale_formulation == true && param.start_with_low_order==false && param.initialize_with_former_mesh_instances==true)
+//      {
+//      for(unsigned int i = param.order_time_integrator + 1/*d_grid.size()*/; i >1 ; --i)
+//          {
+//            navier_stokes_operation->init_ale_start_high_order(time_integrator->get_previous_time(i));
+//          }
+//          navier_stokes_operation->init_ale_start_high_order(time_integrator->get_time());
+//      }
 
   }
   else if(param.solver_type == SolverType::Steady)
@@ -306,6 +314,26 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   else
   {
     AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+
+  if(param.ale_formulation == true && param.start_with_low_order==false && param.initialize_with_former_mesh_instances==true)
+  {
+
+    std::vector<double> eval_times(param.order_time_integrator);
+    std::vector<unsigned int> time_steps(param.order_time_integrator);
+
+    for(unsigned int i = 0; i < param.order_time_integrator; ++i)
+    {
+
+      eval_times[i]=time_integrator->get_previous_time(i);
+
+      time_steps[i]=i;
+    }
+
+    ale_operation->init_d_grid_on_former_mesh(eval_times, time_steps);
+    time_integrator->reinit_former_solution_with_former_mesh_ALE(ale_operation->init_former_solution_on_former_mesh(eval_times, time_steps));
+    time_integrator->reinit_convective_term_with_former_mesh_ALE(ale_operation->init_convective_term_on_former_mesh(eval_times, time_steps));
   }
 
 
@@ -332,16 +360,11 @@ Problem<dim, Number>::solve()
 
           while(!timeloop_finished)
           {
+            ale_operation->move_mesh(time_integrator->get_next_time(),
+                                     time_integrator->get_time_step_size(),
+                                     time_integrator->get_current_time_integrator_constants());
+     //       ale_operation->move_mesh(time_integrator->get_next_time());
 
-            navier_stokes_operation->move_mesh(time_integrator->get_next_time());
-
-            if (param.grid_velocity_analytical==false)
-              navier_stokes_operation->set_grid_velocitys(
-              time_integrator->compute_BDF_time_derivative(navier_stokes_operation->get_u_grid_np(),
-                navier_stokes_operation->get_d_grid));
-
-
-            navier_stokes_operation->consider_grid_velocitys(time_integrator->get_next_time());
 
             timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
 

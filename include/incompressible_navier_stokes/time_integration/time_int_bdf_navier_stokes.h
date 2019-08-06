@@ -35,6 +35,7 @@ class TimeIntBDF : public TimeIntBDFBase
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef Interface::OperatorBase<Number> InterfaceBase;
 
@@ -51,10 +52,29 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
+//  virtual void
+//  compute_BDF_time_derivative(
+//      LinearAlgebra::distributed::Vector<Number> & dst,
+//      std::vector<LinearAlgebra::distributed::Vector<Number>> src);
+
+  std::vector<double>
+  get_current_time_integrator_constants()
+  {
+    std::vector<double> time_integrator_constants(this->order+1);
+    update_time_integrator_constants();
+    time_integrator_constants[0]=this->bdf.get_gamma0();
+    for(unsigned int i = 1; i < time_integrator_constants.size(); ++i)
+      time_integrator_constants[i] = this->bdf.get_alpha(i-1);
+
+    return time_integrator_constants;
+  }
+
   virtual void
-  compute_BDF_time_derivative(
-      LinearAlgebra::distributed::Vector<Number> & dst,
-      std::vector<LinearAlgebra::distributed::Vector<Number>> src);
+  reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) = 0;
+
+  virtual void
+  reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> convective_term_in) = 0;
+
 
 protected:
   virtual void

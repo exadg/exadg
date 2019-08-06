@@ -45,10 +45,10 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 
       mapping_init.reset(new MappingQGeneric<dim>(mapping_degree));
 
-      if(param.ale_formulation == true)
-      {
-        setup_moving_mesh(triangulation);
-      }
+//      if(param.ale_formulation == true)
+//      {
+//        setup_moving_mesh(triangulation);
+//      }
 
 }
 
@@ -121,10 +121,10 @@ DGNavierStokesBase<dim, Number>::setup(
   // depending on MatrixFree
   initialize_operators();
   //depending on MatrixFree
-  if(param.ale_formulation == true)
-  {
-    initialize_moving_mesh();
-  }
+//  if(param.ale_formulation == true)
+//  {
+//    initialize_moving_mesh();
+//  }
 
   // turbulence model
   if(param.use_turbulence_model == true)
@@ -319,7 +319,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
 //  }
 
   matrix_free.reinit(
-    get_mapping_init(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+    get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
 template<int dim, typename Number>
@@ -553,7 +553,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.dof_index           = dof_index_u;
   model_data.quad_index          = quad_index_u;
   model_data.degree              = param.degree_u;
-  turbulence_model.initialize(matrix_free, get_mapping_init(), viscous_kernel, model_data);
+  turbulence_model.initialize(matrix_free, get_mapping(), viscous_kernel, model_data);
   //TODO: check if different mappings influence turbulence functions
 }
 
@@ -702,7 +702,7 @@ DGNavierStokesBase<dim, Number>::get_mapping() const
 {
   if(param.ale_formulation == true)
   {
-    return moving_mesh->get_mapping();
+    return *mapping_ale;
   }
   else
   {
@@ -711,10 +711,10 @@ DGNavierStokesBase<dim, Number>::get_mapping() const
 }
 
 template<int dim, typename Number>
-Mapping<dim> const &
+std::shared_ptr<MappingQGeneric<dim>>
 DGNavierStokesBase<dim, Number>::get_mapping_init() const
 {
-    return *mapping_init;
+    return mapping_init;
 }
 
 //template<int dim, typename Number>
