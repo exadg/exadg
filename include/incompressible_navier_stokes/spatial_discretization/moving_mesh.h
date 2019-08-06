@@ -65,35 +65,27 @@ public:
       navier_stokes_operation->set_grid_velocity(u_grid_np);
   }
 
-  void init_d_grid_on_former_mesh(std::vector<double> eval_times, std::vector<unsigned int> time_steps)
+  void init_d_grid_on_former_mesh(std::vector<double> eval_times)
   {
+    //Iterating backwards leaves us with the mesh at start time automatically
     for (unsigned int i=param.order_time_integrator-1;i <param.order_time_integrator;--i)
     {
-      //[d(0), d(1), ..., d(order), ?]
-      //  |already init             |will be pushed away
       advance_mesh(eval_times[i]);
       navier_stokes_operation->ALE_update(dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
 
-      std::cout<<"eval_times[i]:"<<eval_times[i]<<std::endl;//TEST
       get_analytical_grid_velocity(eval_times[i]);
-      std::cout<<u_grid_np.l2_norm()<<std::endl;//TEST
-
-
 
       fill_d_grid(i);
     }
 
-//    advance_mesh(param.start_time);
-//    navier_stokes_operation->ALE_update(dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
-//    get_analytical_grid_velocity(param.start_time);
-//    navier_stokes_operation->set_grid_velocity(param.start_time);
   }
 
   std::vector<BlockVectorType>
-  init_former_solution_on_former_mesh(std::vector<double> eval_times, std::vector<unsigned int> time_steps)
+  init_former_solution_on_former_mesh(std::vector<double> eval_times)
   {
   std::vector<BlockVectorType> solution(param.order_time_integrator);
 
+  //Iterating backwards leaves us with the mesh at start time automatically
   for(unsigned int i = 0; i < solution.size(); ++i)
   {
     solution[i].reinit(2);
@@ -103,7 +95,6 @@ public:
 
   for (unsigned int i=param.order_time_integrator-1;i <param.order_time_integrator;--i)
   {
-    std::cout<<"i_former_solution="<<i<<std::endl;
     advance_mesh(eval_times[i]);
     navier_stokes_operation->ALE_update(dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
 
@@ -112,24 +103,20 @@ public:
                                                           eval_times[i]);
   }
 
-//  advance_mesh(param.start_time);
-//  navier_stokes_operation->ALE_update(dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
-//  field_functions->initial_solution_velocity->set_time(param.start_time);
-//  field_functions->initial_solution_pressure->set_time(param.start_time);
-
   return solution;
 
   }
 
   std::vector<VectorType>
-  init_convective_term_on_former_mesh(std::vector<double> eval_times, std::vector<unsigned int> time_steps)
+  init_convective_term_on_former_mesh(std::vector<double> eval_times)
   {
-    std::vector<BlockVectorType> solution = init_former_solution_on_former_mesh(eval_times, time_steps);
+    std::vector<BlockVectorType> solution = init_former_solution_on_former_mesh(eval_times);
     std::vector<VectorType> vec_convective_term(param.order_time_integrator);
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       navier_stokes_operation->initialize_vector_velocity(vec_convective_term[i]);
 
+    //Iterating backwards leaves us with the mesh at start time automatically
     for (unsigned int i=param.order_time_integrator-1;i <param.order_time_integrator;--i)
     {
       advance_mesh(eval_times[i]);
@@ -140,12 +127,9 @@ public:
       navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                         solution[i].block(0),
                                                         eval_times[i]);
-    }
 
-//    advance_mesh(param.start_time);
-//    navier_stokes_operation->ALE_update(dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
-//    get_analytical_grid_velocity(param.start_time);
-//    navier_stokes_operation->set_grid_velocity(param.start_time);
+      //IT IS IMPORTANT TO OVERWRITE CONVECTIVE TERM [0] since now we have velocity at this time
+    }
 
     return vec_convective_term;
 
@@ -207,6 +191,8 @@ private:
                              grid_velocity_double);
 
     u_grid_np = grid_velocity_double;
+
+   // std::cout<<"Set u_grid at time t=" <<evaluation_time<<" leats to L2 norm"<<u_grid_np.l2_norm()<<std::endl;//TEST
   }
 
   void

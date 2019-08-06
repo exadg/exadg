@@ -50,10 +50,13 @@ public:
   value(const Point<dim>    &p,
         const unsigned int  component = 0) const{
     //Since displacements are of shape const*f(t), code duplication can be avoided using f(t)=\partial_t f(t)
+    double value =0.0;
     if (t_current>=dat.start_time || dat.initialize_with_former_mesh_instances==true)
-      return displacement(p, component);
+      value = displacement(p, component);
     else if (t_current<dat.start_time && dat.initialize_with_former_mesh_instances==false)
-      return 0.0;
+      value = 0.0;
+
+    return value;
   }
 
 protected:
@@ -343,6 +346,7 @@ class InteriorSinCosWithSinInTime :                            public MeshMoveme
   {
     this->t_current = t;
     this->sin_t = std::cos(2*pi*t/this->T)*2*pi/this->T;
+  //  std::cout<<"SET TIME for veloctiy to t="<<t <<std::endl;
   }
 
   void
@@ -350,6 +354,7 @@ class InteriorSinCosWithSinInTime :                            public MeshMoveme
   {
       this->t_current=t;
       this->sin_t = std::sin(2*pi*t/this->T);
+     // std::cout<<"SET TIME for displacement to t="<<t <<std::endl;
   }
 
   private:

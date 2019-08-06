@@ -20,14 +20,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 5;
-unsigned int const DEGREE_MAX = 5;
+unsigned int const DEGREE_MIN = 6;
+unsigned int const DEGREE_MAX = 6;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 7;
-unsigned int const REFINE_TIME_MAX = 7;
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 10;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -53,7 +53,7 @@ namespace IncNS
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = true;//TODO: if false and start lower oder false and init former mesh true assertwthrow
+  param.grid_velocity_analytical = true;
   param.ale_formulation = true;
   param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
@@ -63,7 +63,10 @@ void set_input_parameters(InputParameters &param)
   param.NBC_prescribed_with_known_normal_vectors = false;
   param.analytical_mesh_movement = AnalyicMeshMovement::InteriorSinCosWithSinInTime;
   param.initialize_with_former_mesh_instances=true ;
-
+  param.start_with_low_order = false;
+  param.time_step_size = 0.5;//5e-5;
+  param.order_time_integrator = 3;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
 
   // MATHEMATICAL MODEL
   param.dim = 2;
@@ -72,6 +75,7 @@ void set_input_parameters(InputParameters &param)
   param.formulation_viscous_term = FORMULATION_VISCOUS_TERM;
   param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = false;
+
 
 
   // PHYSICAL QUANTITIES
@@ -83,7 +87,7 @@ void set_input_parameters(InputParameters &param)
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
 
-  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
@@ -93,9 +97,8 @@ void set_input_parameters(InputParameters &param)
   param.cfl_oif = param.cfl/1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
-  param.time_step_size = 0.5;//5e-5;
-  param.order_time_integrator = 2;
-  param.start_with_low_order = false;
+
+
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information

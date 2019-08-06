@@ -62,15 +62,18 @@ public:
       velocity[i]=solution_in[i].block(0);
       pressure[i]=solution_in[i].block(1);
     }
+    //TODO: CHECK IF OTHER QUANTITIES ARE INITIALIZED AT PREVIOUS TIMES
   }
 
   void
   reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> convective_term_in) override
   {
-    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+    //it is important to start at i=0!
+    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
     {
       vec_convective_term[i]=convective_term_in[i];
     }
+    //TODO: CHECK IF OTHER QUANTITIES ARE INITIALIZED AT PREVIOUS TIMES
   }
 
 private:

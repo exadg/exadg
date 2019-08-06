@@ -273,16 +273,19 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  ale_operation = std::make_shared<DGALE>(param, triangulation,field_functions, navier_stokes_operation);
+  if(param.ale_formulation == true)
+    ale_operation = std::make_shared<DGALE>(param, triangulation,field_functions, navier_stokes_operation);
 
-  //Depends on mapping
+  //Depends on mapping which is initialized in constructor of MovingMesh
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
                                  field_functions);
-  //depends on matrix free which is initialized with setup()
-  ale_operation->setup();
+
+  //depends on matrix free which is initialized in navier_stokes_operation->setup
+  if(param.ale_formulation == true)
+      ale_operation->setup();
 
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -293,16 +296,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
     navier_stokes_operation->setup_solvers(
       time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
-
-    //Initialize d_grid for high order start
-//    if(param.ale_formulation == true && param.start_with_low_order==false && param.initialize_with_former_mesh_instances==true)
-//      {
-//      for(unsigned int i = param.order_time_integrator + 1/*d_grid.size()*/; i >1 ; --i)
-//          {
-//            navier_stokes_operation->init_ale_start_high_order(time_integrator->get_previous_time(i));
-//          }
-//          navier_stokes_operation->init_ale_start_high_order(time_integrator->get_time());
-//      }
 
   }
   else if(param.solver_type == SolverType::Steady)
@@ -321,19 +314,16 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   {
 
     std::vector<double> eval_times(param.order_time_integrator);
-    std::vector<unsigned int> time_steps(param.order_time_integrator);
 
     for(unsigned int i = 0; i < param.order_time_integrator; ++i)
-    {
-
       eval_times[i]=time_integrator->get_previous_time(i);
 
-      time_steps[i]=i;
-    }
+    if(param.grid_velocity_analytical == false)
+      ale_operation->init_d_grid_on_former_mesh(eval_times);
 
-    ale_operation->init_d_grid_on_former_mesh(eval_times, time_steps);
-    time_integrator->reinit_former_solution_with_former_mesh_ALE(ale_operation->init_former_solution_on_former_mesh(eval_times, time_steps));
-    time_integrator->reinit_convective_term_with_former_mesh_ALE(ale_operation->init_convective_term_on_former_mesh(eval_times, time_steps));
+    time_integrator->reinit_former_solution_with_former_mesh_ALE(ale_operation->init_former_solution_on_former_mesh(eval_times));
+    time_integrator->reinit_convective_term_with_former_mesh_ALE(ale_operation->init_convective_term_on_former_mesh(eval_times));
+
   }
 
 
