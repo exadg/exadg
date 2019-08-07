@@ -18,11 +18,11 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 6;
-unsigned int const DEGREE_MAX = 6;
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = 4;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -33,25 +33,32 @@ const double VISCOSITY = 1.e-2;
 const double TRIANGULATION_LEFT = -1.0;
 const double TRIANGULATION_RIGHT = 1.0;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.8;
 
 const double START_TIME = 0.0;
-const double END_TIME = 0.5;
-
-const int ORDER_TIME_INTEGRATOR = 2;
+const double END_TIME = 2.0;
 
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = true;
+  param.grid_velocity_analytical = false;
   param.ale_formulation = true;
-  param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
   param.triangulation_left = TRIANGULATION_LEFT;
   param.triangulation_right = TRIANGULATION_RIGHT;
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
+  param.NBC_prescribed_with_known_normal_vectors = false;
+  param.analytical_mesh_movement = AnalyicMeshMovement::CubeDoubleInteriorSinCos;
+  param.initialize_with_former_mesh_instances=false ;
+  param.start_with_low_order = true;
+  param.time_step_size = 1e-4;
+  param.order_time_integrator = 2;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = true;
+  param.cfl = 0.4;
 
   // MATHEMATICAL MODEL
   param.dim = 2;
@@ -69,17 +76,11 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
-  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.max_velocity = 1.0;
-  param.cfl = 4.0;
   param.cfl_oif = param.cfl/8.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
-  param.time_step_size = 1.0e-4;//1e-4
-  param.order_time_integrator = ORDER_TIME_INTEGRATOR; // 1; // 2; // 3;
-  param.start_with_low_order = false; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
@@ -209,55 +210,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
 /*                                                                                                          */
 /************************************************************************************************************/
 
-template<int dim>
-class AnalyticalSolutionGridVelocity : public Function<dim>
-{
-public:
-  AnalyticalSolutionGridVelocity (const unsigned int  n_components = dim,
-                                  const double        time = 0.)
-  :
-  Function<dim>(n_components, time)
-  {}
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-    double t = this->get_time();
-
-    double result = 0.0;
-    double frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
-    double amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
-    double delta_t = END_TIME - START_TIME;
-    double T = delta_t / frequency;
-    double left = TRIANGULATION_LEFT;
-    double right = TRIANGULATION_RIGHT;
-    double width = right - left;
-
-    double damp0 = (1- std::pow(p(0)/right,2) );
-    double damp1 = (1- std::pow(p(1)/right,2) );
-
-
-      double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
-      //double dsin_t_dt = std::cos(2*numbers::PI*t/T)*2*numbers::PI/T;
-
-   if(component == 0)
-     {
-       result = amplitude*std::sin(2*numbers::PI*(p(1)-left)/width)*damp0  *dsin_t_dt;
-     }
-   else if(component == 1)
-     {
-       result = amplitude*std::sin(2*numbers::PI*(p(0)-left)/width)*damp1  *dsin_t_dt;
-     }
-
-   if (t<=0)
-     return 0.0;//for initialization
-   else
-   {
-     return result;
-   }
-  }
-
-};
+#include "../grid_tools/mesh_movement_functions.h"
 
 namespace IncNS
 {
@@ -353,9 +306,27 @@ void set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, InputParameters param_in)
 {
-  field_functions->analytical_solution_grid_velocity.reset(new AnalyticalSolutionGridVelocity<dim>());
+  if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCos<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyX<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyY<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeSinCosWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeSinCosWithBoundaries<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosWithSinInTime<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeXSquaredWithBoundaries<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleInteriorSinCos<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleSinCosWithBoundaries<dim>(param_in));
+  else
+    AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
+
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
@@ -376,7 +347,7 @@ construct_postprocessor(InputParameters const &param)
 
   // write output for visualization of results
   pp_data.output_data.write_output = true;
-  pp_data.output_data.output_folder = "output/taylor_vortex/";
+  pp_data.output_data.output_folder = "output/taylor_vortex/vtu/";
   pp_data.output_data.output_name = "taylor_vortex";
   pp_data.output_data.output_start_time = param.start_time;
   pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;

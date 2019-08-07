@@ -667,18 +667,17 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 
 enum class AnalyicMeshMovement
 {
-  InteriorSinCos,
-  InteriorSinCosOnlyX,
-  InteriorSinCosOnlyY,
-  SinCosWithBoundaries,
-  SinCosWithBoundariesOnlyX,
-  SinCosWithBoundariesOnlyY,
-  InteriorSinCosWithSinInTime,
-  XSquaredWithBoundaries,
-  DoubleInteriorSinCos,
-  DoubleSinCosWithBoundaries,
-  Undefined,
-  None
+  CubeInteriorSinCos,
+  CubeInteriorSinCosOnlyX,
+  CubeInteriorSinCosOnlyY,
+  CubeSinCosWithBoundaries,
+  CubeInteriorSinCosWithSinInTime,
+  CubeXSquaredWithBoundaries,
+  CubeDoubleInteriorSinCos,
+  CubeDoubleSinCosWithBoundaries,
+  RectangleSinCos,
+  RectangleSinCosWithSinInTime,
+  Undefined
 };
 
 std::string

@@ -60,14 +60,15 @@ void set_input_parameters(InputParameters &param)
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
   param.NBC_prescribed_with_known_normal_vectors = false;
-  param.analytical_mesh_movement = AnalyicMeshMovement::DoubleInteriorSinCos;
-  param.initialize_with_former_mesh_instances=true ;
-  param.start_with_low_order = false;
-  param.time_step_size = 0.5;//5e-5;
+  param.analytical_mesh_movement = AnalyicMeshMovement::CubeDoubleInteriorSinCos;
+  param.initialize_with_former_mesh_instances=false ;
+  param.start_with_low_order = true;
+  param.time_step_size = 5e-5;//0.5;//5e-5;
   param.order_time_integrator = 3;
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-  param.adaptive_time_stepping = true;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
+  param.adaptive_time_stepping = false;
+  param.cfl = 0.4;
 
   // MATHEMATICAL MODEL
   param.dim = 2;
@@ -93,7 +94,6 @@ void set_input_parameters(InputParameters &param)
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
 
   param.max_velocity = 1.4 * U_X_MAX;
-  param.cfl = 0.4;
   param.cfl_oif = param.cfl/1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
@@ -542,28 +542,24 @@ template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, InputParameters param_in)
 {
 
-  if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCos<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosOnlyX)
-    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosOnlyX<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosOnlyY)
-    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosOnlyY<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundaries<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundariesOnlyX)
-    field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundariesOnlyX<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::SinCosWithBoundariesOnlyY)
-    field_functions->analytical_solution_grid_velocity.reset(new SinCosWithBoundariesOnlyY<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::InteriorSinCosWithSinInTime)
-    field_functions->analytical_solution_grid_velocity.reset(new InteriorSinCosWithSinInTime<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::XSquaredWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(new XSquaredWithBoundaries<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::DoubleInteriorSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(new DoubleInteriorSinCos<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::DoubleSinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(new DoubleSinCosWithBoundaries<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::None)
-    field_functions->analytical_solution_grid_velocity.reset(new None<dim>(param_in));
+  if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCos<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyX<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyY<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeSinCosWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeSinCosWithBoundaries<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosWithSinInTime<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeXSquaredWithBoundaries<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleInteriorSinCos<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleSinCosWithBoundaries<dim>(param_in));
+  else
+    AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
 
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());

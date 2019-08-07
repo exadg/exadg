@@ -608,6 +608,8 @@ public:
   bool ale_formulation;
   double triangulation_left;
   double triangulation_right;
+  double triangulation_height;
+  double triangulation_length;
   double grid_movement_amplitude;
   double grid_movement_frequency;
   bool NBC_prescribed_with_known_normal_vectors;

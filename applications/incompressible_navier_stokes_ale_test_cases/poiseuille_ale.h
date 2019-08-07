@@ -17,8 +17,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 2;
-unsigned int const DEGREE_MAX = 2;
+unsigned int const DEGREE_MIN = 4;
+unsigned int const DEGREE_MAX = 4;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
@@ -29,6 +29,9 @@ unsigned int const REFINE_TIME_MAX = 0;
 
 // set problem specific parameters like physical dimensions, etc.
 const ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
+
+bool INITIALIZE_STEADY_SOLUTION = true;
+
 const double MAX_VELOCITY = 1.0;
 const double VISCOSITY = 1.0e-1;
 
@@ -39,8 +42,8 @@ bool periodicBCs = false;
 
 bool symmetryBC = false;
 
-const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.3;//0.04;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.4999;
+const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 2.0;
 const double START_TIME = 0.0;
 const double END_TIME = 10.0;
 
@@ -53,12 +56,23 @@ namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
 {
-
   //ALE
+  param.grid_velocity_analytical = true;
   param.ale_formulation = true;
-  param.max_grid_velocity = std::abs(TRIANGULATION_MOVEMENT_AMPLITUDE*2*numbers::PI/((END_TIME - START_TIME) / TRIANGULATION_MOVEMENT_FREQUENCY));
+  param.triangulation_height = H;
+  param.triangulation_length = L;
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
+  param.NBC_prescribed_with_known_normal_vectors = true;
+  param.analytical_mesh_movement = AnalyicMeshMovement::RectangleSinCosWithSinInTime;
+  param.initialize_with_former_mesh_instances=false ;
+  param.start_with_low_order = true;
+  param.time_step_size = 1.0e-1;
+  param.order_time_integrator = 2;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = true;
+  param.cfl = 2.0e-1;
 
   // MATHEMATICAL MODEL
   param.dim = 2;
@@ -78,15 +92,8 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution; //BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  param.adaptive_time_stepping = false;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl = 2.0e-1;
-  param.time_step_size = 1.0e-1;
-  param.order_time_integrator = 2; // 1; // 2; // 3;
-  param.start_with_low_order = true; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
 
   param.convergence_criterion_steady_problem = ConvergenceCriterionSteadyProblem::SolutionIncrement; //ResidualSteadyNavierStokes;
@@ -266,209 +273,16 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
 }
 
 
-template<int dim>
-void time_dependent_mesh_generation(double t,
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
-    unsigned int const                                n_refine_space,
-    std::vector<GridTools::PeriodicFacePair<typename
-          Triangulation<dim>::cell_iterator> >            periodic_faces)
-{ //TODO:incorporate into create_grid_and_set_boundary_ids
-
-  if(periodicBCs == true)
-   {
-     std::vector<unsigned int> repetitions({1,1});
-     Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
-     GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
-
-
-
-     triangulation->set_all_manifold_ids(1);
-
-     static RectangleMovingManifoldSin<dim> manifold(&t,
-                                                   L,
-                                                   H,
-                                                   TRIANGULATION_MOVEMENT_AMPLITUDE,
-                                                   END_TIME - START_TIME,
-                                                   TRIANGULATION_MOVEMENT_FREQUENCY);
-  triangulation->set_manifold(1, manifold);
-
-
-     //periodicity in x-direction
-     //add 10 to avoid conflicts with dirichlet boundary, which is 0
-     typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-     for(;cell!=endc;++cell)
-     {
-       for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-       {
-        if ((std::fabs(cell->face(face_number)->center()(0) - 0.0)< 1e-12))
-            cell->face(face_number)->set_boundary_id (0+10);
-        if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
-           cell->face(face_number)->set_boundary_id (1+10);
-       }
-     }
-
-     triangulation->add_periodicity(periodic_faces);
-   }
-   else if(symmetryBC == true)
-   {
-     double y_upper_wall = 0.0;
-     std::vector<unsigned int> repetitions({4,1});
-     Point<dim> point1(0.0,-H/2.), point2(L,y_upper_wall);
-     GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
-
-
-
-     triangulation->set_all_manifold_ids(1);
-
-     static RectangleMovingManifoldSin<dim> manifold(&t,
-                                                   L,
-                                                   H,
-                                                   TRIANGULATION_MOVEMENT_AMPLITUDE,
-                                                   END_TIME - START_TIME,
-                                                   TRIANGULATION_MOVEMENT_FREQUENCY);
-
-     triangulation->set_manifold(1, manifold);
-
-     // set boundary indicator
-     typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-     for(;cell!=endc;++cell)
-     {
-       for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-       {
-        if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
-           cell->face(face_number)->set_boundary_id (1);
-
-        // upper wall symmetry BC
-        if ((std::fabs(cell->face(face_number)->center()(1) - y_upper_wall)< 1e-12))
-           cell->face(face_number)->set_boundary_id (2);
-       }
-     }
-   }
-   else // inflow at left boundary, no-slip on upper and lower wall, outflow at right boundary
-   {
-     std::vector<unsigned int> repetitions({2,1});
-     Point<dim> point1(0.0,-H/2.), point2(L,H/2.);
-     GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
-
-     triangulation->set_all_manifold_ids(1);
-
-     static RectangleMovingManifoldSin<dim> manifold(&t,
-                                                   L,
-                                                   H,
-                                                   TRIANGULATION_MOVEMENT_AMPLITUDE,
-                                                   END_TIME - START_TIME,
-                                                   TRIANGULATION_MOVEMENT_FREQUENCY);
-
-     triangulation->set_manifold(1, manifold);
-
-     // set boundary indicator
-     typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-     for(;cell!=endc;++cell)
-     {
-       for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-       {
-        if ((std::fabs(cell->face(face_number)->center()(0) - L)< 1e-12))
-           cell->face(face_number)->set_boundary_id (1);
-       }
-     }
-   }
-
-   triangulation->refine_global(n_refine_space);
-
-
-
-}
-
-
-
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
 /*                                                                                                          */
 /************************************************************************************************************/
 
+#include "../grid_tools/mesh_movement_functions.h"
+
 namespace IncNS
 {
-
-
-template<int dim>
-class AnalyticalSolutionGridVelocity : public Function<dim>
-{
-public:
-  AnalyticalSolutionGridVelocity (const unsigned int  n_components = dim,
-                                  const double        time = 0.)
-  :
-  Function<dim>(n_components, time)
-  {}
-
-  double value (const Point<dim>    &p,
-                const unsigned int  component = 0) const
-  {
-
-
-
-    double t = this->get_time();
-    double result = 0.0;
-   double frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
-
-    double amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
-    double delta_t = END_TIME - START_TIME;
-    double T = delta_t / frequency;
-    double height = H;
-    double length = L;
-    double sin_t=std::pow(std::sin(2*numbers::PI*t/T),2);
-
-
-
-   // std::cout<<"entering analytical solution"<<std::endl;
-
-      Point<dim> X = p;
-
-    Tensor<1,dim> R; //Residual
-
-
-    R[0] = p(0)- X(0)- std::sin(2* numbers::PI*(X(1)-(height/2))/height)*sin_t*amplitude * (1- std::pow((X(0)-(length/2))/(length/2),2));
-    R[1] = p(1)- X(1)- std::sin(2* numbers::PI*(X(0))/length)*sin_t*amplitude *(1- std::pow(X(1)/(height/2),2));
-
-
-  unsigned int its = 0;
-  while (R.norm() > 1e-12 && its < 100)
-  {
-
-    Tensor<2,dim> J;
-
-    J[0][0]= -1 -std::sin(2* numbers::PI*(X(1)-(height/2))/height)*sin_t*amplitude * (-2*(X(0)-(length/2)) *std::pow(1/(length/2),2)); //dR0/dX0
-    J[0][1]= -std::cos(2* numbers::PI*(X(1)-(height/2))/height)*2*numbers::PI/height *sin_t*amplitude * (1- std::pow((X(0)-(length/2))/(length/2),2)); //dR0/dX1
-    J[1][0]= -std::cos(2* numbers::PI*(X(0))/length)*2*numbers::PI/length*sin_t*amplitude *(1- std::pow(X(1)/(height/2),2)); //dR1/dX0
-    J[1][1]= -1-std::sin(2* numbers::PI*(X(0))/length)*sin_t*amplitude *(-2* X(1)* std::pow(1/(height/2),2)); //dR1/dX1
-
-    Tensor<1,dim> D; //Displacement
-    D = invert(J)*-1*R;
-    X+=D;
-
-    R[0] = p(0)- X(0)- std::sin(2* numbers::PI*(X(1)-(height/2))/height)*sin_t*amplitude * (1- std::pow((X(0)-(length/2))/(length/2),2));
-    R[1] = p(1)- X(1)- std::sin(2* numbers::PI*(X(0))/length)*sin_t*amplitude *(1- std::pow(X(1)/(height/2),2));
-
-
-    ++its;
-  }
-  AssertThrow (R.norm() < 1e-12,
-               ExcMessage("Newton for point did not converge."));
-
-    double dsin_t_dt =(4*numbers::PI*std::sin(2*numbers::PI*t/T)*std::cos(2*numbers::PI*t/T)/T);
-    if(component == 0)
-      result = std::sin(2* numbers::PI*(X(1)-(height/2))/height)*amplitude*(1- std::pow((X(0)-(length/2))/(length/2),2))*dsin_t_dt;
-    else if(component == 1)
-      result = std::sin(2* numbers::PI*(X(0))/length)*amplitude*(1- std::pow(X(1)/(height/2),2))*dsin_t_dt;
-
-    return result;
-  }
-};
-
-
-
-
-
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -519,7 +333,7 @@ public:
         const double pressure_gradient = -2.*VISCOSITY*MAX_VELOCITY;
         if(component == 0)
         {
-          result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+          result = 1.0/VISCOSITY * pressure_gradient * (pow(p[1],2.0)-1.0)/2.0 *(INITIALIZE_STEADY_SOLUTION ? 1.0 : (t<T ? std::sin(pi/2.*t/T) : 1.0));
         }
       }
     }
@@ -574,7 +388,7 @@ public:
         double T = 1.0e0;
         // note that this is the steady state solution that would correspond to a
         // steady velocity field at time t
-        result = (p[0]-L) * pressure_gradient * (t<T ? std::sin(pi/2.*t/T) : 1.0);
+        result = (p[0]-L) * pressure_gradient * (INITIALIZE_STEADY_SOLUTION ? 1.0 : (t<T ? std::sin(pi/2.*t/T) : 1.0));
       }
     }
     return result;
@@ -690,11 +504,17 @@ void set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, InputParameters param_in)
 {
+  if (param_in.analytical_mesh_movement == AnalyicMeshMovement::RectangleSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCos<dim>(param_in));
+  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::RectangleSinCosWithSinInTime)
+    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCosWithSinInTime<dim>(param_in));
+  else
+    AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
+
   field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  field_functions->analytical_solution_grid_velocity.reset(new AnalyticalSolutionGridVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->right_hand_side.reset(new RightHandSide<dim>());

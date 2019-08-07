@@ -1,7 +1,6 @@
 #ifndef INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 #define INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 
-//#include "../../include/incompressible_navier_stokes/spatial_discretization/moving_mesh_dat.h"
 #include "../../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 namespace IncNS
@@ -21,7 +20,9 @@ public:
    right(data_in.triangulation_right),
    f(data_in.grid_movement_frequency),
    A(data_in.grid_movement_amplitude),
-   Dt(data_in.end_time - data_in.start_time)
+   Dt(data_in.end_time - data_in.start_time),
+   height(data_in.triangulation_height),
+   length(data_in.triangulation_length)
   {
   }
 
@@ -71,14 +72,16 @@ protected:
   const double A;
   const double Dt;
   const double T = Dt/f;
+  const double height;
+  const double length;
 
 };
 
 template<int dim>
-class SinCosWithBoundaries :                            public MeshMovementFunctions<dim>
+class CubeSinCosWithBoundaries : public MeshMovementFunctions<dim>
 {
   public:
-    SinCosWithBoundaries(InputParameters const & data_in)
+  CubeSinCosWithBoundaries(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -102,65 +105,10 @@ class SinCosWithBoundaries :                            public MeshMovementFunct
 };
 
 template<int dim>
-class SinCosWithBoundariesOnlyX :                                   public MeshMovementFunctions<dim>
+class CubeInteriorSinCosOnlyX : public MeshMovementFunctions<dim>
 {
   public:
-    SinCosWithBoundariesOnlyX(InputParameters const & data_in)
-    :
-     MeshMovementFunctions<dim>(data_in)
-     {}
-
-  double
-  displacement(const Point<dim>    &x,
-              const unsigned int  coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    if (coordinate_direction == 0)
-      solution = std::sin(2* pi*(x(1)-this->left)/this->width)*this->sin_t*this->A;
-    else if (coordinate_direction == 1)
-      solution = 0.0;
-
-    return solution;
-  }
-
-  private:
-  double pi = numbers::PI;
-};
-
-template<int dim>
-class SinCosWithBoundariesOnlyY :                                   public MeshMovementFunctions<dim>
-{
-  public:
-    SinCosWithBoundariesOnlyY(InputParameters const & data_in)
-    :
-     MeshMovementFunctions<dim>(data_in)
-     {}
-
-  double
-  displacement(const Point<dim>    &x,
-              const unsigned int  coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    if (coordinate_direction == 0)
-      solution = 0.0;
-    else if (coordinate_direction == 1)
-      solution = std::sin(2* pi*(x(0)-this->left)/this->width)*this->sin_t*this->A;
-
-    return solution;
-  }
-
-  private:
-  InputParameters dat;
-  double pi = numbers::PI;
-};
-
-template<int dim>
-class InteriorSinCosOnlyX :                             public MeshMovementFunctions<dim>
-{
-  public:
-  InteriorSinCosOnlyX(InputParameters const & data_in)
+  CubeInteriorSinCosOnlyX(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -184,10 +132,10 @@ class InteriorSinCosOnlyX :                             public MeshMovementFunct
 };
 
 template<int dim>
-class InteriorSinCosOnlyY :                            public MeshMovementFunctions<dim>
+class CubeInteriorSinCosOnlyY : public MeshMovementFunctions<dim>
 {
   public:
-  InteriorSinCosOnlyY(InputParameters const & data_in)
+  CubeInteriorSinCosOnlyY(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -211,10 +159,10 @@ class InteriorSinCosOnlyY :                            public MeshMovementFuncti
 };
 
 template<int dim>
-class XSquaredWithBoundaries :                            public MeshMovementFunctions<dim>
+class CubeXSquaredWithBoundaries : public MeshMovementFunctions<dim>
 {
   public:
-  XSquaredWithBoundaries(InputParameters const & data_in)
+  CubeXSquaredWithBoundaries(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -238,10 +186,10 @@ class XSquaredWithBoundaries :                            public MeshMovementFun
 };
 
 template<int dim>
-class DoubleInteriorSinCos :                             public MeshMovementFunctions<dim>
+class CubeDoubleInteriorSinCos : public MeshMovementFunctions<dim>
 {
   public:
-  DoubleInteriorSinCos(InputParameters const & data_in)
+  CubeDoubleInteriorSinCos(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -265,10 +213,10 @@ class DoubleInteriorSinCos :                             public MeshMovementFunc
 };
 
 template<int dim>
-class DoubleSinCosWithBoundaries :                            public MeshMovementFunctions<dim>
+class CubeDoubleSinCosWithBoundaries : public MeshMovementFunctions<dim>
 {
   public:
-  DoubleSinCosWithBoundaries(InputParameters const & data_in)
+  CubeDoubleSinCosWithBoundaries(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -292,10 +240,10 @@ class DoubleSinCosWithBoundaries :                            public MeshMovemen
 };
 
 template<int dim>
-class InteriorSinCos :                            public MeshMovementFunctions<dim>
+class CubeInteriorSinCos : public MeshMovementFunctions<dim>
 {
   public:
-  InteriorSinCos(InputParameters const & data_in)
+  CubeInteriorSinCos(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -319,10 +267,10 @@ class InteriorSinCos :                            public MeshMovementFunctions<d
 };
 
 template<int dim>
-class InteriorSinCosWithSinInTime :                            public MeshMovementFunctions<dim>
+class CubeInteriorSinCosWithSinInTime : public MeshMovementFunctions<dim>
 {
   public:
-  InteriorSinCosWithSinInTime(InputParameters const & data_in)
+  CubeInteriorSinCosWithSinInTime(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
@@ -346,7 +294,6 @@ class InteriorSinCosWithSinInTime :                            public MeshMoveme
   {
     this->t_current = t;
     this->sin_t = std::cos(2*pi*t/this->T)*2*pi/this->T;
-  //  std::cout<<"SET TIME for veloctiy to t="<<t <<std::endl;
   }
 
   void
@@ -354,7 +301,6 @@ class InteriorSinCosWithSinInTime :                            public MeshMoveme
   {
       this->t_current=t;
       this->sin_t = std::sin(2*pi*t/this->T);
-     // std::cout<<"SET TIME for displacement to t="<<t <<std::endl;
   }
 
   private:
@@ -362,21 +308,71 @@ class InteriorSinCosWithSinInTime :                            public MeshMoveme
 };
 
 template<int dim>
-class None :                            public MeshMovementFunctions<dim>
+class RectangleSinCos : public MeshMovementFunctions<dim>
 {
   public:
-  None(InputParameters const & data_in)
+  RectangleSinCos(InputParameters const & data_in)
     :
      MeshMovementFunctions<dim>(data_in)
      {}
 
   double
-  displacement(const Point<dim>    &/*x*/,
-              const unsigned int  /*coordinate_direction = 0*/) const override
+  displacement(const Point<dim>    &x,
+              const unsigned int  coordinate_direction = 0) const override
   {
-     return 0.0;
+    double solution = 0.0;
+
+      if (coordinate_direction == 0)
+        solution = std::sin(2* pi*(x(1)-(this->height/2))/this->height)*this->sin_t*this->A *(1- std::pow((x(0)-(this->length/2))/(this->length/2),2));
+      else if (coordinate_direction == 1)
+        solution = std::sin(2* pi*(x(0))/this->length)*this->sin_t*this->A*(1- std::pow(x(1)/(this->height/2),2));
+
+    return solution;
   }
 
+  private:
+  double pi = numbers::PI;
+};
+
+template<int dim>
+class RectangleSinCosWithSinInTime : public MeshMovementFunctions<dim>
+{
+  public:
+  RectangleSinCosWithSinInTime(InputParameters const & data_in)
+    :
+     MeshMovementFunctions<dim>(data_in)
+     {}
+
+  double
+  displacement(const Point<dim>    &x,
+              const unsigned int  coordinate_direction = 0) const override
+  {
+    double solution = 0.0;
+
+      if (coordinate_direction == 0)
+        solution = std::sin(2* pi*(x(1)-(this->height/2))/this->height)*this->sin_t*this->A *(1- std::pow((x(0)-(this->length/2))/(this->length/2),2));
+      else if (coordinate_direction == 1)
+        solution = std::sin(2* pi*(x(0))/this->length)*this->sin_t*this->A*(1- std::pow(x(1)/(this->height/2),2));
+
+    return solution;
+  }
+
+  void
+  set_time_velocity(double const t) override
+  {
+    this->t_current = t;
+    this->sin_t = std::cos(2*pi*t/this->T)*2*pi/this->T;
+  }
+
+  void
+  set_time_displacement(double const t) override
+  {
+      this->t_current=t;
+      this->sin_t = std::sin(2*pi*t/this->T);
+  }
+
+  private:
+  double pi = numbers::PI;
 };
 
 }
