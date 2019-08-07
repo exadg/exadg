@@ -201,7 +201,7 @@ InputParameters::InputParameters()
     exact_inversion_of_laplace_operator(false),
     solver_data_pressure_block(SolverData(1e4, 1.e-12, 1.e-6, 100)),
 
-    //ale
+    // ale
     grid_velocity_analytical(true),
     ale_formulation(false),
     triangulation_left(-0.5),
@@ -437,18 +437,27 @@ InputParameters::check_input_parameters()
     AssertThrow(turbulence_model_constant > 0, ExcMessage("parameter must be greater than zero"));
   }
 
-  //ALE
+  // ALE
   if(ale_formulation)
   {
-    AssertThrow(formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation, ExcMessage("divergence formulation of convective operator has to be used since the grid velocity might not be divergence free"));
-    AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution, ExcMessage("only BDFCoupledSolution has been implemented on moving meshes"));
-    AssertThrow(analytical_mesh_movement != AnalyicMeshMovement::Undefined, ExcMessage("Analytical functions have to be applied to move the mesh, since no mesh movement algorithm is implemented yet"));
-    AssertThrow(problem_type == ProblemType::Unsteady, ExcMessage("physically steady problems become unsteady on moving meshes."));
+    AssertThrow(
+      formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
+      ExcMessage(
+        "divergence formulation of convective operator has to be used since the grid velocity might not be divergence free"));
+    AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
+                ExcMessage("only BDFCoupledSolution has been implemented on moving meshes"));
+    AssertThrow(
+      analytical_mesh_movement != AnalyicMeshMovement::Undefined,
+      ExcMessage(
+        "Analytical functions have to be applied to move the mesh, since no mesh movement algorithm is implemented yet"));
+    AssertThrow(problem_type == ProblemType::Unsteady,
+                ExcMessage("physically steady problems become unsteady on moving meshes."));
 
-  if (start_with_low_order==false && initialize_with_former_mesh_instances==true)
-    AssertThrow(analytical_mesh_movement != AnalyicMeshMovement::Undefined , ExcMessage("Velocity has to be describable analytical to be able to start simulation with high order of time integration, if mesh instances at previous times have to be used."));
-
-
+    if(start_with_low_order == false && initialize_with_former_mesh_instances == true)
+      AssertThrow(
+        analytical_mesh_movement != AnalyicMeshMovement::Undefined,
+        ExcMessage(
+          "Velocity has to be describable analytical to be able to start simulation with high order of time integration, if mesh instances at previous times have to be used."));
   }
 }
 

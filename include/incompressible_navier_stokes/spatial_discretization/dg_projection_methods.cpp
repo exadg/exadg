@@ -133,7 +133,8 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  this->get_mapping(),//TODO: check if this is right or if *this->mapping_init needs to be provided
+                                  this->get_mapping(), // TODO: check if this is right or if
+                                                       // *this->mapping_init needs to be provided
                                   laplace_operator.get_data(),
                                   &laplace_operator.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);

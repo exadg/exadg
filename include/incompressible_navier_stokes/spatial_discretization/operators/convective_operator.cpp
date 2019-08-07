@@ -9,7 +9,6 @@
 
 namespace IncNS
 {
-
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::set_velocity_copy(VectorType const & src) const
@@ -174,8 +173,10 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
   VectorType const &              src,
   Range const &                   cell_range) const
 {
-  IntegratorCell integrator               (matrix_free, this->data.dof_index, this->data.quad_index_nonlinear);
-  IntegratorCell integrator_grid_velocity (matrix_free, this->data.dof_index, this->data.quad_index_nonlinear);
+  IntegratorCell integrator(matrix_free, this->data.dof_index, this->data.quad_index_nonlinear);
+  IntegratorCell integrator_grid_velocity(matrix_free,
+                                          this->data.dof_index,
+                                          this->data.quad_index_nonlinear);
 
 
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -194,7 +195,7 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
 
     integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false, false);
 
-    do_cell_integral_nonlinear_operator(integrator,integrator_grid_velocity);
+    do_cell_integral_nonlinear_operator(integrator, integrator_grid_velocity);
 
     integrator.integrate_scatter(this->integrator_flags.cell_integrate.value,
                                  this->integrator_flags.cell_integrate.gradient,
@@ -220,9 +221,9 @@ ConvectiveOperator<dim, Number>::face_loop_nonlinear_operator(
                               this->data.quad_index_nonlinear);
 
   IntegratorFace integrator_grid_velocity(matrix_free,
-                              true,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                                          true,
+                                          this->data.dof_index,
+                                          this->data.quad_index_nonlinear);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
@@ -268,9 +269,9 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
                               this->data.quad_index_nonlinear);
 
   IntegratorFace integrator_grid_velocity(matrix_free,
-                              true,
-                              this->data.dof_index,
-                              this->data.quad_index_nonlinear);
+                                          true,
+                                          this->data.dof_index,
+                                          this->data.quad_index_nonlinear);
 
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
@@ -285,7 +286,9 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
 
     integrator_grid_velocity.gather_evaluate(kernel->get_grid_velocity(), true, false);
 
-    do_boundary_integral_nonlinear_operator(integrator_m, integrator_grid_velocity, matrix_free.get_boundary_id(face));
+    do_boundary_integral_nonlinear_operator(integrator_m,
+                                            integrator_grid_velocity,
+                                            matrix_free.get_boundary_id(face));
 
     integrator_m.integrate_scatter(this->integrator_flags.face_integrate.value,
                                    this->integrator_flags.face_integrate.gradient,
@@ -296,7 +299,8 @@ ConvectiveOperator<dim, Number>::boundary_face_loop_nonlinear_operator(
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::do_cell_integral_nonlinear_operator(
-  IntegratorCell & integrator, IntegratorCell & integrator_u_grid) const
+  IntegratorCell & integrator,
+  IntegratorCell & integrator_u_grid) const
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -313,14 +317,13 @@ ConvectiveOperator<dim, Number>::do_cell_integral_nonlinear_operator(
     {
       // convective formulation: (u * grad) u = grad(u) * u
       tensor gradient_u = integrator.get_gradient(q);
-      if (this->data.kernel_data.ale == true)
+      if(this->data.kernel_data.ale == true)
       {
         vector ugrid = integrator_u_grid.get_value(q);
-        u-=ugrid;
-
+        u -= ugrid;
       }
 
-      vector F          = gradient_u * u;
+      vector F = gradient_u * u;
 
       // plus sign since the strong formulation is used, i.e.
       // integration by parts is performed twice
@@ -369,21 +372,22 @@ template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
   IntegratorFace &           integrator,
-  IntegratorFace & integrator_grid_velocity,
+  IntegratorFace &           integrator_grid_velocity,
   types::boundary_id const & boundary_id) const
 {
   BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    vector u_m = integrator.get_value(q);
-    vector u_grid   = integrator_grid_velocity.get_value(q);
-    vector u_p = kernel->calculate_exterior_value_nonlinear(
+    vector u_m    = integrator.get_value(q);
+    vector u_grid = integrator_grid_velocity.get_value(q);
+    vector u_p    = kernel->calculate_exterior_value_nonlinear(
       u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
 
     vector normal_m = integrator.get_normal_vector(q);
 
-    vector flux = kernel->calculate_flux_nonlinear_boundary(u_m, u_p, normal_m, u_grid, boundary_type);
+    vector flux =
+      kernel->calculate_flux_nonlinear_boundary(u_m, u_p, normal_m, u_grid, boundary_type);
 
     integrator.submit_value(flux, q);
   }

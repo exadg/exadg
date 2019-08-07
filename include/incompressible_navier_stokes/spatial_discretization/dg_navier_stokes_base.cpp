@@ -43,7 +43,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     AssertThrow(false, ExcMessage("Not implemented"));
   }
 
-      mapping.reset(new MappingQGeneric<dim>(mapping_degree));
+  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
 }
 
 template<int dim, typename Number>
@@ -1140,12 +1140,17 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::ALE_update(std::vector<const DoFHandler<dim> *> dof_handler_vec_ALE,
-                std::vector<const AffineConstraints<double> *> constraint_matrix_vec_ALE,
-                std::vector<Quadrature<1>> quadratures_ALE,
-                typename MatrixFree<dim, Number>::AdditionalData  additional_data_ALE)
+DGNavierStokesBase<dim, Number>::ALE_update(
+  std::vector<const DoFHandler<dim> *>             dof_handler_vec_ALE,
+  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ALE,
+  std::vector<Quadrature<1>>                       quadratures_ALE,
+  typename MatrixFree<dim, Number>::AdditionalData additional_data_ALE)
 {
-    matrix_free.reinit(get_mapping(), dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
+  matrix_free.reinit(get_mapping(),
+                     dof_handler_vec_ALE,
+                     constraint_matrix_vec_ALE,
+                     quadratures_ALE,
+                     additional_data_ALE);
 }
 
 template<int dim, typename Number>
@@ -1167,7 +1172,7 @@ template<int dim, typename Number>
 std::shared_ptr<MappingQGeneric<dim>>
 DGNavierStokesBase<dim, Number>::get_mapping_init() const
 {
-    return mapping;
+  return mapping;
 }
 
 template<int dim, typename Number>

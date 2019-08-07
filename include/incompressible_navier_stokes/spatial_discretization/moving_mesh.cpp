@@ -371,9 +371,9 @@ MovingMesh<dim, Number>::initialize_ALE_update_data()
 {
   additional_data_ALE.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data_ALE.initialize_indices = false; // connectivity of elements stays the same
-  additional_data_ALE.initialize_mapping                  = true;
-  additional_data_ALE.mapping_update_flags                = ale_update_flags;
+  additional_data_ALE.initialize_indices   = false; // connectivity of elements stays the same
+  additional_data_ALE.initialize_mapping   = true;
+  additional_data_ALE.mapping_update_flags = ale_update_flags;
   additional_data_ALE.mapping_update_flags_inner_faces    = ale_update_flags;
   additional_data_ALE.mapping_update_flags_boundary_faces = ale_update_flags;
 

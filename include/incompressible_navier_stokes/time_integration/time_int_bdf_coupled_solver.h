@@ -53,13 +53,14 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-  //ALE
+  // ALE
 
   void
   reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) override;
 
   void
-  reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> vec_convective_term_in) override;
+  reinit_convective_term_with_former_mesh_ALE(
+    std::vector<VectorType> vec_convective_term_in) override;
 
 private:
   void
@@ -122,7 +123,7 @@ private:
 
   std::vector<VectorType> vec_convective_term;
 
-  //ALE:
+  // ALE:
   VectorType vec_convective_np;
 
   // performance analysis: average number of iterations and solver time

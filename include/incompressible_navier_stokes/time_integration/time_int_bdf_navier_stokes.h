@@ -34,7 +34,7 @@ template<typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef Interface::OperatorBase<Number> InterfaceBase;
@@ -52,7 +52,7 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
-  //ALE
+  // ALE
 
   std::vector<double>
   get_current_time_integrator_constants();
@@ -80,7 +80,6 @@ protected:
    */
   void
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
-
 
 
 
@@ -152,7 +151,7 @@ private:
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
 
-  //CFL ALE
+  // CFL ALE
   VectorType u_grid_cfl;
 };
 

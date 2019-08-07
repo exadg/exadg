@@ -45,7 +45,7 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
-//ALE
+// ALE
 #include <deal.II/fe/mapping_fe_field.h>
 
 // interface space-time
@@ -72,8 +72,8 @@ template<int dim, typename Number>
 class DGNavierStokesBase : public dealii::Subscriptor, public Interface::OperatorBase<Number>
 {
 protected:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  typedef MappingFEField<dim,dim,LinearAlgebra::distributed::Vector<Number>> MappingField;
+  typedef LinearAlgebra::distributed::Vector<Number>                           VectorType;
+  typedef MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>> MappingField;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
@@ -379,13 +379,13 @@ public:
   double
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
-  //ALE
+  // ALE
 
   void
-  ALE_update(std::vector<const DoFHandler<dim> *> dof_handler_vec_ALE,
-                  std::vector<const AffineConstraints<double> *> constraint_matrix_vec_ALE,
-                  std::vector<Quadrature<1>> quadratures_ALE,
-                  typename MatrixFree<dim, Number>::AdditionalData  additional_data_ALE);
+  ALE_update(std::vector<const DoFHandler<dim> *>             dof_handler_vec_ALE,
+             std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ALE,
+             std::vector<Quadrature<1>>                       quadratures_ALE,
+             typename MatrixFree<dim, Number>::AdditionalData additional_data_ALE);
 
   void
   set_mapping_ALE(std::shared_ptr<MappingField> mapping_in);
@@ -417,11 +417,11 @@ protected:
   std::shared_ptr<FESystem<dim>> fe_u;
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
- // std::shared_ptr<FESystem<dim>> fe_grid;//TEST
+  // std::shared_ptr<FESystem<dim>> fe_grid;//TEST
 
   unsigned int                          mapping_degree;
   std::shared_ptr<MappingQGeneric<dim>> mapping;
-  std::shared_ptr<MappingField> mapping_ale;
+  std::shared_ptr<MappingField>         mapping_ale;
 
 
   DoFHandler<dim> dof_handler_u;
@@ -534,7 +534,6 @@ protected:
   ConditionalOStream pcout;
 
 private:
-
   /*
    * Initialization functions called during setup phase.
    */
@@ -570,7 +569,6 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
-
 };
 
 } // namespace IncNS

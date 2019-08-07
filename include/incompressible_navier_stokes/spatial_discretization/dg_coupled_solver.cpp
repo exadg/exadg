@@ -437,7 +437,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_block_preconditioner()
   initialize_preconditioner_velocity_block();
 
   initialize_preconditioner_pressure_block();
-
 }
 
 template<int dim, typename Number>

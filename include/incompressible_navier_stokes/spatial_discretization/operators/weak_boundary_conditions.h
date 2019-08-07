@@ -145,7 +145,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
-    value_m = integrator.get_value(q);//TESTintegrator.get_value(q);
+    value_m = integrator.get_value(q); // TESTintegrator.get_value(q);
   }
   else if(operator_type == OperatorType::inhomogeneous)
   {
@@ -266,7 +266,8 @@ inline DEAL_II_ALWAYS_INLINE //
         boundary_descriptor->neumann_bc.find(boundary_id);
       Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
-      Tensor<1, dim, VectorizedArray<Number>> h = evaluate_vectorial_function(it->second, q_points, time);
+      Tensor<1, dim, VectorizedArray<Number>> h =
+        evaluate_vectorial_function(it->second, q_points, time);
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
     }
@@ -320,7 +321,8 @@ inline DEAL_II_ALWAYS_INLINE //
       Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
       Tensor<1, dim, VectorizedArray<Number>> normals_m = integrator.get_normal_vector(q);
-      Tensor<1, dim, VectorizedArray<Number>> h = evaluate_vectorial_function_with_normal(it->second, q_points,normals_m, time);
+      Tensor<1, dim, VectorizedArray<Number>> h =
+        evaluate_vectorial_function_with_normal(it->second, q_points, normals_m, time);
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
     }

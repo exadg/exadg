@@ -33,7 +33,7 @@ class TimeIntBDFPressureCorrection : public TimeIntBDF<Number>
 public:
   typedef TimeIntBDF<Number> Base;
 
-  typedef typename Base::VectorType VectorType;
+  typedef typename Base::VectorType      VectorType;
   typedef typename Base::BlockVectorType BlockVectorType;
 
   typedef Interface::OperatorBase<Number>               InterfaceBase;
@@ -57,8 +57,8 @@ public:
   {
     for(unsigned int i = 1; i < velocity.size(); ++i)
     {
-      velocity[i]=solution_in[i].block(0);
-      pressure[i]=solution_in[i].block(1);
+      velocity[i] = solution_in[i].block(0);
+      pressure[i] = solution_in[i].block(1);
     }
   }
 
@@ -67,7 +67,7 @@ public:
   {
     for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
     {
-      vec_convective_term[i]=convective_term_in[i];
+      vec_convective_term[i] = convective_term_in[i];
     }
   }
 

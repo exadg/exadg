@@ -69,10 +69,11 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
   Tensor<1, dim, VectorizedArray<value_type>>
-  evaluate_vectorial_function_with_normal(std::shared_ptr<Function<dim>>                  function,
-                              Point<dim, VectorizedArray<value_type>> const & q_points,
-                              Tensor<1, dim, VectorizedArray<value_type>> const & normals_m,
-                              double const &                                  eval_time)
+  evaluate_vectorial_function_with_normal(
+    std::shared_ptr<Function<dim>>                      function,
+    Point<dim, VectorizedArray<value_type>> const &     q_points,
+    Tensor<1, dim, VectorizedArray<value_type>> const & normals_m,
+    double const &                                      eval_time)
 {
   Tensor<1, dim, VectorizedArray<value_type>> value;
 
@@ -81,17 +82,19 @@ inline DEAL_II_ALWAYS_INLINE //
     value_type array[VectorizedArray<value_type>::n_array_elements];
     for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
     {
-      Point<dim> q_point;
+      Point<dim>     q_point;
       Tensor<1, dim> normal_m;
       for(unsigned int d = 0; d < dim; ++d)
-        {q_point[d] = q_points[d][n];
-        normal_m[d]=normals_m[d][n];}
+      {
+        q_point[d]  = q_points[d][n];
+        normal_m[d] = normals_m[d][n];
+      }
       function->set_time(eval_time);
 
-      double temp=0;
+      double temp = 0;
       for(unsigned int dd = 0; dd < dim; ++dd)
       {
-        temp += function->value(q_point, dim*d+dd)*normal_m[dd];
+        temp += function->value(q_point, dim * d + dd) * normal_m[dd];
       }
 
       array[n] = temp;
