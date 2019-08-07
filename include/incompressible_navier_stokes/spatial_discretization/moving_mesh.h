@@ -157,6 +157,7 @@ private:
     initialize_vectors()
     {
       navier_stokes_operation->initialize_vector_velocity(u_grid_np);
+      get_analytical_grid_velocity(param.start_time);
 
       if(param.grid_velocity_analytical==false)
       {
