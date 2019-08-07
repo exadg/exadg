@@ -46,9 +46,10 @@ using namespace IncNS;
 
 
 // 2D Navier-Stokes flow
-#include "incompressible_navier_stokes_ale_test_cases/poiseuille_ale.h"
-//#include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
+//#include "incompressible_navier_stokes_ale_test_cases/poiseuille_ale.h"
+#include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
 //#include "incompressible_navier_stokes_ale_test_cases/taylor_vortex_ale.h"
+//#include "incompressible_navier_stokes_ale_test_cases/free_stream_preservation_test.h"
 
 
 template<typename Number>
