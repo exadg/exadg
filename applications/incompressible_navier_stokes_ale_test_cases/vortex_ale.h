@@ -41,7 +41,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 const double TRIANGULATION_LEFT = -0.5;
 const double TRIANGULATION_RIGHT = 0.5;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 2;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.8;
 
 const double START_TIME = 0.0;
 const double END_TIME = 0.5;
@@ -60,7 +60,7 @@ void set_input_parameters(InputParameters &param)
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
   param.NBC_prescribed_with_known_normal_vectors = false;
-  param.analytical_mesh_movement = AnalyicMeshMovement::InteriorSinCosWithSinInTime;
+  param.analytical_mesh_movement = AnalyicMeshMovement::DoubleInteriorSinCos;
   param.initialize_with_former_mesh_instances=true ;
   param.start_with_low_order = false;
   param.time_step_size = 0.5;//5e-5;

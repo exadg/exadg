@@ -95,6 +95,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.cpp
      include/incompressible_navier_stokes/spatial_discretization/interface.cpp 
+     include/incompressible_navier_stokes/spatial_discretization/moving_mesh.cpp
      include/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp 

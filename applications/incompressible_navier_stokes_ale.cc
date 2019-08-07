@@ -37,7 +37,6 @@
 #include "../include/functionalities/print_general_infos.h"
 
 //ALE
-//#include "./grid_tools/mesh_movement.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/moving_mesh.h"
 
 using namespace dealii;
@@ -465,32 +464,32 @@ Problem<dim, Number>::analyze_computing_times() const
               << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
 
-//  Utilities::MPI::MinMaxAvg move_mesh_time_data =
-//      Utilities::MPI::min_max_avg(move_mesh->get_move_mesh_time(), MPI_COMM_WORLD);
-//  double const move_mesh_t = move_mesh_time_data.avg;
-//  this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
-//              << std::scientific << std::setw(25) << std::right << move_mesh_t << " s  "
-//              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-//              << move_mesh_t / overall_time_avg * 100 << " %" << std::endl;
-//
-//  Utilities::MPI::MinMaxAvg update_time_data =
-//      Utilities::MPI::min_max_avg(move_mesh->get_update_time(), MPI_COMM_WORLD);
-//  double const update = update_time_data.avg;
-//  this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
-//              << std::scientific << std::setw(25) << std::right << update << " s  "
-//              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-//              << update / overall_time_avg * 100 << " %" << std::endl;
-//
-//  Utilities::MPI::MinMaxAvg compute_and_set_mesh_velocity_time_data =
-//      Utilities::MPI::min_max_avg(move_mesh->get_compute_and_set_mesh_velocity_time(), MPI_COMM_WORLD);
-//  double const compute_and_set_mesh_velocity = compute_and_set_mesh_velocity_time_data.avg;
-//  this->pcout << "  " << std::setw(length + 2) << std::left << "Compute and set mesh velocity" << std::setprecision(2)
-//              << std::scientific << std::setw(12) << std::right << compute_and_set_mesh_velocity << " s  "
-//              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-//              << compute_and_set_mesh_velocity / overall_time_avg * 100 << " %" << std::endl;
+  Utilities::MPI::MinMaxAvg advance_mesh_time_data =
+      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_advance_mesh(), MPI_COMM_WORLD);
+  double const advance_mesh = advance_mesh_time_data.avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
+              << std::scientific << std::setw(25) << std::right << advance_mesh << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << advance_mesh / overall_time_avg * 100 << " %" << std::endl;
+
+  Utilities::MPI::MinMaxAvg update_time_data =
+      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_ALE_update(), MPI_COMM_WORLD);
+  double const update = update_time_data.avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
+              << std::scientific << std::setw(25) << std::right << update << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << update / overall_time_avg * 100 << " %" << std::endl;
+
+  Utilities::MPI::MinMaxAvg compute_and_set_mesh_velocity_time_data =
+      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_compute_and_set_mesh_velocity(), MPI_COMM_WORLD);
+  double const compute_and_set_mesh_velocity = compute_and_set_mesh_velocity_time_data.avg;
+  this->pcout << "  " << std::setw(length + 2) << std::left << "Compute and set mesh velocity" << std::setprecision(2)
+              << std::scientific << std::setw(12) << std::right << compute_and_set_mesh_velocity << " s  "
+              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+              << compute_and_set_mesh_velocity / overall_time_avg * 100 << " %" << std::endl;
 
 
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;// - update - move_mesh_t - compute_and_set_mesh_velocity;
+  double const other = overall_time_avg - sum_of_substeps - setup_time_avg - update - advance_mesh - compute_and_set_mesh_velocity;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
               << std::scientific << std::setw(25) << std::right << other << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
