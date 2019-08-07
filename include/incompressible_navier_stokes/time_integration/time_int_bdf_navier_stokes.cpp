@@ -182,14 +182,12 @@ TimeIntBDF<Number>::calculate_time_step_size()
     print_parameter(pcout, "Time step size (global)", time_step_global);
 
     if(adaptive_time_stepping == true)
-    {//TODO
+    {
 
       VectorType u_temp = get_velocity();
       if(param.ale_formulation==true)
-      {
-        //std::cout<<"u_grid_cfl_used_first:" << u_grid_cfl.l2_norm()<<std::endl;//TEST
-      u_temp -= u_grid_cfl;
-      }
+        u_temp -= u_grid_cfl;
+
 
       // if u(x,t=0)=0, this time step size will tend to infinity
       double time_step_adap =
@@ -260,14 +258,12 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
 
   VectorType u_temp = get_velocity();
 
-  if(param.ale_formulation==true)
-  {
-   //std::cout<<"u_grid_cfl_used:" << u_grid_cfl.l2_norm()<<std::endl;//TEST
+  if(param.ale_formulation == true)
     u_temp -= u_grid_cfl;
-  }
 
-    double new_time_step_size =
-    operator_base->calculate_time_step_cfl(u_temp,
+
+  double new_time_step_size =
+  operator_base->calculate_time_step_cfl(u_temp,
                                            cfl,
                                            param.cfl_exponent_fe_degree_velocity);
 
@@ -336,6 +332,26 @@ TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & v
     velocities.at(i) = &get_velocity(i);
     times.at(i)      = get_previous_time(i);
   }
+}
+
+template<typename Number>
+std::vector<double>
+TimeIntBDF<Number>::get_current_time_integrator_constants()
+{
+  std::vector<double> time_integrator_constants(this->order+1);
+  update_time_integrator_constants();
+  time_integrator_constants[0]=this->bdf.get_gamma0();
+  for(unsigned int i = 1; i < time_integrator_constants.size(); ++i)
+    time_integrator_constants[i] = this->bdf.get_alpha(i-1);
+
+  return time_integrator_constants;
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::set_grid_velocity_cfl(VectorType u_grid_cfl_in)
+{
+    u_grid_cfl = u_grid_cfl_in;
 }
 
 template<typename Number>

@@ -45,15 +45,10 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
-//Moving mesh
-//#include "moving_mesh.h"
 #include <deal.II/fe/mapping_fe_field.h>
 
 // interface space-time
 #include "interface.h"
-
-
-
 
 // preconditioners and solvers
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
@@ -187,11 +182,6 @@ public:
   Mapping<dim> const &
   get_mapping() const;
 
-
-
-//  MappingField &
-//  get_mapping_field()const;//TEST
-
   FESystem<dim> const &
   get_fe_u() const;
 
@@ -200,9 +190,6 @@ public:
 
   DoFHandler<dim> const &
   get_dof_handler_u() const;
-
-//  DoFHandler<dim> const &
-//  get_dof_handler_grid() const;
 
   DoFHandler<dim> const &
   get_dof_handler_u_scalar() const;
@@ -393,23 +380,17 @@ public:
 
   //ALE
 
-  void ALE_update(std::vector<const DoFHandler<dim> *> dof_handler_vec_ALE,
+  void
+  ALE_update(std::vector<const DoFHandler<dim> *> dof_handler_vec_ALE,
                   std::vector<const AffineConstraints<double> *> constraint_matrix_vec_ALE,
                   std::vector<Quadrature<1>> quadratures_ALE,
-                  typename MatrixFree<dim, Number>::AdditionalData  additional_data_ALE)
-  {
-      matrix_free.reinit(get_mapping(), dof_handler_vec_ALE, constraint_matrix_vec_ALE, quadratures_ALE, additional_data_ALE);
-  }
+                  typename MatrixFree<dim, Number>::AdditionalData  additional_data_ALE);
 
-  void set_mapping_ALE(std::shared_ptr<MappingField> mapping_in)
-  {
-    mapping_ale = mapping_in;
-  }
+  void
+  set_mapping_ALE(std::shared_ptr<MappingField> mapping_in);
 
-  void set_grid_velocity(VectorType u_grid_in)
-  {
-    convective_kernel->set_velocity_grid_ptr(u_grid_in);
-  }
+  void
+  set_grid_velocity(VectorType u_grid_in);
 
   std::shared_ptr<MappingQGeneric<dim>>
   get_mapping_init() const;
@@ -438,7 +419,7 @@ protected:
  // std::shared_ptr<FESystem<dim>> fe_grid;//TEST
 
   unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping_init;
+  std::shared_ptr<MappingQGeneric<dim>> mapping;
   std::shared_ptr<MappingField> mapping_ale;
 
 

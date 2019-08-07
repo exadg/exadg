@@ -60,7 +60,7 @@ void set_input_parameters(InputParameters &param)
   param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
   param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
   param.NBC_prescribed_with_known_normal_vectors = false;
-  param.analytical_mesh_movement = AnalyicMeshMovement::DoubleSinCosWithBoundaries;
+  param.analytical_mesh_movement = AnalyicMeshMovement::InteriorSinCosWithSinInTime;
   param.initialize_with_former_mesh_instances=true ;
   param.start_with_low_order = false;
   param.time_step_size = 0.5;//5e-5;

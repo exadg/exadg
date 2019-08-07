@@ -53,26 +53,13 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-  void
-  reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) override
-  {
-    for(unsigned int i = 1; i < solution.size(); ++i)
-    {
-      solution[i].block(0)=solution_in[i].block(0);
-      solution[i].block(1)=solution_in[i].block(1);
-    }
-  }
+  //ALE
 
   void
-  reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> vec_convective_term_in) override
-  {
-    //it is important to start at i=0!
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-    {
-      vec_convective_term[i]=vec_convective_term_in[i];
-    }
-  }
+  reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) override;
 
+  void
+  reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> vec_convective_term_in) override;
 
 private:
   void

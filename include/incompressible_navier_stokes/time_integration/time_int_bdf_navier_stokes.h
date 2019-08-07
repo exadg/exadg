@@ -52,17 +52,10 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
-  std::vector<double>
-  get_current_time_integrator_constants()
-  {
-    std::vector<double> time_integrator_constants(this->order+1);
-    update_time_integrator_constants();
-    time_integrator_constants[0]=this->bdf.get_gamma0();
-    for(unsigned int i = 1; i < time_integrator_constants.size(); ++i)
-      time_integrator_constants[i] = this->bdf.get_alpha(i-1);
+  //ALE
 
-    return time_integrator_constants;
-  }
+  std::vector<double>
+  get_current_time_integrator_constants();
 
   virtual void
   reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) = 0;
@@ -71,11 +64,7 @@ public:
   reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> convective_term_in) = 0;
 
   void
-  set_grid_velocity_cfl(VectorType u_grid_cfl_in)
-  {
-      u_grid_cfl = u_grid_cfl_in;
-      //std::cout<<"Set_grid_velocity_cfl:"<<u_grid_cfl_in.l2_norm()<<std::endl;//TEST
-  }
+  set_grid_velocity_cfl(VectorType u_grid_cfl_in);
 
 
 protected:
