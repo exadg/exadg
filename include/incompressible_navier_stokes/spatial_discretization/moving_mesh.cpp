@@ -142,28 +142,28 @@ MovingMesh<dim, Number>::init_convective_term_on_former_mesh(std::vector<double>
 
 template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number>
-MovingMesh<dim, Number>::get_grid_velocity()
+MovingMesh<dim, Number>::get_grid_velocity() const
 {
   return u_grid_np;
 }
 
 template<int dim, typename Number>
 double
-MovingMesh<dim, Number>::get_wall_time_ALE_update()
+MovingMesh<dim, Number>::get_wall_time_ALE_update() const
 {
   return ALE_update_timer;
 }
 
 template<int dim, typename Number>
 double
-MovingMesh<dim, Number>::get_wall_time_advance_mesh()
+MovingMesh<dim, Number>::get_wall_time_advance_mesh() const
 {
   return advance_mesh_timer;
 }
 
 template<int dim, typename Number>
 double
-MovingMesh<dim, Number>::get_wall_time_compute_and_set_mesh_velocity()
+MovingMesh<dim, Number>::get_wall_time_compute_and_set_mesh_velocity() const
 {
   return compute_and_set_mesh_velocity_timer;
 }

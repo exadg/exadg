@@ -45,16 +45,16 @@ public:
   init_convective_term_on_former_mesh(std::vector<double> eval_times);
 
   VectorType
-  get_grid_velocity();
+  get_grid_velocity() const;
 
   double
-  get_wall_time_ALE_update();
+  get_wall_time_ALE_update() const;
 
   double
-  get_wall_time_advance_mesh();
+  get_wall_time_advance_mesh() const;
 
   double
-  get_wall_time_compute_and_set_mesh_velocity();
+  get_wall_time_compute_and_set_mesh_velocity() const;
 
 
 private:
