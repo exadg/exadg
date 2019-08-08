@@ -382,13 +382,13 @@ public:
   // ALE
 
   void
-  ALE_update(std::vector<const DoFHandler<dim> *>             dof_handler_vec_ALE,
-             std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ALE,
-             std::vector<Quadrature<1>>                       quadratures_ALE,
-             typename MatrixFree<dim, Number>::AdditionalData additional_data_ALE);
+  ale_update(std::vector<const DoFHandler<dim> *>             dof_handler_vec_ale,
+             std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ale,
+             std::vector<Quadrature<1>>                       quadratures_ale,
+             typename MatrixFree<dim, Number>::AdditionalData additional_data_ale);
 
   void
-  set_mapping_ALE(std::shared_ptr<MappingField> mapping_in);
+  set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
 
   void
   set_grid_velocity(VectorType u_grid_in);

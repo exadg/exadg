@@ -56,10 +56,11 @@ public:
   // ALE
 
   void
-  reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) override;
+  reinit_former_solution_considering_former_mesh_instances(
+    std::vector<BlockVectorType> solution_in) override;
 
   void
-  reinit_convective_term_with_former_mesh_ALE(
+  reinit_convective_term_considering_former_mesh_instances(
     std::vector<VectorType> vec_convective_term_in) override;
 
 private:

@@ -58,10 +58,12 @@ public:
   get_current_time_integrator_constants();
 
   virtual void
-  reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) = 0;
+  reinit_former_solution_considering_former_mesh_instances(
+    std::vector<BlockVectorType> solution_in) = 0;
 
   virtual void
-  reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> convective_term_in) = 0;
+  reinit_convective_term_considering_former_mesh_instances(
+    std::vector<VectorType> convective_term_in) = 0;
 
   void
   set_grid_velocity_cfl(VectorType u_grid_cfl_in);

@@ -55,7 +55,8 @@ public:
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
   void
-  reinit_former_solution_with_former_mesh_ALE(std::vector<BlockVectorType> solution_in) override
+  reinit_former_solution_considering_former_mesh_instances(
+    std::vector<BlockVectorType> solution_in) override
   {
     for(unsigned int i = 1; i < velocity.size(); ++i)
     {
@@ -66,7 +67,8 @@ public:
   }
 
   void
-  reinit_convective_term_with_former_mesh_ALE(std::vector<VectorType> convective_term_in) override
+  reinit_convective_term_considering_former_mesh_instances(
+    std::vector<VectorType> convective_term_in) override
   {
     // it is important to start at i=0!
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)

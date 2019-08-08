@@ -1140,22 +1140,22 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::ALE_update(
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec_ALE,
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ALE,
-  std::vector<Quadrature<1>>                       quadratures_ALE,
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_ALE)
+DGNavierStokesBase<dim, Number>::ale_update(
+  std::vector<const DoFHandler<dim> *>             dof_handler_vec_ale,
+  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ale,
+  std::vector<Quadrature<1>>                       quadratures_ale,
+  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale)
 {
   matrix_free.reinit(get_mapping(),
-                     dof_handler_vec_ALE,
-                     constraint_matrix_vec_ALE,
-                     quadratures_ALE,
-                     additional_data_ALE);
+                     dof_handler_vec_ale,
+                     constraint_matrix_vec_ale,
+                     quadratures_ale,
+                     additional_data_ale);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_mapping_ALE(std::shared_ptr<MappingField> mapping_in)
+DGNavierStokesBase<dim, Number>::set_mapping_ale(std::shared_ptr<MappingField> mapping_in)
 {
   mapping_ale = mapping_in;
 }

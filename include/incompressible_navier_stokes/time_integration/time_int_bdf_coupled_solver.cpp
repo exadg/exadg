@@ -730,7 +730,7 @@ TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
 // ALE
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::reinit_former_solution_with_former_mesh_ALE(
+TimeIntBDFCoupled<Number>::reinit_former_solution_considering_former_mesh_instances(
   std::vector<BlockVectorType> solution_in)
 {
   for(unsigned int i = 1; i < solution.size(); ++i)
@@ -742,7 +742,7 @@ TimeIntBDFCoupled<Number>::reinit_former_solution_with_former_mesh_ALE(
 
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::reinit_convective_term_with_former_mesh_ALE(
+TimeIntBDFCoupled<Number>::reinit_convective_term_considering_former_mesh_instances(
   std::vector<VectorType> vec_convective_term_in)
 {
   // it is important to start at i=0!

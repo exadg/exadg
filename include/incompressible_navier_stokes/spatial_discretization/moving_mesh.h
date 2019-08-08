@@ -36,19 +36,19 @@ public:
             const std::vector<Number> time_integrator_constants);
 
   void
-  init_d_grid_on_former_mesh(std::vector<double> eval_times);
+  initialize_grid_coordinates_on_former_mesh_instances(std::vector<double> eval_times);
 
   std::vector<BlockVectorType>
-  init_former_solution_on_former_mesh(std::vector<double> eval_times);
+  initialize_former_solution_on_former_mesh_instances(std::vector<double> eval_times);
 
   std::vector<VectorType>
-  init_convective_term_on_former_mesh(std::vector<double> eval_times);
+  initialize_convective_term_on_former_mesh_instances(std::vector<double> eval_times);
 
   VectorType
   get_grid_velocity() const;
 
   double
-  get_wall_time_ALE_update() const;
+  get_wall_time_ale_update() const;
 
   double
   get_wall_time_advance_mesh() const;
@@ -64,6 +64,9 @@ private:
   void
   initialize_vectors();
 
+  void
+  initialize_mapping_field();
+
   Mapping<dim> const &
   get_mapping() const;
 
@@ -72,9 +75,6 @@ private:
 
   void
   advance_mesh(double time_in);
-
-  void
-  initialize_mapping_field();
 
   /*
    * Two cases can occur:
@@ -86,22 +86,22 @@ private:
    */
   template<class MappingTypeIn>
   void
-  interpolate_mg(MappingTypeIn & mapping_in);
+  advance_position_grid_new_multigrid(MappingTypeIn & mapping_in);
 
   void
   compute_grid_velocity(std::vector<Number> time_integrator_constants, double time_step_size);
 
   void
-  compute_BDF_time_derivative(VectorType &            dst,
+  compute_bdf_time_derivative(VectorType &            dst,
                               std::vector<VectorType> src,
                               std::vector<Number>     time_integrator_constants,
                               double                  time_step_size);
 
   void
-  fill_d_grid(int component = 0);
+  fill_grid_coordinates_vector(int component = 0);
 
   void
-  initialize_ALE_update_data();
+  initialize_ale_update_data();
 
 
   InputParameters                                  param;
@@ -115,12 +115,12 @@ private:
   // dof handlers
   DoFHandler<dim> dof_handler_grid;
   DoFHandler<dim> dof_handler_u_grid;
-  DoFHandler<dim> dof_handler_d_grid;
+  DoFHandler<dim> dof_handler_x_grid;
 
   // vectors
   std::vector<VectorType>                                 position_grid_new_multigrid;
   LinearAlgebra::distributed::Vector<Number>              u_grid_np;
-  std::vector<LinearAlgebra::distributed::Vector<Number>> d_grid;
+  std::vector<LinearAlgebra::distributed::Vector<Number>> x_grid;
 
   // mappings
   std::shared_ptr<MappingField> mapping;
@@ -128,18 +128,18 @@ private:
 
 
   // matrix_free update data:
-  std::vector<Quadrature<1>> quadratures_ALE;
-  AffineConstraints<double>  constraint_u_ALE, constraint_p_ALE, constraint_u_scalar_ALE;
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ALE;
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec_ALE;
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_ALE;
+  std::vector<Quadrature<1>> quadratures_ale;
+  AffineConstraints<double>  constraint_u_ale, constraint_p_ale, constraint_u_scalar_ale;
+  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ale;
+  std::vector<const DoFHandler<dim> *>             dof_handler_vec_ale;
+  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
   UpdateFlags                                      ale_update_flags =
     (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
      update_values | update_inverse_jacobians /*CFL*/);
 
   // timer
   Timer  timer_ale;
-  double ALE_update_timer;
+  double ale_update_timer;
   double advance_mesh_timer;
   double compute_and_set_mesh_velocity_timer;
   double help_timer;

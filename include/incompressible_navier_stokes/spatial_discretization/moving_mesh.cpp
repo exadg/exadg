@@ -16,10 +16,10 @@ MovingMesh<dim, Number>::MovingMesh(
     fe_u_grid(new FESystem<dim>(FE_DGQ<dim>(param_in.degree_u), dim)),
     dof_handler_grid(*triangulation_in),
     dof_handler_u_grid(*triangulation_in),
-    dof_handler_d_grid(*triangulation_in),
+    dof_handler_x_grid(*triangulation_in),
     position_grid_new_multigrid((*triangulation_in).n_global_levels()),
-    d_grid(param_in.order_time_integrator + 1),
-    ALE_update_timer(0.0),
+    x_grid(param_in.order_time_integrator + 1),
+    ale_update_timer(0.0),
     advance_mesh_timer(0.0),
     compute_and_set_mesh_velocity_timer(0.0),
     help_timer(0.0)
@@ -34,7 +34,7 @@ void
 MovingMesh<dim, Number>::setup()
 {
   initialize_vectors();
-  initialize_ALE_update_data();
+  initialize_ale_update_data();
 }
 
 template<int dim, typename Number>
@@ -48,11 +48,11 @@ MovingMesh<dim, Number>::move_mesh(const double              time_in,
   advance_mesh_timer += timer_ale.wall_time() - help_timer;
 
   help_timer = timer_ale.wall_time();
-  navier_stokes_operation->ALE_update(dof_handler_vec_ALE,
-                                      constraint_matrix_vec_ALE,
-                                      quadratures_ALE,
-                                      additional_data_ALE);
-  ALE_update_timer += timer_ale.wall_time() - help_timer;
+  navier_stokes_operation->ale_update(dof_handler_vec_ale,
+                                      constraint_matrix_vec_ale,
+                                      quadratures_ale,
+                                      additional_data_ale);
+  ale_update_timer += timer_ale.wall_time() - help_timer;
 
   help_timer = timer_ale.wall_time();
   if(param.grid_velocity_analytical == true)
@@ -66,26 +66,28 @@ MovingMesh<dim, Number>::move_mesh(const double              time_in,
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::init_d_grid_on_former_mesh(std::vector<double> eval_times)
+MovingMesh<dim, Number>::initialize_grid_coordinates_on_former_mesh_instances(
+  std::vector<double> eval_times)
 {
   // Iterating backwards leaves us with the mesh at start time automatically
   for(unsigned int i = param.order_time_integrator - 1; i < param.order_time_integrator; --i)
   {
     advance_mesh(eval_times[i]);
-    navier_stokes_operation->ALE_update(dof_handler_vec_ALE,
-                                        constraint_matrix_vec_ALE,
-                                        quadratures_ALE,
-                                        additional_data_ALE);
+    navier_stokes_operation->ale_update(dof_handler_vec_ale,
+                                        constraint_matrix_vec_ale,
+                                        quadratures_ale,
+                                        additional_data_ale);
 
     get_analytical_grid_velocity(eval_times[i]);
 
-    fill_d_grid(i);
+    fill_grid_coordinates_vector(i);
   }
 }
 
 template<int dim, typename Number>
 std::vector<LinearAlgebra::distributed::BlockVector<Number>>
-MovingMesh<dim, Number>::init_former_solution_on_former_mesh(std::vector<double> eval_times)
+MovingMesh<dim, Number>::initialize_former_solution_on_former_mesh_instances(
+  std::vector<double> eval_times)
 {
   std::vector<BlockVectorType> solution(param.order_time_integrator);
 
@@ -100,10 +102,10 @@ MovingMesh<dim, Number>::init_former_solution_on_former_mesh(std::vector<double>
   for(unsigned int i = param.order_time_integrator - 1; i < param.order_time_integrator; --i)
   {
     advance_mesh(eval_times[i]);
-    navier_stokes_operation->ALE_update(dof_handler_vec_ALE,
-                                        constraint_matrix_vec_ALE,
-                                        quadratures_ALE,
-                                        additional_data_ALE);
+    navier_stokes_operation->ale_update(dof_handler_vec_ale,
+                                        constraint_matrix_vec_ale,
+                                        quadratures_ale,
+                                        additional_data_ale);
 
     navier_stokes_operation->prescribe_initial_conditions(solution[i].block(0),
                                                           solution[i].block(1),
@@ -114,10 +116,12 @@ MovingMesh<dim, Number>::init_former_solution_on_former_mesh(std::vector<double>
 
 template<int dim, typename Number>
 std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::init_convective_term_on_former_mesh(std::vector<double> eval_times)
+MovingMesh<dim, Number>::initialize_convective_term_on_former_mesh_instances(
+  std::vector<double> eval_times)
 {
-  std::vector<BlockVectorType> solution = init_former_solution_on_former_mesh(eval_times);
-  std::vector<VectorType>      vec_convective_term(param.order_time_integrator);
+  std::vector<BlockVectorType> solution =
+    initialize_former_solution_on_former_mesh_instances(eval_times);
+  std::vector<VectorType> vec_convective_term(param.order_time_integrator);
 
   for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
     navier_stokes_operation->initialize_vector_velocity(vec_convective_term[i]);
@@ -126,10 +130,10 @@ MovingMesh<dim, Number>::init_convective_term_on_former_mesh(std::vector<double>
   for(unsigned int i = param.order_time_integrator - 1; i < param.order_time_integrator; --i)
   {
     advance_mesh(eval_times[i]);
-    navier_stokes_operation->ALE_update(dof_handler_vec_ALE,
-                                        constraint_matrix_vec_ALE,
-                                        quadratures_ALE,
-                                        additional_data_ALE);
+    navier_stokes_operation->ale_update(dof_handler_vec_ale,
+                                        constraint_matrix_vec_ale,
+                                        quadratures_ale,
+                                        additional_data_ale);
     get_analytical_grid_velocity(eval_times[i]);
     navier_stokes_operation->set_grid_velocity(u_grid_np);
 
@@ -149,9 +153,9 @@ MovingMesh<dim, Number>::get_grid_velocity() const
 
 template<int dim, typename Number>
 double
-MovingMesh<dim, Number>::get_wall_time_ALE_update() const
+MovingMesh<dim, Number>::get_wall_time_ale_update() const
 {
-  return ALE_update_timer;
+  return ale_update_timer;
 }
 
 template<int dim, typename Number>
@@ -176,8 +180,8 @@ MovingMesh<dim, Number>::initialize_dof_handler()
   dof_handler_grid.distribute_mg_dofs();
   dof_handler_u_grid.distribute_dofs(*fe_u_grid);
   dof_handler_u_grid.distribute_mg_dofs();
-  dof_handler_d_grid.distribute_dofs(*fe_u_grid);
-  dof_handler_d_grid.distribute_mg_dofs();
+  dof_handler_x_grid.distribute_dofs(*fe_u_grid);
+  dof_handler_x_grid.distribute_mg_dofs();
 }
 
 template<int dim, typename Number>
@@ -189,17 +193,26 @@ MovingMesh<dim, Number>::initialize_vectors()
 
   if(param.grid_velocity_analytical == false)
   {
-    for(unsigned int i = 0; i < d_grid.size(); ++i)
+    for(unsigned int i = 0; i < x_grid.size(); ++i)
     {
-      navier_stokes_operation->initialize_vector_velocity(d_grid[i]);
-      d_grid[i].update_ghost_values();
+      navier_stokes_operation->initialize_vector_velocity(x_grid[i]);
+      x_grid[i].update_ghost_values();
     }
 
-    fill_d_grid();
+    fill_grid_coordinates_vector();
   }
 }
 
-
+template<int dim, typename Number>
+void
+MovingMesh<dim, Number>::initialize_mapping_field()
+{
+  field_functions->analytical_solution_grid_velocity->set_time_displacement(0.0);
+  advance_position_grid_new_multigrid<MappingQ>(*mapping_init);
+  mapping.reset(new MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>(
+    dof_handler_grid, position_grid_new_multigrid));
+  navier_stokes_operation->set_mapping_ale(mapping);
+}
 
 template<int dim, typename Number>
 Mapping<dim> const &
@@ -234,25 +247,13 @@ void
 MovingMesh<dim, Number>::advance_mesh(double time_in)
 {
   field_functions->analytical_solution_grid_velocity->set_time_displacement(time_in);
-  interpolate_mg<MappingQ>(*mapping_init);
+  advance_position_grid_new_multigrid<MappingQ>(*mapping_init);
 }
-
-template<int dim, typename Number>
-void
-MovingMesh<dim, Number>::initialize_mapping_field()
-{
-  field_functions->analytical_solution_grid_velocity->set_time_displacement(0.0);
-  interpolate_mg<MappingQ>(*mapping_init);
-  mapping.reset(new MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>(
-    dof_handler_grid, position_grid_new_multigrid));
-  navier_stokes_operation->set_mapping_ALE(mapping);
-}
-
 
 template<int dim, typename Number>
 template<class MappingTypeIn>
 void
-MovingMesh<dim, Number>::interpolate_mg(MappingTypeIn & mapping_in)
+MovingMesh<dim, Number>::advance_position_grid_new_multigrid(MappingTypeIn & mapping_in)
 {
   VectorType position_grid_init;
   VectorType displacement_grid;
@@ -275,10 +276,13 @@ MovingMesh<dim, Number>::interpolate_mg(MappingTypeIn & mapping_in)
                              relevant_dofs_grid,
                              MPI_COMM_WORLD);
 
-    FEValues<dim>                        fe_values(mapping_in,
-                            *fe_grid,
-                            Quadrature<dim>(fe_grid->get_unit_support_points()),
-                            update_quadrature_points);
+    // clang-format off
+    FEValues<dim>  fe_values(mapping_in,
+                             *fe_grid,
+                             Quadrature<dim>(fe_grid->get_unit_support_points()),
+                             update_quadrature_points);
+    // clang-format on
+
     std::vector<types::global_dof_index> dof_indices(fe_grid->dofs_per_cell);
     for(const auto & cell : dof_handler_grid.mg_cell_iterators_on_level(level))
       if(cell->level_subdomain_id() != numbers::artificial_subdomain_id)
@@ -311,15 +315,15 @@ void
 MovingMesh<dim, Number>::compute_grid_velocity(std::vector<Number> time_integrator_constants,
                                                double              time_step_size)
 {
-  push_back(d_grid);
-  fill_d_grid();
-  compute_BDF_time_derivative(u_grid_np, d_grid, time_integrator_constants, time_step_size);
+  push_back(x_grid);
+  fill_grid_coordinates_vector();
+  compute_bdf_time_derivative(u_grid_np, x_grid, time_integrator_constants, time_step_size);
 }
 
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::compute_BDF_time_derivative(VectorType &            dst,
+MovingMesh<dim, Number>::compute_bdf_time_derivative(VectorType &            dst,
                                                      std::vector<VectorType> src,
                                                      std::vector<Number> time_integrator_constants,
                                                      double              time_step_size)
@@ -334,21 +338,23 @@ MovingMesh<dim, Number>::compute_BDF_time_derivative(VectorType &            dst
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::fill_d_grid(int component)
+MovingMesh<dim, Number>::fill_grid_coordinates_vector(int component)
 {
   IndexSet relevant_dofs_grid;
-  DoFTools::extract_locally_relevant_dofs(dof_handler_d_grid, relevant_dofs_grid);
+  DoFTools::extract_locally_relevant_dofs(dof_handler_x_grid, relevant_dofs_grid);
 
-  d_grid[component].reinit(dof_handler_d_grid.locally_owned_dofs(),
+  x_grid[component].reinit(dof_handler_x_grid.locally_owned_dofs(),
                            relevant_dofs_grid,
                            MPI_COMM_WORLD);
+  // clang-format off
+  FEValues<dim>  fe_values(get_mapping(),
+                           *fe_u_grid,
+                           Quadrature<dim>((*fe_u_grid).get_unit_support_points()),
+                           update_quadrature_points);
+  // clang-format on
 
-  FEValues<dim>                        fe_values(get_mapping(),
-                          *fe_u_grid,
-                          Quadrature<dim>((*fe_u_grid).get_unit_support_points()),
-                          update_quadrature_points);
   std::vector<types::global_dof_index> dof_indices((*fe_u_grid).dofs_per_cell);
-  for(const auto & cell : dof_handler_d_grid.active_cell_iterators())
+  for(const auto & cell : dof_handler_x_grid.active_cell_iterators())
   {
     if(!cell->is_artificial())
     {
@@ -358,24 +364,24 @@ MovingMesh<dim, Number>::fill_d_grid(int component)
       {
         const unsigned int coordinate_direction = (*fe_u_grid).system_to_component_index(i).first;
         const Point<dim>   point                = fe_values.quadrature_point(i);
-        d_grid[component](dof_indices[i])       = point[coordinate_direction];
+        x_grid[component](dof_indices[i])       = point[coordinate_direction];
       }
     }
   }
-  d_grid[component].update_ghost_values();
+  x_grid[component].update_ghost_values();
 }
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::initialize_ALE_update_data()
+MovingMesh<dim, Number>::initialize_ale_update_data()
 {
-  additional_data_ALE.tasks_parallel_scheme =
+  additional_data_ale.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
-  additional_data_ALE.initialize_indices   = false; // connectivity of elements stays the same
-  additional_data_ALE.initialize_mapping   = true;
-  additional_data_ALE.mapping_update_flags = ale_update_flags;
-  additional_data_ALE.mapping_update_flags_inner_faces    = ale_update_flags;
-  additional_data_ALE.mapping_update_flags_boundary_faces = ale_update_flags;
+  additional_data_ale.initialize_indices   = false; // connectivity of elements stays the same
+  additional_data_ale.initialize_mapping   = true;
+  additional_data_ale.mapping_update_flags = ale_update_flags;
+  additional_data_ale.mapping_update_flags_inner_faces    = ale_update_flags;
+  additional_data_ale.mapping_update_flags_boundary_faces = ale_update_flags;
 
   auto & dof_handler_u        = navier_stokes_operation->get_dof_handler_u();
   auto & dof_handler_u_scalar = navier_stokes_operation->get_dof_handler_u_scalar();
@@ -385,31 +391,31 @@ MovingMesh<dim, Number>::initialize_ALE_update_data()
   {
     auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
       &dof_handler_u.get_triangulation());
-    Categorization::do_cell_based_loops(*tria, additional_data_ALE);
+    Categorization::do_cell_based_loops(*tria, additional_data_ale);
   }
 
-  dof_handler_vec_ALE.resize(3);
-  dof_handler_vec_ALE[navier_stokes_operation->get_dof_index_velocity()] = &dof_handler_u;
-  dof_handler_vec_ALE[navier_stokes_operation->get_dof_index_pressure()] = &dof_handler_p;
-  dof_handler_vec_ALE[navier_stokes_operation->get_dof_index_velocity_scalar()] =
+  dof_handler_vec_ale.resize(3);
+  dof_handler_vec_ale[navier_stokes_operation->get_dof_index_velocity()] = &dof_handler_u;
+  dof_handler_vec_ale[navier_stokes_operation->get_dof_index_pressure()] = &dof_handler_p;
+  dof_handler_vec_ale[navier_stokes_operation->get_dof_index_velocity_scalar()] =
     &dof_handler_u_scalar;
 
-  constraint_matrix_vec_ALE.resize(3);
+  constraint_matrix_vec_ale.resize(3);
 
-  constraint_u_ALE.close();
-  constraint_p_ALE.close();
-  constraint_u_scalar_ALE.close();
-  constraint_matrix_vec_ALE[navier_stokes_operation->get_dof_index_velocity()] = &constraint_u_ALE;
-  constraint_matrix_vec_ALE[navier_stokes_operation->get_dof_index_pressure()] = &constraint_p_ALE;
-  constraint_matrix_vec_ALE[navier_stokes_operation->get_dof_index_velocity_scalar()] =
-    &constraint_u_scalar_ALE;
+  constraint_u_ale.close();
+  constraint_p_ale.close();
+  constraint_u_scalar_ale.close();
+  constraint_matrix_vec_ale[navier_stokes_operation->get_dof_index_velocity()] = &constraint_u_ale;
+  constraint_matrix_vec_ale[navier_stokes_operation->get_dof_index_pressure()] = &constraint_p_ale;
+  constraint_matrix_vec_ale[navier_stokes_operation->get_dof_index_velocity_scalar()] =
+    &constraint_u_scalar_ale;
 
-  quadratures_ALE.resize(3);
-  quadratures_ALE[navier_stokes_operation->get_quad_index_velocity_linear()] =
+  quadratures_ale.resize(3);
+  quadratures_ale[navier_stokes_operation->get_quad_index_velocity_linear()] =
     QGauss<1>(param.degree_u + 1);
-  quadratures_ALE[navier_stokes_operation->get_quad_index_pressure()] =
+  quadratures_ale[navier_stokes_operation->get_quad_index_pressure()] =
     QGauss<1>(param.get_degree_p() + 1);
-  quadratures_ALE[navier_stokes_operation->get_quad_index_velocity_nonlinear()] =
+  quadratures_ale[navier_stokes_operation->get_quad_index_velocity_nonlinear()] =
     QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
 }
 

@@ -323,12 +323,12 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       eval_times[i] = time_integrator->get_previous_time(i);
 
     if(param.grid_velocity_analytical == false)
-      ale_operation->init_d_grid_on_former_mesh(eval_times);
+      ale_operation->initialize_grid_coordinates_on_former_mesh_instances(eval_times);
 
-    time_integrator->reinit_former_solution_with_former_mesh_ALE(
-      ale_operation->init_former_solution_on_former_mesh(eval_times));
-    time_integrator->reinit_convective_term_with_former_mesh_ALE(
-      ale_operation->init_convective_term_on_former_mesh(eval_times));
+    time_integrator->reinit_former_solution_considering_former_mesh_instances(
+      ale_operation->initialize_former_solution_on_former_mesh_instances(eval_times));
+    time_integrator->reinit_convective_term_considering_former_mesh_instances(
+      ale_operation->initialize_convective_term_on_former_mesh_instances(eval_times));
   }
 
 
@@ -474,7 +474,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << advance_mesh / overall_time_avg * 100 << " %" << std::endl;
 
   Utilities::MPI::MinMaxAvg update_time_data =
-    Utilities::MPI::min_max_avg(ale_operation->get_wall_time_ALE_update(), MPI_COMM_WORLD);
+    Utilities::MPI::min_max_avg(ale_operation->get_wall_time_ale_update(), MPI_COMM_WORLD);
   double const update = update_time_data.avg;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
               << std::scientific << std::setw(25) << std::right << update << " s  "
