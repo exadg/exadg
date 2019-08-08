@@ -503,6 +503,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
   preconditioner_momentum.reset(new MULTIGRID());
+
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
 
@@ -511,6 +512,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
   parallel::Triangulation<dim> const * tria =
     dynamic_cast<parallel::Triangulation<dim> const *>(&dof_handler.get_triangulation());
   FiniteElement<dim> const & fe = dof_handler.get_fe();
+
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
                                 tria,
                                 fe,

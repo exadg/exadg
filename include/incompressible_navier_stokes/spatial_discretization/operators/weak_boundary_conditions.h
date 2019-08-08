@@ -145,7 +145,7 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(operator_type == OperatorType::full || operator_type == OperatorType::homogeneous)
   {
-    value_m = integrator.get_value(q); // TESTintegrator.get_value(q);
+    value_m = integrator.get_value(q);
   }
   else if(operator_type == OperatorType::inhomogeneous)
   {
@@ -347,7 +347,6 @@ inline DEAL_II_ALWAYS_INLINE //
 
   return normal_gradient_p;
 }
-
 
 } // namespace IncNS
 

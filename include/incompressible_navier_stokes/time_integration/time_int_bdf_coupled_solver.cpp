@@ -49,7 +49,6 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
       this->operator_base->initialize_vector_velocity(vec_convective_np);
     }
 
-
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
   }
@@ -324,7 +323,6 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     // Newton solver
     unsigned int newton_iterations = 0;
     unsigned int linear_iterations = 0;
-
 
     pde_operator->solve_nonlinear_problem(solution_np,
                                           rhs,

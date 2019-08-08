@@ -307,7 +307,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_free(
-    Mapping<dim> const & mapping)
+  Mapping<dim> const & mapping)
 {
   this->matrix_free_objects.resize(0, this->n_levels - 1);
 

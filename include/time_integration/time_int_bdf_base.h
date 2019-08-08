@@ -96,8 +96,6 @@ public:
   double
   get_next_time() const;
 
-
-
   /*
    * Get time at the end of the current time step.
    */

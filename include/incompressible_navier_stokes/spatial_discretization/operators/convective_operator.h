@@ -68,7 +68,6 @@ public:
 
     matrix_free.initialize_dof_vector(velocity_grid, dof_index);
 
-
     // integrators for linearized problem
     integrator_velocity.reset(new IntegratorCell(matrix_free, dof_index, quad_index_linearized));
     integrator_velocity_m.reset(

@@ -169,7 +169,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
   {
     double time_step = 1.0;
 
-    double h_min = operator_base->calculate_minimum_element_length();
+    double const h_min = operator_base->calculate_minimum_element_length();
 
     double time_step_global = calculate_time_step_cfl_global(
       cfl, param.max_velocity, h_min, degree_u, param.cfl_exponent_fe_degree_velocity);
@@ -186,7 +186,6 @@ TimeIntBDF<Number>::calculate_time_step_size()
       VectorType u_temp = get_velocity();
       if(param.ale_formulation == true)
         u_temp -= u_grid_cfl;
-
 
       // if u(x,t=0)=0, this time step size will tend to infinity
       double time_step_adap =
@@ -252,12 +251,10 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
               ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
-
   VectorType u_temp = get_velocity();
 
   if(param.ale_formulation == true)
     u_temp -= u_grid_cfl;
-
 
   double new_time_step_size =
     operator_base->calculate_time_step_cfl(u_temp, cfl, param.cfl_exponent_fe_degree_velocity);

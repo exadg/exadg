@@ -71,8 +71,10 @@ DGNavierStokesBase<dim, Number>::setup(
   initialize_boundary_descriptor_laplace();
 
   initialize_dof_handler();
+
   // depending on DoFHandler
   initialize_matrix_free();
+
   // depending on MatrixFree
   initialize_operators();
 
@@ -145,7 +147,7 @@ DGNavierStokesBase<dim, Number>::initialize_dof_handler()
   dof_handler_p.distribute_dofs(fe_p);
   dof_handler_p.distribute_mg_dofs();
   dof_handler_u_scalar.distribute_dofs(fe_u_scalar);
-  dof_handler_u_scalar.distribute_mg_dofs();
+  dof_handler_u_scalar.distribute_mg_dofs(); // probably, we don't need this
 
   unsigned int const ndofs_per_cell_velocity = Utilities::pow(param.degree_u + 1, dim) * dim;
   unsigned int const ndofs_per_cell_pressure = Utilities::pow(param.get_degree_p() + 1, dim);
@@ -256,6 +258,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   // exact integration of nonlinear convective term
   quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
 
+  // reinit
   matrix_free.reinit(
     get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }

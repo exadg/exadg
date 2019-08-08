@@ -681,7 +681,7 @@ enum class AnalyicMeshMovement
 };
 
 std::string
-enum_to_string(TurbulenceEddyViscosityModel const enum_type);
+enum_to_string(AnalyicMeshMovement const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */

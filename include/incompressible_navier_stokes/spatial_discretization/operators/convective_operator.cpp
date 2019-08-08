@@ -60,7 +60,6 @@ ConvectiveOperator<dim, Number>::reinit(
   this->integrator_flags = kernel->get_integrator_flags();
 }
 
-
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::evaluate_nonlinear_operator(VectorType &       dst,
@@ -178,7 +177,6 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
                                           this->data.dof_index,
                                           this->data.quad_index_nonlinear);
 
-
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator.reinit(cell);
@@ -189,7 +187,6 @@ ConvectiveOperator<dim, Number>::cell_loop_nonlinear_operator(
                                this->integrator_flags.cell_evaluate.value,
                                this->integrator_flags.cell_evaluate.gradient,
                                this->integrator_flags.cell_evaluate.hessian);
-
 
     integrator_grid_velocity.reinit(cell);
 

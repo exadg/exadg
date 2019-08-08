@@ -83,8 +83,6 @@ protected:
   void
   calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
 
-
-
   InputParameters const & param;
 
   // BDF time integration: Sum_i (alpha_i/dt * u_i)

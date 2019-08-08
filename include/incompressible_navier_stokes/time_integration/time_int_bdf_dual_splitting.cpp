@@ -334,7 +334,6 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   else
   {
     this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
-
     for(unsigned int i = 1; i < velocity.size(); ++i)
     {
       this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);

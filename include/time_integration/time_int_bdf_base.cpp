@@ -44,7 +44,6 @@ TimeIntBDFBase::setup(bool const do_restart)
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-
 void
 TimeIntBDFBase::initialize_solution_and_calculate_timestep(bool do_restart)
 {

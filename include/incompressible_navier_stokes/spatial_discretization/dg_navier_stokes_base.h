@@ -217,7 +217,6 @@ public:
   /*
    * Initialization of vectors.
    */
-
   void
   initialize_vector_velocity(VectorType & src) const;
 
@@ -417,12 +416,10 @@ protected:
   std::shared_ptr<FESystem<dim>> fe_u;
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
-  // std::shared_ptr<FESystem<dim>> fe_grid;//TEST
 
   unsigned int                          mapping_degree;
   std::shared_ptr<MappingQGeneric<dim>> mapping;
   std::shared_ptr<MappingField>         mapping_ale;
-
 
   DoFHandler<dim> dof_handler_u;
   DoFHandler<dim> dof_handler_p;
