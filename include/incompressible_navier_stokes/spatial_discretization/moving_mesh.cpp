@@ -24,9 +24,10 @@ MovingMesh<dim, Number>::MovingMesh(
     compute_and_set_mesh_velocity_timer(0.0),
     help_timer(0.0)
 {
-  mapping_init = navier_stokes_operation->get_mapping_init();
+  mapping = std::make_shared<MappingQGeneric<dim>>(
+    dynamic_cast<const MappingQGeneric<dim> &>((navier_stokes_operation_in->get_mapping())));
   initialize_dof_handler();
-  initialize_mapping_field();
+  initialize_mapping_ale();
 }
 
 template<int dim, typename Number>
@@ -39,9 +40,7 @@ MovingMesh<dim, Number>::setup()
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::move_mesh(const double              time_in,
-                                   const double              time_step_size,
-                                   const std::vector<Number> time_integrator_constants)
+MovingMesh<dim, Number>::move_mesh(const double time_in)
 {
   help_timer = timer_ale.wall_time();
   advance_mesh(time_in);
@@ -53,7 +52,14 @@ MovingMesh<dim, Number>::move_mesh(const double              time_in,
                                       quadratures_ale,
                                       additional_data_ale);
   ale_update_timer += timer_ale.wall_time() - help_timer;
+}
 
+template<int dim, typename Number>
+void
+MovingMesh<dim, Number>::update_grid_velocities(const double              time_in,
+                                                const double              time_step_size,
+                                                const std::vector<Number> time_integrator_constants)
+{
   help_timer = timer_ale.wall_time();
   if(param.grid_velocity_analytical == true)
     get_analytical_grid_velocity(time_in);
@@ -205,20 +211,20 @@ MovingMesh<dim, Number>::initialize_vectors()
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::initialize_mapping_field()
+MovingMesh<dim, Number>::initialize_mapping_ale()
 {
   field_functions->analytical_solution_grid_velocity->set_time_displacement(0.0);
-  advance_position_grid_new_multigrid<MappingQ>(*mapping_init);
-  mapping.reset(new MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>(
+  advance_position_grid_new_multigrid<MappingQ>(*mapping);
+  mapping_ale.reset(new MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>(
     dof_handler_grid, position_grid_new_multigrid));
-  navier_stokes_operation->set_mapping_ale(mapping);
+  navier_stokes_operation->set_mapping_ale(mapping_ale);
 }
 
 template<int dim, typename Number>
 Mapping<dim> const &
 MovingMesh<dim, Number>::get_mapping() const
 {
-  return *mapping;
+  return *mapping_ale;
 }
 
 template<int dim, typename Number>
@@ -234,7 +240,7 @@ MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_ti
   grid_velocity_double = u_grid_np;
 
   VectorTools::interpolate(
-    *mapping_init, // coordinates on which analytical_solution_grid_velocity() relies
+    *mapping, // coordinates on which analytical_solution_grid_velocity() relies
     dof_handler_u_grid,
     *(field_functions->analytical_solution_grid_velocity),
     grid_velocity_double);
@@ -247,7 +253,7 @@ void
 MovingMesh<dim, Number>::advance_mesh(double time_in)
 {
   field_functions->analytical_solution_grid_velocity->set_time_displacement(time_in);
-  advance_position_grid_new_multigrid<MappingQ>(*mapping_init);
+  advance_position_grid_new_multigrid<MappingQ>(*mapping);
 }
 
 template<int dim, typename Number>

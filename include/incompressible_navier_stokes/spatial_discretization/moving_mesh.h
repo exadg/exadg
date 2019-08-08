@@ -31,9 +31,12 @@ public:
   setup();
 
   void
-  move_mesh(const double              time_in,
-            const double              time_step_size,
-            const std::vector<Number> time_integrator_constants);
+  move_mesh(const double time_in);
+
+  void
+  update_grid_velocities(const double              time_in,
+                         const double              time_step_size,
+                         const std::vector<Number> time_integrator_constants);
 
   void
   initialize_grid_coordinates_on_former_mesh_instances(std::vector<double> eval_times);
@@ -65,7 +68,7 @@ private:
   initialize_vectors();
 
   void
-  initialize_mapping_field();
+  initialize_mapping_ale();
 
   Mapping<dim> const &
   get_mapping() const;
@@ -123,9 +126,8 @@ private:
   std::vector<LinearAlgebra::distributed::Vector<Number>> x_grid;
 
   // mappings
-  std::shared_ptr<MappingField> mapping;
-  std::shared_ptr<MappingQ>     mapping_init;
-
+  std::shared_ptr<MappingQ>     mapping;
+  std::shared_ptr<MappingField> mapping_ale;
 
   // matrix_free update data:
   std::vector<Quadrature<1>> quadratures_ale;

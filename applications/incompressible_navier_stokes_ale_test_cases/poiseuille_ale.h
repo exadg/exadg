@@ -35,13 +35,15 @@ bool INITIALIZE_STEADY_SOLUTION = true;
 const double MAX_VELOCITY = 1.0;
 const double VISCOSITY = 1.0e-1;
 
-const double H = 2.0;
-const double L = 4.0;
-
 bool periodicBCs = false;
 
 bool symmetryBC = false;
 
+
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::RectangleSinCos;
+const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
+const double H = 2.0;
+const double L = 4.0;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
 const double TRIANGULATION_MOVEMENT_FREQUENCY = 2.0;
 const double START_TIME = 0.0;
@@ -59,13 +61,8 @@ void set_input_parameters(InputParameters &param)
   //ALE
   param.grid_velocity_analytical = true;
   param.ale_formulation = true;
-  param.triangulation_height = H;
-  param.triangulation_length = L;
-  param.grid_movement_amplitude = TRIANGULATION_MOVEMENT_AMPLITUDE;
-  param.grid_movement_frequency = TRIANGULATION_MOVEMENT_FREQUENCY;
   param.NBC_prescribed_with_known_normal_vectors = true;
-  param.analytical_mesh_movement = AnalyicMeshMovement::RectangleSinCosWithSinInTime;
-  param.initialize_with_former_mesh_instances=false ;
+  param.initialize_with_former_mesh_instances=INITIALIZE_WITH_FORMER_MESH_INSTANCES ;
   param.start_with_low_order = true;
   param.time_step_size = 1.0e-1;
   param.order_time_integrator = 2;
@@ -504,12 +501,22 @@ void set_boundary_conditions(
 
 
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions, InputParameters param_in)
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  if (param_in.analytical_mesh_movement == AnalyicMeshMovement::RectangleSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCos<dim>(param_in));
-  else if (param_in.analytical_mesh_movement == AnalyicMeshMovement::RectangleSinCosWithSinInTime)
-    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCosWithSinInTime<dim>(param_in));
+  MeshMovementData data;
+  data.type = MESH_MOVEMENT;
+  data.height = H;
+  data.length = L;
+  data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
+  data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
+  data.t_0 = START_TIME;
+  data.t_end = END_TIME;
+  data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
+
+  if (data.type == AnalyicMeshMovement::RectangleSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCos<dim>(data));
+  else if (data.type == AnalyicMeshMovement::RectangleSinCosWithSinInTime)
+    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCosWithSinInTime<dim>(data));
   else
     AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
 

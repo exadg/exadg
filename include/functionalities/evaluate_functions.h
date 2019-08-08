@@ -12,6 +12,7 @@
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
+#include "../../include/incompressible_navier_stokes/user_interface/function_with_normal.h"
 
 using namespace dealii;
 
@@ -104,6 +105,44 @@ inline DEAL_II_ALWAYS_INLINE //
 
   return value;
 }
+
+
+
+// template<int dim, typename value_type>
+// inline DEAL_II_ALWAYS_INLINE //
+//  Tensor<1, dim, VectorizedArray<value_type>>
+//  evaluate_vectorial_function_with_normal(
+//    std::shared_ptr<FunctionWithNormal<dim>>  function,
+//    Point<dim, VectorizedArray<value_type>> const &     q_points,
+//    Tensor<1, dim, VectorizedArray<value_type>> const & normals_m,
+//    double const &                                      eval_time)
+//{
+//  Tensor<1, dim, VectorizedArray<value_type>> value;
+//
+//  for(unsigned int d = 0; d < dim; ++d)
+//  {
+//    value_type array[VectorizedArray<value_type>::n_array_elements];
+//    for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+//    {
+//      Point<dim>     q_point;
+//      Tensor<1, dim> normal_m;
+//      for(unsigned int d = 0; d < dim; ++d)
+//      {
+//        q_point[d]  = q_points[d][n];
+//        normal_m[d] = normals_m[d][n];
+//      }
+//
+//      function->set_time(eval_time);
+//
+//
+//      array[n] = function->value(q_point, d, normal_m);
+//    }
+//    value[d].load(&array[0]);
+//  }
+//
+//  return value;
+//}
+//
 
 
 

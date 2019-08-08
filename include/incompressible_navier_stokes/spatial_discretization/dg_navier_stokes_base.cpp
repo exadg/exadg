@@ -642,7 +642,13 @@ DGNavierStokesBase<dim, Number>::get_mapping() const
 {
   if(param.ale_formulation == true)
   {
-    return *mapping_ale;
+    // TODO
+    //    return *mapping_ale;
+
+    if(mapping_ale.get() == 0)
+      return *mapping;
+    else
+      return *mapping_ale;
   }
   else
   {
@@ -1168,14 +1174,6 @@ void
 DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 {
   convective_kernel->set_velocity_grid_ptr(u_grid_in);
-}
-
-
-template<int dim, typename Number>
-std::shared_ptr<MappingQGeneric<dim>>
-DGNavierStokesBase<dim, Number>::get_mapping_init() const
-{
-  return mapping;
 }
 
 template<int dim, typename Number>

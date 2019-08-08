@@ -201,7 +201,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   // field functions and boundary conditions
   field_functions.reset(new FieldFunctions<dim>());
-  set_field_functions(field_functions, param);
+  set_field_functions(field_functions);
 
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);
@@ -355,9 +355,12 @@ Problem<dim, Number>::solve()
 
       while(!timeloop_finished)
       {
-        ale_operation->move_mesh(time_integrator->get_next_time(),
-                                 time_integrator->get_time_step_size(),
-                                 time_integrator->get_current_time_integrator_constants());
+        ale_operation->move_mesh(time_integrator->get_next_time());
+
+        ale_operation->update_grid_velocities(
+          time_integrator->get_next_time(),
+          time_integrator->get_time_step_size(),
+          time_integrator->get_current_time_integrator_constants());
 
         if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
            param.adaptive_time_stepping == true)

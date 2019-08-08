@@ -114,7 +114,17 @@ public:
   // Navier-Stokes equations is unequal zero, set right_hand_side = true
   bool right_hand_side;
 
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                                        ALE                                         */
+  /*                                                                                    */
+  /**************************************************************************************/
+  bool grid_velocity_analytical;
+  bool ale_formulation;
+  bool NBC_prescribed_with_known_normal_vectors;
 
+  // TODO this variable is currently used for testing and can be removed later
+  bool initialize_with_former_mesh_instances;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -598,23 +608,6 @@ public:
   // solver data for schur complement
   // (only relevant if exact_inversion_of_laplace_operator == true)
   SolverData solver_data_pressure_block;
-
-  /**************************************************************************************/
-  /*                                                                                    */
-  /*                                        ALE                                         */
-  /*                                                                                    */
-  /**************************************************************************************/
-  bool                grid_velocity_analytical;
-  bool                ale_formulation;
-  double              triangulation_left;
-  double              triangulation_right;
-  double              triangulation_height;
-  double              triangulation_length;
-  double              grid_movement_amplitude;
-  double              grid_movement_frequency;
-  bool                NBC_prescribed_with_known_normal_vectors;
-  AnalyicMeshMovement analytical_mesh_movement;
-  bool                initialize_with_former_mesh_instances;
 };
 
 } // namespace IncNS

@@ -5,22 +5,50 @@
 
 namespace IncNS
 {
+struct MeshMovementData
+{
+  MeshMovementData()
+    : type(AnalyicMeshMovement::Undefined),
+      left(0.0),
+      right(0.0),
+      height(0.0),
+      length(0.0),
+      A(0.0),
+      f(0.0),
+      t_0(0.0),
+      t_end(0.0),
+      initialize_with_former_mesh_instances(false)
+  {
+  }
+
+  AnalyicMeshMovement type;
+  double              left;
+  double              right;
+  double              height;
+  double              length;
+  double              A;
+  double              f;
+  double              t_0;
+  double              t_end;
+  bool                initialize_with_former_mesh_instances;
+};
+
 template<int dim>
 class MeshMovementFunctions : public Function<dim>
 {
 public:
-  MeshMovementFunctions(InputParameters const & data_in)
+  MeshMovementFunctions(MeshMovementData const & data_in)
     : Function<dim>(dim, 0.0),
       sin_t(0.0),
       dat(data_in),
       t_current(0.0),
-      left(data_in.triangulation_left),
-      right(data_in.triangulation_right),
-      f(data_in.grid_movement_frequency),
-      A(data_in.grid_movement_amplitude),
-      Dt(data_in.end_time - data_in.start_time),
-      height(data_in.triangulation_height),
-      length(data_in.triangulation_length)
+      left(data_in.left),
+      right(data_in.right),
+      f(data_in.f),
+      A(data_in.A),
+      Dt(data_in.t_end - data_in.t_0),
+      height(data_in.height),
+      length(data_in.length)
   {
   }
 
@@ -53,35 +81,35 @@ public:
     // Since displacements are of shape const*f(t), code duplication can be avoided using
     // f(t)=\partial_t f(t)
     double value = 0.0;
-    if(t_current >= dat.start_time || dat.initialize_with_former_mesh_instances == true)
+    if(t_current >= dat.t_0 || dat.initialize_with_former_mesh_instances == true)
       value = displacement(p, component);
-    else if(t_current < dat.start_time && dat.initialize_with_former_mesh_instances == false)
+    else if(t_current < dat.t_0 && dat.initialize_with_former_mesh_instances == false)
       value = 0.0;
 
     return value;
   }
 
 protected:
-  double          sin_t;
-  InputParameters dat;
-  double          t_current;
-  double          pi = numbers::PI;
-  const double    left;
-  const double    right;
-  const double    width = right - left;
-  const double    f;
-  const double    A;
-  const double    Dt;
-  const double    T = Dt / f;
-  const double    height;
-  const double    length;
+  double           sin_t;
+  MeshMovementData dat;
+  double           t_current;
+  double           pi = numbers::PI;
+  const double     left;
+  const double     right;
+  const double     width = right - left;
+  const double     f;
+  const double     A;
+  const double     Dt;
+  const double     T = Dt / f;
+  const double     height;
+  const double     length;
 };
 
 template<int dim>
 class CubeSinCosWithBoundaries : public MeshMovementFunctions<dim>
 {
 public:
-  CubeSinCosWithBoundaries(InputParameters const & data_in) : MeshMovementFunctions<dim>(data_in)
+  CubeSinCosWithBoundaries(MeshMovementData const & data_in) : MeshMovementFunctions<dim>(data_in)
   {
   }
 
@@ -106,7 +134,7 @@ template<int dim>
 class CubeInteriorSinCosOnlyX : public MeshMovementFunctions<dim>
 {
 public:
-  CubeInteriorSinCosOnlyX(InputParameters const & data_in) : MeshMovementFunctions<dim>(data_in)
+  CubeInteriorSinCosOnlyX(MeshMovementData const & data_in) : MeshMovementFunctions<dim>(data_in)
   {
   }
 
@@ -132,7 +160,7 @@ template<int dim>
 class CubeInteriorSinCosOnlyY : public MeshMovementFunctions<dim>
 {
 public:
-  CubeInteriorSinCosOnlyY(InputParameters const & data_in) : MeshMovementFunctions<dim>(data_in)
+  CubeInteriorSinCosOnlyY(MeshMovementData const & data_in) : MeshMovementFunctions<dim>(data_in)
   {
   }
 
@@ -158,7 +186,7 @@ template<int dim>
 class CubeXSquaredWithBoundaries : public MeshMovementFunctions<dim>
 {
 public:
-  CubeXSquaredWithBoundaries(InputParameters const & data_in) : MeshMovementFunctions<dim>(data_in)
+  CubeXSquaredWithBoundaries(MeshMovementData const & data_in) : MeshMovementFunctions<dim>(data_in)
   {
   }
 
@@ -185,7 +213,7 @@ template<int dim>
 class CubeDoubleInteriorSinCos : public MeshMovementFunctions<dim>
 {
 public:
-  CubeDoubleInteriorSinCos(InputParameters const & data_in) : MeshMovementFunctions<dim>(data_in)
+  CubeDoubleInteriorSinCos(MeshMovementData const & data_in) : MeshMovementFunctions<dim>(data_in)
   {
   }
 
@@ -212,7 +240,7 @@ template<int dim>
 class CubeDoubleSinCosWithBoundaries : public MeshMovementFunctions<dim>
 {
 public:
-  CubeDoubleSinCosWithBoundaries(InputParameters const & data_in)
+  CubeDoubleSinCosWithBoundaries(MeshMovementData const & data_in)
     : MeshMovementFunctions<dim>(data_in)
   {
   }
@@ -238,7 +266,7 @@ template<int dim>
 class CubeInteriorSinCos : public MeshMovementFunctions<dim>
 {
 public:
-  CubeInteriorSinCos(InputParameters const & data_in) : MeshMovementFunctions<dim>(data_in)
+  CubeInteriorSinCos(MeshMovementData const & data_in) : MeshMovementFunctions<dim>(data_in)
   {
   }
 
@@ -265,7 +293,7 @@ template<int dim>
 class CubeInteriorSinCosWithSinInTime : public MeshMovementFunctions<dim>
 {
 public:
-  CubeInteriorSinCosWithSinInTime(InputParameters const & data_in)
+  CubeInteriorSinCosWithSinInTime(MeshMovementData const & data_in)
     : MeshMovementFunctions<dim>(data_in)
   {
   }
@@ -307,7 +335,7 @@ template<int dim>
 class RectangleSinCos : public MeshMovementFunctions<dim>
 {
 public:
-  RectangleSinCos(InputParameters const & data_in) : MeshMovementFunctions<dim>(data_in)
+  RectangleSinCos(MeshMovementData const & data_in) : MeshMovementFunctions<dim>(data_in)
   {
   }
 
@@ -334,7 +362,7 @@ template<int dim>
 class RectangleSinCosWithSinInTime : public MeshMovementFunctions<dim>
 {
 public:
-  RectangleSinCosWithSinInTime(InputParameters const & data_in)
+  RectangleSinCosWithSinInTime(MeshMovementData const & data_in)
     : MeshMovementFunctions<dim>(data_in)
   {
   }

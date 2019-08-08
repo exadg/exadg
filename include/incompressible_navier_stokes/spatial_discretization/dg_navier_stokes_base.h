@@ -392,9 +392,6 @@ public:
   void
   set_grid_velocity(VectorType u_grid_in);
 
-  std::shared_ptr<MappingQGeneric<dim>>
-  get_mapping_init() const;
-
 protected:
   /*
    * Projection step.
