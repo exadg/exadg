@@ -16,8 +16,6 @@
 #include <deal.II/multigrid/mg_tools.h>
 #include <deal.II/multigrid/multigrid.h>
 
-#include "../../functionalities/dynamic_convergence_table.h"
-
 #include "transfer/mg_transfer_mf.h"
 
 using namespace dealii;
@@ -25,14 +23,93 @@ using namespace dealii;
 /*
  * Activate timings if desired.
  */
-
-#define ENABLE_TIMING true
+#define ENABLE_TIMING false
 
 #ifndef ENABLE_TIMING
 #  define ENABLE_TIMING false
 #endif
 
 using namespace dealii;
+
+class MultigridTimings
+{
+public:
+  MultigridTimings() : min_level(0), max_level(0)
+  {
+  }
+
+  void
+  init(unsigned int const minlevel, unsigned int const maxlevel) const
+  {
+    vec.resize(maxlevel - minlevel + 1);
+    min_level = minlevel;
+    max_level = maxlevel;
+  }
+
+  void
+  add(unsigned int const level, std::string const label, double const value) const
+  {
+    auto & map = vec[level - min_level];
+    auto   it  = map.find(label);
+    if(it != map.end())
+      it->second += value;
+    else
+      map[label] = value;
+  }
+
+  void
+  set(unsigned int const level, std::string const label, double const value) const
+  {
+    auto & map = vec[level - min_level];
+    auto   it  = map.find(label);
+    if(it != map.end())
+      it->second = value;
+    else
+      map[label] = value;
+  }
+
+  void
+  print() const
+  {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+    if(rank)
+      return;
+
+    std::cout << "Wall times [sec] ('overall' includes current level and all coarser levels):"
+              << std::endl
+              << std::endl;
+
+    unsigned int level = max_level;
+    for(std::vector<std::map<std::string, double>>::reverse_iterator it = vec.rbegin();
+        it != vec.rend();
+        ++it)
+    {
+      std::cout << std::setw(6) << "level";
+
+      std::map<std::string, double> & map = *it;
+      for(auto iter_map : map)
+        std::cout << std::setw(12) << iter_map.first;
+
+      std::cout << std::endl;
+
+      std::cout << std::setw(6) << level;
+      --level;
+
+      for(auto iter_map : map)
+        std::cout << std::setw(12) << std::scientific << std::setprecision(2) << iter_map.second;
+
+      std::cout << std::endl << std::endl;
+    }
+  }
+
+private:
+  mutable unsigned int                               min_level;
+  mutable unsigned int                               max_level;
+  mutable std::vector<std::map<std::string, double>> vec;
+};
+
 /*
  * Re-implementation of multigrid preconditioner (V-cycle) in order to have more direct control over
  * its individual components and avoid inner products and other expensive stuff.
@@ -70,15 +147,19 @@ public:
     }
 
 #if ENABLE_TIMING
+    timings.init(minlevel, maxlevel);
+
     for(unsigned int level = minlevel; level <= maxlevel; ++level)
-      this->table.set("dofs-" + std::to_string(level), defect[level].size());
+      timings.set(level, "dofs", defect[level].size());
 #endif
   }
 
   virtual ~MultigridPreconditioner()
   {
+#if ENABLE_TIMING
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-      this->table.print();
+      timings.print();
+#endif
   }
 
   template<class OtherVectorType>
@@ -150,38 +231,32 @@ public:
   }
 
 private:
-#if ENABLE_TIMING
-  void
-  put_in_table(std::string label, Timer & timer) const
-  {
-    this->table.put(label, timer.wall_time());
-  }
-#else
-  void
-  put_in_table(std::string /*label*/, Timer & /*timer*/) const
-  {
-  }
-#endif
-
   /**
    * Implements the V-cycle
    */
   void
   v_cycle(unsigned int const level, bool const multigrid_is_a_solver) const
   {
+#if ENABLE_TIMING
     Timer timer_local;
     Timer timer_global;
     timer_global.restart();
+#endif
 
     // call coarse grid solver
     if(level == minlevel)
     {
       (*coarse)(level, solution[level], defect[level]);
-      put_in_table("level-" + std::to_string(level), timer_global);
+
+#if ENABLE_TIMING
+      timings.add(level, "overall", timer_global.wall_time());
+#endif
     }
     else
     {
+#if ENABLE_TIMING
       timer_local.restart();
+#endif
 
       // pre-smoothing
       if(multigrid_is_a_solver)
@@ -198,40 +273,60 @@ private:
         // the first iteration of the smoother).
         (*smoother)[level]->vmult(solution[level], defect[level]);
       }
-      (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
-      t[level].sadd(-1.0, 1.0, defect[level]);
-      put_in_table("pres-" + std::to_string(level), timer_local);
+
+#if ENABLE_TIMING
+      timings.add(level, "presmooth", timer_local.wall_time());
+#endif
+
+#if ENABLE_TIMING
+      timer_local.restart();
+#endif
 
       // restriction
-      timer_local.restart();
+      (*matrix)[level]->vmult_interface_down(t[level], solution[level]);
+      t[level].sadd(-1.0, 1.0, defect[level]);
       transfer.restrict_and_add(level, defect[level - 1], t[level]);
-      put_in_table("rest-" + std::to_string(level), timer_local);
+
+#if ENABLE_TIMING
+      timings.add(level, "restrict", timer_local.wall_time());
+#endif
 
       // coarse grid correction
       v_cycle(level - 1, false);
 
+#if ENABLE_TIMING
       timer_local.restart();
+#endif
 
       // prolongation
       transfer.prolongate(level, t[level], solution[level - 1]);
-      put_in_table("prol-" + std::to_string(level), timer_local);
-      timer_local.restart();
       solution[level] += t[level];
+
+#if ENABLE_TIMING
+      timings.add(level, "prolong", timer_local.wall_time());
+#endif
+
+#if ENABLE_TIMING
+      timer_local.restart();
+#endif
 
       // post-smoothing
       (*smoother)[level]->step(solution[level], defect[level]);
-      put_in_table("poss-" + std::to_string(level), timer_local);
-      put_in_table("level-" + std::to_string(level), timer_global);
+
+#if ENABLE_TIMING
+      timings.add(level, "postsmooth", timer_local.wall_time());
+      timings.add(level, "overall", timer_global.wall_time());
+#endif
     }
   }
 
   /**
-   * Lowest level of cells.
+   * Coarsest level.
    */
   unsigned int minlevel;
 
   /**
-   * Highest level of cells.
+   * Finest level.
    */
   unsigned int maxlevel;
 
@@ -278,7 +373,9 @@ private:
 
   const unsigned int n_cycles;
 
-  DynamicConvergenceTable table;
+#if ENABLE_TIMING
+  MultigridTimings timings;
+#endif
 };
 
 

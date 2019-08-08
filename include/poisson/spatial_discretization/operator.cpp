@@ -1,4 +1,5 @@
 #include "operator.h"
+#include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../preconditioner/multigrid_preconditioner.h"
 
 namespace Poisson
@@ -19,6 +20,14 @@ DGOperator<dim, Number>::DGOperator(
   if(param.mapping == MappingType::Affine)
   {
     mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Quadratic)
+  {
+    mapping_degree = 2;
+  }
+  else if(param.mapping == MappingType::Cubic)
+  {
+    mapping_degree = 3;
   }
   else if(param.mapping == MappingType::Isoparametric)
   {
@@ -125,10 +134,28 @@ DGOperator<dim, Number>::setup_solver()
       new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
         laplace_operator, *preconditioner, solver_data));
   }
+  else if(param.solver == Solver::FGMRES)
+  {
+    // initialize solver_data
+    FGMRESSolverData solver_data;
+    solver_data.solver_tolerance_abs        = param.solver_data.abs_tol;
+    solver_data.solver_tolerance_rel        = param.solver_data.rel_tol;
+    solver_data.max_iter                    = param.solver_data.max_iter;
+    solver_data.max_n_tmp_vectors           = param.solver_data.max_krylov_size;
+    solver_data.compute_performance_metrics = param.compute_performance_metrics;
+
+    if(param.preconditioner != Preconditioner::None)
+      solver_data.use_preconditioner = true;
+
+    // initialize solver
+    iterative_solver.reset(
+      new FGMRESSolver<Poisson::LaplaceOperator<dim, Number>,
+                       PreconditionerBase<Number>,
+                       VectorType>(laplace_operator, *preconditioner, solver_data));
+  }
   else
   {
-    AssertThrow(param.solver == Poisson::Solver::CG,
-                ExcMessage("Specified solver is not implemented!"));
+    AssertThrow(false, ExcMessage("Specified solver is not implemented!"));
   }
 
   pcout << std::endl << "... done!" << std::endl;
@@ -172,9 +199,30 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const time) const
 }
 
 template<int dim, typename Number>
+void
+DGOperator<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
+{
+  laplace_operator.vmult(dst, src);
+}
+
+template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
 {
+  // only activate if desired
+  if(false)
+  {
+    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+
+    std::shared_ptr<MULTIGRID> mg_preconditioner =
+      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+
+    CheckMultigrid<dim, Number, LaplaceOperator<dim, Number>, MULTIGRID, MultigridNumber>
+      check_multigrid(laplace_operator, mg_preconditioner);
+
+    check_multigrid.check();
+  }
+
   unsigned int iterations = iterative_solver->solve(sol, rhs, /* update_preconditioner = */ false);
 
   return iterations;
@@ -200,6 +248,46 @@ DGOperator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
+
+template<int dim, typename Number>
+double
+DGOperator<dim, Number>::get_n10() const
+{
+  return iterative_solver->n10;
+}
+
+template<int dim, typename Number>
+double
+DGOperator<dim, Number>::get_average_convergence_rate() const
+{
+  return iterative_solver->rho;
+}
+
+#ifdef DEAL_II_WITH_TRILINOS
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+{
+  laplace_operator.init_system_matrix(system_matrix);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::calculate_system_matrix(
+  TrilinosWrappers::SparseMatrix & system_matrix) const
+{
+  laplace_operator.calculate_system_matrix(system_matrix);
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::vmult_matrix_based(VectorTypeDouble &                     dst,
+                                            TrilinosWrappers::SparseMatrix const & system_matrix,
+                                            VectorTypeDouble const &               src) const
+{
+  system_matrix.vmult(dst, src);
+}
+#endif
 
 template<int dim, typename Number>
 void

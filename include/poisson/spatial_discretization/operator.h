@@ -40,8 +40,13 @@ class DGOperator : public dealii::Subscriptor
 {
 public:
   typedef float MultigridNumber;
+  // use this line for double-precision multigrid
+  //  typedef Number MultigridNumber;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+#ifdef DEAL_II_WITH_TRILINOS
+  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
+#endif
 
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
@@ -70,6 +75,9 @@ public:
   void
   rhs(VectorType & dst, double const time = 0.0) const;
 
+  void
+  vmult(VectorType & dst, VectorType const & src) const;
+
   unsigned int
   solve(VectorType & sol, VectorType const & rhs) const;
 
@@ -81,6 +89,25 @@ public:
 
   types::global_dof_index
   get_number_of_dofs() const;
+
+  double
+  get_n10() const;
+
+  double
+  get_average_convergence_rate() const;
+
+#ifdef DEAL_II_WITH_TRILINOS
+  void
+  init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+
+  void
+  calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
+
+  void
+  vmult_matrix_based(VectorTypeDouble &                     dst,
+                     TrilinosWrappers::SparseMatrix const & system_matrix,
+                     VectorTypeDouble const &               src) const;
+#endif
 
   void
   do_postprocessing(VectorType const & solution) const;

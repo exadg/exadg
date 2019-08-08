@@ -20,18 +20,17 @@
 #include "convection_diffusion/postprocessor/postprocessor_base.h"
 
 // user interface, etc.
-#include "../include/functionalities/print_throughput.h"
 #include "convection_diffusion/user_interface/analytical_solution.h"
 #include "convection_diffusion/user_interface/boundary_descriptor.h"
 #include "convection_diffusion/user_interface/field_functions.h"
 #include "convection_diffusion/user_interface/input_parameters.h"
+
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
+#include "functionalities/print_throughput.h"
 
 
 // specify the test case that has to be solved
-
-// template
 #include "convection_diffusion_test_cases/periodic_box.h"
 
 using namespace dealii;

@@ -26,7 +26,7 @@
 #include "../include/functionalities/dynamic_convergence_table.h"
 #include "../include/functionalities/measure_minimum_time.h"
 #include "../include/poisson/spatial_discretization/operator.h"
-#include "../include/solvers_and_preconditioners/smoother/chebyshev_smoother.h"
+#include "../include/solvers_and_preconditioners/multigrid/smoothers/chebyshev_smoother.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 

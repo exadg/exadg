@@ -17,7 +17,8 @@ SET( SOURCE_FILES
      #multigrid_solver.cc
      #poisson_lung.cc
      #lung_tria.cc
-     laplace_operator_matrix_free.cc
+     #laplace_operator_matrix_free.cc
+     poisson_performance.cc
  
 
      # Scalar reaction-convection-diffusion

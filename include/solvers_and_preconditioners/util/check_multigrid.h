@@ -1,5 +1,5 @@
 /*
- * CheckMultigrid.h
+ * check_multigrid.h
  *
  *  Created on: Oct 4, 2016
  *      Author: fehn
@@ -10,15 +10,19 @@
 
 #include <deal.II/numerics/data_out.h>
 
-template<int dim, typename value_type, typename Operator, typename Preconditioner>
+using namespace dealii;
+
+template<int dim,
+         typename Number,
+         typename Operator,
+         typename Preconditioner,
+         typename MultigridNumber>
 class CheckMultigrid
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<value_type> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef float NumberMG;
-
-  typedef LinearAlgebra::distributed::Vector<NumberMG> VectorTypeMG;
+  typedef LinearAlgebra::distributed::Vector<MultigridNumber> VectorTypeMG;
 
   CheckMultigrid(Operator const &                underlying_operator_in,
                  std::shared_ptr<Preconditioner> preconditioner_in)
@@ -90,7 +94,11 @@ public:
                VectorType const &   solution_after_mg_cylce,
                VectorTypeMG const & solution_after_smoothing) const
   {
-    DataOut<dim> data_out;
+    DataOut<dim>          data_out;
+    DataOutBase::VtkFlags flags;
+    flags.write_higher_order_cells = true;
+    data_out.set_flags(flags);
+
     unsigned int dof_index = underlying_operator.get_dof_index();
 
     // TODO: use scalar = false for velocity field
@@ -99,13 +107,13 @@ public:
     if(scalar)
     {
       // pressure
-      data_out.add_data_vector(underlying_operator.get_data().get_dof_handler(dof_index),
+      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                initial_solution,
                                "initial");
-      data_out.add_data_vector(underlying_operator.get_data().get_dof_handler(dof_index),
+      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                solution_after_mg_cylce,
                                "mg_cycle");
-      data_out.add_data_vector(underlying_operator.get_data().get_dof_handler(dof_index),
+      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                solution_after_smoothing,
                                "smoother");
     }
@@ -117,7 +125,7 @@ public:
         initial_component_interpretation(dim,
                                          DataComponentInterpretation::component_is_part_of_vector);
 
-      data_out.add_data_vector(underlying_operator.get_data().get_dof_handler(dof_index),
+      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                initial_solution,
                                initial,
                                initial_component_interpretation);
@@ -127,7 +135,7 @@ public:
         mg_cylce_component_interpretation(dim,
                                           DataComponentInterpretation::component_is_part_of_vector);
 
-      data_out.add_data_vector(underlying_operator.get_data().get_dof_handler(dof_index),
+      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                solution_after_mg_cylce,
                                mg_cycle,
                                mg_cylce_component_interpretation);
@@ -137,14 +145,14 @@ public:
         smoother_component_interpretation(dim,
                                           DataComponentInterpretation::component_is_part_of_vector);
 
-      data_out.add_data_vector(underlying_operator.get_data().get_dof_handler(dof_index),
+      data_out.add_data_vector(underlying_operator.get_matrix_free().get_dof_handler(dof_index),
                                solution_after_smoothing,
                                smoother,
                                smoother_component_interpretation);
     }
 
     data_out.build_patches(
-      underlying_operator.get_data().get_dof_handler(dof_index).get_fe().degree);
+      underlying_operator.get_matrix_free().get_dof_handler(dof_index).get_fe().degree);
 
     std::ostringstream filename;
     std::string        name = "smoothing";

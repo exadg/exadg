@@ -53,6 +53,12 @@ enum_to_string(MappingType const enum_type)
     case MappingType::Affine:
       string_type = "Affine";
       break;
+    case MappingType::Quadratic:
+      string_type = "Quadratic";
+      break;
+    case MappingType::Cubic:
+      string_type = "Cubic";
+      break;
     case MappingType::Isoparametric:
       string_type = "Isoparametric";
       break;
@@ -106,6 +112,9 @@ enum_to_string(Solver const enum_type)
       break;
     case Solver::CG:
       string_type = "CG";
+      break;
+    case Solver::FGMRES:
+      string_type = "FGMRES";
       break;
     default:
       AssertThrow(false, ExcMessage("Not implemented."));

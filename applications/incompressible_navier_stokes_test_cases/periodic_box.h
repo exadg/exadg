@@ -163,15 +163,28 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   }
   else if(MESH_TYPE == MeshType::Curvilinear)
   {
-    // TODO
-//    AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
-//        ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
-
-    triangulation->set_all_manifold_ids(1);
     double const deformation = 0.5;
     unsigned int const frequency = 2;
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+    triangulation->set_all_manifold_ids(1);
     triangulation->set_manifold(1, manifold);
+
+    std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
+
+    for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
+        cell != triangulation->end(); ++cell)
+    {
+      for (unsigned int v=0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+      {
+        if (vertex_touched[cell->vertex_index(v)]==false)
+        {
+          Point<dim> &vertex = cell->vertex(v);
+          Point<dim> new_point = manifold.push_forward(vertex);
+          vertex = new_point;
+          vertex_touched[cell->vertex_index(v)] = true;
+        }
+      }
+    }
   }
 
   AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));

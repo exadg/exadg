@@ -30,15 +30,98 @@
 // specify the test case that has to be solved
 
 // template
-#include "poisson_test_cases/template.h"
+//#include "poisson_test_cases/template.h"
 
 //#include "poisson_test_cases/gaussian.h"
-//#include "poisson_test_cases/cosinus.h"
+//#include "poisson_test_cases/slit.h"
+#include "poisson_test_cases/sine.h"
+//#include "poisson_test_cases/nozzle.h"
 //#include "poisson_test_cases/torus.h"
 //#include "poisson_test_cases/lung.h"
 
 using namespace dealii;
 using namespace Poisson;
+
+enum class RunType
+{
+  RefineHAndP,      // run simulation for a specified range of mesh refiments and polynomial degrees
+  FixedProblemSize, // increase polynomial degree and keep problem size approximately constant
+  IncreasingProblemSize // run at fixed polynomial degree
+};
+
+RunType const RUN_TYPE = RunType::FixedProblemSize;
+
+/*
+ * Specify minimum and maximum problem size for
+ *  RunType::FixedProblemSize
+ *  RunType::IncreasingProblemSize
+ */
+types::global_dof_index N_DOFS_MIN = 2.5e5;
+types::global_dof_index N_DOFS_MAX = 7.5e5;
+
+/*
+ * Enable hyper_cube meshes with number of cells per direction other than multiples of 2.
+ * Use this only for
+ *  RunType::FixedProblemSize
+ *  RunType::IncreasingProblemSize
+ */
+#define ENABLE_SUBDIVIDED_HYPERCUBE
+unsigned int SUBDIVISIONS_MESH;
+
+struct Timings
+{
+  Timings() : degree(1), dofs(1), n_10(0), tau_10(0.0)
+  {
+  }
+
+  Timings(unsigned int const            degree_,
+          types::global_dof_index const dofs_,
+          double const                  n_10_,
+          double const                  tau_10_)
+    : degree(degree_), dofs(dofs_), n_10(n_10_), tau_10(tau_10_)
+  {
+  }
+
+  void
+  print_header(ConditionalOStream const & pcout) const
+  {
+    // names
+    pcout << std::setw(7) << "degree";
+    pcout << std::setw(15) << "dofs";
+    pcout << std::setw(8) << "n_10";
+    pcout << std::setw(15) << "tau_10";
+    pcout << std::setw(15) << "throughput";
+    pcout << std::endl;
+
+    // units
+    pcout << std::setw(7) << " ";
+    pcout << std::setw(15) << " ";
+    pcout << std::setw(8) << " ";
+    pcout << std::setw(15) << "in s*core/DoF";
+    pcout << std::setw(15) << "in DoF/s/core";
+    pcout << std::endl;
+
+    pcout << std::endl;
+  }
+
+  void
+  print_results(ConditionalOStream const & pcout) const
+  {
+    pcout << std::setw(7) << std::fixed << degree;
+    pcout << std::setw(15) << std::fixed << dofs;
+    pcout << std::setw(8) << std::fixed << std::setprecision(1) << n_10;
+    pcout << std::setw(15) << std::scientific << std::setprecision(2) << tau_10;
+    pcout << std::setw(15) << std::scientific << std::setprecision(2) << 1.0 / tau_10;
+    pcout << std::endl;
+  }
+
+  unsigned int            degree;
+  types::global_dof_index dofs;
+  double                  n_10;
+  double                  tau_10;
+};
+// global variable used to store the wall times for different polynomial degrees and problem sizes
+std::vector<Timings> timings;
 
 class ProblemBase
 {
@@ -163,7 +246,17 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
+#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
+  AssertThrow(RUN_TYPE != RunType::RefineHAndP,
+              ExcMessage("Not possible in combination with anisotropic refinement. "
+                         "Deactivate anisotropic refinement for combined h- and p-refinement."));
+  create_grid_and_set_boundary_ids(triangulation,
+                                   param.h_refinements,
+                                   periodic_faces,
+                                   SUBDIVISIONS_MESH);
+#else
   create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
+#endif
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
@@ -173,7 +266,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>();
+  postprocessor = construct_postprocessor<dim, Number>(param);
 
   // initialize Poisson operator
   poisson_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
@@ -234,12 +327,18 @@ Problem<dim, Number>::analyze_computing_times() const
 
   this->pcout << "Performance results for Poisson solver:" << std::endl;
 
+  double const n_10 = poisson_operator->get_n10();
   // Iterations
   {
     this->pcout << std::endl << "Number of iterations:" << std::endl;
 
-    this->pcout << "  Iterations: " << std::fixed << std::setprecision(2) << std::right
-                << std::setw(6) << iterations << std::endl;
+    this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl;
+
+    this->pcout << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
+                << std::endl;
+
+    this->pcout << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
+                << poisson_operator->get_average_convergence_rate() << std::endl;
   }
 
   // overall wall time including postprocessing
@@ -301,7 +400,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
   // computational costs in CPUh
-  // Throughput in DoFs/s per time step per core
+  // Throughput in DoF/s per time step per core
   unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
   types::global_dof_index const DoFs            = poisson_operator->get_number_of_dofs();
 
@@ -309,28 +408,76 @@ Problem<dim, Number>::analyze_computing_times() const
               << "Computational costs and throughput:" << std::endl
               << "  Number of MPI processes = " << N_mpi_processes << std::endl
               << "  Degrees of freedom      = " << DoFs << std::endl
-              << std::endl
-              << "Overall costs (including setup + postprocessing):" << std::endl
+              << std::endl;
+
+  this->pcout << "Overall costs (including setup + postprocessing):" << std::endl
               << "  Wall time               = " << std::scientific << std::setprecision(2)
               << overall_time_avg << " s" << std::endl
               << "  Computational costs     = " << std::scientific << std::setprecision(2)
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl
               << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / (overall_time_avg * N_mpi_processes) << " DoFs/s/core" << std::endl
-              << std::endl
-              << "Right-hand side + solver:" << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << wall_time_rhs + wall_time_solver << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << (wall_time_rhs + wall_time_solver) * (double)N_mpi_processes / 3600.0 << " CPUh"
-              << std::endl
-              << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / ((wall_time_rhs + wall_time_solver) * N_mpi_processes) << " DoFs/s/core"
+              << DoFs / (overall_time_avg * N_mpi_processes) << " DoF/s/core" << std::endl
               << std::endl;
+
+  this->pcout << "Linear solver:" << std::endl
+              << "  Wall time               = " << std::scientific << std::setprecision(2)
+              << wall_time_solver << " s" << std::endl
+              << "  Computational costs     = " << std::scientific << std::setprecision(2)
+              << wall_time_solver * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl
+              << "  Throughput              = " << std::scientific << std::setprecision(2)
+              << DoFs / (wall_time_solver * N_mpi_processes) << " DoF/s/core" << std::endl
+              << std::endl;
+
+  double const t_10   = wall_time_solver * n_10 / iterations;
+  double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
+  this->pcout << "Linear solver (numbers based on n_10):" << std::endl
+              << "  Wall time t_10          = " << std::scientific << std::setprecision(2) << t_10
+              << " s" << std::endl
+              << "  tau_10                  = " << std::scientific << std::setprecision(2) << tau_10
+              << " s*core/DoF" << std::endl
+              << "  Throughput E_10         = " << std::scientific << std::setprecision(2)
+              << 1.0 / tau_10 << " DoF/s/core" << std::endl;
 
   this->pcout << "_________________________________________________________________________________"
               << std::endl
               << std::endl;
+
+  timings.push_back(Timings(param.degree, DoFs, n_10, tau_10));
+}
+
+void
+do_run(Poisson::InputParameters const & param)
+{
+  // setup problem and run simulation
+  typedef double               Number;
+  std::shared_ptr<ProblemBase> problem;
+
+  if(param.dim == 2)
+    problem.reset(new Problem<2, Number>());
+  else if(param.dim == 3)
+    problem.reset(new Problem<3, Number>());
+  else
+    AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
+
+  problem->setup(param);
+
+  try
+  {
+    problem->solve();
+  }
+  catch(...)
+  {
+    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    {
+      std::cerr << std::endl
+                << std::endl
+                << "----------------------------------------------------" << std::endl;
+      std::cerr << "Solver failed to converge!" << std::endl
+                << "----------------------------------------------------" << std::endl;
+    }
+  }
+
+  problem->analyze_computing_times();
 }
 
 int
@@ -344,37 +491,166 @@ main(int argc, char ** argv)
     Poisson::InputParameters param;
     set_input_parameters(param);
 
-    // k-refinement
-    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+    if(RUN_TYPE == RunType::RefineHAndP)
     {
-      // h-refinement
-      for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
-          ++h_refinements)
+      // k-refinement
+      for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
       {
-        // reset degree
-        param.degree = degree;
+        // h-refinement
+        for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
+            ++h_refinements)
+        {
+          // reset degree
+          param.degree = degree;
 
-        // reset mesh refinement
-        param.h_refinements = h_refinements;
+          // reset mesh refinement
+          param.h_refinements = h_refinements;
 
-        // setup problem and run simulation
-        typedef double               Number;
-        std::shared_ptr<ProblemBase> problem;
-
-        if(param.dim == 2)
-          problem.reset(new Problem<2, Number>());
-        else if(param.dim == 3)
-          problem.reset(new Problem<3, Number>());
-        else
-          AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
-
-        problem->setup(param);
-
-        problem->solve();
-
-        problem->analyze_computing_times();
+          do_run(param);
+        }
       }
     }
+#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
+    else if(RUN_TYPE == RunType::FixedProblemSize || RUN_TYPE == RunType::IncreasingProblemSize)
+    {
+      // k-refinement
+      for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+      {
+        if(RUN_TYPE == RunType::FixedProblemSize)
+        {
+          // reset degree
+          param.degree = degree;
+        }
+        else if(RUN_TYPE == RunType::IncreasingProblemSize)
+        {
+          AssertThrow(
+            DEGREE_MIN == DEGREE_MAX,
+            ExcMessage(
+              "Only a single polynomial degree can be considered for RunType::IncreasingProblemSize"));
+
+          // reset degree
+          param.degree = DEGREE_MIN;
+        }
+
+        double n_cells_min = N_DOFS_MIN / std::pow(param.degree + 1, param.dim);
+        double n_cells_max = N_DOFS_MAX / std::pow(param.degree + 1, param.dim);
+
+        int    refine_level = 0;
+        double n_cells      = 1.0;
+
+        while(n_cells <= std::pow(2, param.dim) * n_cells_max)
+        {
+          // We want to increase the problem size approximately by a factor of two, which is
+          // realized by using a coarse grid with {3,4}^dim elements in 2D and {3,4,5}^dim elements
+          // in 3D.
+
+          // coarse grid with 3^dim cells, and refine_level-2 uniform refinements
+          if(refine_level >= 2)
+          {
+            SUBDIVISIONS_MESH = 3;
+            n_cells =
+              std::pow(SUBDIVISIONS_MESH, param.dim) * std::pow(2., (refine_level - 2) * param.dim);
+
+            if(n_cells >= n_cells_min && n_cells <= n_cells_max)
+            {
+              // reset mesh refinement
+              param.h_refinements = refine_level - 2;
+
+              if(RUN_TYPE == RunType::FixedProblemSize)
+                break;
+              else if(RUN_TYPE == RunType::IncreasingProblemSize)
+                do_run(param);
+              else
+                AssertThrow(false, ExcMessage("Not implemented:"));
+            }
+          }
+
+          // coarse grid with 2^dim cells, and refine_level-1 uniform refinements
+          {
+            SUBDIVISIONS_MESH = 2;
+            n_cells =
+              std::pow(SUBDIVISIONS_MESH, param.dim) * std::pow(2., (refine_level - 1) * param.dim);
+
+            if(n_cells >= n_cells_min && n_cells <= n_cells_max)
+            {
+              // reset mesh refinement
+              param.h_refinements = refine_level - 1;
+
+              if(RUN_TYPE == RunType::FixedProblemSize)
+                break;
+              else if(RUN_TYPE == RunType::IncreasingProblemSize)
+                do_run(param);
+              else
+                AssertThrow(false, ExcMessage("Not implemented:"));
+            }
+          }
+
+          // coarse grid with 5^dim cells, and refine_level-2 uniform refinements
+          if(param.dim == 3 && refine_level >= 2)
+          {
+            SUBDIVISIONS_MESH = 5;
+            n_cells =
+              std::pow(SUBDIVISIONS_MESH, param.dim) * std::pow(2., (refine_level - 2) * param.dim);
+
+            if(n_cells >= n_cells_min && n_cells <= n_cells_max)
+            {
+              // reset mesh refinement
+              param.h_refinements = refine_level - 2;
+
+              if(RUN_TYPE == RunType::FixedProblemSize)
+                break;
+              else if(RUN_TYPE == RunType::IncreasingProblemSize)
+                do_run(param);
+              else
+                AssertThrow(false, ExcMessage("Not implemented:"));
+            }
+          }
+
+          // perform one global refinement
+          ++refine_level;
+          n_cells = std::pow(2., refine_level * param.dim);
+        }
+
+        if(RUN_TYPE == RunType::FixedProblemSize)
+        {
+          AssertThrow((n_cells >= n_cells_min && n_cells <= n_cells_max),
+                      ExcMessage(
+                        "No mesh found that meets the requirements regarding problem size. "
+                        "Make sure that N_DOFS_MAX is sufficiently larger than N_DOFS_MIN."));
+
+          do_run(param);
+        }
+        else
+        {
+          AssertThrow(RUN_TYPE == RunType::IncreasingProblemSize, ExcMessage("Not implemented:"));
+        }
+      }
+    }
+#endif
+    else
+    {
+      AssertThrow(false,
+                  ExcMessage("Not implemented. Make sure to activate ENABLE_SUBDIVIDED_HYPERCUBE "
+                             "for RunType::FixedProblemSize or RunType::IncreasingProblemSize."));
+    }
+
+    // summarize results for all polynomial degrees and problem sizes
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+
+    pcout << std::endl
+          << "_________________________________________________________________________________"
+          << std::endl
+          << std::endl;
+
+    pcout << "Summary of performance results for Poisson solver:" << std::endl << std::endl;
+
+    timings[0].print_header(pcout);
+    for(std::vector<Timings>::const_iterator it = timings.begin(); it != timings.end(); ++it)
+      it->print_results(pcout);
+
+    pcout << "_________________________________________________________________________________"
+          << std::endl
+          << std::endl;
   }
   catch(std::exception & exc)
   {

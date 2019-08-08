@@ -72,8 +72,9 @@ void set_input_parameters(InputParameters &param)
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = false;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl_oif = 0.5; //0.2; //0.125;
+  param.cfl_oif = 0.45; //0.2; //0.125;
   param.cfl = param.cfl_oif * 1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-3; // 1.0e-4;
@@ -132,18 +133,22 @@ void set_input_parameters(InputParameters &param)
   // pressure Poisson equation
   param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-3,100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  param.multigrid_data_pressure_poisson.type = MultigridType::phMG;
-  param.multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
+  param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
   param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
 
   // projection step
   param.solver_projection = SolverProjection::CG;
-  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
-  param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix; //BlockJacobi;
+  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-3);
+  param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  param.multigrid_data_projection.type = MultigridType::phMG;
+  param.multigrid_data_projection.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data_projection.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
+  param.multigrid_data_projection.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
   param.preconditioner_block_diagonal_projection = Elementwise::Preconditioner::InverseMassMatrix;
   param.solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2,1000);
-  param.update_preconditioner_projection = true;
+  param.update_preconditioner_projection = false;
+  param.update_preconditioner_projection_every_time_steps = 10;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -152,10 +157,11 @@ void set_input_parameters(InputParameters &param)
 
   // viscous step
   param.solver_viscous = SolverViscous::CG;
-  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
+  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-3);
   param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
-  param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Jacobi;
-  param.multigrid_data_viscous.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data_viscous.type = MultigridType::cphMG;
+  param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi;
+  param.multigrid_data_viscous.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi; //BlockJacobi;
   param.multigrid_data_viscous.smoother_data.relaxation_factor = 0.7;
   param.update_preconditioner_viscous = false;
 
@@ -195,7 +201,7 @@ void set_input_parameters(InputParameters &param)
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
 
   // preconditioner Schur-complement block
   param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion;
@@ -233,14 +239,28 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   }
   else if(MESH_TYPE == MeshType::Curvilinear)
   {
-    AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
-        ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
-
-    triangulation->set_all_manifold_ids(1);
     double const deformation = 0.5;
     unsigned int const frequency = 2;
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
+    triangulation->set_all_manifold_ids(1);
     triangulation->set_manifold(1, manifold);
+
+    std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
+
+    for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
+        cell != triangulation->end(); ++cell)
+    {
+      for (unsigned int v=0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+      {
+        if (vertex_touched[cell->vertex_index(v)]==false)
+        {
+          Point<dim> &vertex = cell->vertex(v);
+          Point<dim> new_point = manifold.push_forward(vertex);
+          vertex = new_point;
+          vertex_touched[cell->vertex_index(v)] = true;
+        }
+      }
+    }
   }
 
   AssertThrow(dim == 3, ExcMessage("This test case can only be used for dim==3!"));

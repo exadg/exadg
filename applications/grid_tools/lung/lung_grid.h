@@ -293,7 +293,7 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 
 
   timer.restart();
-  // GridReordering<3>::reorder_cells(cell_data_3d, true);
+  GridReordering<3>::reorder_cells(cell_data_3d, true);
   tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
   timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
