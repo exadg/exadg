@@ -10,8 +10,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 4;
-unsigned int const DEGREE_MAX = 4;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
 unsigned int const REFINE_SPACE_MIN = 1;
 unsigned int const REFINE_SPACE_MAX = 1;
@@ -19,7 +19,7 @@ unsigned int const REFINE_SPACE_MAX = 1;
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME       = "lung_8gen";
+std::string OUTPUT_NAME       = "lung_paper_6gen";
 
 // lung geometry
 std::string const FOLDER_LUNG_FILES = "lung/02_BronchialTreeGrowing_child/output/";
@@ -29,7 +29,7 @@ types::boundary_id const OUTLET_ID_FIRST = 2;
 types::boundary_id OUTLET_ID_LAST = OUTLET_ID_FIRST; // initialization
 
 // number of lung generations
-unsigned int const N_GENERATIONS = 8;
+unsigned int const N_GENERATIONS = 6;
 
 namespace Poisson
 {
@@ -50,16 +50,18 @@ set_input_parameters(Poisson::InputParameters &param)
   // SOLVER
   param.solver = Poisson::Solver::CG;
   param.solver_data.abs_tol = 1.e-20;
-  param.solver_data.rel_tol = 1.e-8;
+  param.solver_data.rel_tol = 1.e-10;
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
   param.multigrid_data.type = MultigridType::cphMG;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data.smoother_data.iterations = 5;
   // MG coarse grid solver
   param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
 }
 }
 
@@ -175,7 +177,7 @@ std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
 construct_postprocessor(Poisson::InputParameters const &param)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false; //true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
   pp_data.output_data.degree = param.degree;

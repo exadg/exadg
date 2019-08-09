@@ -1,5 +1,5 @@
 /*
- * TurbulentChannel.h
+ * turbulent_channel.h
  *
  *  Created on: Oct 14, 2016
  *      Author: fehn
