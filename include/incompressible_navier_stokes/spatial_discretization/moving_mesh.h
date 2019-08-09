@@ -103,9 +103,6 @@ private:
   void
   fill_grid_coordinates_vector(int component = 0);
 
-  void
-  initialize_ale_update_data();
-
 
   InputParameters                                  param;
   std::shared_ptr<FieldFunctions<dim>>             field_functions;
@@ -128,16 +125,6 @@ private:
   // mappings
   std::shared_ptr<MappingQ>     mapping;
   std::shared_ptr<MappingField> mapping_ale;
-
-  // matrix_free update data:
-  std::vector<Quadrature<1>> quadratures_ale;
-  AffineConstraints<double>  constraint_u_ale, constraint_p_ale, constraint_u_scalar_ale;
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ale;
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec_ale;
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
-  UpdateFlags                                      ale_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values | update_inverse_jacobians /*CFL*/);
 
   // timer
   Timer  timer_ale;

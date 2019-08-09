@@ -217,6 +217,16 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
   additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
+  if(param.ale_formulation == true)
+  {
+    additional_data_ale                                     = additional_data;
+    additional_data_ale.mapping_update_flags                = ale_update_flags;
+    additional_data_ale.mapping_update_flags_inner_faces    = ale_update_flags;
+    additional_data_ale.mapping_update_flags_boundary_faces = ale_update_flags;
+    additional_data_ale.initialize_indices = false; // connectivity of elements stays the same
+    additional_data_ale.initialize_mapping = true;
+  }
+
   if(param.use_cell_based_face_loops)
   {
     auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
@@ -225,8 +235,6 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   }
 
   // dofhandler
-  std::vector<const DoFHandler<dim> *> dof_handler_vec;
-
   dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
     DofHandlerSelector::n_variants));
   dof_handler_vec[dof_index_u]        = &dof_handler_u;
@@ -234,10 +242,9 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
   // constraint
-  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
   constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
     DofHandlerSelector::n_variants));
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+
   constraint_u.close();
   constraint_p.close();
   constraint_u_scalar.close();
@@ -246,9 +253,6 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
 
   // quadrature
-  std::vector<Quadrature<1>> quadratures;
-
-  // resize quadratures
   quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(
     QuadratureSelector::n_variants));
   // velocity
@@ -1146,17 +1150,10 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::ale_update(
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec_ale,
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ale,
-  std::vector<Quadrature<1>>                       quadratures_ale,
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale)
+DGNavierStokesBase<dim, Number>::ale_update()
 {
-  matrix_free.reinit(get_mapping(),
-                     dof_handler_vec_ale,
-                     constraint_matrix_vec_ale,
-                     quadratures_ale,
-                     additional_data_ale);
+  matrix_free.reinit(
+    get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data_ale);
 }
 
 template<int dim, typename Number>

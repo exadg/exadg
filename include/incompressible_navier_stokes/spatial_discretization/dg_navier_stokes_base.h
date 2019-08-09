@@ -381,10 +381,7 @@ public:
   // ALE
 
   void
-  ale_update(std::vector<const DoFHandler<dim> *>             dof_handler_vec_ale,
-             std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_ale,
-             std::vector<Quadrature<1>>                       quadratures_ale,
-             typename MatrixFree<dim, Number>::AdditionalData additional_data_ale);
+  ale_update();
 
   void
   set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
@@ -563,6 +560,18 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
+
+  /*
+   * MatrixFree Initialization Data
+   */
+
+  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
+  UpdateFlags                                      ale_update_flags =
+    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
+     update_values | update_inverse_jacobians /*CFL*/);
+  std::vector<Quadrature<1>>                     quadratures;
+  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
+  std::vector<const DoFHandler<dim> *>           dof_handler_vec;
 };
 
 } // namespace IncNS

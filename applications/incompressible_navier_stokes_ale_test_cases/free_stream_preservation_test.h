@@ -35,8 +35,8 @@ enum class MeshType
 };
 const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeDoubleInteriorSinCos;
-const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime;
+const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = true;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
@@ -53,11 +53,11 @@ void
 set_input_parameters(InputParameters & param)
 {
   // ALE
-  param.grid_velocity_analytical                 = false;
   param.ale_formulation                          = true;
+  param.grid_velocity_analytical                 = false;
   param.neumann_with_variable_normal_vector      = false;
   param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
-  param.start_with_low_order                     = true;
+  param.start_with_low_order                     = false;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
   param.order_time_integrator                    = 1;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
