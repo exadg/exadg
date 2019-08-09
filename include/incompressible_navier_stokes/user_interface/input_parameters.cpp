@@ -25,7 +25,7 @@ InputParameters::InputParameters()
     // ALE
     grid_velocity_analytical(true),
     ale_formulation(false),
-    NBC_prescribed_with_known_normal_vectors(true),
+    neumann_with_variable_normal_vector(false),
     // TODO this variable is currently used for testing and can be removed later
     initialize_with_former_mesh_instances(!start_with_low_order),
 
@@ -442,6 +442,9 @@ InputParameters::check_input_parameters()
                 ExcMessage("only BDFCoupledSolution has been implemented on moving meshes"));
     AssertThrow(problem_type == ProblemType::Unsteady,
                 ExcMessage("physically steady problems become unsteady on moving meshes."));
+
+    AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
+                ExcMessage("ale is only implemented for explicit formulations by now."));
   }
 }
 
@@ -548,6 +551,10 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   }
 
   print_parameter(pcout, "Right-hand side", right_hand_side);
+
+  print_parameter(pcout, "Use ALE formulation", ale_formulation);
+  print_parameter(pcout, "Grid velocity is prescribed analytically", grid_velocity_analytical);
+  print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
 }
 
 

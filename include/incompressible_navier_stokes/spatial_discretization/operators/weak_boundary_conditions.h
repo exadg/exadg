@@ -296,7 +296,7 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
     Tensor<1, dim, VectorizedArray<Number>>
-    calculate_exterior_normal_gradient_without_known_normal_vectors(
+    calculate_exterior_normal_gradient_variable_normal_vector(
       Tensor<1, dim, VectorizedArray<Number>> const & normal_gradient_m,
       unsigned int const                              q,
       FaceIntegrator<dim, dim, Number> const &        integrator,

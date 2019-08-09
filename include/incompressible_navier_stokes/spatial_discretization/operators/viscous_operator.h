@@ -33,7 +33,7 @@ struct ViscousKernelData
       penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Symmetrized),
       IP_formulation(InteriorPenaltyFormulation::SIPG),
       viscosity_is_variable(false),
-      known_normal_vector(true)
+      variable_normal_vector(false)
   {
   }
 
@@ -45,7 +45,7 @@ struct ViscousKernelData
   PenaltyTermDivergenceFormulation penalty_term_div_formulation;
   InteriorPenaltyFormulation       IP_formulation;
   bool                             viscosity_is_variable;
-  bool                             known_normal_vector;
+  bool                             variable_normal_vector;
 };
 
 template<int dim, typename Number>

@@ -299,8 +299,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     // depends on quantities such as the time_step_size or gamma0!!!)
     time_integrator->setup(param.restarted_simulation);
 
-    // TODO note that the grid velocity has to be set to correctly initialize the preconditioner
-    // for the ALE case
     navier_stokes_operation->setup_solvers(
       time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
   }
@@ -315,8 +313,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  // TODO if(param.convective_problem()), if(param.treatment_convective == Explicit)
   if(param.ale_formulation == true && param.start_with_low_order == false &&
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
      param.initialize_with_former_mesh_instances == true)
   {
     std::vector<double> eval_times(param.order_time_integrator);
@@ -330,8 +328,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     time_integrator->reinit_former_solution_considering_former_mesh_instances(
       ale_operation->get_former_solution_on_former_mesh_instances(eval_times));
 
-    time_integrator->reinit_convective_term_considering_former_mesh_instances(
-      ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
+    if(param.convective_problem())
+      time_integrator->reinit_convective_term_considering_former_mesh_instances(
+        ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
   }
 
 
@@ -476,33 +475,37 @@ Problem<dim, Number>::analyze_computing_times() const
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
               << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
+  double compute_and_set_mesh_velocity = 0.0;
+  double update                        = 0.0;
+  double advance_mesh                  = 0.0;
+  if(param.ale_formulation == true)
+  {
+    Utilities::MPI::MinMaxAvg advance_mesh_time_data =
+      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_advance_mesh(), MPI_COMM_WORLD);
+    advance_mesh = advance_mesh_time_data.avg;
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
+                << std::scientific << std::setw(25) << std::right << advance_mesh << " s  "
+                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                << advance_mesh / overall_time_avg * 100 << " %" << std::endl;
 
-  Utilities::MPI::MinMaxAvg advance_mesh_time_data =
-    Utilities::MPI::min_max_avg(ale_operation->get_wall_time_advance_mesh(), MPI_COMM_WORLD);
-  double const advance_mesh = advance_mesh_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
-              << std::scientific << std::setw(25) << std::right << advance_mesh << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << advance_mesh / overall_time_avg * 100 << " %" << std::endl;
+    Utilities::MPI::MinMaxAvg update_time_data =
+      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_ale_update(), MPI_COMM_WORLD);
+    update = update_time_data.avg;
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
+                << std::scientific << std::setw(25) << std::right << update << " s  "
+                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+                << update / overall_time_avg * 100 << " %" << std::endl;
 
-  Utilities::MPI::MinMaxAvg update_time_data =
-    Utilities::MPI::min_max_avg(ale_operation->get_wall_time_ale_update(), MPI_COMM_WORLD);
-  double const update = update_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
-              << std::scientific << std::setw(25) << std::right << update << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << update / overall_time_avg * 100 << " %" << std::endl;
-
-  Utilities::MPI::MinMaxAvg compute_and_set_mesh_velocity_time_data =
-    Utilities::MPI::min_max_avg(ale_operation->get_wall_time_compute_and_set_mesh_velocity(),
-                                MPI_COMM_WORLD);
-  double const compute_and_set_mesh_velocity = compute_and_set_mesh_velocity_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Compute and set mesh velocity"
-              << std::setprecision(2) << std::scientific << std::setw(12) << std::right
-              << compute_and_set_mesh_velocity << " s  " << std::setprecision(2) << std::fixed
-              << std::setw(6) << std::right
-              << compute_and_set_mesh_velocity / overall_time_avg * 100 << " %" << std::endl;
-
+    Utilities::MPI::MinMaxAvg compute_and_set_mesh_velocity_time_data =
+      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_compute_and_set_mesh_velocity(),
+                                  MPI_COMM_WORLD);
+    compute_and_set_mesh_velocity = compute_and_set_mesh_velocity_time_data.avg;
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Compute and set mesh velocity"
+                << std::setprecision(2) << std::scientific << std::setw(12) << std::right
+                << compute_and_set_mesh_velocity << " s  " << std::setprecision(2) << std::fixed
+                << std::setw(6) << std::right
+                << compute_and_set_mesh_velocity / overall_time_avg * 100 << " %" << std::endl;
+  }
 
   double const other = overall_time_avg - sum_of_substeps - setup_time_avg - update - advance_mesh -
                        compute_and_set_mesh_velocity;

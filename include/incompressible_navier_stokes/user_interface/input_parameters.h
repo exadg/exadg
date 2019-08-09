@@ -121,7 +121,7 @@ public:
   /**************************************************************************************/
   bool grid_velocity_analytical;
   bool ale_formulation;
-  bool NBC_prescribed_with_known_normal_vectors;
+  bool neumann_with_variable_normal_vector;
 
   // TODO this variable is currently used for testing and can be removed later
   bool initialize_with_former_mesh_instances;

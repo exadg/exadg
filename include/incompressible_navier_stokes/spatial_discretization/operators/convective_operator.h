@@ -276,6 +276,11 @@ public:
                                                       tensor const & grad_u,
                                                       tensor const & grad_delta_u) const
   {
+    AssertThrow(
+      data.ale == false,
+      ExcMessage(
+        "The linearized convective operator is currently not implemented for ALE formulation."));
+
     // plus sign since the strong formulation is used, i.e.
     // integration by parts is performed twice
     vector F = grad_u * delta_u + grad_delta_u * u;

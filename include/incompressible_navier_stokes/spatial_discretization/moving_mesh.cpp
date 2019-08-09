@@ -194,7 +194,6 @@ void
 MovingMesh<dim, Number>::initialize_vectors()
 {
   navier_stokes_operation->initialize_vector_velocity(u_grid_np);
-  get_analytical_grid_velocity(param.start_time);
 
   if(param.grid_velocity_analytical == false)
   {
@@ -205,6 +204,15 @@ MovingMesh<dim, Number>::initialize_vectors()
     }
 
     fill_grid_coordinates_vector();
+    // if gird velocity is not prescribed analytically it is assumed to be 0 at timesteps
+    // t_0 and former timesteps
+    navier_stokes_operation->set_grid_velocity(u_grid_np);
+  }
+  else if(param.grid_velocity_analytical == true)
+  {
+    // otherwise:
+    get_analytical_grid_velocity(param.start_time);
+    navier_stokes_operation->set_grid_velocity(u_grid_np);
   }
 }
 

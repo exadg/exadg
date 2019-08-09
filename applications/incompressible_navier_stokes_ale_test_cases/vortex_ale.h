@@ -51,7 +51,7 @@ const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.7;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.25;
 const double START_TIME = 0.0;
 const double END_TIME   = 0.5;
 
@@ -66,14 +66,14 @@ set_input_parameters(InputParameters & param)
   // ALE
   param.grid_velocity_analytical                 = true;
   param.ale_formulation                          = true;
-  param.NBC_prescribed_with_known_normal_vectors = false;
+  param.neumann_with_variable_normal_vector      = true;
   param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
   param.start_with_low_order                     = true;
-  param.time_step_size                           = 5e-5; // 0.5;//5e-5;
+  param.time_step_size                           = 0.01; // 0.5;//5e-5;
   param.order_time_integrator                    = 3;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
-  param.calculation_of_time_step_size            = TimeStepCalculation::CFL;
-  param.adaptive_time_stepping                   = true;
+  param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
+  param.adaptive_time_stepping                   = false;
   param.cfl                                      = 0.4;
 
   // MATHEMATICAL MODEL
