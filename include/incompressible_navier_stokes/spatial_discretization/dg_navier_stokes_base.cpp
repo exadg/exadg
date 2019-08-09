@@ -642,9 +642,6 @@ DGNavierStokesBase<dim, Number>::get_mapping() const
 {
   if(param.ale_formulation == true)
   {
-    // TODO
-    //    return *mapping_ale;
-
     if(mapping_ale.get() == 0)
       return *mapping;
     else
