@@ -53,7 +53,7 @@ void set_input_parameters(InputParameters &param)
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.use_outflow_bc_convective_term = true;
-  param.right_hand_side = periodicBCs; //prescribe body force in x-direction in case of perodic BC's
+  param.right_hand_side = periodicBCs; //prescribe body force in x-direction in case of periodic BC's
 
 
   // PHYSICAL QUANTITIES
@@ -64,7 +64,7 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFCoupledSolution;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = true;
@@ -157,6 +157,7 @@ void set_input_parameters(InputParameters &param)
 
   // preconditioner velocity/momentum block
   param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
   param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
   param.multigrid_data_velocity_block.smoother_data.iterations = 5;
@@ -436,8 +437,8 @@ template<int dim>
 
      if(periodicBCs == true)
      {
-     if(component==0)
-       result = 0.02;
+       if(component==0)
+         result = 0.25;
      }
 
      return result;
@@ -502,7 +503,7 @@ construct_postprocessor(InputParameters const &param)
   // write output for visualization of results
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = "output/poiseuille/vtu/";
-  pp_data.output_data.output_name = "poiseuille";
+  pp_data.output_data.output_name = "test";
   pp_data.output_data.output_start_time = param.start_time;
   pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/100;
   pp_data.output_data.write_vorticity = true;

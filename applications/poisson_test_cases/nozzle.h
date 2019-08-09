@@ -12,8 +12,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 1;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
 unsigned int const REFINE_SPACE_MIN = 0;
 unsigned int const REFINE_SPACE_MAX = 0;
@@ -21,7 +21,7 @@ unsigned int const REFINE_SPACE_MAX = 0;
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME       = "nozzle";
+std::string OUTPUT_NAME       = "nozzle_refine0";
 
 namespace Poisson
 {
@@ -35,7 +35,7 @@ set_input_parameters(Poisson::InputParameters &param)
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
-  param.mapping = MappingType::Isoparametric;
+  param.mapping = MappingType::Cubic; //Isoparametric;
   param.spatial_discretization = SpatialDiscretization::DG;
   param.IP_factor = 1.0e0;
 
@@ -46,7 +46,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::phcMG;
+  param.multigrid_data.type = MultigridType::cphMG;
   param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;

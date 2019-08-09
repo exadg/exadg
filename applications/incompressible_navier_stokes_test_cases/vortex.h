@@ -23,8 +23,8 @@
 unsigned int const DEGREE_MIN = 4;
 unsigned int const DEGREE_MAX = 4;
 
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 1;
+unsigned int const REFINE_SPACE_MAX = 1;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -104,8 +104,9 @@ void set_input_parameters(InputParameters &param)
   param.pure_dirichlet_bc = false;
 
   // NUMERICAL PARAMETERS
-  param.implement_block_diagonal_preconditioner_matrix_free = true;
-  param.use_cell_based_face_loops = true;
+  param.implement_block_diagonal_preconditioner_matrix_free = false;
+  param.use_cell_based_face_loops = false;
+  param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
   // PROJECTION METHODS
 
@@ -131,7 +132,9 @@ void set_input_parameters(InputParameters &param)
   // viscous step
   param.solver_viscous = SolverViscous::CG;
   param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
-  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+  param.preconditioner_viscous = PreconditionerViscous::Multigrid;
+  param.multigrid_data_viscous.type = MultigridType::hMG;
+  param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.update_preconditioner_viscous = false;
 
 
@@ -148,8 +151,8 @@ void set_input_parameters(InputParameters &param)
 
   // linear solver
   param.solver_momentum = SolverMomentum::FGMRES;
-  param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
-  param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
+  param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-2, 100);
+  param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
   param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
   param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
   param.update_preconditioner_momentum = true;
@@ -175,22 +178,22 @@ void set_input_parameters(InputParameters &param)
 
   // linear solver
   param.solver_coupled = SolverCoupled::FGMRES; //FGMRES; //GMRES;
-  param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-2, 100);
 
   // preconditioner linear solver
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
   param.update_preconditioner_coupled = true;
 
   // preconditioner momentum block
-  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid; // InverseMassMatrix;
-  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+  param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
+  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionConvectionDiffusion;
   param.multigrid_data_velocity_block.type = MultigridType::phMG;
-  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi; //Chebyshev; //GMRES;
-  param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi; //PointJacobi; //BlockJacobi;
+  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi; //Chebyshev; //GMRES;
+  param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
   param.multigrid_data_velocity_block.smoother_data.iterations = 5;
   param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
   // coarse grid solver
-  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
+  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::GMRES; //Chebyshev; //GMRES;
 
   // preconditioner Schur-complement block
   param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;

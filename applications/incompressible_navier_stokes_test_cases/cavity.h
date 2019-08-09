@@ -112,6 +112,12 @@ void set_input_parameters(InputParameters &param)
   param.continuity_penalty_factor = param.divergence_penalty_factor;
   param.add_penalty_terms_to_monolithic_system = true;
 
+  // NUMERICAL PARAMETERS
+  param.implement_block_diagonal_preconditioner_matrix_free = false;
+  param.use_cell_based_face_loops = false;
+  param.solver_data_block_diagonal = SolverData(1000, 1.e-12, 1.e-2, 1000);
+  param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
+
   // PROJECTION METHODS
 
   // pressure Poisson equation
@@ -180,7 +186,7 @@ void set_input_parameters(InputParameters &param)
   // preconditioner velocity/momentum block
   param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
   param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionConvectionDiffusion;
-  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::GMRES;
+  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi; //GMRES;
   param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
   param.multigrid_data_velocity_block.smoother_data.iterations = 5;
   param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
