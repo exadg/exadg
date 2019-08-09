@@ -42,10 +42,10 @@ public:
   initialize_grid_coordinates_on_former_mesh_instances(std::vector<double> eval_times);
 
   std::vector<BlockVectorType>
-  initialize_former_solution_on_former_mesh_instances(std::vector<double> eval_times);
+  get_former_solution_on_former_mesh_instances(std::vector<double> eval_times);
 
   std::vector<VectorType>
-  initialize_convective_term_on_former_mesh_instances(std::vector<double> eval_times);
+  get_convective_term_on_former_mesh_instances(std::vector<double> eval_times);
 
   VectorType
   get_grid_velocity() const;

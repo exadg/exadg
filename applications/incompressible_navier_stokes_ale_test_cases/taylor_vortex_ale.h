@@ -316,26 +316,19 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   if(data.type == AnalyicMeshMovement::CubeInteriorSinCos)
     field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeInteriorSinCosOnlyX<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyX<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeInteriorSinCosOnlyY<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyY<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeSinCosWithBoundaries<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeSinCosWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeInteriorSinCosWithSinInTime<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeXSquaredWithBoundaries<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeXSquaredWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeDoubleInteriorSinCos<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeDoubleSinCosWithBoundaries<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
 

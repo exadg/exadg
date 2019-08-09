@@ -31,8 +31,8 @@ unsigned int const REFINE_TIME_MAX = 0;
 
 
 // set problem specific parameters like physical dimensions, etc.
-const double                 U_X_MAX                  = 1.0;
-const double                 VISCOSITY                = 2.5e-2; // 1.e-2; //2.5e-2;
+const double U_X_MAX = 1.0;
+const double VISCOSITY = 2.5e-2; // 1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
 enum class MeshType
@@ -46,12 +46,12 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeDoubleInteriorSinCos;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 1.0;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.7;
 const double START_TIME = 0.0;
 const double END_TIME   = 0.5;
 
@@ -463,55 +463,38 @@ public:
 };
 
 template<int dim>
-class NeumannBoundaryVelocity : public Function<dim>
+class NeumannBoundaryVelocity : public FunctionWithNormal<dim>
 {
 public:
-  NeumannBoundaryVelocity(const double time = 0.) : Function<dim>(dim, time)
+  NeumannBoundaryVelocity(const double time = 0.)
+  : FunctionWithNormal<dim>(time)
   {
   }
-
-//  //TODO
-//  double
-//  value(const Point<dim> & p, const unsigned int component = 0, Tensor<1, dim> normal) const
-//  {
-//    AssertThrow(false, ExcMessage("Not implemented."));
-//    return 0.0;
-//  }
 
   double
   value(const Point<dim> & p, const unsigned int component = 0) const
   {
-    double       t      = this->get_time();
-    double       result = 0.0;
-    const double pi     = numbers::PI;
+    double         t      = this->get_time();
+    Tensor<1, dim> n      = this->get_normal_vector();
+    double         result = 0.0;
+    const double   pi     = numbers::PI;
 
+    // h = h_u - g_p*n;
+    // h_u/nu :=
     if(FORMULATION_VISCOUS_TERM == FormulationViscousTerm::LaplaceFormulation)
     {
-      // h = h_u - g_p*n;
-      // h_u/nu/n :=
-      if(component == 0)
-        result = 0; //(grad u)_{11}
+      if (component == 0)
+        result = 0 * n[0] - U_X_MAX * 2.0 * pi * std::cos(2 * pi * p[1]) * std::exp(-4.0 * pi * pi * VISCOSITY * t) * n[1];
       else if(component == 1)
-        result = -U_X_MAX * 2.0 * pi * std::cos(2 * pi * p[1]) *
-                 std::exp(-4.0 * pi * pi * VISCOSITY * t); //(grad u)_{12}
-      else if(component == 2)
-        result = U_X_MAX * 2.0 * pi * std::cos(2 * pi * p[0]) *
-                 std::exp(-4.0 * pi * pi * VISCOSITY * t); //(grad u)_{21}
-      else if(component == 3)
-        result = 0; //(grad u)_{22}
+        result = U_X_MAX * 2.0 * pi * std::cos(2 * pi * p[0]) * std::exp(-4.0 * pi * pi * VISCOSITY * t) * n[0] + 0 * n[1];
     }
     else if(FORMULATION_VISCOUS_TERM == FormulationViscousTerm::DivergenceFormulation)
     {
-      if(component == 0)
-        result = 0; // 0.5*(grad u+ (grad u)^T)_{11}
+
+      if (component == 0)
+        result = 0 * n[0] + U_X_MAX * 2.0 * pi * (std::cos(2.0 * pi * p[0]) - std::cos(2.0 * pi * p[1])) * std::exp(-4.0 * pi * pi * VISCOSITY * t) * n[1];
       else if(component == 1)
-        result = U_X_MAX * 2.0 * pi * (std::cos(2.0 * pi * p[0]) - std::cos(2.0 * pi * p[1])) *
-                 std::exp(-4.0 * pi * pi * VISCOSITY * t); // 0.5*(grad u+ (grad u)^T)_{12}
-      else if(component == 2)
-        result = U_X_MAX * 2.0 * pi * (std::cos(2.0 * pi * p[0]) - std::cos(2.0 * pi * p[1])) *
-                 std::exp(-4.0 * pi * pi * VISCOSITY * t); // 0.5*(grad u+ (grad u)^T)_{21}
-      else if(component == 3)
-        result = 0; // 0.5*(grad u+ (grad u)^T)_{22}
+        result = U_X_MAX * 2.0 * pi * (std::cos(2.0 * pi * p[0]) - std::cos(2.0 * pi * p[1])) * std::exp(-4.0 * pi * pi * VISCOSITY * t) * n[0] + 0 * n[1];
     }
     else
     {
@@ -585,26 +568,19 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   if(data.type == AnalyicMeshMovement::CubeInteriorSinCos)
     field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeInteriorSinCosOnlyX<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyX<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeInteriorSinCosOnlyY<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyY<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeSinCosWithBoundaries<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeSinCosWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeInteriorSinCosWithSinInTime<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeXSquaredWithBoundaries<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeXSquaredWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeDoubleInteriorSinCos<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(
-      new CubeDoubleSinCosWithBoundaries<dim>(data));
+    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
 

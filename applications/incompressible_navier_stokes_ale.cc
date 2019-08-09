@@ -299,6 +299,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     // depends on quantities such as the time_step_size or gamma0!!!)
     time_integrator->setup(param.restarted_simulation);
 
+    // TODO note that the grid velocity has to be set to correctly initialize the preconditioner
+    // for the ALE case
     navier_stokes_operation->setup_solvers(
       time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
   }
@@ -313,7 +315,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-
+  // TODO if(param.convective_problem()), if(param.treatment_convective == Explicit)
   if(param.ale_formulation == true && param.start_with_low_order == false &&
      param.initialize_with_former_mesh_instances == true)
   {
@@ -326,9 +328,10 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       ale_operation->initialize_grid_coordinates_on_former_mesh_instances(eval_times);
 
     time_integrator->reinit_former_solution_considering_former_mesh_instances(
-      ale_operation->initialize_former_solution_on_former_mesh_instances(eval_times));
+      ale_operation->get_former_solution_on_former_mesh_instances(eval_times));
+
     time_integrator->reinit_convective_term_considering_former_mesh_instances(
-      ale_operation->initialize_convective_term_on_former_mesh_instances(eval_times));
+      ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
   }
 
 
@@ -355,17 +358,23 @@ Problem<dim, Number>::solve()
 
       while(!timeloop_finished)
       {
+        // calculate mesh at time t_n+1
         ale_operation->move_mesh(time_integrator->get_next_time());
 
+        // calculate grid velocity at time t_n+1 and hand it over to navier_stokes_operation
+        // for correct evaluation of convective term
         ale_operation->update_grid_velocities(
           time_integrator->get_next_time(),
           time_integrator->get_time_step_size(),
           time_integrator->get_current_time_integrator_constants());
 
+        // set grid velocity at time t_n+1 since the time integrator needs the grid velocity
+        // to compute the time step size for the next time step at the end of the current time step
         if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
            param.adaptive_time_stepping == true)
           time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
 
+        // advance from t_n -> t_n+1
         timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
       }
     }

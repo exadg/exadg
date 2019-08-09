@@ -92,7 +92,7 @@ MovingMesh<dim, Number>::initialize_grid_coordinates_on_former_mesh_instances(
 
 template<int dim, typename Number>
 std::vector<LinearAlgebra::distributed::BlockVector<Number>>
-MovingMesh<dim, Number>::initialize_former_solution_on_former_mesh_instances(
+MovingMesh<dim, Number>::get_former_solution_on_former_mesh_instances(
   std::vector<double> eval_times)
 {
   std::vector<BlockVectorType> solution(param.order_time_integrator);
@@ -122,12 +122,11 @@ MovingMesh<dim, Number>::initialize_former_solution_on_former_mesh_instances(
 
 template<int dim, typename Number>
 std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::initialize_convective_term_on_former_mesh_instances(
+MovingMesh<dim, Number>::get_convective_term_on_former_mesh_instances(
   std::vector<double> eval_times)
 {
-  std::vector<BlockVectorType> solution =
-    initialize_former_solution_on_former_mesh_instances(eval_times);
-  std::vector<VectorType> vec_convective_term(param.order_time_integrator);
+  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
+  std::vector<VectorType>      vec_convective_term(param.order_time_integrator);
 
   for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
     navier_stokes_operation->initialize_vector_velocity(vec_convective_term[i]);
