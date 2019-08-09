@@ -61,7 +61,7 @@ void set_input_parameters(InputParameters &param)
   //ALE
   param.grid_velocity_analytical = true;
   param.ale_formulation = true;
-  param.NBC_prescribed_with_known_normal_vectors = true;
+  param.neumann_with_variable_normal_vector = false;
   param.initialize_with_former_mesh_instances=INITIALIZE_WITH_FORMER_MESH_INSTANCES ;
   param.start_with_low_order = true;
   param.time_step_size = 1.0e-1;

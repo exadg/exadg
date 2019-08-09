@@ -42,7 +42,7 @@ enum class MeshType
   ComplexVolumeManifold,
   Curvilinear
 };
-const MeshType MESH_TYPE = MeshType::UniformCartesian;
+const MeshType MESH_TYPE = MeshType::Curvilinear;
 
 
 
@@ -64,8 +64,8 @@ void
 set_input_parameters(InputParameters & param)
 {
   // ALE
-  param.grid_velocity_analytical                 = true;
   param.ale_formulation                          = true;
+  param.grid_velocity_analytical                 = true;
   param.neumann_with_variable_normal_vector      = true;
   param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
   param.start_with_low_order                     = true;

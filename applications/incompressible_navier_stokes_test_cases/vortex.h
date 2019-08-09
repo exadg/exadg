@@ -20,14 +20,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 6;
-unsigned int const DEGREE_MAX = 6;
+unsigned int const DEGREE_MIN = 4;
+unsigned int const DEGREE_MAX = 4;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
 unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 7;
+unsigned int const REFINE_TIME_MAX = 0;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -36,7 +36,7 @@ const double VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
 enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeManifold, Curvilinear };
-const MeshType MESH_TYPE = MeshType::UniformCartesian; //UniformCartesian;
+const MeshType MESH_TYPE = MeshType::Curvilinear; //UniformCartesian;
 
 namespace IncNS
 {
@@ -59,7 +59,7 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -69,7 +69,7 @@ void set_input_parameters(InputParameters &param)
   param.cfl_oif = param.cfl/1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
-  param.time_step_size = 0.5;
+  param.time_step_size = 5.e-5;
   param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.dt_refinements = REFINE_TIME_MIN;

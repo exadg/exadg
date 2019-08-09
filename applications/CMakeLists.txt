@@ -32,7 +32,7 @@ SET( SOURCE_FILES
      incompressible_navier_stokes_two_domains.cc
 
      # incompressible flow with scalar transport
-     #incompressible_flow_with_transport.cc
+     incompressible_flow_with_transport.cc
 
      # Compressible Navier-Stokes
      compressible_navier_stokes_performance.cc 
