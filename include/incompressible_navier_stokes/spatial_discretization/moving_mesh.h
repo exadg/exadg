@@ -70,7 +70,7 @@ private:
   void
   initialize_mapping_ale();
 
-  Mapping<dim> const &
+  Mapping<dim> &
   get_mapping() const;
 
   void
@@ -84,12 +84,12 @@ private:
    * The user wants to advance the mesh from the one of the last timestep:
    *  This is the case if a mesh moving algorithm is applied
    * The user wants to advance the mesh with an analytical mesh movement function and wants to use
-   * the initial mesh as a reference Hence: MappingTypeIn can be MappingQ(Case2) or
-   * MappingField(Case1)
+   * the initial mesh as a reference
+   * Hence: Mapping can be MappingQ(Case2) or MappingField(Case1)
    */
-  template<class MappingTypeIn>
+
   void
-  advance_position_grid_new_multigrid(MappingTypeIn & mapping_in);
+  advance_position_grid_new_multigrid(Mapping<dim> & mapping_in);
 
   void
   compute_grid_velocity(std::vector<Number> time_integrator_constants, double time_step_size);

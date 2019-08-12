@@ -11,8 +11,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 5;
-unsigned int const DEGREE_MAX = 5;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
@@ -23,7 +23,7 @@ unsigned int const REFINE_TIME_MAX = 0;
 
 // set problem specific parameters like physical dimensions, etc.
 const double                 U_X_MAX                  = 1.0;
-const double                 VISCOSITY                = 2.5e-2; // 1.e-2; //2.5e-2;
+const double                 VISCOSITY                = 2.5e-2; // 1.e-2; //2.5e-2;//1e-1
 const FormulationViscousTerm FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
 enum class MeshType
@@ -35,15 +35,15 @@ enum class MeshType
 };
 const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeDoubleInteriorSinCos;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = true;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
-const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 0.8;
+const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
+const double TRIANGULATION_MOVEMENT_FREQUENCY = 2.0;
 
 const double START_TIME = 0.0;
-const double END_TIME   = 0.5;
+const double END_TIME   = 20;
 
 bool PURE_DIRICHLET = true;
 
@@ -56,14 +56,15 @@ set_input_parameters(InputParameters & param)
   param.ale_formulation                          = true;
   param.grid_velocity_analytical                 = false;
   param.neumann_with_variable_normal_vector      = false;
-  param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
+  param.initialize_with_former_mesh_instances    = false;
   param.start_with_low_order                     = false;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
-  param.order_time_integrator                    = 1;
+  param.order_time_integrator                    = 3;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
   param.calculation_of_time_step_size            = TimeStepCalculation::CFL;
   param.adaptive_time_stepping                   = true;
   param.cfl                                      = 0.4;
+//  param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
   // MATHEMATICAL MODEL
   param.dim                         = 2;
@@ -135,7 +136,7 @@ set_input_parameters(InputParameters & param)
 
   // pressure Poisson equation
   param.solver_pressure_poisson         = SolverPressurePoisson::CG;
-  param.solver_data_pressure_poisson    = SolverData(1000, 1.e-12, 1.e-6, 100);
+  param.solver_data_pressure_poisson    = SolverData(1000, 1.e-14, 1.e-10, 100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data_pressure_poisson.smoother_data.preconditioner =
@@ -143,10 +144,10 @@ set_input_parameters(InputParameters & param)
 
   // projection step
   param.solver_projection                        = SolverProjection::CG;
-  param.solver_data_projection                   = SolverData(1000, 1.e-12, 1.e-6);
+  param.solver_data_projection                   = SolverData(1000, 1.e-14, 1.e-10);
   param.preconditioner_projection                = PreconditionerProjection::InverseMassMatrix;
   param.preconditioner_block_diagonal_projection = Elementwise::Preconditioner::InverseMassMatrix;
-  param.solver_data_block_diagonal_projection    = SolverData(1000, 1.e-12, 1.e-2, 1000);
+  param.solver_data_block_diagonal_projection    = SolverData(1000, 1.e-14, 1.e-10, 1000);
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -156,7 +157,7 @@ set_input_parameters(InputParameters & param)
 
   // viscous step
   param.solver_viscous                = SolverViscous::CG;
-  param.solver_data_viscous           = SolverData(1000, 1.e-12, 1.e-6);
+  param.solver_data_viscous           = SolverData(1000, 1.e-14, 1.e-10);
   param.preconditioner_viscous        = PreconditionerViscous::InverseMassMatrix;
   param.update_preconditioner_viscous = false;
 
@@ -170,11 +171,11 @@ set_input_parameters(InputParameters & param)
   // momentum step
 
   // Newton solver
-  param.newton_solver_data_momentum = NewtonSolverData(100, 1.e-12, 1.e-6);
+  param.newton_solver_data_momentum = NewtonSolverData(100, 1.e-14, 1.e-10);
 
   // linear solver
   param.solver_momentum                  = SolverMomentum::FGMRES;
-  param.solver_data_momentum             = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.solver_data_momentum             = SolverData(1e4, 1.e-14, 1.e-10, 100);
   param.preconditioner_momentum          = MomentumPreconditioner::InverseMassMatrix;
   param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
   param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
@@ -189,11 +190,11 @@ set_input_parameters(InputParameters & param)
   param.use_scaling_continuity = false;
 
   // nonlinear solver (Newton solver)
-  param.newton_solver_data_coupled = NewtonSolverData(100, 1.e-12, 1.e-6);
+  param.newton_solver_data_coupled = NewtonSolverData(100, 1.e-14, 1.e-10);
 
   // linear solver
   param.solver_coupled      = SolverCoupled::FGMRES; // FGMRES; //GMRES;
-  param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.solver_data_coupled = SolverData(1e4, 1.e-14, 1.e-10, 100);
 
   // preconditioner linear solver
   param.preconditioner_coupled        = PreconditionerCoupled::BlockTriangular;
@@ -393,7 +394,7 @@ construct_postprocessor(InputParameters const & param)
   pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>());
   pp_data.error_data_u.calculate_relative_errors = true;
   pp_data.error_data_u.error_calc_start_time     = param.start_time;
-  pp_data.error_data_u.error_calc_interval_time  = (param.end_time - param.start_time);
+  pp_data.error_data_u.error_calc_interval_time  = (param.end_time - param.start_time)/20;
   pp_data.error_data_u.name                      = "velocity";
 
   // ... pressure error
@@ -401,7 +402,7 @@ construct_postprocessor(InputParameters const & param)
   pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>());
   pp_data.error_data_p.calculate_relative_errors = true;
   pp_data.error_data_p.error_calc_start_time     = param.start_time;
-  pp_data.error_data_p.error_calc_interval_time  = (param.end_time - param.start_time);
+  pp_data.error_data_p.error_calc_interval_time  = (param.end_time - param.start_time)/20;
   pp_data.error_data_p.name                      = "pressure";
 
   std::shared_ptr<PostProcessorBase<dim, Number>> pp;

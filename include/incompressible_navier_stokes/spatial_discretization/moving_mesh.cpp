@@ -209,14 +209,14 @@ void
 MovingMesh<dim, Number>::initialize_mapping_ale()
 {
   field_functions->analytical_solution_grid_velocity->set_time_displacement(0.0);
-  advance_position_grid_new_multigrid<MappingQ>(*mapping);
+  advance_position_grid_new_multigrid(*mapping);
   mapping_ale.reset(new MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>(
     dof_handler_grid, position_grid_new_multigrid));
   navier_stokes_operation->set_mapping_ale(mapping_ale);
 }
 
 template<int dim, typename Number>
-Mapping<dim> const &
+Mapping<dim> &
 MovingMesh<dim, Number>::get_mapping() const
 {
   return *mapping_ale;
@@ -248,13 +248,12 @@ void
 MovingMesh<dim, Number>::advance_mesh(double time_in)
 {
   field_functions->analytical_solution_grid_velocity->set_time_displacement(time_in);
-  advance_position_grid_new_multigrid<MappingQ>(*mapping);
+  advance_position_grid_new_multigrid(*mapping);
 }
 
 template<int dim, typename Number>
-template<class MappingTypeIn>
 void
-MovingMesh<dim, Number>::advance_position_grid_new_multigrid(MappingTypeIn & mapping_in)
+MovingMesh<dim, Number>::advance_position_grid_new_multigrid(Mapping<dim> & mapping_in)
 {
   VectorType position_grid_init;
   VectorType displacement_grid;
