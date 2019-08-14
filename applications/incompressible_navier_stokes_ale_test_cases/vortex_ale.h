@@ -42,11 +42,11 @@ enum class MeshType
   ComplexVolumeManifold,
   Curvilinear
 };
-const MeshType MESH_TYPE = MeshType::Curvilinear;
+const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCos;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
@@ -64,7 +64,7 @@ void
 set_input_parameters(InputParameters & param)
 {
   // ALE
-  param.ale_formulation                          = true;
+  param.ale_formulation                          = false;
   param.grid_velocity_analytical                 = true;
   param.neumann_with_variable_normal_vector      = true;
   param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
@@ -72,8 +72,8 @@ set_input_parameters(InputParameters & param)
   param.time_step_size                           = 0.01; // 0.5;//5e-5;
   param.order_time_integrator                    = 3;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
-  param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
-  param.adaptive_time_stepping                   = false;
+  param.calculation_of_time_step_size            = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping                   = true;
   param.cfl                                      = 0.4;
 
   // MATHEMATICAL MODEL
