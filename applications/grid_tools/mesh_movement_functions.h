@@ -5,6 +5,7 @@
 
 namespace IncNS
 {
+
 struct MeshMovementData
 {
   MeshMovementData()

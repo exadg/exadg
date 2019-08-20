@@ -20,8 +20,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
+unsigned int const DEGREE_MIN = 5;
+unsigned int const DEGREE_MAX = 5;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
@@ -47,7 +47,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime;
-const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
+const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = true;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.04;
@@ -69,7 +69,7 @@ set_input_parameters(InputParameters & param)
   param.neumann_with_variable_normal_vector      = true;
   param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
   param.start_with_low_order                     = true;
-  param.time_step_size                           = 0.01; // 0.5;//5e-5;
+  param.time_step_size                           = 5e-5; // 0.5;//5e-5;
   param.order_time_integrator                    = 3;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
   param.calculation_of_time_step_size            = TimeStepCalculation::CFL;
@@ -553,7 +553,7 @@ set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descr
 
 template<int dim>
 void
-set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+set_mesh_movement_function(std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_movement_function)
 {
   MeshMovementData data;
   data.type = MESH_MOVEMENT;
@@ -566,24 +566,29 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
   if(data.type == AnalyicMeshMovement::CubeInteriorSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCos<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyX<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCosOnlyX<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosOnlyY<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCosOnlyY<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeSinCosWithBoundaries<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeSinCosWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeXSquaredWithBoundaries<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeXSquaredWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleInteriorSinCos<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeDoubleInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
-    field_functions->analytical_solution_grid_velocity.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
+}
 
+template<int dim>
+void
+set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+{
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());

@@ -16,7 +16,6 @@ namespace IncNS
 template<int dim>
 struct FieldFunctions
 {
-  std::shared_ptr<MeshMovementFunctions<dim>> analytical_solution_grid_velocity;//TODO: remove from field functions
   /*
    * The function initial_solution_velocity is used to initialize the velocity field at the
    * beginning of the simulation.

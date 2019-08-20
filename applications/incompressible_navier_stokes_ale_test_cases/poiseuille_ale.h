@@ -499,9 +499,9 @@ void set_boundary_conditions(
   }
 }
 
-
 template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
+void
+set_mesh_movement_function(std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function)
 {
   MeshMovementData data;
   data.type = MESH_MOVEMENT;
@@ -519,7 +519,11 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
     field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCosWithSinInTime<dim>(data));
   else
     AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
+}
 
+template<int dim>
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
+{
   field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
   field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
