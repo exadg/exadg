@@ -13,8 +13,8 @@
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 1;
-unsigned int const REFINE_SPACE_MAX = 1;
+unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MAX = 0;
 
 // problem specific parameters
 std::string OUTPUT_FOLDER     = "output/poisson/";
@@ -61,7 +61,7 @@ set_input_parameters(Poisson::InputParameters &param)
   // MG coarse grid solver
   param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
-  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
+  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-1;
 }
 }
 
@@ -134,6 +134,9 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> t
   {
     AssertThrow(false, ExcMessage("Unknown triangulation!"));
   }
+
+  AssertThrow(OUTLET_ID_LAST-OUTLET_ID_FIRST == std::pow(2, N_GENERATIONS - 1),
+      ExcMessage("Number of outlets has to be 2^{N_generations-1}."));
 }
 
 namespace Poisson
