@@ -13,6 +13,6 @@ struct AnalyticalMeshMovement
   std::shared_ptr<MeshMovementFunctions<dim>> analytical_mesh_movement;
 };
 
-}
+} // namespace IncNS
 
 #endif /*INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_ANALYTICAL_MESH_MOVEMENT_H_*/

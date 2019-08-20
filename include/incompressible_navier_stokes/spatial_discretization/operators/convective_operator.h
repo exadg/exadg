@@ -89,7 +89,8 @@ public:
 
     if(data.ale)
       AssertThrow(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation,
-          ExcMessage("ALE formulation can only be used in combination with ConvectiveFormulation"));
+                  ExcMessage(
+                    "ALE formulation can only be used in combination with ConvectiveFormulation"));
   }
 
   static MappingFlags
@@ -401,7 +402,7 @@ public:
         if(data.ale == false)
           apply_outflow_bc(flux, uM * normalM);
         else
-          apply_outflow_bc(flux, (uM-u_grid) * normalM);
+          apply_outflow_bc(flux, (uM - u_grid) * normalM);
 
       // second term appears since the strong formulation is implemented (integration by parts
       // is performed twice)
@@ -726,7 +727,9 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_upwind_flux(vector const & uM, vector const & uP, scalar const & average_normal_velocity) const
+    calculate_upwind_flux(vector const & uM,
+                          vector const & uP,
+                          scalar const & average_normal_velocity) const
   {
     vector average_velocity = 0.5 * (uM + uP);
 

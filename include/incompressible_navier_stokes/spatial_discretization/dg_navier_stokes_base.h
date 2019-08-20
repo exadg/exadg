@@ -428,9 +428,9 @@ private:
   std::shared_ptr<MappingQGeneric<dim>> mapping;
   std::shared_ptr<MappingField>         mapping_ale;
 
-  DoFHandler<dim> dof_handler_u;
-  DoFHandler<dim> dof_handler_p;
-  DoFHandler<dim> dof_handler_u_scalar;
+  DoFHandler<dim>         dof_handler_u;
+  DoFHandler<dim>         dof_handler_p;
+  DoFHandler<dim>         dof_handler_u_scalar;
   MatrixFree<dim, Number> matrix_free;
 
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
@@ -441,7 +441,6 @@ private:
   types::global_dof_index dof_index_first_point;
 
 protected:
-
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
@@ -578,9 +577,9 @@ private:
    * MatrixFree Initialization Data
    */
   typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
-  std::vector<Quadrature<1>>                     quadratures;
-  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
-  std::vector<const DoFHandler<dim> *>           dof_handler_vec;
+  std::vector<Quadrature<1>>                       quadratures;
+  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec;
+  std::vector<const DoFHandler<dim> *>             dof_handler_vec;
 };
 
 } // namespace IncNS

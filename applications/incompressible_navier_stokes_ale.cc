@@ -95,10 +95,10 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  std::shared_ptr<FieldFunctions<dim>>      field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
-  std::shared_ptr<AnalyticalMeshMovement<dim>>      mesh_movement_function;
+  std::shared_ptr<FieldFunctions<dim>>         field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim>>    boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim>>    boundary_descriptor_pressure;
+  std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_movement_function;
 
   InputParameters param;
 
@@ -204,7 +204,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  //set mesh movement function
+  // set mesh movement function
   mesh_movement_function.reset(new AnalyticalMeshMovement<dim>());
   set_mesh_movement_function(mesh_movement_function);
 
@@ -277,8 +277,10 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   if(param.ale_formulation == true)
-    ale_operation =
-      std::make_shared<DGALE>(param, triangulation, mesh_movement_function, navier_stokes_operation);
+    ale_operation = std::make_shared<DGALE>(param,
+                                            triangulation,
+                                            mesh_movement_function,
+                                            navier_stokes_operation);
 
 
   // Depends on mapping which is initialized in constructor of MovingMesh

@@ -126,8 +126,8 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&this->get_dof_handler_p().get_triangulation());
+    parallel::Triangulation<dim> const * tria = dynamic_cast<const parallel::Triangulation<dim> *>(
+      &this->get_dof_handler_p().get_triangulation());
     const FiniteElement<dim> & fe = this->get_dof_handler_p().get_fe();
 
     mg_preconditioner->initialize(mg_data,

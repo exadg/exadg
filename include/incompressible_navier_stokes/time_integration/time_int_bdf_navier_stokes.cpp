@@ -189,7 +189,9 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
       // if u(x,t=0)=0, this time step size will tend to infinity
       double time_step_adap =
-        operator_base->calculate_time_step_cfl(u_relative, cfl, param.cfl_exponent_fe_degree_velocity);
+        operator_base->calculate_time_step_cfl(u_relative,
+                                               cfl,
+                                               param.cfl_exponent_fe_degree_velocity);
 
       // use adaptive time step size only if it is smaller, otherwise use temporary time step size
       time_step = std::min(time_step_adap, time_step_global);

@@ -874,7 +874,9 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
   pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
-  pressure_conv_diff_operator->reinit(this->get_matrix_free(), this->get_constraint_p(), operator_data);
+  pressure_conv_diff_operator->reinit(this->get_matrix_free(),
+                                      this->get_constraint_p(),
+                                      operator_data);
 }
 
 // clang-format off

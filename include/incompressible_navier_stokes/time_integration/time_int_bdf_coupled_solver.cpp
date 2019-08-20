@@ -397,7 +397,8 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     }
   }
 
-  // In the case of ALE, we need to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
+  // In the case of ALE, we need to evaluate the convective term at time t_{n+1} on the mesh at time
+  // t_{n+1}.
   if(this->param.ale_formulation == true &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {

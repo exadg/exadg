@@ -603,15 +603,16 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
 
       vector normal_gradient_p;
 
-      normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
-                                                             q,
-                                                             integrator,
-                                                             operator_type,
-                                                             boundary_type,
-                                                             boundary_id,
-                                                             this->data.bc,
-                                                             this->time,
-                                                             viscous_kernel->get_data().variable_normal_vector);
+      normal_gradient_p =
+        calculate_exterior_normal_gradient(normal_gradient_m,
+                                           q,
+                                           integrator,
+                                           operator_type,
+                                           boundary_type,
+                                           boundary_id,
+                                           this->data.bc,
+                                           this->time,
+                                           viscous_kernel->get_data().variable_normal_vector);
 
       vector value_flux = viscous_kernel->calculate_value_flux(
         normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, viscosity);

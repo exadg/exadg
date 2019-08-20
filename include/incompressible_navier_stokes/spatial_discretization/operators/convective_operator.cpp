@@ -384,8 +384,8 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
 
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    vector u_m    = integrator.get_value(q);
-    vector u_p    = kernel->calculate_exterior_value_nonlinear(
+    vector u_m = integrator.get_value(q);
+    vector u_p = kernel->calculate_exterior_value_nonlinear(
       u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
 
     vector normal_m = integrator.get_normal_vector(q);

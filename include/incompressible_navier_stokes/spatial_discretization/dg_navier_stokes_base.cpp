@@ -219,7 +219,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
 
   if(param.ale_formulation == true)
   {
-    additional_data_ale                                     = additional_data;
+    additional_data_ale                    = additional_data;
     additional_data_ale.initialize_indices = false; // connectivity of elements stays the same
     additional_data_ale.initialize_mapping = true;
   }
