@@ -183,13 +183,13 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
     if(adaptive_time_stepping == true)
     {
-      VectorType u_temp = get_velocity();//TODO: name u_relative
+      VectorType u_relative = get_velocity();
       if(param.ale_formulation == true)
-        u_temp -= u_grid_cfl;
+        u_relative -= u_grid_cfl;
 
       // if u(x,t=0)=0, this time step size will tend to infinity
       double time_step_adap =
-        operator_base->calculate_time_step_cfl(u_temp, cfl, param.cfl_exponent_fe_degree_velocity);
+        operator_base->calculate_time_step_cfl(u_relative, cfl, param.cfl_exponent_fe_degree_velocity);
 
       // use adaptive time step size only if it is smaller, otherwise use temporary time step size
       time_step = std::min(time_step_adap, time_step_global);
@@ -251,13 +251,13 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
               ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
-  VectorType u_temp = get_velocity();//TODO: name u_relative
+  VectorType u_relative = get_velocity();
 
   if(param.ale_formulation == true)
-    u_temp -= u_grid_cfl;
+    u_relative -= u_grid_cfl;
 
   double new_time_step_size =
-    operator_base->calculate_time_step_cfl(u_temp, cfl, param.cfl_exponent_fe_degree_velocity);
+    operator_base->calculate_time_step_cfl(u_relative, cfl, param.cfl_exponent_fe_degree_velocity);
 
   // make sure that time step size does not exceed maximum allowable time step size
   new_time_step_size = std::min(new_time_step_size, param.time_step_size_max);
@@ -328,10 +328,9 @@ TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & v
 
 template<typename Number>
 std::vector<double>
-TimeIntBDF<Number>::get_current_time_integrator_constants() //TODO: const
+TimeIntBDF<Number>::get_current_time_integrator_constants() const
 {
   std::vector<double> time_integrator_constants(this->order + 1);
-  update_time_integrator_constants(); //TODO: check if necessary
   time_integrator_constants[0] = this->bdf.get_gamma0();
   for(unsigned int i = 1; i < time_integrator_constants.size(); ++i)
     time_integrator_constants[i] = this->bdf.get_alpha(i - 1);

@@ -120,7 +120,7 @@ private:
   // vectors
   std::vector<VectorType>                                 vec_position_grid_new;
   LinearAlgebra::distributed::Vector<Number>              grid_velocity;
-  std::vector<LinearAlgebra::distributed::Vector<Number>> vec_x_grid_discontinuous;//TODO: vec_x_grid_discontinuous
+  std::vector<LinearAlgebra::distributed::Vector<Number>> vec_x_grid_discontinuous;
 
   // mappings
   std::shared_ptr<MappingQ>     mapping;

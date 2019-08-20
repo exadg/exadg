@@ -55,7 +55,7 @@ public:
   // ALE
 
   std::vector<double>
-  get_current_time_integrator_constants();
+  get_current_time_integrator_constants() const;
 
   virtual void
   reinit_former_solution_considering_former_mesh_instances(

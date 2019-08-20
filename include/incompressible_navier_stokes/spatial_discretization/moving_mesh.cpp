@@ -171,7 +171,7 @@ MovingMesh<dim, Number>::initialize_dof_handler()
 {
   dof_handler_x_grid_continuous.distribute_dofs(*fe_x_grid_continuous);
   dof_handler_x_grid_continuous.distribute_mg_dofs();
-  dof_handler_u_grid.distribute_dofs(*fe_u_grid);//use this dof handler in convective operator (set dof hander)
+  dof_handler_u_grid.distribute_dofs(*fe_u_grid);
   dof_handler_x_grid_discontinuous.distribute_dofs(*fe_u_grid);
 }
 
@@ -230,7 +230,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_time)
 {
-  field_functions->analytical_solution_grid_velocity->set_time_velocity(evaluation_time);//TODO: write mesh movement velocity explict
+  field_functions->analytical_solution_grid_velocity->set_time_velocity(evaluation_time);//TODO: write mesh movement velocity explicit in mesh movement functions
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;

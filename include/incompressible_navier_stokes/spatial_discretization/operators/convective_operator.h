@@ -323,22 +323,6 @@ public:
     {
       vector flux;
       scalar average_u_normal;
-      // TODO
-//      if(data.ale == false)
-//      {
-//        flux = calculate_upwind_flux(uM, uP, normalM);
-//        // a second term is needed since the strong formulation is implemented (integration by parts
-//        // twice)
-//        average_u_normal = 0.5 * (uM + uP) * normalM;
-//      }
-//      else if(data.ale == true)
-//      {
-//        flux = calculate_upwind_flux_ale(uM, uP, normalM, ugrid);
-//
-//        vector wM        = uM - ugrid;
-//        vector wP        = uP - ugrid;
-//        average_u_normal = 0.5 * (wM + wP) * normalM;
-//      }
 
       if(data.ale == false)
       {
@@ -400,16 +384,6 @@ public:
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      // TODO
-//      if(data.ale == false)
-//      {
-//        flux = calculate_upwind_flux(uM, uP, normalM);
-//      }
-//      else if(data.ale == true)
-//      {
-//        flux = calculate_upwind_flux_ale(uM, uP, normalM, u_grid);
-//      }
-
       if(data.ale == false)
       {
         average_u_normal = 0.5 * (uM + uP) * normalM;
@@ -428,16 +402,6 @@ public:
           apply_outflow_bc(flux, uM * normalM);
         else
           apply_outflow_bc(flux, (uM-u_grid) * normalM);
-
-      // TODO
-//      vector uM_temp = uM;
-//      vector uP_temp = uP;
-//      if(data.ale == true)
-//      {
-//        uM_temp -= u_grid;
-//        uP_temp -= u_grid;
-//      }
-//      scalar average_u_normal = 0.5 * (uM_temp + uP_temp) * normalM;
 
       // second term appears since the strong formulation is implemented (integration by parts
       // is performed twice)
@@ -760,38 +724,6 @@ public:
   /*
    *  Calculate upwind flux for nonlinear operator (convective formulation).
    */
-//  inline DEAL_II_ALWAYS_INLINE //
-//    vector
-//    calculate_upwind_flux(vector const & uM, vector const & uP, vector const & normalM) const
-//  {
-//    vector average_velocity = 0.5 * (uM + uP);
-//
-//    scalar average_normal_velocity = average_velocity * normalM;
-//
-//    vector jump_value = uM - uP;
-//
-//    return (average_normal_velocity * average_velocity +
-//            data.upwind_factor * 0.5 * std::abs(average_normal_velocity) * jump_value);
-//  }
-//
-//  // ale
-//  inline DEAL_II_ALWAYS_INLINE //
-//    vector
-//    calculate_upwind_flux_ale(vector const & uM,
-//                              vector const & uP,
-//                              vector const & normalM,
-//                              vector const & ugrid) const
-//  {
-//    vector average_velocity = 0.5 * (uM + uP);
-//
-//    scalar average_normal_velocity_g = (average_velocity - ugrid) * normalM;
-//
-//    vector jump_value = uM - uP;
-//
-//    return (average_normal_velocity_g * average_velocity +
-//            data.upwind_factor * 0.5 * std::abs(average_normal_velocity_g) * jump_value);
-//  }
-
   inline DEAL_II_ALWAYS_INLINE //
     vector
     calculate_upwind_flux(vector const & uM, vector const & uP, scalar const & average_normal_velocity) const
