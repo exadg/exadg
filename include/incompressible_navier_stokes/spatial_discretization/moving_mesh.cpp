@@ -17,8 +17,8 @@ MovingMesh<dim, Number>::MovingMesh(
     dof_handler_x_grid_continuous(*triangulation_in),
     dof_handler_u_grid(*triangulation_in),
     dof_handler_x_grid_discontinuous(*triangulation_in),
-    position_grid_new_multigrid((*triangulation_in).n_global_levels()),
-    x_grid(param_in.order_time_integrator + 1),
+    vec_position_grid_new((*triangulation_in).n_global_levels()),
+    vec_x_grid_discontinuous(param_in.order_time_integrator + 1),
     ale_update_timer(0.0),
     advance_mesh_timer(0.0),
     compute_and_set_mesh_velocity_timer(0.0),
@@ -29,7 +29,6 @@ MovingMesh<dim, Number>::MovingMesh(
   initialize_dof_handler();
   initialize_mapping_ale();
 }
-//TODO: x_grid_continuous and x_grid_discontinuous
 
 template<int dim, typename Number>
 void
@@ -63,7 +62,7 @@ MovingMesh<dim, Number>::update_grid_velocities(const double              time_i
   else
     compute_grid_velocity(time_integrator_constants, time_step_size);
 
-  navier_stokes_operation->set_grid_velocity(u_grid_np);
+  navier_stokes_operation->set_grid_velocity(grid_velocity);
   compute_and_set_mesh_velocity_timer += timer_ale.wall_time() - help_timer;
 }
 
@@ -129,7 +128,7 @@ MovingMesh<dim, Number>::get_convective_term_on_former_mesh_instances(
     navier_stokes_operation->ale_update();
 
     get_analytical_grid_velocity(eval_times[i]);
-    navier_stokes_operation->set_grid_velocity(u_grid_np);
+    navier_stokes_operation->set_grid_velocity(grid_velocity);
 
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                       solution[i].block(0),
@@ -142,7 +141,7 @@ template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number>
 MovingMesh<dim, Number>::get_grid_velocity() const
 {
-  return u_grid_np;
+  return grid_velocity;
 }
 
 template<int dim, typename Number>
@@ -170,20 +169,17 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::initialize_dof_handler()
 {
-  //TODO: tidy
   dof_handler_x_grid_continuous.distribute_dofs(*fe_x_grid_continuous);
-  dof_handler_x_grid_continuous.distribute_mg_dofs();//purge?
-  dof_handler_u_grid.distribute_dofs(*fe_u_grid);//use in convective operator
-  dof_handler_u_grid.distribute_mg_dofs();//purge
+  dof_handler_x_grid_continuous.distribute_mg_dofs();
+  dof_handler_u_grid.distribute_dofs(*fe_u_grid);//use this dof handler in convective operator (set dof hander)
   dof_handler_x_grid_discontinuous.distribute_dofs(*fe_u_grid);
-  dof_handler_x_grid_discontinuous.distribute_mg_dofs();
 }
 
 template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::initialize_vectors()
 {
-  navier_stokes_operation->initialize_vector_velocity(u_grid_np);
+  navier_stokes_operation->initialize_vector_velocity(grid_velocity);
 
   if(param.grid_velocity_analytical == true)
   {
@@ -191,10 +187,10 @@ MovingMesh<dim, Number>::initialize_vectors()
   }
   else // compute grid velocity from grid positions
   {
-    for(unsigned int i = 0; i < x_grid.size(); ++i)
+    for(unsigned int i = 0; i < vec_x_grid_discontinuous.size(); ++i)
     {
-      navier_stokes_operation->initialize_vector_velocity(x_grid[i]);
-      x_grid[i].update_ghost_values();
+      navier_stokes_operation->initialize_vector_velocity(vec_x_grid_discontinuous[i]);
+      vec_x_grid_discontinuous[i].update_ghost_values();
     }
 
     // fill grid coordinates vector at start time t_0, grid coordinates
@@ -203,18 +199,23 @@ MovingMesh<dim, Number>::initialize_vectors()
     fill_grid_coordinates_vector();
   }
 
-  navier_stokes_operation->set_grid_velocity(u_grid_np);
+  navier_stokes_operation->set_grid_velocity(grid_velocity);
 }
 
 template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::initialize_mapping_ale()
 {
-  //TODO: Initialize with VectorTools::get_position_vector
   field_functions->analytical_solution_grid_velocity->set_time_displacement(0.0);
   advance_grid_position(*mapping);
+
+  // For initialization a vector is used that is determined by the function that describes the mesh movement.
+  // If at start time t_0 the displacement of the mesh is 0 this could also be done by VectorTools::get_position_vector.
+  // Here the more generic case is coverd:
+  // advance_grid_position(*mapping) is used, which determines the positions at t_0 that is prescribed on each multigrid level.
   mapping_ale.reset(new MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>(
-    dof_handler_x_grid_continuous, position_grid_new_multigrid));
+    dof_handler_x_grid_continuous, vec_position_grid_new));
+
   navier_stokes_operation->set_mapping_ale(mapping_ale);
 }
 
@@ -235,7 +236,7 @@ MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_ti
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
 
   VectorTypeDouble grid_velocity_double;
-  grid_velocity_double = u_grid_np;
+  grid_velocity_double = grid_velocity;
 
   VectorTools::interpolate(
     *mapping, // the grid velocity is formulated in reference coordinates and therefore needs the grid positions at start time t_0
@@ -243,7 +244,7 @@ MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_ti
     *(field_functions->analytical_solution_grid_velocity),
     grid_velocity_double);
 
-  u_grid_np = grid_velocity_double;
+  grid_velocity = grid_velocity_double;
 }
 
 template<int dim, typename Number>
@@ -308,8 +309,8 @@ MovingMesh<dim, Number>::advance_grid_position(Mapping<dim> & mapping_in)
 
     position_grid_new = position_grid_init;
     position_grid_new += displacement_grid;
-    position_grid_new_multigrid[level] = position_grid_new;
-    position_grid_new_multigrid[level].update_ghost_values();
+    vec_position_grid_new[level] = position_grid_new;
+    vec_position_grid_new[level].update_ghost_values();
   }
 }
 
@@ -318,9 +319,9 @@ void
 MovingMesh<dim, Number>::compute_grid_velocity(std::vector<Number> time_integrator_constants,
                                                double              time_step_size)
 {
-  push_back(x_grid);
+  push_back(vec_x_grid_discontinuous);
   fill_grid_coordinates_vector();
-  compute_bdf_time_derivative(u_grid_np, x_grid, time_integrator_constants, time_step_size);
+  compute_bdf_time_derivative(grid_velocity, vec_x_grid_discontinuous, time_integrator_constants, time_step_size);
 }
 
 
@@ -346,7 +347,7 @@ MovingMesh<dim, Number>::fill_grid_coordinates_vector(int component)
   IndexSet relevant_dofs_grid;
   DoFTools::extract_locally_relevant_dofs(dof_handler_x_grid_discontinuous, relevant_dofs_grid);
 
-  x_grid[component].reinit(dof_handler_x_grid_discontinuous.locally_owned_dofs(),
+  vec_x_grid_discontinuous[component].reinit(dof_handler_x_grid_discontinuous.locally_owned_dofs(),
                            relevant_dofs_grid,
                            MPI_COMM_WORLD);
   // clang-format off
@@ -367,11 +368,11 @@ MovingMesh<dim, Number>::fill_grid_coordinates_vector(int component)
       {
         const unsigned int coordinate_direction = (*fe_u_grid).system_to_component_index(i).first;
         const Point<dim>   point                = fe_values.quadrature_point(i);
-        x_grid[component](dof_indices[i])       = point[coordinate_direction];
+        vec_x_grid_discontinuous[component](dof_indices[i])       = point[coordinate_direction];
       }
     }
   }
-  x_grid[component].update_ghost_values();
+  vec_x_grid_discontinuous[component].update_ghost_values();
 }
 
 
