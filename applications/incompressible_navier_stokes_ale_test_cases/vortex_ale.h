@@ -46,7 +46,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCos;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
@@ -64,7 +64,7 @@ void
 set_input_parameters(InputParameters & param)
 {
   // ALE
-  param.ale_formulation                          = false;
+  param.ale_formulation                          = true;
   param.grid_velocity_analytical                 = true;
   param.neumann_with_variable_normal_vector      = true;
   param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;

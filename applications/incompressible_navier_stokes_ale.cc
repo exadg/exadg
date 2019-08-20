@@ -284,54 +284,54 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                  field_functions);
 
   // depends on matrix free which is initialized in navier_stokes_operation->setup
-//  if(param.ale_formulation == true)
-//  {
-//    ale_operation->setup();
-//    if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
-//       param.adaptive_time_stepping == true)
-//      time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
-//  }
+  if(param.ale_formulation == true)
+  {
+    ale_operation->setup();
+    if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
+       param.adaptive_time_stepping == true)
+      time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
+  }
 
-//  if(param.solver_type == SolverType::Unsteady)
-//  {
-//    // setup time integrator before calling setup_solvers
-//    // (this is necessary since the setup of the solvers
-//    // depends on quantities such as the time_step_size or gamma0!!!)
-//    time_integrator->setup(param.restarted_simulation);
-//
-//    navier_stokes_operation->setup_solvers(
-//      time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
-//  }
-//  else if(param.solver_type == SolverType::Steady)
-//  {
-//    driver_steady->setup();
-//
-//    navier_stokes_operation->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
-//  }
-//  else
-//  {
-//    AssertThrow(false, ExcMessage("Not implemented."));
-//  }
+  if(param.solver_type == SolverType::Unsteady)
+  {
+    // setup time integrator before calling setup_solvers
+    // (this is necessary since the setup of the solvers
+    // depends on quantities such as the time_step_size or gamma0!!!)
+    time_integrator->setup(param.restarted_simulation);
 
-//  if(param.ale_formulation == true && param.start_with_low_order == false &&
-//     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
-//     param.initialize_with_former_mesh_instances == true)
-//  {
-//    std::vector<double> eval_times(param.order_time_integrator);
-//
-//    for(unsigned int i = 0; i < param.order_time_integrator; ++i)
-//      eval_times[i] = time_integrator->get_previous_time(i);
-//
-//    if(param.grid_velocity_analytical == false)
-//      ale_operation->initialize_grid_coordinates_on_former_mesh_instances(eval_times);
-//
-//    time_integrator->reinit_former_solution_considering_former_mesh_instances(
-//      ale_operation->get_former_solution_on_former_mesh_instances(eval_times));
-//
-//    if(param.convective_problem())
-//      time_integrator->reinit_convective_term_considering_former_mesh_instances(
-//        ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
-//  }
+    navier_stokes_operation->setup_solvers(
+      time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
+  }
+  else if(param.solver_type == SolverType::Steady)
+  {
+    driver_steady->setup();
+
+    navier_stokes_operation->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  if(param.ale_formulation == true && param.start_with_low_order == false &&
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
+     param.initialize_with_former_mesh_instances == true)
+  {
+    std::vector<double> eval_times(param.order_time_integrator);
+
+    for(unsigned int i = 0; i < param.order_time_integrator; ++i)
+      eval_times[i] = time_integrator->get_previous_time(i);
+
+    if(param.grid_velocity_analytical == false)
+      ale_operation->initialize_grid_coordinates_on_former_mesh_instances(eval_times);
+
+    time_integrator->reinit_former_solution_considering_former_mesh_instances(
+      ale_operation->get_former_solution_on_former_mesh_instances(eval_times));
+
+    if(param.convective_problem())
+      time_integrator->reinit_convective_term_considering_former_mesh_instances(
+        ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
+  }
 
 
   setup_time = timer.wall_time();
@@ -620,9 +620,9 @@ main(int argc, char ** argv)
 
           problem->setup(param);
 
-          //problem->solve();
+          problem->solve();
 
-         // problem->analyze_computing_times();
+          problem->analyze_computing_times();
         }
       }
     }

@@ -70,25 +70,26 @@ public:
   {
     this->data = data;
 
-    matrix_free.initialize_dof_vector(velocity_grid, dof_index);
-
     // integrators for linearized problem
     integrator_velocity.reset(new IntegratorCell(matrix_free, dof_index, quad_index_linearized));
-//    integrator_velocity_m.reset(
-//      new IntegratorFace(matrix_free, true, dof_index, quad_index_linearized));
-//    integrator_velocity_p.reset(
-//      new IntegratorFace(matrix_free, false, dof_index, quad_index_linearized));
-//
-//    // use own storage of velocity vector only in case of multigrid
-//    if(is_mg)
-//    {
-//      velocity.reset();
-//      matrix_free.initialize_dof_vector(velocity.own(), dof_index);
-//    }
-//
-//    if(data.ale)
-//      AssertThrow(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation,
-//          ExcMessage("ALE formulation can only be used in combination with ConvectiveFormulation"));
+    integrator_velocity_m.reset(
+      new IntegratorFace(matrix_free, true, dof_index, quad_index_linearized));
+    integrator_velocity_p.reset(
+      new IntegratorFace(matrix_free, false, dof_index, quad_index_linearized));
+
+    // use own storage of velocity vector only in case of multigrid
+    if(is_mg)
+    {
+      velocity.reset();
+      matrix_free.initialize_dof_vector(velocity.own(), dof_index);
+    }
+
+    if(data.ale)
+      matrix_free.initialize_dof_vector(velocity_grid, dof_index);
+
+    if(data.ale)
+      AssertThrow(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation,
+          ExcMessage("ALE formulation can only be used in combination with ConvectiveFormulation"));
   }
 
   static MappingFlags
