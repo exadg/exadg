@@ -230,7 +230,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_time)
 {
-  mesh_movement_function->analytical_mesh_movement->set_time(evaluation_time);//TODO: write mesh movement velocity explicit in mesh movement functions
+  mesh_movement_function->analytical_mesh_movement->set_time(evaluation_time);
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -239,7 +239,7 @@ MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_ti
   grid_velocity_double = grid_velocity;
 
   VectorTools::interpolate(
-    *mapping, // the grid velocity is formulated in reference coordinates and therefore needs the grid positions at start time t_0
+      *mapping,
     dof_handler_u_grid,
     *(mesh_movement_function->analytical_mesh_movement),
     grid_velocity_double);
@@ -263,7 +263,6 @@ MovingMesh<dim, Number>::advance_grid_position(Mapping<dim> & mapping_in)
   VectorType displacement_grid;
   VectorType position_grid_new;
   IndexSet   relevant_dofs_grid;
-//TODO: try to use mapping_fe_field and iterate with newton/fixpunktiteration
 
   unsigned int nlevel = dof_handler_x_grid_continuous.get_triangulation().n_global_levels();
   for(unsigned int level = 0; level < nlevel; ++level)
@@ -279,7 +278,6 @@ MovingMesh<dim, Number>::advance_grid_position(Mapping<dim> & mapping_in)
     position_grid_new.reinit(dof_handler_x_grid_continuous.locally_owned_mg_dofs(level),
                              relevant_dofs_grid,
                              MPI_COMM_WORLD);
-
     // clang-format off
     FEValues<dim>  fe_values(mapping_in,
                              *fe_x_grid_continuous,
