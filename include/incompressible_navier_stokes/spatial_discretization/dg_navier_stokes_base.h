@@ -199,10 +199,7 @@ public:
   get_dof_handler_p() const;
 
   AffineConstraints<double> const &
-  get_constraint_p() const
-  {
-    return constraint_p;
-  }
+  get_constraint_p() const;
 
   types::global_dof_index
   get_number_of_dofs() const;
@@ -406,10 +403,7 @@ protected:
   unsteady_problem_has_to_be_solved() const;
 
   unsigned int
-  get_mapping_degree() const
-  {
-    return mapping_degree;
-  }
+  get_mapping_degree() const;
 
   /*
    * List of input parameters.

@@ -690,6 +690,13 @@ DGNavierStokesBase<dim, Number>::get_dof_handler_p() const
 }
 
 template<int dim, typename Number>
+AffineConstraints<double> const &
+DGNavierStokesBase<dim, Number>::get_constraint_p() const
+{
+  return constraint_p;
+}
+
+template<int dim, typename Number>
 double
 DGNavierStokesBase<dim, Number>::get_viscosity() const
 {
@@ -1345,6 +1352,13 @@ bool
 DGNavierStokesBase<dim, Number>::unsteady_problem_has_to_be_solved() const
 {
   return (this->param.solver_type == SolverType::Unsteady);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGNavierStokesBase<dim, Number>::get_mapping_degree() const
+{
+  return mapping_degree;
 }
 
 template<int dim, typename Number>
