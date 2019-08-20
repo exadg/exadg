@@ -20,8 +20,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 5;
-unsigned int const DEGREE_MAX = 5;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;

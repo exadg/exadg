@@ -250,7 +250,8 @@ inline DEAL_II_ALWAYS_INLINE //
       BoundaryTypeU const &                           boundary_type,
       types::boundary_id const                        boundary_id,
       std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
-      double const &                                  time)
+      double const &                                  time,
+      bool const                                      variable_normal_vector)
 {
   Tensor<1, dim, VectorizedArray<Number>> normal_gradient_p;
 
@@ -266,8 +267,16 @@ inline DEAL_II_ALWAYS_INLINE //
         boundary_descriptor->neumann_bc.find(boundary_id);
       Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
-      Tensor<1, dim, VectorizedArray<Number>> h =
-        evaluate_vectorial_function(it->second, q_points, time);
+      Tensor<1, dim, VectorizedArray<Number>> h;
+      if(variable_normal_vector == false)
+      {
+        h = evaluate_vectorial_function(it->second, q_points, time);
+      }
+      else
+      {
+        Tensor<1, dim, VectorizedArray<Number>> normals_m = integrator.get_normal_vector(q);
+        h = evaluate_vectorial_function_with_normal(it->second, q_points, normals_m, time);
+      }
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
     }
@@ -293,60 +302,62 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_p;
 }
 
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
-    calculate_exterior_normal_gradient_variable_normal_vector(
-      Tensor<1, dim, VectorizedArray<Number>> const & normal_gradient_m,
-      unsigned int const                              q,
-      FaceIntegrator<dim, dim, Number> const &        integrator,
-      OperatorType const &                            operator_type,
-      BoundaryTypeU const &                           boundary_type,
-      types::boundary_id const                        boundary_id,
-      std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
-      double const &                                  time)
-{
-  Tensor<1, dim, VectorizedArray<Number>> normal_gradient_p;
+// TODO
 
-  if(boundary_type == BoundaryTypeU::Dirichlet)
-  {
-    normal_gradient_p = normal_gradient_m;
-  }
-  else if(boundary_type == BoundaryTypeU::Neumann)
-  {
-    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
-    {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        boundary_descriptor->neumann_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
-
-      Tensor<1, dim, VectorizedArray<Number>> normals_m = integrator.get_normal_vector(q);
-      Tensor<1, dim, VectorizedArray<Number>> h =
-        evaluate_vectorial_function_with_normal(it->second, q_points, normals_m, time);
-
-      normal_gradient_p = -normal_gradient_m + 2.0 * h;
-    }
-    else if(operator_type == OperatorType::homogeneous)
-    {
-      normal_gradient_p = -normal_gradient_m;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
-    }
-  }
-  else if(boundary_type == BoundaryTypeU::Symmetry)
-  {
-    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator.get_normal_vector(q);
-    normal_gradient_p = -normal_gradient_m + 2.0 * (normal_gradient_m * normal_m) * normal_m;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-  }
-
-  return normal_gradient_p;
-}
+//template<int dim, typename Number>
+//inline DEAL_II_ALWAYS_INLINE //
+//    Tensor<1, dim, VectorizedArray<Number>>
+//    calculate_exterior_normal_gradient_variable_normal_vector(
+//      Tensor<1, dim, VectorizedArray<Number>> const & normal_gradient_m,
+//      unsigned int const                              q,
+//      FaceIntegrator<dim, dim, Number> const &        integrator,
+//      OperatorType const &                            operator_type,
+//      BoundaryTypeU const &                           boundary_type,
+//      types::boundary_id const                        boundary_id,
+//      std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
+//      double const &                                  time)
+//{
+//  Tensor<1, dim, VectorizedArray<Number>> normal_gradient_p;
+//
+//  if(boundary_type == BoundaryTypeU::Dirichlet)
+//  {
+//    normal_gradient_p = normal_gradient_m;
+//  }
+//  else if(boundary_type == BoundaryTypeU::Neumann)
+//  {
+//    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+//    {
+//      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+//        boundary_descriptor->neumann_bc.find(boundary_id);
+//      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
+//
+//      Tensor<1, dim, VectorizedArray<Number>> normals_m = integrator.get_normal_vector(q);
+//      Tensor<1, dim, VectorizedArray<Number>> h =
+//        evaluate_vectorial_function_with_normal(it->second, q_points, normals_m, time);
+//
+//      normal_gradient_p = -normal_gradient_m + 2.0 * h;
+//    }
+//    else if(operator_type == OperatorType::homogeneous)
+//    {
+//      normal_gradient_p = -normal_gradient_m;
+//    }
+//    else
+//    {
+//      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+//    }
+//  }
+//  else if(boundary_type == BoundaryTypeU::Symmetry)
+//  {
+//    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator.get_normal_vector(q);
+//    normal_gradient_p = -normal_gradient_m + 2.0 * (normal_gradient_m * normal_m) * normal_m;
+//  }
+//  else
+//  {
+//    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+//  }
+//
+//  return normal_gradient_p;
+//}
 
 } // namespace IncNS
 

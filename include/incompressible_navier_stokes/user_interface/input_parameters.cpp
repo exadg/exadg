@@ -437,7 +437,7 @@ InputParameters::check_input_parameters()
     AssertThrow(
       formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
       ExcMessage(
-        "divergence formulation of convective operator has to be used since the grid velocity might not be divergence free"));
+        "convective formulation of convective operator has to be used since the grid velocity might not be divergence free"));
     AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
                 ExcMessage("only BDFCoupledSolution has been implemented on moving meshes"));
     AssertThrow(problem_type == ProblemType::Unsteady,

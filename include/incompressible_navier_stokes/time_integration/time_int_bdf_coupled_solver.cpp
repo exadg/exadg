@@ -46,7 +46,7 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
   {
     if(this->param.ale_formulation == true)
     {
-      this->operator_base->initialize_vector_velocity(vec_convective_np);
+      this->operator_base->initialize_vector_velocity(convective_term_np);
     }
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
@@ -110,6 +110,9 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
 {
+  // The initialization done here at start time t_0 assumes that the mesh velocity is zero
+  // at start time t_0. If the mesh velocity is nonzero, e.g., when starting the time integrator
+  // with high-order, vec_convective_term[0] has to be reinitialized separately.
   if(this->param.ale_formulation == true &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
@@ -250,14 +253,13 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
-      if(this->param.ale_formulation == false ||
-         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      // In the case of ALE, the convective term has already been evaluated in the last time step.
+      if(this->param.ale_formulation == false)
       {
         this->operator_base->evaluate_convective_term(vec_convective_term[0],
                                                       solution[0].block(0),
                                                       this->get_time());
       }
-
 
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         rhs_vector.block(0).add(-this->extra.get_beta(i), vec_convective_term[i]);
@@ -395,11 +397,11 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     }
   }
 
-  // convective term for next timestep on current mesh
+  // In the case of ALE, we need to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
   if(this->param.ale_formulation == true &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    this->operator_base->evaluate_convective_term(vec_convective_np,
+    this->operator_base->evaluate_convective_term(convective_term_np,
                                                   solution_np.block(0),
                                                   this->get_next_time());
   }
@@ -539,7 +541,7 @@ TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
     // ALE
     if(this->param.ale_formulation == true)
     {
-      vec_convective_term[0].swap(vec_convective_np);
+      vec_convective_term[0].swap(convective_term_np);
     }
   }
 }
@@ -743,7 +745,8 @@ void
 TimeIntBDFCoupled<Number>::reinit_convective_term_considering_former_mesh_instances(
   std::vector<VectorType> vec_convective_term_in)
 {
-  // it is important to start at i=0!
+  // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
+  // which has not been taken into account in the setup function of the time integrator.
   for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
   {
     vec_convective_term[i] = vec_convective_term_in[i];

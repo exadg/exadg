@@ -198,6 +198,13 @@ public:
   DoFHandler<dim> const &
   get_dof_handler_p() const;
 
+  // TODO
+  AffineConstraints<double> const &
+  get_constraint_p() const
+  {
+    return constraint_p;
+  }
+
   types::global_dof_index
   get_number_of_dofs() const;
 
@@ -399,6 +406,13 @@ protected:
   bool
   unsteady_problem_has_to_be_solved() const;
 
+  // TODO
+  unsigned int
+  get_mapping_degree() const
+  {
+    return mapping_degree;
+  }
+
   /*
    * List of input parameters.
    */
@@ -407,28 +421,6 @@ protected:
   /*
    * Basic finite element ingredients.
    */
-  std::shared_ptr<FESystem<dim>> fe_u;
-  FE_DGQ<dim>                    fe_p;
-  FE_DGQ<dim>                    fe_u_scalar;
-
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
-  std::shared_ptr<MappingField>         mapping_ale;
-
-  DoFHandler<dim> dof_handler_u;
-  DoFHandler<dim> dof_handler_p;
-  DoFHandler<dim> dof_handler_u_scalar;
-
-  MatrixFree<dim, Number> matrix_free;
-
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-
-  /*
-   * Special case: pure Dirichlet boundary conditions.
-   */
-  Point<dim>              first_point;
-  types::global_dof_index dof_index_first_point;
-
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
@@ -564,11 +556,27 @@ private:
   /*
    * MatrixFree Initialization Data
    */
+  std::shared_ptr<FESystem<dim>> fe_u;
+  FE_DGQ<dim>                    fe_p;
+  FE_DGQ<dim>                    fe_u_scalar;
+
+  unsigned int                          mapping_degree;
+  std::shared_ptr<MappingQGeneric<dim>> mapping;
+  std::shared_ptr<MappingField>         mapping_ale;
+
+  DoFHandler<dim> dof_handler_u;
+  DoFHandler<dim> dof_handler_p;
+  DoFHandler<dim> dof_handler_u_scalar;
+  MatrixFree<dim, Number> matrix_free;
+
+  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+  /*
+   * Special case: pure Dirichlet boundary conditions.
+   */
+  Point<dim>              first_point;
+  types::global_dof_index dof_index_first_point;
 
   typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
-  UpdateFlags                                      ale_update_flags =
-    (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-     update_values | update_inverse_jacobians /*CFL*/);
   std::vector<Quadrature<1>>                     quadratures;
   std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
   std::vector<const DoFHandler<dim> *>           dof_handler_vec;

@@ -89,7 +89,7 @@ private:
    */
 
   void
-  advance_position_grid_new_multigrid(Mapping<dim> & mapping_in);
+  advance_grid_position(Mapping<dim> & mapping_in);
 
   void
   compute_grid_velocity(std::vector<Number> time_integrator_constants, double time_step_size);
@@ -109,18 +109,18 @@ private:
   std::shared_ptr<DGNavierStokesBase<dim, Number>> navier_stokes_operation;
 
   // fe systems
-  std::shared_ptr<FESystem<dim>> fe_grid;
+  std::shared_ptr<FESystem<dim>> fe_x_grid_continuous;
   std::shared_ptr<FESystem<dim>> fe_u_grid;
 
   // dof handlers
-  DoFHandler<dim> dof_handler_grid;
+  DoFHandler<dim> dof_handler_x_grid_continuous;
   DoFHandler<dim> dof_handler_u_grid;
-  DoFHandler<dim> dof_handler_x_grid;
+  DoFHandler<dim> dof_handler_x_grid_discontinuous;
 
   // vectors
   std::vector<VectorType>                                 position_grid_new_multigrid;
-  LinearAlgebra::distributed::Vector<Number>              u_grid_np;
-  std::vector<LinearAlgebra::distributed::Vector<Number>> x_grid;
+  LinearAlgebra::distributed::Vector<Number>              u_grid_np; // TODO write grid_velocity
+  std::vector<LinearAlgebra::distributed::Vector<Number>> x_grid;//TODO: vec_x_grid_discontinuous
 
   // mappings
   std::shared_ptr<MappingQ>     mapping;

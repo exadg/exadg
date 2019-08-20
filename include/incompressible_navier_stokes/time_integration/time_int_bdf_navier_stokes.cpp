@@ -183,7 +183,7 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
     if(adaptive_time_stepping == true)
     {
-      VectorType u_temp = get_velocity();
+      VectorType u_temp = get_velocity();//TODO: name u_relative
       if(param.ale_formulation == true)
         u_temp -= u_grid_cfl;
 
@@ -251,7 +251,7 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
               ExcMessage(
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
-  VectorType u_temp = get_velocity();
+  VectorType u_temp = get_velocity();//TODO: name u_relative
 
   if(param.ale_formulation == true)
     u_temp -= u_grid_cfl;
@@ -328,10 +328,10 @@ TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & v
 
 template<typename Number>
 std::vector<double>
-TimeIntBDF<Number>::get_current_time_integrator_constants()
+TimeIntBDF<Number>::get_current_time_integrator_constants() //TODO: const
 {
   std::vector<double> time_integrator_constants(this->order + 1);
-  update_time_integrator_constants();
+  update_time_integrator_constants(); //TODO: check if necessary
   time_integrator_constants[0] = this->bdf.get_gamma0();
   for(unsigned int i = 1; i < time_integrator_constants.size(); ++i)
     time_integrator_constants[i] = this->bdf.get_alpha(i - 1);

@@ -142,8 +142,8 @@ DGNavierStokesCoupled<dim, Number>::initialize_block_vector_velocity_pressure(
   // velocity(1st block) + pressure(2nd block)
   src.reinit(2);
 
-  this->matrix_free.initialize_dof_vector(src.block(0), this->get_dof_index_velocity());
-  this->matrix_free.initialize_dof_vector(src.block(1), this->get_dof_index_pressure());
+  this->get_matrix_free().initialize_dof_vector(src.block(0), this->get_dof_index_velocity());
+  this->get_matrix_free().initialize_dof_vector(src.block(1), this->get_dof_index_pressure());
 
   src.collect_sizes();
 }
@@ -700,7 +700,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
     laplace_operator_data.operator_is_singular       = this->param.pure_dirichlet_bc;
     laplace_operator_data.kernel_data.IP_factor      = 1.0;
     laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
-    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
+    laplace_operator_data.kernel_data.degree_mapping = this->get_mapping_degree();
 
     laplace_operator_data.bc = this->boundary_descriptor_laplace;
 
@@ -762,11 +762,11 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
     laplace_operator_data.bc                         = this->boundary_descriptor_laplace;
     laplace_operator_data.kernel_data.IP_factor      = 1.0;
     laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
-    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
+    laplace_operator_data.kernel_data.degree_mapping = this->get_mapping_degree();
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
     laplace_operator_classical->reinit(this->get_matrix_free(),
-                                       this->constraint_p,
+                                       this->get_constraint_p(),
                                        laplace_operator_data);
 
     solver_pressure_block.reset(
@@ -856,7 +856,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   // applying the preconditioner).
   diffusive_kernel_data.diffusivity    = this->param.viscosity;
   diffusive_kernel_data.degree         = this->param.get_degree_p();
-  diffusive_kernel_data.degree_mapping = this->mapping_degree;
+  diffusive_kernel_data.degree_mapping = this->get_mapping_degree();
 
   // combined convection-diffusion operator
   ConvDiff::OperatorData<dim> operator_data;
@@ -874,7 +874,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
   pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
-  pressure_conv_diff_operator->reinit(this->get_matrix_free(), this->constraint_p, operator_data);
+  pressure_conv_diff_operator->reinit(this->get_matrix_free(), this->get_constraint_p(), operator_data);
 }
 
 // clang-format off
