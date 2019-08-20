@@ -206,7 +206,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::initialize_mapping_ale()
 {
-  mesh_movement_function->analytical_mesh_movement->set_time_displacement(0.0);
+  mesh_movement_function->analytical_mesh_movement->set_time(param.start_time);
   advance_grid_position(*mapping);
 
   // For initialization a vector is used that is determined by the function that describes the mesh movement.
@@ -230,7 +230,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_time)
 {
-  mesh_movement_function->analytical_mesh_movement->set_time_velocity(evaluation_time);//TODO: write mesh movement velocity explicit in mesh movement functions
+  mesh_movement_function->analytical_mesh_movement->set_time(evaluation_time);//TODO: write mesh movement velocity explicit in mesh movement functions
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -251,7 +251,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::advance_mesh(double time_in)
 {
-  mesh_movement_function->analytical_mesh_movement->set_time_displacement(time_in);
+  mesh_movement_function->analytical_mesh_movement->set_time(time_in);
   advance_grid_position(*mapping);
 }
 
