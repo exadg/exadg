@@ -675,8 +675,11 @@ enum class AnalyicMeshMovement
   CubeXSquaredWithBoundaries,
   CubeDoubleInteriorSinCos,
   CubeDoubleSinCosWithBoundaries,
+  CubeSinCosWithBoundaries3D,
+  CubeInteriorSinCos3D,
   RectangleSinCos,
   RectangleSinCosWithSinInTime,
+  RectangleSinCos3D,
   Undefined
 };
 
