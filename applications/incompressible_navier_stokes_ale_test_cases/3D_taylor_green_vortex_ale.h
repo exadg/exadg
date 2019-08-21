@@ -21,8 +21,8 @@
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MAX = 2;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -51,7 +51,7 @@ const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 // mesh movement
 const double LEFT = - numbers::PI * L;
 const double RIGHT = numbers::PI * L;
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeSinCosWithBoundaries3D;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeSinCosWithBoundaries;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.3;
 const double TRIANGULATION_MOVEMENT_FREQUENCY = 4;
@@ -387,10 +387,13 @@ template<int dim>
 std::shared_ptr<MeshMovementFunctions<dim>>
 set_mesh_movement_function()
 {
-  MeshMovementData data;
+  MeshMovementData<dim> data;
   data.type = MESH_MOVEMENT;
   data.left = LEFT;
   data.right = RIGHT;
+  data.dimensions[0] = RIGHT - LEFT;
+  data.dimensions[1] = data.dimensions[0];
+  data.dimensions[2] = data.dimensions[1];
   data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
   data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
   data.t_0 = START_TIME;
@@ -398,10 +401,22 @@ set_mesh_movement_function()
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
-  if(data.type == AnalyicMeshMovement::CubeInteriorSinCos3D)
-    mesh_movement_function.reset(new CubeInteriorSinCos3D<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries3D)
-    mesh_movement_function.reset(new CubeSinCosWithBoundaries3D<dim>(data));
+  if(data.type == AnalyicMeshMovement::CubeInteriorSinCos)
+    mesh_movement_function.reset(new CubeInteriorSinCos<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundariesWithSinInTime)
+    mesh_movement_function.reset(new CubeSinCosWithBoundariesWithSinInTime<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
+    mesh_movement_function.reset(new CubeInteriorSinCosOnlyX<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
+    mesh_movement_function.reset(new CubeInteriorSinCosOnlyY<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries)
+    mesh_movement_function.reset(new CubeSinCosWithBoundaries<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
+    mesh_movement_function.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
+    mesh_movement_function.reset(new CubeDoubleInteriorSinCos<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
+    mesh_movement_function.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
 
@@ -434,7 +449,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
   pp_data.output_data.output_start_time = param.start_time;
-  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/200;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
   pp_data.output_data.write_vorticity = true;
   pp_data.output_data.write_divergence = true;
   pp_data.output_data.write_velocity_magnitude = true;

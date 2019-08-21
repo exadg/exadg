@@ -503,10 +503,10 @@ template<int dim>
 std::shared_ptr<MeshMovementFunctions<dim>>
 set_mesh_movement_function()
 {
-  MeshMovementData data;
+  MeshMovementData<dim> data;
   data.type = MESH_MOVEMENT;
-  data.height = H;
-  data.length = L;
+  data.dimensions[0] = L;
+  data.dimensions[1] = H;
   data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
   data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
   data.t_0 = START_TIME;

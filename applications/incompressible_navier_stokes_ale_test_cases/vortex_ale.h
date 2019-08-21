@@ -20,8 +20,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 5;
-unsigned int const DEGREE_MAX = 5;
+unsigned int const DEGREE_MIN = 2;
+unsigned int const DEGREE_MAX = 2;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
@@ -71,9 +71,9 @@ set_input_parameters(InputParameters & param)
   param.start_with_low_order                     = false;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
   param.order_time_integrator                    = 2;
-  param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
+  param.temporal_discretization                  = TemporalDiscretization::CFL;
   param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
-  param.adaptive_time_stepping                   = false;
+  param.adaptive_time_stepping                   = true;
   param.cfl                                      = 0.4;
 
   // MATHEMATICAL MODEL
@@ -555,10 +555,10 @@ template<int dim>
 std::shared_ptr<MeshMovementFunctions<dim>>
 set_mesh_movement_function()
 {
-  MeshMovementData data;
+  MeshMovementData<dim> data;
   data.type = MESH_MOVEMENT;
-  data.left = TRIANGULATION_LEFT;
-  data.right = TRIANGULATION_RIGHT;
+  data.dimensions[0] = TRIANGULATION_RIGHT - TRIANGULATION_LEFT;
+  data.dimensions[1] = data.dimensions[0];
   data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
   data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
   data.t_0 = START_TIME;
@@ -578,8 +578,6 @@ set_mesh_movement_function()
     mesh_movement_function.reset(new CubeSinCosWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
     mesh_movement_function.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
-    mesh_movement_function.reset(new CubeXSquaredWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
     mesh_movement_function.reset(new CubeDoubleInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)

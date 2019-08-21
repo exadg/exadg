@@ -317,10 +317,10 @@ template<int dim>
 std::shared_ptr<MeshMovementFunctions<dim>>
 set_mesh_movement_function()
 {
-  MeshMovementData data;
+  MeshMovementData<dim> data;
   data.type = MESH_MOVEMENT;
-  data.left = TRIANGULATION_LEFT;
-  data.right = TRIANGULATION_RIGHT;
+  data.dimensions[0] = TRIANGULATION_RIGHT - TRIANGULATION_LEFT;
+  data.dimensions[1] = data.dimensions[0];
   data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
   data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
   data.t_0 = START_TIME;
@@ -340,8 +340,6 @@ set_mesh_movement_function()
     mesh_movement_function.reset(new CubeSinCosWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
     mesh_movement_function.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
-    mesh_movement_function.reset(new CubeXSquaredWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
     mesh_movement_function.reset(new CubeDoubleInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)

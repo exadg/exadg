@@ -409,11 +409,11 @@ template<int dim>
 std::shared_ptr<MeshMovementFunctions<dim>>
 set_mesh_movement_function()
 {
-  MeshMovementData data;
+  MeshMovementData<dim> data;
   data.type = MESH_MOVEMENT;
-  data.length = DIMENSIONS_X1;
-  data.height = DIMENSIONS_X2;
-  data.depth = DIMENSIONS_X3;
+  data.dimensions[0] = DIMENSIONS_X1;
+  data.dimensions[1] = DIMENSIONS_X2;
+  data.dimensions[2] = DIMENSIONS_X3;
   data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
   data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
   data.t_0 = START_TIME;
@@ -421,10 +421,12 @@ set_mesh_movement_function()
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
-  if(data.type == AnalyicMeshMovement::RectangleSinCos3D)
-    mesh_movement_function->analytical_mesh_movement.reset(new RectangleSinCos3D<dim>(data));
+  if (data.type == AnalyicMeshMovement::RectangleSinCos)
+    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCos<dim>(data));
+  else if (data.type == AnalyicMeshMovement::RectangleSinCosWithSinInTime)
+    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCosWithSinInTime<dim>(data));
   else
-    AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
+    AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
 
   return mesh_movement_function;
 }
