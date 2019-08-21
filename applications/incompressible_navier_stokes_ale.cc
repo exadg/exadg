@@ -47,9 +47,11 @@ using namespace IncNS;
 
 // 2D Navier-Stokes flow
 //#include "incompressible_navier_stokes_ale_test_cases/poiseuille_ale.h"
-#include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
+//#include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
 //#include "incompressible_navier_stokes_ale_test_cases/taylor_vortex_ale.h"
 //#include "incompressible_navier_stokes_ale_test_cases/free_stream_preservation_test.h"
+#include "incompressible_navier_stokes_ale_test_cases/turbulent_channel_ale.h"
+//#include "incompressible_navier_stokes_ale_test_cases/3D_taylor_green_vortex_ale.h"
 
 
 template<typename Number>
@@ -205,8 +207,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // set mesh movement function
-  mesh_movement_function.reset(new AnalyticalMeshMovement<dim>());
-  set_mesh_movement_function(mesh_movement_function);
+  if(param.ale_formulation==true)
+  {
+    mesh_movement_function.reset(new AnalyticalMeshMovement<dim>());
+    set_mesh_movement_function(mesh_movement_function);
+  }
 
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);
