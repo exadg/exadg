@@ -7,6 +7,8 @@
 
 #include "kinetic_energy_dissipation_detailed.h"
 
+#include <fstream>
+
 namespace IncNS
 {
 template<int dim, typename Number>

@@ -11,6 +11,8 @@
 
 #include "write_output.h"
 
+#include <fstream>
+
 namespace CompNS
 {
 template<int dim, typename Number, typename VectorType>

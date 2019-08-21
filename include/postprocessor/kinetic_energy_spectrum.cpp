@@ -7,6 +7,8 @@
 
 #include "kinetic_energy_spectrum.h"
 
+#include <fstream>
+
 template<int dim, typename Number>
 KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator()
   : clear_files(true), deal_spectrum_wrapper(false, true), counter(0), reset_counter(true)

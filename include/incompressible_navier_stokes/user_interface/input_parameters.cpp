@@ -9,6 +9,8 @@
 
 #include "../../functionalities/print_functions.h"
 
+#include <deal.II/base/mpi.h>
+
 namespace IncNS
 {
 // standard constructor that initializes parameters
@@ -27,7 +29,7 @@ InputParameters::InputParameters()
     ale_formulation(false),
     neumann_with_variable_normal_vector(false),
     // TODO this variable is currently used for testing and can be removed later
-    initialize_with_former_mesh_instances(!start_with_low_order),
+    initialize_with_former_mesh_instances(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),

@@ -20,8 +20,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 2;
-unsigned int const DEGREE_MAX = 2;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
@@ -71,8 +71,8 @@ set_input_parameters(InputParameters & param)
   param.start_with_low_order                     = false;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
   param.order_time_integrator                    = 2;
-  param.temporal_discretization                  = TemporalDiscretization::CFL;
-  param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
+  param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
+  param.calculation_of_time_step_size            = TimeStepCalculation::CFL;
   param.adaptive_time_stepping                   = true;
   param.cfl                                      = 0.4;
 

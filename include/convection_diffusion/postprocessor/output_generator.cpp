@@ -10,6 +10,8 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/data_out_dof_data.h>
 
+#include <fstream>
+
 namespace ConvDiff
 {
 template<int dim, typename VectorType>

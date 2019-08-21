@@ -7,6 +7,8 @@
 
 #include "perturbation_energy_orr_sommerfeld.h"
 
+#include <fstream>
+
 template<int dim, typename Number>
 PerturbationEnergyCalculator<dim, Number>::PerturbationEnergyCalculator()
   : clear_files(true),

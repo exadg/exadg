@@ -17,6 +17,8 @@
 #include "line_plot_calculation.h"
 #include "line_plot_data.h"
 
+#include <fstream>
+
 using namespace dealii;
 
 /*
