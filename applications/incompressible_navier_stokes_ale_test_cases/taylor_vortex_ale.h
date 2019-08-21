@@ -301,8 +301,8 @@ void set_boundary_conditions(
 
 
 template<int dim>
-void
-set_mesh_movement_function(std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function)
+std::shared_ptr<MeshMovementFunctions<dim>>
+set_mesh_movement_function()
 {
   MeshMovementData data;
   data.type = MESH_MOVEMENT;
@@ -314,8 +314,11 @@ set_mesh_movement_function(std::shared_ptr<MeshMovementFunctions<dim>> mesh_move
   data.t_end = END_TIME;
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
   if(data.type == AnalyicMeshMovement::CubeInteriorSinCos)
     mesh_movement_function.reset(new CubeInteriorSinCos<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundariesWithSinInTime)
+    mesh_movement_function->analytical_mesh_movement.reset(new CubeSinCosWithBoundariesWithSinInTime<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
     mesh_movement_function.reset(new CubeInteriorSinCosOnlyX<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
@@ -332,6 +335,8 @@ set_mesh_movement_function(std::shared_ptr<MeshMovementFunctions<dim>> mesh_move
     mesh_movement_function.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
+
+  return mesh_movement_function;
 }
 
 template<int dim>

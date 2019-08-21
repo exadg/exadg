@@ -60,15 +60,16 @@ public:
   double
   displacement(const Point<dim> & x, const unsigned int coordinate_direction = 0) const
   {
-    return compute_displacement_share(x,coordinate_direction) * compute_time_share();
+    return compute_displacement_share(x, coordinate_direction) * compute_time_share();
   }
 
   // velocity is called vale since VectorTools::Interpolate can be used to evaluate the velocity.
-  // the displacement requires multigrid support and hence, can not be acessed with VectorTools::Interpolate
+  // the displacement requires multigrid support and hence, can not be acessed with
+  // VectorTools::Interpolate
   double
   value(const Point<dim> & p, const unsigned int component = 0) const
   {
-    return compute_velocity(p,component);
+    return compute_velocity(p, component);
   }
 
   double
@@ -77,27 +78,31 @@ public:
     double velocity = 0.0;
 
     if(this->get_time() >= dat.t_0 || dat.initialize_with_former_mesh_instances == true)
-      velocity = compute_displacement_share(x,coordinate_direction) * compute_time_deriv_share();
+      velocity = compute_displacement_share(x, coordinate_direction) * compute_time_deriv_share();
     else if(this->get_time() < dat.t_0 && dat.initialize_with_former_mesh_instances == false)
-      velocity =  0.0;
+      velocity = 0.0;
 
     return velocity;
   }
 
-  virtual double compute_time_share() const
+  virtual double
+  compute_time_share() const
   {
-    //By default the time share equals the sin²
+    // By default the time share equals the sin²
     return std::pow(std::sin(2 * pi * this->get_time() / T), 2);
   }
 
-  virtual double compute_time_deriv_share() const
+  virtual double
+  compute_time_deriv_share() const
   {
-    //By default the time derivative share equals the dsin²/dt
-    return (4 * pi * std::sin(2 * pi * this->get_time() / T) * std::cos(2 * pi * this->get_time() / T) / T);
+    // By default the time derivative share equals the dsin²/dt
+    return (4 * pi * std::sin(2 * pi * this->get_time() / T) *
+            std::cos(2 * pi * this->get_time() / T) / T);
   }
 
   virtual double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const = 0;
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const = 0;
 
 protected:
   MeshMovementData dat;
@@ -112,6 +117,8 @@ protected:
   const double     height;
   const double     length;
   const double     depth;
+  //
+  //  const Vector<dim> dimensions;
 };
 
 template<int dim>
@@ -123,7 +130,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -148,19 +156,22 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
     if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - this->left) / this->width)
-                *std::sin(2 * pi * (x(2) - this->left) / this->width) * this->A;
+    {
+      solution = std::sin(2 * pi * (x(1) - this->left) / this->width) *
+                 std::sin(2 * pi * (x(2) - this->left) / this->width) * this->A;
+    }
     else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - this->left) / this->width)
-                *std::sin(2 * pi * (x(2) - this->left) / this->width) * this->A;
+      solution = std::sin(2 * pi * (x(0) - this->left) / this->width) *
+                 std::sin(2 * pi * (x(2) - this->left) / this->width) * this->A;
     else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - this->left) / this->width)
-                *std::sin(2 * pi * (x(1) - this->left) / this->width) * this->A;
+      solution = std::sin(2 * pi * (x(0) - this->left) / this->width) *
+                 std::sin(2 * pi * (x(1) - this->left) / this->width) * this->A;
 
     return solution;
   }
@@ -178,7 +189,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -204,7 +216,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -230,16 +243,15 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
     if(coordinate_direction == 0)
-      solution =
-        std::pow(x(1), 2) * std::pow((this->right - std::abs(x(1))), 2) * this->A;
+      solution = std::pow(x(1), 2) * std::pow((this->right - std::abs(x(1))), 2) * this->A;
     else if(coordinate_direction == 1)
-      solution =
-        std::pow(x(0), 2) * std::pow((this->right - std::abs(x(0))), 2) * this->A;
+      solution = std::pow(x(0), 2) * std::pow((this->right - std::abs(x(0))), 2) * this->A;
 
     return solution;
   }
@@ -257,7 +269,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -285,7 +298,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -310,7 +324,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -337,7 +352,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -346,14 +362,14 @@ public:
     double damp2 = (1 - std::pow(x(2) / this->right, 2));
 
     if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - this->left) / this->width) * this->A
-                *std::sin(2 * pi * (x(2) - this->left) / this->width) * damp0;
+      solution = std::sin(2 * pi * (x(1) - this->left) / this->width) * this->A *
+                 std::sin(2 * pi * (x(2) - this->left) / this->width) * damp0;
     else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - this->left) / this->width) * this->A
-                *std::sin(2 * pi * (x(2) - this->left) / this->width) * damp1;
+      solution = std::sin(2 * pi * (x(0) - this->left) / this->width) * this->A *
+                 std::sin(2 * pi * (x(2) - this->left) / this->width) * damp1;
     else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - this->left) / this->width) * this->A
-                *std::sin(2 * pi * (x(1) - this->left) / this->width) * damp2;
+      solution = std::sin(2 * pi * (x(0) - this->left) / this->width) * this->A *
+                 std::sin(2 * pi * (x(1) - this->left) / this->width) * damp2;
 
     return solution;
   }
@@ -372,7 +388,8 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
@@ -386,12 +403,14 @@ public:
     return solution;
   }
 
-  double compute_time_share() const override
+  double
+  compute_time_share() const override
   {
     return std::sin(2 * pi * this->get_time() / this->T);
   }
 
-  double compute_time_deriv_share() const override
+  double
+  compute_time_deriv_share() const override
   {
     return std::cos(2 * pi * this->get_time() / this->T) * 2 * pi / this->T;
   }
@@ -409,13 +428,14 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
     if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - (this->height / 2)) / this->height) *
-                 this->A * (1 - std::pow((x(0) - (this->length / 2)) / (this->length / 2), 2));
+      solution = std::sin(2 * pi * (x(1) - (this->height / 2)) / this->height) * this->A *
+                 (1 - std::pow((x(0) - (this->length / 2)) / (this->length / 2), 2));
     else if(coordinate_direction == 1)
       solution = std::sin(2 * pi * (x(0)) / this->length) * this->A *
                  (1 - std::pow(x(1) / (this->height / 2), 2));
@@ -436,22 +456,23 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
-    double damp0 =(1 - std::pow((x(0)) / (this->length / 2), 2));
-    double damp1 =(1 - std::pow((x(1)) / (this->height / 2), 2));
-    double damp2 =(1 - std::pow((x(2)) / (this->depth / 2), 2));
+    double damp0    = (1 - std::pow((x(0)) / (this->length / 2), 2));
+    double damp1    = (1 - std::pow((x(1)) / (this->height / 2), 2));
+    double damp2    = (1 - std::pow((x(2)) / (this->depth / 2), 2));
 
     if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - (this->height / 2)) / this->height) * this->A
-                *std::sin(2 * pi * (x(2) - (this->depth / 2)) / this->depth) *damp0;
+      solution = std::sin(2 * pi * (x(1) - (this->height / 2)) / this->height) * this->A *
+                 std::sin(2 * pi * (x(2) - (this->depth / 2)) / this->depth) * damp0;
     else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0)-(this->length/2)) / this->length) * this->A
-                *std::sin(2 * pi * (x(2)-(this->depth/2)) / this->depth) * damp1;
+      solution = std::sin(2 * pi * (x(0) - (this->length / 2)) / this->length) * this->A *
+                 std::sin(2 * pi * (x(2) - (this->depth / 2)) / this->depth) * damp1;
     else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(1)-(this->height/2)) / this->height) * this->A
-                *std::sin(2 * pi * (x(0)-(this->length/2)) / this->length) * damp2;
+      solution = std::sin(2 * pi * (x(1) - (this->height / 2)) / this->height) * this->A *
+                 std::sin(2 * pi * (x(0) - (this->length / 2)) / this->length) * damp2;
 
     return solution;
   }
@@ -470,13 +491,14 @@ public:
   }
 
   double
-  compute_displacement_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
   {
     double solution = 0.0;
 
     if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - (this->height / 2)) / this->height) *
-                 this->A * (1 - std::pow((x(0) - (this->length / 2)) / (this->length / 2), 2));
+      solution = std::sin(2 * pi * (x(1) - (this->height / 2)) / this->height) * this->A *
+                 (1 - std::pow((x(0) - (this->length / 2)) / (this->length / 2), 2));
     else if(coordinate_direction == 1)
       solution = std::sin(2 * pi * (x(0)) / this->length) * this->A *
                  (1 - std::pow(x(1) / (this->height / 2), 2));
@@ -484,12 +506,53 @@ public:
     return solution;
   }
 
-  double compute_time_share() const override
+  double
+  compute_time_share() const override
   {
     return std::sin(2 * pi * this->get_time() / this->T);
   }
 
-  double compute_time_deriv_share() const override
+  double
+  compute_time_deriv_share() const override
+  {
+    return std::cos(2 * pi * this->get_time() / this->T) * 2 * pi / this->T;
+  }
+
+private:
+  double pi = numbers::PI;
+};
+
+template<int dim>
+class CubeSinCosWithBoundariesWithSinInTime : public MeshMovementFunctions<dim>
+{
+public:
+  CubeSinCosWithBoundariesWithSinInTime(MeshMovementData const & data_in)
+    : MeshMovementFunctions<dim>(data_in)
+  {
+  }
+
+  double
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const override
+  {
+    double solution = 0.0;
+
+    if(coordinate_direction == 0)
+      solution = std::sin(2 * pi * (x(1) - this->left) / this->width) * this->A;
+    else if(coordinate_direction == 1)
+      solution = std::sin(2 * pi * (x(0) - this->left) / this->width) * this->A;
+
+    return solution;
+  }
+
+  double
+  compute_time_share() const override
+  {
+    return std::sin(2 * pi * this->get_time() / this->T);
+  }
+
+  double
+  compute_time_deriv_share() const override
   {
     return std::cos(2 * pi * this->get_time() / this->T) * 2 * pi / this->T;
   }

@@ -51,7 +51,7 @@ const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 // mesh movement
 const double LEFT = - numbers::PI * L;
 const double RIGHT = numbers::PI * L;
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCos3D;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeSinCosWithBoundaries3D;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
 const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.3;
 const double TRIANGULATION_MOVEMENT_FREQUENCY = 4;
@@ -384,8 +384,8 @@ void set_boundary_conditions(
 }
 
 template<int dim>
-void
-set_mesh_movement_function(std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_movement_function)
+std::shared_ptr<MeshMovementFunctions<dim>>
+set_mesh_movement_function()
 {
   MeshMovementData data;
   data.type = MESH_MOVEMENT;
@@ -397,12 +397,15 @@ set_mesh_movement_function(std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_mov
   data.t_end = END_TIME;
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
   if(data.type == AnalyicMeshMovement::CubeInteriorSinCos3D)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCos3D<dim>(data));
+    mesh_movement_function.reset(new CubeInteriorSinCos3D<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries3D)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeSinCosWithBoundaries3D<dim>(data));
+    mesh_movement_function.reset(new CubeSinCosWithBoundaries3D<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
+
+  return mesh_movement_function;
 }
 
 template<int dim>
@@ -431,7 +434,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
   pp_data.output_data.output_start_time = param.start_time;
-  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/200;
   pp_data.output_data.write_vorticity = true;
   pp_data.output_data.write_divergence = true;
   pp_data.output_data.write_velocity_magnitude = true;

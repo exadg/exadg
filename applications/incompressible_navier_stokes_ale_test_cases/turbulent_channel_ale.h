@@ -73,7 +73,7 @@ GridStretchType GRID_STRETCH_TYPE = GridStretchType::VolumeManifold;
 // mesh movement
 const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::RectangleSinCos3D;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
-const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
+const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.4;
 const double TRIANGULATION_MOVEMENT_FREQUENCY = 4;
 
 namespace IncNS
@@ -406,8 +406,8 @@ void set_boundary_conditions(
 }
 
 template<int dim>
-void
-set_mesh_movement_function(std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_movement_function)
+std::shared_ptr<MeshMovementFunctions<dim>>
+set_mesh_movement_function()
 {
   MeshMovementData data;
   data.type = MESH_MOVEMENT;
@@ -420,10 +420,13 @@ set_mesh_movement_function(std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_mov
   data.t_end = END_TIME;
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
   if(data.type == AnalyicMeshMovement::RectangleSinCos3D)
     mesh_movement_function->analytical_mesh_movement.reset(new RectangleSinCos3D<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
+
+  return mesh_movement_function;
 }
 
 template<int dim>

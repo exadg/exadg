@@ -5,10 +5,10 @@ namespace IncNS
 {
 template<int dim, typename Number>
 MovingMesh<dim, Number>::MovingMesh(
-  InputParameters const &                            param_in,
-  std::shared_ptr<parallel::Triangulation<dim>>      triangulation_in,
-  std::shared_ptr<AnalyticalMeshMovement<dim>> const mesh_movement_function_in,
-  std::shared_ptr<DGNavierStokesBase<dim, Number>>   navier_stokes_operation_in)
+  InputParameters const &                           param_in,
+  std::shared_ptr<parallel::Triangulation<dim>>     triangulation_in,
+  std::shared_ptr<MeshMovementFunctions<dim>> const mesh_movement_function_in,
+  std::shared_ptr<DGNavierStokesBase<dim, Number>>  navier_stokes_operation_in)
   : param(param_in),
     mesh_movement_function(mesh_movement_function_in),
     navier_stokes_operation(navier_stokes_operation_in),
@@ -206,7 +206,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::initialize_mapping_ale()
 {
-  mesh_movement_function->analytical_mesh_movement->set_time(param.start_time);
+  mesh_movement_function->set_time(param.start_time);
   advance_grid_position(*mapping);
 
   // For initialization a vector is used that is determined by the function that describes the mesh
@@ -231,7 +231,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_time)
 {
-  mesh_movement_function->analytical_mesh_movement->set_time(evaluation_time);
+  mesh_movement_function->set_time(evaluation_time);
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -241,7 +241,7 @@ MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_ti
 
   VectorTools::interpolate(*mapping,
                            dof_handler_u_grid,
-                           *(mesh_movement_function->analytical_mesh_movement),
+                           *mesh_movement_function,
                            grid_velocity_double);
 
   grid_velocity = grid_velocity_double;
@@ -251,7 +251,7 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::advance_mesh(double time_in)
 {
-  mesh_movement_function->analytical_mesh_movement->set_time(time_in);
+  mesh_movement_function->set_time(time_in);
   advance_grid_position(*mapping);
 }
 
@@ -300,9 +300,7 @@ MovingMesh<dim, Number>::advance_grid_position(Mapping<dim> & mapping_in)
           const Point<dim> point        = fe_values.quadrature_point(i);
           double           displacement = 0.0;
           for(unsigned int d = 0; d < dim; ++d)
-            displacement =
-              mesh_movement_function->analytical_mesh_movement->displacement(point,
-                                                                             coordinate_direction);
+            displacement = mesh_movement_function->displacement(point, coordinate_direction);
 
           position_grid_init(dof_indices[i]) = point[coordinate_direction];
           displacement_grid(dof_indices[i])  = displacement;

@@ -97,10 +97,10 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  std::shared_ptr<FieldFunctions<dim>>         field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim>>    boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim>>    boundary_descriptor_pressure;
-  std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_movement_function;
+  std::shared_ptr<FieldFunctions<dim>>        field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim>>   boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim>>   boundary_descriptor_pressure;
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
 
   InputParameters param;
 
@@ -207,11 +207,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // set mesh movement function
-  if(param.ale_formulation==true)
-  {
-    mesh_movement_function.reset(new AnalyticalMeshMovement<dim>());
-    set_mesh_movement_function(mesh_movement_function);
-  }
+  if(param.ale_formulation == true)
+    mesh_movement_function = set_mesh_movement_function<dim>();
 
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);

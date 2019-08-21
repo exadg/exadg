@@ -500,8 +500,8 @@ void set_boundary_conditions(
 }
 
 template<int dim>
-void
-set_mesh_movement_function(std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function)
+std::shared_ptr<MeshMovementFunctions<dim>>
+set_mesh_movement_function()
 {
   MeshMovementData data;
   data.type = MESH_MOVEMENT;
@@ -513,12 +513,15 @@ set_mesh_movement_function(std::shared_ptr<MeshMovementFunctions<dim>> mesh_move
   data.t_end = END_TIME;
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
   if (data.type == AnalyicMeshMovement::RectangleSinCos)
     field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCos<dim>(data));
   else if (data.type == AnalyicMeshMovement::RectangleSinCosWithSinInTime)
     field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCosWithSinInTime<dim>(data));
   else
     AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
+
+  return mesh_movement_function;
 }
 
 template<int dim>

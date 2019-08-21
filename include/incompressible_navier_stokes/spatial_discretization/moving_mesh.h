@@ -5,7 +5,6 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 
-#include "../user_interface/analytical_mesh_movement.h"
 #include "dg_navier_stokes_base.h"
 
 using namespace dealii;
@@ -21,10 +20,10 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number>                           VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number>                      BlockVectorType;
 
-  MovingMesh(InputParameters const &                            param_in,
-             std::shared_ptr<parallel::Triangulation<dim>>      triangulation_in,
-             std::shared_ptr<AnalyticalMeshMovement<dim>> const mesh_movement_function_in,
-             std::shared_ptr<DGNavierStokesBase<dim, Number>>   navier_stokes_operation_in);
+  MovingMesh(InputParameters const &                           param_in,
+             std::shared_ptr<parallel::Triangulation<dim>>     triangulation_in,
+             std::shared_ptr<MeshMovementFunctions<dim>> const mesh_movement_function_in,
+             std::shared_ptr<DGNavierStokesBase<dim, Number>>  navier_stokes_operation_in);
 
   void
   setup();
@@ -104,7 +103,7 @@ private:
 
 
   InputParameters                                  param;
-  std::shared_ptr<AnalyticalMeshMovement<dim>>     mesh_movement_function;
+  std::shared_ptr<MeshMovementFunctions<dim>>      mesh_movement_function;
   std::shared_ptr<DGNavierStokesBase<dim, Number>> navier_stokes_operation;
 
   // fe systems

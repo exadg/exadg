@@ -46,7 +46,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime;
+const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeSinCosWithBoundariesWithSinInTime;
 const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = true;
 const double TRIANGULATION_LEFT               = -0.5;
 const double TRIANGULATION_RIGHT              = 0.5;
@@ -65,15 +65,15 @@ set_input_parameters(InputParameters & param)
 {
   // ALE
   param.ale_formulation                          = true;
-  param.grid_velocity_analytical                 = true;
+  param.grid_velocity_analytical                 = false;
   param.neumann_with_variable_normal_vector      = true;
   param.initialize_with_former_mesh_instances    = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
   param.start_with_low_order                     = false;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
-  param.order_time_integrator                    = 3;
+  param.order_time_integrator                    = 2;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
-  param.calculation_of_time_step_size            = TimeStepCalculation::CFL;
-  param.adaptive_time_stepping                   = true;
+  param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
+  param.adaptive_time_stepping                   = false;
   param.cfl                                      = 0.4;
 
   // MATHEMATICAL MODEL
@@ -552,8 +552,8 @@ set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descr
 }
 
 template<int dim>
-void
-set_mesh_movement_function(std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_movement_function)
+std::shared_ptr<MeshMovementFunctions<dim>>
+set_mesh_movement_function()
 {
   MeshMovementData data;
   data.type = MESH_MOVEMENT;
@@ -565,24 +565,29 @@ set_mesh_movement_function(std::shared_ptr<AnalyticalMeshMovement<dim>> mesh_mov
   data.t_end = END_TIME;
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
 
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
   if(data.type == AnalyicMeshMovement::CubeInteriorSinCos)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCos<dim>(data));
+    mesh_movement_function.reset(new CubeInteriorSinCos<dim>(data));
+  else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundariesWithSinInTime)
+    mesh_movement_function.reset(new CubeSinCosWithBoundariesWithSinInTime<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCosOnlyX<dim>(data));
+    mesh_movement_function.reset(new CubeInteriorSinCosOnlyX<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCosOnlyY<dim>(data));
+    mesh_movement_function.reset(new CubeInteriorSinCosOnlyY<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeSinCosWithBoundaries<dim>(data));
+    mesh_movement_function.reset(new CubeSinCosWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
+    mesh_movement_function.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeXSquaredWithBoundaries)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeXSquaredWithBoundaries<dim>(data));
+    mesh_movement_function.reset(new CubeXSquaredWithBoundaries<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeDoubleInteriorSinCos<dim>(data));
+    mesh_movement_function.reset(new CubeDoubleInteriorSinCos<dim>(data));
   else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
-    mesh_movement_function->analytical_mesh_movement.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
+    mesh_movement_function.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
   else
     AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
+
+  return mesh_movement_function;
 }
 
 template<int dim>
