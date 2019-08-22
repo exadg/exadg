@@ -51,7 +51,7 @@ set_input_parameters(Poisson::InputParameters &param)
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
-  param.mapping = MappingType::Isoparametric;
+  param.mapping = MappingType::Affine; //Isoparametric;
   param.spatial_discretization = SpatialDiscretization::DG;
   param.IP_factor = 1.0;
 
