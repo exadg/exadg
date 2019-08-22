@@ -33,7 +33,7 @@ public:
 
   void
   initialize(MultigridData const &                mg_data,
-             const parallel::Triangulation<dim> * tria,
+             const parallel::TriangulationBase<dim> * tria,
              const FiniteElement<dim> &           fe,
              Mapping<dim> const &                 mapping,
              LaplaceOperatorData<dim> const &     data_in,

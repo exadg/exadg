@@ -15,7 +15,7 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   MultigridData const &                data,
-  parallel::Triangulation<dim> const * tria,
+  parallel::TriangulationBase<dim> const * tria,
   FiniteElement<dim> const &           fe,
   Mapping<dim> const &                 mapping,
   bool const                           operator_is_singular,
@@ -81,7 +81,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
-  parallel::Triangulation<dim> const * tria,
+  parallel::TriangulationBase<dim> const * tria,
   unsigned int const                   degree,
   bool const                           is_dg)
 {
@@ -280,7 +280,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_dof_handle
   bool const                           operator_is_singular,
   PeriodicFacePairs *                  periodic_face_pairs_in,
   FiniteElement<dim> const &           fe,
-  parallel::Triangulation<dim> const * tria,
+  parallel::TriangulationBase<dim> const * tria,
   Map const *                          dirichlet_bc_in)
 {
   bool const is_dg = fe.dofs_per_vertex == 0;
@@ -323,7 +323,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     bool                                                        is_singular,
     PeriodicFacePairs &                                         periodic_face_pairs,
     FiniteElement<dim> const &                                  fe,
-    parallel::Triangulation<dim> const *                        tria,
+    parallel::TriangulationBase<dim> const *                        tria,
     Map const &                                                 dirichlet_bc,
     std::vector<MGLevelInfo> &                                  level_info,
     std::vector<MGDoFHandlerIdentifier> &                       p_levels,

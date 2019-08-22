@@ -20,9 +20,9 @@ FlowRateCalculator<dim, Number>::FlowRateCalculator(MatrixFree<dim, Number> cons
     dof_index(dof_index_in),
     quad_index(quad_index_in),
     clear_files(true),
-    communicator(dynamic_cast<const parallel::Triangulation<dim> *>(
+    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
                    &dof_handler_velocity_in.get_triangulation()) ?
-                   (dynamic_cast<const parallel::Triangulation<dim> *>(
+                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
                       &dof_handler_velocity_in.get_triangulation())
                       ->get_communicator()) :
                    MPI_COMM_SELF)
