@@ -93,7 +93,7 @@ private:
   bool                                          use_pmg;
   bool                                          use_amg;
   bool                                          use_block;
-  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
+  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
   Poisson::InputParameters                      param;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>

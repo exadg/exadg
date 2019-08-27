@@ -126,7 +126,7 @@ public:
 
 public:
   ConditionalOStream                            pcout;
-  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
+  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
   const unsigned int                            n_refine_space;
   Poisson::InputParameters                      param;
 

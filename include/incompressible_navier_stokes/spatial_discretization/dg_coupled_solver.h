@@ -190,7 +190,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesCoupled(parallel::Triangulation<dim> const & triangulation,
+  DGNavierStokesCoupled(parallel::TriangulationBase<dim> const & triangulation,
                         InputParameters const &              parameters,
                         std::shared_ptr<Postprocessor>       postprocessor);
 

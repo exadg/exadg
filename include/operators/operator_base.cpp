@@ -636,7 +636,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::init_system_matrix(
   // extract communicator
   {
     auto tria =
-      dynamic_cast<parallel::Triangulation<dim> const *>(&dof_handler.get_triangulation());
+      dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
 
     if(tria != NULL)
       comm = tria->get_communicator();

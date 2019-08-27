@@ -14,7 +14,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
-  parallel::Triangulation<dim> const & triangulation,
+  parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &              parameters_in,
   std::shared_ptr<Postprocessor>       postprocessor_in)
   : dealii::Subscriptor(),
@@ -957,8 +957,8 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   // explicit copy needed since function is called on const
   auto periodic_face_pairs = this->periodic_face_pairs;
 
-  parallel::Triangulation<dim> const * tria =
-    dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler_u_scalar.get_triangulation());
+  parallel::TriangulationBase<dim> const * tria =
+    dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler_u_scalar.get_triangulation());
   const FiniteElement<dim> & fe = dof_handler_u_scalar.get_fe();
 
   mg_preconditioner->initialize(mg_data,
@@ -1232,8 +1232,8 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
 
       auto & dof_handler = this->get_dof_handler_u();
 
-      parallel::Triangulation<dim> const * tria =
-        dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+      parallel::TriangulationBase<dim> const * tria =
+        dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
 
       const FiniteElement<dim> & fe = dof_handler.get_fe();
 

@@ -11,7 +11,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
-  parallel::Triangulation<dim> const & triangulation,
+  parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &              parameters,
   std::shared_ptr<Postprocessor>       postprocessor)
   : Base(triangulation, parameters, postprocessor)
@@ -87,8 +87,8 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
 
     auto & dof_handler = this->get_dof_handler_u();
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    parallel::TriangulationBase<dim> const * tria =
+      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
 
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
