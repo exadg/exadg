@@ -13,7 +13,7 @@ public:
    */
   template<int dim, typename AdditionalData>
   static void
-  do_cell_based_loops(const parallel::Triangulation<dim> & tria,
+  do_cell_based_loops(const parallel::TriangulationBase<dim> & tria,
                       AdditionalData &                     data,
                       const unsigned int                   level = numbers::invalid_unsigned_int)
   {

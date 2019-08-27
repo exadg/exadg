@@ -10,7 +10,7 @@
 namespace CompNS
 {
 template<int dim, typename Number>
-DGOperator<dim, Number>::DGOperator(parallel::Triangulation<dim> const & triangulation,
+DGOperator<dim, Number>::DGOperator(parallel::TriangulationBase<dim> const & triangulation,
                                     InputParameters const &              param_in,
                                     std::shared_ptr<Postprocessor>       postprocessor_in)
   : dealii::Subscriptor(),

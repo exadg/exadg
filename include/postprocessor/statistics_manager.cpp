@@ -11,9 +11,9 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> & dof_handler_ve
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::Triangulation<dim> *>(
+    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
                    &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::Triangulation<dim> *>(
+                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
                       &dof_handler_velocity.get_triangulation())
                       ->get_communicator()) :
                    MPI_COMM_SELF),
