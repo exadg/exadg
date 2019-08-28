@@ -709,6 +709,8 @@ InputParameters::print_parameters_turbulence(ConditionalOStream & pcout)
 void
 InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcout)
 {
+  pcout << std::endl << "Numerical parameters:" << std::endl;
+
   print_parameter(pcout,
                   "Block Jacobi matrix-free",
                   implement_block_diagonal_preconditioner_matrix_free);

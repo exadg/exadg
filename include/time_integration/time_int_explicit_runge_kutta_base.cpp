@@ -75,13 +75,13 @@ TimeIntExplRKBase<Number>::setup(bool const do_restart)
 
 template<typename Number>
 void
-TimeIntExplRKBase<Number>::do_timestep()
+TimeIntExplRKBase<Number>::do_timestep(bool const do_write_output)
 {
   output_solver_info_header();
 
   solve_timestep();
 
-  output_remaining_time();
+  output_remaining_time(do_write_output);
 
   prepare_vectors_for_next_timestep();
 

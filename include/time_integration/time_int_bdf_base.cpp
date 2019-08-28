@@ -201,7 +201,7 @@ TimeIntBDFBase::set_time_step_size(double const & time_step_size)
 }
 
 void
-TimeIntBDFBase::do_timestep()
+TimeIntBDFBase::do_timestep(bool const do_write_output)
 {
   update_time_integrator_constants();
 
@@ -209,7 +209,7 @@ TimeIntBDFBase::do_timestep()
 
   solve_timestep();
 
-  output_remaining_time();
+  output_remaining_time(do_write_output);
 
   prepare_vectors_for_next_timestep();
 
