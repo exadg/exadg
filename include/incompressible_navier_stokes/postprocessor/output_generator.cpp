@@ -140,8 +140,11 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
       // time step.
       if(reset_counter)
       {
-        output_counter +=
-          int((time - output_data.output_start_time + EPSILON) / output_data.output_interval_time);
+        if(time > output_data.output_start_time)
+        {
+          output_counter += int((time - output_data.output_start_time + EPSILON) /
+                                output_data.output_interval_time);
+        }
         reset_counter = false;
       }
 
