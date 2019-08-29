@@ -42,7 +42,7 @@ double const END_TIME = (TEST_CASE==1) ? 1000.0 : 8.0;
 // CFL number (use CFL <= 0.4 - 0.6 for adaptive time stepping)
 double const CFL = 0.4;
 
-// physical dimensions
+// physical dimensions (diameter D and center coordinate Y_C can be varied)
 double const X_0 = 0.0; // origin (x-coordinate)
 double const Y_0 = 0.0; // origin (y-coordinate)
 double const L1 = 0.3; // x-coordinate of inflow boundary (2d test cases)
