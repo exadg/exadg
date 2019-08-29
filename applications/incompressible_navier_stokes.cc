@@ -54,7 +54,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/vortex.h"
+//#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
@@ -62,7 +62,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/shear_layer_problem.h"
 
 // 2D/3D Navier-Stokes flow
-//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
 // 3D Navier-Stokes flow
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
