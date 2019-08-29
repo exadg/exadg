@@ -9,6 +9,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../../include/functionalities/linear_interpolation.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -71,6 +72,16 @@ MeshType const MESH_TYPE = MeshType::Type2;
 // Volume manifold: when refining the mesh all child cells are curved since it is a volume manifold
 enum class ManifoldType{ SurfaceManifold, VolumeManifold };
 ManifoldType const MANIFOLD_TYPE = ManifoldType::VolumeManifold;
+
+// use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
+bool const USE_RANDOM_PERTURBATION = false;
+// amplitude of perturbations relative to maximum velocity on centerline
+double const AMPLITUDE_PERTURBATION = 0.25;
+unsigned int const N_POINTS_Y = 10;
+unsigned int const N_POINTS_Z = DIMENSION == 3 ? N_POINTS_Y : 1;
+std::vector<double> Y_VALUES(N_POINTS_Y);
+std::vector<double> Z_VALUES(N_POINTS_Z);
+std::vector<Tensor<1,DIMENSION,double> > VELOCITY_VALUES(N_POINTS_Y*N_POINTS_Z);
 
 // solver tolerances
 double const ABS_TOL_LINEAR = 1.e-12;
@@ -323,42 +334,125 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 namespace IncNS
 {
 
+// initialize vectors
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+void initialize_y_and_z_values()
+{
+  AssertThrow(N_POINTS_Y >= 2, ExcMessage("Variable N_POINTS_Y is invalid"));
+  if(dim == 3)
+    AssertThrow(N_POINTS_Z >= 2, ExcMessage("Variable N_POINTS_Z is invalid"));
+
+  // 0 <= y <= H
+  for(unsigned int i=0; i<N_POINTS_Y; ++i)
+    Y_VALUES[i] = double(i)/double(N_POINTS_Y-1)*H;
+
+  // 0 <= z <= H
+  if(dim == 3)
+    for(unsigned int i=0; i<N_POINTS_Z; ++i)
+      Z_VALUES[i] = double(i)/double(N_POINTS_Z-1)*H;
+}
+
+template<int dim>
+void initialize_velocity_values()
+{
+  AssertThrow(N_POINTS_Y >= 2, ExcMessage("Variable N_POINTS_Y is invalid"));
+  if(DIMENSION == 3)
+    AssertThrow(N_POINTS_Z >= 2, ExcMessage("Variable N_POINTS_Z is invalid"));
+
+  for(unsigned int iy=0; iy<N_POINTS_Y; ++iy)
+  {
+    for(unsigned int iz=0; iz<N_POINTS_Z; ++iz)
+    {
+      Tensor<1, dim, double> velocity;
+
+      if(USE_RANDOM_PERTURBATION==true)
+      {
+        // Add random perturbation
+        double const y = Y_VALUES[iy];
+        double const z = Z_VALUES[iz];
+        double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
+        double perturbation = AMPLITUDE_PERTURBATION * coefficient * ((double)rand()/RAND_MAX-0.5)/0.5;
+        perturbation *= y * (H-y);
+        if(dim == 3)
+          perturbation *= z * (H-z);
+
+        velocity[0] += perturbation;
+      }
+
+      VELOCITY_VALUES[iy*N_POINTS_Z + iz] = velocity;
+    }
+  }
+}
+
+template<int dim>
+class InflowBC : public Function<dim>
 {
 public:
-  AnalyticalSolutionVelocity (const unsigned int  n_components = dim,
-                              const double        time = 0.)
+  InflowBC (const unsigned int  n_components = dim,
+            const double        time = 0.)
     :
     Function<dim>(n_components, time)
-  {}
+  {
+    if(USE_RANDOM_PERTURBATION)
+    {
+      initialize_y_and_z_values<DIMENSION>();
+      initialize_velocity_values<DIMENSION>();
+    }
+  }
 
-  double value (const Point<dim>    &p,
+  double value (const Point<dim>    &x,
                 const unsigned int  component = 0) const
   {
     double t = this->get_time();
     double result = 0.0;
 
-    if(component == 0 && std::abs(p[0]-(dim==2 ? L1: 0.0))<1.e-12)
+    if(component == 0)
     {
       const double pi = numbers::PI;
       const double T = 1.0;
       double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
-      if(TEST_CASE < 3)
-      {
-        if(PROBLEM_TYPE == ProblemType::Steady)
-        {
-          result = coefficient * p[1] * (H-p[1]);
-        }
-        else if(PROBLEM_TYPE == ProblemType::Unsteady)
-        {
-          result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);
-        }
-      }
-      if(TEST_CASE == 3)
-        result = coefficient * p[1] * (H-p[1]) * std::sin(pi*t/END_TIME);
+
+      if(TEST_CASE == 1)
+        result = coefficient * x[1] * (H-x[1]);
+      else if(TEST_CASE == 2)
+        result = coefficient * x[1] * (H-x[1]) * ( (t/T)<1.0 ? std::sin(pi/2.*t/T) : 1.0);
+      else if(TEST_CASE == 3)
+        result = coefficient * x[1] * (H-x[1]) * std::sin(pi*t/END_TIME);
+      else
+        AssertThrow(false, ExcMessage("Not implemented."));
+
       if (dim == 3)
-        result *= p[2] * (H-p[2]);
+        result *= x[2] * (H-x[2]);
+
+      if(USE_RANDOM_PERTURBATION)
+      {
+        double perturbation = 0.0;
+
+        if(dim == 2)
+          perturbation = linear_interpolation_1d(x[1],
+                                                 Y_VALUES,
+                                                 VELOCITY_VALUES,
+                                                 component);
+        else if(dim == 3)
+        {
+          AssertThrow(DIMENSION == 3, ExcMessage("Invalid dimensions."));
+
+          Point<DIMENSION> point_3d;
+          point_3d[0] = x[0];
+          point_3d[1] = x[1];
+          point_3d[2] = x[2];
+
+          perturbation = linear_interpolation_2d_cartesian(point_3d,
+                                                           Y_VALUES,
+                                                           Z_VALUES,
+                                                           VELOCITY_VALUES,
+                                                           component);
+        }
+        else
+          AssertThrow(false, ExcMessage("Not implemented."));
+
+        result += perturbation;
+      }
     }
 
     return result;
@@ -385,10 +479,12 @@ public:
       const double pi = numbers::PI;
       const double T = 1.0;
       double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
-      if(TEST_CASE < 3)
+
+      if(TEST_CASE == 2)
         result = coefficient * p[1] * (H-p[1]) * ( (t/T)<1.0 ? (pi/2./T)*std::cos(pi/2.*t/T) : 0.0);
       if(TEST_CASE == 3)
         result = coefficient * p[1] * (H-p[1]) * std::cos(pi*t/END_TIME)*pi/END_TIME;
+
       if (dim == 3)
         result *= p[2] * (H-p[2]);
     }
@@ -406,8 +502,8 @@ void set_boundary_conditions(
  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
  // fill boundary descriptor velocity
- boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new AnalyticalSolutionVelocity<dim>()));
- boundary_descriptor_velocity->dirichlet_bc.insert(pair(2,new AnalyticalSolutionVelocity<dim>()));
+ boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new InflowBC<dim>()));
+ boundary_descriptor_velocity->dirichlet_bc.insert(pair(2,new Functions::ZeroFunction<dim>(dim)));
  boundary_descriptor_velocity->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(dim)));
 
  // fill boundary descriptor pressure
