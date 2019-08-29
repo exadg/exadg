@@ -46,7 +46,7 @@ double const REL_TOL_NONLINEAR = 1.e-8;
 
 std::string OUTPUT_FOLDER = "output/FPC/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "flow_past_cylinder";
+std::string OUTPUT_NAME = "xyz"; //"flow_past_cylinder";
 
 namespace IncNS
 {
@@ -418,8 +418,8 @@ construct_postprocessor(InputParameters const &param)
   // surfaces for calculation of lift and drag coefficients have boundary_ID = 2
   pp_data.lift_and_drag_data.boundary_IDs.insert(2);
 
-  pp_data.lift_and_drag_data.filename_lift = OUTPUT_FOLDER + OUTPUT_NAME;
-  pp_data.lift_and_drag_data.filename_drag = OUTPUT_FOLDER + OUTPUT_NAME;
+  pp_data.lift_and_drag_data.filename_lift = OUTPUT_FOLDER + OUTPUT_NAME + "_lift";
+  pp_data.lift_and_drag_data.filename_drag = OUTPUT_FOLDER + OUTPUT_NAME + "_drag";
 
   // pressure difference
   pp_data.pressure_difference_data.calculate_pressure_difference = true;
@@ -436,7 +436,7 @@ construct_postprocessor(InputParameters const &param)
     pp_data.pressure_difference_data.point_2 = point_2_3D;
   }
 
-  pp_data.pressure_difference_data.filename = OUTPUT_FOLDER + OUTPUT_NAME;
+  pp_data.pressure_difference_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_pressure_difference";
 
   pp_data.mass_data.calculate_error = false; //true;
   pp_data.mass_data.start_time = 0.0;
