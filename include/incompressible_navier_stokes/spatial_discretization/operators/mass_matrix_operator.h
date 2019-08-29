@@ -24,11 +24,11 @@ struct MassMatrixOperatorData : public OperatorBaseData
   }
 };
 
-template<int dim, typename Number>
-class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData, dim>
+template<int dim, int n_components, typename Number>
+class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData, n_components>
 {
 public:
-  typedef OperatorBase<dim, Number, MassMatrixOperatorData, dim> Base;
+  typedef OperatorBase<dim, Number, MassMatrixOperatorData, n_components> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::Range          Range;
