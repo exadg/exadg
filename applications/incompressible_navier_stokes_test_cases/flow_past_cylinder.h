@@ -8,7 +8,6 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
-#include "../grid_tools/mesh_flow_past_cylinder.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 /************************************************************************************************************/
@@ -27,26 +26,66 @@ unsigned int const REFINE_SPACE_MAX = REFINE_SPACE_MIN;
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = REFINE_TIME_MIN;
 
-// set problem specific parameters like physical dimensions, etc.
+// select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
 unsigned int const DIMENSION = 2;
 unsigned int const TEST_CASE = 3; // 1, 2 or 3
 double const Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
 
+// physical parameters
 double const VISCOSITY = 1.0e-3;
 
-// use a large value for TEST_CASE=1 in order to not stop pseudo-timestepping approach before having converged
+// end time: use a large value for TEST_CASE = 1 (steady problem)
+// in order to not stop pseudo-timestepping approach before having converged
 double const END_TIME = (TEST_CASE==1) ? 1000.0 : 8.0;
 
+// CFL number (use CFL <= 0.4 - 0.6 for adaptive time stepping)
+double const CFL = 0.4;
+
+// physical dimensions
+double const X_0 = 0.0; // origin (x-coordinate)
+double const Y_0 = 0.0; // origin (y-coordinate)
+double const L1 = 0.3; // x-coordinate of inflow boundary (2d test cases)
+double const L2 = 2.5; // x-coordinate of outflow boundary (=length for 3d test cases)
+double const H = 0.41; // height of channel
+double const X_1 = L1; // left x-coordinate of mesh block around the cylinder
+double const X_2 = 0.7; // right x-coordinate of mesh block around the cylinder
+double const X_C = (X_2+X_1)/2.0; // center of cylinder (x-coordinate)
+double const Y_C = 0.2; // center of cylinder (y-coordinate)
+double const D = 0.1; // cylinder diameter
+double const R = D/2.0; // cylinder radius
+
+// MeshType
+// Type1: no refinement around cylinder surface (coarsest mesh has 34 elements in 2D)
+// Type2: two layers of spherical cells around cylinder (used in Fehn et al. (JCP, 2017, "On the stability of projection methods ...")),
+//        (coarsest mesh has 50 elements in 2D)
+// Type3: coarse mesh has only one element in direction perpendicular to flow direction,
+//        one layer of spherical cells around cylinder for coarsest mesh (coarsest mesh has 12 elements in 2D)
+// Type4: no refinement around cylinder, coarsest mesh consists of 4 cells for the block that
+//        that surrounds the cylinder (coarsest mesh has 8 elements in 2D)
+enum class MeshType{ Type1, Type2, Type3, Type4 };
+MeshType const MESH_TYPE = MeshType::Type2;
+
+// ManifoldType
+// Surface manifold: when refining the mesh only the cells close to the manifold-surface are curved (should not be used!)
+// Volume manifold: when refining the mesh all child cells are curved since it is a volume manifold
+enum class ManifoldType{ SurfaceManifold, VolumeManifold };
+ManifoldType const MANIFOLD_TYPE = ManifoldType::VolumeManifold;
+
+// solver tolerances
 double const ABS_TOL_LINEAR = 1.e-12;
 double const REL_TOL_LINEAR = 1.e-6; // use 1.e-3 or smaller for pseudo-timestepping approach
 
 double const ABS_TOL_NONLINEAR = 1.e-12;
 double const REL_TOL_NONLINEAR = 1.e-8;
 
+// writing output
 std::string OUTPUT_FOLDER = "output/FPC/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "xyz"; //"flow_past_cylinder";
+std::string OUTPUT_NAME_VTU = "flow_past_cylinder";
+std::string OUTPUT_NAME_LIFT = "lift";
+std::string OUTPUT_NAME_DRAG = "drag";
+std::string OUTPUT_NAME_DELTA_P = "pressure_difference";
 
 namespace IncNS
 {
@@ -73,16 +112,16 @@ void set_input_parameters(InputParameters &param)
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = true;
   param.max_velocity = Um;
-  param.cfl = 0.4; //0.6; //2.5e-1;
+  param.cfl = CFL;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-3;
-  param.order_time_integrator = 2; // 1; // 2; // 3;
-  param.start_with_low_order = true; // true; // false;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = true;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
   param.solver_info_data.print_to_screen = true;
-  param.solver_info_data.interval_time = 1.0; //TODO //(param.end_time-param.start_time)/20;
+  param.solver_info_data.interval_time = (param.end_time-param.start_time)/8.0;
 
   // pseudo-timestepping for steady-state problems
   param.convergence_criterion_steady_problem = ConvergenceCriterionSteadyProblem::SolutionIncrement; //ResidualSteadyNavierStokes;
@@ -210,6 +249,8 @@ void set_input_parameters(InputParameters &param)
 /*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
 /*                                                                                                          */
 /************************************************************************************************************/
+
+#include "../grid_tools/mesh_flow_past_cylinder.h"
 
 template<int dim>
 void
@@ -400,7 +441,7 @@ construct_postprocessor(InputParameters const &param)
   // write output for visualization of results
   pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
-  pp_data.output_data.output_name = OUTPUT_NAME;
+  pp_data.output_data.output_name = OUTPUT_NAME_VTU;
   pp_data.output_data.output_start_time = param.start_time;
   pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
   pp_data.output_data.write_divergence = true;
@@ -418,8 +459,8 @@ construct_postprocessor(InputParameters const &param)
   // surfaces for calculation of lift and drag coefficients have boundary_ID = 2
   pp_data.lift_and_drag_data.boundary_IDs.insert(2);
 
-  pp_data.lift_and_drag_data.filename_lift = OUTPUT_FOLDER + OUTPUT_NAME + "_lift";
-  pp_data.lift_and_drag_data.filename_drag = OUTPUT_FOLDER + OUTPUT_NAME + "_drag";
+  pp_data.lift_and_drag_data.filename_lift = OUTPUT_FOLDER + OUTPUT_NAME_LIFT;
+  pp_data.lift_and_drag_data.filename_drag = OUTPUT_FOLDER + OUTPUT_NAME_DRAG;
 
   // pressure difference
   pp_data.pressure_difference_data.calculate_pressure_difference = true;
@@ -436,12 +477,7 @@ construct_postprocessor(InputParameters const &param)
     pp_data.pressure_difference_data.point_2 = point_2_3D;
   }
 
-  pp_data.pressure_difference_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_pressure_difference";
-
-  pp_data.mass_data.calculate_error = false; //true;
-  pp_data.mass_data.start_time = 0.0;
-  pp_data.mass_data.sample_every_time_steps = 1;
-  pp_data.mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
+  pp_data.pressure_difference_data.filename = OUTPUT_FOLDER + OUTPUT_NAME_DELTA_P;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

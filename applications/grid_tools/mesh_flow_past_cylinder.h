@@ -8,45 +8,15 @@
 #ifndef APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_GRID_TOOLS_MESH_FLOW_PAST_CYLINDER_H_
 
-// pyhsical dimensions
-const double D = 0.1;
-const double R = D/2.0;
-const double H = 0.41;
-const double L1 = 0.3;
-const double L2 = 2.5;
-const double X_0 = 0.0;
-const double Y_0 = 0.0;
-const double X_1 = L1;
-const double X_2 = 0.7;
-const double X_C = 0.5; // center
-const double Y_C = 0.2; // center
-
-// ManifoldType
-// Surface manifold: when refining the mesh only the cells close to the manifold-surface are curved
-// Volume manifold: all child cells are curved and subject to the manifold since it is a volume manifold
-enum class ManifoldType{ SurfaceManifold, VolumeManifold };
-const ManifoldType MANIFOLD_TYPE = ManifoldType::VolumeManifold;
-
-// MeshType
-// Type1: no refinement around cylinder surface
-// Type2: two layers of spherical cells around cylinder (used in paper "On the stability of projection methods ...")
-// Type3: coarse mesh has only one element in direction perpendicular to flow direction,
-//        one layer of spherical cells around cylinder for coarsest mesh
-// Type4: no refinement around cylinder, coarsest mesh consists of 4 cells for the block that
-//        that surrounds the cylinder
-
-enum class MeshType{ Type1, Type2, Type3, Type4 };
-const MeshType MESH_TYPE = MeshType::Type2;
+#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 
 // needed for mesh type 2 with two layers of spherical cells around cylinder
-const double R_1 = 1.2*R;
-const double R_2 = 1.7*R;
-const double R_3 = 1.75*R;
+double const R_1 = 1.2*R;
+double const R_2 = 1.7*R;
+double const R_3 = 1.75*R;
 
 // manifold ID of spherical manifold
-const unsigned int MANIFOLD_ID = 10;
-
-#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+unsigned int const MANIFOLD_ID = 10;
 
 // vectors of manifold_ids and face_ids
 std::vector<unsigned int> manifold_ids;
@@ -89,25 +59,24 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
 
  if(MESH_TYPE == MeshType::Type1)
  {
-//    SphericalManifold<2> boundary(center);
-   MyCylindricalManifold<2> boundary(center);
-
    Triangulation<2> left, middle, right, tmp, tmp2;
+
+   // left part (only needed for 3D problem)
    std::vector<unsigned int> ref_1(2, 2);
    ref_1[1] = 2;
-
    GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
+
+   // right part (2D and 3D)
    std::vector<unsigned int> ref_2(2, 9);
    ref_2[1] = 2;
-
    GridGenerator::subdivided_hyper_rectangle(right, ref_2,Point<2>(X_2,Y_0), Point<2>(L2, H), false);
 
    // create middle part first as a hyper shell
-   /*const double outer_radius = (X_2-X_1)/2.0;*/
+   const double outer_radius = (X_2-X_1)/2.0;
    const unsigned int n_cells = 4;
-   // use value of 0.2 in the following line instead of outer_radius since this yields
-   // different results for the pressure-difference --> TODO
-   GridGenerator::hyper_shell(middle, center, R, 0.2, n_cells, true);
+   Point<2> current_center = Point<2>((X_1+X_2)/2.0, outer_radius);
+   GridGenerator::hyper_shell(middle, current_center, R, outer_radius, n_cells, true);
+   MyCylindricalManifold<2> boundary(current_center);
    middle.set_manifold(0, boundary);
    middle.refine_global(1);
 
@@ -117,36 +86,47 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
     for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
     {
       Point<2> &vertex = cell->vertex(v);
-      if (std::abs(vertex[0] - 0.7) < 1e-10 && std::abs(vertex[1] - 0.2) < 1e-10)
-        vertex = Point<2>(0.7, 0.205);
-      else if (std::abs(vertex[0] - 0.6) < 1e-10 && std::abs(vertex[1] - 0.3) < 1e-10)
-        vertex = Point<2>(0.7, 0.41);
-      else if (std::abs(vertex[0] - 0.6) < 1e-10 && std::abs(vertex[1] - 0.1) < 1e-10)
-        vertex = Point<2>(0.7, 0);
-      else if (std::abs(vertex[0] - 0.5) < 1e-10 && std::abs(vertex[1] - 0.4) < 1e-10)
-        vertex = Point<2>(0.5, 0.41);
-      else if (std::abs(vertex[0] - 0.5) < 1e-10 && std::abs(vertex[1] - 0.0) < 1e-10)
-        vertex = Point<2>(0.5, 0.0);
-      else if (std::abs(vertex[0] - 0.4) < 1e-10 && std::abs(vertex[1] - 0.3) < 1e-10)
-        vertex = Point<2>(0.3, 0.41);
-      else if (std::abs(vertex[0] - 0.4) < 1e-10 && std::abs(vertex[1] - 0.1) < 1e-10)
-        vertex = Point<2>(0.3, 0);
-      else if (std::abs(vertex[0] - 0.3) < 1e-10 && std::abs(vertex[1] - 0.2) < 1e-10)
-        vertex = Point<2>(0.3, 0.205);
-      else if (std::abs(vertex[0] - 0.56379) < 1e-4 && std::abs(vertex[1] - 0.13621) < 1e-4)
-        vertex = Point<2>(0.59, 0.11);
-      else if (std::abs(vertex[0] - 0.56379) < 1e-4 && std::abs(vertex[1] - 0.26379) < 1e-4)
-        vertex = Point<2>(0.59, 0.29);
-      else if (std::abs(vertex[0] - 0.43621) < 1e-4 && std::abs(vertex[1] - 0.13621) < 1e-4)
-        vertex = Point<2>(0.41, 0.11);
-      else if (std::abs(vertex[0] - 0.43621) < 1e-4 && std::abs(vertex[1] - 0.26379) < 1e-4)
-        vertex = Point<2>(0.41, 0.29);
+      if (std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - current_center[1]) < 1e-10)
+        vertex = Point<2>(X_2, H/2.0);
+      else if (std::abs(vertex[0] - (current_center[0] + outer_radius/std::sqrt(2.0))) < 1e-10 &&
+               std::abs(vertex[1] - (current_center[1] + outer_radius/std::sqrt(2.0))) < 1e-10)
+        vertex = Point<2>(X_2, H);
+      else if (std::abs(vertex[0] - (current_center[0] + outer_radius/std::sqrt(2.0))) < 1e-10 &&
+               std::abs(vertex[1] - (current_center[1] - outer_radius/std::sqrt(2.0))) < 1e-10)
+        vertex = Point<2>(X_2, Y_0);
+      else if (std::abs(vertex[0] - current_center[0]) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
+        vertex = Point<2>(current_center[0], H);
+      else if (std::abs(vertex[0] - current_center[0]) < 1e-10 && std::abs(vertex[1] - X_0) < 1e-10)
+        vertex = Point<2>(current_center[0], X_0);
+      else if (std::abs(vertex[0] - (current_center[0] - outer_radius/std::sqrt(2.0))) < 1e-10 &&
+               std::abs(vertex[1] - (current_center[1] + outer_radius/std::sqrt(2.0))) < 1e-10)
+        vertex = Point<2>(X_1, H);
+      else if (std::abs(vertex[0] - (current_center[0] - outer_radius/std::sqrt(2.0))) < 1e-10 &&
+               std::abs(vertex[1] - (current_center[1] - outer_radius/std::sqrt(2.0))) < 1e-10)
+        vertex = Point<2>(X_1, Y_0);
+      else if (std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - current_center[1]) < 1e-10)
+        vertex = Point<2>(X_1, H/2.0);
     }
    }
 
+   // the same for the inner circle
+   for (Triangulation<2>::cell_iterator cell = middle.begin(); cell != middle.end(); ++cell)
+   {
+     for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+     {
+       Point<2> &vertex = cell->vertex(v);
 
-   // must copy the triangulation because we cannot merge triangulations with
-   // refinement...
+       // allow to shift cylinder center
+       if(std::abs(vertex.distance(current_center)-R) < 1.e-10 ||
+          std::abs(vertex.distance(current_center)-(R + (outer_radius-R)/2.0)) < 1.e-10)
+       {
+         vertex[0] += center[0] - current_center[0];
+         vertex[1] += center[1] - current_center[1];
+       }
+     }
+   }
+
+   // we have to copy the triangulation because we cannot merge triangulations with refinement ...
    GridGenerator::flatten_triangulation(middle, tmp2);
 
    if (compute_in_2d)
@@ -205,17 +185,18 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
  }
  else if(MESH_TYPE == MeshType::Type2)
  {
-//    SphericalManifold<2> cylinder_manifold(center);
    MyCylindricalManifold<2> cylinder_manifold(center);
 
    Triangulation<2> left, circle_1, circle_2, circle_tmp, middle, middle_tmp, middle_tmp2, right, tmp_3D;
+
+   // left part (only needed for 3D problem)
    std::vector<unsigned int> ref_1(2, 2);
    ref_1[1] = 2;
-
    GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
+
+   // right part (2D and 3D)
    std::vector<unsigned int> ref_2(2, 9);
    ref_2[1] = 2;
-
    GridGenerator::subdivided_hyper_rectangle(right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
 
    // create middle part first as a hyper shell
@@ -272,7 +253,7 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
      }
    }
 
-   // must copy the triangulation because we cannot merge triangulations with refinement...
+   // we have to copy the triangulation because we cannot merge triangulations with refinement ...
    GridGenerator::flatten_triangulation(middle, middle_tmp);
 
    GridGenerator::merge_triangulations(circle_1,circle_2,circle_tmp);
@@ -336,7 +317,7 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
    GridGenerator::subdivided_hyper_rectangle(left, ref_1 ,Point<2>(X_0,Y_0), Point<2>(X_1, H), false);
 
    // right part (2D and 3D)
-   std::vector<unsigned int> ref_2(2, 5);
+   std::vector<unsigned int> ref_2(2, 4);
    ref_2[1] = 1;
    GridGenerator::subdivided_hyper_rectangle(right, ref_2, Point<2>(X_2, Y_0), Point<2>(L2, H), false);
 
@@ -361,6 +342,8 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
      for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
      {
        Point<2> &vertex = cell->vertex(v);
+
+       // shift two points at the top to a height of H
        if (std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
        {
          vertex = Point<2>(X_1, H);
@@ -368,6 +351,31 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
        else if (std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
        {
          vertex = Point<2>(X_2, H);
+       }
+
+       // allow to shift cylinder center
+       Point<2> current_center = Point<2>((X_1+X_2)/2.0, (X_2-X_1)/2.0);
+       if(std::abs(vertex.distance(current_center)-R_3) < 1.e-10)
+       {
+         vertex[0] += center[0] - current_center[0];
+         vertex[1] += center[1] - current_center[1];
+       }
+     }
+   }
+
+   // the same for the inner circle
+   for (Triangulation<2>::cell_iterator cell = circle.begin(); cell != circle.end(); ++cell)
+   {
+     for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
+     {
+       Point<2> &vertex = cell->vertex(v);
+
+       // allow to shift cylinder center
+       Point<2> current_center = Point<2>((X_1+X_2)/2.0, (X_2-X_1)/2.0);
+       if(std::abs(vertex.distance(current_center)-R) < 1.e-10 || std::abs(vertex.distance(current_center)-R_3) < 1.e-10)
+       {
+         vertex[0] += center[0] - current_center[0];
+         vertex[1] += center[1] - current_center[1];
        }
      }
    }
@@ -393,8 +401,10 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
      {
        if(MANIFOLD_TYPE == ManifoldType::VolumeManifold)
        {
-         if(center.distance(cell->center())<= R_3)
+         if(center.distance(cell->center()) <= R_3)
+         {
            cell->set_all_manifold_ids(MANIFOLD_ID);
+         }
          else
          {
            for (unsigned int f=0; f<GeometryInfo<2>::faces_per_cell; ++f)
@@ -451,6 +461,8 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
      for (unsigned int v=0; v < GeometryInfo<2>::vertices_per_cell; ++v)
      {
        Point<2> &vertex = cell->vertex(v);
+
+       // shift two points at the top to a height of H
        if (std::abs(vertex[0] - X_1) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
        {
          vertex = Point<2>(X_1, H);
@@ -458,6 +470,14 @@ void create_triangulation(Triangulation<2> &tria, const bool compute_in_2d = tru
        else if (std::abs(vertex[0] - X_2) < 1e-10 && std::abs(vertex[1] - (X_2-X_1)) < 1e-10)
        {
          vertex = Point<2>(X_2, H);
+       }
+
+       // allow to shift cylinder center
+       Point<2> current_center = Point<2>((X_1+X_2)/2.0, (X_2-X_1)/2.0);
+       if(std::abs(vertex.distance(current_center)-R) < 1.e-10)
+       {
+         vertex[0] += center[0] - current_center[0];
+         vertex[1] += center[1] - current_center[1];
        }
      }
    }
