@@ -9,35 +9,35 @@ template<int dim>
 struct MeshMovementData
 {
   MeshMovementData()
-    : type(AnalyicMeshMovement::Undefined),
-      A(0.0),
-      f(0.0),
-      t_0(0.0),
+    : temporal(MeshMovementAdvanceInTime::Undefined),
+      shape(MeshMovementShape::Undefined),
+      amplitude(0.0),
+      frequency(0.0),
+      t_start(0.0),
       t_end(0.0),
-      initialize_with_former_mesh_instances(false)
+      spatial_number_of_oscillations(1),
+      initialize_with_former_mesh_instances(false),
+      damp_towards_bondaries(true)
   {
   }
 
-  AnalyicMeshMovement type;
-  Tensor<1, dim>      dimensions;
-  double              A;
-  double              f;
-  double              t_0;
-  double              t_end;
-  bool                initialize_with_former_mesh_instances;
+  MeshMovementAdvanceInTime temporal;
+  MeshMovementShape         shape;
+  Tensor<1, dim>            dimensions;
+  double                    amplitude;
+  double                    frequency;
+  double                    t_start;
+  double                    t_end;
+  double                    spatial_number_of_oscillations;
+  bool                      initialize_with_former_mesh_instances;
+  bool                      damp_towards_bondaries;
 };
 
 template<int dim>
 class MeshMovementFunctions : public Function<dim>
 {
 public:
-  MeshMovementFunctions(MeshMovementData<dim> const & data_in)
-    : Function<dim>(dim, 0.0),
-      dat(data_in),
-      f(data_in.f),
-      A(data_in.A),
-      Dt(data_in.t_end - data_in.t_0),
-      dimensions(data_in.dimensions)
+  MeshMovementFunctions() : Function<dim>(dim, 0.0)
   {
   }
 
@@ -45,469 +45,445 @@ public:
   {
   }
 
-  double
-  displacement(const Point<dim> & x, const unsigned int coordinate_direction = 0) const
-  {
-    return compute_displacement_share(x, coordinate_direction) * compute_time_share();
-  }
+  virtual double
+  displacement(const Point<dim> & x, const unsigned int coordinate_direction = 0) const = 0;
 
   // velocity is called vale since VectorTools::Interpolate can be used to evaluate the velocity.
   // the displacement requires multigrid support and hence, can not be acessed with
   // VectorTools::Interpolate
-  double
-  value(const Point<dim> & p, const unsigned int component = 0) const
+  virtual double
+  value(const Point<dim> & p, const unsigned int component = 0) const = 0;
+};
+
+
+
+template<int dim>
+class CubeMeshMovementFunctions : public MeshMovementFunctions<dim>
+{
+public:
+  CubeMeshMovementFunctions(MeshMovementData<dim> const & data_in)
+    : MeshMovementFunctions<dim>(),
+      data(data_in),
+      width(data_in.dimensions[0]),
+      left(-1.0 / 2.0 * width),
+      right(-left),
+      runtime(data_in.t_end - data_in.t_start),
+      time_period(runtime / data_in.frequency)
   {
-    return compute_velocity(p, component);
   }
 
   double
-  compute_velocity(const Point<dim> & x, const unsigned int coordinate_direction = 0) const
+  value(const Point<dim> & p, const unsigned int component = 0) const override
   {
     double velocity = 0.0;
 
-    if(this->get_time() >= dat.t_0 || dat.initialize_with_former_mesh_instances == true)
-      velocity = compute_displacement_share(x, coordinate_direction) * compute_time_deriv_share();
-    else if(this->get_time() < dat.t_0 && dat.initialize_with_former_mesh_instances == false)
+    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+      velocity = compute_displacement_share(p, component) * compute_damping_share(p, component) *
+                 compute_time_deriv_share();
+    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
       velocity = 0.0;
 
     return velocity;
   }
 
-  virtual double
-  compute_time_share() const
+  double
+  displacement(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
   {
-    // By default the time share equals the sin²
-    return std::pow(std::sin(2 * pi * this->get_time() / T), 2);
+    double displacement = 0.0;
+
+    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+      displacement = compute_displacement_share(x, coordinate_direction) *
+                     compute_damping_share(x, coordinate_direction) * compute_time_share();
+    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
+      displacement = 0.0;
+
+    return displacement;
   }
 
-  virtual double
+private:
+  double
+  compute_displacement_share(const Point<dim> & x,
+                             const unsigned int coordinate_direction = 0) const
+  {
+    double solution = 0.0;
+
+    switch(data.shape)
+    {
+      case MeshMovementShape::Sin:
+        if(coordinate_direction == 0)
+          solution =
+            std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *
+            data.amplitude *
+            (dim == 3 ?
+               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
+               1.0);
+        else if(coordinate_direction == 1)
+          solution =
+            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
+            data.amplitude *
+            (dim == 3 ?
+               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
+               1.0);
+        else if(coordinate_direction == 2)
+          solution =
+            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
+            data.amplitude *
+            std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width);
+        break;
+
+      case MeshMovementShape::Undefined:
+        AssertThrow(false,
+                    ExcMessage(
+                      "You are trying to use a mesh moving function but didn't specify its shape"));
+        break;
+    }
+
+    return solution;
+  }
+
+  double
   compute_time_deriv_share() const
   {
-    // By default the time derivative share equals the dsin²/dt
-    return (4 * pi * std::sin(2 * pi * this->get_time() / T) *
-            std::cos(2 * pi * this->get_time() / T) / T);
+    double solution = 0.0;
+
+    switch(data.temporal)
+    {
+      case MeshMovementAdvanceInTime::SinSquared:
+        solution = (4.0 * pi * std::sin(2.0 * pi * this->get_time() / time_period) *
+                    std::cos(2.0 * pi * this->get_time() / time_period) / time_period);
+        break;
+
+      case MeshMovementAdvanceInTime::Sin:
+        solution = std::cos(2.0 * pi * this->get_time() / time_period) * 2.0 * pi / time_period;
+        break;
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+    }
+    return solution;
   }
 
-  virtual double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const = 0;
+  double
+  compute_time_share() const
+  {
+    double solution = 0.0;
+
+    switch(data.temporal)
+    {
+      case MeshMovementAdvanceInTime::SinSquared:
+        solution = std::pow(std::sin(2.0 * pi * this->get_time() / time_period), 2);
+        break;
+
+      case MeshMovementAdvanceInTime::Sin:
+        solution = std::sin(2.0 * pi * this->get_time() / time_period);
+        break;
+
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+    }
+    return solution;
+  }
+
+  double
+  compute_damping_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const
+  {
+    double damp = 0.0;
+
+    if(this->data.damp_towards_bondaries == true)
+      damp = (1 - std::pow(x(coordinate_direction) / right, 2));
+    else
+      damp = 1.0;
+
+    return damp;
+  }
 
 protected:
-  MeshMovementData<dim> dat;
-  double                pi = numbers::PI;
-  const double          f;
-  const double          A;
-  const double          Dt;
-  const double          T = Dt / f;
-  Tensor<1, dim>        dimensions;
+  const double                pi = numbers::PI;
+  MeshMovementData<dim> const data;
+  double const                width;
+  double const                left;
+  double const                right;
+  double const                runtime;
+  double const                time_period;
 };
 
 template<int dim>
-class CubeSinCosWithBoundaries : public MeshMovementFunctions<dim>
+class RectangleMeshMovementFunctions : public MeshMovementFunctions<dim>
 {
 public:
-  CubeSinCosWithBoundaries(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
+  RectangleMeshMovementFunctions(MeshMovementData<dim> const & data_in)
+    : MeshMovementFunctions<dim>(),
+      data(data_in),
+      length(data_in.dimensions[0]),
+      height(data_in.dimensions[1]),
+      runtime(data_in.t_end - data_in.t_start),
+      time_period(runtime / data_in.frequency)
   {
+    if(dim == 3)
+      depth = data_in.dimensions[2];
   }
 
   double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
+  value(const Point<dim> & p_in, const unsigned int component = 0) const override
   {
-    double solution = 0.0;
+    // For 2D and 3D the coordinate system is set differently
+    Point<dim> p = p_in;
+    if(dim == 2)
+      p[0] -= length / 2.0;
 
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - left) / width) * this->A *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A *
-                 std::sin(2 * pi * (x(1) - left) / width);
+    double velocity = 0.0;
 
-    return solution;
-  }
+    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+      velocity = compute_displacement_share(p, component) * compute_damping_share(p, component) *
+                 compute_time_deriv_share();
+    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
+      velocity = 0.0;
 
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
-};
-
-template<int dim>
-class CubeInteriorSinCosOnlyX : public MeshMovementFunctions<dim>
-{
-public:
-  CubeInteriorSinCosOnlyX(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
-  {
+    return velocity;
   }
 
   double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    if(coordinate_direction == 0)
-      solution =
-        std::sin(2 * pi * (x(1) - left) / width) * this->A * (1 - std::pow(x(0) / right, 2));
-    else if(coordinate_direction == 1)
-      solution = 0.0;
-    else if(coordinate_direction == 2)
-      solution = 0.0;
-
-    return solution;
-  }
-
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double right = 1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
-};
-
-template<int dim>
-class CubeInteriorSinCosOnlyY : public MeshMovementFunctions<dim>
-{
-public:
-  CubeInteriorSinCosOnlyY(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
-  double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    if(coordinate_direction == 0)
-      solution = 0.0;
-    else if(coordinate_direction == 1)
-      solution =
-        std::sin(2 * pi * (x(0) - left) / width) * this->A * (1 - std::pow(x(1) / right, 2));
-    else if(coordinate_direction == 2)
-      solution = 0.0;
-
-    return solution;
-  }
-
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double right = 1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
-};
-
-template<int dim>
-class CubeDoubleInteriorSinCos : public MeshMovementFunctions<dim>
-{
-public:
-  CubeDoubleInteriorSinCos(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
-  double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    double damp0 = (1 - std::pow(x(0) / right, 2));
-    double damp1 = (1 - std::pow(x(1) / right, 2));
-    double damp2 = (1 - std::pow(x(2) / right, 2));
-
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - left) * 2 / width) * this->A * damp0 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) * 2 / width) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - left) * 2 / width) * this->A * damp1 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) * 2 / width) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - left) * 2 / width) * this->A * damp2 *
-                 std::sin(2 * pi * (x(1) - left) * 2 / width);
-
-    return solution;
-  }
-
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double right = 1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
-};
-
-template<int dim>
-class CubeDoubleSinCosWithBoundaries : public MeshMovementFunctions<dim>
-{
-public:
-  CubeDoubleSinCosWithBoundaries(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
-  double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - left) * 2 / width) * this->A *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) * 2 / width) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - left) * 2 / width) * this->A *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) * 2 / width) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - left) * 2 / width) * this->A *
-                 std::sin(2 * pi * (x(1) - left) * 2 / width);
-
-
-    return solution;
-  }
-
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
-};
-
-template<int dim>
-class CubeInteriorSinCos : public MeshMovementFunctions<dim>
-{
-public:
-  CubeInteriorSinCos(MeshMovementData<dim> const & data_in) : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
-  double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    double damp0 = (1 - std::pow(x(0) / right, 2));
-    double damp1 = (1 - std::pow(x(1) / right, 2));
-    double damp2 = (1 - std::pow(x(2) / right, 2));
-
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - left) / width) * this->A * damp0 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A * damp1 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A * damp2 *
-                 std::sin(2 * pi * (x(1) - left) / width);
-
-    return solution;
-  }
-
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double right = 1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
-};
-
-template<int dim>
-class CubeInteriorSinCosWithSinInTime : public MeshMovementFunctions<dim>
-{
-public:
-  CubeInteriorSinCosWithSinInTime(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
-  double
-  compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
-  {
-    double solution = 0.0;
-
-    double damp0 = (1 - std::pow(x(0) / right, 2));
-    double damp1 = (1 - std::pow(x(1) / right, 2));
-    double damp2 = (1 - std::pow(x(2) / right, 2));
-
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - left) / width) * this->A * damp0 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A * damp1 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A * damp2 *
-                 std::sin(2 * pi * (x(1) - left) / width);
-
-    return solution;
-  }
-
-  double
-  compute_time_share() const override
-  {
-    return std::sin(2 * pi * this->get_time() / this->T);
-  }
-
-  double
-  compute_time_deriv_share() const override
-  {
-    return std::cos(2 * pi * this->get_time() / this->T) * 2 * pi / this->T;
-  }
-
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double right = 1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
-};
-
-template<int dim>
-class RectangleSinCos : public MeshMovementFunctions<dim>
-{
-public:
-  RectangleSinCos(MeshMovementData<dim> const & data_in) : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
-  double
-  compute_displacement_share(const Point<dim> & x_in,
-                             const unsigned int coordinate_direction = 0) const override
+  displacement(const Point<dim> & x_in, const unsigned int coordinate_direction = 0) const override
   {
     // For 2D and 3D the coordinate system is set differently
     Point<dim> x = x_in;
     if(dim == 2)
-      x[0] -= length / 2;
+      x[0] -= length / 2.0;
 
-    double solution = 0.0;
-    double damp0    = (1 - std::pow((x(0)) / (length / 2), 2));
-    double damp1    = (1 - std::pow((x(1)) / (height / 2), 2));
-    double damp2    = (1 - std::pow((x(2)) / (depth / 2), 2));
+    double displacement = 0.0;
 
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp0 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - (length / 2)) / length) * this->A * damp1 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp2 *
-                 std::sin(2 * pi * (x(0) - (length / 2)) / length);
+    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+      displacement = compute_displacement_share(x, coordinate_direction) *
+                     compute_damping_share(x, coordinate_direction) * compute_time_share();
+    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
+      displacement = 0.0;
 
-    return solution;
+    return displacement;
   }
 
 private:
-  double pi     = numbers::PI;
-  double length = this->dimensions[0];
-  double height = this->dimensions[1];
-  double depth  = this->dimensions[2];
-};
-
-template<int dim>
-class RectangleSinCosWithSinInTime : public MeshMovementFunctions<dim>
-{
-public:
-  RectangleSinCosWithSinInTime(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
-  double
-  compute_displacement_share(const Point<dim> & x_in,
-                             const unsigned int coordinate_direction = 0) const override
-  {
-    // For 2D and 3D the coordinate system is set differently
-    Point<dim> x = x_in;
-    if(dim == 2)
-      x[0] -= length / 2;
-
-    double solution = 0.0;
-    double damp0    = (1 - std::pow((x(0)) / (length / 2), 2));
-    double damp1    = (1 - std::pow((x(1)) / (height / 2), 2));
-    double damp2    = (1 - std::pow((x(2)) / (depth / 2), 2));
-
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp0 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - (length / 2)) / length) * this->A * damp1 *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp2 *
-                 std::sin(2 * pi * (x(0) - (length / 2)) / length);
-
-    return solution;
-  }
-
-  double
-  compute_time_share() const override
-  {
-    return std::sin(2 * pi * this->get_time() / this->T);
-  }
-
-  double
-  compute_time_deriv_share() const override
-  {
-    return std::cos(2 * pi * this->get_time() / this->T) * 2 * pi / this->T;
-  }
-
-private:
-  double pi     = numbers::PI;
-  double length = this->dimensions[0];
-  double height = this->dimensions[1];
-  double depth  = this->dimensions[2];
-};
-
-template<int dim>
-class CubeSinCosWithBoundariesWithSinInTime : public MeshMovementFunctions<dim>
-{
-public:
-  CubeSinCosWithBoundariesWithSinInTime(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(data_in)
-  {
-  }
-
   double
   compute_displacement_share(const Point<dim> & x,
-                             const unsigned int coordinate_direction = 0) const override
+                             const unsigned int coordinate_direction = 0) const
   {
     double solution = 0.0;
 
-    if(coordinate_direction == 0)
-      solution = std::sin(2 * pi * (x(1) - left) / width) * this->A *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 1)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A *
-                 (dim == 3 ? std::sin(2 * pi * (x(2) - left) / width) : 1.0);
-    else if(coordinate_direction == 2)
-      solution = std::sin(2 * pi * (x(0) - left) / width) * this->A *
-                 std::sin(2 * pi * (x(1) - left) / width);
+    switch(data.shape)
+    {
+      case MeshMovementShape::Sin:
+        if(coordinate_direction == 0)
+          solution = std::sin(2.0 * pi * (x(1) - (height / 2.0)) / height) * data.amplitude *
+                     (dim == 3 ? std::sin(2 * pi * (x(2.0) - (depth / 2)) / depth) : 1.0);
+        else if(coordinate_direction == 1)
+          solution = std::sin(2.0 * pi * (x(0) - (length / 2.0)) / length) * data.amplitude *
+                     (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2.0)) / depth) : 1.0);
+        else if(coordinate_direction == 2)
+          solution = std::sin(2.0 * pi * (x(1) - (height / 2.0)) / height) * data.amplitude *
+                     std::sin(2.0 * pi * (x(0) - (length / 2.0)) / length);
+        break;
+
+      case MeshMovementShape::Undefined:
+        AssertThrow(false,
+                    ExcMessage(
+                      "You are trying to use a mesh moving function but didn't specify its shape"));
+        break;
+    }
 
     return solution;
   }
 
   double
-  compute_time_share() const override
+  compute_time_deriv_share() const
   {
-    return std::sin(2 * pi * this->get_time() / this->T);
+    double solution = 0.0;
+
+    switch(data.temporal)
+    {
+      case MeshMovementAdvanceInTime::SinSquared:
+        solution = (4.0 * pi * std::sin(2.0 * pi * this->get_time() / time_period) *
+                    std::cos(2.0 * pi * this->get_time() / time_period) / time_period);
+        break;
+
+      case MeshMovementAdvanceInTime::Sin:
+        solution = std::cos(2.0 * pi * this->get_time() / time_period) * 2.0 * pi / time_period;
+        break;
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+    }
+    return solution;
   }
 
   double
-  compute_time_deriv_share() const override
+  compute_time_share() const
   {
-    return std::cos(2 * pi * this->get_time() / this->T) * 2 * pi / this->T;
+    double solution = 0.0;
+
+    switch(data.temporal)
+    {
+      case MeshMovementAdvanceInTime::SinSquared:
+        solution = std::pow(std::sin(2.0 * pi * this->get_time() / time_period), 2);
+        break;
+
+      case MeshMovementAdvanceInTime::Sin:
+        solution = std::sin(2.0 * pi * this->get_time() / time_period);
+        break;
+
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+    }
+    return solution;
   }
 
-private:
-  double pi    = numbers::PI;
-  double left  = -1 / 2 * this->dimensions[0];
-  double right = 1 / 2 * this->dimensions[0];
-  double width = this->dimensions[0];
+  double
+  compute_damping_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const
+  {
+    double damp = 0.0;
+
+    if(this->data.damp_towards_bondaries == true)
+      damp = (1.0 -
+              std::pow(x(coordinate_direction) / (data.dimensions[coordinate_direction] / 2.0), 2));
+    else
+      damp = 1.0;
+
+    return damp;
+  }
+
+protected:
+  const double                pi = numbers::PI;
+  MeshMovementData<dim> const data;
+  double const                length;
+  double const                height;
+  double const                depth;
+  double const                runtime;
+  double const                time_period;
 };
+//
+//  template<int dim>
+//  class RectangleSinCos : public MeshMovementFunctions<dim>
+//  {
+//  public:
+//    RectangleSinCos(MeshMovementData<dim> const & data_in)
+//      : MeshMovementFunctions<dim>(data_in),
+//        length(data_in.dimensions[0]),
+//        height(data_in.dimensions[1]),
+//        dimensions(data_in.dimensions)
+//    {
+//      if(dim == 3)
+//        depth = data_in.dimensions[2];
+//    }
+//
+//    double
+//    compute_displacement_share(const Point<dim> & x_in,
+//                               const unsigned int coordinate_direction = 0) const override
+//    {
+//      // For 2D and 3D the coordinate system is set differently
+//      Point<dim> x = x_in;
+//      if(dim == 2)
+//        x[0] -= length / 2;
+//
+//      double solution = 0.0;
+//      double damp =
+//        (1 - std::pow(x(coordinate_direction) / (dimensions[coordinate_direction] / 2), 2));
+//
+//      if(coordinate_direction == 0)
+//        solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp *
+//                   (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
+//      else if(coordinate_direction == 1)
+//        solution = std::sin(2 * pi * (x(0) - (length / 2)) / length) * this->A * damp *
+//                   (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
+//      else if(coordinate_direction == 2)
+//        solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp *
+//                   std::sin(2 * pi * (x(0) - (length / 2)) / length);
+//
+//      return solution;
+//    }
+//
+//  private:
+//    double         pi = numbers::PI;
+//    double         length;
+//    double         height;
+//    double         depth = 0;
+//    Tensor<1, dim> dimensions;
+//  };
+//
+//  template<int dim>
+//  class RectangleSinCosWithSinInTime : public MeshMovementFunctions<dim>
+//  {
+//  public:
+//    RectangleSinCosWithSinInTime(MeshMovementData<dim> const & data_in)
+//      : MeshMovementFunctions<dim>(data_in),
+//        length(data_in.dimensions[0]),
+//        height(data_in.dimensions[1]),
+//        dimensions(data_in.dimensions)
+//    {
+//      if(dim == 3)
+//        depth = data_in.dimensions[2];
+//    }
+//
+//    double
+//    compute_displacement_share(const Point<dim> & x_in,
+//                               const unsigned int coordinate_direction = 0) const override
+//    {
+//      // For 2D and 3D the coordinate system is set differently
+//      Point<dim> x = x_in;
+//      if(dim == 2)
+//        x[0] -= length / 2;
+//
+//      double solution = 0.0;
+//
+//      double damp =
+//        (1 - std::pow(x(coordinate_direction) / (dimensions[coordinate_direction] / 2), 2));
+//
+//
+//      if(coordinate_direction == 0)
+//        solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp *
+//                   (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
+//      else if(coordinate_direction == 1)
+//        solution = std::sin(2 * pi * (x(0) - (length / 2)) / length) * this->A * damp *
+//                   (dim == 3 ? std::sin(2 * pi * (x(2) - (depth / 2)) / depth) : 1.0);
+//      else if(coordinate_direction == 2)
+//        solution = std::sin(2 * pi * (x(1) - (height / 2)) / height) * this->A * damp *
+//                   std::sin(2 * pi * (x(0) - (length / 2)) / length);
+//
+//      return solution;
+//    }
+//
+//    double
+//    compute_time_share() const override
+//    {
+//      return std::sin(2 * pi * this->get_time() / this->T);
+//    }
+//
+//    double
+//    compute_time_deriv_share() const override
+//    {
+//      return std::cos(2 * pi * this->get_time() / this->T) * 2 * pi / this->T;
+//    }
+//
+//  private:
+//    double         pi = numbers::PI;
+//    double         length;
+//    double         height;
+//    double         depth = 0;
+//    Tensor<1, dim> dimensions;
+//  };
+
+
 
 } // namespace IncNS
 

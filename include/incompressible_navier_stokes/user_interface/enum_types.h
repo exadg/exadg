@@ -665,23 +665,24 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 /*                                                                                    */
 /**************************************************************************************/
 
-enum class AnalyicMeshMovement
+enum class MeshMovementAdvanceInTime
 {
-  CubeInteriorSinCos,
-  CubeInteriorSinCosOnlyX,
-  CubeInteriorSinCosOnlyY,
-  CubeSinCosWithBoundaries,
-  CubeInteriorSinCosWithSinInTime,
-  CubeDoubleInteriorSinCos,
-  CubeDoubleSinCosWithBoundaries,
-  RectangleSinCos,
-  RectangleSinCosWithSinInTime,
-  CubeSinCosWithBoundariesWithSinInTime,
+  SinSquared,
+  Sin,
   Undefined
 };
 
 std::string
-enum_to_string(AnalyicMeshMovement const enum_type);
+enum_to_string(MeshMovementAdvanceInTime const enum_type);
+
+enum class MeshMovementShape
+{
+  Sin,
+  Undefined
+};
+
+std::string
+enum_to_string(MeshMovementShape const enum_type);
 
 /**************************************************************************************/
 /*                                                                                    */
