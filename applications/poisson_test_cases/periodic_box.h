@@ -11,6 +11,9 @@
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
+unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MAX = 0;
+
 // problem specific parameters
 
 enum class MeshType{ Cartesian, Curvilinear };
@@ -47,12 +50,12 @@ set_input_parameters(Poisson::InputParameters &param)
 template<int dim>
 void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                                 unsigned int const                            n_refine_space,
+                                 unsigned int const                                n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
-                                   Triangulation<dim>::cell_iterator> >         &periodic_faces,
-                                   unsigned int const n_subdivisions = 1)
+                                   Triangulation<dim>::cell_iterator> >            &periodic_faces,
+                                 unsigned int const                                n_subdivisions = 1)
 {
-  const double left = -1.0, right = 1.0;
+  double const left = -1.0, right = 1.0;
   GridGenerator::subdivided_hyper_cube(*triangulation,n_subdivisions,left,right);
 
   if(MESH_TYPE == MeshType::Cartesian)

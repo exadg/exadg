@@ -19,7 +19,7 @@
 
 // convergence studies in space or time
 unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 15;
+unsigned int const DEGREE_MAX = 10;
 
 unsigned int const REFINE_SPACE_MIN = 0;
 unsigned int const REFINE_SPACE_MAX = 0;
@@ -30,10 +30,7 @@ unsigned int const REFINE_TIME_MAX = 0;
 // set problem specific parameters like physical dimensions, etc.
 
 enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Curvilinear;
-
-// only relevant for Cartesian mesh
-const unsigned int N_CELLS_1D_COARSE_GRID = 3;
+const MeshType MESH_TYPE = MeshType::Cartesian;
 
 namespace IncNS
 {
@@ -144,18 +141,13 @@ void set_input_parameters(InputParameters &param)
 template<int dim>
 void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                                 unsigned int const                            n_refine_space,
+                                 unsigned int const                                n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
-                                   Triangulation<dim>::cell_iterator> >        &periodic_faces)
+                                   Triangulation<dim>::cell_iterator> >            &periodic_faces,
+                                 unsigned int const                                n_subdivisions = 1)
 {
-  const double pi = numbers::PI;
-  const double left = - pi, right = pi;
-  std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
-                                         N_CELLS_1D_COARSE_GRID,
-                                         N_CELLS_1D_COARSE_GRID});
-
-  Point<dim> point1(left,left,left), point2(right,right,right);
-  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+  double const left = -1.0, right = 1.0;
+  GridGenerator::subdivided_hyper_cube(*triangulation,n_subdivisions,left,right);
 
   if(MESH_TYPE == MeshType::Cartesian)
   {
@@ -163,7 +155,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
   }
   else if(MESH_TYPE == MeshType::Curvilinear)
   {
-    double const deformation = 0.5;
+    double const deformation = 0.1;
     unsigned int const frequency = 2;
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
     triangulation->set_all_manifold_ids(1);

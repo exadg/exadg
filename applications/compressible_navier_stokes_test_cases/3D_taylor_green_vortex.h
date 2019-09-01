@@ -32,9 +32,6 @@ unsigned int const REFINE_TIME_MAX = 0;
 enum class MeshType{ Cartesian, Curvilinear };
 const MeshType MESH_TYPE = MeshType::Cartesian;
 
-// only relevant for Cartesian mesh
-const unsigned int N_CELLS_1D_COARSE_GRID = 1;
-
 // set parameters according to Wiart et al. ("Assessment of discontinuous Galerkin method
 // for the simulation of vortical flows at high Reynolds number"):
 
@@ -154,26 +151,22 @@ void set_input_parameters(InputParameters & param)
 
 template<int dim>
 void create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
-                                      unsigned int const                            n_refine_space,
+                                      unsigned int const                                n_refine_space,
                                       std::vector<GridTools::PeriodicFacePair<typename
-                                        Triangulation<dim>::cell_iterator> >        &periodic_faces)
+                                        Triangulation<dim>::cell_iterator> >            &periodic_faces,
+                                      unsigned int const                                n_subdivisions = 1)
 {
-  const double pi = numbers::PI;
-  const double left = - pi * L, right = pi * L;
-  std::vector<unsigned int> repetitions({N_CELLS_1D_COARSE_GRID,
-                                        N_CELLS_1D_COARSE_GRID,
-                                        N_CELLS_1D_COARSE_GRID});
-
-  Point<dim> point1(left,left,left), point2(right,right,right);
-  GridGenerator::subdivided_hyper_rectangle(*triangulation,repetitions,point1,point2);
+  double const pi = numbers::PI;
+  double const left = - pi * L, right = pi * L;
+  GridGenerator::subdivided_hyper_cube(*triangulation,n_subdivisions,left,right);
 
   if(MESH_TYPE == MeshType::Cartesian)
   {
-   // do nothing
+    // do nothing
   }
   else if(MESH_TYPE == MeshType::Curvilinear)
   {
-    double const deformation = 0.5;
+    double const deformation = 0.1;
     unsigned int const frequency = 2;
     static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
     triangulation->set_all_manifold_ids(1);
