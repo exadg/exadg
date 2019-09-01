@@ -43,35 +43,9 @@ double const END_TIME = (TEST_CASE==1) ? 1000.0 : 8.0;
 // CFL number (use CFL <= 0.4 - 0.6 for adaptive time stepping)
 double const CFL = 0.4;
 
-// physical dimensions (diameter D and center coordinate Y_C can be varied)
-double const X_0 = 0.0; // origin (x-coordinate)
-double const Y_0 = 0.0; // origin (y-coordinate)
-double const L1 = 0.3; // x-coordinate of inflow boundary (2d test cases)
-double const L2 = 2.5; // x-coordinate of outflow boundary (=length for 3d test cases)
-double const H = 0.41; // height of channel
-double const X_1 = L1; // left x-coordinate of mesh block around the cylinder
-double const X_2 = 0.7; // right x-coordinate of mesh block around the cylinder
-double const X_C = (X_2+X_1)/2.0; // center of cylinder (x-coordinate)
+// physical dimensions
 double const Y_C = 0.2; // center of cylinder (y-coordinate)
 double const D = 0.1; // cylinder diameter
-double const R = D/2.0; // cylinder radius
-
-// MeshType
-// Type1: no refinement around cylinder surface (coarsest mesh has 34 elements in 2D)
-// Type2: two layers of spherical cells around cylinder (used in Fehn et al. (JCP, 2017, "On the stability of projection methods ...")),
-//        (coarsest mesh has 50 elements in 2D)
-// Type3: coarse mesh has only one element in direction perpendicular to flow direction,
-//        one layer of spherical cells around cylinder for coarsest mesh (coarsest mesh has 12 elements in 2D)
-// Type4: no refinement around cylinder, coarsest mesh consists of 4 cells for the block that
-//        that surrounds the cylinder (coarsest mesh has 8 elements in 2D)
-enum class MeshType{ Type1, Type2, Type3, Type4 };
-MeshType const MESH_TYPE = MeshType::Type2;
-
-// ManifoldType
-// Surface manifold: when refining the mesh only the cells close to the manifold-surface are curved (should not be used!)
-// Volume manifold: when refining the mesh all child cells are curved since it is a volume manifold
-enum class ManifoldType{ SurfaceManifold, VolumeManifold };
-ManifoldType const MANIFOLD_TYPE = ManifoldType::VolumeManifold;
 
 // use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
 bool const USE_RANDOM_PERTURBATION = false;
@@ -477,6 +451,7 @@ public:
     if(component == 0 && std::abs(p[0]-(dim==2 ? L1 : 0.0))<1.e-12)
     {
       const double pi = numbers::PI;
+
       const double T = 1.0;
       double coefficient = Utilities::fixed_power<dim-1>(4.) * Um / Utilities::fixed_power<2*dim-2>(H);
 

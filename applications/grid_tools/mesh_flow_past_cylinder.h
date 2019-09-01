@@ -10,10 +10,40 @@
 
 #include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 
+// physical dimensions (diameter D and center coordinate Y_C can be varied)
+double const X_0 = 0.0; // origin (x-coordinate)
+double const Y_0 = 0.0; // origin (y-coordinate)
+double const L1 = 0.3; // x-coordinate of inflow boundary (2d test cases)
+double const L2 = 2.5; // x-coordinate of outflow boundary (=length for 3d test cases)
+double const H = 0.41; // height of channel
+double const X_1 = L1; // left x-coordinate of mesh block around the cylinder
+double const X_2 = 0.7; // right x-coordinate of mesh block around the cylinder
+double const R = D/2.0; // cylinder radius
+double const X_C = (X_2+X_1)/2.0; // center of cylinder (x-coordinate)
+
+// MeshType
+// Type1: no refinement around cylinder surface (coarsest mesh has 34 elements in 2D)
+// Type2: two layers of spherical cells around cylinder (used in Fehn et al. (JCP, 2017, "On the stability of projection methods ...")),
+//        (coarsest mesh has 50 elements in 2D)
+// Type3: coarse mesh has only one element in direction perpendicular to flow direction,
+//        one layer of spherical cells around cylinder for coarsest mesh (coarsest mesh has 12 elements in 2D)
+// Type4: no refinement around cylinder, coarsest mesh consists of 4 cells for the block that
+//        that surrounds the cylinder (coarsest mesh has 8 elements in 2D)
+enum class MeshType{ Type1, Type2, Type3, Type4 };
+MeshType const MESH_TYPE = MeshType::Type2;
+
 // needed for mesh type 2 with two layers of spherical cells around cylinder
 double const R_1 = 1.2*R;
 double const R_2 = 1.7*R;
+
+// neded for mesh type 3 with one layers of spherical cells around cylinder
 double const R_3 = 1.75*R;
+
+// ManifoldType
+// Surface manifold: when refining the mesh only the cells close to the manifold-surface are curved (should not be used!)
+// Volume manifold: when refining the mesh all child cells are curved since it is a volume manifold
+enum class ManifoldType{ SurfaceManifold, VolumeManifold };
+ManifoldType const MANIFOLD_TYPE = ManifoldType::VolumeManifold;
 
 // manifold ID of spherical manifold
 unsigned int const MANIFOLD_ID = 10;

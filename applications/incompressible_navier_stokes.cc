@@ -41,7 +41,7 @@ using namespace IncNS;
 // specify the flow problem that has to be solved
 
 // template
-//#include "incompressible_navier_stokes_test_cases/template.h"
+#include "incompressible_navier_stokes_test_cases/template.h"
 
 // 2D Stokes flow
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
@@ -62,7 +62,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/shear_layer_problem.h"
 
 // 2D/3D Navier-Stokes flow
-#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
+//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
 
 // 3D Navier-Stokes flow
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"

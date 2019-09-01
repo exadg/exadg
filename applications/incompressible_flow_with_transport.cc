@@ -60,9 +60,9 @@ using namespace dealii;
 // specify the test case that has to be solved
 
 // template
-//#include "incompressible_flow_with_transport_test_cases/template.h"
+#include "incompressible_flow_with_transport_test_cases/template.h"
 
-#include "incompressible_flow_with_transport_test_cases/cavity.h"
+//#include "incompressible_flow_with_transport_test_cases/cavity.h"
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 template<typename Number>
