@@ -40,14 +40,17 @@ bool periodicBCs = false;
 bool symmetryBC = false;
 
 
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::RectangleSinCos;
-const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
+MeshMovementShape const MESH_MOVEMENT_SHAPE = MeshMovementShape::Sin;
+MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::SinSquared;
+bool const INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
 const double H = 2.0;
 const double L = 4.0;
-const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.06;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 2.0;
-const double START_TIME = 0.0;
-const double END_TIME = 10.0;
+double const MESH_MOVEMENT_AMPLITUDE = 0.06;
+double const MESH_MOVEMENT_FREQUENCY = 2.0;
+double const START_TIME = 0.0;
+double const END_TIME   = 10.0;
+double const SPATIAL_NUMBER_OF_OSCILLATIONS = 1.0;
+bool const MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES = false;
 
 
 
@@ -504,22 +507,20 @@ std::shared_ptr<MeshMovementFunctions<dim>>
 set_mesh_movement_function()
 {
   MeshMovementData<dim> data;
-  data.type = MESH_MOVEMENT;
+  data.temporal = MESH_MOVEMENT_ADVANCE_IN_TIME;
+  data.shape = MESH_MOVEMENT_SHAPE;
   data.dimensions[0] = L;
   data.dimensions[1] = H;
-  data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
-  data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
-  data.t_0 = START_TIME;
+  data.amplitude = MESH_MOVEMENT_AMPLITUDE;
+  data.frequency = MESH_MOVEMENT_FREQUENCY;
+  data.t_start = START_TIME;
   data.t_end = END_TIME;
+  data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
+  data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
-  if (data.type == AnalyicMeshMovement::RectangleSinCos)
-    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCos<dim>(data));
-  else if (data.type == AnalyicMeshMovement::RectangleSinCosWithSinInTime)
-    field_functions->analytical_solution_grid_velocity.reset(new RectangleSinCosWithSinInTime<dim>(data));
-  else
-    AssertThrow(false,ExcMessage("No suitable mesh movement for test case defined!"));
+  mesh_movement_function.reset(new RectangleMeshMovementFunctions<dim>(data));
 
   return mesh_movement_function;
 }

@@ -51,10 +51,13 @@ const unsigned int N_CELLS_1D_COARSE_GRID = 1;
 // mesh movement
 const double LEFT = - numbers::PI * L;
 const double RIGHT = numbers::PI * L;
-const AnalyicMeshMovement MESH_MOVEMENT = AnalyicMeshMovement::CubeSinCosWithBoundaries;
-const bool INITIALIZE_WITH_FORMER_MESH_INSTANCES = false;
-const double TRIANGULATION_MOVEMENT_AMPLITUDE = 0.3;
-const double TRIANGULATION_MOVEMENT_FREQUENCY = 4;
+MeshMovementShape const MESH_MOVEMENT_SHAPE = MeshMovementShape::Sin;
+MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::SinSquared;
+bool const INITIALIZE_WITH_FORMER_MESH_INSTANCES = true;
+double const MESH_MOVEMENT_AMPLITUDE = 0.04;
+double const MESH_MOVEMENT_FREQUENCY = 0.25;
+double const SPATIAL_NUMBER_OF_OSCILLATIONS = 1.0;
+bool const MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES = false;
 const double START_TIME = 0.0;
 const double END_TIME = 20.0*CHARACTERISTIC_TIME;
 
@@ -388,37 +391,21 @@ std::shared_ptr<MeshMovementFunctions<dim>>
 set_mesh_movement_function()
 {
   MeshMovementData<dim> data;
-  data.type = MESH_MOVEMENT;
-  data.left = LEFT;
-  data.right = RIGHT;
-  data.dimensions[0] = RIGHT - LEFT;
-  data.dimensions[1] = data.dimensions[0];
-  data.dimensions[2] = data.dimensions[1];
-  data.A = TRIANGULATION_MOVEMENT_AMPLITUDE;
-  data.f = TRIANGULATION_MOVEMENT_FREQUENCY;
-  data.t_0 = START_TIME;
+  data.temporal = MESH_MOVEMENT_ADVANCE_IN_TIME;
+  data.shape = MESH_MOVEMENT_SHAPE;
+  data.dimensions[0] = std::abs(RIGHT-LEFT);
+  data.dimensions[1] = std::abs(RIGHT-LEFT);
+  data.dimensions[2] = std::abs(RIGHT-LEFT);
+  data.amplitude = MESH_MOVEMENT_AMPLITUDE;
+  data.frequency = MESH_MOVEMENT_FREQUENCY;
+  data.t_start = START_TIME;
   data.t_end = END_TIME;
+  data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
   data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
+  data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
-  if(data.type == AnalyicMeshMovement::CubeInteriorSinCos)
-    mesh_movement_function.reset(new CubeInteriorSinCos<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundariesWithSinInTime)
-    mesh_movement_function.reset(new CubeSinCosWithBoundariesWithSinInTime<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyX)
-    mesh_movement_function.reset(new CubeInteriorSinCosOnlyX<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosOnlyY)
-    mesh_movement_function.reset(new CubeInteriorSinCosOnlyY<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeSinCosWithBoundaries)
-    mesh_movement_function.reset(new CubeSinCosWithBoundaries<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeInteriorSinCosWithSinInTime)
-    mesh_movement_function.reset(new CubeInteriorSinCosWithSinInTime<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeDoubleInteriorSinCos)
-    mesh_movement_function.reset(new CubeDoubleInteriorSinCos<dim>(data));
-  else if(data.type == AnalyicMeshMovement::CubeDoubleSinCosWithBoundaries)
-    mesh_movement_function.reset(new CubeDoubleSinCosWithBoundaries<dim>(data));
-  else
-    AssertThrow(false, ExcMessage("No suitable mesh movement for test case defined!"));
+  mesh_movement_function.reset(new CubeMeshMovementFunctions<dim>(data));
 
   return mesh_movement_function;
 }
