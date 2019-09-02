@@ -86,10 +86,9 @@ void set_input_parameters(InputParameters &param)
   param.solver_pressure_poisson = SolverPressurePoisson::CG;
   param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  param.multigrid_data_pressure_poisson.type = MultigridType::phMG;
+  param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   param.multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
-  param.multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
-  param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG; //AMG; //Chebyshev;
+  param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
   // projection step

@@ -24,10 +24,10 @@
 #include "poisson/user_interface/field_functions.h"
 #include "poisson/user_interface/input_parameters.h"
 
+#include "functionalities/mesh_resolution_generator_hypercube.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 #include "functionalities/print_throughput.h"
-
 
 // specify the test case that has to be solved
 #include "poisson_test_cases/periodic_box.h"
@@ -35,23 +35,29 @@
 using namespace dealii;
 using namespace Poisson;
 
-/*
- * study throughput as a function of polynomial degree or problem size
- */
-enum class RunType
-{
-  FixedProblemSize,     // increase polynomial degree and keep problem size approximately constant
-  IncreasingProblemSize // run at fixed polynomial degree
-};
 
 RunType const RUN_TYPE = RunType::IncreasingProblemSize;
 
+/*
+ * Specify minimum and maximum problem size for
+ *  RunType::FixedProblemSize
+ *  RunType::IncreasingProblemSize
+ */
 types::global_dof_index N_DOFS_MIN = 1e3;
-types::global_dof_index N_DOFS_MAX = 1e7;
+types::global_dof_index N_DOFS_MAX = 2e5;
 
-// enable hyper_cube meshes with number of cells per direction other than multiples of 2.
+/*
+ * Enable hyper_cube meshes with number of cells per direction other than multiples of 2.
+ * Use this only for simple hyper_cube problems and for
+ *  RunType::FixedProblemSize
+ *  RunType::IncreasingProblemSize
+ */
 #define ENABLE_SUBDIVIDED_HYPERCUBE
-unsigned int SUBDIVISIONS_MESH;
+
+#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
+// will be set automatically for RunType::FixedProblemSize and RunType::IncreasingProblemSize
+unsigned int SUBDIVISIONS_MESH = 1;
+#endif
 
 enum class EvaluationType
 {
@@ -67,7 +73,7 @@ unsigned int const N_REPETITIONS_INNER = 100; // take the average of inner repet
 unsigned int const N_REPETITIONS_OUTER = 1;   // take the minimum of outer repetitions
 
 // global variable used to store the wall times for different polynomial degrees and problem sizes
-std::vector<std::tuple<unsigned int, types::global_dof_index, double>> wall_times;
+std::vector<std::tuple<unsigned int, types::global_dof_index, double>> WALL_TIMES;
 
 class ProblemBase
 {
@@ -183,6 +189,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 #else
   create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
 #endif
+
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
@@ -279,14 +286,14 @@ Problem<dim, Number>::apply_operator()
         << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
   // clang-format on
 
-  wall_times.push_back(std::tuple<unsigned int, types::global_dof_index, double>(
+  WALL_TIMES.push_back(std::tuple<unsigned int, types::global_dof_index, double>(
     param.degree, dofs, dofs_per_walltime));
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
 }
 
 void
-do_run(Poisson::InputParameters const & param)
+do_run(InputParameters const & param)
 {
   // setup problem and run simulation
   typedef double               Number;
@@ -312,122 +319,62 @@ main(int argc, char ** argv)
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
     // set parameters
-    Poisson::InputParameters param;
+    InputParameters param;
     set_input_parameters(param);
 
-#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
-    if(RUN_TYPE == RunType::FixedProblemSize || RUN_TYPE == RunType::IncreasingProblemSize)
+    if(RUN_TYPE == RunType::RefineHAndP)
     {
-      // k-refinement
+      // p-refinement
       for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
       {
-        if(RUN_TYPE == RunType::FixedProblemSize)
+        // reset degree
+        param.degree = degree;
+
+        // h-refinement
+        for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
+            ++h_refinements)
         {
-          // reset degree
-          param.degree = degree;
-        }
-        else if(RUN_TYPE == RunType::IncreasingProblemSize)
-        {
-          AssertThrow(
-            DEGREE_MIN == DEGREE_MAX,
-            ExcMessage(
-              "Only a single polynomial degree can be considered for RunType::IncreasingProblemSize"));
-
-          // reset degree
-          param.degree = DEGREE_MIN;
-        }
-
-        double n_cells_min = N_DOFS_MIN / std::pow(param.degree + 1, param.dim);
-        double n_cells_max = N_DOFS_MAX / std::pow(param.degree + 1, param.dim);
-
-        int    refine_level = 0;
-        double n_cells      = 1.0;
-
-        while(n_cells <= std::pow(2, param.dim) * n_cells_max)
-        {
-          // We want to increase the problem size approximately by a factor of two, which is
-          // realized by using a coarse grid with {3,4}^dim elements in 2D and {3,4,5}^dim elements
-          // in 3D.
-
-          // coarse grid with 3^dim cells, and refine_level-2 uniform refinements
-          if(refine_level >= 2)
-          {
-            SUBDIVISIONS_MESH = 3;
-            n_cells =
-              std::pow(SUBDIVISIONS_MESH, param.dim) * std::pow(2., (refine_level - 2) * param.dim);
-
-            if(n_cells >= n_cells_min && n_cells <= n_cells_max)
-            {
-              // reset mesh refinement
-              param.h_refinements = refine_level - 2;
-
-              if(RUN_TYPE == RunType::FixedProblemSize)
-                break;
-              else if(RUN_TYPE == RunType::IncreasingProblemSize)
-                do_run(param);
-              else
-                AssertThrow(false, ExcMessage("Not implemented:"));
-            }
-          }
-
-          // coarse grid with only a single cell, and refine_level uniform refinements
-          {
-            SUBDIVISIONS_MESH = 1;
-            n_cells           = std::pow(2., refine_level * param.dim);
-
-            if(n_cells >= n_cells_min && n_cells <= n_cells_max)
-            {
-              // reset mesh refinement
-              param.h_refinements = refine_level;
-
-              if(RUN_TYPE == RunType::FixedProblemSize)
-                break;
-              else if(RUN_TYPE == RunType::IncreasingProblemSize)
-                do_run(param);
-              else
-                AssertThrow(false, ExcMessage("Not implemented:"));
-            }
-          }
-
-          // coarse grid with 5^dim cells, and refine_level-2 uniform refinements
-          if(param.dim == 3 && refine_level >= 2)
-          {
-            SUBDIVISIONS_MESH = 5;
-            n_cells =
-              std::pow(SUBDIVISIONS_MESH, param.dim) * std::pow(2., (refine_level - 2) * param.dim);
-
-            if(n_cells >= n_cells_min && n_cells <= n_cells_max)
-            {
-              // reset mesh refinement
-              param.h_refinements = refine_level - 2;
-
-              if(RUN_TYPE == RunType::FixedProblemSize)
-                break;
-              else if(RUN_TYPE == RunType::IncreasingProblemSize)
-                do_run(param);
-              else
-                AssertThrow(false, ExcMessage("Not implemented:"));
-            }
-          }
-
-          // perform one global refinement
-          ++refine_level;
-          n_cells = std::pow(2., refine_level * param.dim);
-        }
-
-        if(RUN_TYPE == RunType::FixedProblemSize)
-        {
-          AssertThrow((n_cells >= n_cells_min && n_cells <= n_cells_max),
-                      ExcMessage(
-                        "No mesh found that meets the requirements regarding problem size. "
-                        "Make sure that N_DOFS_MAX is sufficiently larger than N_DOFS_MIN."));
+          // reset mesh refinement
+          param.h_refinements = h_refinements;
 
           do_run(param);
         }
-        else
-        {
-          AssertThrow(RUN_TYPE == RunType::IncreasingProblemSize, ExcMessage("Not implemented:"));
-        }
+      }
+    }
+#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
+    else if(RUN_TYPE == RunType::FixedProblemSize || RUN_TYPE == RunType::IncreasingProblemSize)
+    {
+      // a vector storing tuples of the form (degree k, refine level l, n_subdivisions_1d)
+      std::vector<std::tuple<unsigned int, unsigned int, unsigned int>> resolutions;
+
+      // fill resolutions vector
+
+      if(RUN_TYPE == RunType::IncreasingProblemSize)
+      {
+        AssertThrow(
+          DEGREE_MIN == DEGREE_MAX,
+          ExcMessage(
+            "Only a single polynomial degree can be considered for RunType::IncreasingProblemSize"));
+      }
+
+      // k-refinement
+      for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+      {
+        unsigned int const dim              = double(param.dim);
+        double const       dofs_per_element = std::pow(degree + 1, dim);
+
+        fill_resolutions_vector(
+          resolutions, degree, dim, dofs_per_element, N_DOFS_MIN, N_DOFS_MAX, RUN_TYPE);
+      }
+
+      // loop over resolutions vector and run simulations
+      for(auto iter = resolutions.begin(); iter != resolutions.end(); ++iter)
+      {
+        param.degree        = std::get<0>(*iter);
+        param.h_refinements = std::get<1>(*iter);
+        SUBDIVISIONS_MESH   = std::get<2>(*iter);
+
+        do_run(param);
       }
     }
 #endif
@@ -438,8 +385,8 @@ main(int argc, char ** argv)
                              "for RunType::FixedProblemSize or RunType::IncreasingProblemSize."));
     }
 
-    print_throughput(wall_times, "Laplace operator");
-    wall_times.clear();
+    print_throughput(WALL_TIMES, "Laplace operator");
+    WALL_TIMES.clear();
   }
   catch(std::exception & exc)
   {

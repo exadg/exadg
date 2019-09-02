@@ -166,9 +166,9 @@ TimeIntBase::output_solver_info_header() const
  *  current time.
  */
 void
-TimeIntBase::output_remaining_time() const
+TimeIntBase::output_remaining_time(bool const do_write_output) const
 {
-  if(print_solver_info())
+  if(print_solver_info() && do_write_output)
   {
     if(time > start_time)
     {

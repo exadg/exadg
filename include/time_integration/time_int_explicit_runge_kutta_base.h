@@ -50,7 +50,7 @@ protected:
 
 private:
   void
-  do_timestep();
+  do_timestep(bool const do_write_output = true);
 
   virtual void
   solve_timestep() = 0;

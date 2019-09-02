@@ -51,10 +51,19 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
     {
       std::string filename = pressure_difference_data.filename;
 
+      unsigned int precision = 12;
+
       std::ofstream f;
       if(clear_files_pressure_difference)
       {
         f.open(filename.c_str(), std::ios::trunc);
+
+        // clang-format off
+        f << std::setw(precision + 8) << std::left << "time t"
+          << std::setw(precision + 8) << std::left << "pressure difference"
+          << std::endl;
+        // clang-format on
+
         clear_files_pressure_difference = false;
       }
       else
@@ -62,10 +71,13 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
         f.open(filename.c_str(), std::ios::app);
       }
 
-      unsigned int precision = 12;
-
-      f << std::scientific << std::setprecision(precision) << time << "\t" << pressure_difference
+      // clang-format off
+      f << std::scientific << std::setprecision(precision)
+        << std::setw(precision + 8) << std::left << time
+        << std::setw(precision + 8) << std::left << pressure_difference
         << std::endl;
+      // clang-format on
+
       f.close();
     }
   }
