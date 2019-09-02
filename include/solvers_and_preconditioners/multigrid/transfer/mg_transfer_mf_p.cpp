@@ -1,5 +1,7 @@
 #include "mg_transfer_mf_p.h"
 
+#include <deal.II/dofs/dof_tools.h>
+
 namespace
 {
 template<typename Number>
@@ -76,8 +78,11 @@ loop_over_face_points(Number values, Number2 w)
 
 template<int dim, int fe_degree_1, typename Number, typename MatrixFree, typename FEEval>
 void
-weight_residuum(MatrixFree & data_1, FEEval & fe_eval1, unsigned int cell)
+weight_residuum(MatrixFree & data_1, FEEval & fe_eval1, unsigned int cell, 
+        const AlignedVector<VectorizedArray<Number>> & weights)
 {
+#if false
+  (void) weights;
   const int          POINTS         = fe_degree_1 + 1;
   const unsigned int n_filled_lanes = data_1.n_components_filled(cell);
   for(int surface = 0; surface < 2 * dim; surface++)
@@ -120,6 +125,15 @@ weight_residuum(MatrixFree & data_1, FEEval & fe_eval1, unsigned int cell)
         break;
     }
   }
+
+#else
+  (void) data_1;
+  const int points = Utilities::pow(fe_degree_1+1,dim);
+  auto values      = fe_eval1.begin_dof_values();
+  
+  for(unsigned int i = 0; i < points; i++)
+      values[i] = values[i] * weights[i+points * cell];
+#endif
 }
 } // namespace
 
@@ -185,7 +199,7 @@ MGTransferMFP<dim, Number, VectorType, components>::do_restrict_and_add(
     fe_eval1.read_dof_values(src);
 
     if(!is_dg)
-      weight_residuum<dim, fe_degree_1, Number>(*data_1_cm, fe_eval1, cell);
+      weight_residuum<dim, fe_degree_1, Number>(*data_1_cm, fe_eval1, cell, this->weights);
 
     internal::FEEvaluationImplBasisChange<
       internal::evaluate_evenodd,
@@ -243,7 +257,7 @@ MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &  
     }
     else
     {
-      weight_residuum<dim, fe_degree_1, Number>(*data_1_cm, fe_eval1, cell);
+      weight_residuum<dim, fe_degree_1, Number>(*data_1_cm, fe_eval1, cell, this->weights);
       fe_eval1.distribute_local_to_global(dst);
     }
   }
@@ -303,6 +317,44 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
 
   fill_shape_values(prolongation_matrix_1d, this->degree_2, this->degree_1, false);
   fill_shape_values(interpolation_matrix_1d, this->degree_2, this->degree_1, true);
+  
+  if(!is_dg)
+  {
+    LinearAlgebra::distributed::Vector<Number> vec;
+    IndexSet                                   relevant_dofs;
+    DoFTools::extract_locally_relevant_level_dofs(data_1_cm->get_dof_handler(dof_handler_index), 
+            data_1_cm->get_level_mg_handler(), relevant_dofs);
+    vec.reinit(data_1_cm->get_dof_handler(dof_handler_index).locally_owned_mg_dofs(data_1_cm->get_level_mg_handler()),
+               relevant_dofs,
+               data_1_cm->get_vector_partitioner()->get_mpi_communicator () );
+      
+    std::vector<types::global_dof_index> dof_indices(Utilities::pow(this->degree_1+1,dim));
+    for (unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+        for (unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
+        {
+            auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
+            cell_v->get_mg_dof_indices(dof_indices);
+            for(auto i : dof_indices)
+              vec[i]++;
+        }
+    
+    vec.compress(VectorOperation::add);
+    vec.update_ghost_values();
+    
+    
+    weights.resize(data_1_cm->n_macro_cells()*Utilities::pow(this->degree_1+1,dim));
+    
+    for (unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+      for (unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
+      {
+        auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
+        cell_v->get_mg_dof_indices(dof_indices);
+        for(unsigned int i = 0; i < dof_indices.size(); i++)
+          weights[cell * Utilities::pow(this->degree_1+1,dim) + i][v] = 
+            1.0 / vec[dof_indices[data_1_cm->get_shape_info(dof_handler_index).lexicographic_numbering[i]]];
+      }
+    
+  }
 }
 
 template<int dim, typename Number, typename VectorType, int components>
