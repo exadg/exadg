@@ -79,7 +79,7 @@ loop_over_face_points(Number values, Number2 w)
 template<int dim, int fe_degree_1, typename Number, typename MatrixFree, typename FEEval>
 void
 weight_residuum(MatrixFree & data_1, FEEval & fe_eval1, unsigned int cell, 
-        const std::vector<VectorizedArray<Number>> & weights)
+        const AlignedVector<VectorizedArray<Number>> & weights)
 {
 #if false
   (void) weights;

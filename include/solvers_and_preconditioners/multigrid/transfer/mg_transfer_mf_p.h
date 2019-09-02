@@ -67,7 +67,7 @@ private:
   int          dof_handler_index;
   unsigned int quad_index;
   
-  std::vector<VectorizedArray<Number>> weights;
+  AlignedVector<VectorizedArray<Number>> weights;
 
   bool is_dg;
 };
