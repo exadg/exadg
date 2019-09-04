@@ -43,9 +43,9 @@ calculate_aspect_ratio_jacobian(MatrixFree<dim, Number> const & matrix_free,
 
         J.compute_svd();
 
-        double max_ev = std::sqrt(J.singular_value(0));
-        double min_ev = std::sqrt(J.singular_value(dim - 1));
-        double ar     = max_ev / min_ev;
+        double max_sv = J.singular_value(0);
+        double min_sv = J.singular_value(dim - 1);
+        double ar     = max_sv / min_sv;
 
         aspect_ratio_cell = std::max(aspect_ratio_cell, ar);
       }
