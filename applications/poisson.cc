@@ -34,14 +34,14 @@
 // specify the test case that has to be solved
 
 // template
-//#include "poisson_test_cases/template.h"
+#include "poisson_test_cases/template.h"
 
 //#include "poisson_test_cases/gaussian.h"
 //#include "poisson_test_cases/slit.h"
 //#include "poisson_test_cases/sine.h"
 //#include "poisson_test_cases/nozzle.h"
 //#include "poisson_test_cases/torus.h"
-#include "poisson_test_cases/lung.h"
+//#include "poisson_test_cases/lung.h"
 
 using namespace dealii;
 using namespace Poisson;
