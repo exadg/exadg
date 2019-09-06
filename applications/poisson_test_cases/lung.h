@@ -11,7 +11,7 @@
 
 // convergence studies in space
 unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 8;
+unsigned int const DEGREE_MAX = 15;
 
 unsigned int const REFINE_SPACE_MIN = 0;
 unsigned int const REFINE_SPACE_MAX = 0;

@@ -51,7 +51,7 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  DGOperator(parallel::TriangulationBase<dim> const &                      triangulation,
+  DGOperator(parallel::TriangulationBase<dim> const &                  triangulation,
              Poisson::InputParameters const &                          param,
              std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor);
 
@@ -95,6 +95,9 @@ public:
 
   double
   get_average_convergence_rate() const;
+
+  double
+  calculate_maximum_aspect_ratio() const;
 
 #ifdef DEAL_II_WITH_TRILINOS
   void
