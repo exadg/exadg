@@ -12,6 +12,7 @@
 #  include <metis.h>
 #endif
 
+#include <deal.II/distributed/fully_distributed_tria_util.h>
 #include <deal.II/grid/grid_reordering.h>
 #include <vector>
 
@@ -206,7 +207,6 @@ template<typename T>
 std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>
 face_vertices(T face)
 {
-
   std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> result;
 
   std::vector<unsigned int> v(4);
@@ -825,9 +825,9 @@ void lung(dealii::parallel::fullydistributed::Triangulation<2> &         tria,
   AssertThrow(false, ExcMessage("Not implemented for dim = 2."));
 }
 
-void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
-          int                                                            refinements1,
-          int                                                            refinements2,
+void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
+          int                                                    refinements1,
+          int /*refinements2*/,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
@@ -839,27 +839,33 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
   Timer timer;
   timer.restart();
 
-  parallel::fullydistributed::AdditionalData ad;
-  ad.partition_group_size = 1;
-  ad.partition_group      = parallel::fullydistributed::single;
-
   std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
+
   // create partitioned triangulation ...
-  tria.reinit(refinements2,
-              [&](auto & tria) mutable {
-                // ... by creating a refined sequential triangulation and partition it
-                lung_unrefined(tria,
-                               create_tree,
-                               timings,
-                               outlet_id_first,
-                               outlet_id_last,
-                               bspline_file,
-                               deform,
-                               branch_filter);
-                tria.refine_global(refinements1);
-                // update_mapping(tria, deform);
-              },
-              ad);
+  const auto construction_data =
+    parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<3,
+                                                                                                 3>(
+      [&](dealii::Triangulation<3, 3> & tria) mutable {
+        // ... by creating a refined sequential triangulation and partition it
+        lung_unrefined(tria,
+                       create_tree,
+                       timings,
+                       outlet_id_first,
+                       outlet_id_last,
+                       bspline_file,
+                       deform,
+                       branch_filter);
+        tria.refine_global(refinements1);
+      },
+      [](dealii::Triangulation<3, 3> & tria,
+         const MPI_Comm                comm,
+         const unsigned int /*group_size*/) {
+        GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm), tria);
+      },
+      tria.get_communicator(),
+      1 /*group size*/,
+      true /*construct multigrid levels*/);
+  tria.create_triangulation(construction_data);
   update_mapping(tria, deform);
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
