@@ -34,7 +34,7 @@ const double L = 1.0;
 const double MAX_VELOCITY = 1.0;
 const double VISCOSITY = 1.0e-3;
 
-std::string OUTPUT_FOLDER = "/data/fehn/navierstokes/applications/output/tum_test/";
+std::string OUTPUT_FOLDER = "output/tum/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME = "tum_Re1000_3d";
 
