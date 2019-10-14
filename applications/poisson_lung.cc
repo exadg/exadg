@@ -11,6 +11,7 @@
 #include <deal.II/base/convergence_table.h>
 #include <deal.II/base/revision.h>
 #include <deal.II/base/timer.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/lac/la_parallel_vector.h>
