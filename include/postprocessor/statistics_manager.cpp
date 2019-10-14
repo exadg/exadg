@@ -91,7 +91,7 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
     // initialize number of samples
     number_of_samples = 0;
 
-    // calculate y-coordinates in physical space where we want to peform the sampling (averaging)
+    // calculate y-coordinates in physical space where we want to perform the sampling (averaging)
     y_glob.reserve(n_points_y_glob);
 
     // loop over all cells in y-direction
