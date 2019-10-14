@@ -39,6 +39,7 @@ SET( SOURCE_FILES
 
      # Other
      gmres_test.cc
+     subdivided_hyper_rectangle.cc
      )
 
 FOREACH ( sourcefile ${SOURCE_FILES} )
