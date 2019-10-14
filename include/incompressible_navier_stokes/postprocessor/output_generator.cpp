@@ -9,6 +9,8 @@
 
 #include "output_generator.h"
 
+#include "../../postprocessor/write_output.h"
+
 #include "../spatial_discretization/dg_navier_stokes_base.h"
 
 namespace IncNS
@@ -24,10 +26,13 @@ write_output(OutputData const &                                 output_data,
              std::vector<SolutionField<dim, Number>> const &    additional_fields,
              unsigned int const                                 output_counter)
 {
-  DataOut<dim> data_out;
+  unsigned int rank   = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  std::string  folder = output_data.output_folder, file = output_data.output_name;
 
   DataOutBase::VtkFlags flags;
   flags.write_higher_order_cells = output_data.write_higher_order;
+
+  DataOut<dim> data_out;
   data_out.set_flags(flags);
 
   std::vector<std::string> velocity_names(dim, "velocity");
@@ -68,28 +73,23 @@ write_output(OutputData const &                                 output_data,
 
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
-  std::ostringstream filename;
-  filename << output_data.output_folder << output_data.output_name << "_Proc"
-           << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) << "_" << output_counter << ".vtu";
-
-  std::ofstream output(filename.str().c_str());
+  std::string filename = folder + file + "_Proc" + Utilities::int_to_string(rank) + "_" +
+                         Utilities::int_to_string(output_counter) + ".vtu";
+  std::ofstream output(filename.c_str());
   data_out.write_vtu(output);
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  write_pvtu_record_wrapper(data_out, folder, file, output_counter, rank);
+
+  // write surface mesh
+  if(output_data.write_surface_mesh)
   {
-    std::vector<std::string> filenames;
-    for(unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD); ++i)
-    {
-      std::ostringstream filename;
-      filename << output_data.output_name << "_Proc" << i << "_" << output_counter << ".vtu";
-
-      filenames.push_back(filename.str().c_str());
-    }
-    std::string master_name = output_data.output_folder + output_data.output_name + "_" +
-                              Utilities::int_to_string(output_counter) + ".pvtu";
-
-    std::ofstream master_output(master_name.c_str());
-    data_out.write_pvtu_record(master_output, filenames);
+    write_surface_mesh(dof_handler_velocity.get_triangulation(),
+                       mapping,
+                       output_data.degree,
+                       folder,
+                       file + "_surface",
+                       output_counter,
+                       rank);
   }
 }
 
@@ -117,6 +117,16 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
   output_counter = output_data.output_counter_start;
 
   initialize_additional_fields();
+
+  // Visualize boundary IDs:
+  // since boundary IDs typically do not change during the simulation, we only do this
+  // once at the beginning of the simulation (i.e., in the setup function).
+  if(output_data.write_boundary_IDs)
+  {
+    write_boundary_IDs(dof_handler_velocity->get_triangulation(),
+                       output_data.output_folder,
+                       output_data.output_name);
+  }
 }
 
 template<int dim, typename Number>
