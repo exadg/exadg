@@ -34,12 +34,12 @@
 // specify the test case that has to be solved
 
 // template
-#include "poisson_test_cases/template.h"
+//#include "poisson_test_cases/template.h"
 
 //#include "poisson_test_cases/gaussian.h"
 //#include "poisson_test_cases/slit.h"
 //#include "poisson_test_cases/sine.h"
-//#include "poisson_test_cases/nozzle.h"
+#include "poisson_test_cases/nozzle.h"
 //#include "poisson_test_cases/torus.h"
 //#include "poisson_test_cases/lung.h"
 
@@ -271,12 +271,18 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   poisson_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 
-  if(false)
+  if(true)
   {
     double AR = calculate_aspect_ratio_vertex_distance(*triangulation);
     std::cout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
+
     AR = poisson_operator->calculate_maximum_aspect_ratio();
     std::cout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
+
+    // TODO
+//    QGauss<dim> quadrature(param.degree+1);
+//    AR = GridTools::compute_maximum_aspect_ratio(*triangulation, poisson_operator->get_mapping(),quadrature);
+//    std::cout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
   poisson_operator->setup_solver();
