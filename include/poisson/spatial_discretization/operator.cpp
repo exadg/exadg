@@ -265,13 +265,6 @@ DGOperator<dim, Number>::get_average_convergence_rate() const
   return iterative_solver->rho;
 }
 
-template<int dim, typename Number>
-double
-DGOperator<dim, Number>::calculate_maximum_aspect_ratio() const
-{
-  return calculate_aspect_ratio_jacobian(matrix_free, dof_handler, *mapping);
-}
-
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number>
 void
