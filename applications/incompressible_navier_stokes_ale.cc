@@ -366,6 +366,10 @@ Problem<dim, Number>::solve()
 
       while(!timeloop_finished)
       {
+        // BDF coefficients are updated within advance_one_timestep()
+        // for ALE it is already needed before the function call to compute the grid velocity
+        time_integrator->update_time_integrator_constants();
+
         // calculate mesh at time t_n+1
         ale_operation->move_mesh(time_integrator->get_next_time());
 

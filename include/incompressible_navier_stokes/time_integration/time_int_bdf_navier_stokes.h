@@ -68,11 +68,10 @@ public:
   void
   set_grid_velocity_cfl(VectorType u_grid_cfl_in);
 
-
-protected:
   virtual void
   update_time_integrator_constants();
 
+protected:
   bool
   print_solver_info() const;
 
