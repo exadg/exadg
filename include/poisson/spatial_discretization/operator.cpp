@@ -255,7 +255,8 @@ template<int dim, typename Number>
 double
 DGOperator<dim, Number>::get_n10() const
 {
-  AssertThrow(iterative_solver->n10 != 0, ExcMessage("Make sure to activate param.compute_performance_metrics!"));
+  AssertThrow(iterative_solver->n10 != 0,
+              ExcMessage("Make sure to activate param.compute_performance_metrics!"));
 
   return iterative_solver->n10;
 }

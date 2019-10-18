@@ -78,8 +78,10 @@ loop_over_face_points(Number values, Number2 w)
 
 template<int dim, int fe_degree_1, typename Number, typename MatrixFree, typename FEEval>
 void
-weight_residuum(MatrixFree & data_1, FEEval & fe_eval1, unsigned int cell, 
-        const AlignedVector<VectorizedArray<Number>> & weights)
+weight_residuum(MatrixFree &                                   data_1,
+                FEEval &                                       fe_eval1,
+                unsigned int                                   cell,
+                const AlignedVector<VectorizedArray<Number>> & weights)
 {
 #if false
   (void) weights;
@@ -127,12 +129,12 @@ weight_residuum(MatrixFree & data_1, FEEval & fe_eval1, unsigned int cell,
   }
 
 #else
-  (void) data_1;
-  const int points = Utilities::pow(fe_degree_1+1,dim);
-  auto values      = fe_eval1.begin_dof_values();
-  
+  (void)data_1;
+  const int points = Utilities::pow(fe_degree_1 + 1, dim);
+  auto      values = fe_eval1.begin_dof_values();
+
   for(unsigned int i = 0; i < points; i++)
-      values[i] = values[i] * weights[i+points * cell];
+    values[i] = values[i] * weights[i + points * cell];
 #endif
 }
 } // namespace
@@ -317,43 +319,45 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
 
   fill_shape_values(prolongation_matrix_1d, this->degree_2, this->degree_1, false);
   fill_shape_values(interpolation_matrix_1d, this->degree_2, this->degree_1, true);
-  
+
   if(!is_dg)
   {
     LinearAlgebra::distributed::Vector<Number> vec;
     IndexSet                                   relevant_dofs;
-    DoFTools::extract_locally_relevant_level_dofs(data_1_cm->get_dof_handler(dof_handler_index), 
-            data_1_cm->get_level_mg_handler(), relevant_dofs);
-    vec.reinit(data_1_cm->get_dof_handler(dof_handler_index).locally_owned_mg_dofs(data_1_cm->get_level_mg_handler()),
+    DoFTools::extract_locally_relevant_level_dofs(data_1_cm->get_dof_handler(dof_handler_index),
+                                                  data_1_cm->get_mg_level(),
+                                                  relevant_dofs);
+    vec.reinit(data_1_cm->get_dof_handler(dof_handler_index)
+                 .locally_owned_mg_dofs(data_1_cm->get_mg_level()),
                relevant_dofs,
-               data_1_cm->get_vector_partitioner()->get_mpi_communicator () );
-      
-    std::vector<types::global_dof_index> dof_indices(Utilities::pow(this->degree_1+1,dim));
-    for (unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
-        for (unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
-        {
-            auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
-            cell_v->get_mg_dof_indices(dof_indices);
-            for(auto i : dof_indices)
-              vec[i]++;
-        }
-    
+               data_1_cm->get_vector_partitioner()->get_mpi_communicator());
+
+    std::vector<types::global_dof_index> dof_indices(Utilities::pow(this->degree_1 + 1, dim));
+    for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+      for(unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
+      {
+        auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
+        cell_v->get_mg_dof_indices(dof_indices);
+        for(auto i : dof_indices)
+          vec[i]++;
+      }
+
     vec.compress(VectorOperation::add);
     vec.update_ghost_values();
-    
-    
-    weights.resize(data_1_cm->n_macro_cells()*Utilities::pow(this->degree_1+1,dim));
-    
-    for (unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
-      for (unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
+
+
+    weights.resize(data_1_cm->n_macro_cells() * Utilities::pow(this->degree_1 + 1, dim));
+
+    for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
+      for(unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
       {
         auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
         cell_v->get_mg_dof_indices(dof_indices);
         for(unsigned int i = 0; i < dof_indices.size(); i++)
-          weights[cell * Utilities::pow(this->degree_1+1,dim) + i][v] = 
-            1.0 / vec[dof_indices[data_1_cm->get_shape_info(dof_handler_index).lexicographic_numbering[i]]];
+          weights[cell * Utilities::pow(this->degree_1 + 1, dim) + i][v] =
+            1.0 / vec[dof_indices[data_1_cm->get_shape_info(dof_handler_index)
+                                    .lexicographic_numbering[i]]];
       }
-    
   }
 }
 
