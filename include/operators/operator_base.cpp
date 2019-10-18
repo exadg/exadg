@@ -71,7 +71,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   }
 
   // set multigrid level
-  this->level = this->matrix_free->get_level_mg_handler();
+  this->level = this->matrix_free->get_mg_level();
 
   // The default value is is_mg = false and this variable is set to true in case
   // the operator is applied in multigrid algorithm. By convention, the default
