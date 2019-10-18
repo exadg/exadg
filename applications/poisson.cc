@@ -273,11 +273,16 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   poisson_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 
-  if(false)
+  if(true)
   {
+    // this variant is only for comparison
     double AR = calculate_aspect_ratio_vertex_distance(*triangulation);
     std::cout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
-    AR = poisson_operator->calculate_maximum_aspect_ratio();
+
+    QGauss<dim> quadrature(param.degree + 1);
+    AR = GridTools::compute_maximum_aspect_ratio(*triangulation,
+                                                 poisson_operator->get_mapping(),
+                                                 quadrature);
     std::cout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 

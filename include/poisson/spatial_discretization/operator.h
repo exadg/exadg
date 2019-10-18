@@ -96,9 +96,6 @@ public:
   double
   get_average_convergence_rate() const;
 
-  double
-  calculate_maximum_aspect_ratio() const;
-
 #ifdef DEAL_II_WITH_TRILINOS
   void
   init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const;
