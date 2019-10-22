@@ -123,9 +123,6 @@ public:
   bool ale_formulation;
   bool neumann_with_variable_normal_vector;
 
-  // TODO this variable is currently used for testing and can be removed later
-  bool initialize_with_former_mesh_instances;
-
   /**************************************************************************************/
   /*                                                                                    */
   /*                                 PHYSICAL QUANTITIES                                */

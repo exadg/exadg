@@ -28,8 +28,6 @@ InputParameters::InputParameters()
     grid_velocity_analytical(true),
     ale_formulation(false),
     neumann_with_variable_normal_vector(false),
-    // TODO this variable is currently used for testing and can be removed later
-    initialize_with_former_mesh_instances(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),

@@ -16,7 +16,7 @@ struct MeshMovementData
       t_start(0.0),
       t_end(0.0),
       spatial_number_of_oscillations(1),
-      initialize_with_former_mesh_instances(false),
+      start_with_low_order(true),
       damp_towards_bondaries(true)
   {
   }
@@ -29,7 +29,7 @@ struct MeshMovementData
   double                    t_start;
   double                    t_end;
   double                    spatial_number_of_oscillations;
-  bool                      initialize_with_former_mesh_instances;
+  bool                      start_with_low_order;
   bool                      damp_towards_bondaries;
 };
 
@@ -77,10 +77,10 @@ public:
   {
     double velocity = 0.0;
 
-    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+    if(this->get_time() >= data.t_start || data.start_with_low_order == false)
       velocity = compute_displacement_share(p, component) * compute_damping_share(p, component) *
                  compute_time_deriv_share();
-    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
+    else if(this->get_time() < data.t_start && data.start_with_low_order == true)
       velocity = 0.0;
 
     return velocity;
@@ -91,10 +91,10 @@ public:
   {
     double displacement = 0.0;
 
-    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+    if(this->get_time() >= data.t_start || data.start_with_low_order == false)
       displacement = compute_displacement_share(x, coordinate_direction) *
                      compute_damping_share(x, coordinate_direction) * compute_time_share();
-    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
+    else if(this->get_time() < data.t_start && data.start_with_low_order == true)
       displacement = 0.0;
 
     return displacement;
@@ -240,10 +240,10 @@ public:
 
     double velocity = 0.0;
 
-    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+    if(this->get_time() >= data.t_start || data.start_with_low_order == false)
       velocity = compute_displacement_share(p, component) * compute_damping_share(p, component) *
                  compute_time_deriv_share();
-    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
+    else if(this->get_time() < data.t_start && data.start_with_low_order == true)
       velocity = 0.0;
 
     return velocity;
@@ -259,10 +259,10 @@ public:
 
     double displacement = 0.0;
 
-    if(this->get_time() >= data.t_start || data.initialize_with_former_mesh_instances == true)
+    if(this->get_time() >= data.t_start || data.start_with_low_order == false)
       displacement = compute_displacement_share(x, coordinate_direction) *
                      compute_damping_share(x, coordinate_direction) * compute_time_share();
-    else if(this->get_time() < data.t_start && data.initialize_with_former_mesh_instances == false)
+    else if(this->get_time() < data.t_start && data.start_with_low_order == true)
       displacement = 0.0;
 
     return displacement;

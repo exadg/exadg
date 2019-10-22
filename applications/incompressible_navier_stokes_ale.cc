@@ -323,8 +323,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   if(param.ale_formulation == true && param.start_with_low_order == false &&
-     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
-     param.initialize_with_former_mesh_instances == true)
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     std::vector<double> eval_times(param.order_time_integrator);
 

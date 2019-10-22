@@ -37,7 +37,6 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 MeshMovementShape const MESH_MOVEMENT_SHAPE = MeshMovementShape::Sin;
 MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::SinSquared;
-bool const INITIALIZE_WITH_FORMER_MESH_INSTANCES = true;
 double const LEFT               = -0.5;
 double const RIGHT              = 0.5;
 double const MESH_MOVEMENT_AMPLITUDE = 0.06;
@@ -46,6 +45,8 @@ double const START_TIME = 0.0;
 double const END_TIME   = 20.0;
 double const SPATIAL_NUMBER_OF_OSCILLATIONS = 1.0;
 bool const MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES = false;
+
+bool const   START_WITH_LOW_ORDER = false;
 
 bool PURE_DIRICHLET = true;
 
@@ -58,8 +59,7 @@ set_input_parameters(InputParameters & param)
   param.ale_formulation                          = true;
   param.grid_velocity_analytical                 = false;
   param.neumann_with_variable_normal_vector      = false;
-  param.initialize_with_former_mesh_instances    = false;
-  param.start_with_low_order                     = false;
+  param.start_with_low_order                     = START_WITH_LOW_ORDER;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
   param.order_time_integrator                    = 3;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
@@ -329,7 +329,7 @@ set_mesh_movement_function()
   data.t_start = START_TIME;
   data.t_end = END_TIME;
   data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
-  data.initialize_with_former_mesh_instances = INITIALIZE_WITH_FORMER_MESH_INSTANCES;
+  data.start_with_low_order = START_WITH_LOW_ORDER;
   data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
