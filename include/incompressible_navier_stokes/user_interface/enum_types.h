@@ -667,9 +667,9 @@ enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 
 enum class MeshMovementAdvanceInTime
 {
+  Undefined,
   SinSquared,
-  Sin,
-  Undefined
+  Sin
 };
 
 std::string
@@ -677,8 +677,8 @@ enum_to_string(MeshMovementAdvanceInTime const enum_type);
 
 enum class MeshMovementShape
 {
-  Sin,
-  Undefined
+  Undefined,
+  Sin
 };
 
 std::string
