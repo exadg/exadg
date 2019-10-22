@@ -109,6 +109,12 @@ private:
 
     switch(data.shape)
     {
+      case MeshMovementShape::Undefined:
+        AssertThrow(false,
+                    ExcMessage(
+                      "You are trying to use a mesh moving function but didn't specify its shape"));
+        break;
+
       case MeshMovementShape::Sin:
         if(coordinate_direction == 0)
           solution =
@@ -131,10 +137,8 @@ private:
             std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width);
         break;
 
-      case MeshMovementShape::Undefined:
-        AssertThrow(false,
-                    ExcMessage(
-                      "You are trying to use a mesh moving function but didn't specify its shape"));
+      default:
+        AssertThrow(false, ExcMessage("Not implemented."));
         break;
     }
 
@@ -148,6 +152,13 @@ private:
 
     switch(data.temporal)
     {
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+
       case MeshMovementAdvanceInTime::SinSquared:
         solution = (4.0 * pi * std::sin(2.0 * pi * this->get_time() / time_period) *
                     std::cos(2.0 * pi * this->get_time() / time_period) / time_period);
@@ -156,11 +167,9 @@ private:
       case MeshMovementAdvanceInTime::Sin:
         solution = std::cos(2.0 * pi * this->get_time() / time_period) * 2.0 * pi / time_period;
         break;
-      case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+
+      default:
+        AssertThrow(false, ExcMessage("Not implemented."));
         break;
     }
     return solution;
@@ -173,6 +182,13 @@ private:
 
     switch(data.temporal)
     {
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+
       case MeshMovementAdvanceInTime::SinSquared:
         solution = std::pow(std::sin(2.0 * pi * this->get_time() / time_period), 2);
         break;
@@ -181,11 +197,8 @@ private:
         solution = std::sin(2.0 * pi * this->get_time() / time_period);
         break;
 
-      case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+      default:
+        AssertThrow(false, ExcMessage("Not implemented."));
         break;
     }
     return solution;
@@ -277,6 +290,12 @@ private:
 
     switch(data.shape)
     {
+      case MeshMovementShape::Undefined:
+        AssertThrow(false,
+                    ExcMessage(
+                      "You are trying to use a mesh moving function but didn't specify its shape"));
+        break;
+
       case MeshMovementShape::Sin:
         if(coordinate_direction == 0)
           solution = std::sin(2.0 * pi * (x(1) - (height / 2.0)) / height) * data.amplitude *
@@ -289,10 +308,8 @@ private:
                      std::sin(2.0 * pi * (x(0) - (length / 2.0)) / length);
         break;
 
-      case MeshMovementShape::Undefined:
-        AssertThrow(false,
-                    ExcMessage(
-                      "You are trying to use a mesh moving function but didn't specify its shape"));
+      default:
+        AssertThrow(false, ExcMessage("Not implemented."));
         break;
     }
 
@@ -306,6 +323,13 @@ private:
 
     switch(data.temporal)
     {
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+
       case MeshMovementAdvanceInTime::SinSquared:
         solution = (4.0 * pi * std::sin(2.0 * pi * this->get_time() / time_period) *
                     std::cos(2.0 * pi * this->get_time() / time_period) / time_period);
@@ -314,11 +338,9 @@ private:
       case MeshMovementAdvanceInTime::Sin:
         solution = std::cos(2.0 * pi * this->get_time() / time_period) * 2.0 * pi / time_period;
         break;
-      case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+
+      default:
+        AssertThrow(false, ExcMessage("Not implemented."));
         break;
     }
     return solution;
@@ -331,6 +353,13 @@ private:
 
     switch(data.temporal)
     {
+      case MeshMovementAdvanceInTime::Undefined:
+        AssertThrow(
+          false,
+          ExcMessage(
+            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        break;
+
       case MeshMovementAdvanceInTime::SinSquared:
         solution = std::pow(std::sin(2.0 * pi * this->get_time() / time_period), 2);
         break;
@@ -339,11 +368,8 @@ private:
         solution = std::sin(2.0 * pi * this->get_time() / time_period);
         break;
 
-      case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+      default:
+        AssertThrow(false, ExcMessage("Not implemented."));
         break;
     }
     return solution;
