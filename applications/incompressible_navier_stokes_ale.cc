@@ -295,6 +295,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   // depends on matrix free which is initialized in navier_stokes_operation->setup
   if(param.ale_formulation == true)
   {
+    AssertThrow(ale_operation.get() != 0, ExcMessage("Not initialized."));
     ale_operation->setup();
     if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
        param.adaptive_time_stepping == true)
