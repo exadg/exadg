@@ -5,10 +5,11 @@
  *      Author: fehn
  */
 
+#include <deal.II/numerics/data_out.h>
+
 #include "output_generator.h"
 
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/data_out_dof_data.h>
+#include "../../postprocessor/write_output.h"
 
 #include <fstream>
 
@@ -22,40 +23,29 @@ write_output(OutputDataBase const &  output_data,
              VectorType const &      solution_vector,
              unsigned int const      output_counter)
 {
-  DataOut<dim> data_out;
+  std::string folder = output_data.output_folder, file = output_data.output_name;
 
   DataOutBase::VtkFlags flags;
   flags.write_higher_order_cells = output_data.write_higher_order;
+
+  DataOut<dim> data_out;
   data_out.set_flags(flags);
 
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution_vector, "solution");
-  data_out.build_patches(output_data.degree);
-
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
-  std::ostringstream filename;
-  filename << output_data.output_folder << output_data.output_name << "_Proc"
-           << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) << "_" << output_counter << ".vtu";
+  data_out.write_vtu_with_pvtu_record(folder, file, output_counter);
 
-  std::ofstream output(filename.str().c_str());
-  data_out.write_vtu(output);
-
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  // write surface mesh
+  if(output_data.write_surface_mesh)
   {
-    std::vector<std::string> filenames;
-    for(unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD); ++i)
-    {
-      std::ostringstream filename;
-      filename << output_data.output_name << "_Proc" << i << "_" << output_counter << ".vtu";
-
-      filenames.push_back(filename.str().c_str());
-    }
-    std::string master_name = output_data.output_folder + output_data.output_name + "_" +
-                              Utilities::int_to_string(output_counter) + ".pvtu";
-
-    std::ofstream master_output(master_name.c_str());
-    data_out.write_pvtu_record(master_output, filenames);
+    write_surface_mesh(dof_handler.get_triangulation(),
+                       mapping,
+                       output_data.degree,
+                       folder,
+                       file + "_surface",
+                       output_counter);
   }
 }
 
@@ -76,6 +66,16 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
 
   // reset output counter
   output_counter = output_data.output_counter_start;
+
+  // Visualize boundary IDs:
+  // since boundary IDs typically do not change during the simulation, we only do this
+  // once at the beginning of the simulation (i.e., in the setup function).
+  if(output_data.write_boundary_IDs)
+  {
+    write_boundary_IDs(dof_handler->get_triangulation(),
+                       output_data.output_folder,
+                       output_data.output_name);
+  }
 }
 
 template<int dim, typename Number>
@@ -98,8 +98,11 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
       // time step.
       if(reset_counter)
       {
-        output_counter +=
-          int((time - output_data.output_start_time + EPSILON) / output_data.output_interval_time);
+        if(time > output_data.output_start_time)
+        {
+          output_counter += int((time - output_data.output_start_time + EPSILON) /
+                                output_data.output_interval_time);
+        }
         reset_counter = false;
       }
 

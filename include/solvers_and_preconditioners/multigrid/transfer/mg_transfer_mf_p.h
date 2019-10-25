@@ -66,6 +66,8 @@ private:
   int          degree_2;
   int          dof_handler_index;
   unsigned int quad_index;
+  
+  AlignedVector<VectorizedArray<Number>> weights;
 
   bool is_dg;
 };

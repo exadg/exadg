@@ -78,6 +78,8 @@ private:
   MatrixFree<dim, Number> const *     matrix_free;
   unsigned int                        dof_index_velocity, dof_index_pressure, quad_index;
 
+  mutable double c_L_max, c_D_max;
+
   LiftAndDragData lift_and_drag_data;
 };
 

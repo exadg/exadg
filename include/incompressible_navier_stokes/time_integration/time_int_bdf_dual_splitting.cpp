@@ -716,7 +716,7 @@ TimeIntBDFDualSplitting<Number>::solve_steady_problem()
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
       // solve time step
-      this->do_timestep();
+      this->do_timestep(false);
 
       // calculate increment:
       // increment = solution_{n+1} - solution_{n}

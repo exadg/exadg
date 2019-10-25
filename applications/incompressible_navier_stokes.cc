@@ -7,6 +7,7 @@
 
 // deal.II
 #include <deal.II/base/revision.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
@@ -16,10 +17,10 @@
 #include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
 
 // spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
 #include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
 
 // temporal discretization
 #include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
@@ -41,7 +42,7 @@ using namespace IncNS;
 // specify the flow problem that has to be solved
 
 // template
-//#include "incompressible_navier_stokes_test_cases/template.h"
+#include "incompressible_navier_stokes_test_cases/template.h"
 
 // 2D Stokes flow
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
@@ -54,7 +55,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
 //#include "incompressible_navier_stokes_test_cases/cavity.h"
 //#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-#include "incompressible_navier_stokes_test_cases/vortex.h"
+//#include "incompressible_navier_stokes_test_cases/vortex.h"
 //#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/tum.h"
 //#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
@@ -115,7 +116,7 @@ private:
 
   ConditionalOStream pcout;
 
-  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
+  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 

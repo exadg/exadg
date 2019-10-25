@@ -1,4 +1,5 @@
 #include "operator.h"
+#include "../../functionalities/calculate_maximum_aspect_ratio.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 #include "../preconditioner/multigrid_preconditioner.h"
 
@@ -6,7 +7,7 @@ namespace Poisson
 {
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
-  parallel::Triangulation<dim> const &                      triangulation,
+  parallel::TriangulationBase<dim> const &                  triangulation,
   Poisson::InputParameters const &                          param_in,
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor_in)
   : dealii::Subscriptor(),
@@ -96,8 +97,9 @@ DGOperator<dim, Number>::setup_solver()
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&this->dof_handler.get_triangulation());
+    parallel::TriangulationBase<dim> const * tria =
+      dynamic_cast<const parallel::TriangulationBase<dim> *>(
+        &this->dof_handler.get_triangulation());
     const FiniteElement<dim> & fe = this->dof_handler.get_fe();
 
     mg_preconditioner->initialize(mg_data,
@@ -253,6 +255,9 @@ template<int dim, typename Number>
 double
 DGOperator<dim, Number>::get_n10() const
 {
+  AssertThrow(iterative_solver->n10 != 0,
+              ExcMessage("Make sure to activate param.compute_performance_metrics!"));
+
   return iterative_solver->n10;
 }
 
@@ -341,7 +346,7 @@ DGOperator<dim, Number>::initialize_matrix_free()
     if(param.enable_cell_based_face_loops)
     {
       auto tria =
-        dynamic_cast<parallel::Triangulation<dim> const *>(&dof_handler.get_triangulation());
+        dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
       Categorization::do_cell_based_loops(*tria, additional_data);
     }
   }

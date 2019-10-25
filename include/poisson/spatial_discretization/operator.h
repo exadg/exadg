@@ -51,7 +51,7 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  DGOperator(parallel::Triangulation<dim> const &                      triangulation,
+  DGOperator(parallel::TriangulationBase<dim> const &                  triangulation,
              Poisson::InputParameters const &                          param,
              std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor);
 

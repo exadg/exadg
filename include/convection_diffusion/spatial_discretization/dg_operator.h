@@ -58,7 +58,7 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::Triangulation<dim> const &            triangulation,
+  DGOperator(parallel::TriangulationBase<dim> const &            triangulation,
              InputParameters const &                         param_in,
              std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in);
 

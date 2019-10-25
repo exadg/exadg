@@ -146,6 +146,7 @@ InputParameters::InputParameters()
 
     // formulations
     order_extrapolation_pressure_nbc((order_time_integrator <= 2) ? order_time_integrator : 2),
+    formulation_convective_term_bc(FormulationConvectiveTerm::ConvectiveFormulation),
 
     // convective step
 
@@ -350,6 +351,12 @@ InputParameters::check_input_parameters()
         << "condition is larger than 2 which leads to a scheme that is only conditionally stable."
         << std::endl;
     }
+
+    AssertThrow(formulation_convective_term_bc ==
+                    FormulationConvectiveTerm::DivergenceFormulation ||
+                  formulation_convective_term_bc ==
+                    FormulationConvectiveTerm::ConvectiveFormulation,
+                ExcMessage("Not implemented."));
 
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Implicit,
                 ExcMessage("An implicit treatment of the convective term is not possible "
@@ -736,6 +743,8 @@ InputParameters::print_parameters_turbulence(ConditionalOStream & pcout)
 void
 InputParameters::print_parameters_numerical_parameters(ConditionalOStream & pcout)
 {
+  pcout << std::endl << "Numerical parameters:" << std::endl;
+
   print_parameter(pcout,
                   "Block Jacobi matrix-free",
                   implement_block_diagonal_preconditioner_matrix_free);
@@ -814,6 +823,10 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
 
   // formulations
   print_parameter(pcout, "Order of extrapolation pressure NBC", order_extrapolation_pressure_nbc);
+
+  print_parameter(pcout,
+                  "Formulation convective term in BC",
+                  enum_to_string(formulation_convective_term_bc));
 
   // projection method
   print_parameters_pressure_poisson(pcout);

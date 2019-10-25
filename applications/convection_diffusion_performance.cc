@@ -7,6 +7,7 @@
 
 // deal.II
 #include <deal.II/base/revision.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
@@ -25,10 +26,10 @@
 #include "convection_diffusion/user_interface/field_functions.h"
 #include "convection_diffusion/user_interface/input_parameters.h"
 
+#include "functionalities/mesh_resolution_generator_hypercube.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 #include "functionalities/print_throughput.h"
-
 
 // specify the test case that has to be solved
 #include "convection_diffusion_test_cases/periodic_box.h"
@@ -36,24 +37,30 @@
 using namespace dealii;
 using namespace ConvDiff;
 
-// refinement level: l = REFINE_LEVELS[fe_degree-1]
-std::vector<int> REFINE_LEVELS = {
-  7, /* k=1 */
-  6,
-  6, /* k=3 */
-  5,
-  5,
-  5,
-  5, /* k=7 */
-  4,
-  4,
-  4,
-  4,
-  4,
-  4,
-  4,
-  4 /* k=15 */
-};
+
+RunType const RUN_TYPE = RunType::FixedProblemSize;
+
+/*
+ * Specify minimum and maximum problem size for
+ *  RunType::FixedProblemSize
+ *  RunType::IncreasingProblemSize
+ */
+types::global_dof_index N_DOFS_MIN = 1e4;
+types::global_dof_index N_DOFS_MAX = 3e4;
+
+/*
+ * Enable hyper_cube meshes with number of cells per direction other than multiples of 2.
+ * Use this only for simple hyper_cube problems and for
+ *  RunType::FixedProblemSize
+ *  RunType::IncreasingProblemSize
+ */
+#define ENABLE_SUBDIVIDED_HYPERCUBE
+
+#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
+// will be set automatically for RunType::FixedProblemSize and RunType::IncreasingProblemSize
+unsigned int SUBDIVISIONS_MESH = 1;
+#endif
+
 
 // Select the operator to be applied
 
@@ -92,8 +99,8 @@ enum_to_string(Operatortype const enum_type)
 unsigned int const N_REPETITIONS_INNER = 100; // take the average of inner repetitions
 unsigned int const N_REPETITIONS_OUTER = 1;   // take the minimum of outer repetitions
 
-// global variable used to store the wall times for different polynomial degrees
-std::vector<std::pair<unsigned int, double>> wall_times;
+// global variable used to store the wall times for different polynomial degrees and problem sizes
+std::vector<std::tuple<unsigned int, types::global_dof_index, double>> WALL_TIMES;
 
 template<typename Number>
 class ProblemBase
@@ -128,7 +135,7 @@ private:
 
   ConditionalOStream pcout;
 
-  std::shared_ptr<parallel::Triangulation<dim>> triangulation;
+  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
@@ -201,7 +208,15 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
   }
 
+#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
+  create_grid_and_set_boundary_ids(triangulation,
+                                   param.h_refinements,
+                                   periodic_faces,
+                                   SUBDIVISIONS_MESH);
+#else
   create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
+#endif
+
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
   boundary_descriptor.reset(new BoundaryDescriptor<dim>());
@@ -311,9 +326,29 @@ Problem<dim, Number>::apply_operator()
         << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
   // clang-format on
 
-  wall_times.push_back(std::pair<unsigned int, double>(param.degree, dofs_per_walltime));
+  WALL_TIMES.push_back(std::tuple<unsigned int, types::global_dof_index, double>(
+    param.degree, dofs, dofs_per_walltime));
 
   pcout << std::endl << " ... done." << std::endl << std::endl;
+}
+
+void
+do_run(ConvDiff::InputParameters const & param)
+{
+  // setup problem and run simulation
+  typedef double                       Number;
+  std::shared_ptr<ProblemBase<Number>> problem;
+
+  if(param.dim == 2)
+    problem.reset(new Problem<2, Number>());
+  else if(param.dim == 3)
+    problem.reset(new Problem<3, Number>());
+  else
+    AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
+
+  problem->setup(param);
+
+  problem->apply_operator();
 }
 
 int
@@ -327,33 +362,71 @@ main(int argc, char ** argv)
     ConvDiff::InputParameters param;
     set_input_parameters(param);
 
-    // k-refinement
-    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+    // p-refinement
+    if(RUN_TYPE == RunType::RefineHAndP)
     {
-      // reset degree
-      param.degree = degree;
+      for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+      {
+        // reset degree
+        param.degree = degree;
 
-      // reset h-refinements
-      param.h_refinements = REFINE_LEVELS[degree - 1];
+        // h-refinement
+        for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
+            ++h_refinements)
+        {
+          // reset h-refinements
+          param.h_refinements = h_refinements; // REFINE_LEVELS[degree - 1];
 
-      // setup problem and run simulation
-      typedef double                       Number;
-      std::shared_ptr<ProblemBase<Number>> problem;
+          do_run(param);
+        }
+      }
+    }
+#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
+    else if(RUN_TYPE == RunType::FixedProblemSize || RUN_TYPE == RunType::IncreasingProblemSize)
+    {
+      // a vector storing tuples of the form (degree k, refine level l, n_subdivisions_1d)
+      std::vector<std::tuple<unsigned int, unsigned int, unsigned int>> resolutions;
 
-      if(param.dim == 2)
-        problem.reset(new Problem<2, Number>());
-      else if(param.dim == 3)
-        problem.reset(new Problem<3, Number>());
-      else
-        AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
+      // fill resolutions vector
 
-      problem->setup(param);
+      if(RUN_TYPE == RunType::IncreasingProblemSize)
+      {
+        AssertThrow(
+          DEGREE_MIN == DEGREE_MAX,
+          ExcMessage(
+            "Only a single polynomial degree can be considered for RunType::IncreasingProblemSize"));
+      }
 
-      problem->apply_operator();
+      // k-refinement
+      for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+      {
+        unsigned int const dim              = double(param.dim);
+        double const       dofs_per_element = std::pow(degree + 1, dim);
+
+        fill_resolutions_vector(
+          resolutions, degree, dim, dofs_per_element, N_DOFS_MIN, N_DOFS_MAX, RUN_TYPE);
+      }
+
+      // loop over resolutions vector and run simulations
+      for(auto iter = resolutions.begin(); iter != resolutions.end(); ++iter)
+      {
+        param.degree        = std::get<0>(*iter);
+        param.h_refinements = std::get<1>(*iter);
+        SUBDIVISIONS_MESH   = std::get<2>(*iter);
+
+        do_run(param);
+      }
+    }
+#endif
+    else
+    {
+      AssertThrow(false,
+                  ExcMessage("Not implemented. Make sure to activate ENABLE_SUBDIVIDED_HYPERCUBE "
+                             "for RunType::FixedProblemSize or RunType::IncreasingProblemSize."));
     }
 
-    print_throughput(wall_times, enum_to_string(OPERATOR));
-    wall_times.clear();
+    print_throughput(WALL_TIMES, enum_to_string(OPERATOR));
+    WALL_TIMES.clear();
   }
   catch(std::exception & exc)
   {

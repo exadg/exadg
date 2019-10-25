@@ -13,9 +13,9 @@ StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> & dof_handler_ve
   : n_points_y_per_cell(0),
     dof_handler(dof_handler_velocity),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::Triangulation<dim> *>(
+    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
                    &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::Triangulation<dim> *>(
+                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
                       &dof_handler_velocity.get_triangulation())
                       ->get_communicator()) :
                    MPI_COMM_SELF),
@@ -93,7 +93,7 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
     // initialize number of samples
     number_of_samples = 0;
 
-    // calculate y-coordinates in physical space where we want to peform the sampling (averaging)
+    // calculate y-coordinates in physical space where we want to perform the sampling (averaging)
     y_glob.reserve(n_points_y_glob);
 
     // loop over all cells in y-direction

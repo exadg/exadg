@@ -12,8 +12,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
+unsigned int const DEGREE_MIN = 1;
+unsigned int const DEGREE_MAX = 15;
 
 unsigned int const REFINE_SPACE_MIN = 0;
 unsigned int const REFINE_SPACE_MAX = 0;
@@ -54,7 +54,7 @@ set_input_parameters(Poisson::InputParameters &param)
   // MG coarse grid solver
   param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
-  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-6;
+  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
 }
 
 }
@@ -68,7 +68,7 @@ set_input_parameters(Poisson::InputParameters &param)
 
 template<int dim>
 void
-create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >         &periodic_faces)

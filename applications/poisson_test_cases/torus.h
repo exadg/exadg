@@ -54,7 +54,7 @@ set_input_parameters(Poisson::InputParameters &param)
 /************************************************************************************************************/
 
 void
-create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<2>> /*triangulation*/,
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<2>> /*triangulation*/,
                                  unsigned int const                          /*n_refine_space*/,
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<2>::cell_iterator> >         &/*periodic_faces*/)
@@ -64,7 +64,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<2>> /*t
 
 template<int dim>
 void
-create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >         &/*periodic_faces*/)

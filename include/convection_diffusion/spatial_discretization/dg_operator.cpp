@@ -14,7 +14,7 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
-  parallel::Triangulation<dim> const &            triangulation,
+  parallel::TriangulationBase<dim> const &            triangulation,
   InputParameters const &                         param_in,
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
   : dealii::Subscriptor(),
@@ -381,8 +381,8 @@ DGOperator<dim, Number>::initialize_preconditioner()
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    parallel::TriangulationBase<dim> const * tria =
+      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
 
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 

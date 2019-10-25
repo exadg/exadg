@@ -12,7 +12,6 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include "../functionalities/calculate_characteristic_element_length.h"
-#include "../functionalities/cutoff_floating_point_number.h"
 #include "enum_types.h"
 
 using namespace dealii;
@@ -306,7 +305,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
   // that the sequence of time step sizes is exactly reproducible with the results being
   // independent of the number of processors, which is important for code verification in a
   // parallel setting.
-  new_time_step = cutoff(new_time_step, 4);
+  new_time_step = Utilities::truncate_to_n_digits(new_time_step, 4);
 
   return new_time_step;
 }

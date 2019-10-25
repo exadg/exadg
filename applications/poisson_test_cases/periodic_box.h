@@ -1,6 +1,6 @@
 
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
-#include "../grid_tools/deformed_cube_manifold.h"
+#include "../grid_tools/periodic_box.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -10,6 +10,9 @@
 
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
+
+unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MAX = 0;
 
 // problem specific parameters
 
@@ -28,7 +31,7 @@ set_input_parameters(Poisson::InputParameters &param)
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
-  param.mapping = MappingType::Isoparametric;
+  param.mapping = MappingType::Affine; //Cubic;
   param.spatial_discretization = SpatialDiscretization::DG;
   param.IP_factor = 1.0e0;
 
@@ -46,78 +49,37 @@ set_input_parameters(Poisson::InputParameters &param)
 
 template<int dim>
 void
-create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
-                                 unsigned int const                            n_refine_space,
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+                                 unsigned int const                                n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
-                                   Triangulation<dim>::cell_iterator> >         &periodic_faces,
-                                   unsigned int const n_subdivisions = 1)
+                                   Triangulation<dim>::cell_iterator> >            &periodic_faces,
+                                 unsigned int const                                n_subdivisions = 1)
 {
-  const double left = -1.0, right = 1.0;
-  GridGenerator::subdivided_hyper_cube(*triangulation,n_subdivisions,left,right);
+  double const left = -1.0, right = 1.0;
+  double const deformation = 0.1;
 
+  bool curvilinear_mesh = false;
   if(MESH_TYPE == MeshType::Cartesian)
   {
     // do nothing
   }
   else if(MESH_TYPE == MeshType::Curvilinear)
   {
-    double const deformation = 0.1;
-    unsigned int const frequency = 2;
-    static DeformedCubeManifold<dim> manifold(left, right, deformation, frequency);
-    triangulation->set_all_manifold_ids(1);
-    triangulation->set_manifold(1, manifold);
-
-    std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
-
-    for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-        cell != triangulation->end(); ++cell)
-    {
-      for (unsigned int v=0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
-      {
-        if (vertex_touched[cell->vertex_index(v)]==false)
-        {
-          Point<dim> &vertex = cell->vertex(v);
-          Point<dim> new_point = manifold.push_forward(vertex);
-          vertex = new_point;
-          vertex_touched[cell->vertex_index(v)] = true;
-        }
-      }
-    }
+    curvilinear_mesh = true;
   }
-
-  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
-  for(;cell!=endc;++cell)
+  else
   {
-   for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
-   {
-     // x-direction
-     if((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (0);
-     else if((std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (1);
-     // y-direction
-     else if((std::fabs(cell->face(face_number)->center()(1) - left)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (2);
-     else if((std::fabs(cell->face(face_number)->center()(1) - right)< 1e-12))
-       cell->face(face_number)->set_all_boundary_ids (3);
-     // z-direction
-     else if((std::fabs(cell->face(face_number)->center()(2) - left)< 1e-12) && dim == 3)
-       cell->face(face_number)->set_all_boundary_ids (4);
-     else if((std::fabs(cell->face(face_number)->center()(2) - right)< 1e-12) && dim == 3)
-       cell->face(face_number)->set_all_boundary_ids (5);
-   }
+    AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  auto tria = dynamic_cast<Triangulation<dim>*>(&*triangulation);
-  GridTools::collect_periodic_faces(*tria, 0, 1, 0 /*x-direction*/, periodic_faces);
-  GridTools::collect_periodic_faces(*tria, 2, 3, 1 /*y-direction*/, periodic_faces);
-  if(dim == 3)
-    GridTools::collect_periodic_faces(*tria, 4, 5, 2 /*z-direction*/, periodic_faces);
-
-  triangulation->add_periodicity(periodic_faces);
-
-  // perform global refinements
-  triangulation->refine_global(n_refine_space);
+  create_periodic_box(triangulation,
+                      n_refine_space,
+                      periodic_faces,
+                      n_subdivisions,
+                      left,
+                      right,
+                      curvilinear_mesh,
+                      deformation);
 }
 
 /************************************************************************************************************/

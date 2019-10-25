@@ -32,13 +32,13 @@ public:
   typedef typename BASE::PeriodicFacePairs PeriodicFacePairs;
 
   void
-  initialize(MultigridData const &                mg_data,
-             const parallel::Triangulation<dim> * tria,
-             const FiniteElement<dim> &           fe,
-             Mapping<dim> const &                 mapping,
-             LaplaceOperatorData<dim> const &     data_in,
-             Map const *                          dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                  periodic_face_pairs = nullptr)
+  initialize(MultigridData const &                    mg_data,
+             const parallel::TriangulationBase<dim> * tria,
+             const FiniteElement<dim> &               fe,
+             Mapping<dim> const &                     mapping,
+             LaplaceOperatorData<dim> const &         data_in,
+             Map const *                              dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                      periodic_face_pairs = nullptr)
   {
     data            = data_in;
     data.dof_index  = 0;
@@ -57,7 +57,7 @@ public:
     // setup MatrixFree::AdditionalData
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
 
-    additional_data.level_mg_handler = this->level_info[level].h_level();
+    additional_data.mg_level = this->level_info[level].h_level();
 
     MappingFlags flags = Operators::LaplaceKernel<dim, Number>::get_mapping_flags();
 

@@ -42,13 +42,13 @@ public:
   virtual ~MultigridPreconditionerProjection(){};
 
   void
-  initialize(MultigridData const &                mg_data,
-             parallel::Triangulation<dim> const * tria,
-             FiniteElement<dim> const &           fe,
-             Mapping<dim> const &                 mapping,
-             PDEOperatorNumber const &            pde_operator,
-             Map const *                          dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                  periodic_face_pairs = nullptr)
+  initialize(MultigridData const &                    mg_data,
+             parallel::TriangulationBase<dim> const * tria,
+             FiniteElement<dim> const &               fe,
+             Mapping<dim> const &                     mapping,
+             PDEOperatorNumber const &                pde_operator,
+             Map const *                              dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                      periodic_face_pairs = nullptr)
   {
     this->pde_operator = &pde_operator;
 
@@ -74,7 +74,7 @@ public:
     // additional data
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
 
-    additional_data.level_mg_handler      = this->level_info[level].h_level();
+    additional_data.mg_level              = this->level_info[level].h_level();
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;

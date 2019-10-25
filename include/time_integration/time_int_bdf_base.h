@@ -108,7 +108,7 @@ protected:
    * current time step.
    */
   void
-  do_timestep();
+  do_timestep(bool const do_write_output = true);
 
   /*
    * Update the time integrator constants.

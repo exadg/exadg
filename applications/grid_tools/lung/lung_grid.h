@@ -12,6 +12,7 @@
 #  include <metis.h>
 #endif
 
+#include <deal.II/distributed/fully_distributed_tria_util.h>
 #include <deal.II/grid/grid_reordering.h>
 #include <vector>
 
@@ -203,8 +204,29 @@ lung_files_to_node(std::vector<std::string> files)
 }
 
 template<typename T>
+std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>
+face_vertices(T face)
+{
+  std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>> result;
+
+  std::vector<unsigned int> v(4);
+
+  for(unsigned int d = 0; d < 4; d++)
+    v[d] = face->vertex_index(d);
+
+  std::sort(v.begin(), v.end());
+
+  result.first.first   = v[0];
+  result.first.second  = v[1];
+  result.second.first  = v[2];
+  result.second.second = v[3];
+
+  return result;
+}
+
+template<typename T, typename Map>
 bool
-mark(T cell, const int number)
+mark(T cell, const int number, Map & map)
 {
   // is not at boundary
   if(!cell->at_boundary(4))
@@ -216,6 +238,7 @@ mark(T cell, const int number)
 
   // set boundary id
   cell->face(4)->set_all_boundary_ids(number);
+  map[face_vertices(cell->face(4))] = number;
 
   // mark all neighbors
   for(unsigned int d = 0; d < 6; d++)
@@ -225,7 +248,7 @@ mark(T cell, const int number)
       continue;
 
     // mark neighbor
-    mark(cell->neighbor(d), number);
+    mark(cell->neighbor(d), number, map);
   }
 
   // cell has been marked
@@ -293,30 +316,43 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
 
 
   timer.restart();
-  GridReordering<3>::reorder_cells(cell_data_3d, true);
-  tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
-  timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
+  // collect faces and their ids for the non-reordered triangulation
+  std::map<std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>, unsigned int> map;
 
-  // set boundary ids
-  unsigned int counter = outlet_id_first; // counter for outlets
-  for(auto cell : tria.active_cell_iterators())
   {
+    dealii::Triangulation<3> tria;
+    tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
+
+    // set boundary ids
+    unsigned int counter = outlet_id_first; // counter for outlets
+    for(auto cell : tria.active_cell_iterators())
+    {
     // the mesh is generated in a way that inlet/outlets are one faces with normal vector
     // in positive or negative z-direction (faces 4/5)
-    if(cell->at_boundary(5) && cell->material_id() == (unsigned int)LungID::create_root()) // inlet
-      cell->face(5)->set_all_boundary_ids(1);
-    if(cell->at_boundary(4)) // outlets (>1)
-      if(mark(cell, counter))
-        counter++;
+      if(cell->at_boundary(5) && cell->material_id() == (unsigned int) LungID::create_root()) // inlet
+        map[face_vertices(cell->face(5))] = 1;
+
+      if(cell->at_boundary(4)) // outlets (>1)
+        if(mark(cell, counter, map))
+          counter++;
+    }
+    // set outlet_id_last which is needed by the application setting the boundary conditions
+    outlet_id_last = counter;
   }
 
-  // set outlet_id_last which is needed by the application setting the boundary conditions
-  outlet_id_last = counter;
+  GridReordering<3>::reorder_cells(cell_data_3d, true);
+  tria.create_triangulation(vertices_3d, cell_data_3d, subcell_data);
 
-  timer.restart();
-  // tria.refine_global(refinements);
-  timings["create_triangulation_5_serial_refinement"] = timer.wall_time();
+
+
+  // actually set boundary ids
+  for(auto cell : tria.active_cell_iterators())
+    for(unsigned int d = 0; d < 6; d++)
+      if(cell->at_boundary(d) && map.find(face_vertices(cell->face(d))) != map.end())
+        cell->face(d)->set_all_boundary_ids(map[face_vertices(cell->face(d))]);
+
+  timings["create_triangulation_4_serial_triangulation"] = timer.wall_time();
 
   if(roots[0]->skeleton.size() > 0)
   {
@@ -789,9 +825,9 @@ void lung(dealii::parallel::fullydistributed::Triangulation<2> &         tria,
   AssertThrow(false, ExcMessage("Not implemented for dim = 2."));
 }
 
-void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
-          int                                                            refinements1,
-          int                                                            refinements2,
+void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
+          int                                                    refinements1,
+          int /*refinements2*/,
           std::function<void(std::vector<Node *> & roots, unsigned int)> create_tree,
           std::map<std::string, double> &                                timings,
           unsigned int const &                                           outlet_id_first,
@@ -803,27 +839,33 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> &         tria,
   Timer timer;
   timer.restart();
 
-  parallel::fullydistributed::AdditionalData ad;
-  ad.partition_group_size = 1;
-  ad.partition_group      = parallel::fullydistributed::single;
-
   std::map<types::material_id, DeformTransfinitelyViaSplines<3>> deform;
+
   // create partitioned triangulation ...
-  tria.reinit(refinements2,
-              [&](auto & tria) mutable {
-                // ... by creating a refined sequential triangulation and partition it
-                lung_unrefined(tria,
-                               create_tree,
-                               timings,
-                               outlet_id_first,
-                               outlet_id_last,
-                               bspline_file,
-                               deform,
-                               branch_filter);
-                tria.refine_global(refinements1);
-                // update_mapping(tria, deform);
-              },
-              ad);
+  const auto construction_data =
+    parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<3,
+                                                                                                 3>(
+      [&](dealii::Triangulation<3, 3> & tria) mutable {
+        // ... by creating a refined sequential triangulation and partition it
+        lung_unrefined(tria,
+                       create_tree,
+                       timings,
+                       outlet_id_first,
+                       outlet_id_last,
+                       bspline_file,
+                       deform,
+                       branch_filter);
+        tria.refine_global(refinements1);
+      },
+      [](dealii::Triangulation<3, 3> & tria,
+         const MPI_Comm                comm,
+         const unsigned int /*group_size*/) {
+        GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm), tria);
+      },
+      tria.get_communicator(),
+      1 /*group size*/,
+      true /*construct multigrid levels*/);
+  tria.create_triangulation(construction_data);
   update_mapping(tria, deform);
 
   outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);

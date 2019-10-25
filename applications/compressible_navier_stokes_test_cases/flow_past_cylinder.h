@@ -8,8 +8,6 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
-#include "../grid_tools/mesh_flow_past_cylinder.h"
-#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
 #include "../../include/compressible_navier_stokes/postprocessor/postprocessor.h"
 
 /************************************************************************************************************/
@@ -29,29 +27,32 @@ unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
 
 // problem specific parameters
-
-const unsigned int TEST_CASE = 2; // 1, 2 or 3
-const unsigned int DIMENSION = 2;
-const double Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
+unsigned int const TEST_CASE = 3; // 1, 2 or 3
+unsigned int const DIMENSION = 2;
+double const Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
 
 // physical quantities
-const double VISCOSITY = 1.e-3;
-const double GAMMA = 1.4;
-const double LAMBDA = 0.0262;
-const double GAS_CONSTANT = 287.058;
-const double U_0 = Um;
-const double MACH = 0.2;
-const double SPEED_OF_SOUND = U_0/MACH;
-const double RHO_0 = 1.0;
-const double T_0 = SPEED_OF_SOUND*SPEED_OF_SOUND/GAMMA/GAS_CONSTANT;
-const double E_0 = GAS_CONSTANT/(GAMMA-1.0)*T_0;
+double const VISCOSITY = 1.e-3;
+double const GAMMA = 1.4;
+double const LAMBDA = 0.0262;
+double const GAS_CONSTANT = 287.058;
+double const U_0 = Um;
+double const MACH = 0.2;
+double const SPEED_OF_SOUND = U_0/MACH;
+double const RHO_0 = 1.0;
+double const T_0 = SPEED_OF_SOUND*SPEED_OF_SOUND/GAMMA/GAS_CONSTANT;
+double const E_0 = GAS_CONSTANT/(GAMMA-1.0)*T_0;
+
+// physical dimensions
+double const Y_C = 0.2; // center of cylinder (y-coordinate)
+double const D = 0.1; // cylinder diameter
 
 // end time
-const double START_TIME = 0.0;
-const double END_TIME = 8.0;
+double const START_TIME = 0.0;
+double const END_TIME = 8.0;
 
-std::string OUTPUT_FOLDER = "output_comp_ns/flow_past_cylinder/";
-std::string FILENAME = "test";
+std::string const OUTPUT_FOLDER = "output_comp_ns/flow_past_cylinder/";
+std::string const FILENAME = "test";
 
 namespace CompNS
 {
@@ -109,8 +110,11 @@ void set_input_parameters(InputParameters & param)
 /*                                                                                                          */
 /************************************************************************************************************/
 
+#include "../grid_tools/mesh_flow_past_cylinder.h"
+#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+
 template<int dim>
-void create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+void create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
                                       unsigned int const                            n_refine_space,
                                       std::vector<GridTools::PeriodicFacePair<typename
                                         Triangulation<dim>::cell_iterator> >        &periodic_faces)

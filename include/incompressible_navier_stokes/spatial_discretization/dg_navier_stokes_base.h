@@ -121,9 +121,9 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesBase(parallel::Triangulation<dim> const & triangulation,
-                     InputParameters const &              parameters,
-                     std::shared_ptr<Postprocessor>       postprocessor);
+  DGNavierStokesBase(parallel::TriangulationBase<dim> const & triangulation,
+                     InputParameters const &                  parameters,
+                     std::shared_ptr<Postprocessor>           postprocessor);
 
   /*
    * Destructor.
@@ -473,12 +473,12 @@ protected:
   /*
    * Basic operators.
    */
-  MassMatrixOperator<dim, Number> mass_matrix_operator;
-  ConvectiveOperator<dim, Number> convective_operator;
-  ViscousOperator<dim, Number>    viscous_operator;
-  RHSOperator<dim, Number>        rhs_operator;
-  GradientOperator<dim, Number>   gradient_operator;
-  DivergenceOperator<dim, Number> divergence_operator;
+  MassMatrixOperator<dim, dim, Number> mass_matrix_operator;
+  ConvectiveOperator<dim, Number>      convective_operator;
+  ViscousOperator<dim, Number>         viscous_operator;
+  RHSOperator<dim, Number>             rhs_operator;
+  GradientOperator<dim, Number>        gradient_operator;
+  DivergenceOperator<dim, Number>      divergence_operator;
 
   DivergencePenaltyOperator<dim, Number> div_penalty_operator;
   ContinuityPenaltyOperator<dim, Number> conti_penalty_operator;
