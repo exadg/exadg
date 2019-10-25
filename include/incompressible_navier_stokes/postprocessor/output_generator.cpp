@@ -26,8 +26,7 @@ write_output(OutputData const &                                 output_data,
              std::vector<SolutionField<dim, Number>> const &    additional_fields,
              unsigned int const                                 output_counter)
 {
-  unsigned int rank   = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
-  std::string  folder = output_data.output_folder, file = output_data.output_name;
+  std::string folder = output_data.output_folder, file = output_data.output_name;
 
   DataOutBase::VtkFlags flags;
   flags.write_higher_order_cells = output_data.write_higher_order;
@@ -73,12 +72,7 @@ write_output(OutputData const &                                 output_data,
 
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
-  std::string filename = folder + file + "_Proc" + Utilities::int_to_string(rank) + "_" +
-                         Utilities::int_to_string(output_counter) + ".vtu";
-  std::ofstream output(filename.c_str());
-  data_out.write_vtu(output);
-
-  write_pvtu_record_wrapper(data_out, folder, file, output_counter, rank);
+  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, 3, MPI_COMM_WORLD);
 
   // write surface mesh
   if(output_data.write_surface_mesh)
@@ -88,8 +82,7 @@ write_output(OutputData const &                                 output_data,
                        output_data.degree,
                        folder,
                        file + "_surface",
-                       output_counter,
-                       rank);
+                       output_counter);
   }
 }
 
