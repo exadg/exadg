@@ -13,6 +13,10 @@
 #include "time_integration/bdf_time_integration.h"
 #include "time_integration/extrapolation_scheme.h"
 
+#include <deal.II/lac/la_parallel_vector.h>
+
+#include "../incompressible_navier_stokes/spatial_discretization/interface.h"
+
 using namespace dealii;
 
 class TimeIntBDFBase : public TimeIntBase
@@ -86,7 +90,6 @@ public:
   virtual void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const = 0;
 
-protected:
   /*
    * Get time at the end of the current time step t_{n+1}.
    */
@@ -99,6 +102,7 @@ protected:
   double
   get_previous_time(int const i /* t_{n-i} */) const;
 
+protected:
   /*
    * Do one time step including different updates before and after the actual solution of the
    * current time step.

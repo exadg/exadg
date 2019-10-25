@@ -95,9 +95,9 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 
   laplace_operator_data.kernel_data.IP_factor      = this->param.IP_factor_pressure;
   laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
-  laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
+  laplace_operator_data.kernel_data.degree_mapping = this->get_mapping_degree();
 
-  laplace_operator.reinit(this->matrix_free, this->constraint_p, laplace_operator_data);
+  laplace_operator.reinit(this->get_matrix_free(), this->get_constraint_p(), laplace_operator_data);
 }
 
 template<int dim, typename Number>
@@ -126,14 +126,14 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&this->dof_handler_p.get_triangulation());
-    const FiniteElement<dim> & fe = this->dof_handler_p.get_fe();
+    parallel::Triangulation<dim> const * tria = dynamic_cast<const parallel::Triangulation<dim> *>(
+      &this->get_dof_handler_p().get_triangulation());
+    const FiniteElement<dim> & fe = this->get_dof_handler_p().get_fe();
 
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  *this->mapping,
+                                  this->get_mapping(),
                                   laplace_operator.get_data(),
                                   &laplace_operator.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);

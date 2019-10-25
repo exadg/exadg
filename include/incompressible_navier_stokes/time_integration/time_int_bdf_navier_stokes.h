@@ -34,7 +34,8 @@ template<typename Number>
 class TimeIntBDF : public TimeIntBDFBase
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef Interface::OperatorBase<Number> InterfaceBase;
 
@@ -51,10 +52,26 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
-protected:
+  // ALE
+
+  std::vector<double>
+  get_current_time_integrator_constants() const;
+
+  virtual void
+  reinit_former_solution_considering_former_mesh_instances(
+    std::vector<BlockVectorType> solution_in) = 0;
+
+  virtual void
+  reinit_convective_term_considering_former_mesh_instances(
+    std::vector<VectorType> convective_term_in) = 0;
+
+  void
+  set_grid_velocity_cfl(VectorType u_grid_cfl_in);
+
   virtual void
   update_time_integrator_constants();
 
+protected:
   bool
   print_solver_info() const;
 
@@ -132,6 +149,9 @@ private:
   // solution vectors needed for OIF substepping of convective term
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
+
+  // CFL ALE
+  VectorType u_grid_cfl;
 };
 
 } // namespace IncNS

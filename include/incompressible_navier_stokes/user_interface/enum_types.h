@@ -658,6 +658,32 @@ enum class TurbulenceEddyViscosityModel
 std::string
 enum_to_string(TurbulenceEddyViscosityModel const enum_type);
 
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                              ANALYTIC MESH MOVEMENTS                               */
+/*                                                                                    */
+/**************************************************************************************/
+
+enum class MeshMovementAdvanceInTime
+{
+  Undefined,
+  SinSquared,
+  Sin
+};
+
+std::string
+enum_to_string(MeshMovementAdvanceInTime const enum_type);
+
+enum class MeshMovementShape
+{
+  Undefined,
+  Sin
+};
+
+std::string
+enum_to_string(MeshMovementShape const enum_type);
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                               OUTPUT AND POSTPROCESSING                            */

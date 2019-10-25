@@ -250,7 +250,8 @@ inline DEAL_II_ALWAYS_INLINE //
       BoundaryTypeU const &                           boundary_type,
       types::boundary_id const                        boundary_id,
       std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
-      double const &                                  time)
+      double const &                                  time,
+      bool const                                      variable_normal_vector)
 {
   Tensor<1, dim, VectorizedArray<Number>> normal_gradient_p;
 
@@ -266,8 +267,16 @@ inline DEAL_II_ALWAYS_INLINE //
         boundary_descriptor->neumann_bc.find(boundary_id);
       Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
-      Tensor<1, dim, VectorizedArray<Number>> h =
-        evaluate_vectorial_function(it->second, q_points, time);
+      Tensor<1, dim, VectorizedArray<Number>> h;
+      if(variable_normal_vector == false)
+      {
+        h = evaluate_vectorial_function(it->second, q_points, time);
+      }
+      else
+      {
+        Tensor<1, dim, VectorizedArray<Number>> normals_m = integrator.get_normal_vector(q);
+        h = evaluate_vectorial_function_with_normal(it->second, q_points, normals_m, time);
+      }
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
     }

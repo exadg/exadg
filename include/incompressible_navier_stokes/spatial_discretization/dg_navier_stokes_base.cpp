@@ -217,6 +217,13 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
   additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
+  if(param.ale_formulation == true)
+  {
+    additional_data_ale                    = additional_data;
+    additional_data_ale.initialize_indices = false; // connectivity of elements stays the same
+    additional_data_ale.initialize_mapping = true;
+  }
+
   if(param.use_cell_based_face_loops)
   {
     auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
@@ -225,8 +232,6 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   }
 
   // dofhandler
-  std::vector<const DoFHandler<dim> *> dof_handler_vec;
-
   dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
     DofHandlerSelector::n_variants));
   dof_handler_vec[dof_index_u]        = &dof_handler_u;
@@ -234,10 +239,9 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
   // constraint
-  std::vector<const AffineConstraints<double> *> constraint_matrix_vec;
   constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
     DofHandlerSelector::n_variants));
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+
   constraint_u.close();
   constraint_p.close();
   constraint_u_scalar.close();
@@ -246,9 +250,6 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
 
   // quadrature
-  std::vector<Quadrature<1>> quadratures;
-
-  // resize quadratures
   quadratures.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(
     QuadratureSelector::n_variants));
   // velocity
@@ -260,7 +261,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
 
   // reinit
   matrix_free.reinit(
-    *mapping, dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
+    get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data);
 }
 
 template<int dim, typename Number>
@@ -273,8 +274,9 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   convective_kernel_data.upwind_factor     = param.upwind_factor;
   convective_kernel_data.use_outflow_bc    = param.use_outflow_bc_convective_term;
   convective_kernel_data.type_dirichlet_bc = param.type_dirichlet_bc_convective;
+  convective_kernel_data.ale               = param.ale_formulation;
   convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
-  convective_kernel->reinit(matrix_free,
+  convective_kernel->reinit(get_matrix_free(),
                             convective_kernel_data,
                             dof_index_u,
                             get_quad_index_velocity_linearized(),
@@ -289,6 +291,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_kernel_data.penalty_term_div_formulation = param.penalty_term_div_formulation;
   viscous_kernel_data.IP_formulation               = param.IP_formulation_viscous;
   viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
+  viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
   viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
   viscous_kernel->reinit(matrix_free, viscous_kernel_data, dof_index_u);
 
@@ -492,7 +495,7 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.dof_index           = dof_index_u;
   model_data.quad_index          = quad_index_u;
   model_data.degree              = param.degree_u;
-  turbulence_model.initialize(matrix_free, *mapping, viscous_kernel, model_data);
+  turbulence_model.initialize(matrix_free, get_mapping(), viscous_kernel, model_data);
 }
 
 template<int dim, typename Number>
@@ -638,7 +641,17 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGNavierStokesBase<dim, Number>::get_mapping() const
 {
-  return *mapping;
+  if(param.ale_formulation == true)
+  {
+    if(mapping_ale.get() == 0)
+      return *mapping;
+    else
+      return *mapping_ale;
+  }
+  else
+  {
+    return *mapping;
+  }
 }
 
 template<int dim, typename Number>
@@ -674,6 +687,13 @@ DoFHandler<dim> const &
 DGNavierStokesBase<dim, Number>::get_dof_handler_p() const
 {
   return dof_handler_p;
+}
+
+template<int dim, typename Number>
+AffineConstraints<double> const &
+DGNavierStokesBase<dim, Number>::get_constraint_p() const
+{
+  return constraint_p;
 }
 
 template<int dim, typename Number>
@@ -750,12 +770,12 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
   velocity_double = velocity;
   pressure_double = pressure;
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(get_mapping(),
                            dof_handler_u,
                            *(field_functions->initial_solution_velocity),
                            velocity_double);
 
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(get_mapping(),
                            dof_handler_p,
                            *(field_functions->initial_solution_pressure),
                            pressure_double);
@@ -831,7 +851,7 @@ DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressu
   vec_double = pressure; // initialize
 
   field_functions->analytical_solution_pressure->set_time(time);
-  VectorTools::interpolate(*mapping,
+  VectorTools::interpolate(get_mapping(),
                            dof_handler_p,
                            *(field_functions->analytical_solution_pressure),
                            vec_double);
@@ -964,7 +984,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   mg_preconditioner->initialize(mg_data,
                                 tria,
                                 fe,
-                                *mapping,
+                                get_mapping(),
                                 laplace_operator.get_data(),
                                 &laplace_operator.get_data().bc->dirichlet_bc,
                                 &periodic_face_pairs);
@@ -1130,6 +1150,28 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
   {
     return 0.0;
   }
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::ale_update()
+{
+  matrix_free.reinit(
+    get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data_ale);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::set_mapping_ale(std::shared_ptr<MappingField> mapping_in)
+{
+  mapping_ale = mapping_in;
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
+{
+  convective_kernel->set_velocity_grid_ptr(u_grid_in);
 }
 
 template<int dim, typename Number>
@@ -1310,6 +1352,13 @@ bool
 DGNavierStokesBase<dim, Number>::unsteady_problem_has_to_be_solved() const
 {
   return (this->param.solver_type == SolverType::Unsteady);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGNavierStokesBase<dim, Number>::get_mapping_degree() const
+{
+  return mapping_degree;
 }
 
 template<int dim, typename Number>

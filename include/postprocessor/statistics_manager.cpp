@@ -5,6 +5,8 @@
 #include <deal.II/distributed/tria_base.h>
 #include <deal.II/fe/fe_values.h>
 
+#include <fstream>
+
 template<int dim>
 StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> & dof_handler_velocity,
                                           const Mapping<dim> &    mapping_in)

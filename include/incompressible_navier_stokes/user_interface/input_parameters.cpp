@@ -9,6 +9,8 @@
 
 #include "../../functionalities/print_functions.h"
 
+#include <deal.II/base/mpi.h>
+
 namespace IncNS
 {
 // standard constructor that initializes parameters
@@ -21,6 +23,11 @@ InputParameters::InputParameters()
     formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
     use_outflow_bc_convective_term(false),
     right_hand_side(false),
+
+    // ALE
+    grid_velocity_analytical(true),
+    ale_formulation(false),
+    neumann_with_variable_normal_vector(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
@@ -423,6 +430,22 @@ InputParameters::check_input_parameters()
                 ExcMessage("parameter must be defined"));
     AssertThrow(turbulence_model_constant > 0, ExcMessage("parameter must be greater than zero"));
   }
+
+  // ALE
+  if(ale_formulation)
+  {
+    AssertThrow(
+      formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
+      ExcMessage(
+        "convective formulation of convective operator has to be used since the grid velocity might not be divergence free"));
+    AssertThrow(temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
+                ExcMessage("only BDFCoupledSolution has been implemented on moving meshes"));
+    AssertThrow(problem_type == ProblemType::Unsteady,
+                ExcMessage("physically steady problems become unsteady on moving meshes."));
+
+    AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
+                ExcMessage("ale is only implemented for explicit formulations by now."));
+  }
 }
 
 bool
@@ -528,6 +551,10 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   }
 
   print_parameter(pcout, "Right-hand side", right_hand_side);
+
+  print_parameter(pcout, "Use ALE formulation", ale_formulation);
+  print_parameter(pcout, "Grid velocity is prescribed analytically", grid_velocity_analytical);
+  print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
 }
 
 

@@ -114,7 +114,14 @@ public:
   // Navier-Stokes equations is unequal zero, set right_hand_side = true
   bool right_hand_side;
 
-
+  /**************************************************************************************/
+  /*                                                                                    */
+  /*                                        ALE                                         */
+  /*                                                                                    */
+  /**************************************************************************************/
+  bool grid_velocity_analytical;
+  bool ale_formulation;
+  bool neumann_with_variable_normal_vector;
 
   /**************************************************************************************/
   /*                                                                                    */

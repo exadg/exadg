@@ -7,6 +7,8 @@
 
 #include "kinetic_energy_calculation.h"
 
+#include <fstream>
+
 template<int dim, typename Number>
 KineticEnergyCalculator<dim, Number>::KineticEnergyCalculator()
   : clear_files(true), matrix_free(nullptr), dof_index(0), quad_index(0)

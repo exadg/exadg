@@ -10,6 +10,8 @@
 
 #include <deal.II/numerics/data_out.h>
 
+#include <fstream>
+
 using namespace dealii;
 
 template<int dim,

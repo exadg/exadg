@@ -8,6 +8,9 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
+#include "../../../applications/grid_tools/mesh_movement_functions.h"
+#include "enum_types.h"
+
 namespace IncNS
 {
 template<int dim>

@@ -45,6 +45,9 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
+// ALE
+#include <deal.II/fe/mapping_fe_field.h>
+
 // interface space-time
 #include "interface.h"
 
@@ -69,7 +72,8 @@ template<int dim, typename Number>
 class DGNavierStokesBase : public dealii::Subscriptor, public Interface::OperatorBase<Number>
 {
 protected:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number>                           VectorType;
+  typedef MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>> MappingField;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
@@ -193,6 +197,9 @@ public:
 
   DoFHandler<dim> const &
   get_dof_handler_p() const;
+
+  AffineConstraints<double> const &
+  get_constraint_p() const;
 
   types::global_dof_index
   get_number_of_dofs() const;
@@ -374,6 +381,17 @@ public:
   double
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
+  // ALE
+
+  void
+  ale_update();
+
+  void
+  set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
+
+  void
+  set_grid_velocity(VectorType u_grid_in);
+
 protected:
   /*
    * Projection step.
@@ -384,6 +402,9 @@ protected:
   bool
   unsteady_problem_has_to_be_solved() const;
 
+  unsigned int
+  get_mapping_degree() const;
+
   /*
    * List of input parameters.
    */
@@ -392,27 +413,28 @@ protected:
   /*
    * Basic finite element ingredients.
    */
+private:
   std::shared_ptr<FESystem<dim>> fe_u;
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
 
   unsigned int                          mapping_degree;
   std::shared_ptr<MappingQGeneric<dim>> mapping;
+  std::shared_ptr<MappingField>         mapping_ale;
 
-  DoFHandler<dim> dof_handler_u;
-  DoFHandler<dim> dof_handler_p;
-  DoFHandler<dim> dof_handler_u_scalar;
-
+  DoFHandler<dim>         dof_handler_u;
+  DoFHandler<dim>         dof_handler_p;
+  DoFHandler<dim>         dof_handler_u_scalar;
   MatrixFree<dim, Number> matrix_free;
 
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-
   /*
    * Special case: pure Dirichlet boundary conditions.
    */
   Point<dim>              first_point;
   types::global_dof_index dof_index_first_point;
 
+protected:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
@@ -544,6 +566,14 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
+
+  /*
+   * MatrixFree Initialization Data
+   */
+  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
+  std::vector<Quadrature<1>>                       quadratures;
+  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec;
+  std::vector<const DoFHandler<dim> *>             dof_handler_vec;
 };
 
 } // namespace IncNS

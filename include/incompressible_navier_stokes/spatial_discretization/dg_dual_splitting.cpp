@@ -48,7 +48,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   else if(this->param.preconditioner_viscous == PreconditionerViscous::InverseMassMatrix)
   {
     helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
-      this->matrix_free,
+      this->get_matrix_free(),
       this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
@@ -213,12 +213,12 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_body_forces_add(Vecto
   this->time = time;
 
   VectorType src_dummy;
-  this->matrix_free.loop(&This::cell_loop_empty,
-                         &This::face_loop_empty,
-                         &This::local_rhs_ppe_div_term_body_forces_boundary_face,
-                         this,
-                         dst,
-                         src_dummy);
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_div_term_body_forces_boundary_face,
+                               this,
+                               dst,
+                               src_dummy);
 }
 
 template<int dim, typename Number>
@@ -285,12 +285,12 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_convective_term_add(
   VectorType &       dst,
   VectorType const & src) const
 {
-  this->matrix_free.loop(&This::cell_loop_empty,
-                         &This::face_loop_empty,
-                         &This::local_rhs_ppe_div_term_convective_term_boundary_face,
-                         this,
-                         dst,
-                         src);
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_div_term_convective_term_boundary_face,
+                               this,
+                               dst,
+                               src);
 }
 
 template<int dim, typename Number>
@@ -361,12 +361,12 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_add(VectorType & dst, doub
   this->time = time;
 
   VectorType src_dummy;
-  this->matrix_free.loop(&This::cell_loop_empty,
-                         &This::face_loop_empty,
-                         &This::local_rhs_ppe_nbc_add_boundary_face,
-                         this,
-                         dst,
-                         src_dummy);
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_nbc_add_boundary_face,
+                               this,
+                               dst,
+                               src_dummy);
 }
 
 template<int dim, typename Number>
@@ -432,12 +432,12 @@ void
 DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_convective_add(VectorType &       dst,
                                                                  VectorType const & src) const
 {
-  this->matrix_free.loop(&This::cell_loop_empty,
-                         &This::face_loop_empty,
-                         &This::local_rhs_ppe_nbc_convective_add_boundary_face,
-                         this,
-                         dst,
-                         src);
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_nbc_convective_add_boundary_face,
+                               this,
+                               dst,
+                               src);
 }
 
 template<int dim, typename Number>
@@ -500,12 +500,12 @@ void
 DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  this->matrix_free.loop(&This::cell_loop_empty,
-                         &This::face_loop_empty,
-                         &This::local_rhs_ppe_nbc_viscous_add_boundary_face,
-                         this,
-                         dst,
-                         src);
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_nbc_viscous_add_boundary_face,
+                               this,
+                               dst,
+                               src);
 }
 
 template<int dim, typename Number>
