@@ -181,6 +181,15 @@ MovingMesh<dim, Number>::initialize_vectors()
 {
   navier_stokes_operation->initialize_vector_velocity(grid_velocity);
 
+  if(param.start_with_low_order == true)
+  {
+    get_analytical_grid_velocity(param.start_time);
+    AssertThrow(
+      grid_velocity.l2_norm() <= 1e-5,
+      ExcMessage(
+        "Consider an other mesh moving function (e.g. use MeshMovementAdvanceInTime::SinSquared). For low oder start, the grid velocity has to be 0 at start time to ensure a continuisly differentiable (in time) mesh motion."));
+  }
+
   if(param.grid_velocity_analytical == true)
   {
     get_analytical_grid_velocity(param.start_time);
