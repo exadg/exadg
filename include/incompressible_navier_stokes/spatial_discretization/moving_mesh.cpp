@@ -185,7 +185,7 @@ MovingMesh<dim, Number>::initialize_vectors()
   {
     get_analytical_grid_velocity(param.start_time);
     AssertThrow(
-      grid_velocity.l2_norm() <= 1e-5,
+      grid_velocity.l2_norm() <= std::numeric_limits<Number>::min(),
       ExcMessage(
         "Consider an other mesh moving function (e.g. use MeshMovementAdvanceInTime::SinSquared). For low oder start, the grid velocity has to be 0 at start time to ensure a continuisly differentiable (in time) mesh motion."));
   }
