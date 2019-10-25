@@ -38,14 +38,14 @@ public:
   virtual ~MultigridPreconditioner(){};
 
   void
-  initialize(MultigridData const &                mg_data,
-             parallel::Triangulation<dim> const * tria,
-             FiniteElement<dim> const &           fe,
-             Mapping<dim> const &                 mapping,
-             PDEOperatorNumber const &            pde_operator,
-             MultigridOperatorType const &        mg_operator_type,
-             Map const *                          dirichlet_bc        = nullptr,
-             PeriodicFacePairs *                  periodic_face_pairs = nullptr)
+  initialize(MultigridData const &                    mg_data,
+             parallel::TriangulationBase<dim> const * tria,
+             FiniteElement<dim> const &               fe,
+             Mapping<dim> const &                     mapping,
+             PDEOperatorNumber const &                pde_operator,
+             MultigridOperatorType const &            mg_operator_type,
+             Map const *                              dirichlet_bc        = nullptr,
+             PeriodicFacePairs *                      periodic_face_pairs = nullptr)
   {
     this->pde_operator     = &pde_operator;
     this->mg_operator_type = mg_operator_type;
@@ -116,7 +116,7 @@ public:
 
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
 
-    additional_data.level_mg_handler      = this->level_info[level].h_level();
+    additional_data.mg_level              = this->level_info[level].h_level();
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
 
     MappingFlags flags;
@@ -184,11 +184,11 @@ public:
   }
 
   void
-  initialize_dof_handler_and_constraints(bool const                           operator_is_singular,
-                                         PeriodicFacePairs *                  periodic_face_pairs,
-                                         FiniteElement<dim> const &           fe,
-                                         parallel::Triangulation<dim> const * tria,
-                                         Map const *                          dirichlet_bc)
+  initialize_dof_handler_and_constraints(bool const                 operator_is_singular,
+                                         PeriodicFacePairs *        periodic_face_pairs,
+                                         FiniteElement<dim> const & fe,
+                                         parallel::TriangulationBase<dim> const * tria,
+                                         Map const *                              dirichlet_bc)
   {
     Base::initialize_dof_handler_and_constraints(
       operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);

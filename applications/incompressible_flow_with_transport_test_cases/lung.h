@@ -270,9 +270,8 @@ void set_input_parameters(InputParameters &param)
   // pressure Poisson equation
   param.solver_data_pressure_poisson = SolverData(1000,ABS_TOL,REL_TOL,100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
-  param.multigrid_data_pressure_poisson.type = MultigridType::phMG;
+  param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   param.multigrid_data_pressure_poisson.p_sequence = PSequenceType::Bisect;
-  param.multigrid_data_pressure_poisson.dg_to_cg_transfer = DG_To_CG_Transfer::Fine;
   param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
@@ -345,7 +344,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::ConvectionDiffusion;
-  param.type_velocity_field = TypeVelocityField::Numerical;
+  param.analytical_velocity_field = false;
   param.right_hand_side = false;
 
   // PHYSICAL QUANTITIES
@@ -633,7 +632,7 @@ private:
 
 template<int dim>
 void create_grid_and_set_boundary_ids(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    std::shared_ptr<parallel::TriangulationBase<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)

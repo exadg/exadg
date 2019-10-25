@@ -74,8 +74,8 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
 
     auto & dof_handler = this->get_dof_handler_u();
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    parallel::TriangulationBase<dim> const * tria =
+      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
 
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
@@ -326,9 +326,25 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
-        scalar div_u  = velocity.get_divergence(q);
 
-        scalar flux_times_normal = (grad_u * u + div_u * u) * normal;
+        vector flux;
+        if(this->param.formulation_convective_term_bc ==
+           FormulationConvectiveTerm::DivergenceFormulation)
+        {
+          scalar div_u = velocity.get_divergence(q);
+          flux         = grad_u * u + div_u * u;
+        }
+        else if(this->param.formulation_convective_term_bc ==
+                FormulationConvectiveTerm::ConvectiveFormulation)
+        {
+          flux = grad_u * u;
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
+
+        scalar flux_times_normal = flux * normal;
 
         pressure.submit_value(flux_times_normal, q);
       }
@@ -475,9 +491,22 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_bound
 
         vector u      = velocity.get_value(q);
         tensor grad_u = velocity.get_gradient(q);
-        scalar div_u  = velocity.get_divergence(q);
 
-        h = -normal * (grad_u * u + div_u * u);
+        if(this->param.formulation_convective_term_bc ==
+           FormulationConvectiveTerm::DivergenceFormulation)
+        {
+          scalar div_u = velocity.get_divergence(q);
+          h            = -normal * (grad_u * u + div_u * u);
+        }
+        else if(this->param.formulation_convective_term_bc ==
+                FormulationConvectiveTerm::ConvectiveFormulation)
+        {
+          h = -normal * (grad_u * u);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
 
         pressure.submit_value(h, q);
       }

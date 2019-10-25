@@ -11,6 +11,46 @@
 
 template<int dim, typename Number>
 Number
+linear_interpolation_1d(double const &                              y,
+                        std::vector<Number> const &                 y_values,
+                        std::vector<Tensor<1, dim, Number>> const & solution_values,
+                        unsigned int const &                        component)
+{
+  Number result = 0.0;
+
+  Number const tol = 1.e-2;
+
+  unsigned int const n_points_y = y_values.size();
+
+  AssertThrow((y_values[0] - tol < y) && (y < y_values[n_points_y - 1] + tol),
+              ExcMessage("invalid point found."));
+
+  // interpolate y-coordinates
+  unsigned int iy = 0;
+
+  iy = std::distance(y_values.begin(), std::lower_bound(y_values.begin(), y_values.end(), y));
+  // make sure that the index does not exceed the array bounds in case of round-off errors
+  if(iy == y_values.size())
+    iy--;
+
+  if(iy == 0)
+    iy++;
+
+  Number const weight_yp = (y - y_values[iy - 1]) / (y_values[iy] - y_values[iy - 1]);
+  Number const weight_ym = 1 - weight_yp;
+
+  AssertThrow(-1.e-12 < weight_yp && weight_yp < 1. + 1e-12 && -1.e-12 < weight_ym &&
+                weight_ym < 1. + 1e-12,
+              ExcMessage("invalid weights when interpolating solution in 1D."));
+
+  result =
+    weight_ym * solution_values[iy - 1][component] + weight_yp * solution_values[iy][component];
+
+  return result;
+}
+
+template<int dim, typename Number>
+Number
 linear_interpolation_2d_cartesian(Point<dim> const &                          p,
                                   std::vector<Number> const &                 y_values,
                                   std::vector<Number> const &                 z_values,
@@ -41,6 +81,11 @@ linear_interpolation_2d_cartesian(Point<dim> const &                          p,
   if(iz == z_values.size())
     iz--;
 
+  if(iy == 0)
+    iy++;
+  if(iz == 0)
+    iz++;
+
   Number const weight_yp = (p[1] - y_values[iy - 1]) / (y_values[iy] - y_values[iy - 1]);
   Number const weight_ym = 1 - weight_yp;
   Number const weight_zp = (p[2] - z_values[iz - 1]) / (z_values[iz] - z_values[iz - 1]);
@@ -51,10 +96,10 @@ linear_interpolation_2d_cartesian(Point<dim> const &                          p,
                 -1.e-12 < weight_zm && weight_zm < 1. + 1e-12,
               ExcMessage("invalid weights when interpolating solution in 2D."));
 
-  result = weight_ym * weight_zm * solution_values[(iy - 1) * n_points_y + (iz - 1)][component] +
-           weight_ym * weight_zp * solution_values[(iy - 1) * n_points_y + (iz)][component] +
-           weight_yp * weight_zm * solution_values[(iy)*n_points_y + (iz - 1)][component] +
-           weight_yp * weight_zp * solution_values[(iy)*n_points_y + (iz)][component];
+  result = weight_ym * weight_zm * solution_values[(iy - 1) * n_points_z + (iz - 1)][component] +
+           weight_ym * weight_zp * solution_values[(iy - 1) * n_points_z + (iz)][component] +
+           weight_yp * weight_zm * solution_values[(iy)*n_points_z + (iz - 1)][component] +
+           weight_yp * weight_zp * solution_values[(iy)*n_points_z + (iz)][component];
 
   return result;
 }
@@ -122,10 +167,10 @@ linear_interpolation_2d_cylindrical(Number const                                
               ExcMessage("invalid weights when interpolating solution in 2D."));
 
   result =
-    weight_r_m * weight_phi_m * solution_values[(i_r - 1) * n_points_r + (i_phi - 1)][component] +
-    weight_r_m * weight_phi_p * solution_values[(i_r - 1) * n_points_r + (i_phi)][component] +
-    weight_r_p * weight_phi_m * solution_values[(i_r)*n_points_r + (i_phi - 1)][component] +
-    weight_r_p * weight_phi_p * solution_values[(i_r)*n_points_r + (i_phi)][component];
+    weight_r_m * weight_phi_m * solution_values[(i_r - 1) * n_points_phi + (i_phi - 1)][component] +
+    weight_r_m * weight_phi_p * solution_values[(i_r - 1) * n_points_phi + (i_phi)][component] +
+    weight_r_p * weight_phi_m * solution_values[(i_r)*n_points_phi + (i_phi - 1)][component] +
+    weight_r_p * weight_phi_p * solution_values[(i_r)*n_points_phi + (i_phi)][component];
 
   return result;
 }

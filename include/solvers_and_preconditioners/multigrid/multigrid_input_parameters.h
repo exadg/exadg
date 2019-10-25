@@ -277,7 +277,6 @@ struct MultigridData
 
     if(type != MultigridType::hMG || type != MultigridType::hcMG || type != MultigridType::chMG)
     {
-      std::string str_type[] = {"Go to one", "Decrease by one", "Bisect", "Manual"};
       print_parameter(pcout, "p-sequence", enum_to_string(p_sequence));
     }
 

@@ -385,7 +385,7 @@ public:
 
 template<int dim>
 void create_grid_and_set_boundary_ids_1(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    std::shared_ptr<parallel::TriangulationBase<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)
@@ -454,7 +454,7 @@ void create_grid_and_set_boundary_ids_1(
 
 template<int dim>
 void create_grid_and_set_boundary_ids_2(
-    std::shared_ptr<parallel::Triangulation<dim>>     triangulation,
+    std::shared_ptr<parallel::TriangulationBase<dim>>     triangulation,
     unsigned int const                                n_refine_space,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >            &periodic_faces)

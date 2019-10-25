@@ -87,7 +87,7 @@ public:
    * current time step.
    */
   virtual void
-  do_timestep() = 0;
+  do_timestep(bool const do_write_output = true) = 0;
 
   /*
    * Postprocessing of solution.
@@ -133,7 +133,7 @@ protected:
    * Output estimated computation time until completion of the simulation.
    */
   virtual void
-  output_remaining_time() const;
+  output_remaining_time(bool const do_write_output = true) const;
 
   /*
    * returns whether solver info has to be written in the current time step.

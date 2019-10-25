@@ -7,6 +7,7 @@
 
 // deal.II
 #include <deal.II/base/revision.h>
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_tools.h>
 
@@ -89,7 +90,7 @@ private:
 
   ConditionalOStream pcout;
 
-  std::shared_ptr<parallel::Triangulation<dim>> triangulation_1, triangulation_2;
+  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation_1, triangulation_2;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_1, periodic_faces_2;
 

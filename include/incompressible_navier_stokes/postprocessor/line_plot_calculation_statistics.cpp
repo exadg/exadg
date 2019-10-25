@@ -16,9 +16,9 @@ LinePlotCalculatorStatistics<dim>::LinePlotCalculatorStatistics(
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::Triangulation<dim> *>(
+    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
                    &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::Triangulation<dim> *>(
+                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
                       &dof_handler_velocity.get_triangulation())
                       ->get_communicator()) :
                    MPI_COMM_SELF),
@@ -610,9 +610,9 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::Triangulation<dim> *>(
+    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
                    &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::Triangulation<dim> *>(
+                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
                       &dof_handler_velocity.get_triangulation())
                       ->get_communicator()) :
                    MPI_COMM_SELF),

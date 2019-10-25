@@ -21,6 +21,8 @@ struct OutputDataBase
       output_name("name"),
       output_start_time(std::numeric_limits<double>::max()),
       output_interval_time(std::numeric_limits<double>::max()),
+      write_surface_mesh(false),
+      write_boundary_IDs(false),
       write_higher_order(true),
       degree(1)
   {
@@ -44,6 +46,9 @@ struct OutputDataBase
         print_parameter(pcout, "Output interval time", output_interval_time);
       }
 
+      print_parameter(pcout, "Write surface mesh", write_surface_mesh);
+      print_parameter(pcout, "Write boundary IDs", write_boundary_IDs);
+
       print_parameter(pcout, "Write higher order", write_higher_order);
       print_parameter(pcout, "Polynomial degree", degree);
     }
@@ -65,6 +70,15 @@ struct OutputDataBase
 
   // specifies the time interval in which output is written
   double output_interval_time;
+
+  // this variable decides whether the surface mesh is written separately
+  bool write_surface_mesh;
+
+  // this variable decides whether a vtk-file is written that allows a visualization of boundary
+  // IDs, e.g., to verify that boundary IDs have been set correctly. Note that in the current
+  // version of deal.II, boundaries with ID = 0 (default) are not visible, but only those with 
+  // ID != 0.
+  bool write_boundary_IDs;
 
   // write higher order output (NOTE: requires at least ParaView version 5.5, switch off if ParaView
   // version is lower)

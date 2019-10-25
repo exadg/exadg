@@ -833,7 +833,7 @@ TimeIntBDFPressureCorrection<Number>::solve_steady_problem()
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);
 
       // solve time step
-      this->do_timestep();
+      this->do_timestep(false);
 
       // calculate increment:
       // increment = solution_{n+1} - solution_{n}
@@ -876,7 +876,7 @@ TimeIntBDFPressureCorrection<Number>::solve_steady_problem()
     while(!converged && this->time < (this->end_time - this->eps) &&
           this->get_time_step_number() <= this->param.max_number_of_time_steps)
     {
-      this->do_timestep();
+      this->do_timestep(false);
 
       // check convergence by evaluating the residual of
       // the steady-state incompressible Navier-Stokes equations

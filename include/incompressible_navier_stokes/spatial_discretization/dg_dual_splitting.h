@@ -40,7 +40,7 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesDualSplitting(parallel::Triangulation<dim> const & triangulation,
+  DGNavierStokesDualSplitting(parallel::TriangulationBase<dim> const & triangulation,
                               InputParameters const &              parameters,
                               std::shared_ptr<Postprocessor>       postprocessor)
     : Base(triangulation, parameters, postprocessor), time(0.0)

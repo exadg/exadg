@@ -88,7 +88,7 @@ public:
   // alternative: use more accurate over-integration strategy
   //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
 
-  DGOperator(parallel::Triangulation<dim> const & triangulation,
+  DGOperator(parallel::TriangulationBase<dim> const & triangulation,
              InputParameters const &              param_in,
              std::shared_ptr<Postprocessor>       postprocessor_in);
 

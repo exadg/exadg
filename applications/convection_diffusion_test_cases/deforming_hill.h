@@ -99,7 +99,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
 template<int dim>
 void create_grid_and_set_boundary_ids(
-    std::shared_ptr<parallel::Triangulation<dim>>       triangulation,
+    std::shared_ptr<parallel::TriangulationBase<dim>>       triangulation,
     unsigned int const                                  n_refine_space,
     std::vector<GridTools::PeriodicFacePair<typename
       Triangulation<dim>::cell_iterator> >              &periodic_faces)

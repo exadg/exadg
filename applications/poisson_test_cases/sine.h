@@ -52,7 +52,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::chpMG;
+  param.multigrid_data.type = MultigridType::cphMG;
   param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -75,7 +75,7 @@ set_input_parameters(Poisson::InputParameters &param)
 
 template<int dim>
 void
-create_grid_and_set_boundary_ids(std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >         &periodic_faces,

@@ -9,34 +9,35 @@
 
 namespace IncNS
 {
-template<int dim, typename Number>
-MassMatrixOperator<dim, Number>::MassMatrixOperator() : scaling_factor(1.0)
+template<int dim, int n_components, typename Number>
+MassMatrixOperator<dim, n_components, Number>::MassMatrixOperator() : scaling_factor(1.0)
 {
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-MassMatrixOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
-                                        AffineConstraints<double> const & constraint_matrix,
-                                        MassMatrixOperatorData const &    data)
+MassMatrixOperator<dim, n_components, Number>::reinit(
+  MatrixFree<dim, Number> const &   matrix_free,
+  AffineConstraints<double> const & constraint_matrix,
+  MassMatrixOperatorData const &    data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 
   this->integrator_flags = kernel.get_integrator_flags();
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-MassMatrixOperator<dim, Number>::set_scaling_factor(Number const & number)
+MassMatrixOperator<dim, n_components, Number>::set_scaling_factor(Number const & number)
 {
   scaling_factor = number;
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-MassMatrixOperator<dim, Number>::apply_scale(VectorType &       dst,
-                                             Number const &     factor,
-                                             VectorType const & src) const
+MassMatrixOperator<dim, n_components, Number>::apply_scale(VectorType &       dst,
+                                                           Number const &     factor,
+                                                           VectorType const & src) const
 {
   scaling_factor = factor;
 
@@ -45,11 +46,11 @@ MassMatrixOperator<dim, Number>::apply_scale(VectorType &       dst,
   scaling_factor = 1.0;
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-MassMatrixOperator<dim, Number>::apply_scale_add(VectorType &       dst,
-                                                 Number const &     factor,
-                                                 VectorType const & src) const
+MassMatrixOperator<dim, n_components, Number>::apply_scale_add(VectorType &       dst,
+                                                               Number const &     factor,
+                                                               VectorType const & src) const
 {
   scaling_factor = factor;
 
@@ -58,9 +59,9 @@ MassMatrixOperator<dim, Number>::apply_scale_add(VectorType &       dst,
   scaling_factor = 1.0;
 }
 
-template<int dim, typename Number>
+template<int dim, int n_components, typename Number>
 void
-MassMatrixOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) const
+MassMatrixOperator<dim, n_components, Number>::do_cell_integral(IntegratorCell & integrator) const
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
@@ -68,10 +69,18 @@ MassMatrixOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
   }
 }
 
-template class MassMatrixOperator<2, float>;
-template class MassMatrixOperator<2, double>;
+// scalar
+template class MassMatrixOperator<2, 1, float>;
+template class MassMatrixOperator<2, 1, double>;
 
-template class MassMatrixOperator<3, float>;
-template class MassMatrixOperator<3, double>;
+template class MassMatrixOperator<3, 1, float>;
+template class MassMatrixOperator<3, 1, double>;
+
+// vector
+template class MassMatrixOperator<2, 2, float>;
+template class MassMatrixOperator<2, 2, double>;
+
+template class MassMatrixOperator<3, 3, float>;
+template class MassMatrixOperator<3, 3, double>;
 
 } // namespace IncNS

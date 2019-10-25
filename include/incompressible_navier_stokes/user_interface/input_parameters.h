@@ -460,6 +460,19 @@ public:
   // order of extrapolation of viscous term and convective term in pressure Neumann BC
   unsigned int order_extrapolation_pressure_nbc;
 
+  // description: see enum declaration
+  // The formulation of the convective term in the boundary conditions for the dual
+  // splitting scheme can be chosen independently from the type of formulation used for
+  // the discretization of the convective term in the Navier-Stokes equations.
+  // As a default parameter, FormulationConvectiveTerm::ConvectiveFormulation should be
+  // used (exploiting that div(u)=0 holds in the continuous case). The background is
+  // that for the BDF3 time integration scheme, instabilities have been observed when
+  // using FormulationConvectiveTerm::DivergenceFormulation in the boundary conditions
+  // of the dual splitting scheme (where there are two occurrences, the g_u_hat term
+  // arising form the divergence term on the right-hand side of the pressure Poisson
+  // equation as well as the pressure NBC for the dual splitting scheme).
+  FormulationConvectiveTerm formulation_convective_term_bc;
+
   // CONVECTIVE STEP
 
   // VISCOUS STEP

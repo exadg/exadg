@@ -67,7 +67,7 @@ template<int dim>
 void
 print_grid_data(ConditionalOStream const &           pcout,
                 unsigned int const                   n_refine_space,
-                parallel::Triangulation<dim> const & triangulation)
+                parallel::TriangulationBase<dim> const & triangulation)
 {
   pcout << std::endl
         << "Generating grid for " << dim << "-dimensional problem:" << std::endl
@@ -81,9 +81,9 @@ template<int dim>
 void
 print_grid_data(ConditionalOStream const &           pcout,
                 unsigned int const                   n_refine_space_1,
-                parallel::Triangulation<dim> const & triangulation_1,
+                parallel::TriangulationBase<dim> const & triangulation_1,
                 unsigned int const                   n_refine_space_2,
-                parallel::Triangulation<dim> const & triangulation_2)
+                parallel::TriangulationBase<dim> const & triangulation_2)
 {
   pcout << std::endl
         << "Generating grid for DOMAIN 1 for " << dim << "-dimensional problem:" << std::endl

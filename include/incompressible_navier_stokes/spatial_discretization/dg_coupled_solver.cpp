@@ -11,7 +11,7 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
-  parallel::Triangulation<dim> const & triangulation,
+  parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &              parameters,
   std::shared_ptr<Postprocessor>       postprocessor)
   : Base(triangulation, parameters, postprocessor), scaling_factor_continuity(1.0)
@@ -509,8 +509,8 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 
   auto & dof_handler = this->get_dof_handler_u();
 
-  parallel::Triangulation<dim> const * tria =
-    dynamic_cast<parallel::Triangulation<dim> const *>(&dof_handler.get_triangulation());
+  parallel::TriangulationBase<dim> const * tria =
+    dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
   FiniteElement<dim> const & fe = dof_handler.get_fe();
 
   mg_preconditioner->initialize(this->param.multigrid_data_velocity_block,
@@ -684,8 +684,8 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
 
     auto & dof_handler = this->get_dof_handler_p();
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    parallel::TriangulationBase<dim> const * tria =
+      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
     mg_preconditioner->initialize(
@@ -715,8 +715,8 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
 
     auto & dof_handler = this->get_dof_handler_p();
 
-    parallel::Triangulation<dim> const * tria =
-      dynamic_cast<const parallel::Triangulation<dim> *>(&dof_handler.get_triangulation());
+    parallel::TriangulationBase<dim> const * tria =
+      dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
     mg_preconditioner->initialize(mg_data,
