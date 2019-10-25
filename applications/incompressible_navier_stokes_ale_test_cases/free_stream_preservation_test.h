@@ -46,8 +46,6 @@ double const END_TIME   = 20.0;
 double const SPATIAL_NUMBER_OF_OSCILLATIONS = 1.0;
 bool const MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES = false;
 
-bool const   START_WITH_LOW_ORDER = false;
-
 bool PURE_DIRICHLET = true;
 
 namespace IncNS
@@ -59,7 +57,7 @@ set_input_parameters(InputParameters & param)
   param.ale_formulation                          = true;
   param.grid_velocity_analytical                 = false;
   param.neumann_with_variable_normal_vector      = false;
-  param.start_with_low_order                     = START_WITH_LOW_ORDER;
+  param.start_with_low_order                     = false;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
   param.order_time_integrator                    = 3;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
@@ -329,7 +327,6 @@ set_mesh_movement_function()
   data.t_start = START_TIME;
   data.t_end = END_TIME;
   data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
-  data.start_with_low_order = START_WITH_LOW_ORDER;
   data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;

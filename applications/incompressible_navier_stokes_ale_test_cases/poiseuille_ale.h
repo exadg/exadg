@@ -51,8 +51,6 @@ double const END_TIME   = 10.0;
 double const SPATIAL_NUMBER_OF_OSCILLATIONS = 1.0;
 bool const MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES = false;
 
-bool const   START_WITH_LOW_ORDER = true;
-
 enum class InflowProfile { ConstantProfile, ParabolicProfile };
 const InflowProfile INFLOW_PROFILE = InflowProfile::ParabolicProfile;
 
@@ -64,7 +62,7 @@ void set_input_parameters(InputParameters &param)
   param.grid_velocity_analytical = true;
   param.ale_formulation = true;
   param.neumann_with_variable_normal_vector = false;
-  param.start_with_low_order = START_WITH_LOW_ORDER;
+  param.start_with_low_order = true;
   param.time_step_size = 1.0e-1;
   param.order_time_integrator = 2;
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
@@ -514,7 +512,6 @@ set_mesh_movement_function()
   data.t_start = START_TIME;
   data.t_end = END_TIME;
   data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
-  data.start_with_low_order = START_WITH_LOW_ORDER;
   data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;

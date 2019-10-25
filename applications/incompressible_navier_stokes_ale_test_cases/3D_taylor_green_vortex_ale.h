@@ -60,8 +60,6 @@ bool const MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES = false;
 const double START_TIME = 0.0;
 const double END_TIME = 20.0*CHARACTERISTIC_TIME;
 
-bool const   START_WITH_LOW_ORDER = true;
-
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
@@ -70,7 +68,6 @@ void set_input_parameters(InputParameters &param)
   param.ale_formulation                          = true;
   param.grid_velocity_analytical                 = true;
   param.neumann_with_variable_normal_vector      = false;
-  param.start_with_low_order                     = START_WITH_LOW_ORDER;
 
   // MATHEMATICAL MODEL
   param.dim = 3;
@@ -401,7 +398,6 @@ set_mesh_movement_function()
   data.t_start = START_TIME;
   data.t_end = END_TIME;
   data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
-  data.start_with_low_order = START_WITH_LOW_ORDER;
   data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
 
   std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
