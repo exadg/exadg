@@ -340,9 +340,31 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     if(param.convective_problem())
       time_integrator->reinit_convective_term_considering_former_mesh_instances(
         ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
+
+    // Dual splitting
+    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+    {
+      auto time_integrator_ds = std::dynamic_pointer_cast<TimeIntDualSplitting>(time_integrator);
+
+      if(this->param.divu_integrated_by_parts == true &&
+         this->param.divu_use_boundary_data == true && this->param.convective_problem())
+        time_integrator_ds
+          ->reinit_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
+            ale_operation->get_vec_rhs_ppe_div_term_convective_term_on_former_mesh_instances(
+              eval_times));
+
+      if(this->param.convective_problem())
+        time_integrator_ds->reinit_vec_rhs_ppe_convective_considering_former_mesh_instances(
+          ale_operation->get_vec_rhs_ppe_convective_on_former_mesh_instances(eval_times));
+
+      if(this->param.viscous_problem())
+        time_integrator_ds->reinit_vec_rhs_ppe_viscous_considering_former_mesh_instances(
+          ale_operation->get_vec_rhs_ppe_viscous_on_former_mesh_instances(eval_times));
+    }
+
+    // Pressure-correction
+    //...
   }
-
-
   setup_time = timer.wall_time();
 }
 

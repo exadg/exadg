@@ -20,14 +20,14 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 4;
-unsigned int const DEGREE_MAX = 4;
+unsigned int const DEGREE_MIN = 6;
+unsigned int const DEGREE_MAX = 6;
 
-unsigned int const REFINE_SPACE_MIN = 5;
-unsigned int const REFINE_SPACE_MAX = 5;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 10;
+unsigned int const REFINE_TIME_MIN = 5;
+unsigned int const REFINE_TIME_MAX = 5;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -46,7 +46,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 MeshMovementShape const MESH_MOVEMENT_SHAPE = MeshMovementShape::Sin;
-MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::SinSquared;
+MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::Sin;
 double const LEFT               = -0.5;
 double const RIGHT              = 0.5;
 double const MESH_MOVEMENT_AMPLITUDE = 0.04;
@@ -69,8 +69,8 @@ set_input_parameters(InputParameters & param)
   param.neumann_with_variable_normal_vector      = true;
   param.start_with_low_order                     = false;
   param.time_step_size                           = 0.25; // 0.5;//5e-5;
-  param.order_time_integrator                    = 4;
-  param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
+  param.order_time_integrator                    = 3;
+  param.temporal_discretization                  = TemporalDiscretization::BDFDualSplittingScheme;
   param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping                   = false;
   param.cfl                                      = 0.4;
