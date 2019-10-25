@@ -6,7 +6,7 @@ namespace IncNS
 template<int dim, typename Number>
 MovingMesh<dim, Number>::MovingMesh(
   InputParameters const &                           param_in,
-  std::shared_ptr<parallel::Triangulation<dim>>     triangulation_in,
+  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation_in,
   std::shared_ptr<MeshMovementFunctions<dim>> const mesh_movement_function_in,
   std::shared_ptr<DGNavierStokesBase<dim, Number>>  navier_stokes_operation_in)
   : param(param_in),

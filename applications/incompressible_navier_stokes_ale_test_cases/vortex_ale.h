@@ -74,6 +74,7 @@ set_input_parameters(InputParameters & param)
   param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping                   = false;
   param.cfl                                      = 0.4;
+  param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
   // MATHEMATICAL MODEL
   param.dim                         = 2;
@@ -251,7 +252,7 @@ const double left = LEFT, right = RIGHT;
 template<int dim>
 void
 create_grid_and_set_boundary_ids(
-  std::shared_ptr<parallel::Triangulation<dim>> triangulation,
+    std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
   unsigned int const                            n_refine_space,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
     periodic_faces)
