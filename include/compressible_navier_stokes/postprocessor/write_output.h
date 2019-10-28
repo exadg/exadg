@@ -8,6 +8,8 @@
 #ifndef INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_WRITE_OUTPUT_H_
 #define INCLUDE_COMPRESSIBLE_NAVIER_STOKES_POSTPROCESSOR_WRITE_OUTPUT_H_
 
+#include <fstream>
+
 // postprocessor
 #include "../../postprocessor/output_data.h"
 #include "../../postprocessor/solution_field.h"

@@ -14,8 +14,8 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters,
-  std::shared_ptr<Postprocessor>       postprocessor)
+  InputParameters const &                  parameters,
+  std::shared_ptr<Postprocessor>           postprocessor)
   : Base(triangulation, parameters, postprocessor)
 {
   AssertThrow(this->param.get_degree_p() > 0,
@@ -127,8 +127,9 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
 
     parallel::TriangulationBase<dim> const * tria =
-      dynamic_cast<const parallel::TriangulationBase<dim> *>(&this->dof_handler_p.get_triangulation());
-    const FiniteElement<dim> & fe = this->dof_handler_p.get_fe();
+      dynamic_cast<const parallel::TriangulationBase<dim> *>(
+        &this->get_dof_handler_p().get_triangulation());
+    const FiniteElement<dim> & fe = this->get_dof_handler_p().get_fe();
 
     mg_preconditioner->initialize(mg_data,
                                   tria,
