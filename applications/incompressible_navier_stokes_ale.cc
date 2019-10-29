@@ -363,8 +363,10 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       }
 
       if(this->param.viscous_problem())
+      {
         time_integrator_ds->set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
           ale_operation->get_vec_rhs_ppe_viscous_on_former_mesh_instances(eval_times));
+      }
     }
 
     // Pressure-correction

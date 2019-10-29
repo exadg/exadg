@@ -71,7 +71,9 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
     // meshes and is triggered in the main file (incompressible_navier_stokes_ale.cc)
     initialize_vec_convective_term();
 
-    if(this->param.ale_formulation == true)
+    // In the ale case, initialization of the time integrator is just performed for low_order start;
+    // otherwise the initialization is performed in the main file, utilizing the moving_mesh class
+    if(this->param.ale_formulation == true && this->param.start_with_low_order == true)
     {
       if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
         initialize_vec_rhs_ppe_div_term_convective_term();
@@ -80,9 +82,10 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
     }
   }
 
-
-
-  if(this->param.ale_formulation && this->param.viscous_problem())
+  // In the ale case, initialization of the time integrator is just performed for low_order start;
+  // otherwise the initialization is performed in the main file, utilizing the moving_mesh class
+  if(this->param.viscous_problem() && this->param.ale_formulation &&
+     this->param.start_with_low_order == true)
     initialize_vec_rhs_ppe_viscous();
 }
 
@@ -195,9 +198,12 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
   }
   else
   {
-    this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                  velocity[0],
-                                                  this->get_time());
+    // In the ale case, initialization of the time integrator is just performed for low_order start;
+    // otherwise the initialization is performed in the main file, utilizing the moving_mesh class
+    if(this->param.start_with_low_order == true)
+      this->operator_base->evaluate_convective_term(vec_convective_term[0],
+                                                    velocity[0],
+                                                    this->get_time());
   }
 }
 
@@ -409,10 +415,10 @@ TimeIntBDFDualSplitting<Number>::convective_step()
     }
     else /*this->param.ale_formulation == true*/
     {
-      //in the ale case the mass matrix has to be applied at t^{n+1}
-      //therefore it is not possible to evaluate the convective term and directly apply
-      //the inverse mass matrix, as it is done in the euler case since due to the push back
-      //design, different mass matrices at $t^{n-i}$ would be considered
+      // in the ale case the mass matrix has to be applied at t^{n+1}
+      // therefore it is not possible to evaluate the convective term and directly apply
+      // the inverse mass matrix, as it is done in the euler case since due to the push back
+      // design, different mass matrices at $t^{n-i}$ would be considered
 
       // convective_term_np is used as temporary variable
       convective_term_np.equ(-this->extra.get_beta(0), vec_convective_term[0]);
@@ -1042,7 +1048,7 @@ void
 TimeIntBDFDualSplitting<Number>::set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
   std::vector<VectorType> vec_rhs_ppe_viscous_in)
 {
-  for(unsigned int i = 1; i < vec_rhs_ppe_viscous.size(); ++i)
+  for(unsigned int i = 0; i < vec_rhs_ppe_viscous.size(); ++i)
   {
     vec_rhs_ppe_viscous[i] = vec_rhs_ppe_viscous_in[i];
   }

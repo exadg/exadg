@@ -72,7 +72,7 @@ MovingMesh<dim, Number>::initialize_grid_coordinates_on_former_mesh_instances(
   std::vector<double> eval_times)
 {
   // Iterating backwards leaves us with the mesh at start time automatically
-  for(unsigned int i = param.order_time_integrator - 1; i < param.order_time_integrator; --i)
+  for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
     advance_mesh(eval_times[i]);
     navier_stokes_operation->ale_update();
@@ -98,7 +98,7 @@ MovingMesh<dim, Number>::get_former_solution_on_former_mesh_instances(
     navier_stokes_operation->initialize_vector_pressure(solution[i].block(1));
   }
 
-  for(unsigned int i = param.order_time_integrator - 1; i < param.order_time_integrator; --i)
+  for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
     advance_mesh(eval_times[i]);
     navier_stokes_operation->ale_update();
@@ -122,7 +122,7 @@ MovingMesh<dim, Number>::get_convective_term_on_former_mesh_instances(
     navier_stokes_operation->initialize_vector_velocity(vec_convective_term[i]);
 
   // Iterating backwards leaves us with the mesh at start time automatically
-  for(unsigned int i = param.order_time_integrator - 1; i < param.order_time_integrator; --i)
+  for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
     advance_mesh(eval_times[i]);
     navier_stokes_operation->ale_update();
@@ -152,7 +152,7 @@ MovingMesh<dim, Number>::get_vec_rhs_ppe_div_term_convective_term_on_former_mesh
     std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, Number>>(navier_stokes_operation);
 
   // Iterating backwards leaves us with the mesh at start time automatically
-  for(unsigned int i = param.order_time_integrator - 1; i < param.order_time_integrator; --i)
+  for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
     advance_mesh(eval_times[i]);
     navier_stokes_operation->ale_update();
@@ -182,9 +182,7 @@ MovingMesh<dim, Number>::get_vec_rhs_ppe_convective_on_former_mesh_instances(
     std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, Number>>(navier_stokes_operation);
 
   // Iterating backwards leaves us with the mesh at start time automatically
-  for(unsigned int i = param.order_extrapolation_pressure_nbc - 1;
-      i < param.order_extrapolation_pressure_nbc;
-      --i)
+  for(int i = param.order_extrapolation_pressure_nbc - 1; i >= 0; --i)
   {
     advance_mesh(eval_times[i]);
     navier_stokes_operation->ale_update();
@@ -204,9 +202,9 @@ std::vector<LinearAlgebra::distributed::Vector<Number>>
 MovingMesh<dim, Number>::get_vec_rhs_ppe_viscous_on_former_mesh_instances(
   std::vector<double> eval_times)
 {
+  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
   std::vector<VectorType>      vec_rhs_ppe_viscous(param.order_extrapolation_pressure_nbc);
   VectorType                   vorticity;
-  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
 
   for(unsigned int i = 0; i < vec_rhs_ppe_viscous.size(); ++i)
     navier_stokes_operation->initialize_vector_pressure(vec_rhs_ppe_viscous[i]);
@@ -215,16 +213,12 @@ MovingMesh<dim, Number>::get_vec_rhs_ppe_viscous_on_former_mesh_instances(
   auto navier_stokes_operation_ds =
     std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, Number>>(navier_stokes_operation);
 
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(unsigned int i = param.order_extrapolation_pressure_nbc - 1;
-      i < param.order_extrapolation_pressure_nbc;
-      --i)
+  for(int i = param.order_extrapolation_pressure_nbc - 1; i >= 0; --i)
   {
     advance_mesh(eval_times[i]);
     navier_stokes_operation->ale_update();
 
     vec_rhs_ppe_viscous[i] = 0.0;
-
     navier_stokes_operation->compute_vorticity(vorticity, solution[i].block(0));
     navier_stokes_operation_ds->rhs_ppe_viscous_add(vec_rhs_ppe_viscous[i], vorticity);
   }
