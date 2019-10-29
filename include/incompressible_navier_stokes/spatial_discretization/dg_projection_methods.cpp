@@ -30,10 +30,25 @@ DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
 
 template<int dim, typename Number>
 void
+DGNavierStokesProjectionMethods<dim, Number>::setup(
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+{
+  DGNavierStokesBase<dim, Number>::setup(periodic_face_pairs_in,
+                                         boundary_descriptor_velocity_in,
+                                         boundary_descriptor_pressure_in,
+                                         field_functions_in);
+
+  initialize_laplace_operator();
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesProjectionMethods<dim, Number>::setup_pressure_poisson_solver()
 {
-  initialize_laplace_operator();
-
   initialize_preconditioner_pressure_poisson();
 
   initialize_solver_pressure_poisson();

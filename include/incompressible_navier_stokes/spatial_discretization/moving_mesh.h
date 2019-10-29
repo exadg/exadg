@@ -5,7 +5,9 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 
+#include "dg_dual_splitting.h"
 #include "dg_navier_stokes_base.h"
+#include "dg_pressure_correction.h"
 
 using namespace dealii;
 
@@ -44,6 +46,19 @@ public:
 
   std::vector<VectorType>
   get_convective_term_on_former_mesh_instances(std::vector<double> eval_times);
+
+  // Dual splitting
+  std::vector<VectorType>
+  get_vec_rhs_ppe_div_term_convective_term_on_former_mesh_instances(std::vector<double> eval_times);
+
+  std::vector<VectorType>
+  get_vec_rhs_ppe_convective_on_former_mesh_instances(std::vector<double> eval_times);
+
+  std::vector<VectorType>
+  get_vec_rhs_ppe_viscous_on_former_mesh_instances(std::vector<double> eval_times);
+
+  // Pressure-correction
+  //...
 
   VectorType
   get_grid_velocity() const;

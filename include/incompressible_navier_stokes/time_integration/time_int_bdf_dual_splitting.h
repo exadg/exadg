@@ -54,28 +54,24 @@ public:
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
   void
-  reinit_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) override
-  {
-    for(unsigned int i = 1; i < velocity.size(); ++i)
-    {
-      velocity[i] = solution_in[i].block(0);
-      pressure[i] = solution_in[i].block(1);
-    }
-    // TODO: CHECK IF OTHER QUANTITIES ARE INITIALIZED AT PREVIOUS TIMES
-  }
+  set_former_solution_considering_former_mesh_instances(
+    std::vector<BlockVectorType> solution_in) override;
 
   void
-  reinit_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> convective_term_in) override
-  {
-    // it is important to start at i=0!
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-    {
-      vec_convective_term[i] = convective_term_in[i];
-    }
-    // TODO: CHECK IF OTHER QUANTITIES ARE INITIALIZED AT PREVIOUS TIMES
-  }
+  set_convective_term_considering_former_mesh_instances(
+    std::vector<VectorType> convective_term_in) override;
+
+  void
+  set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
+    std::vector<VectorType> vec_rhs_ppe_div_term_convective_term_in);
+
+  void
+  set_vec_rhs_ppe_convective_considering_former_mesh_instances(
+    std::vector<VectorType> vec_rhs_ppe_convective_in);
+
+  void
+  set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
+    std::vector<VectorType> vec_rhs_ppe_viscous_in);
 
 private:
   void
@@ -113,6 +109,15 @@ private:
 
   void
   initialize_vec_convective_term();
+
+  void
+  initialize_vec_rhs_ppe_div_term_convective_term();
+
+  void
+  initialize_vec_rhs_ppe_convective();
+
+  void
+  initialize_vec_rhs_ppe_viscous();
 
   void
   pressure_step();
@@ -164,8 +169,20 @@ private:
   VectorType pressure_np;
 
   std::vector<VectorType> vorticity;
+  VectorType              vorticity_np;
 
   std::vector<VectorType> vec_convective_term;
+  VectorType              convective_term_np;
+
+  std::vector<VectorType> vec_rhs_ppe_div_term_convective_term;
+  VectorType              rhs_ppe_div_term_convective_term_np;
+
+  std::vector<VectorType> vec_rhs_ppe_convective;
+  VectorType              rhs_ppe_convective_np;
+
+  std::vector<VectorType> vec_rhs_ppe_viscous;
+  VectorType              rhs_ppe_viscous_np;
+
 
   std::vector<double>       computing_times;
   std::vector<unsigned int> iterations;

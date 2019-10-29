@@ -58,11 +58,11 @@ public:
   get_current_time_integrator_constants() const;
 
   virtual void
-  reinit_former_solution_considering_former_mesh_instances(
+  set_former_solution_considering_former_mesh_instances(
     std::vector<BlockVectorType> solution_in) = 0;
 
   virtual void
-  reinit_convective_term_considering_former_mesh_instances(
+  set_convective_term_considering_former_mesh_instances(
     std::vector<VectorType> convective_term_in) = 0;
 
   void
