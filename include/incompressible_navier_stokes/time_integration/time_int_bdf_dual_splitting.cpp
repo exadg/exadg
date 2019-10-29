@@ -409,6 +409,11 @@ TimeIntBDFDualSplitting<Number>::convective_step()
     }
     else /*this->param.ale_formulation == true*/
     {
+      //in the ale case the mass matrix has to be applied at t^{n+1}
+      //therefore it is not possible to evaluate the convective term and directly apply
+      //the inverse mass matrix, as it is done in the euler case since due to the push back
+      //design, different mass matrices at $t^{n-i}$ would be considered
+
       // convective_term_np is used as temporary variable
       convective_term_np.equ(-this->extra.get_beta(0), vec_convective_term[0]);
 
@@ -597,9 +602,6 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
     VectorType tmp(vorticity[0]);
     for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
     {
-      //      tmp = 0.0;
-      //      pde_operator->rhs_ppe_viscous_add(tmp, vorticity[i]);
-
       rhs.add(this->extra_pressure_nbc.get_beta(i), vec_rhs_ppe_viscous[i]);
     }
   }
