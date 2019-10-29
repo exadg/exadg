@@ -198,16 +198,6 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
     this->operator_base->evaluate_convective_term(vec_convective_term[0],
                                                   velocity[0],
                                                   this->get_time());
-
-    if(this->param.start_with_low_order == false)
-    {
-      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-      {
-        this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                      velocity[i],
-                                                      this->get_previous_time(i));
-      }
-    }
   }
 }
 
@@ -218,15 +208,6 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_div_term_convective_term
   vec_rhs_ppe_div_term_convective_term[0] = 0.0;
   pde_operator->rhs_ppe_div_term_convective_term_add(vec_rhs_ppe_div_term_convective_term[0],
                                                      velocity[0]);
-  if(this->param.start_with_low_order == false)
-  {
-    for(unsigned int i = 1; i < vec_rhs_ppe_div_term_convective_term.size(); ++i)
-    {
-      vec_rhs_ppe_div_term_convective_term[i] = 0.0;
-      pde_operator->rhs_ppe_div_term_convective_term_add(vec_rhs_ppe_div_term_convective_term[i],
-                                                         velocity[i]);
-    }
-  }
 }
 
 template<typename Number>
@@ -235,14 +216,6 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_convective()
 {
   vec_rhs_ppe_convective[0] = 0.0;
   pde_operator->rhs_ppe_convective_add(vec_rhs_ppe_convective[0], velocity[0]);
-  if(this->param.start_with_low_order == false)
-  {
-    for(unsigned int i = 1; i < vec_rhs_ppe_convective.size(); ++i)
-    {
-      vec_rhs_ppe_convective[i] = 0.0;
-      pde_operator->rhs_ppe_convective_add(vec_rhs_ppe_convective[i], velocity[i]);
-    }
-  }
 }
 
 template<typename Number>
@@ -250,17 +223,7 @@ void
 TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_viscous()
 {
   vec_rhs_ppe_viscous[0] = 0.0;
-
   pde_operator->rhs_ppe_viscous_add(vec_rhs_ppe_viscous[0], vorticity[0]);
-
-  if(this->param.start_with_low_order == false)
-  {
-    for(unsigned int i = 1; i < vec_rhs_ppe_viscous.size(); ++i)
-    {
-      vec_rhs_ppe_viscous[i] = 0.0;
-      pde_operator->rhs_ppe_viscous_add(vec_rhs_ppe_viscous[i], vorticity[i]);
-    }
-  }
 }
 
 template<typename Number>
