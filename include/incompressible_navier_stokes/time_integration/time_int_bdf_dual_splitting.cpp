@@ -63,14 +63,24 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
 {
   initialize_vorticity();
 
-  initialize_vec_convective_term();
+  if(this->param.convective_problem())
+  {
+    // initialize_vec_convective_term() has to be called in any way.
+    // The initialization in the Euler and ALE case differ, these cases are distinguished inside the
+    // function The initialization for the ALE case for high_order start has to perform on different
+    // meshes and is triggered in the main file (incompressible_navier_stokes_ale.cc)
+    initialize_vec_convective_term();
 
-  if(this->param.ale_formulation == true && this->param.divu_integrated_by_parts == true &&
-     this->param.divu_use_boundary_data == true && this->param.convective_problem())
-    initialize_vec_rhs_ppe_div_term_convective_term();
+    if(this->param.ale_formulation == true)
+    {
+      if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
+        initialize_vec_rhs_ppe_div_term_convective_term();
 
-  if(this->param.ale_formulation == true && this->param.convective_problem())
-    initialize_vec_rhs_ppe_convective();
+      initialize_vec_rhs_ppe_convective();
+    }
+  }
+
+
 
   if(this->param.ale_formulation && this->param.viscous_problem())
     initialize_vec_rhs_ppe_viscous();
@@ -100,28 +110,27 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
   // vec_convective_term
   if(this->param.convective_problem())
   {
-    if(this->param.ale_formulation == true)
-      this->operator_base->initialize_vector_velocity(convective_term_np);
-
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
-  }
 
-  if(this->param.ale_formulation == true && this->param.convective_problem())
-  {
-    if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
+    if(this->param.ale_formulation == true)
     {
-      for(unsigned int i = 0; i < vec_rhs_ppe_div_term_convective_term.size(); ++i)
-        this->operator_base->initialize_vector_pressure(vec_rhs_ppe_div_term_convective_term[i]);
-      this->operator_base->initialize_vector_pressure(rhs_ppe_div_term_convective_term_np);
-    }
+      this->operator_base->initialize_vector_velocity(convective_term_np);
 
-    for(unsigned int i = 0; i < vec_rhs_ppe_convective.size(); ++i)
-      this->operator_base->initialize_vector_pressure(vec_rhs_ppe_convective[i]);
-    this->operator_base->initialize_vector_pressure(rhs_ppe_convective_np);
+      for(unsigned int i = 0; i < vec_rhs_ppe_convective.size(); ++i)
+        this->operator_base->initialize_vector_pressure(vec_rhs_ppe_convective[i]);
+      this->operator_base->initialize_vector_pressure(rhs_ppe_convective_np);
+
+      if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
+      {
+        for(unsigned int i = 0; i < vec_rhs_ppe_div_term_convective_term.size(); ++i)
+          this->operator_base->initialize_vector_pressure(vec_rhs_ppe_div_term_convective_term[i]);
+        this->operator_base->initialize_vector_pressure(rhs_ppe_div_term_convective_term_np);
+      }
+    }
   }
 
-  if(this->param.ale_formulation && this->param.viscous_problem())
+  if(this->param.viscous_problem() && this->param.ale_formulation)
   {
     for(unsigned int i = 0; i < vec_rhs_ppe_viscous.size(); ++i)
       this->operator_base->initialize_vector_pressure(vec_rhs_ppe_viscous[i]);
@@ -171,9 +180,9 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
 {
-  if(this->param.convective_problem() && this->param.start_with_low_order == false)
+  if(this->param.ale_formulation == false)
   {
-    if(this->param.ale_formulation == false)
+    if(this->param.start_with_low_order == false)
     {
       // note that the loop begins with i=1! (we could also start with i=0 but this is not
       // necessary)
@@ -183,20 +192,20 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
           vec_convective_term[i], velocity[i], this->get_previous_time(i));
       }
     }
-    else /*this->param.ale_formulation==true*/
-    {
-      this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                    velocity[0],
-                                                    this->get_time());
+  }
+  else
+  {
+    this->operator_base->evaluate_convective_term(vec_convective_term[0],
+                                                  velocity[0],
+                                                  this->get_time());
 
-      if(this->param.start_with_low_order == false)
+    if(this->param.start_with_low_order == false)
+    {
+      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
       {
-        for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-        {
-          this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                        velocity[i],
-                                                        this->get_previous_time(i));
-        }
+        this->operator_base->evaluate_convective_term(vec_convective_term[i],
+                                                      velocity[i],
+                                                      this->get_previous_time(i));
       }
     }
   }
@@ -435,7 +444,7 @@ TimeIntBDFDualSplitting<Number>::convective_step()
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
     }
-    else /*this->param.ale_formulation == false*/
+    else /*this->param.ale_formulation == true*/
     {
       // convective_term_np is used as temporary variable
       convective_term_np.equ(-this->extra.get_beta(0), vec_convective_term[0]);
@@ -803,8 +812,8 @@ TimeIntBDFDualSplitting<Number>::viscous_step()
     AssertThrow(this->param.equation_type == EquationType::Euler, ExcMessage("Logical error."));
   }
 
-
   this->operator_base->compute_vorticity(vorticity_np, velocity_np);
+
   if(this->param.ale_formulation == true)
   {
     if(this->param.convective_problem())
@@ -830,8 +839,6 @@ TimeIntBDFDualSplitting<Number>::viscous_step()
       pde_operator->rhs_ppe_viscous_add(rhs_ppe_viscous_np, vorticity_np);
     }
   }
-
-
 
   computing_times[3] += timer.wall_time();
 }
@@ -868,6 +875,7 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
   if(this->param.convective_problem())
   {
     push_back(vec_convective_term);
+
     if(this->param.ale_formulation == true)
     {
       vec_convective_term[0].swap(convective_term_np);
