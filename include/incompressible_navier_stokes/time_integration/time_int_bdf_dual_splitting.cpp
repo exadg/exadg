@@ -985,7 +985,7 @@ TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
 
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::reinit_former_solution_considering_former_mesh_instances(
+TimeIntBDFDualSplitting<Number>::set_former_solution_considering_former_mesh_instances(
   std::vector<BlockVectorType> solution_in)
 {
   for(unsigned int i = 1; i < velocity.size(); ++i)
@@ -997,7 +997,7 @@ TimeIntBDFDualSplitting<Number>::reinit_former_solution_considering_former_mesh_
 
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::reinit_convective_term_considering_former_mesh_instances(
+TimeIntBDFDualSplitting<Number>::set_convective_term_considering_former_mesh_instances(
   std::vector<VectorType> convective_term_in)
 {
   // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
@@ -1011,7 +1011,7 @@ TimeIntBDFDualSplitting<Number>::reinit_convective_term_considering_former_mesh_
 template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::
-  reinit_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
+  set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
     std::vector<VectorType> vec_rhs_ppe_div_term_convective_term_in)
 {
   // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
@@ -1024,7 +1024,7 @@ TimeIntBDFDualSplitting<Number>::
 //
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::reinit_vec_rhs_ppe_convective_considering_former_mesh_instances(
+TimeIntBDFDualSplitting<Number>::set_vec_rhs_ppe_convective_considering_former_mesh_instances(
   std::vector<VectorType> vec_rhs_ppe_convective_in)
 {
   // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
@@ -1037,7 +1037,7 @@ TimeIntBDFDualSplitting<Number>::reinit_vec_rhs_ppe_convective_considering_forme
 
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::reinit_vec_rhs_ppe_viscous_considering_former_mesh_instances(
+TimeIntBDFDualSplitting<Number>::set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
   std::vector<VectorType> vec_rhs_ppe_viscous_in)
 {
   for(unsigned int i = 1; i < vec_rhs_ppe_viscous.size(); ++i)

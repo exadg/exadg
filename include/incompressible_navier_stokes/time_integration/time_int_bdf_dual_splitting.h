@@ -54,23 +54,23 @@ public:
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
   void
-  reinit_former_solution_considering_former_mesh_instances(
+  set_former_solution_considering_former_mesh_instances(
     std::vector<BlockVectorType> solution_in) override;
 
   void
-  reinit_convective_term_considering_former_mesh_instances(
+  set_convective_term_considering_former_mesh_instances(
     std::vector<VectorType> convective_term_in) override;
 
   void
-  reinit_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
+  set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
     std::vector<VectorType> vec_rhs_ppe_div_term_convective_term_in);
 
   void
-  reinit_vec_rhs_ppe_convective_considering_former_mesh_instances(
+  set_vec_rhs_ppe_convective_considering_former_mesh_instances(
     std::vector<VectorType> vec_rhs_ppe_convective_in);
 
   void
-  reinit_vec_rhs_ppe_viscous_considering_former_mesh_instances(
+  set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
     std::vector<VectorType> vec_rhs_ppe_viscous_in);
 
 private:
