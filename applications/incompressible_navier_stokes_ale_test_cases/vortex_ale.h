@@ -26,7 +26,7 @@ unsigned int const DEGREE_MAX = 6;
 unsigned int const REFINE_SPACE_MIN = 3;
 unsigned int const REFINE_SPACE_MAX = 3;
 
-unsigned int const REFINE_TIME_MIN = 5;
+unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 5;
 
 
@@ -46,7 +46,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 MeshMovementShape const MESH_MOVEMENT_SHAPE = MeshMovementShape::Sin;
-MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::Sin;
+MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::SinSquared;
 double const LEFT               = -0.5;
 double const RIGHT              = 0.5;
 double const MESH_MOVEMENT_AMPLITUDE = 0.04;
@@ -69,12 +69,13 @@ set_input_parameters(InputParameters & param)
   param.neumann_with_variable_normal_vector      = true;
   param.start_with_low_order                     = false;
   param.time_step_size                           = 0.25; // 0.5;//5e-5;
-  param.order_time_integrator                    = 3;
-  param.temporal_discretization                  = TemporalDiscretization::BDFDualSplittingScheme;
+  param.order_time_integrator                    = 2;
+  param.temporal_discretization                  = TemporalDiscretization::BDFPressureCorrection;
   param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping                   = false;
   param.cfl                                      = 0.4;
   param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
+  param.extrapolate_pressure_predictor_on_former_mesh_instances = true;
 
   // MATHEMATICAL MODEL
   param.dim                         = 2;

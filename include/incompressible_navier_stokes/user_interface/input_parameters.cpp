@@ -28,6 +28,9 @@ InputParameters::InputParameters()
     grid_velocity_analytical(true),
     ale_formulation(false),
     neumann_with_variable_normal_vector(false),
+    // false is chosen as a default value, since extrapolation considering former mesh
+    // instances doesnt yield optimal temporal rates of convergence for BDF2 (in the ALE case)
+    extrapolate_pressure_predictor_on_former_mesh_instances(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
@@ -445,11 +448,6 @@ InputParameters::check_input_parameters()
       formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
       ExcMessage(
         "convective formulation of convective operator has to be used since the grid velocity might not be divergence free"));
-    AssertThrow(
-      temporal_discretization == TemporalDiscretization::BDFCoupledSolution ||
-        temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme,
-      ExcMessage(
-        "only BDFCoupledSolution and BDFDualSplittingScheme has been implemented on moving meshes"));
     AssertThrow(problem_type == ProblemType::Unsteady,
                 ExcMessage("physically steady problems become unsteady on moving meshes."));
 

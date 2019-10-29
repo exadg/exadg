@@ -95,13 +95,24 @@ public:
    * Constructor.
    */
   DGNavierStokesPressureCorrection(parallel::TriangulationBase<dim> const & triangulation,
-                                   InputParameters const &              parameters,
-                                   std::shared_ptr<Postprocessor>       postprocessor);
+                                   InputParameters const &                  parameters,
+                                   std::shared_ptr<Postprocessor>           postprocessor);
 
   /*
    * Destructor.
    */
   virtual ~DGNavierStokesPressureCorrection();
+
+  /*
+   * Calls setup() function of base class and additionally initializes the pressure mass matrix
+   * operator needed for the pressure correction scheme in the ALE case.
+   */
+  virtual void
+  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                        periodic_face_pairs,
+        std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+        std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
@@ -183,6 +194,9 @@ public:
   void
   apply_inverse_pressure_mass_matrix(VectorType & dst, VectorType const & src) const;
 
+  void
+  apply_pressure_mass_matrix(VectorType & dst, VectorType const & src) const;
+
   /*
    * pressure Poisson equation.
    */
@@ -224,6 +238,7 @@ private:
   setup_inverse_mass_matrix_operator_pressure();
 
   InverseMassMatrixOperator<dim, 1, Number> inverse_mass_pressure;
+  MassMatrixOperator<dim, 1, Number>        mass_matrix_pressure;
 
   /*
    * Momentum equation.

@@ -321,6 +321,9 @@ public:
   apply_inverse_pressure_mass_matrix(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
+  apply_pressure_mass_matrix(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
   rhs_pressure_gradient_term(VectorType & dst, double const time) const = 0;
 
   virtual void

@@ -12,8 +12,8 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters,
-  std::shared_ptr<Postprocessor>       postprocessor)
+  InputParameters const &                  parameters,
+  std::shared_ptr<Postprocessor>           postprocessor)
   : Base(triangulation, parameters, postprocessor)
 {
 }
@@ -21,6 +21,36 @@ DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::~DGNavierStokesPressureCorrection()
 {
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::setup(
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+{
+  DGNavierStokesProjectionMethods<dim, Number>::setup(periodic_face_pairs_in,
+                                                      boundary_descriptor_velocity_in,
+                                                      boundary_descriptor_pressure_in,
+                                                      field_functions_in);
+
+
+  if(this->param.ale_formulation)
+  {
+    AffineConstraints<double> constraint_dummy;
+    constraint_dummy.close();
+
+    // pressure mass matrix operator
+    MassMatrixOperatorData mass_matrix_operator_data;
+    mass_matrix_operator_data.dof_index  = this->get_dof_index_pressure();
+    mass_matrix_operator_data.quad_index = this->get_quad_index_pressure();
+    mass_matrix_pressure.reinit(this->get_matrix_free(),
+                                constraint_dummy,
+                                mass_matrix_operator_data);
+  }
 }
 
 template<int dim, typename Number>
@@ -337,6 +367,15 @@ DGNavierStokesPressureCorrection<dim, Number>::apply_inverse_pressure_mass_matri
   VectorType const & src) const
 {
   inverse_mass_pressure.apply(dst, src);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::apply_pressure_mass_matrix(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  mass_matrix_pressure.apply(dst, src);
 }
 
 template<int dim, typename Number>

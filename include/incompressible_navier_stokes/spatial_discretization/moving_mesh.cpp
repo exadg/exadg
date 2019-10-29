@@ -227,6 +227,65 @@ MovingMesh<dim, Number>::get_vec_rhs_ppe_viscous_on_former_mesh_instances(
 }
 
 template<int dim, typename Number>
+std::vector<LinearAlgebra::distributed::Vector<Number>>
+MovingMesh<dim, Number>::get_vec_pressure_gradient_term_on_former_mesh_instances(
+  std::vector<double> eval_times)
+{
+  std::vector<VectorType>      vec_pressure_gradient_term(param.order_pressure_extrapolation);
+  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
+
+  for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
+  {
+    navier_stokes_operation->initialize_vector_velocity(vec_pressure_gradient_term[i]);
+  }
+
+  // Iterating backwards leaves us with the mesh at start time automatically
+  for(int i = param.order_pressure_extrapolation - 1; i >= 0; --i)
+  {
+    advance_mesh(eval_times[i]);
+    navier_stokes_operation->ale_update();
+
+    navier_stokes_operation->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
+                                                             solution[i].block(1),
+                                                             eval_times[i]);
+  }
+  return vec_pressure_gradient_term;
+}
+
+template<int dim, typename Number>
+std::vector<LinearAlgebra::distributed::Vector<Number>>
+MovingMesh<dim, Number>::get_pressure_mass_matrix_term_on_former_mesh_instances(
+  std::vector<double> eval_times)
+{
+  auto navier_stokes_operation_pc =
+    std::dynamic_pointer_cast<DGNavierStokesPressureCorrection<dim, Number>>(
+      navier_stokes_operation);
+
+  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
+
+  std::vector<VectorType> vec_pressure_mass_matrix_term(param.order_pressure_extrapolation);
+
+  for(unsigned int i = 0; i < vec_pressure_mass_matrix_term.size(); ++i)
+  {
+    navier_stokes_operation->initialize_vector_pressure(vec_pressure_mass_matrix_term[i]);
+  }
+
+  // Iterating backwards leaves us with the mesh at start time automatically
+  for(int i = vec_pressure_mass_matrix_term.size() - 1; i >= 0; --i)
+  {
+    advance_mesh(eval_times[i]);
+    navier_stokes_operation->ale_update();
+
+    vec_pressure_mass_matrix_term[i] = 0.0;
+
+    navier_stokes_operation_pc->apply_pressure_mass_matrix(vec_pressure_mass_matrix_term[i],
+                                                           solution[i].block(1));
+  }
+
+  return vec_pressure_mass_matrix_term;
+}
+
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number>
 MovingMesh<dim, Number>::get_grid_velocity() const
 {

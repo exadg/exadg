@@ -347,10 +347,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     {
       auto time_integrator_ds = std::dynamic_pointer_cast<TimeIntDualSplitting>(time_integrator);
 
-      if(this->param.convective_problem())
+      if(param.convective_problem())
       {
-        if(this->param.divu_integrated_by_parts == true &&
-           this->param.divu_use_boundary_data == true)
+        if(param.divu_integrated_by_parts == true && param.divu_use_boundary_data == true)
         {
           time_integrator_ds
             ->set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
@@ -362,7 +361,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
           ale_operation->get_vec_rhs_ppe_convective_on_former_mesh_instances(eval_times));
       }
 
-      if(this->param.viscous_problem())
+      if(param.viscous_problem())
       {
         time_integrator_ds->set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
           ale_operation->get_vec_rhs_ppe_viscous_on_former_mesh_instances(eval_times));
@@ -370,8 +369,22 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     }
 
     // Pressure-correction
-    //...
+    if(param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+    {
+      auto time_integrator_pc =
+        std::dynamic_pointer_cast<TimeIntPressureCorrection>(time_integrator);
+
+      if(param.order_pressure_extrapolation > 0)
+      {
+        time_integrator_pc->set_vec_pressure_gradient_term_considering_former_mesh_instances(
+          ale_operation->get_vec_pressure_gradient_term_on_former_mesh_instances(eval_times));
+
+        time_integrator_pc->set_pressure_mass_matrix_considering_former_mesh_instances(
+          ale_operation->get_pressure_mass_matrix_term_on_former_mesh_instances(eval_times));
+      }
+    }
   }
+
   setup_time = timer.wall_time();
 }
 

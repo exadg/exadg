@@ -58,7 +58,11 @@ public:
   get_vec_rhs_ppe_viscous_on_former_mesh_instances(std::vector<double> eval_times);
 
   // Pressure-correction
-  //...
+  std::vector<VectorType>
+  get_vec_pressure_gradient_term_on_former_mesh_instances(std::vector<double> eval_times);
+
+  std::vector<VectorType>
+  get_pressure_mass_matrix_term_on_former_mesh_instances(std::vector<double> eval_times);
 
   VectorType
   get_grid_velocity() const;

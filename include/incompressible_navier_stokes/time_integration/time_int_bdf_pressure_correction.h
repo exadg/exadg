@@ -53,24 +53,19 @@ public:
 
   void
   set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) override
-  {
-    for(unsigned int i = 1; i < velocity.size(); ++i)
-    {
-      velocity[i] = solution_in[i].block(0);
-      pressure[i] = solution_in[i].block(1);
-    }
-  }
+    std::vector<BlockVectorType> solution_in) override;
 
   void
   set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> convective_term_in) override
-  {
-    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-    {
-      vec_convective_term[i] = convective_term_in[i];
-    }
-  }
+    std::vector<VectorType> convective_term_in) override;
+
+  void
+  set_vec_pressure_gradient_term_considering_former_mesh_instances(
+    std::vector<VectorType> vec_pressure_gradient_term_in);
+
+  void
+  set_pressure_mass_matrix_considering_former_mesh_instances(
+    std::vector<VectorType> vec_pressure_mass_matrix_in);
 
 private:
   void
@@ -93,6 +88,15 @@ private:
 
   void
   initialize_vec_pressure_gradient_term();
+
+  void
+  initialize_vec_rhs_ppe_laplace();
+
+  void
+  initialize_vec_rhs_pressure_gradient_term();
+
+  void
+  initialize_vec_pressure_mass_matrix();
 
   void
   solve_timestep();
@@ -162,6 +166,7 @@ private:
   VectorType pressure_increment;
 
   std::vector<VectorType> vec_convective_term;
+  VectorType              convective_term_np;
 
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;
@@ -170,6 +175,10 @@ private:
   ExtrapolationConstants extra_pressure_gradient;
 
   std::vector<VectorType> vec_pressure_gradient_term;
+  VectorType              pressure_gradient_term_np;
+
+  std::vector<VectorType> vec_pressure_mass_matrix;
+  VectorType              pressure_mass_matrix_np;
 
   std::vector<Number>       computing_times;
   std::vector<unsigned int> iterations;
