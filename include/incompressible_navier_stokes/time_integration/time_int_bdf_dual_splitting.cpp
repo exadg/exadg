@@ -793,19 +793,29 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::ale_update_post()
 {
+  // convective operator
   if(this->param.convective_problem())
   {
+    // Note that the convective term is always treated explicitly for the dual splitting scheme
     this->operator_base->evaluate_convective_term(convective_term_np,
                                                   velocity_np,
                                                   this->get_next_time());
+  }
 
+  // BC term in divergence term on right-hand side of pressure Poisson equation
+  if(this->param.convective_problem())
+  {
     if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
     {
       rhs_ppe_div_term_convective_term_np = 0.0;
       pde_operator->rhs_ppe_div_term_convective_term_add(rhs_ppe_div_term_convective_term_np,
                                                          velocity_np);
     }
+  }
 
+  // Pressure Neumann boundary condition
+  if(this->param.convective_problem())
+  {
     rhs_ppe_convective_np = 0.0;
     pde_operator->rhs_ppe_convective_add(rhs_ppe_convective_np, velocity_np);
   }

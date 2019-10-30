@@ -876,9 +876,14 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::ale_update_post()
 {
-  this->operator_base->evaluate_convective_term(convective_term_np,
-                                                velocity_np,
-                                                this->get_next_time());
+  // In the case of ALE and if the convective term is formulated explicitly, we need
+  // to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
+  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    this->operator_base->evaluate_convective_term(convective_term_np,
+                                                  velocity_np,
+                                                  this->get_next_time());
+  }
 
   if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true &&
      extra_pressure_gradient.get_order() > 0)
