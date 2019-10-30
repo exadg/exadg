@@ -716,6 +716,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_pressure(VectorType & rhs) const
   // incremental formulation of pressure-correction scheme
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
+    // set temp to zero since rhs_ppe_laplace_add() adds into the vector
     temp           = 0.0;
     double const t = this->get_previous_time(i);
     pde_operator->rhs_ppe_laplace_add(temp, t);
