@@ -189,28 +189,33 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >         &periodic_faces)
 {
-  std::shared_ptr<dealii::parallel::fullydistributed::Triangulation<3>> tria_fully_dist =
-      std::dynamic_pointer_cast<dealii::parallel::fullydistributed::Triangulation<3>>(triangulation);
+  if(auto tria_fully_dist = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+  {
+    const auto construction_data =
+        parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<3,
+                                                                                                     3>(
+          [&](dealii::Triangulation<3, 3> & tria) mutable {
+            do_create_grid_and_set_boundary_ids(tria, n_refine_space, periodic_faces);
+          },
+          [](dealii::Triangulation<3, 3> & tria,
+             const MPI_Comm                comm,
+             const unsigned int /* group_size */) {
+            GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm), tria);
+          },
+          tria_fully_dist->get_communicator(),
+          1 /* group size */,
+          true /* construct multigrid levels */);
+        tria_fully_dist->create_triangulation(construction_data);
+  }
+  else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+  {
+    do_create_grid_and_set_boundary_ids(*tria, n_refine_space, periodic_faces);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Unknown triangulation!"));
+  }
 
-  AssertThrow(tria_fully_dist.get() != 0,
-      ExcMessage("Dynamic pointer cast failed. Make sure to activate "
-                 "TriangulationType::FullyDistributed"));
-
-  const auto construction_data =
-      parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<3,
-                                                                                                   3>(
-        [&](dealii::Triangulation<3, 3> & tria) mutable {
-          do_create_grid_and_set_boundary_ids(tria, n_refine_space, periodic_faces);
-        },
-        [](dealii::Triangulation<3, 3> & tria,
-           const MPI_Comm                comm,
-           const unsigned int /* group_size */) {
-          GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm), tria);
-        },
-        tria_fully_dist->get_communicator(),
-        1 /* group size */,
-        true /* construct multigrid levels */);
-      tria_fully_dist->create_triangulation(construction_data);
 }
 
 /************************************************************************************************************/
