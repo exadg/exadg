@@ -78,7 +78,10 @@ private:
   setup_derived();
 
   void
-  solve_timestep();
+  do_solve_timestep();
+
+  void
+  ale_update_post();
 
   void
   allocate_vectors();

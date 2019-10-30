@@ -80,7 +80,10 @@ private:
   initialize_vec_convective_term();
 
   void
-  solve_timestep();
+  do_solve_timestep();
+
+  void
+  ale_update_post();
 
   void
   solve_steady_problem();

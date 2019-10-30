@@ -93,7 +93,10 @@ private:
   initialize_vec_pressure_mass_matrix();
 
   void
-  solve_timestep();
+  do_solve_timestep();
+
+  void
+  ale_update_post();
 
   void
   solve_steady_problem();

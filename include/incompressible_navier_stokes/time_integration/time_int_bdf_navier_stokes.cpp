@@ -40,6 +40,19 @@ TimeIntBDF<Number>::update_time_integrator_constants()
 
 template<typename Number>
 void
+TimeIntBDF<Number>::solve_timestep()
+{
+  if(param.ale_formulation)
+    ale_update_pre();
+
+  do_solve_timestep();
+
+  if(param.ale_formulation)
+    ale_update_post();
+}
+
+template<typename Number>
+void
 TimeIntBDF<Number>::initialize_oif()
 {
   // Operator-integration-factor splitting

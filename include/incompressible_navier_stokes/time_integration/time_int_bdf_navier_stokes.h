@@ -72,6 +72,9 @@ public:
   update_time_integrator_constants();
 
 protected:
+  void
+  solve_timestep();
+
   bool
   print_solver_info() const;
 
@@ -96,6 +99,18 @@ protected:
   std::shared_ptr<InterfaceBase> operator_base;
 
 private:
+  virtual void
+  do_solve_timestep() = 0;
+
+  void
+  ale_update_pre(){
+    // TODO needs to be filled (should be the same for all Navier-Stokes solvers, so
+    // there should be no need to make this function virtual)
+  };
+
+  virtual void
+  ale_update_post() = 0;
+
   void
   initialize_oif();
 

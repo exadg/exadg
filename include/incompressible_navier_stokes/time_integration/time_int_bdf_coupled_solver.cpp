@@ -170,7 +170,7 @@ TimeIntBDFCoupled<Number>::set_pressure(VectorType const & pressure_in, unsigned
 
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::solve_timestep()
+TimeIntBDFCoupled<Number>::do_solve_timestep()
 {
   Timer timer;
   timer.restart();
@@ -396,11 +396,15 @@ TimeIntBDFCoupled<Number>::solve_timestep()
       computing_times[1] += timer.wall_time();
     }
   }
+}
 
-  // In the case of ALE, we need to evaluate the convective term at time t_{n+1} on the mesh at time
-  // t_{n+1}.
-  if(this->param.ale_formulation == true &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+template<typename Number>
+void
+TimeIntBDFCoupled<Number>::ale_update_post()
+{
+  // In the case of ALE and if the convective term is formulated explicitly, we need
+  // to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
+  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     this->operator_base->evaluate_convective_term(convective_term_np,
                                                   solution_np.block(0),
@@ -495,7 +499,7 @@ TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
     solution[0].block(0).local_element(j) = 1.0;
 
     // solve time step
-    solve_timestep();
+    this->solve_timestep();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)

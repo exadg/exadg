@@ -281,7 +281,7 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
     velocity[0].local_element(j) = 1.0;
 
     // solve time step
-    solve_timestep();
+    this->solve_timestep();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)
@@ -316,7 +316,7 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::solve_timestep()
+TimeIntBDFPressureCorrection<Number>::do_solve_timestep()
 {
   // perform the substeps of the pressure-correction scheme
   momentum_step();
@@ -868,27 +868,29 @@ TimeIntBDFPressureCorrection<Number>::projection_step()
                 << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 
-  if(this->param.ale_formulation == true)
-  {
-    this->operator_base->evaluate_convective_term(convective_term_np,
-                                                  velocity_np,
-                                                  this->get_next_time());
-
-    if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true &&
-       extra_pressure_gradient.get_order() > 0)
-    {
-      pressure_gradient_term_np = 0.0;
-      this->operator_base->evaluate_pressure_gradient_term(pressure_gradient_term_np,
-                                                           pressure_np,
-                                                           this->get_next_time());
-
-      pressure_mass_matrix_np = 0.0;
-      pde_operator->apply_pressure_mass_matrix(pressure_mass_matrix_np, pressure_np);
-    }
-  }
-
   computing_times[2] += timer.wall_time();
   iterations[2] += iterations_projection;
+}
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::ale_update_post()
+{
+  this->operator_base->evaluate_convective_term(convective_term_np,
+                                                velocity_np,
+                                                this->get_next_time());
+
+  if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true &&
+     extra_pressure_gradient.get_order() > 0)
+  {
+    pressure_gradient_term_np = 0.0;
+    this->operator_base->evaluate_pressure_gradient_term(pressure_gradient_term_np,
+                                                         pressure_np,
+                                                         this->get_next_time());
+
+    pressure_mass_matrix_np = 0.0;
+    pde_operator->apply_pressure_mass_matrix(pressure_mass_matrix_np, pressure_np);
+  }
 }
 
 template<typename Number>

@@ -336,7 +336,7 @@ TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
     this->operator_base->compute_vorticity(vorticity[0], velocity[0]);
 
     // solve time step
-    solve_timestep();
+    this->solve_timestep();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)
@@ -371,7 +371,7 @@ TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
 
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::solve_timestep()
+TimeIntBDFDualSplitting<Number>::do_solve_timestep()
 {
   // perform the four substeps of the dual-splitting method
   convective_step();
@@ -381,6 +381,9 @@ TimeIntBDFDualSplitting<Number>::solve_timestep()
   projection_step();
 
   viscous_step();
+
+  // vorticity needs to be computed for the dual splitting scheme!
+  this->operator_base->compute_vorticity(vorticity_np, velocity_np);
 }
 
 template<typename Number>
@@ -783,35 +786,35 @@ TimeIntBDFDualSplitting<Number>::viscous_step()
     AssertThrow(this->param.equation_type == EquationType::Euler, ExcMessage("Logical error."));
   }
 
-  this->operator_base->compute_vorticity(vorticity_np, velocity_np);
+  computing_times[3] += timer.wall_time();
+}
 
-  if(this->param.ale_formulation == true)
+template<typename Number>
+void
+TimeIntBDFDualSplitting<Number>::ale_update_post()
+{
+  if(this->param.convective_problem())
   {
-    if(this->param.convective_problem())
+    this->operator_base->evaluate_convective_term(convective_term_np,
+                                                  velocity_np,
+                                                  this->get_next_time());
+
+    if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
     {
-      this->operator_base->evaluate_convective_term(convective_term_np,
-                                                    velocity_np,
-                                                    this->get_next_time());
-
-      if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
-      {
-        rhs_ppe_div_term_convective_term_np = 0.0;
-        pde_operator->rhs_ppe_div_term_convective_term_add(rhs_ppe_div_term_convective_term_np,
-                                                           velocity_np);
-      }
-
-      rhs_ppe_convective_np = 0.0;
-      pde_operator->rhs_ppe_convective_add(rhs_ppe_convective_np, velocity_np);
+      rhs_ppe_div_term_convective_term_np = 0.0;
+      pde_operator->rhs_ppe_div_term_convective_term_add(rhs_ppe_div_term_convective_term_np,
+                                                         velocity_np);
     }
 
-    if(this->param.viscous_problem())
-    {
-      rhs_ppe_viscous_np = 0.0;
-      pde_operator->rhs_ppe_viscous_add(rhs_ppe_viscous_np, vorticity_np);
-    }
+    rhs_ppe_convective_np = 0.0;
+    pde_operator->rhs_ppe_convective_add(rhs_ppe_convective_np, velocity_np);
   }
 
-  computing_times[3] += timer.wall_time();
+  if(this->param.viscous_problem())
+  {
+    rhs_ppe_viscous_np = 0.0;
+    pde_operator->rhs_ppe_viscous_add(rhs_ppe_viscous_np, vorticity_np);
+  }
 }
 
 template<typename Number>
