@@ -884,18 +884,16 @@ TimeIntBDFPressureCorrection<Number>::projection_step()
     if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true &&
        extra_pressure_gradient.get_order() > 0)
     {
-      if(extra_pressure_gradient.get_order() > 0)
-      {
-        pressure_gradient_term_np = 0.0;
-        this->operator_base->evaluate_pressure_gradient_term(pressure_gradient_term_np,
-                                                             pressure_np,
-                                                             this->get_next_time());
-      }
+      pressure_gradient_term_np = 0.0;
+      this->operator_base->evaluate_pressure_gradient_term(pressure_gradient_term_np,
+                                                           pressure_np,
+                                                           this->get_next_time());
 
       pressure_mass_matrix_np = 0.0;
       pde_operator->apply_pressure_mass_matrix(pressure_mass_matrix_np, pressure_np);
     }
   }
+
   computing_times[2] += timer.wall_time();
   iterations[2] += iterations_projection;
 }
