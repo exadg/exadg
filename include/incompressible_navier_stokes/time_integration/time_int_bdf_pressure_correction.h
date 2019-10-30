@@ -90,12 +90,6 @@ private:
   initialize_vec_pressure_gradient_term();
 
   void
-  initialize_vec_rhs_ppe_laplace();
-
-  void
-  initialize_vec_rhs_pressure_gradient_term();
-
-  void
   initialize_vec_pressure_mass_matrix();
 
   void
