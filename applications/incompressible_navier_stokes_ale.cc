@@ -324,9 +324,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  if(param.ale_formulation == true && param.start_with_low_order == false &&
-     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(param.ale_formulation == true && param.start_with_low_order == false)
   {
+    AssertThrow(
+      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
+      ExcMessage(
+        "ALE formulation currently only implemented for TreatmentOfConvectiveTerm::Explicit"));
+
     std::vector<double> eval_times(param.order_time_integrator);
 
     for(unsigned int i = 0; i < param.order_time_integrator; ++i)

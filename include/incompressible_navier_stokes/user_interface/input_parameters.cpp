@@ -226,14 +226,35 @@ InputParameters::check_input_parameters()
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
   if(equation_type == EquationType::Euler)
+  {
     AssertThrow(std::abs(viscosity) < 1.e-15,
                 ExcMessage(
                   "Make sure that the viscosity is zero when solving the Euler equations."));
+  }
 
   AssertThrow(formulation_viscous_term != FormulationViscousTerm::Undefined,
               ExcMessage("parameter must be defined"));
   AssertThrow(formulation_convective_term != FormulationConvectiveTerm::Undefined,
               ExcMessage("parameter must be defined"));
+
+  // ALE
+  if(ale_formulation)
+  {
+    AssertThrow(
+      formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
+      ExcMessage(
+        "Convective formulation of convective operator has to be used for ALE formulation."));
+
+    AssertThrow(
+      problem_type == ProblemType::Unsteady && solver_type == SolverType::Unsteady,
+      ExcMessage(
+        "Both problem type and solver type have to be Unsteady when using ALE formulation."));
+
+    AssertThrow(
+      treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
+      ExcMessage(
+        "ALE formulation is currently only implemented for explicit formulation of convective term."));
+  }
 
   // PHYSICAL QUANTITIES
   AssertThrow(end_time > start_time, ExcMessage("parameter end_time must be defined"));
@@ -249,6 +270,7 @@ InputParameters::check_input_parameters()
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
                 ExcMessage("parameter must be defined"));
   }
+
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
               ExcMessage("parameter must be defined"));
 
@@ -439,20 +461,6 @@ InputParameters::check_input_parameters()
     AssertThrow(turbulence_model != TurbulenceEddyViscosityModel::Undefined,
                 ExcMessage("parameter must be defined"));
     AssertThrow(turbulence_model_constant > 0, ExcMessage("parameter must be greater than zero"));
-  }
-
-  // ALE
-  if(ale_formulation)
-  {
-    AssertThrow(
-      formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
-      ExcMessage(
-        "convective formulation of convective operator has to be used since the grid velocity might not be divergence free"));
-    AssertThrow(problem_type == ProblemType::Unsteady,
-                ExcMessage("physically steady problems become unsteady on moving meshes."));
-
-    AssertThrow(treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
-                ExcMessage("ale is only implemented for explicit formulations by now."));
   }
 }
 
