@@ -18,7 +18,6 @@ class MovingMesh
 {
 public:
   typedef MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>> MappingField;
-  typedef MappingQGeneric<dim>                                                 MappingQ;
   typedef LinearAlgebra::distributed::Vector<Number>                           VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number>                      BlockVectorType;
 
@@ -31,7 +30,7 @@ public:
   setup();
 
   void
-  move_mesh(const double time_in);
+  advance_grid_coordinates(double const time);
 
   void
   update_grid_velocities(const double              time_in,
@@ -67,16 +66,6 @@ public:
   VectorType
   get_grid_velocity() const;
 
-  double
-  get_wall_time_ale_update() const;
-
-  double
-  get_wall_time_advance_mesh() const;
-
-  double
-  get_wall_time_compute_and_set_mesh_velocity() const;
-
-
 private:
   void
   initialize_dof_handler();
@@ -91,25 +80,11 @@ private:
   get_mapping() const;
 
   void
-  get_analytical_grid_velocity(double const evaluation_time);
+  compute_grid_velocity_analytical(double const time);
 
   void
-  advance_mesh(double time_in);
-
-  /*
-   * Two cases can occur:
-   * The user wants to advance the mesh from the one of the last timestep:
-   *  This is the case if a mesh moving algorithm is applied
-   * The user wants to advance the mesh with an analytical mesh movement function and wants to use
-   * the initial mesh as a reference
-   * Hence: Mapping can be MappingQ(Case2) or MappingField(Case1)
-   */
-
-  void
-  advance_grid_position(Mapping<dim> & mapping_in);
-
-  void
-  compute_grid_velocity(std::vector<Number> time_integrator_constants, double time_step_size);
+  compute_grid_velocity_from_grid_coordinates(std::vector<Number> time_integrator_constants,
+                                              double              time_step_size);
 
   void
   compute_bdf_time_derivative(VectorType &            dst,
@@ -140,15 +115,8 @@ private:
   std::vector<LinearAlgebra::distributed::Vector<Number>> vec_x_grid_discontinuous;
 
   // mappings
-  std::shared_ptr<MappingQ>     mapping;
-  std::shared_ptr<MappingField> mapping_ale;
-
-  // timer
-  Timer  timer_ale;
-  double ale_update_timer;
-  double advance_mesh_timer;
-  double compute_and_set_mesh_velocity_timer;
-  double help_timer;
+  std::shared_ptr<MappingQGeneric<dim>> mapping;
+  std::shared_ptr<MappingField>         mapping_ale;
 };
 
 } // namespace IncNS

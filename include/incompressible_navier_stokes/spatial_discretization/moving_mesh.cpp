@@ -18,11 +18,7 @@ MovingMesh<dim, Number>::MovingMesh(
     dof_handler_u_grid(*triangulation_in),
     dof_handler_x_grid_discontinuous(*triangulation_in),
     vec_position_grid_new((*triangulation_in).n_global_levels()),
-    vec_x_grid_discontinuous(param_in.order_time_integrator + 1),
-    ale_update_timer(0.0),
-    advance_mesh_timer(0.0),
-    compute_and_set_mesh_velocity_timer(0.0),
-    help_timer(0.0)
+    vec_x_grid_discontinuous(param_in.order_time_integrator + 1)
 {
   mapping = std::make_shared<MappingQGeneric<dim>>(
     dynamic_cast<const MappingQGeneric<dim> &>((navier_stokes_operation_in->get_mapping())));
@@ -39,31 +35,16 @@ MovingMesh<dim, Number>::setup()
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::move_mesh(const double time_in)
-{
-  help_timer = timer_ale.wall_time();
-  advance_mesh(time_in);
-  advance_mesh_timer += timer_ale.wall_time() - help_timer;
-
-  help_timer = timer_ale.wall_time();
-  navier_stokes_operation->ale_update();
-  ale_update_timer += timer_ale.wall_time() - help_timer;
-}
-
-template<int dim, typename Number>
-void
-MovingMesh<dim, Number>::update_grid_velocities(const double              time_in,
+MovingMesh<dim, Number>::update_grid_velocities(const double              time,
                                                 const double              time_step_size,
                                                 const std::vector<Number> time_integrator_constants)
 {
-  help_timer = timer_ale.wall_time();
   if(param.grid_velocity_analytical == true)
-    get_analytical_grid_velocity(time_in);
+    compute_grid_velocity_analytical(time);
   else
-    compute_grid_velocity(time_integrator_constants, time_step_size);
+    compute_grid_velocity_from_grid_coordinates(time_integrator_constants, time_step_size);
 
   navier_stokes_operation->set_grid_velocity(grid_velocity);
-  compute_and_set_mesh_velocity_timer += timer_ale.wall_time() - help_timer;
 }
 
 template<int dim, typename Number>
@@ -74,10 +55,10 @@ MovingMesh<dim, Number>::initialize_grid_coordinates_on_former_mesh_instances(
   // Iterating backwards leaves us with the mesh at start time automatically
   for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
 
-    get_analytical_grid_velocity(eval_times[i]);
+    compute_grid_velocity_analytical(eval_times[i]);
 
     fill_grid_coordinates_vector(i);
   }
@@ -100,13 +81,14 @@ MovingMesh<dim, Number>::get_former_solution_on_former_mesh_instances(
 
   for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
 
     navier_stokes_operation->prescribe_initial_conditions(solution[i].block(0),
                                                           solution[i].block(1),
                                                           eval_times[i]);
   }
+
   return solution;
 }
 
@@ -124,16 +106,17 @@ MovingMesh<dim, Number>::get_convective_term_on_former_mesh_instances(
   // Iterating backwards leaves us with the mesh at start time automatically
   for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
 
-    get_analytical_grid_velocity(eval_times[i]);
+    compute_grid_velocity_analytical(eval_times[i]);
     navier_stokes_operation->set_grid_velocity(grid_velocity);
 
     navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
                                                       solution[i].block(0),
                                                       eval_times[i]);
   }
+
   return vec_convective_term;
 }
 
@@ -154,9 +137,10 @@ MovingMesh<dim, Number>::get_vec_rhs_ppe_div_term_convective_term_on_former_mesh
   // Iterating backwards leaves us with the mesh at start time automatically
   for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
-    get_analytical_grid_velocity(eval_times[i]);
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
+
+    compute_grid_velocity_analytical(eval_times[i]);
     navier_stokes_operation->set_grid_velocity(grid_velocity);
 
     vec_rhs_ppe_div_term_convective_term[i] = 0.0;
@@ -184,9 +168,9 @@ MovingMesh<dim, Number>::get_vec_rhs_ppe_convective_on_former_mesh_instances(
   // Iterating backwards leaves us with the mesh at start time automatically
   for(int i = param.order_extrapolation_pressure_nbc - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
-    get_analytical_grid_velocity(eval_times[i]);
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
+    compute_grid_velocity_analytical(eval_times[i]);
     navier_stokes_operation->set_grid_velocity(grid_velocity);
 
     vec_rhs_ppe_convective[i] = 0.0;
@@ -215,8 +199,8 @@ MovingMesh<dim, Number>::get_vec_rhs_ppe_viscous_on_former_mesh_instances(
 
   for(int i = param.order_extrapolation_pressure_nbc - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
 
     vec_rhs_ppe_viscous[i] = 0.0;
     navier_stokes_operation->compute_vorticity(vorticity, solution[i].block(0));
@@ -242,8 +226,8 @@ MovingMesh<dim, Number>::get_vec_pressure_gradient_term_on_former_mesh_instances
   // Iterating backwards leaves us with the mesh at start time automatically
   for(int i = param.order_pressure_extrapolation - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
 
     navier_stokes_operation->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
                                                              solution[i].block(1),
@@ -273,8 +257,8 @@ MovingMesh<dim, Number>::get_pressure_mass_matrix_term_on_former_mesh_instances(
   // Iterating backwards leaves us with the mesh at start time automatically
   for(int i = vec_pressure_mass_matrix_term.size() - 1; i >= 0; --i)
   {
-    advance_mesh(eval_times[i]);
-    navier_stokes_operation->ale_update();
+    advance_grid_coordinates(eval_times[i]);
+    navier_stokes_operation->update_after_mesh_movement();
 
     vec_pressure_mass_matrix_term[i] = 0.0;
 
@@ -290,27 +274,6 @@ LinearAlgebra::distributed::Vector<Number>
 MovingMesh<dim, Number>::get_grid_velocity() const
 {
   return grid_velocity;
-}
-
-template<int dim, typename Number>
-double
-MovingMesh<dim, Number>::get_wall_time_ale_update() const
-{
-  return ale_update_timer;
-}
-
-template<int dim, typename Number>
-double
-MovingMesh<dim, Number>::get_wall_time_advance_mesh() const
-{
-  return advance_mesh_timer;
-}
-
-template<int dim, typename Number>
-double
-MovingMesh<dim, Number>::get_wall_time_compute_and_set_mesh_velocity() const
-{
-  return compute_and_set_mesh_velocity_timer;
 }
 
 template<int dim, typename Number>
@@ -331,16 +294,18 @@ MovingMesh<dim, Number>::initialize_vectors()
 
   if(param.start_with_low_order == true)
   {
-    get_analytical_grid_velocity(param.start_time);
+    compute_grid_velocity_analytical(param.start_time);
     AssertThrow(
       grid_velocity.l2_norm() <= std::numeric_limits<Number>::min(),
       ExcMessage(
-        "Consider an other mesh moving function (e.g. use MeshMovementAdvanceInTime::SinSquared). For low oder start, the grid velocity has to be 0 at start time to ensure a continuisly differentiable (in time) mesh motion."));
+        "Consider an other mesh moving function (e.g. use MeshMovementAdvanceInTime::SinSquared). "
+        "For low oder start, the grid velocity has to be 0 at start time to ensure a mesh motion "
+        "that is continuously differentiable in time."));
   }
 
   if(param.grid_velocity_analytical == true)
   {
-    get_analytical_grid_velocity(param.start_time);
+    compute_grid_velocity_analytical(param.start_time);
   }
   else // compute grid velocity from grid positions
   {
@@ -363,14 +328,13 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::initialize_mapping_ale()
 {
-  mesh_movement_function->set_time(param.start_time);
-  advance_grid_position(*mapping);
+  // For initialization of mapping_ale a vector is used that describes the mesh movement.
+  // If at start time t_0 the displacement of the mesh is 0 this could also be done by
+  // VectorTools::get_position_vector. Here the more generic case is covered, namely
+  // advance_grid_coordinates() is used, which determines the positions at start time t_0
+  // that are prescribed on each multigrid level.
+  advance_grid_coordinates(param.start_time);
 
-  // For initialization a vector is used that is determined by the function that describes the mesh
-  // movement. If at start time t_0 the displacement of the mesh is 0 this could also be done by
-  // VectorTools::get_position_vector. Here the more generic case is coverd:
-  // advance_grid_position(*mapping) is used, which determines the positions at t_0 that is
-  // prescribed on each multigrid level.
   mapping_ale.reset(new MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>(
     dof_handler_x_grid_continuous, vec_position_grid_new));
 
@@ -386,9 +350,9 @@ MovingMesh<dim, Number>::get_mapping() const
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_time)
+MovingMesh<dim, Number>::compute_grid_velocity_analytical(double const time)
 {
-  mesh_movement_function->set_time(evaluation_time);
+  mesh_movement_function->set_time(time);
 
   // This is necessary if Number == float
   typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
@@ -406,16 +370,19 @@ MovingMesh<dim, Number>::get_analytical_grid_velocity(double const evaluation_ti
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::advance_mesh(double time_in)
+MovingMesh<dim, Number>::advance_grid_coordinates(double const time)
 {
-  mesh_movement_function->set_time(time_in);
-  advance_grid_position(*mapping);
-}
+  mesh_movement_function->set_time(time);
 
-template<int dim, typename Number>
-void
-MovingMesh<dim, Number>::advance_grid_position(Mapping<dim> & mapping_in)
-{
+  /*
+   * Two cases can occur:
+   * Case 1: The user wants to advance the mesh from a displacement vector:
+   *         This is the case if a mesh moving algorithm is applied -> MappingField
+   * Case 2: The user wants to advance the mesh with an analytical mesh movement function
+   *         and wants to use the initial mesh as a reference -> MappingQGeneric
+   */
+  Mapping<dim> & mapping_in = *mapping;
+
   VectorType position_grid_init;
   VectorType displacement_grid;
   VectorType position_grid_new;
@@ -473,8 +440,9 @@ MovingMesh<dim, Number>::advance_grid_position(Mapping<dim> & mapping_in)
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::compute_grid_velocity(std::vector<Number> time_integrator_constants,
-                                               double              time_step_size)
+MovingMesh<dim, Number>::compute_grid_velocity_from_grid_coordinates(
+  std::vector<Number> time_integrator_constants,
+  double              time_step_size)
 {
   push_back(vec_x_grid_discontinuous);
   fill_grid_coordinates_vector();

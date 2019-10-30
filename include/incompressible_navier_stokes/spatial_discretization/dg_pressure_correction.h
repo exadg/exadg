@@ -124,7 +124,7 @@ public:
    * scheme.
    */
   void
-  ale_update();
+  update_after_mesh_movement();
 
   /*
    * Momentum step:

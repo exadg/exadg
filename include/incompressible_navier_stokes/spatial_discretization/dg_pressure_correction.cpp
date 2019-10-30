@@ -75,9 +75,9 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::ale_update()
+DGNavierStokesPressureCorrection<dim, Number>::update_after_mesh_movement()
 {
-  DGNavierStokesBase<dim, Number>::ale_update();
+  DGNavierStokesBase<dim, Number>::update_after_mesh_movement();
 
   // inverse pressure mass matrix has to be updated
   inverse_mass_pressure.reinit();

@@ -129,8 +129,7 @@ private:
 
   std::shared_ptr<DriverSteady> driver_steady;
 
-  typedef MovingMesh<dim, Number> DGALE;
-  std::shared_ptr<DGALE>          ale_operation;
+  std::shared_ptr<MovingMesh<dim, Number>> ale_operation;
 
   /*
    * Computation time (wall clock time).
@@ -138,13 +137,19 @@ private:
   Timer          timer;
   mutable double overall_time;
   double         setup_time;
+  double         time_ale_update;
+  double         time_advance_mesh;
+  double         time_compute_and_set_mesh_velocity;
 };
 
 template<int dim, typename Number>
 Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     overall_time(0.0),
-    setup_time(0.0)
+    setup_time(0.0),
+    time_ale_update(0.0),
+    time_advance_mesh(0.0),
+    time_compute_and_set_mesh_velocity(0.0)
 {
 }
 
@@ -280,10 +285,10 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   if(param.ale_formulation == true)
-    ale_operation = std::make_shared<DGALE>(param,
-                                            triangulation,
-                                            mesh_movement_function,
-                                            navier_stokes_operation);
+    ale_operation = std::make_shared<MovingMesh<dim, Number>>(param,
+                                                              triangulation,
+                                                              mesh_movement_function,
+                                                              navier_stokes_operation);
 
 
   // Depends on mapping which is initialized in constructor of MovingMesh
@@ -408,6 +413,8 @@ Problem<dim, Number>::solve()
       time_integrator->timeloop();
     else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == true)
     {
+      Timer timer_ale;
+
       bool timeloop_finished = false;
 
       while(!timeloop_finished)
@@ -417,14 +424,23 @@ Problem<dim, Number>::solve()
         time_integrator->update_time_integrator_constants();
 
         // calculate mesh at time t_n+1
-        ale_operation->move_mesh(time_integrator->get_next_time());
+
+        timer_ale.restart();
+        ale_operation->advance_grid_coordinates(time_integrator->get_next_time());
+        time_advance_mesh += timer_ale.wall_time();
+
+        timer_ale.restart();
+        navier_stokes_operation->update_after_mesh_movement();
+        time_ale_update += timer_ale.wall_time();
 
         // calculate grid velocity at time t_n+1 and hand it over to navier_stokes_operation
         // for correct evaluation of convective term
+        timer_ale.restart();
         ale_operation->update_grid_velocities(
           time_integrator->get_next_time(),
           time_integrator->get_time_step_size(),
           time_integrator->get_current_time_integrator_constants());
+        time_compute_and_set_mesh_velocity += timer_ale.wall_time();
 
         // set grid velocity at time t_n+1 since the time integrator needs the grid velocity
         // to compute the time step size for the next time step at the end of the current time step
@@ -512,6 +528,7 @@ Problem<dim, Number>::analyze_computing_times() const
   {
     length = length > names[i].length() ? length : names[i].length();
   }
+  length = 25;
 
   double sum_of_substeps = 0.0;
   for(unsigned int i = 0; i < computing_times.size(); ++i)
@@ -540,27 +557,26 @@ Problem<dim, Number>::analyze_computing_times() const
   if(param.ale_formulation == true)
   {
     Utilities::MPI::MinMaxAvg advance_mesh_time_data =
-      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_advance_mesh(), MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(time_advance_mesh, MPI_COMM_WORLD);
     advance_mesh = advance_mesh_time_data.avg;
-    this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Move mesh" << std::setprecision(2)
                 << std::scientific << std::setw(25) << std::right << advance_mesh << " s  "
                 << std::setprecision(2) << std::fixed << std::setw(6) << std::right
                 << advance_mesh / overall_time_avg * 100 << " %" << std::endl;
 
     Utilities::MPI::MinMaxAvg update_time_data =
-      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_ale_update(), MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(time_ale_update, MPI_COMM_WORLD);
     update = update_time_data.avg;
-    this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
-                << std::scientific << std::setw(25) << std::right << update << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Update DG operator"
+                << std::setprecision(2) << std::scientific << std::setw(25) << std::right << update
+                << " s  " << std::setprecision(2) << std::fixed << std::setw(6) << std::right
                 << update / overall_time_avg * 100 << " %" << std::endl;
 
     Utilities::MPI::MinMaxAvg compute_and_set_mesh_velocity_time_data =
-      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_compute_and_set_mesh_velocity(),
-                                  MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(time_compute_and_set_mesh_velocity, MPI_COMM_WORLD);
     compute_and_set_mesh_velocity = compute_and_set_mesh_velocity_time_data.avg;
-    this->pcout << "  " << std::setw(length + 2) << std::left << "Compute and set mesh velocity"
-                << std::setprecision(2) << std::scientific << std::setw(12) << std::right
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Compute grid velocity"
+                << std::setprecision(2) << std::scientific << std::setw(25) << std::right
                 << compute_and_set_mesh_velocity << " s  " << std::setprecision(2) << std::fixed
                 << std::setw(6) << std::right
                 << compute_and_set_mesh_velocity / overall_time_avg * 100 << " %" << std::endl;

@@ -1155,7 +1155,7 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::ale_update()
+DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 {
   matrix_free.reinit(
     get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data_ale);

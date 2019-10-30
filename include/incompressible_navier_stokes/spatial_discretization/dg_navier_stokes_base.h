@@ -384,7 +384,7 @@ public:
   // ALE
 
   virtual void
-  ale_update();
+  update_after_mesh_movement();
 
   void
   set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
