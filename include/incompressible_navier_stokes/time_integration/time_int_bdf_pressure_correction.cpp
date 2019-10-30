@@ -74,7 +74,8 @@ TimeIntBDFPressureCorrection<Number>::setup_derived()
     initialize_vec_pressure_gradient_term();
 
   if(this->param.ale_formulation == true && this->param.start_with_low_order == true &&
-     extra_pressure_gradient.get_order() > 0)
+     extra_pressure_gradient.get_order() > 0 &&
+     this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
   {
     initialize_vec_pressure_mass_matrix();
   }
@@ -110,7 +111,8 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
     this->operator_base->initialize_vector_velocity(vec_pressure_gradient_term[i]);
 
-  if(this->param.ale_formulation == true)
+  if(this->param.ale_formulation == true &&
+     this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
   {
     this->operator_base->initialize_vector_velocity(pressure_gradient_term_np);
 
@@ -782,6 +784,10 @@ TimeIntBDFPressureCorrection<Number>::pressure_update()
       temp = 0.0;
       pde_operator->apply_inverse_pressure_mass_matrix(temp, vec_pressure_mass_matrix[i]);
       pressure_np.add(extra_pressure_gradient.get_beta(i), temp);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Should not arrive here. Logical error."));
     }
   }
 }
