@@ -254,6 +254,9 @@ InputParameters::check_input_parameters()
       treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
       ExcMessage(
         "ALE formulation is currently only implemented for explicit formulation of convective term."));
+
+    AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
+                ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
   }
 
   // PHYSICAL QUANTITIES
@@ -443,6 +446,9 @@ InputParameters::check_input_parameters()
 
     AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
     AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+
+    AssertThrow(ale_formulation == false,
+                ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
   }
 
   // NUMERICAL PARAMETERS
