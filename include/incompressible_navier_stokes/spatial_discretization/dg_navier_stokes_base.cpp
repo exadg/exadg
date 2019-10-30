@@ -217,7 +217,6 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
   additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
-  // TODO
   if(param.ale_formulation == true)
   {
     additional_data_ale                    = additional_data;
