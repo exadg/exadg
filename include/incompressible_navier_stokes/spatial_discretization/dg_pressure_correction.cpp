@@ -37,6 +37,7 @@ DGNavierStokesPressureCorrection<dim, Number>::setup(
                                                       boundary_descriptor_pressure_in,
                                                       field_functions_in);
 
+  setup_inverse_mass_matrix_operator_pressure();
 
   if(this->param.ale_formulation)
   {
@@ -69,9 +70,17 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
 
   Base::setup_projection_solver();
 
-  setup_inverse_mass_matrix_operator_pressure();
-
   this->pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::ale_update()
+{
+  DGNavierStokesBase<dim, Number>::ale_update();
+
+  // inverse pressure mass matrix has to be updated
+  inverse_mass_pressure.reinit();
 }
 
 template<int dim, typename Number>

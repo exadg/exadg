@@ -383,7 +383,7 @@ public:
 
   // ALE
 
-  void
+  virtual void
   ale_update();
 
   void

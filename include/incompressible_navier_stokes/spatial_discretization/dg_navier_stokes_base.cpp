@@ -15,8 +15,8 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters_in,
-  std::shared_ptr<Postprocessor>       postprocessor_in)
+  InputParameters const &                  parameters_in,
+  std::shared_ptr<Postprocessor>           postprocessor_in)
   : dealii::Subscriptor(),
     param(parameters_in),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
@@ -217,6 +217,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
   additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
+  // TODO
   if(param.ale_formulation == true)
   {
     additional_data_ale                    = additional_data;
@@ -231,7 +232,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
     Categorization::do_cell_based_loops(*tria, additional_data);
   }
 
-  // dofhandler
+  // dof handler
   dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
     DofHandlerSelector::n_variants));
   dof_handler_vec[dof_index_u]        = &dof_handler_u;
@@ -978,7 +979,8 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   auto periodic_face_pairs = this->periodic_face_pairs;
 
   parallel::TriangulationBase<dim> const * tria =
-    dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler_u_scalar.get_triangulation());
+    dynamic_cast<const parallel::TriangulationBase<dim> *>(
+      &dof_handler_u_scalar.get_triangulation());
   const FiniteElement<dim> & fe = dof_handler_u_scalar.get_fe();
 
   mg_preconditioner->initialize(mg_data,
@@ -1158,6 +1160,9 @@ DGNavierStokesBase<dim, Number>::ale_update()
 {
   matrix_free.reinit(
     get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data_ale);
+
+  inverse_mass_velocity.reinit();
+  inverse_mass_velocity_scalar.reinit();
 }
 
 template<int dim, typename Number>

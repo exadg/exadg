@@ -104,8 +104,10 @@ public:
   virtual ~DGNavierStokesPressureCorrection();
 
   /*
-   * Calls setup() function of base class and additionally initializes the pressure mass matrix
-   * operator needed for the pressure correction scheme in the ALE case.
+   * Calls setup() function of base class and additionally initializes the inverse pressure mass
+   * matrix operator needed for the pressure correction scheme, as well as the pressure mass matrix
+   * operator needed in the ALE case only (where the mass matrix may be evaluated at different times
+   * depending on the specific ALE formulation chosen).
    */
   virtual void
   setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
@@ -116,6 +118,13 @@ public:
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
+
+  /*
+   * Calls function of base class and does additional updates relevant for the pressure-correction
+   * scheme.
+   */
+  void
+  ale_update();
 
   /*
    * Momentum step:
