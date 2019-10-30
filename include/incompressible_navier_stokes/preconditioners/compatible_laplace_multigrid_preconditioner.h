@@ -38,7 +38,7 @@ public:
 
   void
   initialize(MultigridData const &                      mg_data,
-             const parallel::TriangulationBase<dim> *       tria,
+             const parallel::TriangulationBase<dim> *   tria,
              const FiniteElement<dim> &                 fe,
              Mapping<dim> const &                       mapping,
              CompatibleLaplaceOperatorData<dim> const & data_in,
@@ -114,7 +114,7 @@ public:
          update_values);
     }
 
-    addit_data.level_mg_handler = this->level_info[level].h_level();
+    addit_data.mg_level = this->level_info[level].h_level();
 
     // if(data.use_cell_based_loops)
     //{
@@ -146,11 +146,11 @@ public:
   }
 
   void
-  initialize_dof_handler_and_constraints(bool const                           operator_is_singular,
-                                         PeriodicFacePairs *                  periodic_face_pairs,
-                                         FiniteElement<dim> const &           fe,
+  initialize_dof_handler_and_constraints(bool const                 operator_is_singular,
+                                         PeriodicFacePairs *        periodic_face_pairs,
+                                         FiniteElement<dim> const & fe,
                                          parallel::TriangulationBase<dim> const * tria,
-                                         Map const *                          dirichlet_bc)
+                                         Map const *                              dirichlet_bc)
   {
     Base::initialize_dof_handler_and_constraints(
       operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);

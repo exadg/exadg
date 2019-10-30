@@ -14,31 +14,6 @@
 
 using namespace dealii;
 
-template<typename DataOut>
-void
-write_pvtu_record_wrapper(DataOut const &     data_out,
-                          std::string const & folder,
-                          std::string const & file,
-                          unsigned int const  counter,
-                          unsigned int const  rank)
-{
-  if(rank == 0)
-  {
-    std::vector<std::string> vector;
-    for(unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD); ++i)
-    {
-      std::string filename = file + "_Proc" + Utilities::int_to_string(i) + "_" +
-                             Utilities::int_to_string(counter) + ".vtu";
-
-      vector.push_back(filename.c_str());
-    }
-    std::string master_name = folder + file + "_" + Utilities::int_to_string(counter) + ".pvtu";
-
-    std::ofstream master_output(master_name.c_str());
-    data_out.write_pvtu_record(master_output, vector);
-  }
-}
-
 template<int dim>
 void
 write_surface_mesh(Triangulation<dim> const & triangulation,
@@ -46,35 +21,36 @@ write_surface_mesh(Triangulation<dim> const & triangulation,
                    unsigned int               n_subdivisions,
                    std::string const &        folder,
                    std::string const &        file,
-                   unsigned int const         counter,
-                   unsigned int const         rank)
+                   unsigned int const         counter)
 {
   // write surface mesh only
   DataOutFaces<dim, DoFHandler<dim>> data_out_surface(true /*surface only*/);
   data_out_surface.attach_triangulation(triangulation);
   data_out_surface.build_patches(mapping, n_subdivisions);
-
-  std::string filename_surface = folder + file + "_Proc" + Utilities::int_to_string(rank) + "_" +
-                                 Utilities::int_to_string(counter) + ".vtu";
-  std::ofstream filename(filename_surface.c_str());
-  data_out_surface.write_vtu(filename);
-
-  write_pvtu_record_wrapper(data_out_surface, folder, file, counter, rank);
+  data_out_surface.write_vtu_with_pvtu_record(folder, file, counter, 4);
 }
 
 template<int dim>
 void
 write_boundary_IDs(Triangulation<dim> const & triangulation,
                    std::string const &        folder,
-                   std::string const &        file)
+                   std::string const &        file,
+                   MPI_Comm const &           mpi_communicator = MPI_COMM_WORLD)
 {
-  unsigned int rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  const unsigned int rank = Utilities::MPI::this_mpi_process(mpi_communicator);
+
+  const unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_communicator);
+
+  const unsigned int n_digits = static_cast<int>(std::ceil(std::log10(std::fabs(n_ranks))));
 
   std::string filename =
-    folder + file + "_grid" + "_Proc" + Utilities::int_to_string(rank) + ".vtk";
+    folder + file + "_grid" + "." + Utilities::int_to_string(rank, n_digits) + ".vtk";
   std::ofstream output(filename.c_str());
 
-  GridOut grid_out;
+  GridOut           grid_out;
+  GridOutFlags::Vtk flags =
+    GridOutFlags::Vtk(false /* cells */, true /* faces */, false /* edges */);
+  grid_out.set_flags(flags);
   grid_out.write_vtk(triangulation, output);
 }
 

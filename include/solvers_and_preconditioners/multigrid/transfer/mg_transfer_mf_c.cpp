@@ -22,7 +22,7 @@ MGTransferMFC<dim, Number, VectorType, components>::MGTransferMFC(
   QGauss<1>                                      quadrature(1);
 
   typename MatrixFree<dim, Number>::AdditionalData additional_data;
-  additional_data.level_mg_handler = level;
+  additional_data.mg_level = level;
   data_composite.reinit(dofhandlers, constraint_matrices, quadrature, additional_data);
 }
 
