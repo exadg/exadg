@@ -152,13 +152,6 @@ TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
 {
   if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    if(this->param.ale_formulation == true)
-    {
-      this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                    velocity[0],
-                                                    this->get_time());
-    }
-
     if(this->param.ale_formulation == false && this->start_with_low_order == false)
     {
       // note that the loop begins with i=1! (we could also start with i=0 but this is not
@@ -170,7 +163,7 @@ TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
                                                       this->get_previous_time(i));
       }
     }
-    else
+    else if(this->param.ale_formulation == true && this->start_with_low_order == true)
     {
       this->operator_base->evaluate_convective_term(vec_convective_term[0],
                                                     velocity[0],
@@ -191,7 +184,6 @@ TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
                                                            pressure[i],
                                                            this->get_previous_time(i));
   }
-
   else if(this->param.ale_formulation == true && this->start_with_low_order == true)
   {
     this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
@@ -503,7 +495,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
       for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
         rhs.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
     }
-    else
+    else // ALE case
     {
       if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
       {
@@ -540,6 +532,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
+    // vec_convective_term[0] has already been computed in case of ALE formulation
     if(this->param.ale_formulation == false)
     {
       this->operator_base->evaluate_convective_term(vec_convective_term[0],
