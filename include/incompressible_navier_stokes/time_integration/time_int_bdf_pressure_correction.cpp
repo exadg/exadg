@@ -604,8 +604,7 @@ TimeIntBDFPressureCorrection<Number>::pressure_step()
   // pressure solution p_{n+1} at time t^{n+1}
   for(unsigned int i = 0; i < pressure.size(); ++i)
   {
-    pressure_increment.add(this->extra.get_beta(i),
-                           pressure[i]); // initial guess (p^{n+1}\approx \sum_i^J \beta_i p^{n-1})
+    pressure_increment.add(this->extra.get_beta(i), pressure[i]);
   }
 
   // incremental formulation
@@ -620,9 +619,7 @@ TimeIntBDFPressureCorrection<Number>::pressure_step()
     // formulation of the pressure-correction scheme.
     for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
     {
-      pressure_increment.add(
-        -extra_pressure_gradient.get_beta(i),
-        pressure[i]); // initial guess: \phi^{n+1}\approx p^{n+1}-\sum_i^{J_p} p^{n-i}
+      pressure_increment.add(-extra_pressure_gradient.get_beta(i), pressure[i]);
     }
   }
 
