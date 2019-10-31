@@ -90,7 +90,7 @@ private:
                               double                  time_step_size);
 
   void
-  fill_grid_coordinates_vector(int component);
+  fill_grid_coordinates_vector(VectorType & grid_coordinates_discontinuous);
 
 
   InputParameters                                  param;
@@ -107,9 +107,9 @@ private:
   DoFHandler<dim> dof_handler_x_grid_discontinuous;
 
   // vectors
-  std::vector<VectorType>                                 vec_position_grid_new;
-  LinearAlgebra::distributed::Vector<Number>              grid_velocity;
-  std::vector<LinearAlgebra::distributed::Vector<Number>> vec_x_grid_discontinuous;
+  std::vector<VectorType> vec_position_grid_new;
+  VectorType              grid_velocity;
+  std::vector<VectorType> vec_x_grid_discontinuous;
 
   // mappings
   std::shared_ptr<MappingQGeneric<dim>> mapping;
