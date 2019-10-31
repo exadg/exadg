@@ -93,7 +93,7 @@ private:
                               double                  time_step_size);
 
   void
-  fill_grid_coordinates_vector(int component = 0);
+  fill_grid_coordinates_vector(int component);
 
 
   InputParameters                                  param;

@@ -317,7 +317,7 @@ MovingMesh<dim, Number>::initialize_vectors()
     // fill grid coordinates vector at start time t_0, grid coordinates
     // at previous times have to be computed by a separate function call
     // if the time integrator is started with high order.
-    fill_grid_coordinates_vector();
+    fill_grid_coordinates_vector(0);
   }
 
   navier_stokes_operation->set_grid_velocity(grid_velocity);
@@ -444,7 +444,7 @@ MovingMesh<dim, Number>::compute_grid_velocity_from_grid_coordinates(
   double              time_step_size)
 {
   push_back(vec_x_grid_discontinuous);
-  fill_grid_coordinates_vector();
+  fill_grid_coordinates_vector(0);
   compute_bdf_time_derivative(grid_velocity,
                               vec_x_grid_discontinuous,
                               time_integrator_constants,
@@ -469,14 +469,14 @@ MovingMesh<dim, Number>::compute_bdf_time_derivative(VectorType &            dst
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::fill_grid_coordinates_vector(int component)
+MovingMesh<dim, Number>::fill_grid_coordinates_vector(int time_index)
 {
   IndexSet relevant_dofs_grid;
   DoFTools::extract_locally_relevant_dofs(dof_handler_x_grid_discontinuous, relevant_dofs_grid);
 
-  vec_x_grid_discontinuous[component].reinit(dof_handler_x_grid_discontinuous.locally_owned_dofs(),
-                                             relevant_dofs_grid,
-                                             MPI_COMM_WORLD);
+  vec_x_grid_discontinuous[time_index].reinit(dof_handler_x_grid_discontinuous.locally_owned_dofs(),
+                                              relevant_dofs_grid,
+                                              MPI_COMM_WORLD);
   // clang-format off
   FEValues<dim>  fe_values(get_mapping(),
                            *fe_u_grid,
@@ -495,11 +495,11 @@ MovingMesh<dim, Number>::fill_grid_coordinates_vector(int component)
       {
         const unsigned int coordinate_direction = (*fe_u_grid).system_to_component_index(i).first;
         const Point<dim>   point                = fe_values.quadrature_point(i);
-        vec_x_grid_discontinuous[component](dof_indices[i]) = point[coordinate_direction];
+        vec_x_grid_discontinuous[time_index](dof_indices[i]) = point[coordinate_direction];
       }
     }
   }
-  vec_x_grid_discontinuous[component].update_ghost_values();
+  vec_x_grid_discontinuous[time_index].update_ghost_values();
 }
 
 
