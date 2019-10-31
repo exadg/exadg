@@ -46,7 +46,7 @@ const MeshType MESH_TYPE = MeshType::UniformCartesian;
 
 
 MeshMovementShape const MESH_MOVEMENT_SHAPE = MeshMovementShape::Sin;
-MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::SinSquared;
+MeshMovementAdvanceInTime const MESH_MOVEMENT_ADVANCE_IN_TIME = MeshMovementAdvanceInTime::Sin;
 double const LEFT               = -0.5;
 double const RIGHT              = 0.5;
 double const MESH_MOVEMENT_AMPLITUDE = 0.04;
@@ -63,20 +63,6 @@ namespace IncNS
 void
 set_input_parameters(InputParameters & param)
 {
-  // ALE
-  param.ale_formulation                          = true;
-  param.grid_velocity_analytical                 = false;
-  param.neumann_with_variable_normal_vector      = true;
-  param.start_with_low_order                     = false;
-  param.time_step_size                           = 0.25; // 0.5;//5e-5;
-  param.order_time_integrator                    = 2;
-  param.temporal_discretization                  = TemporalDiscretization::BDFPressureCorrection;
-  param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
-  param.adaptive_time_stepping                   = false;
-  param.cfl                                      = 0.4;
-  param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
-  param.extrapolate_pressure_predictor_on_former_mesh_instances = true;
-
   // MATHEMATICAL MODEL
   param.dim                         = 2;
   param.problem_type                = ProblemType::Unsteady;
@@ -85,18 +71,27 @@ set_input_parameters(InputParameters & param)
   param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side             = false;
 
-
+  // ALE
+  param.ale_formulation                          = true;
+  param.grid_velocity_analytical                 = false;
+  param.neumann_with_variable_normal_vector      = true;
+  param.start_with_low_order                     = false;
+  param.time_step_size                           = 0.25;
+  param.order_time_integrator                    = 2;
+  param.temporal_discretization                  = TemporalDiscretization::BDFPressureCorrection;
+  param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
+  param.adaptive_time_stepping                   = false;
+  param.cfl                                      = 0.4;
+  param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
+  param.extrapolate_pressure_predictor_on_former_mesh_instances = false;
 
   // PHYSICAL QUANTITIES
   param.start_time = START_TIME;
   param.end_time   = END_TIME;
   param.viscosity  = VISCOSITY;
 
-
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-
-
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif          = TimeIntegratorOIF::ExplRK3Stage7Reg2;
 
@@ -104,7 +99,6 @@ set_input_parameters(InputParameters & param)
   param.cfl_oif                         = param.cfl / 1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff                           = 8.0;
-
 
   param.dt_refinements = REFINE_TIME_MIN;
 
@@ -169,7 +163,7 @@ set_input_parameters(InputParameters & param)
   // viscous step
   param.solver_viscous                = SolverViscous::CG;
   param.solver_data_viscous           = SolverData(1000, 1.e-12, 1.e-6);
-  param.preconditioner_viscous        = PreconditionerViscous::InverseMassMatrix;
+  param.preconditioner_viscous        = PreconditionerViscous::Multigrid;
   param.update_preconditioner_viscous = false;
 
 
@@ -185,21 +179,21 @@ set_input_parameters(InputParameters & param)
   param.newton_solver_data_momentum = NewtonSolverData(100, 1.e-12, 1.e-6);
 
   // linear solver
-  param.solver_momentum                  = SolverMomentum::FGMRES;
+  param.solver_momentum                  = SolverMomentum::CG; //FGMRES;
   param.solver_data_momentum             = SolverData(1e4, 1.e-12, 1.e-6, 100);
-  param.preconditioner_momentum          = MomentumPreconditioner::InverseMassMatrix;
-  param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionConvectionDiffusion;
-  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
-  param.update_preconditioner_momentum                 = true;
+  param.preconditioner_momentum          = MomentumPreconditioner::Multigrid; //InverseMassMatrix;
+  param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+  param.update_preconditioner_momentum   = false;
 
   // Jacobi smoother data
-  param.multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
-  param.multigrid_data_momentum.smoother_data.iterations     = 5;
-  param.multigrid_data_momentum.coarse_problem.solver        = MultigridCoarseGridSolver::GMRES;
+//  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+//  param.multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+//  param.multigrid_data_momentum.smoother_data.iterations     = 5;
+//  param.multigrid_data_momentum.coarse_problem.solver        = MultigridCoarseGridSolver::GMRES;
 
   // Chebyshev smoother data
-  //  param.multigrid_data_momentum.smoother = MultigridSmoother::Chebyshev;
-  //  param.multigrid_data_momentum.coarse_solver = MultigridCoarseGridSolver::Chebyshev;
+    param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+    param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
 
   // GMRES smoother data
   //  param.multigrid_data_momentum.gmres_smoother_data.preconditioner =
@@ -598,7 +592,7 @@ construct_postprocessor(InputParameters const & param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output                    = true;
+  pp_data.output_data.write_output                    = false; //true;
   pp_data.output_data.output_folder                   = "output/vortex/vtu/";
   pp_data.output_data.output_name                     = "vortex";
   pp_data.output_data.output_start_time               = param.start_time;
