@@ -82,8 +82,13 @@ MovingMesh<dim, Number>::initialize_grid_coordinates_on_former_mesh_instances(
   for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
     advance_grid_coordinates(eval_times[i]);
+
+    // TODO Why are we doing this update? It updates matrixfree but
+    // fill_grid_coordinates_vector() does not depend on matrixfree?
     navier_stokes_operation->update_after_mesh_movement();
 
+    // TODO Why are we computing the grid velocity here?
+    // fill_grid_coordinates_vector does not depend on grid_velocity?
     compute_grid_velocity_analytical(eval_times[i]);
 
     fill_grid_coordinates_vector(vec_x_grid_discontinuous[i]);
@@ -108,6 +113,9 @@ MovingMesh<dim, Number>::get_former_solution_on_former_mesh_instances(
   for(int i = param.order_time_integrator - 1; i >= 0; --i)
   {
     advance_grid_coordinates(eval_times[i]);
+
+    // TODO Why are we doing this update? It updates matrixfree but
+    // prescribe_initial_conditions() does not depend on matrixfree?
     navier_stokes_operation->update_after_mesh_movement();
 
     navier_stokes_operation->prescribe_initial_conditions(solution[i].block(0),
