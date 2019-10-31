@@ -380,11 +380,12 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     // Pressure-correction
     if(param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
-      auto time_integrator_pc =
-        std::dynamic_pointer_cast<TimeIntPressureCorrection>(time_integrator);
-
-      if(param.order_pressure_extrapolation > 0)
+      if(param.order_pressure_extrapolation > 0 &&
+         this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
       {
+        auto time_integrator_pc =
+          std::dynamic_pointer_cast<TimeIntPressureCorrection>(time_integrator);
+
         time_integrator_pc->set_vec_pressure_gradient_term_considering_former_mesh_instances(
           ale_operation->get_vec_pressure_gradient_term_on_former_mesh_instances(eval_times));
 
