@@ -71,9 +71,6 @@ private:
   initialize_dof_handler();
 
   void
-  initialize_vectors();
-
-  void
   initialize_mapping_ale();
 
   Mapping<dim> &

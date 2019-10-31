@@ -30,7 +30,33 @@ template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::setup()
 {
-  initialize_vectors();
+  navier_stokes_operation->initialize_vector_velocity(grid_velocity);
+
+  // If param.start_with_low_order == true, we only know the grid coordinates
+  // at start time t_0 but not at previous times. Hence, it is not possible to
+  // calculate the grid velocity from the grid coordinates but it has to be calculated
+  // using the analytical function.
+  if(param.grid_velocity_analytical == true || param.start_with_low_order == true)
+  {
+    compute_grid_velocity_analytical(param.start_time);
+  }
+
+  // compute grid velocity from grid positions
+  if(param.grid_velocity_analytical == false)
+  {
+    for(unsigned int i = 0; i < vec_x_grid_discontinuous.size(); ++i)
+    {
+      navier_stokes_operation->initialize_vector_velocity(vec_x_grid_discontinuous[i]);
+      vec_x_grid_discontinuous[i].update_ghost_values();
+    }
+
+    // fill grid coordinates vector at start time t_0, grid coordinates
+    // at previous times have to be computed by a separate function call
+    // if the time integrator is started with high order.
+    fill_grid_coordinates_vector(0);
+  }
+
+  navier_stokes_operation->set_grid_velocity(grid_velocity);
 }
 
 template<int dim, typename Number>
@@ -288,39 +314,6 @@ MovingMesh<dim, Number>::initialize_dof_handler()
   dof_handler_x_grid_continuous.distribute_mg_dofs();
   dof_handler_u_grid.distribute_dofs(*fe_u_grid);
   dof_handler_x_grid_discontinuous.distribute_dofs(*fe_u_grid);
-}
-
-template<int dim, typename Number>
-void
-MovingMesh<dim, Number>::initialize_vectors()
-{
-  navier_stokes_operation->initialize_vector_velocity(grid_velocity);
-
-  // If param.start_with_low_order == true, we only know the grid coordinates
-  // at start time t_0 but not at previous times. Hence, it is not possible to
-  // calculate the grid velocity from the grid coordinates but it has to be calculated
-  // using the analytical function.
-  if(param.grid_velocity_analytical == true || param.start_with_low_order == true)
-  {
-    compute_grid_velocity_analytical(param.start_time);
-  }
-
-  // compute grid velocity from grid positions
-  if(param.grid_velocity_analytical == false)
-  {
-    for(unsigned int i = 0; i < vec_x_grid_discontinuous.size(); ++i)
-    {
-      navier_stokes_operation->initialize_vector_velocity(vec_x_grid_discontinuous[i]);
-      vec_x_grid_discontinuous[i].update_ghost_values();
-    }
-
-    // fill grid coordinates vector at start time t_0, grid coordinates
-    // at previous times have to be computed by a separate function call
-    // if the time integrator is started with high order.
-    fill_grid_coordinates_vector(0);
-  }
-
-  navier_stokes_operation->set_grid_velocity(grid_velocity);
 }
 
 template<int dim, typename Number>
