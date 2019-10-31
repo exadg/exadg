@@ -53,8 +53,8 @@ TimeIntBDFDualSplitting<Number>::update_time_integrator_constants()
   }
 
   // use this function to check the correctness of the time integrator constants
-  //  std::cout << "Coefficients extrapolation scheme pressure NBC:" << std::endl;
-  //  extra_pressure_nbc.print();
+  //    std::cout << "Coefficients extrapolation scheme pressure NBC:" << std::endl;
+  //    extra_pressure_nbc.print(this->pcout);
 }
 
 template<typename Number>
@@ -196,7 +196,7 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
       }
     }
   }
-  else
+  else // ALE case
   {
     // In the ale case, initialization of the time integrator is just performed for low_order start;
     // otherwise the initialization is performed in the main file, utilizing the moving_mesh class

@@ -233,6 +233,7 @@ MovingMesh<dim, Number>::get_vec_pressure_gradient_term_on_former_mesh_instances
                                                              solution[i].block(1),
                                                              eval_times[i]);
   }
+
   return vec_pressure_gradient_term;
 }
 
@@ -264,6 +265,9 @@ MovingMesh<dim, Number>::get_pressure_mass_matrix_term_on_former_mesh_instances(
 
     navier_stokes_operation_pc->apply_pressure_mass_matrix(vec_pressure_mass_matrix_term[i],
                                                            solution[i].block(1));
+
+    std::cout << "L2 norm src = " << solution[i].block(1).l2_norm() << std::endl;
+    std::cout << "L2 norm solution = " << vec_pressure_mass_matrix_term[i].l2_norm() << std::endl;
   }
 
   return vec_pressure_mass_matrix_term;
@@ -292,22 +296,17 @@ MovingMesh<dim, Number>::initialize_vectors()
 {
   navier_stokes_operation->initialize_vector_velocity(grid_velocity);
 
-  if(param.start_with_low_order == true)
+  // If param.start_with_low_order == true, we only know the grid coordinates
+  // at start time t_0 but not at previous times. Hence, it is not possible to
+  // calculate the grid velocity from the grid coordinates but it has to be calculated
+  // using the analytical function.
+  if(param.grid_velocity_analytical == true || param.start_with_low_order == true)
   {
     compute_grid_velocity_analytical(param.start_time);
-    AssertThrow(
-      grid_velocity.l2_norm() <= std::numeric_limits<Number>::min(),
-      ExcMessage(
-        "Consider an other mesh moving function (e.g. use MeshMovementAdvanceInTime::SinSquared). "
-        "For low oder start, the grid velocity has to be 0 at start time to ensure a mesh motion "
-        "that is continuously differentiable in time."));
   }
 
-  if(param.grid_velocity_analytical == true)
-  {
-    compute_grid_velocity_analytical(param.start_time);
-  }
-  else // compute grid velocity from grid positions
+  // compute grid velocity from grid positions
+  if(param.grid_velocity_analytical == false)
   {
     for(unsigned int i = 0; i < vec_x_grid_discontinuous.size(); ++i)
     {
