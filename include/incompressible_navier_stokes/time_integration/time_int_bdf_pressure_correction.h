@@ -96,7 +96,7 @@ private:
   do_solve_timestep();
 
   void
-  ale_update_post();
+  ale_update_post() override;
 
   void
   solve_steady_problem();

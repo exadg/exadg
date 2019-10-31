@@ -41,16 +41,7 @@ DGNavierStokesPressureCorrection<dim, Number>::setup(
 
   if(this->param.ale_formulation)
   {
-    AffineConstraints<double> constraint_dummy;
-    constraint_dummy.close();
-
-    // pressure mass matrix operator
-    MassMatrixOperatorData mass_matrix_operator_data;
-    mass_matrix_operator_data.dof_index  = this->get_dof_index_pressure();
-    mass_matrix_operator_data.quad_index = this->get_quad_index_pressure();
-    mass_matrix_pressure.reinit(this->get_matrix_free(),
-                                constraint_dummy,
-                                mass_matrix_operator_data);
+    setup_mass_matrix_operator_pressure();
   }
 }
 
@@ -217,6 +208,20 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
                                                         this->momentum_operator,
                                                         *momentum_linear_solver));
   }
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::setup_mass_matrix_operator_pressure()
+{
+  AffineConstraints<double> constraint_dummy;
+  constraint_dummy.close();
+
+  // pressure mass matrix operator
+  MassMatrixOperatorData mass_matrix_operator_data;
+  mass_matrix_operator_data.dof_index  = this->get_dof_index_pressure();
+  mass_matrix_operator_data.quad_index = this->get_quad_index_pressure();
+  mass_matrix_pressure.reinit(this->get_matrix_free(), constraint_dummy, mass_matrix_operator_data);
 }
 
 template<int dim, typename Number>

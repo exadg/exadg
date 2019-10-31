@@ -124,7 +124,7 @@ public:
    * scheme.
    */
   void
-  update_after_mesh_movement();
+  update_after_mesh_movement() override;
 
   /*
    * Momentum step:
@@ -241,8 +241,11 @@ private:
   initialize_momentum_solver();
 
   /*
-   * Setup of inverse mass matrix operator for pressure.
+   * Setup of (inverse) mass matrix operator for pressure.
    */
+  void
+  setup_mass_matrix_operator_pressure();
+
   void
   setup_inverse_mass_matrix_operator_pressure();
 
