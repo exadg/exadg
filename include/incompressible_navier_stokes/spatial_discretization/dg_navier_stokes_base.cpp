@@ -15,10 +15,11 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
-  parallel::TriangulationBase<dim> const & triangulation,
+  parallel::TriangulationBase<dim> const & triangulation_in,
   InputParameters const &                  parameters_in,
   std::shared_ptr<Postprocessor>           postprocessor_in)
   : dealii::Subscriptor(),
+    triangulation(triangulation_in),
     param(parameters_in),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
     fe_p(param.get_degree_p()),
@@ -60,8 +61,7 @@ DGNavierStokesBase<dim, Number>::setup(
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh_in)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
 {
   pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
@@ -69,6 +69,18 @@ DGNavierStokesBase<dim, Number>::setup(
   boundary_descriptor_velocity = boundary_descriptor_velocity_in;
   boundary_descriptor_pressure = boundary_descriptor_pressure_in;
   field_functions              = field_functions_in;
+
+  // ALE formulation with moving mesh
+  if(param.ale_formulation)
+  {
+    moving_mesh.reset(
+      new MovingMesh<dim, Number>(param, triangulation, field_functions->mesh_movement, *this));
+
+    AssertThrow(
+      moving_mesh.get() != 0,
+      ExcMessage(
+        "Variable moving_mesh needs to be initialized in case of ale_formulation == true."));
+  }
 
   initialize_boundary_descriptor_laplace();
 
@@ -98,15 +110,6 @@ DGNavierStokesBase<dim, Number>::setup(
 
   // depending on DoFHandler, Mapping, MatrixFree
   initialize_postprocessor();
-
-  moving_mesh = moving_mesh_in;
-
-  if(param.ale_formulation)
-  {
-    AssertThrow(moving_mesh.get() != 0,
-                ExcMessage(
-                  "Variable moving_mesh needs to be initialized in case of ale_formulation."));
-  }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
 }

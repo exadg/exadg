@@ -45,8 +45,6 @@ using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
-
-// 2D Navier-Stokes flow
 //#include "incompressible_navier_stokes_ale_test_cases/poiseuille_ale.h"
 #include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
 //#include "incompressible_navier_stokes_ale_test_cases/taylor_vortex_ale.h"
@@ -129,8 +127,6 @@ private:
 
   std::shared_ptr<DriverSteady> driver_steady;
 
-  std::shared_ptr<MovingMesh<dim, Number>> ale_operation;
-
   /*
    * Computation time (wall clock time).
    */
@@ -212,10 +208,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  // set mesh movement function
-  if(param.ale_formulation == true)
-    mesh_movement_function = set_mesh_movement_function<dim>();
-
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);
 
@@ -284,21 +276,12 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  if(param.ale_formulation == true)
-  {
-    ale_operation = std::make_shared<MovingMesh<dim, Number>>(param,
-                                                              triangulation,
-                                                              mesh_movement_function,
-                                                              navier_stokes_operation);
-  }
-
   // Depends on mapping which is initialized in constructor of MovingMesh
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
-                                 field_functions,
-                                 ale_operation);
+                                 field_functions);
 
   if(param.solver_type == SolverType::Unsteady)
   {

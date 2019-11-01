@@ -228,11 +228,10 @@ public:
       data(data_in),
       length(data_in.dimensions[0]),
       height(data_in.dimensions[1]),
+      depth(dim == 3 ? data_in.dimensions[2] : 1.0),
       runtime(data_in.t_end - data_in.t_start),
       time_period(runtime / data_in.frequency)
   {
-    if(dim == 3)
-      depth = data_in.dimensions[2];
   }
 
   double

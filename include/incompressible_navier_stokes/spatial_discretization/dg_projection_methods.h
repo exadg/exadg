@@ -48,8 +48,7 @@ public:
                                                         periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-        std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh = nullptr);
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
 
   /*
    * This function evaluates the rhs-contribution of the viscous term and adds the result to the

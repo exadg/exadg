@@ -20,9 +20,9 @@ public:
   typedef LinearAlgebra::distributed::BlockVector<Number>                      BlockVectorType;
 
   MovingMesh(InputParameters const &                           param_in,
-             std::shared_ptr<parallel::TriangulationBase<dim>> triangulation_in,
+             parallel::TriangulationBase<dim> const &          triangulation_in,
              std::shared_ptr<MeshMovementFunctions<dim>> const mesh_movement_function_in,
-             std::shared_ptr<DGNavierStokesBase<dim, Number>>  navier_stokes_operation_in);
+             DGNavierStokesBase<dim, Number> &                 navier_stokes_operation_in);
 
   void
   advance_grid_coordinates(double const time);
@@ -43,21 +43,20 @@ private:
   Mapping<dim> &
   get_mapping() const;
 
-  InputParameters                                  param;
-  std::shared_ptr<MeshMovementFunctions<dim>>      mesh_movement_function;
-  std::shared_ptr<DGNavierStokesBase<dim, Number>> navier_stokes_operation;
+  InputParameters                             param;
+  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
+  DGNavierStokesBase<dim, Number> &           navier_stokes_operation;
 
   // fe systems
-  std::shared_ptr<FESystem<dim>> fe_x_grid_continuous;
-  std::shared_ptr<FESystem<dim>> fe_u_grid;
+  std::shared_ptr<FESystem<dim>> fe_vectorial_continuous;
+  std::shared_ptr<FESystem<dim>> fe_vectorial_discontinuous;
 
   // dof handlers
-  DoFHandler<dim> dof_handler_x_grid_continuous;
-  DoFHandler<dim> dof_handler_u_grid;
-  DoFHandler<dim> dof_handler_x_grid_discontinuous;
+  DoFHandler<dim> dof_handler_vectorial_continuous;
+  DoFHandler<dim> dof_handler_vectorial_discontinuous;
 
-  // vectors
-  std::vector<VectorType> vec_position_grid_new;
+  // vectors with grid coordinates for all multigrid levels
+  std::vector<VectorType> grid_coordinates;
 
   // mappings
   std::shared_ptr<MappingQGeneric<dim>> mapping;

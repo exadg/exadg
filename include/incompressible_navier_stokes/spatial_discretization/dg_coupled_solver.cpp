@@ -30,14 +30,12 @@ DGNavierStokesCoupled<dim, Number>::setup(
                                                   periodic_face_pairs,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-  std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions)
 {
   Base::setup(periodic_face_pairs,
               boundary_descriptor_velocity,
               boundary_descriptor_pressure,
-              field_functions,
-              moving_mesh);
+              field_functions);
 
   this->initialize_vector_velocity(temp_vector);
 }
