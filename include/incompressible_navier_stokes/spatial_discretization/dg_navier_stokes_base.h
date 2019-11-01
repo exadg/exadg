@@ -392,7 +392,6 @@ public:
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
   // ALE
-
   virtual void
   update_after_mesh_movement();
 
@@ -400,10 +399,16 @@ public:
   set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
 
   void
-  set_grid_velocity(VectorType u_grid_in);
+  set_grid_velocity(VectorType velocity);
 
   void
-  fill_grid_coordinates_vector(double const time, unsigned int const time_index);
+  move_mesh(double const time);
+
+  void
+  move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
+
+  void
+  compute_grid_velocity_analytical(VectorType & velocity, double const time);
 
 protected:
   /*

@@ -102,6 +102,8 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::allocate_vectors()
 {
+  TimeIntBDF<Number>::allocate_vectors();
+
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
   {
@@ -906,6 +908,8 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 {
+  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+
   push_back(velocity);
   velocity[0].swap(velocity_np);
 

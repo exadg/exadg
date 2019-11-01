@@ -125,7 +125,19 @@ public:
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
-  fill_grid_coordinates_vector(double const time, unsigned int const time_index) = 0;
+  update_after_mesh_movement() = 0;
+
+  virtual void
+  move_mesh(double const time) = 0;
+
+  virtual void
+  move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time) = 0;
+
+  virtual void
+  compute_grid_velocity_analytical(VectorType & vector, double const time) = 0;
+
+  virtual void
+  set_grid_velocity(VectorType velocity) = 0;
 };
 
 /*

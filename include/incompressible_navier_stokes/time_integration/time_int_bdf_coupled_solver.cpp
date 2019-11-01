@@ -35,6 +35,8 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::allocate_vectors()
 {
+  TimeIntBDF<Number>::allocate_vectors();
+
   // solution
   for(unsigned int i = 0; i < solution.size(); ++i)
     pde_operator->initialize_block_vector_velocity_pressure(solution[i]);
@@ -551,6 +553,8 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
 {
+  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+
   push_back(solution);
   solution[0].swap(solution_np);
 

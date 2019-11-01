@@ -52,20 +52,18 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
-  // ALE
-  // TODO make this function protected again
-  std::vector<double>
-  get_current_time_integrator_constants() const;
-
-  void
-  set_grid_velocity_cfl(VectorType u_grid_cfl_in);
-
   virtual void
   update_time_integrator_constants();
 
 protected:
   virtual void
   setup_derived() override;
+
+  virtual void
+  allocate_vectors() override;
+
+  virtual void
+  prepare_vectors_for_next_timestep() override;
 
   void
   solve_timestep();
@@ -98,11 +96,7 @@ private:
   do_solve_timestep() = 0;
 
   void
-  ale_update_pre()
-  {
-    // TODO needs to be filled (should be the same for all Navier-Stokes solvers, so
-    // there should be no need to make this function virtual)
-  }
+  ale_update_pre();
 
   virtual void
   ale_update_post() = 0;
@@ -161,8 +155,10 @@ private:
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
 
-  // CFL ALE
-  VectorType u_grid_cfl;
+  // ALE
+  VectorType              grid_velocity;
+  std::vector<VectorType> vec_grid_coordinates;
+  VectorType              grid_coordinates_np;
 };
 
 } // namespace IncNS

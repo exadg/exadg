@@ -302,16 +302,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   if(param.solver_type == SolverType::Unsteady)
   {
-    // depends on matrix free which is initialized in navier_stokes_operation->setup
-    if(param.ale_formulation == true)
-    {
-      AssertThrow(ale_operation.get() != 0, ExcMessage("Not initialized."));
-      ale_operation->setup();
-      if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
-         param.adaptive_time_stepping == true)
-        time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
-    }
-
     // setup time integrator before calling setup_solvers
     // (this is necessary since the setup of the solvers
     // depends on quantities such as the time_step_size or gamma0!!!)
@@ -346,49 +336,8 @@ Problem<dim, Number>::solve()
     // run time loop
     if(this->param.problem_type == ProblemType::Steady)
       time_integrator->timeloop_steady_problem();
-    else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == false)
+    else if(this->param.problem_type == ProblemType::Unsteady)
       time_integrator->timeloop();
-    else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == true)
-    {
-      Timer timer_ale;
-
-      bool timeloop_finished = false;
-
-      while(!timeloop_finished)
-      {
-        // BDF coefficients are updated within advance_one_timestep()
-        // for ALE it is already needed before the function call to compute the grid velocity
-        time_integrator->update_time_integrator_constants();
-
-        // calculate mesh at time t_n+1
-
-        timer_ale.restart();
-        ale_operation->advance_grid_coordinates(time_integrator->get_next_time());
-        time_advance_mesh += timer_ale.wall_time();
-
-        timer_ale.restart();
-        navier_stokes_operation->update_after_mesh_movement();
-        time_ale_update += timer_ale.wall_time();
-
-        // calculate grid velocity at time t_n+1 and hand it over to navier_stokes_operation
-        // for correct evaluation of convective term
-        timer_ale.restart();
-        ale_operation->update_grid_velocities(
-          time_integrator->get_next_time(),
-          time_integrator->get_time_step_size(),
-          time_integrator->get_current_time_integrator_constants());
-        time_compute_and_set_mesh_velocity += timer_ale.wall_time();
-
-        // set grid velocity at time t_n+1 since the time integrator needs the grid velocity
-        // to compute the time step size for the next time step at the end of the current time step
-        if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
-           param.adaptive_time_stepping == true)
-          time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
-
-        // advance from t_n -> t_n+1
-        timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
-      }
-    }
     else
       AssertThrow(false, ExcMessage("Not implemented."));
   }

@@ -1052,6 +1052,8 @@ DGNavierStokesBase<dim, Number>::evaluate_convective_term(VectorType &       dst
   convective_operator.evaluate_nonlinear_operator(dst, src, time);
 }
 
+// TODO generalize this function so that it does not depend on compute_grid_velocity_analytical(),
+// since this function is not available for practical applications
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::move_mesh_and_evaluate_convective_term(VectorType &       dst,
@@ -1066,8 +1068,9 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_evaluate_convective_term(VectorTy
   update_after_mesh_movement();
 
   // the convective operator needs the correct grid velocity in the ALE case
-  moving_mesh->compute_grid_velocity_analytical(time);
-  set_grid_velocity(moving_mesh->get_grid_velocity());
+  VectorType grid_velocity(src);
+  moving_mesh->compute_grid_velocity_analytical(grid_velocity, time);
+  set_grid_velocity(grid_velocity);
 
   convective_operator.evaluate_nonlinear_operator(dst, src, time);
 }
@@ -1215,12 +1218,27 @@ DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::fill_grid_coordinates_vector(double const       time,
-                                                              unsigned int const time_index)
+DGNavierStokesBase<dim, Number>::move_mesh(double const time)
+{
+  moving_mesh->advance_grid_coordinates(time);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::move_mesh_and_fill_grid_coordinates_vector(VectorType & vector,
+                                                                            double const time)
 {
   moving_mesh->advance_grid_coordinates(time);
 
-  moving_mesh->fill_grid_coordinates_vector(time_index);
+  moving_mesh->fill_grid_coordinates_vector(vector);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::compute_grid_velocity_analytical(VectorType & velocity,
+                                                                  double const time)
+{
+  moving_mesh->compute_grid_velocity_analytical(velocity, time);
 }
 
 template<int dim, typename Number>

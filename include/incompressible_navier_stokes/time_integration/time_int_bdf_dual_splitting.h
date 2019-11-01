@@ -64,10 +64,10 @@ private:
   ale_update_post() override;
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() override;
 
   void
   convective_step();

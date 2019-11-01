@@ -5,9 +5,7 @@
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/lac/la_parallel_block_vector.h>
 
-#include "dg_dual_splitting.h"
 #include "dg_navier_stokes_base.h"
-#include "dg_pressure_correction.h"
 
 using namespace dealii;
 
@@ -27,24 +25,13 @@ public:
              std::shared_ptr<DGNavierStokesBase<dim, Number>>  navier_stokes_operation_in);
 
   void
-  setup();
-
-  void
   advance_grid_coordinates(double const time);
 
   void
-  update_grid_velocities(const double              time_in,
-                         const double              time_step_size,
-                         const std::vector<Number> time_integrator_constants);
+  compute_grid_velocity_analytical(VectorType & velocity, double const time);
 
   void
-  compute_grid_velocity_analytical(double const time);
-
-  VectorType
-  get_grid_velocity() const;
-
-  void
-  fill_grid_coordinates_vector(unsigned int const time_index);
+  fill_grid_coordinates_vector(VectorType & vector);
 
 private:
   void
@@ -55,16 +42,6 @@ private:
 
   Mapping<dim> &
   get_mapping() const;
-
-  void
-  compute_grid_velocity_from_grid_coordinates(std::vector<Number> time_integrator_constants,
-                                              double              time_step_size);
-
-  void
-  compute_bdf_time_derivative(VectorType &            dst,
-                              std::vector<VectorType> src,
-                              std::vector<Number>     time_integrator_constants,
-                              double                  time_step_size);
 
   InputParameters                                  param;
   std::shared_ptr<MeshMovementFunctions<dim>>      mesh_movement_function;
@@ -81,8 +58,6 @@ private:
 
   // vectors
   std::vector<VectorType> vec_position_grid_new;
-  VectorType              grid_velocity;
-  std::vector<VectorType> vec_x_grid_discontinuous;
 
   // mappings
   std::shared_ptr<MappingQGeneric<dim>> mapping;

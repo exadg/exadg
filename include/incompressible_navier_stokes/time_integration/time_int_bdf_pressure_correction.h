@@ -56,7 +56,7 @@ private:
   update_time_integrator_constants();
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
   initialize_current_solution();
@@ -113,7 +113,7 @@ private:
   rhs_pressure(VectorType & rhs) const;
 
   void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() override;
 
   void
   postprocessing() const;

@@ -58,7 +58,7 @@ private:
   setup_derived() override;
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
   initialize_current_solution();
@@ -91,7 +91,7 @@ private:
   postprocessing_steady_problem() const;
 
   void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() override;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;

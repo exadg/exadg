@@ -96,6 +96,8 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::allocate_vectors()
 {
+  TimeIntBDF<Number>::allocate_vectors();
+
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
     this->operator_base->initialize_vector_velocity(velocity[i]);
@@ -959,6 +961,8 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
 {
+  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+
   push_back(velocity);
   velocity[0].swap(velocity_np);
 
