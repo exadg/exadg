@@ -49,11 +49,6 @@ MovingMesh<dim, Number>::setup()
       navier_stokes_operation->initialize_vector_velocity(vec_x_grid_discontinuous[i]);
       vec_x_grid_discontinuous[i].update_ghost_values();
     }
-
-    // fill grid coordinates vector at start time t_0, grid coordinates
-    // at previous times have to be computed by a separate function call
-    // if the time integrator is started with high order.
-    fill_grid_coordinates_vector(vec_x_grid_discontinuous[0]);
   }
 
   navier_stokes_operation->set_grid_velocity(grid_velocity);
@@ -71,240 +66,6 @@ MovingMesh<dim, Number>::update_grid_velocities(const double              time,
     compute_grid_velocity_from_grid_coordinates(time_integrator_constants, time_step_size);
 
   navier_stokes_operation->set_grid_velocity(grid_velocity);
-}
-
-template<int dim, typename Number>
-void
-MovingMesh<dim, Number>::initialize_grid_coordinates_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(int i = param.order_time_integrator - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-
-    // TODO Why are we doing this update? It updates matrixfree but
-    // fill_grid_coordinates_vector() does not depend on matrixfree?
-    navier_stokes_operation->update_after_mesh_movement();
-
-    // TODO Why are we computing the grid velocity here?
-    // fill_grid_coordinates_vector does not depend on grid_velocity?
-    compute_grid_velocity_analytical(eval_times[i]);
-
-    fill_grid_coordinates_vector(vec_x_grid_discontinuous[i]);
-  }
-}
-
-template<int dim, typename Number>
-std::vector<LinearAlgebra::distributed::BlockVector<Number>>
-MovingMesh<dim, Number>::get_former_solution_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  std::vector<BlockVectorType> solution(param.order_time_integrator);
-
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(unsigned int i = 0; i < solution.size(); ++i)
-  {
-    solution[i].reinit(2);
-    navier_stokes_operation->initialize_vector_velocity(solution[i].block(0));
-    navier_stokes_operation->initialize_vector_pressure(solution[i].block(1));
-  }
-
-  for(int i = param.order_time_integrator - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-
-    // TODO Why are we doing this update? It updates matrixfree but
-    // prescribe_initial_conditions() does not depend on matrixfree?
-    navier_stokes_operation->update_after_mesh_movement();
-
-    navier_stokes_operation->prescribe_initial_conditions(solution[i].block(0),
-                                                          solution[i].block(1),
-                                                          eval_times[i]);
-  }
-
-  return solution;
-}
-
-template<int dim, typename Number>
-std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::get_convective_term_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
-  std::vector<VectorType>      vec_convective_term(param.order_time_integrator);
-
-  for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-    navier_stokes_operation->initialize_vector_velocity(vec_convective_term[i]);
-
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(int i = param.order_time_integrator - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-    navier_stokes_operation->update_after_mesh_movement();
-
-    compute_grid_velocity_analytical(eval_times[i]);
-    navier_stokes_operation->set_grid_velocity(grid_velocity);
-
-    navier_stokes_operation->evaluate_convective_term(vec_convective_term[i],
-                                                      solution[i].block(0),
-                                                      eval_times[i]);
-  }
-
-  return vec_convective_term;
-}
-
-template<int dim, typename Number>
-std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::get_vec_rhs_ppe_div_term_convective_term_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
-  std::vector<VectorType>      vec_rhs_ppe_div_term_convective_term(param.order_time_integrator);
-
-  for(unsigned int i = 0; i < vec_rhs_ppe_div_term_convective_term.size(); ++i)
-    navier_stokes_operation->initialize_vector_pressure(vec_rhs_ppe_div_term_convective_term[i]);
-
-  auto navier_stokes_operation_ds =
-    std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, Number>>(navier_stokes_operation);
-
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(int i = param.order_time_integrator - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-    navier_stokes_operation->update_after_mesh_movement();
-
-    compute_grid_velocity_analytical(eval_times[i]);
-    navier_stokes_operation->set_grid_velocity(grid_velocity);
-
-    vec_rhs_ppe_div_term_convective_term[i] = 0.0;
-    navier_stokes_operation_ds->rhs_ppe_div_term_convective_term_add(
-      vec_rhs_ppe_div_term_convective_term[i], solution[i].block(0));
-  }
-
-  return vec_rhs_ppe_div_term_convective_term;
-}
-
-template<int dim, typename Number>
-std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::get_vec_rhs_ppe_convective_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
-  std::vector<VectorType>      vec_rhs_ppe_convective(param.order_extrapolation_pressure_nbc);
-
-  for(unsigned int i = 0; i < vec_rhs_ppe_convective.size(); ++i)
-    navier_stokes_operation->initialize_vector_pressure(vec_rhs_ppe_convective[i]);
-
-  auto navier_stokes_operation_ds =
-    std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, Number>>(navier_stokes_operation);
-
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(int i = param.order_extrapolation_pressure_nbc - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-    navier_stokes_operation->update_after_mesh_movement();
-    compute_grid_velocity_analytical(eval_times[i]);
-    navier_stokes_operation->set_grid_velocity(grid_velocity);
-
-    vec_rhs_ppe_convective[i] = 0.0;
-    navier_stokes_operation_ds->rhs_ppe_convective_add(vec_rhs_ppe_convective[i],
-                                                       solution[i].block(0));
-  }
-
-  return vec_rhs_ppe_convective;
-}
-
-template<int dim, typename Number>
-std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::get_vec_rhs_ppe_viscous_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
-  std::vector<VectorType>      vec_rhs_ppe_viscous(param.order_extrapolation_pressure_nbc);
-  VectorType                   vorticity;
-
-  for(unsigned int i = 0; i < vec_rhs_ppe_viscous.size(); ++i)
-    navier_stokes_operation->initialize_vector_pressure(vec_rhs_ppe_viscous[i]);
-  navier_stokes_operation->initialize_vector_velocity(vorticity);
-
-  auto navier_stokes_operation_ds =
-    std::dynamic_pointer_cast<DGNavierStokesDualSplitting<dim, Number>>(navier_stokes_operation);
-
-  for(int i = param.order_extrapolation_pressure_nbc - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-    navier_stokes_operation->update_after_mesh_movement();
-
-    vec_rhs_ppe_viscous[i] = 0.0;
-    navier_stokes_operation->compute_vorticity(vorticity, solution[i].block(0));
-    navier_stokes_operation_ds->rhs_ppe_viscous_add(vec_rhs_ppe_viscous[i], vorticity);
-  }
-
-  return vec_rhs_ppe_viscous;
-}
-
-template<int dim, typename Number>
-std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::get_vec_pressure_gradient_term_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  std::vector<VectorType>      vec_pressure_gradient_term(param.order_pressure_extrapolation);
-  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
-
-  for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
-  {
-    navier_stokes_operation->initialize_vector_velocity(vec_pressure_gradient_term[i]);
-  }
-
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(int i = param.order_pressure_extrapolation - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-    navier_stokes_operation->update_after_mesh_movement();
-
-    navier_stokes_operation->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
-                                                             solution[i].block(1),
-                                                             eval_times[i]);
-  }
-
-  return vec_pressure_gradient_term;
-}
-
-template<int dim, typename Number>
-std::vector<LinearAlgebra::distributed::Vector<Number>>
-MovingMesh<dim, Number>::get_pressure_mass_matrix_term_on_former_mesh_instances(
-  std::vector<double> eval_times)
-{
-  auto navier_stokes_operation_pc =
-    std::dynamic_pointer_cast<DGNavierStokesPressureCorrection<dim, Number>>(
-      navier_stokes_operation);
-
-  std::vector<BlockVectorType> solution = get_former_solution_on_former_mesh_instances(eval_times);
-
-  std::vector<VectorType> vec_pressure_mass_matrix_term(param.order_pressure_extrapolation);
-
-  for(unsigned int i = 0; i < vec_pressure_mass_matrix_term.size(); ++i)
-  {
-    navier_stokes_operation->initialize_vector_pressure(vec_pressure_mass_matrix_term[i]);
-  }
-
-  // Iterating backwards leaves us with the mesh at start time automatically
-  for(int i = vec_pressure_mass_matrix_term.size() - 1; i >= 0; --i)
-  {
-    advance_grid_coordinates(eval_times[i]);
-    navier_stokes_operation->update_after_mesh_movement();
-
-    vec_pressure_mass_matrix_term[i] = 0.0;
-
-    navier_stokes_operation_pc->apply_pressure_mass_matrix(vec_pressure_mass_matrix_term[i],
-                                                           solution[i].block(1));
-
-    std::cout << "L2 norm src = " << solution[i].block(1).l2_norm() << std::endl;
-    std::cout << "L2 norm dst = " << vec_pressure_mass_matrix_term[i].l2_norm() << std::endl;
-  }
-
-  return vec_pressure_mass_matrix_term;
 }
 
 template<int dim, typename Number>
@@ -445,7 +206,7 @@ MovingMesh<dim, Number>::compute_grid_velocity_from_grid_coordinates(
   double              time_step_size)
 {
   push_back(vec_x_grid_discontinuous);
-  fill_grid_coordinates_vector(vec_x_grid_discontinuous[0]);
+  fill_grid_coordinates_vector(0);
   compute_bdf_time_derivative(grid_velocity,
                               vec_x_grid_discontinuous,
                               time_integrator_constants,
@@ -470,14 +231,14 @@ MovingMesh<dim, Number>::compute_bdf_time_derivative(VectorType &            dst
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::fill_grid_coordinates_vector(VectorType & grid_coordinates_discontinuous)
+MovingMesh<dim, Number>::fill_grid_coordinates_vector(unsigned int const time_index)
 {
   IndexSet relevant_dofs_grid;
   DoFTools::extract_locally_relevant_dofs(dof_handler_x_grid_discontinuous, relevant_dofs_grid);
 
-  grid_coordinates_discontinuous.reinit(dof_handler_x_grid_discontinuous.locally_owned_dofs(),
-                                        relevant_dofs_grid,
-                                        MPI_COMM_WORLD);
+  vec_x_grid_discontinuous[time_index].reinit(dof_handler_x_grid_discontinuous.locally_owned_dofs(),
+                                              relevant_dofs_grid,
+                                              MPI_COMM_WORLD);
   // clang-format off
   FEValues<dim>  fe_values(get_mapping(),
                            *fe_u_grid,
@@ -496,12 +257,12 @@ MovingMesh<dim, Number>::fill_grid_coordinates_vector(VectorType & grid_coordina
       {
         const unsigned int coordinate_direction = (*fe_u_grid).system_to_component_index(i).first;
         const Point<dim>   point                = fe_values.quadrature_point(i);
-        grid_coordinates_discontinuous(dof_indices[i]) = point[coordinate_direction];
+        vec_x_grid_discontinuous[time_index](dof_indices[i]) = point[coordinate_direction];
       }
     }
   }
 
-  grid_coordinates_discontinuous.update_ghost_values();
+  vec_x_grid_discontinuous[time_index].update_ghost_values();
 }
 
 

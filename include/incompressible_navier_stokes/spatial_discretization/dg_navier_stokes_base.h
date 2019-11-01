@@ -68,6 +68,10 @@ using namespace dealii;
 
 namespace IncNS
 {
+// forward declarations
+template<int dim, typename Number>
+class MovingMesh;
+
 template<int dim, typename Number>
 class DGNavierStokesBase : public dealii::Subscriptor, public Interface::OperatorBase<Number>
 {
@@ -140,7 +144,8 @@ public:
                                                         periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+        std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh = nullptr);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -319,6 +324,11 @@ public:
   void
   evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const;
 
+  void
+  move_mesh_and_evaluate_convective_term(VectorType &       dst,
+                                         VectorType const & src,
+                                         Number const       time);
+
   // pressure gradient term
   void
   evaluate_pressure_gradient_term(VectorType &       dst,
@@ -391,6 +401,9 @@ public:
 
   void
   set_grid_velocity(VectorType u_grid_in);
+
+  void
+  fill_grid_coordinates_vector(double const time, unsigned int const time_index);
 
 protected:
   /*
@@ -529,6 +542,11 @@ protected:
   std::shared_ptr<Postprocessor> postprocessor;
 
   ConditionalOStream pcout;
+
+  /*
+   * ALE formulation
+   */
+  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
 
 private:
   /*

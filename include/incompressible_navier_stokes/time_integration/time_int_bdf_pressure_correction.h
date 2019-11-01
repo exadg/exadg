@@ -51,22 +51,6 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-  void
-  set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) override;
-
-  void
-  set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> convective_term_in) override;
-
-  void
-  set_vec_pressure_gradient_term_considering_former_mesh_instances(
-    std::vector<VectorType> vec_pressure_gradient_term_in);
-
-  void
-  set_pressure_mass_matrix_considering_former_mesh_instances(
-    std::vector<VectorType> vec_pressure_mass_matrix_in);
-
 private:
   void
   update_time_integrator_constants();
@@ -81,7 +65,7 @@ private:
   initialize_former_solutions();
 
   void
-  setup_derived();
+  setup_derived() override;
 
   void
   initialize_vec_convective_term();

@@ -9,6 +9,7 @@
 
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_projection.h"
+#include "moving_mesh.h"
 
 namespace IncNS
 {
@@ -59,7 +60,8 @@ DGNavierStokesBase<dim, Number>::setup(
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh_in)
 {
   pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
@@ -96,6 +98,15 @@ DGNavierStokesBase<dim, Number>::setup(
 
   // depending on DoFHandler, Mapping, MatrixFree
   initialize_postprocessor();
+
+  moving_mesh = moving_mesh_in;
+
+  if(param.ale_formulation)
+  {
+    AssertThrow(moving_mesh.get() != 0,
+                ExcMessage(
+                  "Variable moving_mesh needs to be initialized in case of ale_formulation."));
+  }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
 }
@@ -759,6 +770,10 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
                                                               VectorType & pressure,
                                                               double const time) const
 {
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  if(param.ale_formulation)
+    moving_mesh->advance_grid_coordinates(time);
+
   field_functions->initial_solution_velocity->set_time(time);
   field_functions->initial_solution_pressure->set_time(time);
 
@@ -1039,6 +1054,26 @@ DGNavierStokesBase<dim, Number>::evaluate_convective_term(VectorType &       dst
 
 template<int dim, typename Number>
 void
+DGNavierStokesBase<dim, Number>::move_mesh_and_evaluate_convective_term(VectorType &       dst,
+                                                                        VectorType const & src,
+                                                                        Number const       time)
+{
+  AssertThrow(param.ale_formulation == true, ExcMessage("Should not arrive here. Logical error."));
+
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  moving_mesh->advance_grid_coordinates(time);
+  // this update is needed since we have to evaluate the convective operator below
+  update_after_mesh_movement();
+
+  // the convective operator needs the correct grid velocity in the ALE case
+  moving_mesh->compute_grid_velocity_analytical(time);
+  set_grid_velocity(moving_mesh->get_grid_velocity());
+
+  convective_operator.evaluate_nonlinear_operator(dst, src, time);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesBase<dim, Number>::evaluate_pressure_gradient_term(VectorType &       dst,
                                                                  VectorType const & src,
                                                                  double const       time) const
@@ -1176,6 +1211,16 @@ void
 DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 {
   convective_kernel->set_velocity_grid_ptr(u_grid_in);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::fill_grid_coordinates_vector(double const       time,
+                                                              unsigned int const time_index)
+{
+  moving_mesh->advance_grid_coordinates(time);
+
+  moving_mesh->fill_grid_coordinates_vector(time_index);
 }
 
 template<int dim, typename Number>

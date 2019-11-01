@@ -53,17 +53,9 @@ public:
                            std::vector<double> &             times) const;
 
   // ALE
-
+  // TODO make this function protected again
   std::vector<double>
   get_current_time_integrator_constants() const;
-
-  virtual void
-  set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) = 0;
-
-  virtual void
-  set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> convective_term_in) = 0;
 
   void
   set_grid_velocity_cfl(VectorType u_grid_cfl_in);
@@ -72,6 +64,9 @@ public:
   update_time_integrator_constants();
 
 protected:
+  virtual void
+  setup_derived() override;
+
   void
   solve_timestep();
 
@@ -103,10 +98,11 @@ private:
   do_solve_timestep() = 0;
 
   void
-  ale_update_pre(){
+  ale_update_pre()
+  {
     // TODO needs to be filled (should be the same for all Navier-Stokes solvers, so
     // there should be no need to make this function virtual)
-  };
+  }
 
   virtual void
   ale_update_post() = 0;

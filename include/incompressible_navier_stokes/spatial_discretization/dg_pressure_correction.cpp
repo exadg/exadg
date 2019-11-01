@@ -6,6 +6,7 @@
  */
 
 #include "dg_pressure_correction.h"
+#include "moving_mesh.h"
 
 namespace IncNS
 {
@@ -30,12 +31,14 @@ DGNavierStokesPressureCorrection<dim, Number>::setup(
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh_in)
 {
   DGNavierStokesProjectionMethods<dim, Number>::setup(periodic_face_pairs_in,
                                                       boundary_descriptor_velocity_in,
                                                       boundary_descriptor_pressure_in,
-                                                      field_functions_in);
+                                                      field_functions_in,
+                                                      moving_mesh_in);
 
   setup_inverse_mass_matrix_operator_pressure();
 
@@ -72,6 +75,10 @@ DGNavierStokesPressureCorrection<dim, Number>::update_after_mesh_movement()
 
   // inverse pressure mass matrix has to be updated
   inverse_mass_pressure.reinit();
+
+  // TODO this should actually not be necessary but the results are otherwise
+  // wrong and not reproducible
+  setup_mass_matrix_operator_pressure();
 }
 
 template<int dim, typename Number>
@@ -390,6 +397,36 @@ DGNavierStokesPressureCorrection<dim, Number>::apply_pressure_mass_matrix(
   VectorType const & src) const
 {
   mass_matrix_pressure.apply(dst, src);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::move_mesh_and_apply_pressure_mass_matrix(
+  VectorType &       dst,
+  VectorType const & src,
+  double const &     time)
+{
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  this->moving_mesh->advance_grid_coordinates(time);
+  // this update is needed since we have to evaluate an operator below (which uses matrix_free)
+  this->update_after_mesh_movement();
+
+  apply_pressure_mass_matrix(dst, src);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::move_mesh_and_evaluate_pressure_gradient_term(
+  VectorType &       dst,
+  VectorType const & src,
+  double const &     time)
+{
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  this->moving_mesh->advance_grid_coordinates(time);
+  // this update is needed since we have to evaluate an operator below (which uses matrix_free)
+  this->update_after_mesh_movement();
+
+  this->evaluate_pressure_gradient_term(dst, src, time);
 }
 
 template<int dim, typename Number>

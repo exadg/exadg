@@ -191,8 +191,8 @@ public:
    * Constructor.
    */
   DGNavierStokesCoupled(parallel::TriangulationBase<dim> const & triangulation,
-                        InputParameters const &              parameters,
-                        std::shared_ptr<Postprocessor>       postprocessor);
+                        InputParameters const &                  parameters,
+                        std::shared_ptr<Postprocessor>           postprocessor);
 
   /*
    * Destructor.
@@ -204,7 +204,8 @@ public:
                                                         periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+        std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh = nullptr);
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

@@ -72,14 +72,20 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::setup_derived()
 {
-  if(this->param.convective_problem())
+  TimeIntBDF<Number>::setup_derived();
+
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
     initialize_vec_convective_term();
+  }
 
   if(extra_pressure_gradient.get_order() > 0)
+  {
     initialize_vec_pressure_gradient_term();
+  }
 
-  if(this->param.ale_formulation == true && this->param.start_with_low_order == true &&
-     extra_pressure_gradient.get_order() > 0 &&
+  if(this->param.ale_formulation == true && extra_pressure_gradient.get_order() > 0 &&
      this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
   {
     initialize_vec_pressure_mass_matrix();
@@ -155,9 +161,29 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
 {
-  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  // ALE formulation
+  if(this->param.ale_formulation == true)
   {
-    if(this->param.ale_formulation == false && this->start_with_low_order == false)
+    this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[0],
+                                                                velocity[0],
+                                                                this->get_time());
+
+    if(this->param.start_with_low_order == false)
+    {
+      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+      {
+        this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[i],
+                                                                    velocity[i],
+                                                                    this->get_previous_time(i));
+      }
+    }
+  }
+  else // Eulerian formulation
+  {
+    // vec_convective_term[0] is computed in the first time step and does not have to be
+    // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+
+    if(this->param.start_with_low_order == false)
     {
       // note that the loop begins with i=1! (we could also start with i=0 but this is not
       // necessary)
@@ -168,12 +194,6 @@ TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
                                                       this->get_previous_time(i));
       }
     }
-    else if(this->param.ale_formulation == true && this->start_with_low_order == true)
-    {
-      this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                    velocity[0],
-                                                    this->get_time());
-    }
   }
 }
 
@@ -181,19 +201,40 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
 {
-  if(this->param.ale_formulation == false && this->start_with_low_order == false)
+  // ALE formulation
+  if(this->param.ale_formulation == true)
   {
-    // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-    for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
-      this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
-                                                           pressure[i],
-                                                           this->get_previous_time(i));
+    if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+    {
+      this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(
+        vec_pressure_gradient_term[0], pressure[0], this->get_time());
+
+      if(this->param.start_with_low_order == false)
+      {
+        for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
+        {
+          this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(
+            vec_pressure_gradient_term[i], pressure[i], this->get_previous_time(i));
+        }
+      }
+    }
   }
-  else if(this->param.ale_formulation == true && this->start_with_low_order == true)
+  else // Eulerian formulation
   {
-    this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
-                                                         pressure[0],
-                                                         this->get_time());
+    // vec_pressure_gradient_term[0] is computed in the first time step and does not have to be
+    // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+
+    if(this->param.start_with_low_order == false)
+    {
+      // note that the loop begins with i=1! (we could also start with i=0 but this is not
+      // necessary)
+      for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
+      {
+        this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
+                                                             pressure[i],
+                                                             this->get_previous_time(i));
+      }
+    }
   }
 }
 
@@ -201,8 +242,19 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_mass_matrix()
 {
-  vec_pressure_mass_matrix[0] = 0.0;
-  pde_operator->apply_pressure_mass_matrix(vec_pressure_mass_matrix[0], pressure[0]);
+  pde_operator->move_mesh_and_apply_pressure_mass_matrix(vec_pressure_mass_matrix[0],
+                                                         pressure[0],
+                                                         this->get_time());
+
+  if(this->param.start_with_low_order == false)
+  {
+    for(unsigned int i = 1; i < vec_pressure_mass_matrix.size(); ++i)
+    {
+      pde_operator->move_mesh_and_apply_pressure_mass_matrix(vec_pressure_mass_matrix[i],
+                                                             pressure[i],
+                                                             this->get_previous_time(i));
+    }
+  }
 }
 
 
@@ -1120,52 +1172,6 @@ TimeIntBDFPressureCorrection<Number>::get_wall_times(std::vector<std::string> & 
   for(unsigned int i = 0; i < this->computing_times.size(); ++i)
   {
     wall_time[i] = this->computing_times[i];
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::set_former_solution_considering_former_mesh_instances(
-  std::vector<BlockVectorType> solution_in)
-{
-  for(unsigned int i = 1; i < velocity.size(); ++i)
-  {
-    velocity[i] = solution_in[i].block(0);
-    pressure[i] = solution_in[i].block(1);
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::set_convective_term_considering_former_mesh_instances(
-  std::vector<VectorType> convective_term_in)
-{
-  // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
-  // which has not been taken into account in the setup function of the time integrator.
-  for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-    vec_convective_term[i] = convective_term_in[i];
-}
-
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::
-  set_vec_pressure_gradient_term_considering_former_mesh_instances(
-    std::vector<VectorType> vec_pressure_gradient_term_in)
-{
-  for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
-  {
-    vec_pressure_gradient_term[i] = vec_pressure_gradient_term_in[i];
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::set_pressure_mass_matrix_considering_former_mesh_instances(
-  std::vector<VectorType> vec_pressure_mass_matrix_in)
-{
-  for(unsigned int i = 0; i < vec_pressure_mass_matrix.size(); ++i)
-  {
-    vec_pressure_mass_matrix[i] = vec_pressure_mass_matrix_in[i];
   }
 }
 

@@ -285,31 +285,33 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   if(param.ale_formulation == true)
+  {
     ale_operation = std::make_shared<MovingMesh<dim, Number>>(param,
                                                               triangulation,
                                                               mesh_movement_function,
                                                               navier_stokes_operation);
-
+  }
 
   // Depends on mapping which is initialized in constructor of MovingMesh
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
-                                 field_functions);
-
-  // depends on matrix free which is initialized in navier_stokes_operation->setup
-  if(param.ale_formulation == true)
-  {
-    AssertThrow(ale_operation.get() != 0, ExcMessage("Not initialized."));
-    ale_operation->setup();
-    if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
-       param.adaptive_time_stepping == true)
-      time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
-  }
+                                 field_functions,
+                                 ale_operation);
 
   if(param.solver_type == SolverType::Unsteady)
   {
+    // depends on matrix free which is initialized in navier_stokes_operation->setup
+    if(param.ale_formulation == true)
+    {
+      AssertThrow(ale_operation.get() != 0, ExcMessage("Not initialized."));
+      ale_operation->setup();
+      if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
+         param.adaptive_time_stepping == true)
+        time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
+    }
+
     // setup time integrator before calling setup_solvers
     // (this is necessary since the setup of the solvers
     // depends on quantities such as the time_step_size or gamma0!!!)
@@ -327,72 +329,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   else
   {
     AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  if(param.ale_formulation == true && param.start_with_low_order == false)
-  {
-    AssertThrow(
-      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
-      ExcMessage(
-        "ALE formulation currently only implemented for TreatmentOfConvectiveTerm::Explicit"));
-
-    std::vector<double> eval_times(param.order_time_integrator);
-
-    for(unsigned int i = 0; i < param.order_time_integrator; ++i)
-      eval_times[i] = time_integrator->get_previous_time(i);
-
-    if(param.grid_velocity_analytical == false)
-      ale_operation->initialize_grid_coordinates_on_former_mesh_instances(eval_times);
-
-    time_integrator->set_former_solution_considering_former_mesh_instances(
-      ale_operation->get_former_solution_on_former_mesh_instances(eval_times));
-
-    if(param.convective_problem())
-      time_integrator->set_convective_term_considering_former_mesh_instances(
-        ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
-
-    // Dual splitting
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      auto time_integrator_ds = std::dynamic_pointer_cast<TimeIntDualSplitting>(time_integrator);
-
-      if(param.convective_problem())
-      {
-        if(param.divu_integrated_by_parts == true && param.divu_use_boundary_data == true)
-        {
-          time_integrator_ds
-            ->set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
-              ale_operation->get_vec_rhs_ppe_div_term_convective_term_on_former_mesh_instances(
-                eval_times));
-        }
-
-        time_integrator_ds->set_vec_rhs_ppe_convective_considering_former_mesh_instances(
-          ale_operation->get_vec_rhs_ppe_convective_on_former_mesh_instances(eval_times));
-      }
-
-      if(param.viscous_problem())
-      {
-        time_integrator_ds->set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
-          ale_operation->get_vec_rhs_ppe_viscous_on_former_mesh_instances(eval_times));
-      }
-    }
-
-    // Pressure-correction
-    if(param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      if(param.order_pressure_extrapolation > 0 &&
-         this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
-      {
-        auto time_integrator_pc =
-          std::dynamic_pointer_cast<TimeIntPressureCorrection>(time_integrator);
-
-        time_integrator_pc->set_vec_pressure_gradient_term_considering_former_mesh_instances(
-          ale_operation->get_vec_pressure_gradient_term_on_former_mesh_instances(eval_times));
-
-        time_integrator_pc->set_pressure_mass_matrix_considering_former_mesh_instances(
-          ale_operation->get_pressure_mass_matrix_term_on_former_mesh_instances(eval_times));
-      }
-    }
   }
 
   setup_time = timer.wall_time();

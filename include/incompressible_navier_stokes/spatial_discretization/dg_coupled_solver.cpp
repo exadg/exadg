@@ -12,8 +12,8 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters,
-  std::shared_ptr<Postprocessor>       postprocessor)
+  InputParameters const &                  parameters,
+  std::shared_ptr<Postprocessor>           postprocessor)
   : Base(triangulation, parameters, postprocessor), scaling_factor_continuity(1.0)
 {
 }
@@ -30,12 +30,14 @@ DGNavierStokesCoupled<dim, Number>::setup(
                                                   periodic_face_pairs,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+  std::shared_ptr<MovingMesh<dim, Number>> const  moving_mesh)
 {
   Base::setup(periodic_face_pairs,
               boundary_descriptor_velocity,
               boundary_descriptor_pressure,
-              field_functions);
+              field_functions,
+              moving_mesh);
 
   this->initialize_vector_velocity(temp_vector);
 }

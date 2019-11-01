@@ -61,21 +61,26 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::setup_derived()
 {
+  TimeIntBDF<Number>::setup_derived();
+
   initialize_vorticity();
 
   if(this->param.convective_problem())
   {
-    // initialize_vec_convective_term() has to be called in any way.
-    // The initialization in the Euler and ALE case differ, these cases are distinguished inside the
-    // function The initialization for the ALE case for high_order start has to perform on different
-    // meshes and is triggered in the main file (incompressible_navier_stokes_ale.cc)
+    // TODO: check whether we can introduce an if-statement here:
+    //
+    //  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit) { ... }
+    //
+    // Background: The initialization of the convective term should not be necessary for OIF
+    // substepping, and implicit formulations of the convective term are not possible for the dual
+    // splitting scheme
     initialize_vec_convective_term();
 
-    // In the ale case, initialization of the time integrator is just performed for low_order start;
-    // otherwise the initialization is performed in the main file, utilizing the moving_mesh class
-    if(this->param.ale_formulation == true && this->param.start_with_low_order == true)
+    if(this->param.ale_formulation)
     {
-      if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
+      // This boundary condition term only appears if the div(u) term is integrated by parts and
+      // if the discretized div(u) operator utilizes boundary data
+      if(this->param.divu_integrated_by_parts && this->param.divu_use_boundary_data)
         initialize_vec_rhs_ppe_div_term_convective_term();
 
       initialize_vec_rhs_ppe_convective();
@@ -84,9 +89,13 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
 
   // In the ale case, initialization of the time integrator is just performed for low_order start;
   // otherwise the initialization is performed in the main file, utilizing the moving_mesh class
-  if(this->param.viscous_problem() && this->param.ale_formulation &&
-     this->param.start_with_low_order == true)
-    initialize_vec_rhs_ppe_viscous();
+  if(this->param.viscous_problem())
+  {
+    if(this->param.ale_formulation)
+    {
+      initialize_vec_rhs_ppe_viscous();
+    }
+  }
 }
 
 template<typename Number>
@@ -183,8 +192,31 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
 {
-  if(this->param.ale_formulation == false)
+  // ALE formulation
+  if(this->param.ale_formulation == true)
   {
+    // Note that the inverse mass matrix can not be applied immediately since the mass matrix
+    // changes over time due to the mesh movement.
+
+    this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[0],
+                                                                velocity[0],
+                                                                this->get_time());
+
+    if(this->param.start_with_low_order == false)
+    {
+      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+      {
+        this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[i],
+                                                                    velocity[i],
+                                                                    this->get_previous_time(i));
+      }
+    }
+  }
+  else // Eulerian formulation
+  {
+    // vec_convective_term[0] is computed in the first time step and does not have to be
+    // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+
     if(this->param.start_with_low_order == false)
     {
       // note that the loop begins with i=1! (we could also start with i=0 but this is not
@@ -196,15 +228,6 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
       }
     }
   }
-  else // ALE case
-  {
-    // In the ale case, initialization of the time integrator is just performed for low_order start;
-    // otherwise the initialization is performed in the main file, utilizing the moving_mesh class
-    if(this->param.start_with_low_order == true)
-      this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                    velocity[0],
-                                                    this->get_time());
-  }
 }
 
 template<typename Number>
@@ -212,8 +235,18 @@ void
 TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_div_term_convective_term()
 {
   vec_rhs_ppe_div_term_convective_term[0] = 0.0;
-  pde_operator->rhs_ppe_div_term_convective_term_add(vec_rhs_ppe_div_term_convective_term[0],
-                                                     velocity[0]);
+  pde_operator->move_mesh_and_rhs_ppe_div_term_convective_term_add(
+    vec_rhs_ppe_div_term_convective_term[0], velocity[0], this->get_time());
+
+  if(this->param.start_with_low_order == false)
+  {
+    for(unsigned int i = 1; i < vec_rhs_ppe_div_term_convective_term.size(); ++i)
+    {
+      vec_rhs_ppe_div_term_convective_term[i] = 0.0;
+      pde_operator->move_mesh_and_rhs_ppe_div_term_convective_term_add(
+        vec_rhs_ppe_div_term_convective_term[i], velocity[i], this->get_previous_time(i));
+    }
+  }
 }
 
 template<typename Number>
@@ -221,7 +254,20 @@ void
 TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_convective()
 {
   vec_rhs_ppe_convective[0] = 0.0;
-  pde_operator->rhs_ppe_convective_add(vec_rhs_ppe_convective[0], velocity[0]);
+  pde_operator->move_mesh_and_rhs_ppe_convective_add(vec_rhs_ppe_convective[0],
+                                                     velocity[0],
+                                                     this->get_time());
+
+  if(this->param.start_with_low_order == false)
+  {
+    for(unsigned int i = 1; i < vec_rhs_ppe_convective.size(); ++i)
+    {
+      vec_rhs_ppe_convective[i] = 0.0;
+      pde_operator->move_mesh_and_rhs_ppe_convective_add(vec_rhs_ppe_convective[i],
+                                                         velocity[i],
+                                                         this->get_previous_time(i));
+    }
+  }
 }
 
 template<typename Number>
@@ -229,7 +275,20 @@ void
 TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_viscous()
 {
   vec_rhs_ppe_viscous[0] = 0.0;
-  pde_operator->rhs_ppe_viscous_add(vec_rhs_ppe_viscous[0], vorticity[0]);
+  pde_operator->move_mesh_and_rhs_ppe_viscous_add(vec_rhs_ppe_viscous[0],
+                                                  velocity[0],
+                                                  this->get_time());
+
+  if(this->param.start_with_low_order == false)
+  {
+    for(unsigned int i = 1; i < vec_rhs_ppe_viscous.size(); ++i)
+    {
+      vec_rhs_ppe_viscous[i] = 0.0;
+      pde_operator->move_mesh_and_rhs_ppe_viscous_add(vec_rhs_ppe_viscous[i],
+                                                      velocity[i],
+                                                      this->get_previous_time(i));
+    }
+  }
 }
 
 template<typename Number>
@@ -1001,69 +1060,6 @@ TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
   for(unsigned int i = 0; i < this->computing_times.size(); ++i)
   {
     wall_time[i] = this->computing_times[i];
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::set_former_solution_considering_former_mesh_instances(
-  std::vector<BlockVectorType> solution_in)
-{
-  for(unsigned int i = 1; i < velocity.size(); ++i)
-  {
-    velocity[i] = solution_in[i].block(0);
-    pressure[i] = solution_in[i].block(1);
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::set_convective_term_considering_former_mesh_instances(
-  std::vector<VectorType> convective_term_in)
-{
-  // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
-  // which has not been taken into account in the setup function of the time integrator.
-  for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-  {
-    vec_convective_term[i] = convective_term_in[i];
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::
-  set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> vec_rhs_ppe_div_term_convective_term_in)
-{
-  // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
-  // which has not been taken into account in the setup function of the time integrator.
-  for(unsigned int i = 0; i < vec_rhs_ppe_div_term_convective_term.size(); ++i)
-  {
-    vec_rhs_ppe_div_term_convective_term[i] = vec_rhs_ppe_div_term_convective_term_in[i];
-  }
-}
-//
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::set_vec_rhs_ppe_convective_considering_former_mesh_instances(
-  std::vector<VectorType> vec_rhs_ppe_convective_in)
-{
-  // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
-  // which has not been taken into account in the setup function of the time integrator.
-  for(unsigned int i = 0; i < vec_rhs_ppe_convective.size(); ++i)
-  {
-    vec_rhs_ppe_convective[i] = vec_rhs_ppe_convective_in[i];
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
-  std::vector<VectorType> vec_rhs_ppe_viscous_in)
-{
-  for(unsigned int i = 0; i < vec_rhs_ppe_viscous.size(); ++i)
-  {
-    vec_rhs_ppe_viscous[i] = vec_rhs_ppe_viscous_in[i];
   }
 }
 

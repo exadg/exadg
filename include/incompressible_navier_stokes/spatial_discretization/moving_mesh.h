@@ -38,33 +38,13 @@ public:
                          const std::vector<Number> time_integrator_constants);
 
   void
-  initialize_grid_coordinates_on_former_mesh_instances(std::vector<double> eval_times);
-
-  std::vector<BlockVectorType>
-  get_former_solution_on_former_mesh_instances(std::vector<double> eval_times);
-
-  std::vector<VectorType>
-  get_convective_term_on_former_mesh_instances(std::vector<double> eval_times);
-
-  // Dual splitting
-  std::vector<VectorType>
-  get_vec_rhs_ppe_div_term_convective_term_on_former_mesh_instances(std::vector<double> eval_times);
-
-  std::vector<VectorType>
-  get_vec_rhs_ppe_convective_on_former_mesh_instances(std::vector<double> eval_times);
-
-  std::vector<VectorType>
-  get_vec_rhs_ppe_viscous_on_former_mesh_instances(std::vector<double> eval_times);
-
-  // Pressure-correction
-  std::vector<VectorType>
-  get_vec_pressure_gradient_term_on_former_mesh_instances(std::vector<double> eval_times);
-
-  std::vector<VectorType>
-  get_pressure_mass_matrix_term_on_former_mesh_instances(std::vector<double> eval_times);
+  compute_grid_velocity_analytical(double const time);
 
   VectorType
   get_grid_velocity() const;
+
+  void
+  fill_grid_coordinates_vector(unsigned int const time_index);
 
 private:
   void
@@ -77,9 +57,6 @@ private:
   get_mapping() const;
 
   void
-  compute_grid_velocity_analytical(double const time);
-
-  void
   compute_grid_velocity_from_grid_coordinates(std::vector<Number> time_integrator_constants,
                                               double              time_step_size);
 
@@ -88,10 +65,6 @@ private:
                               std::vector<VectorType> src,
                               std::vector<Number>     time_integrator_constants,
                               double                  time_step_size);
-
-  void
-  fill_grid_coordinates_vector(VectorType & grid_coordinates_discontinuous);
-
 
   InputParameters                                  param;
   std::shared_ptr<MeshMovementFunctions<dim>>      mesh_movement_function;

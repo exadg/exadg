@@ -69,6 +69,11 @@ public:
   evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const = 0;
 
   virtual void
+  move_mesh_and_evaluate_convective_term(VectorType &       dst,
+                                         VectorType const & src,
+                                         Number const       time) = 0;
+
+  virtual void
   evaluate_negative_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
                                                                   VectorType const & src,
                                                                   Number const time) const = 0;
@@ -118,6 +123,9 @@ public:
 
   virtual void
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
+  fill_grid_coordinates_vector(double const time, unsigned int const time_index) = 0;
 };
 
 /*
@@ -231,6 +239,11 @@ public:
   rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
+  move_mesh_and_rhs_ppe_div_term_convective_term_add(VectorType &       dst,
+                                                     VectorType const & src,
+                                                     double const &     time) = 0;
+
+  virtual void
   rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time) = 0;
 
   virtual void
@@ -243,7 +256,17 @@ public:
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
+  move_mesh_and_rhs_ppe_viscous_add(VectorType &       dst,
+                                    VectorType const & src,
+                                    double const &     time) = 0;
+
+  virtual void
   rhs_ppe_convective_add(VectorType & dst, VectorType const & src) const = 0;
+
+  virtual void
+  move_mesh_and_rhs_ppe_convective_add(VectorType &       dst,
+                                       VectorType const & src,
+                                       double const &     time) = 0;
 
   virtual unsigned int
   solve_viscous(VectorType &       dst,
@@ -322,6 +345,20 @@ public:
 
   virtual void
   apply_pressure_mass_matrix(VectorType & dst, VectorType const & src) const = 0;
+
+  // needed for ALE consistent formulation, i.e., evaluating the pressure mass matrix for former
+  // pressure solutions on former meshes in pressure update step of the pressure-correction scheme
+  virtual void
+  move_mesh_and_apply_pressure_mass_matrix(VectorType &       dst,
+                                           VectorType const & src,
+                                           double const &     time) = 0;
+
+  // needed for ALE consistent formulation, i.e., evaluating the pressure gradient term for former
+  // pressure solutions on former meshes in momentum step of pressure-correction scheme
+  virtual void
+  move_mesh_and_evaluate_pressure_gradient_term(VectorType &       dst,
+                                                VectorType const & src,
+                                                double const &     time) = 0;
 
   virtual void
   rhs_pressure_gradient_term(VectorType & dst, double const time) const = 0;

@@ -40,6 +40,33 @@ TimeIntBDF<Number>::update_time_integrator_constants()
 
 template<typename Number>
 void
+TimeIntBDF<Number>::setup_derived()
+{
+  // In the case of an arbitrary Lagrangian-Eulerian formulation:
+  if(param.ale_formulation)
+  {
+    // compute the grid coordinates at start time (and at previous times in case of
+    // start_with_low_order == false) if the grid velocity has to be computed from
+    // vectors of grid coordinates (instead of using an analytically prescribed grid velocity).
+    if(param.grid_velocity_analytical == false)
+    {
+      // compute grid coordinates at start time
+      operator_base->fill_grid_coordinates_vector(get_time(), 0);
+
+      if(start_with_low_order == false)
+      {
+        // compute grid coordinates at previous times (start with 1!)
+        for(unsigned int i = 1; i < order; ++i)
+        {
+          operator_base->fill_grid_coordinates_vector(get_previous_time(i), i);
+        }
+      }
+    }
+  }
+}
+
+template<typename Number>
+void
 TimeIntBDF<Number>::solve_timestep()
 {
   if(param.ale_formulation)

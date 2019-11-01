@@ -89,6 +89,8 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::setup_derived()
 {
+  TimeIntBDF<Number>::setup_derived();
+
   // scaling factor continuity equation:
   // Calculate characteristic element length h
   double characteristic_element_length = this->operator_base->calculate_minimum_element_length();
@@ -110,25 +112,38 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
 {
-  // The initialization done here at start time t_0 assumes that the mesh velocity is zero
-  // at start time t_0. If the mesh velocity is nonzero, e.g., when starting the time integrator
-  // with high-order, vec_convective_term[0] has to be reinitialized separately.
-  if(this->param.ale_formulation == true &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  // ALE formulation
+  if(this->param.ale_formulation == true)
   {
-    this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                  solution[0].block(0),
-                                                  this->get_time());
-  }
+    this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[0],
+                                                                solution[0].block(0),
+                                                                this->get_time());
 
-  if(this->param.start_with_low_order == false)
-  {
-    // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+    if(this->param.start_with_low_order == false)
     {
-      this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                    solution[i].block(0),
-                                                    this->get_previous_time(i));
+      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+      {
+        this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[i],
+                                                                    solution[i].block(0),
+                                                                    this->get_previous_time(i));
+      }
+    }
+  }
+  else // Eulerian formulation
+  {
+    // vec_convective_term[0] is computed in the first time step and does not have to be
+    // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+
+    if(this->param.start_with_low_order == false)
+    {
+      // note that the loop begins with i=1! (we could also start with i=0 but this is not
+      // necessary)
+      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+      {
+        this->operator_base->evaluate_convective_term(vec_convective_term[i],
+                                                      solution[i].block(0),
+                                                      this->get_previous_time(i));
+      }
     }
   }
 }
@@ -729,32 +744,6 @@ TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
   for(unsigned int i = 0; i < this->computing_times.size(); ++i)
   {
     wall_time[i] = this->computing_times[i];
-  }
-}
-
-// ALE
-template<typename Number>
-void
-TimeIntBDFCoupled<Number>::set_former_solution_considering_former_mesh_instances(
-  std::vector<BlockVectorType> solution_in)
-{
-  for(unsigned int i = 1; i < solution.size(); ++i)
-  {
-    solution[i].block(0) = solution_in[i].block(0);
-    solution[i].block(1) = solution_in[i].block(1);
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFCoupled<Number>::set_convective_term_considering_former_mesh_instances(
-  std::vector<VectorType> vec_convective_term_in)
-{
-  // We start at i=0 since the mesh velocity might be unequal zero at start time t_0,
-  // which has not been taken into account in the setup function of the time integrator.
-  for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-  {
-    vec_convective_term[i] = vec_convective_term_in[i];
   }
 }
 

@@ -53,19 +53,9 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-  // ALE
-
-  void
-  set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) override;
-
-  void
-  set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> vec_convective_term_in) override;
-
 private:
   void
-  setup_derived();
+  setup_derived() override;
 
   void
   allocate_vectors();
