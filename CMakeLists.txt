@@ -42,6 +42,7 @@ SET( TARGET_SRC
      include/time_integration/time_int_bdf_base.cpp
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/time_integration/enum_types.cpp
+     include/functionalities/moving_mesh.cpp
      include/matrix_free/resolve_templates_float_2d.cpp
      include/matrix_free/resolve_templates_float_3d.cpp
      include/matrix_free/resolve_templates_double_2d.cpp
@@ -95,7 +96,6 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.cpp
      include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.cpp
      include/incompressible_navier_stokes/spatial_discretization/interface.cpp 
-     include/incompressible_navier_stokes/spatial_discretization/moving_mesh.cpp
      include/incompressible_navier_stokes/spatial_discretization/calculators/divergence_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/vorticity_calculator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/calculators/velocity_magnitude_calculator.cpp 

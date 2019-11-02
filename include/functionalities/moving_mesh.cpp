@@ -3,12 +3,10 @@
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
-namespace IncNS
-{
 template<int dim, typename Number>
 MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & triangulation,
                                     unsigned int const                       polynomial_degree,
-                                    std::shared_ptr<MeshMovementFunctions<dim>> const function)
+                                    std::shared_ptr<MeshMovementFunction<dim>> const function)
   : mesh_movement_function(function),
     fe(new FESystem<dim>(FE_Q<dim>(polynomial_degree), dim)),
     dof_handler(triangulation),
@@ -145,6 +143,3 @@ template class MovingMesh<2, double>;
 
 template class MovingMesh<3, float>;
 template class MovingMesh<3, double>;
-
-
-} // namespace IncNS

@@ -12,10 +12,11 @@
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../grid_tools/dealii_extensions.h"
 #include "../grid_tools/deformed_cube_manifold.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
-/*                                              INPUT PARAMETERS */
+/*                                              INPUT PARAMETERS                                            */
 /*                                                                                                          */
 /************************************************************************************************************/
 
@@ -77,8 +78,8 @@ set_input_parameters(InputParameters & param)
   param.neumann_with_variable_normal_vector      = true;
   param.start_with_low_order                     = false;
   param.time_step_size                           = 0.25;
-  param.order_time_integrator                    = 3;
-  param.temporal_discretization                  = TemporalDiscretization::BDFDualSplittingScheme;
+  param.order_time_integrator                    = 2;
+  param.temporal_discretization                  = TemporalDiscretization::BDFPressureCorrection;
   param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping                   = false;
   param.cfl                                      = 0.4;

@@ -38,7 +38,7 @@
 #include "../include/functionalities/print_general_infos.h"
 
 // ALE
-#include "../include/incompressible_navier_stokes/spatial_discretization/moving_mesh.h"
+#include "../include/functionalities/moving_mesh.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -96,10 +96,9 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  std::shared_ptr<FieldFunctions<dim>>        field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim>>   boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim>>   boundary_descriptor_pressure;
-  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
+  std::shared_ptr<FieldFunctions<dim>>      field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
 
   InputParameters param;
 

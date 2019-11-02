@@ -18,6 +18,9 @@
 
 #include <deal.II/matrix_free/operators.h>
 
+// ALE
+#include "../../functionalities/moving_mesh.h"
+
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../incompressible_navier_stokes/user_interface/field_functions.h"
@@ -45,10 +48,7 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
-// ALE
-#include "moving_mesh.h"
-
-// interface space-time
+// interface
 #include "interface.h"
 
 // preconditioners and solvers

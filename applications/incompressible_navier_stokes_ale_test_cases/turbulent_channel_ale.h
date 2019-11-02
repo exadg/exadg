@@ -10,6 +10,7 @@
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/postprocessor/statistics_manager.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */

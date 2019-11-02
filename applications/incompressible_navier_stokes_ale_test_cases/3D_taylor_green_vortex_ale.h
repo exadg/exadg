@@ -10,6 +10,7 @@
 
 #include "../grid_tools/deformed_cube_manifold.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */

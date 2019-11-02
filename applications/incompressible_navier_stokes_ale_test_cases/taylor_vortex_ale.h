@@ -9,6 +9,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_TAYLOR_VORTEX_H_
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -205,8 +206,6 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 /*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
 /*                                                                                                          */
 /************************************************************************************************************/
-
-#include "../grid_tools/mesh_movement_functions.h"
 
 namespace IncNS
 {

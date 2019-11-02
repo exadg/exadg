@@ -7,21 +7,19 @@
 
 #include <deal.II/lac/la_parallel_block_vector.h>
 
-#include "../../../applications/grid_tools/mesh_movement_functions.h"
+#include "mesh_movement_function.h"
 
 using namespace dealii;
 
-namespace IncNS
-{
 template<int dim, typename Number>
 class MovingMesh
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMesh(parallel::TriangulationBase<dim> const &          triangulation,
-             unsigned int const                                polynomial_degree,
-             std::shared_ptr<MeshMovementFunctions<dim>> const mesh_movement_function);
+  MovingMesh(parallel::TriangulationBase<dim> const &         triangulation,
+             unsigned int const                               polynomial_degree,
+             std::shared_ptr<MeshMovementFunction<dim>> const mesh_movement_function);
 
   /*
    * This function initialized the MappingFEField object that is used to describe
@@ -58,7 +56,7 @@ public:
 
 private:
   // An analytical function that describes the mesh movement
-  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
+  std::shared_ptr<MeshMovementFunction<dim>> mesh_movement_function;
 
   // Finite Element (use a continuous finite element space to describe the mesh movement)
   std::shared_ptr<FESystem<dim>> fe;
@@ -70,5 +68,4 @@ private:
   std::vector<VectorType> grid_coordinates;
 };
 
-} // namespace IncNS
 #endif /*INCLUDE_MOVING_MESH_H_*/
