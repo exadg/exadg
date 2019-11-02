@@ -257,6 +257,12 @@ InputParameters::check_input_parameters()
 
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
                 ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
+
+    AssertThrow(
+      convective_problem() == true,
+      ExcMessage(
+        "ALE formulation only implemented for equations that include the convective operator, "
+        "e.g., ALE is currently not available for the Stokes equations."));
   }
 
   // PHYSICAL QUANTITIES
