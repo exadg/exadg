@@ -67,14 +67,10 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
 
   if(this->param.convective_problem())
   {
-    // TODO: check whether we can introduce an if-statement here:
-    //
-    //  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit) { ... }
-    //
-    // Background: The initialization of the convective term should not be necessary for OIF
-    // substepping, and implicit formulations of the convective term are not possible for the dual
-    // splitting scheme
-    initialize_vec_convective_term();
+    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+    {
+      initialize_vec_convective_term();
+    }
 
     if(this->param.ale_formulation)
     {
