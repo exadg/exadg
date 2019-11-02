@@ -9,7 +9,6 @@
 
 #include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_projection.h"
-#include "moving_mesh.h"
 
 namespace IncNS
 {
@@ -74,12 +73,14 @@ DGNavierStokesBase<dim, Number>::setup(
   if(param.ale_formulation)
   {
     moving_mesh.reset(
-      new MovingMesh<dim, Number>(param, triangulation, field_functions->mesh_movement, *this));
+      new MovingMesh<dim, Number>(triangulation, param.degree_u, field_functions->mesh_movement));
 
     AssertThrow(
       moving_mesh.get() != 0,
       ExcMessage(
         "Variable moving_mesh needs to be initialized in case of ale_formulation == true."));
+
+    mapping_ale = moving_mesh->initialize_mapping_fe_field(param.start_time, *mapping);
   }
 
   initialize_boundary_descriptor_laplace();
@@ -775,7 +776,7 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
-    moving_mesh->advance_grid_coordinates(time);
+    moving_mesh->move_mesh_analytical(time, *mapping);
 
   field_functions->initial_solution_velocity->set_time(time);
   field_functions->initial_solution_pressure->set_time(time);
@@ -1066,13 +1067,13 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_evaluate_convective_term(VectorTy
   AssertThrow(param.ale_formulation == true, ExcMessage("Should not arrive here. Logical error."));
 
   // make sure that the mesh fits to the time at which we want to evaluate the solution
-  moving_mesh->advance_grid_coordinates(time);
+  move_mesh(time);
   // this update is needed since we have to evaluate the convective operator below
   update_after_mesh_movement();
 
   // the convective operator needs the correct grid velocity in the ALE case
   VectorType grid_velocity(src);
-  moving_mesh->compute_grid_velocity_analytical(grid_velocity, time);
+  moving_mesh->compute_grid_velocity_analytical(grid_velocity, time, get_dof_handler_u(), *mapping);
   set_grid_velocity(grid_velocity);
 
   convective_operator.evaluate_nonlinear_operator(dst, src, time);
@@ -1223,7 +1224,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::move_mesh(double const time)
 {
-  moving_mesh->advance_grid_coordinates(time);
+  moving_mesh->move_mesh_analytical(time, *mapping);
 }
 
 template<int dim, typename Number>
@@ -1231,9 +1232,9 @@ void
 DGNavierStokesBase<dim, Number>::move_mesh_and_fill_grid_coordinates_vector(VectorType & vector,
                                                                             double const time)
 {
-  moving_mesh->advance_grid_coordinates(time);
+  move_mesh(time);
 
-  moving_mesh->fill_grid_coordinates_vector(vector);
+  moving_mesh->fill_grid_coordinates_vector(vector, get_dof_handler_u(), *mapping_ale);
 }
 
 template<int dim, typename Number>
@@ -1241,7 +1242,7 @@ void
 DGNavierStokesBase<dim, Number>::compute_grid_velocity_analytical(VectorType & velocity,
                                                                   double const time)
 {
-  moving_mesh->compute_grid_velocity_analytical(velocity, time);
+  moving_mesh->compute_grid_velocity_analytical(velocity, time, get_dof_handler_u(), *mapping);
 }
 
 template<int dim, typename Number>

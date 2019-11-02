@@ -405,7 +405,7 @@ DGNavierStokesPressureCorrection<dim, Number>::move_mesh_and_apply_pressure_mass
   double const &     time)
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
-  this->moving_mesh->advance_grid_coordinates(time);
+  this->move_mesh(time);
   // this update is needed since we have to evaluate an operator below (which uses matrix_free)
   this->update_after_mesh_movement();
 
@@ -420,7 +420,7 @@ DGNavierStokesPressureCorrection<dim, Number>::move_mesh_and_evaluate_pressure_g
   double const &     time)
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
-  this->moving_mesh->advance_grid_coordinates(time);
+  this->move_mesh(time);
   // this update is needed since we have to evaluate an operator below (which uses matrix_free)
   this->update_after_mesh_movement();
 

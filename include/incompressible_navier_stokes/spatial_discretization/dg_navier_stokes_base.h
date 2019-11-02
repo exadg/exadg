@@ -46,7 +46,7 @@
 #include "turbulence_model.h"
 
 // ALE
-#include <deal.II/fe/mapping_fe_field.h>
+#include "moving_mesh.h"
 
 // interface space-time
 #include "interface.h"
@@ -68,10 +68,6 @@ using namespace dealii;
 
 namespace IncNS
 {
-// forward declarations
-template<int dim, typename Number>
-class MovingMesh;
-
 template<int dim, typename Number>
 class DGNavierStokesBase : public dealii::Subscriptor, public Interface::OperatorBase<Number>
 {

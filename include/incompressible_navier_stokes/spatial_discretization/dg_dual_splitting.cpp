@@ -302,7 +302,7 @@ DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_div_term_convect
   double const &     time)
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
-  this->moving_mesh->advance_grid_coordinates(time);
+  this->move_mesh(time);
   // this update is needed since we have to evaluate an operator below (which uses matrix_free)
   this->update_after_mesh_movement();
 
@@ -484,7 +484,7 @@ DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_convective_add(
   double const &     time)
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
-  this->moving_mesh->advance_grid_coordinates(time);
+  this->move_mesh(time);
   // this update is needed since we have to evaluate an operator below (which uses matrix_free)
   this->update_after_mesh_movement();
 
@@ -583,7 +583,7 @@ DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_viscous_add(Vect
                                                                             double const &     time)
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
-  this->moving_mesh->advance_grid_coordinates(time);
+  this->move_mesh(time);
   // this update is needed since we have to evaluate an operator below (which uses matrix_free)
   this->update_after_mesh_movement();
 
