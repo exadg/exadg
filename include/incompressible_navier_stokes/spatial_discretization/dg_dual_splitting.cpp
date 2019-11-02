@@ -307,10 +307,6 @@ DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_div_term_convect
   // this update is needed since we have to evaluate an operator below (which uses matrix_free)
   this->update_after_mesh_movement();
 
-  // TODO this should not be necessary since this boundary term does not use the grid velocity
-  //  moving_mesh->compute_grid_velocity_analytical(time);
-  //  set_grid_velocity(moving_mesh->get_grid_velocity());
-
   rhs_ppe_div_term_convective_term_add(dst, src);
 }
 
@@ -489,10 +485,6 @@ DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_convective_add(
   // this update is needed since we have to evaluate an operator below (which uses matrix_free)
   this->update_after_mesh_movement();
 
-  // TODO this should not be necessary since this boundary term does not use the grid velocity
-  //  moving_mesh->compute_grid_velocity_analytical(time);
-  //  set_grid_velocity(moving_mesh->get_grid_velocity());
-
   rhs_ppe_convective_add(dst, src);
 }
 
@@ -579,9 +571,10 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &      
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_viscous_add(VectorType &       dst,
-                                                                            VectorType const & src,
-                                                                            double const &     time)
+DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_viscous_add(
+  VectorType &       dst,
+  VectorType const & velocity,
+  double const &     time)
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   this->move_mesh(time);
@@ -591,7 +584,7 @@ DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_viscous_add(Vect
   // compute vorticity
   VectorType vorticity;
   this->initialize_vector_velocity(vorticity);
-  this->compute_vorticity(vorticity, src);
+  this->compute_vorticity(vorticity, velocity);
 
   rhs_ppe_viscous_add(dst, vorticity);
 }

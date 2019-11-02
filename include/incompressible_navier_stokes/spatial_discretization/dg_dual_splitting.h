@@ -111,7 +111,9 @@ public:
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const;
 
   void
-  move_mesh_and_rhs_ppe_viscous_add(VectorType & dst, VectorType const & src, double const & time);
+  move_mesh_and_rhs_ppe_viscous_add(VectorType &       dst,
+                                    VectorType const & velocity,
+                                    double const &     time);
 
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
