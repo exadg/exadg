@@ -319,7 +319,14 @@ Problem<dim, Number>::solve()
     if(this->param.problem_type == ProblemType::Steady)
       time_integrator->timeloop_steady_problem();
     else if(this->param.problem_type == ProblemType::Unsteady)
+    {
+      // this is necessary to use the correct mesh for the computation of errors
+      // at start time t_0
+      if(this->param.ale_formulation)
+        navier_stokes_operation->move_mesh(param.start_time);
+
       time_integrator->timeloop();
+    }
     else
       AssertThrow(false, ExcMessage("Not implemented."));
   }

@@ -155,7 +155,10 @@ private:
   VectorType              vorticity_np;
 
   std::vector<VectorType> vec_convective_term;
-  VectorType              convective_term_np;
+
+  // ALE
+#ifdef ALE_CONSISTENT_FORM
+  VectorType convective_term_np;
 
   std::vector<VectorType> vec_rhs_ppe_div_term_convective_term;
   VectorType              rhs_ppe_div_term_convective_term_np;
@@ -165,7 +168,7 @@ private:
 
   std::vector<VectorType> vec_rhs_ppe_viscous;
   VectorType              rhs_ppe_viscous_np;
-
+#endif
 
   std::vector<double>       computing_times;
   std::vector<unsigned int> iterations;

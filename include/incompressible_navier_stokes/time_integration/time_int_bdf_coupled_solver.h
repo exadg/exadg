@@ -117,8 +117,10 @@ private:
 
   std::vector<VectorType> vec_convective_term;
 
+#ifdef ALE_CONSISTENT_FORM
   // ALE:
   VectorType convective_term_np;
+#endif
 
   // performance analysis: average number of iterations and solver time
   std::vector<Number>       computing_times;

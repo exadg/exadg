@@ -46,10 +46,12 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
+#ifdef ALE_CONSISTENT_FORM
     if(this->param.ale_formulation == true)
     {
       this->operator_base->initialize_vector_velocity(convective_term_np);
     }
+#endif
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
@@ -117,6 +119,7 @@ TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
   // ALE formulation
   if(this->param.ale_formulation == true)
   {
+#ifdef ALE_CONSISTENT_FORM
     this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[0],
                                                                 solution[0].block(0),
                                                                 this->get_time());
@@ -130,6 +133,7 @@ TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
                                                                     this->get_previous_time(i));
       }
     }
+#endif
   }
   else // Eulerian formulation
   {
@@ -277,6 +281,17 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
                                                       solution[0].block(0),
                                                       this->get_time());
       }
+      else // ALE case
+      {
+#ifndef ALE_CONSISTENT_FORM
+        for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+        {
+          this->operator_base->evaluate_convective_term(vec_convective_term[i],
+                                                        solution[i].block(0),
+                                                        this->get_previous_time(i));
+        }
+#endif
+      }
 
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         rhs_vector.block(0).add(-this->extra.get_beta(i), vec_convective_term[i]);
@@ -419,6 +434,7 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::ale_update_post()
 {
+#ifdef ALE_CONSISTENT_FORM
   // In the case of ALE and if the convective term is formulated explicitly, we need
   // to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
   if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
@@ -427,6 +443,7 @@ TimeIntBDFCoupled<Number>::ale_update_post()
                                                   solution_np.block(0),
                                                   this->get_next_time());
   }
+#endif
 }
 
 template<typename Number>
@@ -562,11 +579,14 @@ TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     push_back(vec_convective_term);
+
+#ifdef ALE_CONSISTENT_FORM
     // ALE
     if(this->param.ale_formulation == true)
     {
       vec_convective_term[0].swap(convective_term_np);
     }
+#endif
   }
 }
 

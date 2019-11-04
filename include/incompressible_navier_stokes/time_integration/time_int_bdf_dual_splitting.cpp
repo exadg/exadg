@@ -25,9 +25,11 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     pressure(this->order),
     vorticity(this->param.order_extrapolation_pressure_nbc),
     vec_convective_term(this->order),
+#ifdef ALE_CONSISTENT_FORM
     vec_rhs_ppe_div_term_convective_term(this->order),
     vec_rhs_ppe_convective(this->param.order_extrapolation_pressure_nbc),
     vec_rhs_ppe_viscous(this->param.order_extrapolation_pressure_nbc),
+#endif
     computing_times(4),
     iterations(4),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
@@ -71,7 +73,11 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
     {
       initialize_vec_convective_term();
     }
+  }
 
+#ifdef ALE_CONSISTENT_FORM
+  if(this->param.convective_problem())
+  {
     if(this->param.ale_formulation)
     {
       // This boundary condition term only appears if the div(u) term is integrated by parts and
@@ -92,6 +98,7 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
       initialize_vec_rhs_ppe_viscous();
     }
   }
+#endif
 }
 
 template<typename Number>
@@ -123,13 +130,10 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
 
+#ifdef ALE_CONSISTENT_FORM
     if(this->param.ale_formulation == true)
     {
       this->operator_base->initialize_vector_velocity(convective_term_np);
-
-      for(unsigned int i = 0; i < vec_rhs_ppe_convective.size(); ++i)
-        this->operator_base->initialize_vector_pressure(vec_rhs_ppe_convective[i]);
-      this->operator_base->initialize_vector_pressure(rhs_ppe_convective_np);
 
       if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
       {
@@ -137,15 +141,23 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
           this->operator_base->initialize_vector_pressure(vec_rhs_ppe_div_term_convective_term[i]);
         this->operator_base->initialize_vector_pressure(rhs_ppe_div_term_convective_term_np);
       }
+
+      for(unsigned int i = 0; i < vec_rhs_ppe_convective.size(); ++i)
+        this->operator_base->initialize_vector_pressure(vec_rhs_ppe_convective[i]);
+      this->operator_base->initialize_vector_pressure(rhs_ppe_convective_np);
     }
+#endif
   }
 
+#ifdef ALE_CONSISTENT_FORM
   if(this->param.viscous_problem() && this->param.ale_formulation)
   {
     for(unsigned int i = 0; i < vec_rhs_ppe_viscous.size(); ++i)
       this->operator_base->initialize_vector_pressure(vec_rhs_ppe_viscous[i]);
     this->operator_base->initialize_vector_pressure(rhs_ppe_viscous_np);
   }
+#endif
+
   // Sum_i (alpha_i/dt * u_i)
   this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
 }
@@ -193,6 +205,7 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
   // ALE formulation
   if(this->param.ale_formulation == true)
   {
+#ifdef ALE_CONSISTENT_FORM
     // Note that the inverse mass matrix can not be applied immediately since the mass matrix
     // changes over time due to the mesh movement.
 
@@ -209,6 +222,7 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
                                                                     this->get_previous_time(i));
       }
     }
+#endif
   }
   else // Eulerian formulation
   {
@@ -232,6 +246,7 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_div_term_convective_term()
 {
+#ifdef ALE_CONSISTENT_FORM
   vec_rhs_ppe_div_term_convective_term[0] = 0.0;
   pde_operator->move_mesh_and_rhs_ppe_div_term_convective_term_add(
     vec_rhs_ppe_div_term_convective_term[0], velocity[0], this->get_time());
@@ -245,12 +260,14 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_div_term_convective_term
         vec_rhs_ppe_div_term_convective_term[i], velocity[i], this->get_previous_time(i));
     }
   }
+#endif
 }
 
 template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_convective()
 {
+#ifdef ALE_CONSISTENT_FORM
   vec_rhs_ppe_convective[0] = 0.0;
   pde_operator->move_mesh_and_rhs_ppe_convective_add(vec_rhs_ppe_convective[0],
                                                      velocity[0],
@@ -266,12 +283,14 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_convective()
                                                          this->get_previous_time(i));
     }
   }
+#endif
 }
 
 template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_viscous()
 {
+#ifdef ALE_CONSISTENT_FORM
   vec_rhs_ppe_viscous[0] = 0.0;
   pde_operator->move_mesh_and_rhs_ppe_viscous_add(vec_rhs_ppe_viscous[0],
                                                   velocity[0],
@@ -287,6 +306,7 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_rhs_ppe_viscous()
                                                       this->get_previous_time(i));
     }
   }
+#endif
 }
 
 template<typename Number>
@@ -473,13 +493,9 @@ TimeIntBDFDualSplitting<Number>::convective_step()
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
     }
-    else /*this->param.ale_formulation == true*/
+    else // ALE case
     {
-      // in the ale case the mass matrix has to be applied at t^{n+1}
-      // therefore it is not possible to evaluate the convective term and directly apply
-      // the inverse mass matrix, as it is done in the euler case since due to the push back
-      // design, different mass matrices at $t^{n-i}$ would be considered
-
+#ifdef ALE_CONSISTENT_FORM
       // convective_term_np is used as temporary variable
       convective_term_np.equ(-this->extra.get_beta(0), vec_convective_term[0]);
 
@@ -489,6 +505,15 @@ TimeIntBDFDualSplitting<Number>::convective_step()
       this->operator_base->apply_inverse_mass_matrix(convective_term_np, convective_term_np);
 
       velocity_np.add(1.0, convective_term_np);
+#else
+      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+      {
+        pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(
+          vec_convective_term[i], velocity[i], this->get_previous_time(i));
+
+        velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
+      }
+#endif
     }
   }
 
@@ -626,9 +651,15 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
             pde_operator->rhs_ppe_div_term_convective_term_add(temp, velocity[i]);
             rhs.add(this->extra.get_beta(i), temp);
           }
-          else
+          else // ALE case
           {
+#ifdef ALE_CONSISTENT_FORM
             rhs.add(this->extra.get_beta(i), vec_rhs_ppe_div_term_convective_term[i]);
+#else
+            temp = 0.0;
+            pde_operator->rhs_ppe_div_term_convective_term_add(temp, velocity[i]);
+            rhs.add(this->extra.get_beta(i), temp);
+#endif
           }
         }
       }
@@ -665,11 +696,22 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
   }
   else
   {
+#ifdef ALE_CONSISTENT_FORM
     VectorType tmp(vorticity[0]);
     for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
     {
       rhs.add(this->extra_pressure_nbc.get_beta(i), vec_rhs_ppe_viscous[i]);
     }
+#else
+    VectorType extrapolation(vorticity[0]);
+    extrapolation = 0.0;
+    for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
+    {
+      extrapolation.add(this->extra_pressure_nbc.get_beta(i), vorticity[i]);
+    }
+
+    pde_operator->rhs_ppe_viscous_add(rhs, extrapolation);
+#endif
   }
   // II.3. convective term of pressure Neumann boundary condition on Gamma_D
   //       (only if we do not solve the Stokes equations)
@@ -686,9 +728,15 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
         pde_operator->rhs_ppe_convective_add(temp, velocity[i]);
         rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
       }
-      else
+      else // ALE case
       {
+#ifdef ALE_CONSISTENT_FORM
         rhs.add(this->extra_pressure_nbc.get_beta(i), vec_rhs_ppe_convective[i]);
+#else
+        temp = 0.0;
+        pde_operator->rhs_ppe_convective_add(temp, velocity[i]);
+        rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
+#endif
       }
     }
   }
@@ -850,6 +898,7 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::ale_update_post()
 {
+#ifdef ALE_CONSISTENT_FORM
   // convective operator
   if(this->param.convective_problem())
   {
@@ -882,6 +931,7 @@ TimeIntBDFDualSplitting<Number>::ale_update_post()
     rhs_ppe_viscous_np = 0.0;
     pde_operator->rhs_ppe_viscous_add(rhs_ppe_viscous_np, vorticity_np);
   }
+#endif
 }
 
 template<typename Number>
@@ -919,6 +969,7 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
   {
     push_back(vec_convective_term);
 
+#ifdef ALE_CONSISTENT_FORM
     if(this->param.ale_formulation == true)
     {
       vec_convective_term[0].swap(convective_term_np);
@@ -932,13 +983,16 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
       push_back(vec_rhs_ppe_convective);
       vec_rhs_ppe_convective[0].swap(rhs_ppe_convective_np);
     }
+#endif
   }
 
+#ifdef ALE_CONSISTENT_FORM
   if(this->param.ale_formulation == true && this->param.viscous_problem())
   {
     push_back(vec_rhs_ppe_viscous);
     vec_rhs_ppe_viscous[0].swap(rhs_ppe_viscous_np);
   }
+#endif
 }
 
 template<typename Number>

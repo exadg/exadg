@@ -27,7 +27,9 @@ TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     vec_pressure_gradient_term(param_in.order_pressure_extrapolation),
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
     vec_pressure_mass_matrix(param_in.order_pressure_extrapolation),
+#endif
     computing_times(3),
     iterations(3),
     N_iter_nonlinear_momentum(0)
@@ -85,11 +87,12 @@ TimeIntBDFPressureCorrection<Number>::setup_derived()
     initialize_vec_pressure_gradient_term();
   }
 
-  if(this->param.ale_formulation == true && extra_pressure_gradient.get_order() > 0 &&
-     this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
+  if(this->param.ale_formulation == true && extra_pressure_gradient.get_order() > 0)
   {
     initialize_vec_pressure_mass_matrix();
   }
+#endif
 }
 
 template<typename Number>
@@ -113,9 +116,6 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    if(this->param.ale_formulation == true)
-      this->operator_base->initialize_vector_velocity(convective_term_np);
-
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
   }
@@ -124,8 +124,17 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
     this->operator_base->initialize_vector_velocity(vec_pressure_gradient_term[i]);
 
-  if(this->param.ale_formulation == true &&
-     this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+#ifdef ALE_CONSISTENT_FORM
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == true)
+      this->operator_base->initialize_vector_velocity(convective_term_np);
+  }
+#endif
+
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
+  if(this->param.ale_formulation == true)
   {
     this->operator_base->initialize_vector_velocity(pressure_gradient_term_np);
 
@@ -133,6 +142,7 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
       this->operator_base->initialize_vector_pressure(vec_pressure_mass_matrix[i]);
     this->operator_base->initialize_vector_pressure(pressure_mass_matrix_np);
   }
+#endif
 
   // Sum_i (alpha_i/dt * u_i)
   this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
@@ -204,24 +214,7 @@ void
 TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
 {
   // ALE formulation
-  if(this->param.ale_formulation == true)
-  {
-    if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
-    {
-      this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(
-        vec_pressure_gradient_term[0], pressure[0], this->get_time());
-
-      if(this->param.start_with_low_order == false)
-      {
-        for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
-        {
-          this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(
-            vec_pressure_gradient_term[i], pressure[i], this->get_previous_time(i));
-        }
-      }
-    }
-  }
-  else // Eulerian formulation
+  if(this->param.ale_formulation == false)
   {
     // vec_pressure_gradient_term[0] is computed in the first time step and does not have to be
     // initialized here. Hence, there is nothing to do for start_with_low_order == true.
@@ -238,12 +231,30 @@ TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
       }
     }
   }
+  else // ALE case
+  {
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
+    this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
+                                                                      pressure[0],
+                                                                      this->get_time());
+
+    if(this->param.start_with_low_order == false)
+    {
+      for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
+      {
+        this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(
+          vec_pressure_gradient_term[i], pressure[i], this->get_previous_time(i));
+      }
+    }
+#endif
+  }
 }
 
 template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_mass_matrix()
 {
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
   pde_operator->move_mesh_and_apply_pressure_mass_matrix(vec_pressure_mass_matrix[0],
                                                          pressure[0],
                                                          this->get_time());
@@ -257,6 +268,7 @@ TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_mass_matrix()
                                                              this->get_previous_time(i));
     }
   }
+#endif
 }
 
 
@@ -556,23 +568,20 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
     }
     else // ALE case
     {
-      if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
+      for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+        rhs.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
+#else
+      for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
       {
-        for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
-          rhs.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
+        VectorType temp(velocity[0]);
+        temp = 0.0;
+        this->operator_base->evaluate_pressure_gradient_term(temp,
+                                                             pressure[i],
+                                                             this->get_previous_time(i));
+        rhs.add(-extra_pressure_gradient.get_beta(i), temp);
       }
-      else
-      {
-        for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
-        {
-          VectorType temp(velocity[0]);
-          temp = 0.0;
-          this->operator_base->evaluate_pressure_gradient_term(temp,
-                                                               pressure[i],
-                                                               this->get_previous_time(i));
-          rhs.add(-extra_pressure_gradient.get_beta(i), temp);
-        }
-      }
+#endif
     }
   }
 
@@ -591,12 +600,25 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    // vec_convective_term[0] has already been computed in case of ALE formulation
     if(this->param.ale_formulation == false)
     {
       this->operator_base->evaluate_convective_term(vec_convective_term[0],
                                                     velocity[0],
                                                     this->get_time());
+    }
+    else // ALE case
+    {
+      // vec_convective_term[0] has already been computed in case of ALE consistent formulation.
+      // The convective term has to be reevaluated for all previous times in case of ALE
+      // inconsistent formulation
+#ifndef ALE_CONSISTENT_FORM
+      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+      {
+        this->operator_base->evaluate_convective_term(vec_convective_term[i],
+                                                      velocity[i],
+                                                      this->get_previous_time(i));
+      }
+#endif
     }
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
@@ -823,23 +845,20 @@ TimeIntBDFPressureCorrection<Number>::pressure_update()
   // p^{n+1} = (pressure_increment)^{n+1} + sum_i (beta_pressure_extrapolation_i * p^{n-i});
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
-    if(this->param.ale_formulation == false ||
-       (this->param.ale_formulation == true &&
-        this->param.extrapolate_pressure_predictor_on_former_mesh_instances == false))
+    if(this->param.ale_formulation == false)
     {
       pressure_np.add(extra_pressure_gradient.get_beta(i), pressure[i]);
     }
-    else if(this->param.ale_formulation == true &&
-            this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+    else // ALE case
     {
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
       VectorType temp(pressure_np);
       temp = 0.0;
       pde_operator->apply_inverse_pressure_mass_matrix(temp, vec_pressure_mass_matrix[i]);
       pressure_np.add(extra_pressure_gradient.get_beta(i), temp);
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Should not arrive here. Logical error."));
+#else
+      pressure_np.add(extra_pressure_gradient.get_beta(i), pressure[i]);
+#endif
     }
   }
 }
@@ -935,17 +954,19 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::ale_update_post()
 {
-  // In the case of ALE and if the convective term is formulated explicitly, we need
-  // to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
+#ifdef ALE_CONSISTENT_FORM
+  // In the case of ALE consistent formulation and if the convective term is formulated explicitly,
+  // we need to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
   if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     this->operator_base->evaluate_convective_term(convective_term_np,
                                                   velocity_np,
                                                   this->get_next_time());
   }
+#endif
 
-  if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true &&
-     extra_pressure_gradient.get_order() > 0)
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
+  if(extra_pressure_gradient.get_order() > 0)
   {
     pressure_gradient_term_np = 0.0;
     this->operator_base->evaluate_pressure_gradient_term(pressure_gradient_term_np,
@@ -955,6 +976,7 @@ TimeIntBDFPressureCorrection<Number>::ale_update_post()
     pressure_mass_matrix_np = 0.0;
     pde_operator->apply_pressure_mass_matrix(pressure_mass_matrix_np, pressure_np);
   }
+#endif
 }
 
 template<typename Number>
@@ -973,22 +995,29 @@ TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     push_back(vec_convective_term);
+
+#ifdef ALE_CONSISTENT_FORM
     if(this->param.ale_formulation == true)
       vec_convective_term[0].swap(convective_term_np);
+#endif
   }
 
   if(extra_pressure_gradient.get_order() > 0)
   {
     push_back(vec_pressure_gradient_term);
+
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
     if(this->param.ale_formulation == true)
       vec_pressure_gradient_term[0].swap(pressure_gradient_term_np);
+#endif
 
-    if(this->param.ale_formulation == true &&
-       this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+#ifdef ALE_CONSISTENT_FORM_PRESSURE
+    if(this->param.ale_formulation == true)
     {
       push_back(vec_pressure_mass_matrix);
       vec_pressure_mass_matrix[0].swap(pressure_mass_matrix_np);
     }
+#endif
   }
 }
 

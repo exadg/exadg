@@ -28,9 +28,6 @@ InputParameters::InputParameters()
     grid_velocity_analytical(true),
     ale_formulation(false),
     neumann_with_variable_normal_vector(false),
-    // false is chosen as a default value, since extrapolation considering former mesh
-    // instances doesnt yield optimal temporal rates of convergence for BDF2 (in the ALE case)
-    extrapolate_pressure_predictor_on_former_mesh_instances(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
