@@ -327,9 +327,10 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     tensor
-    get_volume_flux_linearized_divergence_formulation(vector const & u,
-                                                      vector const & delta_u) const
+    get_volume_flux_linearized_divergence_formulation(vector const &     delta_u,
+                                                      unsigned int const q) const
   {
+    vector u = get_velocity_cell(q);
     tensor F = outer_product(u, delta_u);
 
     // minus sign due to integration by parts
@@ -338,13 +339,13 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux_linearized_convective_formulation(vector const &     u,
-                                                      vector const &     delta_u,
-                                                      tensor const &     grad_u,
+    get_volume_flux_linearized_convective_formulation(vector const &     delta_u,
                                                       tensor const &     grad_delta_u,
                                                       unsigned int const q) const
   {
-    vector w = u;
+    // w = u
+    vector w      = get_velocity_cell(q);
+    tensor grad_u = get_velocity_gradient_cell(q);
 
     // w = u - u_grid
     if(data.ale)

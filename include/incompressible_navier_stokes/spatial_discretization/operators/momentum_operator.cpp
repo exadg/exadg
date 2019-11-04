@@ -291,20 +291,16 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
     if(this->data.convective_problem)
     {
-      vector u = convective_kernel->get_velocity_cell(q);
-
       if(this->data.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       {
         gradient_flux +=
-          convective_kernel->get_volume_flux_linearized_divergence_formulation(u, value);
+          convective_kernel->get_volume_flux_linearized_divergence_formulation(value, q);
       }
       else if(this->data.formulation_convective_term ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
-        tensor grad_u = convective_kernel->get_velocity_gradient_cell(q);
-
-        value_flux += convective_kernel->get_volume_flux_linearized_convective_formulation(
-          u, value, grad_u, gradient, q);
+        value_flux +=
+          convective_kernel->get_volume_flux_linearized_convective_formulation(value, gradient, q);
       }
       else
       {

@@ -701,21 +701,19 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector delta_u = integrator.get_value(q);
-    vector u       = kernel->get_velocity_cell(q);
 
     if(this->data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
-      tensor flux = kernel->get_volume_flux_linearized_divergence_formulation(u, delta_u);
+      tensor flux = kernel->get_volume_flux_linearized_divergence_formulation(delta_u, q);
 
       integrator.submit_gradient(flux, q);
     }
     else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      tensor grad_u       = kernel->get_velocity_gradient_cell(q);
       tensor grad_delta_u = integrator.get_gradient(q);
 
-      vector flux = kernel->get_volume_flux_linearized_convective_formulation(
-        u, delta_u, grad_u, grad_delta_u, q);
+      vector flux =
+        kernel->get_volume_flux_linearized_convective_formulation(delta_u, grad_delta_u, q);
 
       integrator.submit_value(flux, q);
     }
