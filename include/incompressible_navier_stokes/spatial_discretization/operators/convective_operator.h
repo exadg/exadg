@@ -77,6 +77,14 @@ public:
     integrator_velocity_p.reset(
       new IntegratorFace(matrix_free, false, dof_index, quad_index_linearized));
 
+    if(data.ale)
+    {
+      integrator_grid_velocity.reset(
+        new IntegratorCell(matrix_free, dof_index, quad_index_linearized));
+      integrator_grid_velocity_face.reset(
+        new IntegratorFace(matrix_free, true, dof_index, quad_index_linearized));
+    }
+
     // use own storage of velocity vector only in case of multigrid
     if(is_mg)
     {
@@ -85,12 +93,13 @@ public:
     }
 
     if(data.ale)
-      matrix_free.initialize_dof_vector(velocity_grid, dof_index);
+    {
+      matrix_free.initialize_dof_vector(grid_velocity, dof_index);
 
-    if(data.ale)
       AssertThrow(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation,
                   ExcMessage(
                     "ALE formulation can only be used in combination with ConvectiveFormulation"));
+    }
   }
 
   static MappingFlags
@@ -175,16 +184,16 @@ public:
   }
 
   void
-  set_velocity_grid_ptr(VectorType const & src) const
+  set_grid_velocity_ptr(VectorType const & src) const
   {
-    velocity_grid = src;
-    velocity_grid.update_ghost_values();
+    grid_velocity = src;
+    grid_velocity.update_ghost_values();
   }
 
   VectorType const &
   get_grid_velocity() const
   {
-    return velocity_grid;
+    return grid_velocity;
   }
 
   inline DEAL_II_ALWAYS_INLINE //
@@ -215,18 +224,48 @@ public:
     return integrator_velocity_p->get_value(q);
   }
 
+  // grid velocity cell
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    get_grid_velocity_cell(unsigned int const q) const
+  {
+    return integrator_grid_velocity->get_value(q);
+  }
+
+  // grid velocity face (the grid velocity is continuous
+  // so that we need only one function instead of minus and
+  // plus functions)
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    get_grid_velocity_face(unsigned int const q) const
+  {
+    return integrator_grid_velocity_face->get_value(q);
+  }
+
   // linearized operator
   void
   reinit_cell(unsigned int const cell) const
   {
     integrator_velocity->reinit(cell);
 
+    if(data.ale)
+      integrator_grid_velocity->reinit(cell);
+
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    {
       integrator_velocity->gather_evaluate(*velocity, true, false, false);
+    }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
       integrator_velocity->gather_evaluate(*velocity, true, true, false);
+
+      if(data.ale)
+        integrator_grid_velocity->gather_evaluate(grid_velocity, true, false, false);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
 
   void
@@ -237,6 +276,12 @@ public:
 
     integrator_velocity_p->reinit(face);
     integrator_velocity_p->gather_evaluate(*velocity, true, false);
+
+    if(data.ale)
+    {
+      integrator_grid_velocity_face->reinit(face);
+      integrator_grid_velocity_face->gather_evaluate(grid_velocity, true, false);
+    }
   }
 
   void
@@ -244,6 +289,12 @@ public:
   {
     integrator_velocity_m->reinit(face);
     integrator_velocity_m->gather_evaluate(*velocity, true, false);
+
+    if(data.ale)
+    {
+      integrator_grid_velocity_face->reinit(face);
+      integrator_grid_velocity_face->gather_evaluate(grid_velocity, true, false);
+    }
   }
 
   void
@@ -253,6 +304,12 @@ public:
   {
     integrator_velocity_m->reinit(cell, face);
     integrator_velocity_m->gather_evaluate(*velocity, true, false);
+
+    if(data.ale)
+    {
+      integrator_grid_velocity_face->reinit(cell, face);
+      integrator_grid_velocity_face->gather_evaluate(grid_velocity, true, false);
+    }
 
     if(boundary_id == numbers::internal_face_boundary_id) // internal face
     {
@@ -281,19 +338,21 @@ public:
 
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux_linearized_convective_formulation(vector const & u,
-                                                      vector const & delta_u,
-                                                      tensor const & grad_u,
-                                                      tensor const & grad_delta_u) const
+    get_volume_flux_linearized_convective_formulation(vector const &     u,
+                                                      vector const &     delta_u,
+                                                      tensor const &     grad_u,
+                                                      tensor const &     grad_delta_u,
+                                                      unsigned int const q) const
   {
-    AssertThrow(
-      data.ale == false,
-      ExcMessage(
-        "The linearized convective operator is currently not implemented for ALE formulation."));
+    vector w = u;
+
+    // w = u - u_grid
+    if(data.ale)
+      w -= get_grid_velocity_cell(q);
 
     // plus sign since the strong formulation is used, i.e.
     // integration by parts is performed twice
-    vector F = grad_u * delta_u + grad_delta_u * u;
+    vector F = grad_u * delta_u + grad_delta_u * w;
 
     return F;
   }
@@ -309,7 +368,7 @@ public:
     calculate_flux_nonlinear_interior_and_neighbor(vector const & uM,
                                                    vector const & uP,
                                                    vector const & normalM,
-                                                   vector const & ugrid) const
+                                                   vector const & u_grid) const
   {
     vector flux_m, flux_p;
 
@@ -323,18 +382,9 @@ public:
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
       vector flux;
-      scalar average_u_normal;
-
-      if(data.ale == false)
-      {
-        average_u_normal = 0.5 * (uM + uP) * normalM;
-      }
-      else // data.ale == true
-      {
-        vector wM        = uM - ugrid;
-        vector wP        = uP - ugrid;
-        average_u_normal = 0.5 * (wM + wP) * normalM;
-      }
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
 
       flux = calculate_upwind_flux(uM, uP, average_u_normal);
 
@@ -374,7 +424,6 @@ public:
                                       BoundaryTypeU const & boundary_type) const
   {
     vector flux;
-    scalar average_u_normal;
 
     if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
     {
@@ -385,24 +434,19 @@ public:
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      if(data.ale == false)
-      {
-        average_u_normal = 0.5 * (uM + uP) * normalM;
-      }
-      else // data.ale == true
-      {
-        vector wM        = uM - u_grid;
-        vector wP        = uP - u_grid;
-        average_u_normal = 0.5 * (wM + wP) * normalM;
-      }
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
 
       flux = calculate_upwind_flux(uM, uP, average_u_normal);
 
       if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
+      {
         if(data.ale == false)
           apply_outflow_bc(flux, uM * normalM);
         else
           apply_outflow_bc(flux, (uM - u_grid) * normalM);
+      }
 
       // second term appears since the strong formulation is implemented (integration by parts
       // is performed twice)
@@ -520,11 +564,12 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     std::tuple<vector, vector>
-    calculate_flux_linearized_interior_and_neighbor(vector const & uM,
-                                                    vector const & uP,
-                                                    vector const & delta_uM,
-                                                    vector const & delta_uP,
-                                                    vector const & normalM) const
+    calculate_flux_linearized_interior_and_neighbor(vector const &     uM,
+                                                    vector const &     uP,
+                                                    vector const &     delta_uM,
+                                                    vector const &     delta_uP,
+                                                    vector const &     normalM,
+                                                    unsigned int const q) const
   {
     vector fluxM, fluxP;
 
@@ -535,9 +580,16 @@ public:
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      vector flux = calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      vector u_grid;
+      if(data.ale)
+        u_grid = get_grid_velocity_face(q);
 
-      scalar average_u_normal       = 0.5 * (uM + uP) * normalM;
+      vector flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
+
       scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
       // second term appears since the strong formulation is implemented (integration by parts
@@ -560,11 +612,12 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_flux_linearized_interior(vector const & uM,
-                                       vector const & uP,
-                                       vector const & delta_uM,
-                                       vector const & delta_uP,
-                                       vector const & normalM) const
+    calculate_flux_linearized_interior(vector const &     uM,
+                                       vector const &     uP,
+                                       vector const &     delta_uM,
+                                       vector const &     delta_uP,
+                                       vector const &     normalM,
+                                       unsigned int const q) const
   {
     vector flux;
 
@@ -574,9 +627,17 @@ public:
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      flux = calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      vector u_grid;
+      if(data.ale)
+        u_grid = get_grid_velocity_face(q);
 
-      scalar average_u_normal       = 0.5 * (uM + uP) * normalM;
+      flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
+
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
+
       scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
       // second term appears since the strong formulation is implemented (integration by parts
@@ -604,7 +665,8 @@ public:
                                        vector const &        delta_uM,
                                        vector const &        delta_uP,
                                        vector const &        normalM,
-                                       BoundaryTypeU const & boundary_type) const
+                                       BoundaryTypeU const & boundary_type,
+                                       unsigned int const    q) const
   {
     vector flux;
 
@@ -617,12 +679,19 @@ public:
     }
     else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
-      flux = calculate_upwind_flux_linearized(uM, uP, delta_uM, delta_uP, normalM);
+      vector u_grid;
+      if(data.ale)
+        u_grid = get_grid_velocity_face(q);
+
+      flux = calculate_upwind_flux_linearized(uM, uP, u_grid, delta_uM, delta_uP, normalM);
 
       if(boundary_type == BoundaryTypeU::Neumann && data.use_outflow_bc == true)
         apply_outflow_bc(flux, uM * normalM);
 
-      scalar average_u_normal       = 0.5 * (uM + uP) * normalM;
+      scalar average_u_normal = 0.5 * (uM + uP) * normalM;
+      if(data.ale)
+        average_u_normal -= u_grid * normalM;
+
       scalar average_delta_u_normal = 0.5 * (delta_uM + delta_uP) * normalM;
 
       // second term appears since the strong formulation is implemented (integration by parts
@@ -769,7 +838,7 @@ public:
   {
     // we need a factor indicating whether we have inflow or outflow
     // on the Neumann part of the boundary.
-    // outflow: factor =  1.0 (do nothing, neutral element of multiplication)
+    // outflow: factor = 1.0 (do nothing, neutral element of multiplication)
     // inflow:  factor = 0.0 (set convective flux to zero)
     scalar outflow_indicator = make_vectorized_array<Number>(1.0);
 
@@ -790,6 +859,7 @@ public:
     vector
     calculate_upwind_flux_linearized(vector const & uM,
                                      vector const & uP,
+                                     vector const & u_grid,
                                      vector const & delta_uM,
                                      vector const & delta_uP,
                                      vector const & normalM) const
@@ -797,7 +867,10 @@ public:
     vector average_velocity       = 0.5 * (uM + uP);
     vector delta_average_velocity = 0.5 * (delta_uM + delta_uP);
 
-    scalar average_normal_velocity       = average_velocity * normalM;
+    scalar average_normal_velocity = average_velocity * normalM;
+    if(data.ale)
+      average_normal_velocity -= u_grid * normalM;
+
     scalar delta_average_normal_velocity = delta_average_velocity * normalM;
 
     vector jump_value = delta_uM - delta_uP;
@@ -934,11 +1007,14 @@ private:
   ConvectiveKernelData data;
 
   mutable lazy_ptr<VectorType> velocity;
-  mutable VectorType           velocity_grid;
+  mutable VectorType           grid_velocity;
 
   std::shared_ptr<IntegratorCell> integrator_velocity;
   std::shared_ptr<IntegratorFace> integrator_velocity_m;
   std::shared_ptr<IntegratorFace> integrator_velocity_p;
+
+  std::shared_ptr<IntegratorCell> integrator_grid_velocity;
+  std::shared_ptr<IntegratorFace> integrator_grid_velocity_face;
 };
 
 

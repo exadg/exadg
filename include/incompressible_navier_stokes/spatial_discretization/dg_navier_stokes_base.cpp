@@ -1217,7 +1217,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 {
-  convective_kernel->set_velocity_grid_ptr(u_grid_in);
+  convective_kernel->set_grid_velocity_ptr(u_grid_in);
 }
 
 template<int dim, typename Number>

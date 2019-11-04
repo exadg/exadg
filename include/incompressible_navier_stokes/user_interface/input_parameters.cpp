@@ -250,11 +250,6 @@ InputParameters::check_input_parameters()
       ExcMessage(
         "Both problem type and solver type have to be Unsteady when using ALE formulation."));
 
-    AssertThrow(
-      treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit,
-      ExcMessage(
-        "ALE formulation is currently only implemented for explicit formulation of convective term."));
-
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
                 ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
 
