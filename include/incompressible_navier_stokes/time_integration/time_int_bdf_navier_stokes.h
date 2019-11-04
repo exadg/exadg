@@ -52,26 +52,22 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
-  // ALE
-
-  std::vector<double>
-  get_current_time_integrator_constants() const;
-
-  virtual void
-  set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) = 0;
-
-  virtual void
-  set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> convective_term_in) = 0;
-
-  void
-  set_grid_velocity_cfl(VectorType u_grid_cfl_in);
-
   virtual void
   update_time_integrator_constants();
 
 protected:
+  virtual void
+  setup_derived() override;
+
+  virtual void
+  allocate_vectors() override;
+
+  virtual void
+  prepare_vectors_for_next_timestep() override;
+
+  void
+  solve_timestep();
+
   bool
   print_solver_info() const;
 
@@ -96,6 +92,15 @@ protected:
   std::shared_ptr<InterfaceBase> operator_base;
 
 private:
+  virtual void
+  do_solve_timestep() = 0;
+
+  void
+  ale_update_pre();
+
+  virtual void
+  ale_update_post() = 0;
+
   void
   initialize_oif();
 
@@ -150,8 +155,10 @@ private:
   VectorType solution_tilde_m;
   VectorType solution_tilde_mp;
 
-  // CFL ALE
-  VectorType u_grid_cfl;
+  // ALE
+  VectorType              grid_velocity;
+  std::vector<VectorType> vec_grid_coordinates;
+  VectorType              grid_coordinates_np;
 };
 
 } // namespace IncNS

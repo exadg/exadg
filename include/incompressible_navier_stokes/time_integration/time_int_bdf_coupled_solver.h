@@ -53,22 +53,12 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-  // ALE
-
-  void
-  set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) override;
-
-  void
-  set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> vec_convective_term_in) override;
-
 private:
   void
-  setup_derived();
+  setup_derived() override;
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
   initialize_current_solution();
@@ -80,7 +70,10 @@ private:
   initialize_vec_convective_term();
 
   void
-  solve_timestep();
+  do_solve_timestep();
+
+  void
+  ale_update_post() override;
 
   void
   solve_steady_problem();
@@ -98,7 +91,7 @@ private:
   postprocessing_steady_problem() const;
 
   void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() override;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;

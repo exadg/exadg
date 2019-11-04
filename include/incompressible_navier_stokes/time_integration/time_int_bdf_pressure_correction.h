@@ -51,33 +51,12 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-  void
-  set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) override
-  {
-    for(unsigned int i = 1; i < velocity.size(); ++i)
-    {
-      velocity[i] = solution_in[i].block(0);
-      pressure[i] = solution_in[i].block(1);
-    }
-  }
-
-  void
-  set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> convective_term_in) override
-  {
-    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-    {
-      vec_convective_term[i] = convective_term_in[i];
-    }
-  }
-
 private:
   void
   update_time_integrator_constants();
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
   initialize_current_solution();
@@ -86,7 +65,7 @@ private:
   initialize_former_solutions();
 
   void
-  setup_derived();
+  setup_derived() override;
 
   void
   initialize_vec_convective_term();
@@ -95,7 +74,13 @@ private:
   initialize_vec_pressure_gradient_term();
 
   void
-  solve_timestep();
+  initialize_vec_pressure_mass_matrix();
+
+  void
+  do_solve_timestep();
+
+  void
+  ale_update_post() override;
 
   void
   solve_steady_problem();
@@ -128,7 +113,7 @@ private:
   rhs_pressure(VectorType & rhs) const;
 
   void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() override;
 
   void
   postprocessing() const;
@@ -162,6 +147,7 @@ private:
   VectorType pressure_increment;
 
   std::vector<VectorType> vec_convective_term;
+  VectorType              convective_term_np;
 
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;
@@ -170,6 +156,10 @@ private:
   ExtrapolationConstants extra_pressure_gradient;
 
   std::vector<VectorType> vec_pressure_gradient_term;
+  VectorType              pressure_gradient_term_np;
+
+  std::vector<VectorType> vec_pressure_mass_matrix;
+  VectorType              pressure_mass_matrix_np;
 
   std::vector<Number>       computing_times;
   std::vector<unsigned int> iterations;

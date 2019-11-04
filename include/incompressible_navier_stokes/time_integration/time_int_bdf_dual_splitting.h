@@ -53,38 +53,21 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-  void
-  set_former_solution_considering_former_mesh_instances(
-    std::vector<BlockVectorType> solution_in) override;
-
-  void
-  set_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> convective_term_in) override;
-
-  void
-  set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
-    std::vector<VectorType> vec_rhs_ppe_div_term_convective_term_in);
-
-  void
-  set_vec_rhs_ppe_convective_considering_former_mesh_instances(
-    std::vector<VectorType> vec_rhs_ppe_convective_in);
-
-  void
-  set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
-    std::vector<VectorType> vec_rhs_ppe_viscous_in);
-
 private:
   void
-  setup_derived();
+  setup_derived() override;
 
   void
-  solve_timestep();
+  do_solve_timestep();
 
   void
-  allocate_vectors();
+  ale_update_post() override;
 
   void
-  prepare_vectors_for_next_timestep();
+  allocate_vectors() override;
+
+  void
+  prepare_vectors_for_next_timestep() override;
 
   void
   convective_step();

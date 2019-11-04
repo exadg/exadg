@@ -10,6 +10,7 @@
 
 #include "../grid_tools/deformed_cube_manifold.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -384,9 +385,13 @@ void set_boundary_conditions(
 }
 
 template<int dim>
-std::shared_ptr<MeshMovementFunctions<dim>>
-set_mesh_movement_function()
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
+  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
+  field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
+  field_functions->analytical_solution_pressure.reset(new InitialSolutionPressure<dim>());
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
   MeshMovementData<dim> data;
   data.temporal = MESH_MOVEMENT_ADVANCE_IN_TIME;
   data.shape = MESH_MOVEMENT_SHAPE;
@@ -399,20 +404,7 @@ set_mesh_movement_function()
   data.t_end = END_TIME;
   data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
   data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
-
-  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
-  mesh_movement_function.reset(new CubeMeshMovementFunctions<dim>(data));
-
-  return mesh_movement_function;
-}
-
-template<int dim>
-void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
-{
-  field_functions->initial_solution_velocity.reset(new InitialSolutionVelocity<dim>());
-  field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
-  field_functions->analytical_solution_pressure.reset(new InitialSolutionPressure<dim>());
-  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->mesh_movement.reset(new CubeMeshMovementFunctions<dim>(data));
 }
 
 /************************************************************************************************************/

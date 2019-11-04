@@ -27,6 +27,7 @@ TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     vec_pressure_gradient_term(param_in.order_pressure_extrapolation),
+    vec_pressure_mass_matrix(param_in.order_pressure_extrapolation),
     computing_times(3),
     iterations(3),
     N_iter_nonlinear_momentum(0)
@@ -50,36 +51,53 @@ TimeIntBDFPressureCorrection<Number>::update_time_integrator_constants()
   // step, etc.
   if(this->adaptive_time_stepping == false)
   {
+    // the "-1" indicates that the order of extrapolation of the pressure gradient is one order
+    // lower than the order of the BDF time integration scheme
     extra_pressure_gradient.update(this->get_time_step_number() - 1);
   }
   else // adaptive time stepping
   {
+    // the "-1" indicates that the order of extrapolation of the pressure gradient is one order
+    // lower than the order of the BDF time integration scheme
     extra_pressure_gradient.update(this->get_time_step_number() - 1, this->get_time_step_vector());
   }
 
   // use this function to check the correctness of the time integrator constants
-  //  std::cout << "Coefficients extrapolation scheme pressure: Time step = " <<
-  //  this->get_time_step_number() << std::endl; extra_pressure_gradient.print();
+  //    std::cout << "Coefficients extrapolation scheme pressure: Time step = "
+  //              << this->get_time_step_number() << std::endl;
+  //    extra_pressure_gradient.print(this->pcout);
 }
 
 template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::setup_derived()
 {
-  if(this->param.convective_problem() && this->start_with_low_order == false &&
+  TimeIntBDF<Number>::setup_derived();
+
+  if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     initialize_vec_convective_term();
   }
 
   if(extra_pressure_gradient.get_order() > 0)
+  {
     initialize_vec_pressure_gradient_term();
+  }
+
+  if(this->param.ale_formulation == true && extra_pressure_gradient.get_order() > 0 &&
+     this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+  {
+    initialize_vec_pressure_mass_matrix();
+  }
 }
 
 template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::allocate_vectors()
 {
+  TimeIntBDF<Number>::allocate_vectors();
+
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
     this->operator_base->initialize_vector_velocity(velocity[i]);
@@ -95,6 +113,9 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
+    if(this->param.ale_formulation == true)
+      this->operator_base->initialize_vector_velocity(convective_term_np);
+
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
   }
@@ -102,6 +123,16 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   // vec_pressure_gradient_term
   for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
     this->operator_base->initialize_vector_velocity(vec_pressure_gradient_term[i]);
+
+  if(this->param.ale_formulation == true &&
+     this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+  {
+    this->operator_base->initialize_vector_velocity(pressure_gradient_term_np);
+
+    for(unsigned int i = 0; i < vec_pressure_mass_matrix.size(); ++i)
+      this->operator_base->initialize_vector_pressure(vec_pressure_mass_matrix[i]);
+    this->operator_base->initialize_vector_pressure(pressure_mass_matrix_np);
+  }
 
   // Sum_i (alpha_i/dt * u_i)
   this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
@@ -132,12 +163,39 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
 {
-  // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-  for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+  // ALE formulation
+  if(this->param.ale_formulation == true)
   {
-    this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                  velocity[i],
-                                                  this->get_previous_time(i));
+    this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[0],
+                                                                velocity[0],
+                                                                this->get_time());
+
+    if(this->param.start_with_low_order == false)
+    {
+      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+      {
+        this->operator_base->move_mesh_and_evaluate_convective_term(vec_convective_term[i],
+                                                                    velocity[i],
+                                                                    this->get_previous_time(i));
+      }
+    }
+  }
+  else // Eulerian formulation
+  {
+    // vec_convective_term[0] is computed in the first time step and does not have to be
+    // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+
+    if(this->param.start_with_low_order == false)
+    {
+      // note that the loop begins with i=1! (we could also start with i=0 but this is not
+      // necessary)
+      for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+      {
+        this->operator_base->evaluate_convective_term(vec_convective_term[i],
+                                                      velocity[i],
+                                                      this->get_previous_time(i));
+      }
+    }
   }
 }
 
@@ -145,14 +203,62 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
 {
-  // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-  for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
+  // ALE formulation
+  if(this->param.ale_formulation == true)
   {
-    this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
-                                                         pressure[i],
-                                                         this->get_previous_time(i));
+    if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+    {
+      this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(
+        vec_pressure_gradient_term[0], pressure[0], this->get_time());
+
+      if(this->param.start_with_low_order == false)
+      {
+        for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
+        {
+          this->pde_operator->move_mesh_and_evaluate_pressure_gradient_term(
+            vec_pressure_gradient_term[i], pressure[i], this->get_previous_time(i));
+        }
+      }
+    }
+  }
+  else // Eulerian formulation
+  {
+    // vec_pressure_gradient_term[0] is computed in the first time step and does not have to be
+    // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+
+    if(this->param.start_with_low_order == false)
+    {
+      // note that the loop begins with i=1! (we could also start with i=0 but this is not
+      // necessary)
+      for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
+      {
+        this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
+                                                             pressure[i],
+                                                             this->get_previous_time(i));
+      }
+    }
   }
 }
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_mass_matrix()
+{
+  pde_operator->move_mesh_and_apply_pressure_mass_matrix(vec_pressure_mass_matrix[0],
+                                                         pressure[0],
+                                                         this->get_time());
+
+  if(this->param.start_with_low_order == false)
+  {
+    for(unsigned int i = 1; i < vec_pressure_mass_matrix.size(); ++i)
+    {
+      pde_operator->move_mesh_and_apply_pressure_mass_matrix(vec_pressure_mass_matrix[i],
+                                                             pressure[i],
+                                                             this->get_previous_time(i));
+    }
+  }
+}
+
 
 template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
@@ -234,7 +340,7 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
     velocity[0].local_element(j) = 1.0;
 
     // solve time step
-    solve_timestep();
+    this->solve_timestep();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)
@@ -269,7 +375,7 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::solve_timestep()
+TimeIntBDFPressureCorrection<Number>::do_solve_timestep()
 {
   // perform the substeps of the pressure-correction scheme
   momentum_step();
@@ -439,12 +545,35 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
    */
   if(extra_pressure_gradient.get_order() > 0)
   {
-    this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
-                                                         pressure[0],
-                                                         this->get_time());
+    if(this->param.ale_formulation == false)
+    {
+      this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
+                                                           pressure[0],
+                                                           this->get_time());
 
-    for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
-      rhs.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
+      for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+        rhs.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
+    }
+    else // ALE case
+    {
+      if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+      {
+        for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+          rhs.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
+      }
+      else
+      {
+        for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+        {
+          VectorType temp(velocity[0]);
+          temp = 0.0;
+          this->operator_base->evaluate_pressure_gradient_term(temp,
+                                                               pressure[i],
+                                                               this->get_previous_time(i));
+          rhs.add(-extra_pressure_gradient.get_beta(i), temp);
+        }
+      }
+    }
   }
 
   /*
@@ -462,9 +591,13 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                  velocity[0],
-                                                  this->get_time());
+    // vec_convective_term[0] has already been computed in case of ALE formulation
+    if(this->param.ale_formulation == false)
+    {
+      this->operator_base->evaluate_convective_term(vec_convective_term[0],
+                                                    velocity[0],
+                                                    this->get_time());
+    }
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       rhs.add(-this->extra.get_beta(i), vec_convective_term[i]);
@@ -690,7 +823,24 @@ TimeIntBDFPressureCorrection<Number>::pressure_update()
   // p^{n+1} = (pressure_increment)^{n+1} + sum_i (beta_pressure_extrapolation_i * p^{n-i});
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
-    pressure_np.add(extra_pressure_gradient.get_beta(i), pressure[i]);
+    if(this->param.ale_formulation == false ||
+       (this->param.ale_formulation == true &&
+        this->param.extrapolate_pressure_predictor_on_former_mesh_instances == false))
+    {
+      pressure_np.add(extra_pressure_gradient.get_beta(i), pressure[i]);
+    }
+    else if(this->param.ale_formulation == true &&
+            this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+    {
+      VectorType temp(pressure_np);
+      temp = 0.0;
+      pde_operator->apply_inverse_pressure_mass_matrix(temp, vec_pressure_mass_matrix[i]);
+      pressure_np.add(extra_pressure_gradient.get_beta(i), temp);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Should not arrive here. Logical error."));
+    }
   }
 }
 
@@ -720,10 +870,8 @@ TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
     // evaluate inhomogeneous parts of boundary face integrals
-    double const current_time = this->get_previous_time(i);
     // note that the function rhs_...() already includes a factor of -1.0
-    pde_operator->rhs_pressure_gradient_term(temp, current_time);
-
+    pde_operator->rhs_pressure_gradient_term(temp, this->get_previous_time(i));
     rhs.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
               this->bdf.get_gamma0(),
             temp);
@@ -785,8 +933,36 @@ TimeIntBDFPressureCorrection<Number>::projection_step()
 
 template<typename Number>
 void
+TimeIntBDFPressureCorrection<Number>::ale_update_post()
+{
+  // In the case of ALE and if the convective term is formulated explicitly, we need
+  // to evaluate the convective term at time t_{n+1} on the mesh at time t_{n+1}.
+  if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    this->operator_base->evaluate_convective_term(convective_term_np,
+                                                  velocity_np,
+                                                  this->get_next_time());
+  }
+
+  if(this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true &&
+     extra_pressure_gradient.get_order() > 0)
+  {
+    pressure_gradient_term_np = 0.0;
+    this->operator_base->evaluate_pressure_gradient_term(pressure_gradient_term_np,
+                                                         pressure_np,
+                                                         this->get_next_time());
+
+    pressure_mass_matrix_np = 0.0;
+    pde_operator->apply_pressure_mass_matrix(pressure_mass_matrix_np, pressure_np);
+  }
+}
+
+template<typename Number>
+void
 TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
 {
+  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+
   push_back(velocity);
   velocity[0].swap(velocity_np);
 
@@ -797,11 +973,22 @@ TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     push_back(vec_convective_term);
+    if(this->param.ale_formulation == true)
+      vec_convective_term[0].swap(convective_term_np);
   }
 
   if(extra_pressure_gradient.get_order() > 0)
   {
     push_back(vec_pressure_gradient_term);
+    if(this->param.ale_formulation == true)
+      vec_pressure_gradient_term[0].swap(pressure_gradient_term_np);
+
+    if(this->param.ale_formulation == true &&
+       this->param.extrapolate_pressure_predictor_on_former_mesh_instances == true)
+    {
+      push_back(vec_pressure_mass_matrix);
+      vec_pressure_mass_matrix[0].swap(pressure_mass_matrix_np);
+    }
   }
 }
 
@@ -827,7 +1014,7 @@ TimeIntBDFPressureCorrection<Number>::solve_steady_problem()
       velocity_tmp = velocity[0];
       pressure_tmp = pressure[0];
 
-      // calculate normm of solution
+      // calculate norm of solution
       double const norm_u = velocity_tmp.l2_norm();
       double const norm_p = pressure_tmp.l2_norm();
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);

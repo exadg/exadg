@@ -38,15 +38,13 @@
 #include "../include/functionalities/print_general_infos.h"
 
 // ALE
-#include "../include/incompressible_navier_stokes/spatial_discretization/moving_mesh.h"
+#include "../include/functionalities/moving_mesh.h"
 
 using namespace dealii;
 using namespace IncNS;
 
 // specify the flow problem that has to be solved
 
-
-// 2D Navier-Stokes flow
 //#include "incompressible_navier_stokes_ale_test_cases/poiseuille_ale.h"
 #include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
 //#include "incompressible_navier_stokes_ale_test_cases/taylor_vortex_ale.h"
@@ -98,10 +96,9 @@ private:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
-  std::shared_ptr<FieldFunctions<dim>>        field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim>>   boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim>>   boundary_descriptor_pressure;
-  std::shared_ptr<MeshMovementFunctions<dim>> mesh_movement_function;
+  std::shared_ptr<FieldFunctions<dim>>      field_functions;
+  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
 
   InputParameters param;
 
@@ -129,22 +126,25 @@ private:
 
   std::shared_ptr<DriverSteady> driver_steady;
 
-  typedef MovingMesh<dim, Number> DGALE;
-  std::shared_ptr<DGALE>          ale_operation;
-
   /*
    * Computation time (wall clock time).
    */
   Timer          timer;
   mutable double overall_time;
   double         setup_time;
+  double         time_ale_update;
+  double         time_advance_mesh;
+  double         time_compute_and_set_mesh_velocity;
 };
 
 template<int dim, typename Number>
 Problem<dim, Number>::Problem()
   : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     overall_time(0.0),
-    setup_time(0.0)
+    setup_time(0.0),
+    time_ale_update(0.0),
+    time_advance_mesh(0.0),
+    time_compute_and_set_mesh_velocity(0.0)
 {
 }
 
@@ -206,10 +206,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   // field functions and boundary conditions
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
-
-  // set mesh movement function
-  if(param.ale_formulation == true)
-    mesh_movement_function = set_mesh_movement_function<dim>();
 
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param);
@@ -279,29 +275,12 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  if(param.ale_formulation == true)
-    ale_operation = std::make_shared<DGALE>(param,
-                                            triangulation,
-                                            mesh_movement_function,
-                                            navier_stokes_operation);
-
-
   // Depends on mapping which is initialized in constructor of MovingMesh
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
                                  field_functions);
-
-  // depends on matrix free which is initialized in navier_stokes_operation->setup
-  if(param.ale_formulation == true)
-  {
-    AssertThrow(ale_operation.get() != 0, ExcMessage("Not initialized."));
-    ale_operation->setup();
-    if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
-       param.adaptive_time_stepping == true)
-      time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
-  }
 
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -324,54 +303,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  if(param.ale_formulation == true && param.start_with_low_order == false &&
-     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    std::vector<double> eval_times(param.order_time_integrator);
-
-    for(unsigned int i = 0; i < param.order_time_integrator; ++i)
-      eval_times[i] = time_integrator->get_previous_time(i);
-
-    if(param.grid_velocity_analytical == false)
-      ale_operation->initialize_grid_coordinates_on_former_mesh_instances(eval_times);
-
-    time_integrator->set_former_solution_considering_former_mesh_instances(
-      ale_operation->get_former_solution_on_former_mesh_instances(eval_times));
-
-    if(param.convective_problem())
-      time_integrator->set_convective_term_considering_former_mesh_instances(
-        ale_operation->get_convective_term_on_former_mesh_instances(eval_times));
-
-    // Dual splitting
-    if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      auto time_integrator_ds = std::dynamic_pointer_cast<TimeIntDualSplitting>(time_integrator);
-
-      if(this->param.convective_problem())
-      {
-        if(this->param.divu_integrated_by_parts == true &&
-           this->param.divu_use_boundary_data == true)
-        {
-          time_integrator_ds
-            ->set_vec_rhs_ppe_div_term_convective_term_considering_former_mesh_instances(
-              ale_operation->get_vec_rhs_ppe_div_term_convective_term_on_former_mesh_instances(
-                eval_times));
-        }
-
-        time_integrator_ds->set_vec_rhs_ppe_convective_considering_former_mesh_instances(
-          ale_operation->get_vec_rhs_ppe_convective_on_former_mesh_instances(eval_times));
-      }
-
-      if(this->param.viscous_problem())
-      {
-        time_integrator_ds->set_vec_rhs_ppe_viscous_considering_former_mesh_instances(
-          ale_operation->get_vec_rhs_ppe_viscous_on_former_mesh_instances(eval_times));
-      }
-    }
-
-    // Pressure-correction
-    //...
-  }
   setup_time = timer.wall_time();
 }
 
@@ -387,38 +318,8 @@ Problem<dim, Number>::solve()
     // run time loop
     if(this->param.problem_type == ProblemType::Steady)
       time_integrator->timeloop_steady_problem();
-    else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == false)
+    else if(this->param.problem_type == ProblemType::Unsteady)
       time_integrator->timeloop();
-    else if(this->param.problem_type == ProblemType::Unsteady && param.ale_formulation == true)
-    {
-      bool timeloop_finished = false;
-
-      while(!timeloop_finished)
-      {
-        // BDF coefficients are updated within advance_one_timestep()
-        // for ALE it is already needed before the function call to compute the grid velocity
-        time_integrator->update_time_integrator_constants();
-
-        // calculate mesh at time t_n+1
-        ale_operation->move_mesh(time_integrator->get_next_time());
-
-        // calculate grid velocity at time t_n+1 and hand it over to navier_stokes_operation
-        // for correct evaluation of convective term
-        ale_operation->update_grid_velocities(
-          time_integrator->get_next_time(),
-          time_integrator->get_time_step_size(),
-          time_integrator->get_current_time_integrator_constants());
-
-        // set grid velocity at time t_n+1 since the time integrator needs the grid velocity
-        // to compute the time step size for the next time step at the end of the current time step
-        if(param.calculation_of_time_step_size == TimeStepCalculation::CFL &&
-           param.adaptive_time_stepping == true)
-          time_integrator->set_grid_velocity_cfl(ale_operation->get_grid_velocity());
-
-        // advance from t_n -> t_n+1
-        timeloop_finished = time_integrator->advance_one_timestep(!timeloop_finished);
-      }
-    }
     else
       AssertThrow(false, ExcMessage("Not implemented."));
   }
@@ -495,6 +396,7 @@ Problem<dim, Number>::analyze_computing_times() const
   {
     length = length > names[i].length() ? length : names[i].length();
   }
+  length = 25;
 
   double sum_of_substeps = 0.0;
   for(unsigned int i = 0; i < computing_times.size(); ++i)
@@ -523,27 +425,26 @@ Problem<dim, Number>::analyze_computing_times() const
   if(param.ale_formulation == true)
   {
     Utilities::MPI::MinMaxAvg advance_mesh_time_data =
-      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_advance_mesh(), MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(time_advance_mesh, MPI_COMM_WORLD);
     advance_mesh = advance_mesh_time_data.avg;
-    this->pcout << "  " << std::setw(length + 2) << std::left << "Move Mesh" << std::setprecision(2)
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Move mesh" << std::setprecision(2)
                 << std::scientific << std::setw(25) << std::right << advance_mesh << " s  "
                 << std::setprecision(2) << std::fixed << std::setw(6) << std::right
                 << advance_mesh / overall_time_avg * 100 << " %" << std::endl;
 
     Utilities::MPI::MinMaxAvg update_time_data =
-      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_ale_update(), MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(time_ale_update, MPI_COMM_WORLD);
     update = update_time_data.avg;
-    this->pcout << "  " << std::setw(length + 2) << std::left << "Update" << std::setprecision(2)
-                << std::scientific << std::setw(25) << std::right << update << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Update DG operator"
+                << std::setprecision(2) << std::scientific << std::setw(25) << std::right << update
+                << " s  " << std::setprecision(2) << std::fixed << std::setw(6) << std::right
                 << update / overall_time_avg * 100 << " %" << std::endl;
 
     Utilities::MPI::MinMaxAvg compute_and_set_mesh_velocity_time_data =
-      Utilities::MPI::min_max_avg(ale_operation->get_wall_time_compute_and_set_mesh_velocity(),
-                                  MPI_COMM_WORLD);
+      Utilities::MPI::min_max_avg(time_compute_and_set_mesh_velocity, MPI_COMM_WORLD);
     compute_and_set_mesh_velocity = compute_and_set_mesh_velocity_time_data.avg;
-    this->pcout << "  " << std::setw(length + 2) << std::left << "Compute and set mesh velocity"
-                << std::setprecision(2) << std::scientific << std::setw(12) << std::right
+    this->pcout << "  " << std::setw(length + 2) << std::left << "Compute grid velocity"
+                << std::setprecision(2) << std::scientific << std::setw(25) << std::right
                 << compute_and_set_mesh_velocity << " s  " << std::setprecision(2) << std::fixed
                 << std::setw(6) << std::right
                 << compute_and_set_mesh_velocity / overall_time_avg * 100 << " %" << std::endl;

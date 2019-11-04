@@ -1,10 +1,21 @@
 #ifndef INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 #define INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 
-#include "../../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+#include "../../include/functionalities/mesh_movement_function.h"
 
-namespace IncNS
+enum class MeshMovementAdvanceInTime
 {
+  Undefined,
+  SinSquared,
+  Sin
+};
+
+enum class MeshMovementShape
+{
+  Undefined,
+  Sin
+};
+
 template<int dim>
 struct MeshMovementData
 {
@@ -32,36 +43,11 @@ struct MeshMovementData
 };
 
 template<int dim>
-class MeshMovementFunctions : public Function<dim>
-{
-public:
-  MeshMovementFunctions() : Function<dim>(dim, 0.0)
-  {
-  }
-
-  virtual ~MeshMovementFunctions()
-  {
-  }
-
-  virtual double
-  displacement(const Point<dim> & x, const unsigned int coordinate_direction = 0) const = 0;
-
-  // velocity is called vale since VectorTools::Interpolate can be used to evaluate the velocity.
-  // the displacement requires multigrid support and hence, can not be acessed with
-  // VectorTools::Interpolate
-  virtual double
-  value(const Point<dim> & p, const unsigned int component = 0) const = 0;
-};
-
-
-
-template<int dim>
-class CubeMeshMovementFunctions : public MeshMovementFunctions<dim>
+class CubeMeshMovementFunctions : public MeshMovementFunction<dim>
 {
 public:
   CubeMeshMovementFunctions(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(),
-      data(data_in),
+    : data(data_in),
       width(data_in.dimensions[0]),
       left(-1.0 / 2.0 * width),
       right(-left),
@@ -220,19 +206,17 @@ protected:
 };
 
 template<int dim>
-class RectangleMeshMovementFunctions : public MeshMovementFunctions<dim>
+class RectangleMeshMovementFunctions : public MeshMovementFunction<dim>
 {
 public:
   RectangleMeshMovementFunctions(MeshMovementData<dim> const & data_in)
-    : MeshMovementFunctions<dim>(),
-      data(data_in),
+    : data(data_in),
       length(data_in.dimensions[0]),
       height(data_in.dimensions[1]),
+      depth(dim == 3 ? data_in.dimensions[2] : 1.0),
       runtime(data_in.t_end - data_in.t_start),
       time_period(runtime / data_in.frequency)
   {
-    if(dim == 3)
-      depth = data_in.dimensions[2];
   }
 
   double
@@ -384,7 +368,5 @@ protected:
   double const                runtime;
   double const                time_period;
 };
-
-} // namespace IncNS
 
 #endif /*INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_*/

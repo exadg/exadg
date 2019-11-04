@@ -41,8 +41,8 @@ public:
    * Constructor.
    */
   DGNavierStokesDualSplitting(parallel::TriangulationBase<dim> const & triangulation,
-                              InputParameters const &              parameters,
-                              std::shared_ptr<Postprocessor>       postprocessor)
+                              InputParameters const &                  parameters,
+                              std::shared_ptr<Postprocessor>           postprocessor)
     : Base(triangulation, parameters, postprocessor), time(0.0)
   {
   }
@@ -88,6 +88,11 @@ public:
   void
   rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const;
 
+  void
+  move_mesh_and_rhs_ppe_div_term_convective_term_add(VectorType &       dst,
+                                                     VectorType const & src,
+                                                     double const &     time);
+
   // rhs pressure
   void
   rhs_ppe_nbc_add(VectorType & dst, double const & time);
@@ -96,9 +101,19 @@ public:
   void
   rhs_ppe_convective_add(VectorType & dst, VectorType const & src) const;
 
+  void
+  move_mesh_and_rhs_ppe_convective_add(VectorType &       dst,
+                                       VectorType const & src,
+                                       double const &     time);
+
   // rhs pressure: Neumann BC viscous term
   void
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const;
+
+  void
+  move_mesh_and_rhs_ppe_viscous_add(VectorType &       dst,
+                                    VectorType const & velocity,
+                                    double const &     time);
 
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;

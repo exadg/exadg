@@ -8,8 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_USER_INTERFACE_FIELD_FUNCTIONS_H_
 
-#include "../../../applications/grid_tools/mesh_movement_functions.h"
-#include "enum_types.h"
+#include "../../functionalities/mesh_movement_function.h"
 
 namespace IncNS
 {
@@ -42,6 +41,12 @@ struct FieldFunctions
    * the momentum equation of the incompressible Navier-Stokes equations.
    */
   std::shared_ptr<Function<dim>> right_hand_side;
+
+  /*
+   * A function that describes a mesh movement analytically and that is used in case of an
+   * Arbitrary Lagrangian-Eulerian formulation.
+   */
+  std::shared_ptr<MeshMovementFunction<dim>> mesh_movement;
 };
 
 

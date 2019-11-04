@@ -7,6 +7,8 @@
 
 #include "dg_dual_splitting.h"
 
+#include "../../functionalities/moving_mesh.h"
+
 namespace IncNS
 {
 template<int dim, typename Number>
@@ -295,6 +297,21 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_div_term_convective_term_add(
 
 template<int dim, typename Number>
 void
+DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_div_term_convective_term_add(
+  VectorType &       dst,
+  VectorType const & src,
+  double const &     time)
+{
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  this->move_mesh(time);
+  // this update is needed since we have to evaluate an operator below (which uses matrix_free)
+  this->update_after_mesh_movement();
+
+  rhs_ppe_div_term_convective_term_add(dst, src);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term_boundary_face(
   MatrixFree<dim, Number> const &               matrix_free,
   VectorType &                                  dst,
@@ -458,6 +475,21 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_convective_add(VectorType &   
 
 template<int dim, typename Number>
 void
+DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_convective_add(
+  VectorType &       dst,
+  VectorType const & src,
+  double const &     time)
+{
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  this->move_mesh(time);
+  // this update is needed since we have to evaluate an operator below (which uses matrix_free)
+  this->update_after_mesh_movement();
+
+  rhs_ppe_convective_add(dst, src);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_convective_add_boundary_face(
   MatrixFree<dim, Number> const & matrix_free,
   VectorType &                    dst,
@@ -535,6 +567,26 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_viscous_add(VectorType &      
                                this,
                                dst,
                                src);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesDualSplitting<dim, Number>::move_mesh_and_rhs_ppe_viscous_add(
+  VectorType &       dst,
+  VectorType const & velocity,
+  double const &     time)
+{
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  this->move_mesh(time);
+  // this update is needed since we have to evaluate an operator below (which uses matrix_free)
+  this->update_after_mesh_movement();
+
+  // compute vorticity
+  VectorType vorticity;
+  this->initialize_vector_velocity(vorticity);
+  this->compute_vorticity(vorticity, velocity);
+
+  rhs_ppe_viscous_add(dst, vorticity);
 }
 
 template<int dim, typename Number>

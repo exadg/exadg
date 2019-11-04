@@ -18,6 +18,9 @@
 
 #include <deal.II/matrix_free/operators.h>
 
+// ALE
+#include "../../functionalities/moving_mesh.h"
+
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../incompressible_navier_stokes/user_interface/field_functions.h"
@@ -45,10 +48,7 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
-// ALE
-#include <deal.II/fe/mapping_fe_field.h>
-
-// interface space-time
+// interface
 #include "interface.h"
 
 // preconditioners and solvers
@@ -319,6 +319,11 @@ public:
   void
   evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const;
 
+  void
+  move_mesh_and_evaluate_convective_term(VectorType &       dst,
+                                         VectorType const & src,
+                                         Number const       time);
+
   // pressure gradient term
   void
   evaluate_pressure_gradient_term(VectorType &       dst,
@@ -382,15 +387,23 @@ public:
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
   // ALE
-
-  void
-  ale_update();
+  virtual void
+  update_after_mesh_movement();
 
   void
   set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
 
   void
-  set_grid_velocity(VectorType u_grid_in);
+  set_grid_velocity(VectorType velocity);
+
+  void
+  move_mesh(double const time);
+
+  void
+  move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
+
+  void
+  compute_grid_velocity_analytical(VectorType & velocity, double const time);
 
 protected:
   /*
@@ -405,6 +418,11 @@ protected:
   unsigned int
   get_mapping_degree() const;
 
+private:
+  // currently needed for initialization of moving_mesh
+  parallel::TriangulationBase<dim> const & triangulation;
+
+protected:
   /*
    * List of input parameters.
    */
@@ -529,6 +547,11 @@ protected:
   std::shared_ptr<Postprocessor> postprocessor;
 
   ConditionalOStream pcout;
+
+  /*
+   * ALE formulation
+   */
+  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
 
 private:
   /*

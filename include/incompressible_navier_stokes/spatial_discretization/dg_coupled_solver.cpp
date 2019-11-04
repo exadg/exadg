@@ -12,8 +12,8 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters,
-  std::shared_ptr<Postprocessor>       postprocessor)
+  InputParameters const &                  parameters,
+  std::shared_ptr<Postprocessor>           postprocessor)
   : Base(triangulation, parameters, postprocessor), scaling_factor_continuity(1.0)
 {
 }

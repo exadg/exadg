@@ -14,10 +14,11 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
-  parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters_in,
-  std::shared_ptr<Postprocessor>       postprocessor_in)
+  parallel::TriangulationBase<dim> const & triangulation_in,
+  InputParameters const &                  parameters_in,
+  std::shared_ptr<Postprocessor>           postprocessor_in)
   : dealii::Subscriptor(),
+    triangulation(triangulation_in),
     param(parameters_in),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
     fe_p(param.get_degree_p()),
@@ -67,6 +68,20 @@ DGNavierStokesBase<dim, Number>::setup(
   boundary_descriptor_velocity = boundary_descriptor_velocity_in;
   boundary_descriptor_pressure = boundary_descriptor_pressure_in;
   field_functions              = field_functions_in;
+
+  // ALE formulation with moving mesh
+  if(param.ale_formulation)
+  {
+    moving_mesh.reset(
+      new MovingMesh<dim, Number>(triangulation, param.degree_u, field_functions->mesh_movement));
+
+    AssertThrow(
+      moving_mesh.get() != 0,
+      ExcMessage(
+        "Variable moving_mesh needs to be initialized in case of ale_formulation == true."));
+
+    mapping_ale = moving_mesh->initialize_mapping_fe_field(param.start_time, *mapping);
+  }
 
   initialize_boundary_descriptor_laplace();
 
@@ -231,7 +246,7 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
     Categorization::do_cell_based_loops(*tria, additional_data);
   }
 
-  // dofhandler
+  // dof handler
   dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
     DofHandlerSelector::n_variants));
   dof_handler_vec[dof_index_u]        = &dof_handler_u;
@@ -759,6 +774,10 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
                                                               VectorType & pressure,
                                                               double const time) const
 {
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  if(param.ale_formulation)
+    moving_mesh->move_mesh_analytical(time, *mapping);
+
   field_functions->initial_solution_velocity->set_time(time);
   field_functions->initial_solution_pressure->set_time(time);
 
@@ -978,7 +997,8 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   auto periodic_face_pairs = this->periodic_face_pairs;
 
   parallel::TriangulationBase<dim> const * tria =
-    dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler_u_scalar.get_triangulation());
+    dynamic_cast<const parallel::TriangulationBase<dim> *>(
+      &dof_handler_u_scalar.get_triangulation());
   const FiniteElement<dim> & fe = dof_handler_u_scalar.get_fe();
 
   mg_preconditioner->initialize(mg_data,
@@ -1033,6 +1053,29 @@ DGNavierStokesBase<dim, Number>::evaluate_convective_term(VectorType &       dst
                                                           VectorType const & src,
                                                           Number const       time) const
 {
+  convective_operator.evaluate_nonlinear_operator(dst, src, time);
+}
+
+// TODO generalize this function so that it does not depend on compute_grid_velocity_analytical(),
+// since this function is not available for practical applications
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::move_mesh_and_evaluate_convective_term(VectorType &       dst,
+                                                                        VectorType const & src,
+                                                                        Number const       time)
+{
+  AssertThrow(param.ale_formulation == true, ExcMessage("Should not arrive here. Logical error."));
+
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  move_mesh(time);
+  // this update is needed since we have to evaluate the convective operator below
+  update_after_mesh_movement();
+
+  // the convective operator needs the correct grid velocity in the ALE case
+  VectorType grid_velocity(src);
+  moving_mesh->compute_grid_velocity_analytical(grid_velocity, time, get_dof_handler_u(), *mapping);
+  set_grid_velocity(grid_velocity);
+
   convective_operator.evaluate_nonlinear_operator(dst, src, time);
 }
 
@@ -1154,10 +1197,13 @@ DGNavierStokesBase<dim, Number>::calculate_dissipation_continuity_term(
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::ale_update()
+DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 {
   matrix_free.reinit(
     get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data_ale);
+
+  inverse_mass_velocity.reinit();
+  inverse_mass_velocity_scalar.reinit();
 }
 
 template<int dim, typename Number>
@@ -1172,6 +1218,31 @@ void
 DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 {
   convective_kernel->set_velocity_grid_ptr(u_grid_in);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::move_mesh(double const time)
+{
+  moving_mesh->move_mesh_analytical(time, *mapping);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::move_mesh_and_fill_grid_coordinates_vector(VectorType & vector,
+                                                                            double const time)
+{
+  move_mesh(time);
+
+  moving_mesh->fill_grid_coordinates_vector(vector, get_dof_handler_u(), *mapping_ale);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::compute_grid_velocity_analytical(VectorType & velocity,
+                                                                  double const time)
+{
+  moving_mesh->compute_grid_velocity_analytical(velocity, time, get_dof_handler_u(), *mapping);
 }
 
 template<int dim, typename Number>

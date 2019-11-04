@@ -9,6 +9,7 @@
 
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
+#include "time_integration/push_back_vectors.h"
 #include "time_integration/time_step_calculation.h"
 
 namespace IncNS
@@ -26,7 +27,8 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
     param(param_in),
     cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
     cfl_oif(param_in.cfl_oif / std::pow(2.0, param.dt_refinements)),
-    operator_base(operator_in)
+    operator_base(operator_in),
+    vec_grid_coordinates(param_in.order_time_integrator)
 {
 }
 
@@ -36,6 +38,102 @@ TimeIntBDF<Number>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
   TimeIntBDFBase::update_time_integrator_constants();
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::setup_derived()
+{
+  // In the case of an arbitrary Lagrangian-Eulerian formulation:
+  if(param.ale_formulation)
+  {
+    // compute the grid coordinates at start time (and at previous times in case of
+    // start_with_low_order == false) if the grid velocity has to be computed from
+    // vectors of grid coordinates (instead of using an analytically prescribed grid velocity).
+    if(param.grid_velocity_analytical == false)
+    {
+      // compute grid coordinates at start time
+      operator_base->move_mesh_and_fill_grid_coordinates_vector(vec_grid_coordinates[0],
+                                                                get_time());
+
+      if(start_with_low_order == false)
+      {
+        // compute grid coordinates at previous times (start with 1!)
+        for(unsigned int i = 1; i < order; ++i)
+        {
+          operator_base->move_mesh_and_fill_grid_coordinates_vector(vec_grid_coordinates[i],
+                                                                    get_previous_time(i));
+        }
+      }
+    }
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::allocate_vectors()
+{
+  if(param.ale_formulation == true)
+  {
+    this->operator_base->initialize_vector_velocity(grid_velocity);
+
+    if(param.grid_velocity_analytical == false)
+    {
+      this->operator_base->initialize_vector_velocity(grid_coordinates_np);
+
+      for(unsigned int i = 0; i < vec_grid_coordinates.size(); ++i)
+        this->operator_base->initialize_vector_velocity(vec_grid_coordinates[i]);
+    }
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
+{
+  push_back(vec_grid_coordinates);
+  vec_grid_coordinates[0].swap(grid_coordinates_np);
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::solve_timestep()
+{
+  if(param.ale_formulation)
+    ale_update_pre();
+
+  do_solve_timestep();
+
+  if(param.ale_formulation)
+    ale_update_post();
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::ale_update_pre()
+{
+  if(param.grid_velocity_analytical)
+  {
+    operator_base->move_mesh(get_next_time());
+
+    operator_base->compute_grid_velocity_analytical(grid_velocity, get_next_time());
+  }
+  else // compute grid velocity from grid coordinates at discrete instances of time
+  {
+    // move the mesh and compute grid coordinates at the end of the current time step t_{n+1}
+    operator_base->move_mesh_and_fill_grid_coordinates_vector(grid_coordinates_np, get_next_time());
+
+    // update grid velocity using BDF time derivative
+    grid_velocity.equ(this->bdf.get_gamma0() / this->get_time_step_size(), grid_coordinates_np);
+    for(unsigned int i = 0; i < vec_grid_coordinates.size(); ++i)
+      grid_velocity.add(-this->bdf.get_alpha(i) / this->get_time_step_size(),
+                        vec_grid_coordinates[i]);
+  }
+
+  // update the spatial discretization operator so that it is prepared to solve the current time
+  // step
+  operator_base->update_after_mesh_movement();
+  operator_base->set_grid_velocity(grid_velocity);
 }
 
 template<typename Number>
@@ -183,13 +281,11 @@ TimeIntBDF<Number>::calculate_time_step_size()
 
     if(adaptive_time_stepping == true)
     {
-      VectorType u_relative = get_velocity();
-      if(param.ale_formulation == true)
-        u_relative -= u_grid_cfl;
-
       // if u(x,t=0)=0, this time step size will tend to infinity
+      // Note that in the ALE case there is no possibility to know the grid velocity at this point
+      // and to use it for the calculation of the time step size.
       double time_step_adap =
-        operator_base->calculate_time_step_cfl(u_relative,
+        operator_base->calculate_time_step_cfl(get_velocity(),
                                                cfl,
                                                param.cfl_exponent_fe_degree_velocity);
 
@@ -254,9 +350,8 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
                 "Adaptive time step is not implemented for this type of time step calculation."));
 
   VectorType u_relative = get_velocity();
-
   if(param.ale_formulation == true)
-    u_relative -= u_grid_cfl;
+    u_relative -= grid_velocity;
 
   double new_time_step_size =
     operator_base->calculate_time_step_cfl(u_relative, cfl, param.cfl_exponent_fe_degree_velocity);
@@ -326,25 +421,6 @@ TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & v
     velocities.at(i) = &get_velocity(i);
     times.at(i)      = get_previous_time(i);
   }
-}
-
-template<typename Number>
-std::vector<double>
-TimeIntBDF<Number>::get_current_time_integrator_constants() const
-{
-  std::vector<double> time_integrator_constants(this->order + 1);
-  time_integrator_constants[0] = this->bdf.get_gamma0();
-  for(unsigned int i = 1; i < time_integrator_constants.size(); ++i)
-    time_integrator_constants[i] = this->bdf.get_alpha(i - 1);
-
-  return time_integrator_constants;
-}
-
-template<typename Number>
-void
-TimeIntBDF<Number>::set_grid_velocity_cfl(VectorType u_grid_cfl_in)
-{
-  u_grid_cfl = u_grid_cfl_in;
 }
 
 template<typename Number>

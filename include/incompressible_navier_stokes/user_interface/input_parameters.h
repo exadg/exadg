@@ -122,6 +122,7 @@ public:
   bool grid_velocity_analytical;
   bool ale_formulation;
   bool neumann_with_variable_normal_vector;
+  bool extrapolate_pressure_predictor_on_former_mesh_instances;
 
   /**************************************************************************************/
   /*                                                                                    */

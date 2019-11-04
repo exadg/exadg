@@ -48,12 +48,21 @@ public:
     quad_index        = quad_index_in;
 
     coefficients.resize(Utilities::pow(degree_in + 1, dim));
+
+    reinit();
   }
 
   void
   apply(VectorType & dst, VectorType const & src) const
   {
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  }
+
+  void
+  reinit()
+  {
+    fe_eval.reset(new Integrator(*matrix_free, dof_index, quad_index));
+    inverse.reset(new CellwiseInverseMass(*fe_eval));
   }
 
 private:
@@ -63,9 +72,6 @@ private:
             VectorType const & src,
             Range const &      cell_range) const
   {
-    fe_eval.reset(new Integrator(*matrix_free, dof_index, quad_index));
-    inverse.reset(new CellwiseInverseMass(*fe_eval));
-
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
       fe_eval->reinit(cell);
@@ -85,11 +91,11 @@ private:
 
   unsigned int dof_index, quad_index;
 
-  mutable std::shared_ptr<Integrator> fe_eval;
+  std::shared_ptr<Integrator> fe_eval;
 
   mutable AlignedVector<VectorizedArray<Number>> coefficients;
 
-  mutable std::shared_ptr<CellwiseInverseMass> inverse;
+  std::shared_ptr<CellwiseInverseMass> inverse;
 };
 
 
