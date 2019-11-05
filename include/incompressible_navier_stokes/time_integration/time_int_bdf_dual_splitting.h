@@ -94,15 +94,6 @@ private:
   initialize_vec_convective_term();
 
   void
-  initialize_vec_rhs_ppe_div_term_convective_term();
-
-  void
-  initialize_vec_rhs_ppe_convective();
-
-  void
-  initialize_vec_rhs_ppe_viscous();
-
-  void
   pressure_step();
 
   void
@@ -155,20 +146,6 @@ private:
   VectorType              vorticity_np;
 
   std::vector<VectorType> vec_convective_term;
-
-  // ALE
-#ifdef ALE_CONSISTENT_FORM
-  VectorType convective_term_np;
-
-  std::vector<VectorType> vec_rhs_ppe_div_term_convective_term;
-  VectorType              rhs_ppe_div_term_convective_term_np;
-
-  std::vector<VectorType> vec_rhs_ppe_convective;
-  VectorType              rhs_ppe_convective_np;
-
-  std::vector<VectorType> vec_rhs_ppe_viscous;
-  VectorType              rhs_ppe_viscous_np;
-#endif
 
   std::vector<double>       computing_times;
   std::vector<unsigned int> iterations;

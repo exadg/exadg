@@ -319,11 +319,6 @@ public:
   void
   evaluate_convective_term(VectorType & dst, VectorType const & src, Number const time) const;
 
-  void
-  move_mesh_and_evaluate_convective_term(VectorType &       dst,
-                                         VectorType const & src,
-                                         Number const       time);
-
   // pressure gradient term
   void
   evaluate_pressure_gradient_term(VectorType &       dst,

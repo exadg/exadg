@@ -1056,29 +1056,6 @@ DGNavierStokesBase<dim, Number>::evaluate_convective_term(VectorType &       dst
   convective_operator.evaluate_nonlinear_operator(dst, src, time);
 }
 
-// TODO generalize this function so that it does not depend on compute_grid_velocity_analytical(),
-// since this function is not available for practical applications
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::move_mesh_and_evaluate_convective_term(VectorType &       dst,
-                                                                        VectorType const & src,
-                                                                        Number const       time)
-{
-  AssertThrow(param.ale_formulation == true, ExcMessage("Should not arrive here. Logical error."));
-
-  // make sure that the mesh fits to the time at which we want to evaluate the solution
-  move_mesh(time);
-  // this update is needed since we have to evaluate the convective operator below
-  update_after_mesh_movement();
-
-  // the convective operator needs the correct grid velocity in the ALE case
-  VectorType grid_velocity(src);
-  moving_mesh->compute_grid_velocity_analytical(grid_velocity, time, get_dof_handler_u(), *mapping);
-  set_grid_velocity(grid_velocity);
-
-  convective_operator.evaluate_nonlinear_operator(dst, src, time);
-}
-
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::evaluate_pressure_gradient_term(VectorType &       dst,

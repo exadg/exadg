@@ -203,19 +203,6 @@ public:
   void
   apply_inverse_pressure_mass_matrix(VectorType & dst, VectorType const & src) const;
 
-  void
-  apply_pressure_mass_matrix(VectorType & dst, VectorType const & src) const;
-
-  void
-  move_mesh_and_apply_pressure_mass_matrix(VectorType &       dst,
-                                           VectorType const & src,
-                                           double const &     time);
-
-  void
-  move_mesh_and_evaluate_pressure_gradient_term(VectorType &       dst,
-                                                VectorType const & src,
-                                                double const &     time);
-
   /*
    * pressure Poisson equation.
    */
@@ -251,16 +238,12 @@ private:
   initialize_momentum_solver();
 
   /*
-   * Setup of (inverse) mass matrix operator for pressure.
+   * Setup of inverse mass matrix operator for pressure.
    */
-  void
-  setup_mass_matrix_operator_pressure();
-
   void
   setup_inverse_mass_matrix_operator_pressure();
 
   InverseMassMatrixOperator<dim, 1, Number> inverse_mass_pressure;
-  MassMatrixOperator<dim, 1, Number>        mass_matrix_pressure;
 
   /*
    * Momentum equation.

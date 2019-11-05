@@ -12,8 +12,6 @@
 
 #include "time_int_bdf_navier_stokes.h"
 
-//#define ALE_CONSISTENT_FORM_PRESSURE
-
 namespace IncNS
 {
 // forward declarations
@@ -74,9 +72,6 @@ private:
 
   void
   initialize_vec_pressure_gradient_term();
-
-  void
-  initialize_vec_pressure_mass_matrix();
 
   void
   do_solve_timestep();
@@ -157,18 +152,6 @@ private:
   ExtrapolationConstants extra_pressure_gradient;
 
   std::vector<VectorType> vec_pressure_gradient_term;
-
-  // ALE
-#ifdef ALE_CONSISTENT_FORM
-  VectorType convective_term_np;
-#endif
-
-#ifdef ALE_CONSISTENT_FORM_PRESSURE
-  VectorType pressure_gradient_term_np;
-
-  std::vector<VectorType> vec_pressure_mass_matrix;
-  VectorType              pressure_mass_matrix_np;
-#endif
 
   std::vector<Number>       computing_times;
   std::vector<unsigned int> iterations;

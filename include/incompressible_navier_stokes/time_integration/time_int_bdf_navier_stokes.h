@@ -13,8 +13,6 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
-//#define ALE_CONSISTENT_FORM
-
 using namespace dealii;
 
 namespace IncNS
