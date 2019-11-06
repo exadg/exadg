@@ -119,6 +119,7 @@ public:
   virtual void
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
 
+  // Arbitrary Lagrangian-Eulerian (ALE) formulation
   virtual void
   update_after_mesh_movement() = 0;
 
@@ -127,9 +128,6 @@ public:
 
   virtual void
   move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time) = 0;
-
-  virtual void
-  compute_grid_velocity_analytical(VectorType & vector, double const time) = 0;
 
   virtual void
   set_grid_velocity(VectorType velocity) = 0;

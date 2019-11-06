@@ -7,8 +7,6 @@
 
 #include <deal.II/lac/la_parallel_block_vector.h>
 
-#include "mesh_movement_function.h"
-
 using namespace dealii;
 
 template<int dim, typename Number>
@@ -17,9 +15,9 @@ class MovingMesh
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMesh(parallel::TriangulationBase<dim> const &         triangulation,
-             unsigned int const                               polynomial_degree,
-             std::shared_ptr<MeshMovementFunction<dim>> const mesh_movement_function);
+  MovingMesh(parallel::TriangulationBase<dim> const & triangulation,
+             unsigned int const                       polynomial_degree,
+             std::shared_ptr<Function<dim>> const     mesh_movement_function);
 
   /*
    * This function initialized the MappingFEField object that is used to describe
@@ -36,16 +34,6 @@ public:
   move_mesh_analytical(double const time, Mapping<dim> const & mapping);
 
   /*
-   * This function is formulated w.r.t. reference coordinates, i.e., the mapping describing
-   * the initial mesh position has to be used for this function.
-   */
-  void
-  compute_grid_velocity_analytical(VectorType &            velocity,
-                                   double const            time,
-                                   DoFHandler<dim> const & dof_handler,
-                                   Mapping<dim> const &    mapping);
-
-  /*
    * This function extracts the grid coordinates of the current mesh configuration, i.e.,
    * a mapping describing the mesh displacement has to be used here.
    */
@@ -56,7 +44,7 @@ public:
 
 private:
   // An analytical function that describes the mesh movement
-  std::shared_ptr<MeshMovementFunction<dim>> mesh_movement_function;
+  std::shared_ptr<Function<dim>> mesh_movement_function;
 
   // Finite Element (use a continuous finite element space to describe the mesh movement)
   std::shared_ptr<FESystem<dim>> fe;

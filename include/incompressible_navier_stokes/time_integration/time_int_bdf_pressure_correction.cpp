@@ -837,12 +837,6 @@ TimeIntBDFPressureCorrection<Number>::projection_step()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::ale_update_post()
-{
-}
-
-template<typename Number>
-void
 TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
 {
   TimeIntBDF<Number>::prepare_vectors_for_next_timestep();

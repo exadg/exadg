@@ -690,12 +690,6 @@ TimeIntBDFDualSplitting<Number>::viscous_step()
 
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::ale_update_post()
-{
-}
-
-template<typename Number>
-void
 TimeIntBDFDualSplitting<Number>::rhs_viscous(VectorType & rhs) const
 {
   /*

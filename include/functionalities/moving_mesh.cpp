@@ -6,7 +6,7 @@
 template<int dim, typename Number>
 MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & triangulation,
                                     unsigned int const                       polynomial_degree,
-                                    std::shared_ptr<MeshMovementFunction<dim>> const function)
+                                    std::shared_ptr<Function<dim>> const     function)
   : mesh_movement_function(function),
     fe(new FESystem<dim>(FE_Q<dim>(polynomial_degree), dim)),
     dof_handler(triangulation),
@@ -27,26 +27,6 @@ MovingMesh<dim, Number>::initialize_mapping_fe_field(double const         time,
   mapping_fe_field.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
 
   return mapping_fe_field;
-}
-
-template<int dim, typename Number>
-void
-MovingMesh<dim, Number>::compute_grid_velocity_analytical(VectorType &            velocity,
-                                                          double const            time,
-                                                          DoFHandler<dim> const & dof_handler,
-                                                          Mapping<dim> const &    mapping)
-{
-  mesh_movement_function->set_time(time);
-
-  // This is necessary if Number == float
-  typedef LinearAlgebra::distributed::Vector<double> VectorTypeDouble;
-
-  VectorTypeDouble grid_velocity_double;
-  grid_velocity_double = velocity;
-
-  VectorTools::interpolate(mapping, dof_handler, *mesh_movement_function, grid_velocity_double);
-
-  velocity = grid_velocity_double;
 }
 
 template<int dim, typename Number>
@@ -90,7 +70,7 @@ MovingMesh<dim, Number>::move_mesh_analytical(double const time, Mapping<dim> co
           Point<dim> const   point = fe_values.quadrature_point(i);
 
           initial_position(dof_indices[i]) = point[d];
-          displacement(dof_indices[i])     = mesh_movement_function->displacement(point, d);
+          displacement(dof_indices[i])     = mesh_movement_function->value(point, d);
         }
       }
     }

@@ -116,11 +116,14 @@ public:
 
   /**************************************************************************************/
   /*                                                                                    */
-  /*                                        ALE                                         */
+  /*                 Arbitrary Lagrangian-Eulerian formulation (ALE)                    */
   /*                                                                                    */
   /**************************************************************************************/
-  bool grid_velocity_analytical;
+
+  // use true to activate ALE formulation, otherwise the standard Eulerian formulation
+  // with fixed mesh will be used
   bool ale_formulation;
+
   bool neumann_with_variable_normal_vector;
 
   /**************************************************************************************/

@@ -85,7 +85,6 @@ void set_input_parameters(InputParameters &param)
 {
   // ALE
   param.ale_formulation                          = true;
-  param.grid_velocity_analytical                 = true;
   param.neumann_with_variable_normal_vector      = false;
   param.time_step_size                           = 5e-5; // 0.5;//5e-5;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;

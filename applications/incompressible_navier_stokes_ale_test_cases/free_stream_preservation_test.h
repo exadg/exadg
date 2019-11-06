@@ -56,16 +56,14 @@ set_input_parameters(InputParameters & param)
 {
   // ALE
   param.ale_formulation                          = true;
-  param.grid_velocity_analytical                 = false;
   param.neumann_with_variable_normal_vector      = false;
   param.start_with_low_order                     = false;
-  param.time_step_size                           = 5e-5; // 0.5;//5e-5;
-  param.order_time_integrator                    = 3;
+  param.time_step_size                           = 1.0;
+  param.order_time_integrator                    = 2;
   param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
   param.calculation_of_time_step_size            = TimeStepCalculation::CFL;
   param.adaptive_time_stepping                   = true;
   param.cfl                                      = 0.4;
-//  param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
 
   // MATHEMATICAL MODEL
   param.dim                         = 2;
@@ -353,7 +351,7 @@ construct_postprocessor(InputParameters const & param)
   // write output for visualization of results
   pp_data.output_data.write_output                    = true;
   pp_data.output_data.output_folder                   = "output/free_stream_preservation/vtu/";
-  pp_data.output_data.output_name                     = "free_stream_preservation";
+  pp_data.output_data.output_name                     = "test";
   pp_data.output_data.output_start_time               = param.start_time;
   pp_data.output_data.output_interval_time            = (param.end_time - param.start_time) / 20;
   pp_data.output_data.write_vorticity                 = true;

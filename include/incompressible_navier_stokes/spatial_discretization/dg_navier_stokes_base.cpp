@@ -1216,14 +1216,6 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_fill_grid_coordinates_vector(Vect
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::compute_grid_velocity_analytical(VectorType & velocity,
-                                                                  double const time)
-{
-  moving_mesh->compute_grid_velocity_analytical(velocity, time, get_dof_handler_u(), *mapping);
-}
-
-template<int dim, typename Number>
-void
 DGNavierStokesBase<dim, Number>::setup_projection_solver()
 {
   // setup projection solver

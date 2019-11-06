@@ -98,9 +98,6 @@ private:
   void
   ale_update_pre();
 
-  virtual void
-  ale_update_post() = 0;
-
   void
   initialize_oif();
 

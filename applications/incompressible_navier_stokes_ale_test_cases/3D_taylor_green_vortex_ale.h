@@ -67,7 +67,6 @@ void set_input_parameters(InputParameters &param)
 {
   // ALE
   param.ale_formulation                          = true;
-  param.grid_velocity_analytical                 = true;
   param.neumann_with_variable_normal_vector      = false;
 
   // MATHEMATICAL MODEL

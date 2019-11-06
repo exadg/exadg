@@ -74,17 +74,15 @@ set_input_parameters(InputParameters & param)
 
   // ALE
   param.ale_formulation                          = true;
-  param.grid_velocity_analytical                 = false;
   param.neumann_with_variable_normal_vector      = true;
   param.start_with_low_order                     = false;
   param.time_step_size                           = 0.25;
-  param.order_time_integrator                    = 2;
-  param.temporal_discretization                  = TemporalDiscretization::BDFPressureCorrection;
+  param.order_time_integrator                    = 3;
+  param.temporal_discretization                  = TemporalDiscretization::BDFCoupledSolution;
   param.calculation_of_time_step_size            = TimeStepCalculation::UserSpecified;
   param.adaptive_time_stepping                   = false;
   param.cfl                                      = 0.4;
   param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
-  param.extrapolate_pressure_predictor_on_former_mesh_instances = false;
 
   // PHYSICAL QUANTITIES
   param.start_time = START_TIME;
@@ -180,7 +178,7 @@ set_input_parameters(InputParameters & param)
   param.newton_solver_data_momentum = NewtonSolverData(100, 1.e-12, 1.e-6);
 
   // linear solver
-  param.solver_momentum                  = SolverMomentum::CG; //FGMRES;
+  param.solver_momentum                  = SolverMomentum::FGMRES;
   param.solver_data_momentum             = SolverData(1e4, 1.e-12, 1.e-6, 100);
   param.preconditioner_momentum          = MomentumPreconditioner::Multigrid; //InverseMassMatrix;
   param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;

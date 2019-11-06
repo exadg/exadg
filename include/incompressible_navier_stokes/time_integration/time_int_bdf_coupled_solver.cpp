@@ -402,12 +402,6 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
 
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::ale_update_post()
-{
-}
-
-template<typename Number>
-void
 TimeIntBDFCoupled<Number>::projection_step()
 {
   Timer timer;

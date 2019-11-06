@@ -1,8 +1,6 @@
 #ifndef INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 #define INCLUDE_MESH_MOVEMENT_FUNCTIONS_H_
 
-#include "../../include/functionalities/mesh_movement_function.h"
-
 enum class MeshMovementAdvanceInTime
 {
   Undefined,
@@ -43,7 +41,7 @@ struct MeshMovementData
 };
 
 template<int dim>
-class CubeMeshMovementFunctions : public MeshMovementFunction<dim>
+class CubeMeshMovementFunctions : public Function<dim>
 {
 public:
   CubeMeshMovementFunctions(MeshMovementData<dim> const & data_in)
@@ -57,18 +55,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p, const unsigned int component = 0) const override
-  {
-    double velocity = 0.0;
-
-    velocity = compute_displacement_share(p, component) * compute_damping_share(p, component) *
-               compute_time_deriv_share();
-
-    return velocity;
-  }
-
-  double
-  displacement(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
+  value(const Point<dim> & x, const unsigned int coordinate_direction = 0) const override
   {
     double displacement = 0.0;
 
@@ -206,7 +193,7 @@ protected:
 };
 
 template<int dim>
-class RectangleMeshMovementFunctions : public MeshMovementFunction<dim>
+class RectangleMeshMovementFunctions : public Function<dim>
 {
 public:
   RectangleMeshMovementFunctions(MeshMovementData<dim> const & data_in)
@@ -220,23 +207,7 @@ public:
   }
 
   double
-  value(const Point<dim> & p_in, const unsigned int component = 0) const override
-  {
-    // For 2D and 3D the coordinate system is set differently
-    Point<dim> p = p_in;
-    if(dim == 2)
-      p[0] -= length / 2.0;
-
-    double velocity = 0.0;
-
-    velocity = compute_displacement_share(p, component) * compute_damping_share(p, component) *
-               compute_time_deriv_share();
-
-    return velocity;
-  }
-
-  double
-  displacement(const Point<dim> & x_in, const unsigned int coordinate_direction = 0) const override
+  value(const Point<dim> & x_in, const unsigned int coordinate_direction = 0) const override
   {
     // For 2D and 3D the coordinate system is set differently
     Point<dim> x = x_in;

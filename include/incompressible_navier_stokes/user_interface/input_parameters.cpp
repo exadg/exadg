@@ -25,7 +25,6 @@ InputParameters::InputParameters()
     right_hand_side(false),
 
     // ALE
-    grid_velocity_analytical(true),
     ale_formulation(false),
     neumann_with_variable_normal_vector(false),
 
@@ -573,7 +572,6 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   print_parameter(pcout, "Right-hand side", right_hand_side);
 
   print_parameter(pcout, "Use ALE formulation", ale_formulation);
-  print_parameter(pcout, "Grid velocity is prescribed analytically", grid_velocity_analytical);
   print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
 }
 

@@ -60,7 +60,6 @@ namespace IncNS
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = true;
   param.ale_formulation = true;
   param.neumann_with_variable_normal_vector = false;
   param.start_with_low_order = true;
@@ -78,7 +77,7 @@ void set_input_parameters(InputParameters &param)
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.use_outflow_bc_convective_term = true;
-  param.right_hand_side = periodicBCs; //prescribe body force in x-direction in case of perodic BC's
+  param.right_hand_side = periodicBCs; //prescribe body force in x-direction in case of periodic BC's
 
 
   // PHYSICAL QUANTITIES

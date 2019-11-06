@@ -381,7 +381,7 @@ public:
   double
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
-  // ALE
+  // Arbitrary Lagrangian-Eulerian (ALE) formulation
   virtual void
   update_after_mesh_movement();
 
@@ -396,9 +396,6 @@ public:
 
   void
   move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
-
-  void
-  compute_grid_velocity_analytical(VectorType & velocity, double const time);
 
 protected:
   /*

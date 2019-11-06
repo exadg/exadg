@@ -46,7 +46,6 @@ namespace IncNS
 void set_input_parameters(InputParameters &param)
 {
   //ALE
-  param.grid_velocity_analytical = false;
   param.ale_formulation = true;
   param.neumann_with_variable_normal_vector = true;
   param.start_with_low_order = true;
