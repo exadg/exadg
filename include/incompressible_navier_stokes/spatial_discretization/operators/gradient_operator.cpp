@@ -204,29 +204,27 @@ GradientOperator<dim, Number>::do_boundary_integral(FaceIntegratorP &          p
 
   for(unsigned int q = 0; q < velocity.n_q_points; ++q)
   {
-    scalar flux = make_vectorized_array<Number>(0.0);
+    scalar value_m = calculate_interior_value(q, pressure, operator_type);
 
+    scalar value_p = make_vectorized_array<Number>(0.0);
     if(data.use_boundary_data == true)
     {
-      scalar value_m = calculate_interior_value(q, pressure, operator_type);
-      scalar value_p = calculate_exterior_value(value_m,
-                                                q,
-                                                pressure,
-                                                operator_type,
-                                                boundary_type,
-                                                boundary_id,
-                                                data.bc,
-                                                time,
-                                                inverse_scaling_factor_pressure);
-
-      flux = kernel.calculate_flux(value_m, value_p);
+      value_p = calculate_exterior_value(value_m,
+                                         q,
+                                         pressure,
+                                         operator_type,
+                                         boundary_type,
+                                         boundary_id,
+                                         data.bc,
+                                         time,
+                                         inverse_scaling_factor_pressure);
     }
     else // use_boundary_data == false
     {
-      scalar value_m = pressure.get_value(q);
-
-      flux = kernel.calculate_flux(value_m, value_m /* value_p = value_m */);
+      value_p = value_m;
     }
+
+    scalar flux = kernel.calculate_flux(value_m, value_p);
 
     vector flux_times_normal = flux * pressure.get_normal_vector(q);
 
@@ -390,7 +388,7 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator(
 {
   (void)src;
 
-  if(data.integration_by_parts == true)
+  if(data.integration_by_parts == true && data.use_boundary_data == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
     FaceIntegratorP pressure(matrix_free, true, data.dof_index_pressure, data.quad_index);
@@ -418,7 +416,7 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vec
   VectorType const &              src,
   Range const &                   face_range) const
 {
-  if(data.integration_by_parts == true)
+  if(data.integration_by_parts == true && data.use_boundary_data == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
     FaceIntegratorP pressure(matrix_free, true, data.dof_index_pressure, data.quad_index);

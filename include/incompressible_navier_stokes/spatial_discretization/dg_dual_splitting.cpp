@@ -302,65 +302,7 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_velocity_divergence_term_dirichlet
   VectorType &       dst,
   VectorType const & velocity) const
 {
-  dst = 0.0;
-
-  this->get_matrix_free().loop(
-    &This::cell_loop_empty,
-    &This::face_loop_empty,
-    &This::local_rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector,
-    this,
-    dst,
-    velocity);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::
-  local_rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(
-    MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                    dst,
-    VectorType const &              src,
-    Range const &                   face_range) const
-{
-  unsigned int const dof_index_velocity = this->get_dof_index_velocity();
-  unsigned int const dof_index_pressure = this->get_dof_index_pressure();
-  unsigned int const quad_index         = this->get_quad_index_velocity_linear();
-
-  FaceIntegratorU velocity(matrix_free, true, dof_index_velocity, quad_index);
-  FaceIntegratorP pressure(matrix_free, true, dof_index_pressure, quad_index);
-
-  for(unsigned int face = face_range.first; face < face_range.second; face++)
-  {
-    velocity.reinit(face);
-    velocity.gather_evaluate(src, true, false);
-
-    pressure.reinit(face);
-
-    BoundaryTypeU boundary_type =
-      this->boundary_descriptor_velocity->get_boundary_type(matrix_free.get_boundary_id(face));
-
-    for(unsigned int q = 0; q < pressure.n_q_points; ++q)
-    {
-      if(boundary_type == BoundaryTypeU::Dirichlet)
-      {
-        vector normal = pressure.get_normal_vector(q);
-        vector u      = velocity.get_value(q);
-        // minus sign since this is a rhs_...() function
-        pressure.submit_value(-u * normal, q);
-      }
-      else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
-      {
-        // Do nothing on Neumann and Symmetry boundaries.
-        scalar zero = make_vectorized_array<Number>(0.0);
-        pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
-    pressure.integrate_scatter(true, false, dst);
-  }
+  this->divergence_operator.rhs_bc_from_dof_vector(dst, velocity);
 }
 
 template<int dim, typename Number>

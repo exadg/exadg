@@ -141,6 +141,9 @@ public:
   rhs(VectorType & dst, Number const evaluation_time) const;
 
   void
+  rhs_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
+
+  void
   rhs_add(VectorType & dst, Number const evaluation_time) const;
 
   // full operator, i.e., homogeneous and inhomogeneous contributions
@@ -210,6 +213,12 @@ private:
                                     VectorType &                                  dst,
                                     VectorType const &                            src,
                                     std::pair<unsigned int, unsigned int> const & face_range) const;
+
+  void
+  boundary_face_loop_inhom_operator_bc_from_dof_vector(MatrixFree<dim, Number> const & matrix_free,
+                                                       VectorType &                    dst,
+                                                       VectorType const &              src,
+                                                       Range const & face_range) const;
 
   MatrixFree<dim, Number> const * matrix_free;
 

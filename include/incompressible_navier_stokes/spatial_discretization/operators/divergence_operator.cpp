@@ -66,6 +66,28 @@ DivergenceOperator<dim, Number>::rhs(VectorType & dst, Number const evaluation_t
 
 template<int dim, typename Number>
 void
+DivergenceOperator<dim, Number>::rhs_bc_from_dof_vector(VectorType &       dst,
+                                                        VectorType const & src) const
+{
+  dst = 0;
+
+  VectorType tmp;
+  tmp.reinit(dst, false /* init with 0 */);
+
+  matrix_free->loop(&This::cell_loop_inhom_operator,
+                    &This::face_loop_inhom_operator,
+                    &This::boundary_face_loop_inhom_operator_bc_from_dof_vector,
+                    this,
+                    tmp,
+                    src,
+                    false /*zero_dst_vector = false*/);
+
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  dst.add(-1.0, tmp);
+}
+
+template<int dim, typename Number>
+void
 DivergenceOperator<dim, Number>::rhs_add(VectorType & dst, Number const evaluation_time) const
 {
   time = evaluation_time;
@@ -176,20 +198,19 @@ DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &         
   {
     vector flux;
 
+    vector value_m = calculate_interior_value(q, velocity, operator_type);
+    vector value_p;
     if(data.use_boundary_data == true)
     {
-      vector value_m = calculate_interior_value(q, velocity, operator_type);
-      vector value_p = calculate_exterior_value(
+      value_p = calculate_exterior_value(
         value_m, q, velocity, operator_type, boundary_type, boundary_id, data.bc, time);
-
-      flux = kernel.calculate_flux(value_m, value_p);
     }
     else // use_boundary_data == false
     {
-      vector value_m = velocity.get_value(q);
-
-      flux = kernel.calculate_flux(value_m, value_m /* value_p = value_m */);
+      value_p = value_m;
     }
+
+    flux = kernel.calculate_flux(value_m, value_p);
 
     scalar flux_times_normal = flux * velocity.get_normal_vector(q);
     pressure.submit_value(flux_times_normal, q);
@@ -353,7 +374,7 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator(
   VectorType const &,
   std::pair<unsigned int, unsigned int> const & face_range) const
 {
-  if(data.integration_by_parts == true)
+  if(data.integration_by_parts == true && data.use_boundary_data == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
 
@@ -373,6 +394,54 @@ DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator(
     }
   }
 }
+
+template<int dim, typename Number>
+void
+DivergenceOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vector(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   face_range) const
+{
+  if(data.integration_by_parts == true && data.use_boundary_data == true)
+  {
+    FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
+
+    FaceIntegratorP pressure(matrix_free, true, data.dof_index_pressure, data.quad_index);
+
+    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    {
+      velocity.reinit(face);
+      velocity.gather_evaluate(src, true, false);
+
+      pressure.reinit(face);
+
+      BoundaryTypeU boundary_type = data.bc->get_boundary_type(matrix_free.get_boundary_id(face));
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+      {
+        if(boundary_type == BoundaryTypeU::Dirichlet)
+        {
+          vector normal = velocity.get_normal_vector(q);
+          vector g_u    = velocity.get_value(q);
+          pressure.submit_value(g_u * normal, q);
+        }
+        else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
+        {
+          // Do nothing on Neumann and Symmetry boundaries.
+          scalar zero = make_vectorized_array<Number>(0.0);
+          pressure.submit_value(zero, q);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+        }
+      }
+      pressure.integrate_scatter(true, false, dst);
+    }
+  }
+}
+
 
 template class DivergenceOperator<2, float>;
 template class DivergenceOperator<2, double>;

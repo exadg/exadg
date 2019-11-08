@@ -176,14 +176,6 @@ private:
 
   // rhs PPE: velocity divergence term
 
-  // velocity Dirichlet boundary conditions
-  void
-  local_rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(
-    MatrixFree<dim, Number> const & matrix_free,
-    VectorType &                    dst,
-    VectorType const &              src,
-    Range const &                   face_range) const;
-
   // convective term
   void
   local_rhs_ppe_div_term_convective_term_boundary_face(MatrixFree<dim, Number> const & matrix_free,
