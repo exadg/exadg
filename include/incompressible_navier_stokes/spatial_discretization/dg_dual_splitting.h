@@ -20,21 +20,22 @@ class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, 
                                     public Interface::OperatorDualSplitting<Number>
 {
 private:
-  typedef DGNavierStokesProjectionMethods<dim, Number> Base;
+  typedef DGNavierStokesBase<dim, Number>              Base;
+  typedef DGNavierStokesProjectionMethods<dim, Number> ProjBase;
   typedef DGNavierStokesDualSplitting<dim, Number>     This;
 
   typedef typename Base::VectorType      VectorType;
   typedef typename Base::Postprocessor   Postprocessor;
   typedef typename Base::MultigridNumber MultigridNumber;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
-  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+  typedef typename Base::scalar scalar;
+  typedef typename Base::vector vector;
+  typedef typename Base::tensor tensor;
 
-  typedef std::pair<unsigned int, unsigned int> Range;
+  typedef typename Base::Range Range;
 
-  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
-  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
+  typedef typename Base::FaceIntegratorU FaceIntegratorU;
+  typedef typename Base::FaceIntegratorP FaceIntegratorP;
 
 public:
   /*
@@ -42,17 +43,12 @@ public:
    */
   DGNavierStokesDualSplitting(parallel::TriangulationBase<dim> const & triangulation,
                               InputParameters const &                  parameters,
-                              std::shared_ptr<Postprocessor>           postprocessor)
-    : Base(triangulation, parameters, postprocessor), time(0.0)
-  {
-  }
+                              std::shared_ptr<Postprocessor>           postprocessor);
 
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesDualSplitting()
-  {
-  }
+  virtual ~DGNavierStokesDualSplitting();
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
@@ -83,6 +79,10 @@ public:
   rhs_velocity_divergence_term(VectorType & dst, double const & time) const;
 
   void
+  rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                            VectorType const & velocity) const;
+
+  void
   rhs_ppe_div_term_body_forces_add(VectorType & dst, double const & time);
 
   void
@@ -90,7 +90,13 @@ public:
 
   // rhs pressure
   void
-  rhs_ppe_nbc_add(VectorType & dst, double const & time);
+  rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time);
+
+  void
+  rhs_ppe_nbc_analytical_time_derivative_add(VectorType & dst, double const & time);
+
+  void
+  rhs_ppe_nbc_numerical_time_derivative_add(VectorType & dst, VectorType const & src);
 
   // rhs pressure: Neumann BC convective term
   void
@@ -170,47 +176,66 @@ private:
 
   // rhs PPE: velocity divergence term
 
+  // velocity Dirichlet boundary conditions
+  void
+  local_rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(
+    MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                    dst,
+    VectorType const &              src,
+    Range const &                   face_range) const;
+
   // convective term
   void
-  local_rhs_ppe_div_term_convective_term_boundary_face(
-    MatrixFree<dim, Number> const &               data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & face_range) const;
+  local_rhs_ppe_div_term_convective_term_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                       VectorType &                    dst,
+                                                       VectorType const &              src,
+                                                       Range const & face_range) const;
 
   // body force term
   void
-  local_rhs_ppe_div_term_body_forces_boundary_face(
-    MatrixFree<dim, Number> const &               data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & face_range) const;
+  local_rhs_ppe_div_term_body_forces_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                   VectorType &                    dst,
+                                                   VectorType const &              src,
+                                                   Range const & face_range) const;
 
   // Neumann boundary condition term
 
-  // du/dt term and body force term
+  // body force term
   void
-  local_rhs_ppe_nbc_add_boundary_face(
-    MatrixFree<dim, Number> const &               data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & face_range) const;
+  local_rhs_ppe_nbc_body_force_term_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                      VectorType &                    dst,
+                                                      VectorType const &              src,
+                                                      Range const & face_range) const;
+
+  // dg_u/dt term with analytical derivative
+  void
+  local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
+    MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                    dst,
+    VectorType const &              src,
+    Range const &                   face_range) const;
+
+  // dg_u/dt with numerical time derivative
+  void
+  local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
+    MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                    dst,
+    VectorType const &              src,
+    Range const &                   face_range) const;
 
   // convective term
   void
-  local_rhs_ppe_nbc_convective_add_boundary_face(
-    MatrixFree<dim, Number> const &               data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & face_range) const;
+  local_rhs_ppe_nbc_convective_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                 VectorType &                    dst,
+                                                 VectorType const &              src,
+                                                 Range const &                   face_range) const;
 
   // viscous term
   void
-  local_rhs_ppe_nbc_viscous_add_boundary_face(
-    MatrixFree<dim, Number> const &               data,
-    VectorType &                                  dst,
-    VectorType const &                            src,
-    std::pair<unsigned int, unsigned int> const & face_range) const;
+  local_rhs_ppe_nbc_viscous_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                              VectorType &                    dst,
+                                              VectorType const &              src,
+                                              Range const &                   face_range) const;
 
 
   /*
@@ -219,12 +244,6 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> helmholtz_preconditioner;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> helmholtz_solver;
-
-  /*
-   * Element variable used to store the current physical time. This variable is needed for the
-   * evaluation of the right-hand side of the pressure Poisson equation.
-   */
-  double time;
 };
 
 } // namespace IncNS

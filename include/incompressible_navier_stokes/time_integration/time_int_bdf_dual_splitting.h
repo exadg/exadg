@@ -91,6 +91,9 @@ private:
   initialize_vec_convective_term();
 
   void
+  initialize_acceleration_and_velocity_on_boundary();
+
+  void
   pressure_step();
 
   void
@@ -143,6 +146,9 @@ private:
   VectorType              vorticity_np;
 
   std::vector<VectorType> vec_convective_term;
+
+  std::vector<VectorType> acceleration;
+  std::vector<VectorType> velocity_dbc;
 
   std::vector<double>       computing_times;
   std::vector<unsigned int> iterations;

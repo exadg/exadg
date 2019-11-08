@@ -514,9 +514,15 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
     {
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       {
+        // TODO
         this->operator_base->evaluate_convective_term(vec_convective_term[i],
                                                       velocity[i],
                                                       this->get_previous_time(i));
+
+        // in a general setting, we only know the boundary conditions at time t_{n+1}
+        //        this->operator_base->evaluate_convective_term(vec_convective_term[i],
+        //                                                      velocity[i],
+        //                                                      this->get_next_time());
       }
     }
 

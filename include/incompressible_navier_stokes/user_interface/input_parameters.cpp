@@ -124,6 +124,9 @@ InputParameters::InputParameters()
 
     // PROJECTION METHODS
 
+    // formulations
+    store_previous_boundary_values(true),
+
     // pressure Poisson equation
     IP_factor_pressure(1.),
     solver_pressure_poisson(SolverPressurePoisson::CG),
@@ -838,6 +841,10 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
   print_parameter(pcout,
                   "Formulation convective term in BC",
                   enum_to_string(formulation_convective_term_bc));
+
+  print_parameter(pcout,
+                  "Store previous boundary values in DoF vector",
+                  store_previous_boundary_values);
 
   // projection method
   print_parameters_pressure_poisson(pcout);

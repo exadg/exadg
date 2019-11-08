@@ -37,10 +37,10 @@ DGNavierStokesProjectionMethods<dim, Number>::setup(
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
 {
-  DGNavierStokesBase<dim, Number>::setup(periodic_face_pairs_in,
-                                         boundary_descriptor_velocity_in,
-                                         boundary_descriptor_pressure_in,
-                                         field_functions_in);
+  Base::setup(periodic_face_pairs_in,
+              boundary_descriptor_velocity_in,
+              boundary_descriptor_pressure_in,
+              field_functions_in);
 
   initialize_laplace_operator();
 }

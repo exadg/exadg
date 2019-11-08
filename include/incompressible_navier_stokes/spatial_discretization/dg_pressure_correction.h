@@ -61,7 +61,7 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'evaluate_nonlinear_residual".
+   * 'evaluate_nonlinear_residual'.
    */
   void
   evaluate_nonlinear_residual(VectorType & dst, VectorType const & src)
@@ -83,7 +83,8 @@ class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<
                                          public Interface::OperatorPressureCorrection<Number>
 {
 private:
-  typedef DGNavierStokesProjectionMethods<dim, Number>  Base;
+  typedef DGNavierStokesBase<dim, Number>               Base;
+  typedef DGNavierStokesProjectionMethods<dim, Number>  ProjBase;
   typedef DGNavierStokesPressureCorrection<dim, Number> This;
 
   typedef typename Base::VectorType      VectorType;

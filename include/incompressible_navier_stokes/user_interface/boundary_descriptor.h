@@ -27,13 +27,14 @@ namespace IncNS
  *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     symmetry         |   Symmetry:               |  Neumann:                                      |
- *   |                      | no BCs to be prescribed   | prescribe dg_u/dt=0 in case of dual-splitting  |
+ *   |                      | no BCs to be prescribed   | prescribe dg_u/dt = 0 in case of dual-splitting|
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     outflow          |   Neumann:                |  Dirichlet:                                    |
- *   |                      | prescribe grad(u)*n       | prescribe g_p                                  |
+ *   |                      | prescribe F(u)*n          | prescribe g_p                                  |
  *   +----------------------+---------------------------+------------------------------------------------+
  *
- *
+ *   Divergence formulation: F(u) = nu * ( grad(u) + grad(u)^T )
+ *   Laplace formulation:    F(u) = nu * grad(u)
  */
 //clang-format on
 
@@ -61,8 +62,11 @@ struct BoundaryDescriptorU
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
-  // Symmetry: prescribe velocity normal to boundary (u*n=0) and normal velocity gradient in
-  // tangential directions (grad(u)*n - [(grad(u)*n)*n] n = 0)
+  // Symmetry: For this boundary condition, the velocity normal to boundary is set to zero
+  // (u*n=0) as well as the normal velocity gradient in tangential directions
+  // (grad(u)*n - [(grad(u)*n)*n] n = 0). This is done automatically by the code.
+  // The user does not have to prescribe a boundary condition, simply use ZeroFunction<dim>,
+  // it is not relevant because this function will not be evaluated by the code.
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> symmetry_bc;
 
   // add more types of boundary conditions
@@ -92,12 +96,19 @@ struct BoundaryDescriptorP
   // Dirichlet: prescribe pressure value
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
 
-  // Neumann: do nothing in case of coupled solution approach (one only has to discretize the
-  // pressure gradient for this solution approach), prescribe Neumann BCs in case of projection type
-  // solution methods where a Poisson equation is solved for the pressure. Hence, the Function<dim>
-  // is irrelevant for the coupled solver and also for the pressure-correction scheme (always
-  // homogeneous NBC also for higher-order formulations).
-  // BUT: Use Function<dim> to store boundary condition du/dt in case of dual splitting scheme.
+  // Neumann: It depends on the chosen Navier-Stokes solver how this map has to be filled
+  //
+  //  - coupled solver: do nothing (one only has to discretize the pressure gradient for
+  //                    this solution approach)
+  //
+  //  - pressure-correction: this solver always prescribes homogeneous Neumann BCs in the
+  //                         pressure Poisson equation. Hence, no function has to be specified.
+  //
+  //  - dual splitting: Specify a Function<dim> for the boundary condition dg_u/dt that has to
+  //                    be evaluated for the dual splitting scheme. But this is only necessary
+  //                    if the parameter store_previous_boundary_values == false.
+  //                    Otherwise, the code automatically determines the time derivative dg_u/dt
+  //                    numerically and no boundary condition has to be set by the user.
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
   // add more types of boundary conditions

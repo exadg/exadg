@@ -105,10 +105,11 @@ TimeIntBDF<Number>::ale_update_pre()
   operator_base->move_mesh_and_fill_grid_coordinates_vector(grid_coordinates_np, get_next_time());
 
   // update grid velocity using BDF time derivative
-  grid_velocity.equ(this->bdf.get_gamma0() / this->get_time_step_size(), grid_coordinates_np);
-  for(unsigned int i = 0; i < vec_grid_coordinates.size(); ++i)
-    grid_velocity.add(-this->bdf.get_alpha(i) / this->get_time_step_size(),
-                      vec_grid_coordinates[i]);
+  compute_bdf_time_derivative(grid_velocity,
+                              grid_coordinates_np,
+                              vec_grid_coordinates,
+                              this->bdf,
+                              this->get_time_step_size());
 
   // update the spatial discretization operator so that it is prepared to solve the current time
   // step

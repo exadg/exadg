@@ -402,6 +402,22 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
+  // FORMULATIONS
+
+  // For projection methods, boundary conditions have to be accessed at previous times
+  // during a time step. For the dual splitting scheme, the acceleration is required in
+  // the pressure Neumann boundary condition. Since these values are not available
+  // analytically in a general setting, there is the possibility to (fill and) store
+  // these boundary conditions in vectors and access them later when needed (and compute
+  // the time derivative numerically to obtain the acceleration).
+  // Hence, this parameter should be set to true, which is also the default value of this
+  // parameter.
+  // Choosing false means that the user has to make sure that the boundary conditions
+  // at previous times are accessible and evaluated correctly by just setting the parameter
+  // time of the Function<dim>. Furthermore, the user has to provide the time derivative
+  // of the velocity (acceleration) analytically in case of the dual splitting scheme.
+  bool store_previous_boundary_values;
+
   // PRESSURE POISSON EQUATION
 
   // interior penalty parameter scaling factor for pressure Poisson equation
@@ -489,11 +505,11 @@ public:
   // description: see enum declaration
   PreconditionerViscous preconditioner_viscous;
 
-  // update preconditioner before every solve of the viscous step
+  // update preconditioner before solving the viscous step
   bool update_preconditioner_viscous;
 
   // Update preconditioner every ... time steps.
-  // This variable is only used if update of preconditioner is true.
+  // This variable is only used if update_preconditioner_viscous is true.
   unsigned int update_preconditioner_viscous_every_time_steps;
 
   // description: see declaration of MultigridData

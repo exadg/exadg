@@ -77,6 +77,17 @@ protected:
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
+  typedef DGNavierStokesBase<dim, Number> This;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+
+  typedef std::pair<unsigned int, unsigned int> Range;
+
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
+
   typedef float MultigridNumber;
 
   enum class DofHandlerSelector
@@ -89,10 +100,11 @@ protected:
 
   enum class QuadratureSelector
   {
-    velocity           = 0,
-    pressure           = 1,
-    velocity_nonlinear = 2,
-    n_variants         = velocity_nonlinear + 1
+    velocity               = 0,
+    pressure               = 1,
+    velocity_nonlinear     = 2,
+    velocity_gauss_lobatto = 3,
+    n_variants             = velocity_gauss_lobatto + 1
   };
 
   static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
@@ -116,6 +128,9 @@ protected:
   static const unsigned int quad_index_u_nonlinear =
     static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::velocity_nonlinear);
+  static const unsigned int quad_index_u_gauss_lobatto =
+    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+      QuadratureSelector::velocity_gauss_lobatto);
 
 public:
   /*
@@ -167,6 +182,9 @@ public:
 
   unsigned int
   get_quad_index_velocity_nonlinear() const;
+
+  unsigned int
+  get_quad_index_velocity_gauss_lobatto() const;
 
   unsigned int
   get_quad_index_velocity_linearized() const;
@@ -236,6 +254,21 @@ public:
   prescribe_initial_conditions(VectorType & velocity,
                                VectorType & pressure,
                                double const time) const;
+
+  /*
+   * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
+   *
+   * Note that this function only works as long as one uses a nodal FE_DGQ element with
+   * Gauss-Lobatto points. Otherwise, the quadrature formula used in this function does not match
+   * the nodes of the element, and the values injected by this function into the DoF vector are not
+   * the degrees of freedom of the underlying finite element space.
+   */
+  void
+  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
+
+  // In case of ALE, it might be necessary to also move the mesh
+  void
+  move_mesh_and_interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
 
   /*
    * Time step calculation.
@@ -472,6 +505,12 @@ protected:
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
 
   /*
+   * Element variable used to store the current physical time. This variable is needed for the
+   * evaluation of certain integrals or weak forms.
+   */
+  double evaluation_time;
+
+  /*
    * Operator kernels.
    */
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
@@ -576,6 +615,28 @@ private:
 
   void
   initialize_postprocessor();
+
+  void
+  cell_loop_empty(MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
+
+  void
+  face_loop_empty(MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
+
+  void
+  local_interpolate_velocity_dirichlet_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                        VectorType &                    dst,
+                                                        VectorType const &              src,
+                                                        Range const & face_range) const;
 
   /*
    * LES turbulence modeling.

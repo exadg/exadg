@@ -63,6 +63,12 @@ public:
                                double const time) const = 0;
 
   virtual void
+  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  move_mesh_and_interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) = 0;
+
+  virtual void
   evaluate_add_body_force_term(VectorType & dst, double const time) const = 0;
 
   virtual void
@@ -241,6 +247,10 @@ public:
   rhs_velocity_divergence_term(VectorType & dst, double const & time) const = 0;
 
   virtual void
+  rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                            VectorType const & src) const = 0;
+
+  virtual void
   rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
@@ -250,7 +260,13 @@ public:
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const = 0;
 
   virtual void
-  rhs_ppe_nbc_add(VectorType & dst, double const & time) = 0;
+  rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  rhs_ppe_nbc_analytical_time_derivative_add(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  rhs_ppe_nbc_numerical_time_derivative_add(VectorType & dst, VectorType const & src) = 0;
 
   virtual void
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const = 0;

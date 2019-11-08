@@ -25,6 +25,8 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     pressure(this->order),
     vorticity(this->param.order_extrapolation_pressure_nbc),
     vec_convective_term(this->order),
+    acceleration(this->param.order_extrapolation_pressure_nbc),
+    velocity_dbc(this->order),
     computing_times(4),
     iterations(4),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
@@ -70,6 +72,9 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
         initialize_vec_convective_term();
     }
   }
+
+  if(this->param.store_previous_boundary_values)
+    initialize_acceleration_and_velocity_on_boundary();
 }
 
 template<typename Number>
@@ -102,6 +107,16 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
   }
 
+  // acceleration
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < acceleration.size(); ++i)
+      this->operator_base->initialize_vector_velocity(acceleration[i]);
+
+    for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
+      this->operator_base->initialize_vector_velocity(velocity_dbc[i]);
+  }
+
   // Sum_i (alpha_i/dt * u_i)
   this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
 }
@@ -131,7 +146,10 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::initialize_vorticity()
 {
-  this->operator_base->compute_vorticity(vorticity[0], velocity[0]);
+  if(this->param.order_extrapolation_pressure_nbc > 0)
+  {
+    this->operator_base->compute_vorticity(vorticity[0], velocity[0]);
+  }
 
   if(this->param.start_with_low_order == false)
   {
@@ -157,6 +175,69 @@ TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
     {
       pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(
         vec_convective_term[i], velocity[i], this->get_previous_time(i));
+    }
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundary()
+{
+  // temporary vectors used to store the velocity at different instants of time and
+  // used to calculate the acceleration via BDF time derivative
+  VectorType vel_np;
+  this->operator_base->initialize_vector_velocity(vel_np);
+
+  // accelerations will only be accessed if the order of extrapolation in the pressure
+  // Neumann boundary condition is larger than 0.
+  if(this->param.order_extrapolation_pressure_nbc > 0)
+  {
+    // compute acceleration at start_time
+    if(this->start_with_low_order == false)
+    {
+      this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(vel_np,
+                                                                           this->get_time());
+
+      for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
+      {
+        this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
+          velocity_dbc[i], this->get_time() - double(i + 1) * this->get_time_step_size());
+      }
+    }
+
+    compute_bdf_time_derivative(
+      acceleration[0], vel_np, velocity_dbc, this->bdf, this->get_time_step_size());
+
+    // compute accelerations at previous times t_j = start_time - j * dt, j = 1, ...
+    if(this->start_with_low_order == false)
+    {
+      for(unsigned int j = 1; j < acceleration.size(); ++j)
+      {
+        this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
+          vel_np, this->get_time() - double(j) * this->get_time_step_size());
+
+        for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
+        {
+          this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
+            velocity_dbc[i], this->get_time() - double(j + i + 1) * this->get_time_step_size());
+        }
+
+        compute_bdf_time_derivative(
+          acceleration[j], vel_np, velocity_dbc, this->bdf, this->get_time_step_size());
+      }
+    }
+  }
+
+  // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
+  this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(velocity_dbc[0],
+                                                                       this->get_time());
+  // ... and previous times if start_with_low_order == false
+  if(this->start_with_low_order == false)
+  {
+    for(unsigned int i = 1; i < velocity_dbc.size(); ++i)
+    {
+      this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
+        velocity_dbc[i], this->get_time() - double(i) * this->get_time_step_size());
     }
   }
 }
@@ -350,8 +431,13 @@ TimeIntBDFDualSplitting<Number>::convective_step()
     {
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       {
+        // TODO
         pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(
           vec_convective_term[i], velocity[i], this->get_previous_time(i));
+
+        // in a general setting, we only know the boundary conditions at time t_{n+1}
+        //        pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(
+        //          vec_convective_term[i], velocity[i], this->get_next_time());
 
         velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
       }
@@ -472,9 +558,11 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
       // sum alpha_i * u_i term
       for(unsigned int i = 0; i < velocity.size(); ++i)
       {
-        temp           = 0.0;
-        double const t = this->get_previous_time(i);
-        pde_operator->rhs_velocity_divergence_term(temp, t);
+        if(this->param.store_previous_boundary_values)
+          pde_operator->rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(temp,
+                                                                                  velocity_dbc[i]);
+        else
+          pde_operator->rhs_velocity_divergence_term(temp, this->get_previous_time(i));
 
         // note that the minus sign related to this term is already taken into account
         // in the function rhs() of the divergence operator
@@ -493,7 +581,8 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
       }
 
       // body force term
-      pde_operator->rhs_ppe_div_term_body_forces_add(rhs, this->get_next_time());
+      if(this->param.right_hand_side)
+        pde_operator->rhs_ppe_div_term_body_forces_add(rhs, this->get_next_time());
     }
   }
 
@@ -502,36 +591,65 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
    * operator
    */
 
-  // II.1. inhomogeneous BC terms depending on prescribed boundary data,
-  //       i.e. pressure Dirichlet boundary conditions on Gamma_N
+  // II.1. pressure Dirichlet boundary conditions
   pde_operator->rhs_ppe_laplace_add(rhs, this->get_next_time());
-  //       and body force vector, temporal derivative of velocity on Gamma_D
-  pde_operator->rhs_ppe_nbc_add(rhs, this->get_next_time());
 
-  // II.2. viscous term of pressure Neumann boundary condition on Gamma_D
-  //       extrapolate vorticity and subsequently evaluate boundary face integral
-  //       (this is possible since pressure Neumann BC is linear in vorticity)
-  VectorType extrapolation(vorticity[0]);
-  extrapolation = 0.0;
-  for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
+
+  // II.2. pressure Neumann boundary condition: body force vector
+  if(this->param.right_hand_side)
   {
-    extrapolation.add(this->extra_pressure_nbc.get_beta(i), vorticity[i]);
+    pde_operator->rhs_ppe_nbc_body_force_term_add(rhs, this->get_next_time());
   }
 
-  pde_operator->rhs_ppe_viscous_add(rhs, extrapolation);
-
-  // II.3. convective term of pressure Neumann boundary condition on Gamma_D
-  //       (only if we do not solve the Stokes equations)
-  //       evaluate convective term and subsequently extrapolate rhs vectors
-  //       (the convective term is nonlinear!)
-  if(this->param.convective_problem())
+  // II.3. pressure Neumann boundary condition: temporal derivative of velocity
+  if(this->param.store_previous_boundary_values)
   {
     VectorType temp(rhs);
     for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
     {
       temp = 0.0;
-      pde_operator->rhs_ppe_convective_add(temp, velocity[i]);
+      pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(temp, acceleration[i]);
       rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
+    }
+  }
+  else
+  {
+    pde_operator->rhs_ppe_nbc_analytical_time_derivative_add(rhs, this->get_next_time());
+  }
+
+  // II.4. viscous term of pressure Neumann boundary condition on Gamma_D
+  //       extrapolate vorticity and subsequently evaluate boundary face integral
+  //       (this is possible since pressure Neumann BC is linear in vorticity)
+  if(this->param.viscous_problem())
+  {
+    if(this->param.order_extrapolation_pressure_nbc > 0)
+    {
+      VectorType extrapolation(vorticity[0]);
+      extrapolation = 0.0;
+      for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
+      {
+        extrapolation.add(this->extra_pressure_nbc.get_beta(i), vorticity[i]);
+      }
+
+      pde_operator->rhs_ppe_viscous_add(rhs, extrapolation);
+    }
+  }
+
+  // II.5. convective term of pressure Neumann boundary condition on Gamma_D
+  //       (only if we do not solve the Stokes equations)
+  //       evaluate convective term and subsequently extrapolate rhs vectors
+  //       (the convective term is nonlinear!)
+  if(this->param.convective_problem())
+  {
+    if(this->param.order_extrapolation_pressure_nbc > 0)
+    {
+      VectorType temp(rhs);
+      for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
+      {
+        temp = 0.0;
+        pde_operator->rhs_ppe_convective_add(temp, velocity[i]);
+        rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
+      }
     }
   }
 
@@ -710,6 +828,43 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 {
   TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
 
+  // push back accelerations and compute new acceleration at the end
+  // of the current time step before velocity_dbc is pushed back
+  if(this->param.store_previous_boundary_values)
+  {
+    VectorType velocity_dbc_np(velocity_dbc[0]);
+    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
+
+    push_back(acceleration);
+
+    if(this->param.order_extrapolation_pressure_nbc)
+    {
+      compute_bdf_time_derivative(
+        acceleration[0], velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
+    }
+
+    push_back(velocity_dbc);
+    velocity_dbc[0].swap(velocity_dbc_np);
+  }
+
+  // Compute acceleration and velocity vectors used for inhomogeneous boundary condition terms
+  // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
+  // velocity. Note: This variant leads to instabilities for small time step sizes.
+  //  if(this->param.use_velocity_dirichlet_bc_in_pressure_step == false)
+  //  {
+  //    push_back(acceleration);
+  //
+  //    if(this->param.order_extrapolation_pressure_nbc)
+  //    {
+  //      compute_bdf_time_derivative(
+  //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
+  //    }
+  //
+  //    push_back(velocity_dbc);
+  //    velocity_dbc[0].swap(velocity_np);
+  //  }
+
   push_back(velocity);
   velocity[0].swap(velocity_np);
 
@@ -717,7 +872,10 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
   pressure[0].swap(pressure_np);
 
   push_back(vorticity);
-  vorticity[0].swap(vorticity_np);
+  if(this->param.order_extrapolation_pressure_nbc)
+  {
+    vorticity[0].swap(vorticity_np);
+  }
 
   if(this->param.convective_problem())
   {
@@ -748,7 +906,7 @@ TimeIntBDFDualSplitting<Number>::solve_steady_problem()
       velocity_tmp = this->velocity[0];
       pressure_tmp = this->pressure[0];
 
-      // calculate normm of solution
+      // calculate norm of solution
       double const norm_u = velocity_tmp.l2_norm();
       double const norm_p = pressure_tmp.l2_norm();
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);

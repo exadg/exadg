@@ -16,7 +16,7 @@ DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &                  parameters,
   std::shared_ptr<Postprocessor>           postprocessor)
-  : Base(triangulation, parameters, postprocessor)
+  : ProjBase(triangulation, parameters, postprocessor)
 {
 }
 
@@ -34,10 +34,10 @@ DGNavierStokesPressureCorrection<dim, Number>::setup(
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
 {
-  DGNavierStokesProjectionMethods<dim, Number>::setup(periodic_face_pairs_in,
-                                                      boundary_descriptor_velocity_in,
-                                                      boundary_descriptor_pressure_in,
-                                                      field_functions_in);
+  ProjBase::setup(periodic_face_pairs_in,
+                  boundary_descriptor_velocity_in,
+                  boundary_descriptor_pressure_in,
+                  field_functions_in);
 
   setup_inverse_mass_matrix_operator_pressure();
 }
@@ -50,13 +50,13 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
-  Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
+  ProjBase::setup_solvers(scaling_factor_time_derivative_term, velocity);
 
   setup_momentum_solver();
 
-  Base::setup_pressure_poisson_solver();
+  ProjBase::setup_pressure_poisson_solver();
 
-  Base::setup_projection_solver();
+  ProjBase::setup_projection_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
 }
@@ -242,7 +242,7 @@ void
 DGNavierStokesPressureCorrection<dim, Number>::rhs_add_viscous_term(VectorType & dst,
                                                                     double const time) const
 {
-  Base::do_rhs_add_viscous_term(dst, time);
+  ProjBase::do_rhs_add_viscous_term(dst, time);
 }
 
 template<int dim, typename Number>
@@ -371,7 +371,7 @@ unsigned int
 DGNavierStokesPressureCorrection<dim, Number>::solve_pressure(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  return Base::do_solve_pressure(dst, src);
+  return ProjBase::do_solve_pressure(dst, src);
 }
 
 template<int dim, typename Number>
@@ -379,7 +379,7 @@ void
 DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
                                                                    double const & time) const
 {
-  Base::do_rhs_ppe_laplace_add(dst, time);
+  ProjBase::do_rhs_ppe_laplace_add(dst, time);
 }
 
 template<int dim, typename Number>
