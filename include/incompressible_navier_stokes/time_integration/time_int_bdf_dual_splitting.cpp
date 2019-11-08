@@ -203,10 +203,10 @@ TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundar
         this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
           velocity_dbc[i], this->get_time() - double(i + 1) * this->get_time_step_size());
       }
-    }
 
-    compute_bdf_time_derivative(
-      acceleration[0], vel_np, velocity_dbc, this->bdf, this->get_time_step_size());
+      compute_bdf_time_derivative(
+        acceleration[0], vel_np, velocity_dbc, this->bdf, this->get_time_step_size());
+    }
 
     // compute accelerations at previous times t_j = start_time - j * dt, j = 1, ...
     if(this->start_with_low_order == false)
