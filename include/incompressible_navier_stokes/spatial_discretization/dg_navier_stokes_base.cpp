@@ -276,6 +276,8 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   quadratures[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
   // velocity: Gauss-Lobatto quadrature points
   quadratures[quad_index_u_gauss_lobatto] = QGaussLobatto<1>(param.degree_u + 1);
+  // pressure: Gauss-Lobatto quadrature points
+  quadratures[quad_index_p_gauss_lobatto] = QGaussLobatto<1>(param.get_degree_p() + 1);
 
   // reinit
   matrix_free.reinit(
@@ -625,7 +627,12 @@ DGNavierStokesBase<dim, Number>::get_quad_index_velocity_gauss_lobatto() const
   return quad_index_u_gauss_lobatto;
 }
 
-
+template<int dim, typename Number>
+unsigned int
+DGNavierStokesBase<dim, Number>::get_quad_index_pressure_gauss_lobatto() const
+{
+  return quad_index_p_gauss_lobatto;
+}
 
 template<int dim, typename Number>
 unsigned int
@@ -832,6 +839,22 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_velocity_dirichlet_bc
 
 template<int dim, typename Number>
 void
+DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_pressure_dirichlet_bc(
+  VectorType &   dst,
+  double const & time)
+{
+  // make sure that the mesh fits to the time at which we want to evaluate the solution
+  if(param.ale_formulation)
+    moving_mesh->move_mesh_analytical(time, *mapping);
+
+  // we also need to update matrix_free
+  update_after_mesh_movement();
+
+  interpolate_pressure_dirichlet_bc(dst, time);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesBase<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType &   dst,
                                                                    double const & time)
 {
@@ -843,6 +866,24 @@ DGNavierStokesBase<dim, Number>::interpolate_velocity_dirichlet_bc(VectorType & 
   this->get_matrix_free().loop(&This::cell_loop_empty,
                                &This::face_loop_empty,
                                &This::local_interpolate_velocity_dirichlet_bc_boundary_face,
+                               this,
+                               dst,
+                               src_dummy);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType &   dst,
+                                                                   double const & time)
+{
+  this->evaluation_time = time;
+
+  dst = 0.0;
+
+  VectorType src_dummy;
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_interpolate_pressure_dirichlet_bc_boundary_face,
                                this,
                                dst,
                                src_dummy);
@@ -1510,6 +1551,52 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
           this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id);
 
         vector g = evaluate_vectorial_function(it->second, q_points, this->evaluation_time);
+        integrator.submit_dof_value(g, index);
+      }
+
+      integrator.set_dof_values(dst);
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundary_face(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &,
+  Range const & face_range) const
+{
+  unsigned int const dof_index  = this->get_dof_index_pressure();
+  unsigned int const quad_index = this->get_quad_index_pressure_gauss_lobatto();
+
+  FaceIntegratorP integrator(matrix_free, true, dof_index, quad_index);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+
+    BoundaryTypeP const boundary_type =
+      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
+
+    if(boundary_type == BoundaryTypeP::Dirichlet)
+    {
+      integrator.reinit(face);
+      integrator.read_dof_values(dst);
+
+      for(unsigned int q = 0; q < integrator.n_q_points; ++q)
+      {
+        unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
+
+        unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
+                                     .face_to_cell_index_nodal[local_face_number][q];
+
+        Point<dim, scalar> q_points = integrator.quadrature_point(q);
+
+        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+          this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
+
+        scalar g = evaluate_scalar_function(it->second, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 

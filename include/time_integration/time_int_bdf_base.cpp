@@ -58,8 +58,8 @@ TimeIntBDFBase::initialize_solution_and_calculate_timestep(bool do_restart)
     // The time step size might depend on the current solution.
     initialize_current_solution();
 
-    // The time step size has to be computed before the solution can be initialized at times t -
-    // dt[1], t - dt[1] - dt[2], etc.
+    // The time step size has to be computed before the solution can be initialized at times
+    // t - dt[1], t - dt[1] - dt[2], etc.
     calculate_time_step_size();
 
     // Finally, prescribe initial conditions at former instants of time. This is only necessary if

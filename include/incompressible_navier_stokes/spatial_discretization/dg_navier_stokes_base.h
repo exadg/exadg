@@ -104,7 +104,8 @@ protected:
     pressure               = 1,
     velocity_nonlinear     = 2,
     velocity_gauss_lobatto = 3,
-    n_variants             = velocity_gauss_lobatto + 1
+    pressure_gauss_lobatto = 4,
+    n_variants             = pressure_gauss_lobatto + 1
   };
 
   static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
@@ -131,6 +132,9 @@ protected:
   static const unsigned int quad_index_u_gauss_lobatto =
     static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::velocity_gauss_lobatto);
+  static const unsigned int quad_index_p_gauss_lobatto =
+    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+      QuadratureSelector::pressure_gauss_lobatto);
 
 public:
   /*
@@ -185,6 +189,9 @@ public:
 
   unsigned int
   get_quad_index_velocity_gauss_lobatto() const;
+
+  unsigned int
+  get_quad_index_pressure_gauss_lobatto() const;
 
   unsigned int
   get_quad_index_velocity_linearized() const;
@@ -266,9 +273,15 @@ public:
   void
   interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
 
+  void
+  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
+
   // In case of ALE, it might be necessary to also move the mesh
   void
   move_mesh_and_interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
+
+  void
+  move_mesh_and_interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
 
   /*
    * Time step calculation.
@@ -634,6 +647,12 @@ private:
 
   void
   local_interpolate_velocity_dirichlet_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                        VectorType &                    dst,
+                                                        VectorType const &              src,
+                                                        Range const & face_range) const;
+
+  void
+  local_interpolate_pressure_dirichlet_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
                                                         VectorType &                    dst,
                                                         VectorType const &              src,
                                                         Range const & face_range) const;

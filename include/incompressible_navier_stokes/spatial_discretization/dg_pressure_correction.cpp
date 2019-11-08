@@ -356,6 +356,14 @@ DGNavierStokesPressureCorrection<dim, Number>::rhs_pressure_gradient_term(Vector
   this->gradient_operator.rhs(dst, time);
 }
 
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::
+  rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                          VectorType const & pressure) const
+{
+  this->gradient_operator.rhs_bc_from_dof_vector(dst, pressure);
+}
 
 template<int dim, typename Number>
 void
@@ -380,6 +388,15 @@ DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add(VectorType & 
                                                                    double const & time) const
 {
   ProjBase::do_rhs_ppe_laplace_add(dst, time);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(
+  VectorType &       dst,
+  VectorType const & src) const
+{
+  this->laplace_operator.rhs_add_dirichlet_bc_from_dof_vector(dst, src);
 }
 
 template<int dim, typename Number>

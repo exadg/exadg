@@ -549,41 +549,38 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
   rhs *= -this->bdf.get_gamma0() / this->get_time_step_size();
 
   // inhomogeneous parts of boundary face integrals of velocity divergence operator
-  if(this->param.divu_integrated_by_parts == true)
+  if(this->param.divu_integrated_by_parts == true && this->param.divu_use_boundary_data == true)
   {
-    if(this->param.divu_use_boundary_data == true)
-    {
-      VectorType temp(rhs);
+    VectorType temp(rhs);
 
-      // sum alpha_i * u_i term
+    // sum alpha_i * u_i term
+    for(unsigned int i = 0; i < velocity.size(); ++i)
+    {
+      if(this->param.store_previous_boundary_values)
+        pde_operator->rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(temp,
+                                                                                velocity_dbc[i]);
+      else
+        pde_operator->rhs_velocity_divergence_term(temp, this->get_previous_time(i));
+
+      // note that the minus sign related to this term is already taken into account
+      // in the function rhs() of the divergence operator
+      rhs.add(this->bdf.get_alpha(i) / this->get_time_step_size(), temp);
+    }
+
+    // convective term
+    if(this->param.convective_problem())
+    {
       for(unsigned int i = 0; i < velocity.size(); ++i)
       {
-        if(this->param.store_previous_boundary_values)
-          pde_operator->rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(temp,
-                                                                                  velocity_dbc[i]);
-        else
-          pde_operator->rhs_velocity_divergence_term(temp, this->get_previous_time(i));
-
-        // note that the minus sign related to this term is already taken into account
-        // in the function rhs() of the divergence operator
-        rhs.add(this->bdf.get_alpha(i) / this->get_time_step_size(), temp);
+        temp = 0.0;
+        pde_operator->rhs_ppe_div_term_convective_term_add(temp, velocity[i]);
+        rhs.add(this->extra.get_beta(i), temp);
       }
-
-      // convective term
-      if(this->param.convective_problem())
-      {
-        for(unsigned int i = 0; i < velocity.size(); ++i)
-        {
-          temp = 0.0;
-          pde_operator->rhs_ppe_div_term_convective_term_add(temp, velocity[i]);
-          rhs.add(this->extra.get_beta(i), temp);
-        }
-      }
-
-      // body force term
-      if(this->param.right_hand_side)
-        pde_operator->rhs_ppe_div_term_body_forces_add(rhs, this->get_next_time());
     }
+
+    // body force term
+    if(this->param.right_hand_side)
+      pde_operator->rhs_ppe_div_term_body_forces_add(rhs, this->get_next_time());
   }
 
   /*

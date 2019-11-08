@@ -27,6 +27,7 @@ TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     vec_pressure_gradient_term(param_in.order_pressure_extrapolation),
+    pressure_dbc(param_in.order_pressure_extrapolation),
     computing_times(3),
     iterations(3),
     N_iter_nonlinear_momentum(0)
@@ -85,6 +86,9 @@ TimeIntBDFPressureCorrection<Number>::setup_derived()
     if(this->param.ale_formulation == false)
       initialize_vec_pressure_gradient_term();
   }
+
+  if(this->param.store_previous_boundary_values)
+    initialize_pressure_on_boundary();
 }
 
 template<typename Number>
@@ -115,6 +119,12 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   // vec_pressure_gradient_term
   for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
     this->operator_base->initialize_vector_velocity(vec_pressure_gradient_term[i]);
+
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
+      this->operator_base->initialize_vector_pressure(pressure_dbc[i]);
+  }
 
   // Sum_i (alpha_i/dt * u_i)
   this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
@@ -177,6 +187,24 @@ TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
       this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
                                                            pressure[i],
                                                            this->get_previous_time(i));
+    }
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::initialize_pressure_on_boundary()
+{
+  // If start_with_low_order == true, no pressure extrapolation is used in the first time step
+  // even for the incremental pressure-correction scheme. Hence, there is no need to initialize
+  // the pressure_dbc vector in this case.
+
+  if(this->param.start_with_low_order == false)
+  {
+    for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
+    {
+      this->operator_base->move_mesh_and_interpolate_pressure_dirichlet_bc(
+        pressure_dbc[i], this->get_time() - double(i) * this->get_time_step_size());
     }
   }
 }
@@ -695,9 +723,12 @@ TimeIntBDFPressureCorrection<Number>::rhs_pressure(VectorType & rhs) const
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
     // set temp to zero since rhs_ppe_laplace_add() adds into the vector
-    temp           = 0.0;
-    double const t = this->get_previous_time(i);
-    pde_operator->rhs_ppe_laplace_add(temp, t);
+    temp = 0.0;
+    if(this->param.store_previous_boundary_values)
+      pde_operator->rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(temp, pressure_dbc[i]);
+    else
+      pde_operator->rhs_ppe_laplace_add(temp, this->get_previous_time(i));
+
     rhs.add(-extra_pressure_gradient.get_beta(i), temp);
   }
 
@@ -777,14 +808,22 @@ TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
    *  III. pressure gradient term: boundary conditions g_p(t_{n-i})
    *       in case of incremental formulation of pressure-correction scheme
    */
-  for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+  if(this->param.gradp_integrated_by_parts == true && this->param.gradp_use_boundary_data == true)
   {
-    // evaluate inhomogeneous parts of boundary face integrals
-    // note that the function rhs_...() already includes a factor of -1.0
-    pde_operator->rhs_pressure_gradient_term(temp, this->get_previous_time(i));
-    rhs.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
-              this->bdf.get_gamma0(),
-            temp);
+    for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+    {
+      // evaluate inhomogeneous parts of boundary face integrals
+      // note that the function rhs_...() already includes a factor of -1.0
+      if(this->param.store_previous_boundary_values)
+        pde_operator->rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp,
+                                                                              pressure_dbc[i]);
+      else
+        pde_operator->rhs_pressure_gradient_term(temp, this->get_previous_time(i));
+
+      rhs.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
+                this->bdf.get_gamma0(),
+              temp);
+    }
   }
 }
 
@@ -864,6 +903,14 @@ TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
   {
     if(this->param.ale_formulation == false)
       push_back(vec_pressure_gradient_term);
+  }
+
+  if(this->param.store_previous_boundary_values)
+  {
+    push_back(pressure_dbc);
+
+    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+    this->operator_base->interpolate_pressure_dirichlet_bc(pressure_dbc[0], this->get_next_time());
   }
 }
 

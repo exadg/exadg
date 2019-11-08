@@ -165,9 +165,12 @@ class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim
 {
 private:
   typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>> Base;
+  typedef LaplaceOperator<dim, Number>                        This;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
+
+  typedef typename Base::Range Range;
 
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
@@ -180,6 +183,12 @@ public:
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          LaplaceOperatorData<dim> const &  data);
+
+  // Some more functionality on top of what is provided by the base class.
+  // This function evaluates the inhomogeneous boundary face integrals where the
+  // Dirichlet boundary condition is extracted from a dof vector instead of a Function<dim>.
+  void
+  rhs_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
 private:
   void
@@ -209,6 +218,31 @@ private:
   do_boundary_integral(IntegratorFace &           integrator_m,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  // Some more functionality on top of what is provided by the base class.
+  void
+  cell_loop_empty(MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                    dst,
+                  VectorType const &              src,
+                  Range const &                   range) const;
+
+  void
+  face_loop_empty(MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                    dst,
+                  VectorType const &              src,
+                  Range const &                   range) const;
+
+  void
+  boundary_face_loop_inhom_operator_dirichlet_bc_from_dof_vector(
+    MatrixFree<dim, Number> const & matrix_free,
+    VectorType &                    dst,
+    VectorType const &              src,
+    Range const &                   range) const;
+
+  void
+  do_boundary_integral_dirichlet_bc_from_dof_vector(IntegratorFace &           integrator_m,
+                                                    OperatorType const &       operator_type,
+                                                    types::boundary_id const & boundary_id) const;
 
   void
   do_verify_boundary_conditions(types::boundary_id const             boundary_id,

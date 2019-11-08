@@ -91,6 +91,15 @@ private:
   typedef typename Base::Postprocessor   Postprocessor;
   typedef typename Base::MultigridNumber MultigridNumber;
 
+  typedef typename Base::scalar scalar;
+  typedef typename Base::vector vector;
+  typedef typename Base::tensor tensor;
+
+  typedef typename Base::Range Range;
+
+  typedef typename Base::FaceIntegratorU FaceIntegratorU;
+  typedef typename Base::FaceIntegratorP FaceIntegratorP;
+
 public:
   /*
    * Constructor.
@@ -196,6 +205,10 @@ public:
   void
   rhs_pressure_gradient_term(VectorType & dst, double const time) const;
 
+  void
+  rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                          VectorType const & pressure) const;
+
   /*
    * Pressure update step.
    */
@@ -212,6 +225,9 @@ public:
 
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
+
+  void
+  rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
   /*
    * Postprocessing.

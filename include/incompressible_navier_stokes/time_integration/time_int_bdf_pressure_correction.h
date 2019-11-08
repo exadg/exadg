@@ -74,6 +74,9 @@ private:
   initialize_vec_pressure_gradient_term();
 
   void
+  initialize_pressure_on_boundary();
+
+  void
   do_solve_timestep();
 
   void
@@ -149,6 +152,9 @@ private:
   ExtrapolationConstants extra_pressure_gradient;
 
   std::vector<VectorType> vec_pressure_gradient_term;
+
+  // stores pressure Dirichlet boundary values at previous times
+  std::vector<VectorType> pressure_dbc;
 
   std::vector<Number>       computing_times;
   std::vector<unsigned int> iterations;

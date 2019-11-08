@@ -74,6 +74,28 @@ GradientOperator<dim, Number>::rhs(VectorType & dst, Number const evaluation_tim
 
 template<int dim, typename Number>
 void
+GradientOperator<dim, Number>::rhs_bc_from_dof_vector(VectorType &       dst,
+                                                      VectorType const & src) const
+{
+  dst = 0;
+
+  VectorType tmp;
+  tmp.reinit(dst, false /* init with 0 */);
+
+  matrix_free->loop(&This::cell_loop_inhom_operator,
+                    &This::face_loop_inhom_operator,
+                    &This::boundary_face_loop_inhom_operator_bc_from_dof_vector,
+                    this,
+                    tmp,
+                    src,
+                    false /*zero_dst_vector = false*/);
+
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  dst.add(-1.0, tmp);
+}
+
+template<int dim, typename Number>
+void
 GradientOperator<dim, Number>::rhs_add(VectorType & dst, Number const evaluation_time) const
 {
   time = evaluation_time;
@@ -383,6 +405,52 @@ GradientOperator<dim, Number>::boundary_face_loop_inhom_operator(
                            OperatorType::inhomogeneous,
                            matrix_free.get_boundary_id(face));
 
+      velocity.integrate_scatter(true, false, dst);
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+GradientOperator<dim, Number>::boundary_face_loop_inhom_operator_bc_from_dof_vector(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   face_range) const
+{
+  if(data.integration_by_parts == true)
+  {
+    FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
+    FaceIntegratorP pressure(matrix_free, true, data.dof_index_pressure, data.quad_index);
+
+    for(unsigned int face = face_range.first; face < face_range.second; face++)
+    {
+      velocity.reinit(face);
+
+      pressure.reinit(face);
+      pressure.gather_evaluate(src, true, false);
+
+      BoundaryTypeP boundary_type = data.bc->get_boundary_type(matrix_free.get_boundary_id(face));
+
+      for(unsigned int q = 0; q < pressure.n_q_points; ++q)
+      {
+        if(boundary_type == BoundaryTypeP::Dirichlet)
+        {
+          vector normal = pressure.get_normal_vector(q);
+          scalar g_p    = pressure.get_value(q);
+          velocity.submit_value(g_p * normal, q);
+        }
+        else if(boundary_type == BoundaryTypeP::Neumann)
+        {
+          // Do nothing on Neumann boundaries.
+          vector zero;
+          velocity.submit_value(zero, q);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+        }
+      }
       velocity.integrate_scatter(true, false, dst);
     }
   }
