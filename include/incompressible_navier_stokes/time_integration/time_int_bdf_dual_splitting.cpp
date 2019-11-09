@@ -192,9 +192,16 @@ TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundar
   // Neumann boundary condition is larger than 0.
   if(this->param.order_extrapolation_pressure_nbc > 0)
   {
-    // compute acceleration at start_time
+    // Note that for BDF1 it can not be guaranteed that the results are the same for
+    // start_with_low_order = true and false if the time derivative of the velocity
+    // in the pressure Neumann boundary condition is computed numerically. This is due to
+    // the fact that computing the time derivative requires knowledge about the velocity
+    // at previous times, which is only available for start_with_low_order = false.
+    // Hence, the acceleration at start_time will be zero for start_with_low_order = true
+    // and this acceleration will be used in the first time step.
     if(this->start_with_low_order == false)
     {
+      // compute acceleration at start_time
       this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(vel_np,
                                                                            this->get_time());
 

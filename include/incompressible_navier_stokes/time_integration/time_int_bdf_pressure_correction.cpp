@@ -725,9 +725,13 @@ TimeIntBDFPressureCorrection<Number>::rhs_pressure(VectorType & rhs) const
     // set temp to zero since rhs_ppe_laplace_add() adds into the vector
     temp = 0.0;
     if(this->param.store_previous_boundary_values)
+    {
       pde_operator->rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(temp, pressure_dbc[i]);
+    }
     else
+    {
       pde_operator->rhs_ppe_laplace_add(temp, this->get_previous_time(i));
+    }
 
     rhs.add(-extra_pressure_gradient.get_beta(i), temp);
   }
@@ -815,10 +819,14 @@ TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
       // evaluate inhomogeneous parts of boundary face integrals
       // note that the function rhs_...() already includes a factor of -1.0
       if(this->param.store_previous_boundary_values)
+      {
         pde_operator->rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp,
                                                                               pressure_dbc[i]);
+      }
       else
+      {
         pde_operator->rhs_pressure_gradient_term(temp, this->get_previous_time(i));
+      }
 
       rhs.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
                 this->bdf.get_gamma0(),
@@ -905,12 +913,16 @@ TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
       push_back(vec_pressure_gradient_term);
   }
 
-  if(this->param.store_previous_boundary_values)
+  if(extra_pressure_gradient.get_order() > 0)
   {
-    push_back(pressure_dbc);
+    if(this->param.store_previous_boundary_values)
+    {
+      push_back(pressure_dbc);
 
-    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
-    this->operator_base->interpolate_pressure_dirichlet_bc(pressure_dbc[0], this->get_next_time());
+      // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+      this->operator_base->interpolate_pressure_dirichlet_bc(pressure_dbc[0],
+                                                             this->get_next_time());
+    }
   }
 }
 

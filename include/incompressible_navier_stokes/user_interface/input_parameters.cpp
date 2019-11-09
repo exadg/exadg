@@ -842,9 +842,7 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
                   "Formulation convective term in BC",
                   enum_to_string(formulation_convective_term_bc));
 
-  print_parameter(pcout,
-                  "Store previous boundary values in DoF vector",
-                  store_previous_boundary_values);
+  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
 
   // projection method
   print_parameters_pressure_poisson(pcout);
@@ -929,6 +927,8 @@ InputParameters::print_parameters_pressure_correction(ConditionalOStream & pcout
   pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
   print_parameter(pcout, "Order of pressure extrapolation", order_pressure_extrapolation);
   print_parameter(pcout, "Rotational formulation", rotational_formulation);
+
+  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
 
   // projection method
   print_parameters_pressure_poisson(pcout);

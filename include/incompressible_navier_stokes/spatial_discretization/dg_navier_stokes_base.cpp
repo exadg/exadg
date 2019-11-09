@@ -829,10 +829,12 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_velocity_dirichlet_bc
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
+  {
     moving_mesh->move_mesh_analytical(time, *mapping);
 
-  // we also need to update matrix_free
-  update_after_mesh_movement();
+    // we also need to update matrix_free
+    update_after_mesh_movement();
+  }
 
   interpolate_velocity_dirichlet_bc(dst, time);
 }
@@ -845,10 +847,12 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_pressure_dirichlet_bc
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
+  {
     moving_mesh->move_mesh_analytical(time, *mapping);
 
-  // we also need to update matrix_free
-  update_after_mesh_movement();
+    // we also need to update matrix_free
+    update_after_mesh_movement();
+  }
 
   interpolate_pressure_dirichlet_bc(dst, time);
 }
