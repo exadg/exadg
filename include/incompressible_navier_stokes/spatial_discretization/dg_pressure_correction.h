@@ -209,6 +209,11 @@ public:
   rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                           VectorType const & pressure) const;
 
+  void
+  evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                               VectorType const & src,
+                                                               VectorType const & pressure) const;
+
   /*
    * Pressure update step.
    */

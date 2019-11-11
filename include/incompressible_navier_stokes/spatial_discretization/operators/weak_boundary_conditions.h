@@ -208,6 +208,47 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  calculate_exterior_value_from_dof_vector(VectorizedArray<Number> const &        value_m,
+                                           unsigned int const                     q,
+                                           FaceIntegrator<dim, 1, Number> const & integrator_bc,
+                                           OperatorType const &                   operator_type,
+                                           BoundaryTypeP const &                  boundary_type,
+                                           double const & inverse_scaling_factor)
+{
+  VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
+
+  if(boundary_type == BoundaryTypeP::Dirichlet)
+  {
+    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    {
+      VectorizedArray<Number> g = integrator_bc.get_value(q);
+
+      value_p = -value_m + 2.0 * inverse_scaling_factor * g;
+    }
+    else if(operator_type == OperatorType::homogeneous)
+    {
+      value_p = -value_m;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+    }
+  }
+  else if(boundary_type == BoundaryTypeP::Neumann)
+  {
+    value_p = value_m;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+  }
+
+  return value_p;
+}
+
 // clang-format off
 /*
  *  These two functions calculates the velocity gradient in normal

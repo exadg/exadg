@@ -367,6 +367,16 @@ DGNavierStokesPressureCorrection<dim, Number>::
 
 template<int dim, typename Number>
 void
+DGNavierStokesPressureCorrection<dim, Number>::
+  evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                               VectorType const & src,
+                                                               VectorType const & pressure) const
+{
+  this->gradient_operator.evaluate_bc_from_dof_vector(dst, src, pressure);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesPressureCorrection<dim, Number>::apply_inverse_pressure_mass_matrix(
   VectorType &       dst,
   VectorType const & src) const

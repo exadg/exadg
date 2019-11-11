@@ -367,6 +367,12 @@ public:
                                                           VectorType const & pressure) const = 0;
 
   virtual void
+  evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(
+    VectorType &       dst,
+    VectorType const & src,
+    VectorType const & pressure) const = 0;
+
+  virtual void
   evaluate_nonlinear_residual_steady(VectorType &       dst_u,
                                      VectorType &       dst_p,
                                      VectorType const & src_u,
