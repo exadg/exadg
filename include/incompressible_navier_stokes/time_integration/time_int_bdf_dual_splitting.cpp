@@ -438,13 +438,10 @@ TimeIntBDFDualSplitting<Number>::convective_step()
     {
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       {
-        // TODO
-        pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(
-          vec_convective_term[i], velocity[i], this->get_previous_time(i));
-
         // in a general setting, we only know the boundary conditions at time t_{n+1}
-        //        pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(
-        //          vec_convective_term[i], velocity[i], this->get_next_time());
+        pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(vec_convective_term[i],
+                                                                             velocity[i],
+                                                                             this->get_next_time());
 
         velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
       }

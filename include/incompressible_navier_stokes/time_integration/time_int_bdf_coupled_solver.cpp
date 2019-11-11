@@ -257,15 +257,10 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
         // evaluate convective term for all previous times since the mesh has been updated
         for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         {
-          // TODO
+          // in a general setting, we only know the boundary conditions at time t_{n+1}
           this->operator_base->evaluate_convective_term(vec_convective_term[i],
                                                         solution[i].block(0),
-                                                        this->get_previous_time(i));
-
-          // in a general setting, we only know the boundary conditions at time t_{n+1}
-          //          this->operator_base->evaluate_convective_term(vec_convective_term[i],
-          //                                                        solution[i].block(0),
-          //                                                        this->get_next_time());
+                                                        this->get_next_time());
         }
       }
 
