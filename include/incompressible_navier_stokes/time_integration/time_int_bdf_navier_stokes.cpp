@@ -43,6 +43,31 @@ TimeIntBDF<Number>::update_time_integrator_constants()
 
 template<typename Number>
 void
+TimeIntBDF<Number>::allocate_vectors()
+{
+  // convective term
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
+
+    this->operator_base->initialize_vector_velocity(convective_term_np);
+  }
+
+  if(param.ale_formulation == true)
+  {
+    this->operator_base->initialize_vector_velocity(grid_velocity);
+
+    this->operator_base->initialize_vector_velocity(grid_coordinates_np);
+
+    for(unsigned int i = 0; i < vec_grid_coordinates.size(); ++i)
+      this->operator_base->initialize_vector_velocity(vec_grid_coordinates[i]);
+  }
+}
+
+template<typename Number>
+void
 TimeIntBDF<Number>::setup_derived()
 {
   // In the case of an arbitrary Lagrangian-Eulerian formulation:
@@ -75,29 +100,6 @@ TimeIntBDF<Number>::setup_derived()
 
 template<typename Number>
 void
-TimeIntBDF<Number>::allocate_vectors()
-{
-  // convective term
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
-  }
-
-  if(param.ale_formulation == true)
-  {
-    this->operator_base->initialize_vector_velocity(grid_velocity);
-
-    this->operator_base->initialize_vector_velocity(grid_coordinates_np);
-
-    for(unsigned int i = 0; i < vec_grid_coordinates.size(); ++i)
-      this->operator_base->initialize_vector_velocity(vec_grid_coordinates[i]);
-  }
-}
-
-template<typename Number>
-void
 TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
 {
   if(this->param.convective_problem() &&
@@ -106,6 +108,7 @@ TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
     if(this->param.ale_formulation == false)
     {
       push_back(this->vec_convective_term);
+      vec_convective_term[0].swap(convective_term_np);
     }
   }
 
@@ -118,14 +121,14 @@ void
 TimeIntBDF<Number>::solve_timestep()
 {
   if(param.ale_formulation)
-    ale_update_pre();
+    ale_update();
 
   do_solve_timestep();
 }
 
 template<typename Number>
 void
-TimeIntBDF<Number>::ale_update_pre()
+TimeIntBDF<Number>::ale_update()
 {
   // move the mesh and compute grid coordinates at the end of the current time step t_{n+1}
   operator_base->move_mesh_and_fill_grid_coordinates_vector(grid_coordinates_np,
@@ -148,13 +151,12 @@ template<typename Number>
 void
 TimeIntBDF<Number>::initialize_vec_convective_term()
 {
-  // vec_convective_term[0] is computed in the first time step and does not have to be
-  // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+  this->operator_base->evaluate_convective_term(vec_convective_term[0],
+                                                get_velocity(),
+                                                this->get_time());
 
   if(this->param.start_with_low_order == false)
   {
-    // note that the loop begins with i=1! (we could also start with i=0 but this is not
-    // necessary)
     for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
     {
       this->operator_base->evaluate_convective_term(vec_convective_term[i],

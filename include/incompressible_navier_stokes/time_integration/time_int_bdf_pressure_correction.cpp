@@ -27,6 +27,7 @@ TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     pressure_dbc(param_in.order_pressure_extrapolation),
     computing_times(3),
+    computing_time_convective(0.0),
     iterations(3),
     N_iter_nonlinear_momentum(0)
 {
@@ -266,6 +267,10 @@ TimeIntBDFPressureCorrection<Number>::do_solve_timestep()
   pressure_step();
 
   projection_step();
+
+  // evaluate convective term once the final solution at time
+  // t_{n+1} is known
+  evaluate_convective_term();
 }
 
 template<typename Number>
@@ -348,7 +353,7 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
                     << "Solve linear momentum equation for intermediate velocity:" << std::endl
                     << "  Iterations:        " << std::setw(6) << std::right
                     << linear_iterations_momentum << "\t Wall time [s]: " << std::scientific
-                    << timer.wall_time() << std::endl;
+                    << timer.wall_time() + computing_time_convective << std::endl;
       }
 
       iterations[0] += linear_iterations_momentum;
@@ -364,7 +369,8 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
         this->pcout << std::endl
                     << "Solve linear momentum equation for intermediate velocity:" << std::endl
                     << "  Iterations:        " << std::setw(6) << std::right << 0
-                    << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+                    << "\t Wall time [s]: " << std::scientific
+                    << timer.wall_time() + computing_time_convective << std::endl;
       }
     }
   }
@@ -414,7 +420,7 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
     N_iter_nonlinear_momentum += nonlinear_iterations_momentum;
   }
 
-  computing_times[0] += timer.wall_time();
+  computing_times[0] += timer.wall_time() + computing_time_convective;
 }
 
 template<typename Number>
@@ -465,13 +471,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    if(this->param.ale_formulation == false)
-    {
-      this->operator_base->evaluate_convective_term(this->vec_convective_term[0],
-                                                    velocity[0],
-                                                    this->get_time());
-    }
-    else // ALE case
+    if(this->param.ale_formulation)
     {
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
       {
@@ -816,6 +816,20 @@ TimeIntBDFPressureCorrection<Number>::projection_step()
 
   computing_times[2] += timer.wall_time();
   iterations[2] += iterations_projection;
+}
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::evaluate_convective_term()
+{
+  Timer timer;
+  timer.restart();
+
+  this->operator_base->evaluate_convective_term(this->convective_term_np,
+                                                velocity_np,
+                                                this->get_next_time());
+
+  computing_time_convective = timer.wall_time();
 }
 
 template<typename Number>

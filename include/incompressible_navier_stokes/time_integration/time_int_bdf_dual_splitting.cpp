@@ -26,6 +26,7 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     acceleration(this->param.order_extrapolation_pressure_nbc),
     velocity_dbc(this->order),
     computing_times(4),
+    computing_time_convective(0.0),
     iterations(4),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
                        this->param.start_with_low_order)
@@ -333,6 +334,10 @@ TimeIntBDFDualSplitting<Number>::do_solve_timestep()
   projection_step();
 
   viscous_step();
+
+  // evaluate convective term once the final solution at time
+  // t_{n+1} is known
+  evaluate_convective_term();
 }
 
 template<typename Number>
@@ -348,16 +353,7 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    if(this->param.ale_formulation == false)
-    {
-      this->operator_base->evaluate_convective_term(this->vec_convective_term[0],
-                                                    velocity[0],
-                                                    this->get_time());
-
-      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
-        velocity_np.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
-    }
-    else // ALE case
+    if(this->param.ale_formulation)
     {
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
       {
@@ -365,10 +361,11 @@ TimeIntBDFDualSplitting<Number>::convective_step()
         this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
                                                       velocity[i],
                                                       this->get_next_time());
-
-        velocity_np.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
       }
     }
+
+    for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+      velocity_np.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
   }
 
   // compute body force vector
@@ -407,10 +404,25 @@ TimeIntBDFDualSplitting<Number>::convective_step()
     this->pcout << std::endl
                 << "Solve convective step explicitly:" << std::endl
                 << "  Iterations:        " << std::setw(6) << std::right << "-"
-                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+                << "\t Wall time [s]: " << std::scientific
+                << timer.wall_time() + computing_time_convective << std::endl;
   }
 
-  computing_times[0] += timer.wall_time();
+  computing_times[0] += timer.wall_time() + computing_time_convective;
+}
+
+template<typename Number>
+void
+TimeIntBDFDualSplitting<Number>::evaluate_convective_term()
+{
+  Timer timer;
+  timer.restart();
+
+  this->operator_base->evaluate_convective_term(this->convective_term_np,
+                                                velocity_np,
+                                                this->get_next_time());
+
+  computing_time_convective = timer.wall_time();
 }
 
 template<typename Number>

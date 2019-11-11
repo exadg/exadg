@@ -70,6 +70,9 @@ private:
   convective_step();
 
   void
+  evaluate_convective_term();
+
+  void
   postprocessing() const;
 
   void
@@ -140,6 +143,7 @@ private:
   std::vector<VectorType> velocity_dbc;
 
   std::vector<double>       computing_times;
+  double                    computing_time_convective;
   std::vector<unsigned int> iterations;
 
   // time integrator constants: extrapolation scheme

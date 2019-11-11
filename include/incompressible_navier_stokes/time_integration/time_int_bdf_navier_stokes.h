@@ -57,19 +57,19 @@ public:
 
 protected:
   virtual void
-  setup_derived() override;
-
-  virtual void
   allocate_vectors() override;
 
   virtual void
-  prepare_vectors_for_next_timestep() override;
+  setup_derived() override;
 
   void
   solve_timestep();
 
   bool
   print_solver_info() const;
+
+  virtual void
+  prepare_vectors_for_next_timestep() override;
 
   /*
    * This function implements the OIF sub-stepping algorithm. Has to be implemented here
@@ -93,13 +93,14 @@ protected:
 
   // convective term formulated explicitly
   std::vector<VectorType> vec_convective_term;
+  VectorType              convective_term_np;
 
 private:
   virtual void
   do_solve_timestep() = 0;
 
   void
-  ale_update_pre();
+  ale_update();
 
   void
   initialize_vec_convective_term();

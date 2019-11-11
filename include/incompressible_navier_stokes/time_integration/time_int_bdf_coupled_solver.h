@@ -110,7 +110,8 @@ private:
   BlockVectorType rhs_vector;
 
   // performance analysis: average number of iterations and solver time
-  std::vector<Number>       computing_times;
+  std::vector<double>       computing_times;
+  double                    computing_time_convective;
   std::vector<unsigned int> iterations;
   unsigned int              N_iter_nonlinear;
 

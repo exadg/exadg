@@ -92,6 +92,9 @@ private:
   projection_step();
 
   void
+  evaluate_convective_term();
+
+  void
   rhs_projection(VectorType & rhs) const;
 
   void
@@ -146,7 +149,8 @@ private:
   // stores pressure Dirichlet boundary values at previous times
   std::vector<VectorType> pressure_dbc;
 
-  std::vector<Number>       computing_times;
+  std::vector<double>       computing_times;
+  double                    computing_time_convective;
   std::vector<unsigned int> iterations;
 
   unsigned int N_iter_nonlinear_momentum;

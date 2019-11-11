@@ -23,6 +23,7 @@ TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> oper
     pde_operator(pde_operator_in),
     solution(this->order),
     computing_times(2),
+    computing_time_convective(0.0),
     iterations(2),
     N_iter_nonlinear(0.0),
     scaling_factor_continuity(1.0),
@@ -206,13 +207,7 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
     if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
-      if(this->param.ale_formulation == false) // Eulerian case
-      {
-        this->operator_base->evaluate_convective_term(this->vec_convective_term[0],
-                                                      solution[0].block(0),
-                                                      this->get_time());
-      }
-      else // ALE case
+      if(this->param.ale_formulation)
       {
         // evaluate convective term for all previous times since the mesh has been updated
         for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
@@ -259,7 +254,6 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
                                                 this->get_scaling_factor_time_derivative_term());
 
     iterations[0] += linear_iterations;
-    computing_times[0] += timer.wall_time();
 
     // write output
     if(this->print_solver_info())
@@ -267,7 +261,8 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
       pcout << "Solve linear problem:" << std::endl
             << "  Iterations: " << std::setw(6) << std::right << linear_iterations
-            << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+            << "\t Wall time [s]: " << std::scientific
+            << timer.wall_time() + computing_time_convective << std::endl;
     }
   }
   else // a nonlinear system of equations has to be solved
@@ -300,7 +295,6 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
 
     N_iter_nonlinear += newton_iterations;
     iterations[0] += linear_iterations;
-    computing_times[0] += timer.wall_time();
 
     // write output
     if(this->print_solver_info())
@@ -347,19 +341,39 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
     }
   }
 
+  computing_times[0] += timer.wall_time() + computing_time_convective;
+
+  // Projection step
+  timer.restart();
+
   // If the penalty terms are applied in a postprocessing step
   if(this->param.add_penalty_terms_to_monolithic_system == false)
   {
     // projection of velocity field using divergence and/or continuity penalty terms
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {
-      timer.restart();
-
       projection_step();
-
-      computing_times[1] += timer.wall_time();
     }
   }
+
+  computing_times[1] += timer.wall_time();
+
+  // Evaluation of convective term
+  timer.restart();
+
+  // evaluate convective term once solution_np is known
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false) // Eulerian case
+    {
+      this->operator_base->evaluate_convective_term(this->convective_term_np,
+                                                    solution_np.block(0),
+                                                    this->get_next_time());
+    }
+  }
+
+  computing_time_convective = timer.wall_time();
 }
 
 template<typename Number>
