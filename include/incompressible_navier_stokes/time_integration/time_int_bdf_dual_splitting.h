@@ -88,9 +88,6 @@ private:
   initialize_vorticity();
 
   void
-  initialize_vec_convective_term();
-
-  void
   initialize_acceleration_and_velocity_on_boundary();
 
   void
@@ -144,8 +141,6 @@ private:
 
   std::vector<VectorType> vorticity;
   VectorType              vorticity_np;
-
-  std::vector<VectorType> vec_convective_term;
 
   std::vector<VectorType> acceleration;
   std::vector<VectorType> velocity_dbc;

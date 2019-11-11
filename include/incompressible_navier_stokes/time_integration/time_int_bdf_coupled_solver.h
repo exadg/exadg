@@ -67,9 +67,6 @@ private:
   initialize_former_solutions();
 
   void
-  initialize_vec_convective_term();
-
-  void
   do_solve_timestep();
 
   void
@@ -111,8 +108,6 @@ private:
   BlockVectorType              solution_np;
 
   BlockVectorType rhs_vector;
-
-  std::vector<VectorType> vec_convective_term;
 
   // performance analysis: average number of iterations and solver time
   std::vector<Number>       computing_times;

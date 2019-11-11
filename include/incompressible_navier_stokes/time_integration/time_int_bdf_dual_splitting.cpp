@@ -24,7 +24,6 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     velocity(this->order),
     pressure(this->order),
     vorticity(this->param.order_extrapolation_pressure_nbc),
-    vec_convective_term(this->order),
     acceleration(this->param.order_extrapolation_pressure_nbc),
     velocity_dbc(this->order),
     computing_times(4),
@@ -64,15 +63,6 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
 
   initialize_vorticity();
 
-  if(this->param.convective_problem())
-  {
-    if(this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-    {
-      if(this->param.ale_formulation == false)
-        initialize_vec_convective_term();
-    }
-  }
-
   if(this->param.store_previous_boundary_values)
     initialize_acceleration_and_velocity_on_boundary();
 }
@@ -99,13 +89,6 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
   for(unsigned int i = 0; i < vorticity.size(); ++i)
     this->operator_base->initialize_vector_velocity(vorticity[i]);
   this->operator_base->initialize_vector_velocity(vorticity_np);
-
-  // vec_convective_term
-  if(this->param.convective_problem())
-  {
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
-  }
 
   // acceleration
   if(this->param.store_previous_boundary_values)
@@ -156,25 +139,6 @@ TimeIntBDFDualSplitting<Number>::initialize_vorticity()
     for(unsigned int i = 1; i < vorticity.size(); ++i)
     {
       this->operator_base->compute_vorticity(vorticity[i], velocity[i]);
-    }
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::initialize_vec_convective_term()
-{
-  // vec_convective_term[0] is computed in the first time step and does not have to be
-  // initialized here. Hence, there is nothing to do for start_with_low_order == true.
-
-  if(this->param.start_with_low_order == false)
-  {
-    // note that the loop begins with i=1! (we could also start with i=0 but this is not
-    // necessary)
-    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-    {
-      pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(
-        vec_convective_term[i], velocity[i], this->get_previous_time(i));
     }
   }
 }
@@ -410,16 +374,7 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   Timer timer;
   timer.restart();
 
-  // compute body force vector
-  if(this->param.right_hand_side == true)
-  {
-    pde_operator->evaluate_body_force_and_apply_inverse_mass_matrix(velocity_np,
-                                                                    this->get_next_time());
-  }
-  else // right_hand_side == false
-  {
-    velocity_np = 0.0;
-  }
+  velocity_np = 0.0;
 
   // compute convective term and extrapolate convective term (if not Stokes equations)
   if(this->param.convective_problem() &&
@@ -427,26 +382,35 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   {
     if(this->param.ale_formulation == false)
     {
-      pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(vec_convective_term[0],
-                                                                           velocity[0],
-                                                                           this->get_time());
+      this->operator_base->evaluate_convective_term(this->vec_convective_term[0],
+                                                    velocity[0],
+                                                    this->get_time());
 
-      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-        velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        velocity_np.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
     else // ALE case
     {
-      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
       {
         // in a general setting, we only know the boundary conditions at time t_{n+1}
-        pde_operator->evaluate_convective_term_and_apply_inverse_mass_matrix(vec_convective_term[i],
-                                                                             velocity[i],
-                                                                             this->get_next_time());
+        this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
+                                                      velocity[i],
+                                                      this->get_next_time());
 
-        velocity_np.add(-this->extra.get_beta(i), vec_convective_term[i]);
+        velocity_np.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
       }
     }
   }
+
+  // compute body force vector
+  if(this->param.right_hand_side == true)
+  {
+    this->operator_base->evaluate_add_body_force_term(velocity_np, this->get_next_time());
+  }
+
+  // apply inverse mass matrix
+  this->operator_base->apply_inverse_mass_matrix(velocity_np, velocity_np);
 
   // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
   // and operator-integration-factor (OIF) splitting
@@ -849,6 +813,7 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
     velocity_dbc[0].swap(velocity_dbc_np);
   }
 
+  // Method by Hesthaven and Warburton (Nodal DG Methods, Springer 2008)
   // Compute acceleration and velocity vectors used for inhomogeneous boundary condition terms
   // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
   // velocity. Note: This variant leads to instabilities for small time step sizes.
@@ -876,12 +841,6 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
   if(this->param.order_extrapolation_pressure_nbc)
   {
     vorticity[0].swap(vorticity_np);
-  }
-
-  if(this->param.convective_problem())
-  {
-    if(this->param.ale_formulation == false)
-      push_back(vec_convective_term);
   }
 }
 

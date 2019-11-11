@@ -183,28 +183,6 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
 
 template<int dim, typename Number>
 void
-DGNavierStokesDualSplitting<dim, Number>::evaluate_convective_term_and_apply_inverse_mass_matrix(
-  VectorType &       dst,
-  VectorType const & src,
-  double const       evaluation_time) const
-{
-  this->convective_operator.evaluate_nonlinear_operator(dst, src, evaluation_time);
-  this->inverse_mass_velocity.apply(dst, dst);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::evaluate_body_force_and_apply_inverse_mass_matrix(
-  VectorType & dst,
-  double const evaluation_time) const
-{
-  this->rhs_operator.evaluate(dst, evaluation_time);
-
-  this->inverse_mass_velocity.apply(dst, dst);
-}
-
-template<int dim, typename Number>
-void
 DGNavierStokesDualSplitting<dim, Number>::apply_velocity_divergence_term(
   VectorType &       dst,
   VectorType const & src) const

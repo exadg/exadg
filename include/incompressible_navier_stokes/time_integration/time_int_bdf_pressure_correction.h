@@ -68,9 +68,6 @@ private:
   setup_derived() override;
 
   void
-  initialize_vec_convective_term();
-
-  void
   initialize_pressure_on_boundary();
 
   void
@@ -139,8 +136,6 @@ private:
   std::vector<VectorType> pressure;
 
   VectorType pressure_increment;
-
-  std::vector<VectorType> vec_convective_term;
 
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;

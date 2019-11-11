@@ -22,7 +22,6 @@ TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> oper
   : TimeIntBDF<Number>(operator_base_in, param_in),
     pde_operator(pde_operator_in),
     solution(this->order),
-    vec_convective_term(this->order),
     computing_times(2),
     iterations(2),
     N_iter_nonlinear(0.0),
@@ -41,14 +40,6 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
   for(unsigned int i = 0; i < solution.size(); ++i)
     pde_operator->initialize_block_vector_velocity_pressure(solution[i]);
   pde_operator->initialize_block_vector_velocity_pressure(solution_np);
-
-  // convective term
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
-  }
 
   // temporal derivative term: sum_i (alpha_i * u_i)
   this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
@@ -90,40 +81,12 @@ TimeIntBDFCoupled<Number>::setup_derived()
 
   // scaling factor continuity equation:
   // Calculate characteristic element length h
-  double characteristic_element_length = this->operator_base->calculate_minimum_element_length();
+  double minimum_element_length = this->operator_base->calculate_minimum_element_length();
 
   unsigned int const degree_u = this->operator_base->get_polynomial_degree();
 
   characteristic_element_length =
-    calculate_characteristic_element_length(characteristic_element_length, degree_u);
-
-  // convective term treated explicitly (additive decomposition)
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    if(this->param.ale_formulation == false)
-      initialize_vec_convective_term();
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
-{
-  // vec_convective_term[0] is computed in the first time step and does not have to be
-  // initialized here. Hence, there is nothing to do for start_with_low_order == true.
-
-  if(this->param.start_with_low_order == false)
-  {
-    // note that the loop begins with i=1! (we could also start with i=0 but this is not
-    // necessary)
-    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-    {
-      this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                    solution[i].block(0),
-                                                    this->get_previous_time(i));
-    }
-  }
+    calculate_characteristic_element_length(minimum_element_length, degree_u);
 }
 
 template<typename Number>
@@ -248,24 +211,24 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
     {
       if(this->param.ale_formulation == false) // Eulerian case
       {
-        this->operator_base->evaluate_convective_term(vec_convective_term[0],
+        this->operator_base->evaluate_convective_term(this->vec_convective_term[0],
                                                       solution[0].block(0),
                                                       this->get_time());
       }
       else // ALE case
       {
         // evaluate convective term for all previous times since the mesh has been updated
-        for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+        for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         {
           // in a general setting, we only know the boundary conditions at time t_{n+1}
-          this->operator_base->evaluate_convective_term(vec_convective_term[i],
+          this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
                                                         solution[i].block(0),
                                                         this->get_next_time());
         }
       }
 
-      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-        rhs_vector.block(0).add(-this->extra.get_beta(i), vec_convective_term[i]);
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        rhs_vector.block(0).add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
 
     // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
@@ -529,13 +492,6 @@ TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
 
   push_back(solution);
   solution[0].swap(solution_np);
-
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    if(this->param.ale_formulation == false)
-      push_back(vec_convective_term);
-  }
 }
 
 template<typename Number>

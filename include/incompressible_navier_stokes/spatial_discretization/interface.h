@@ -235,14 +235,6 @@ public:
   {
   }
 
-  virtual void
-  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst, double const time) const = 0;
-
-  virtual void
-  evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
-                                                         VectorType const & src,
-                                                         double const       time) const = 0;
-
   virtual unsigned int
   solve_pressure(VectorType & dst, VectorType const & src) const = 0;
 

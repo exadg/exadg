@@ -54,20 +54,6 @@ public:
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
 
   /*
-   * This function evaluates the convective term and applies the inverse mass matrix.
-   */
-  void
-  evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
-                                                         VectorType const & src,
-                                                         double const       time) const;
-
-  /*
-   * This function evaluates the body force term and applies the inverse mass matrix.
-   */
-  void
-  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst, double const time) const;
-
-  /*
    * Pressure Poisson equation.
    */
 

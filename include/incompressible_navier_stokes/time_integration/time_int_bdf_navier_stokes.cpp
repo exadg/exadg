@@ -28,6 +28,7 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
     cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
     cfl_oif(param_in.cfl_oif / std::pow(2.0, param.dt_refinements)),
     operator_base(operator_in),
+    vec_convective_term(this->order),
     vec_grid_coordinates(param_in.order_time_integrator)
 {
 }
@@ -62,12 +63,27 @@ TimeIntBDF<Number>::setup_derived()
       }
     }
   }
+
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false)
+      initialize_vec_convective_term();
+  }
 }
 
 template<typename Number>
 void
 TimeIntBDF<Number>::allocate_vectors()
 {
+  // convective term
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
+  }
+
   if(param.ale_formulation == true)
   {
     this->operator_base->initialize_vector_velocity(grid_velocity);
@@ -83,6 +99,15 @@ template<typename Number>
 void
 TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
 {
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false)
+    {
+      push_back(this->vec_convective_term);
+    }
+  }
+
   push_back(vec_grid_coordinates);
   vec_grid_coordinates[0].swap(grid_coordinates_np);
 }
@@ -115,6 +140,26 @@ TimeIntBDF<Number>::ale_update_pre()
   // step
   operator_base->update_after_mesh_movement();
   operator_base->set_grid_velocity(grid_velocity);
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::initialize_vec_convective_term()
+{
+  // vec_convective_term[0] is computed in the first time step and does not have to be
+  // initialized here. Hence, there is nothing to do for start_with_low_order == true.
+
+  if(this->param.start_with_low_order == false)
+  {
+    // note that the loop begins with i=1! (we could also start with i=0 but this is not
+    // necessary)
+    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
+    {
+      this->operator_base->evaluate_convective_term(vec_convective_term[i],
+                                                    get_velocity(i),
+                                                    this->get_previous_time(i));
+    }
+  }
 }
 
 template<typename Number>

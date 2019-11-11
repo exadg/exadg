@@ -89,7 +89,11 @@ protected:
   // cfl number cfl_oif for operator-integration-factor splitting
   double const cfl_oif;
 
+  // spatial discretization operator
   std::shared_ptr<InterfaceBase> operator_base;
+
+  // convective term formulated explicitly
+  std::vector<VectorType> vec_convective_term;
 
 private:
   virtual void
@@ -97,6 +101,9 @@ private:
 
   void
   ale_update_pre();
+
+  void
+  initialize_vec_convective_term();
 
   void
   initialize_oif();

@@ -23,7 +23,6 @@ TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
     pde_operator(pde_operator_in),
     velocity(param_in.order_time_integrator),
     pressure(param_in.order_time_integrator),
-    vec_convective_term(param_in.order_time_integrator),
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     pressure_dbc(param_in.order_pressure_extrapolation),
@@ -73,13 +72,6 @@ TimeIntBDFPressureCorrection<Number>::setup_derived()
 {
   TimeIntBDF<Number>::setup_derived();
 
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    if(this->param.ale_formulation == false)
-      initialize_vec_convective_term();
-  }
-
   if(this->param.store_previous_boundary_values)
     initialize_pressure_on_boundary();
 }
@@ -100,14 +92,6 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
     this->operator_base->initialize_vector_pressure(pressure[i]);
   this->operator_base->initialize_vector_pressure(pressure_np);
   this->operator_base->initialize_vector_pressure(pressure_increment);
-
-  // vec_convective_term
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
-  }
 
   if(this->param.store_previous_boundary_values)
   {
@@ -137,26 +121,6 @@ TimeIntBDFPressureCorrection<Number>::initialize_former_solutions()
     this->operator_base->prescribe_initial_conditions(velocity[i],
                                                       pressure[i],
                                                       this->get_previous_time(i));
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
-{
-  // vec_convective_term[0] is computed in the first time step and does not have to be
-  // initialized here. Hence, there is nothing to do for start_with_low_order == true.
-
-  if(this->param.start_with_low_order == false)
-  {
-    // note that the loop begins with i=1! (we could also start with i=0 but this is not
-    // necessary)
-    for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-    {
-      this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                    velocity[i],
-                                                    this->get_previous_time(i));
-    }
   }
 }
 
@@ -502,23 +466,23 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
   {
     if(this->param.ale_formulation == false)
     {
-      this->operator_base->evaluate_convective_term(vec_convective_term[0],
+      this->operator_base->evaluate_convective_term(this->vec_convective_term[0],
                                                     velocity[0],
                                                     this->get_time());
     }
     else // ALE case
     {
-      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
       {
         // in a general setting, we only know the boundary conditions at time t_{n+1}
-        this->operator_base->evaluate_convective_term(vec_convective_term[i],
+        this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
                                                       velocity[i],
                                                       this->get_next_time());
       }
     }
 
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      rhs.add(-this->extra.get_beta(i), vec_convective_term[i]);
+    for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+      rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
   }
 
   /*
@@ -862,13 +826,6 @@ TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
 
   push_back(pressure);
   pressure[0].swap(pressure_np);
-
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    if(this->param.ale_formulation == false)
-      push_back(vec_convective_term);
-  }
 
   if(extra_pressure_gradient.get_order() > 0)
   {
