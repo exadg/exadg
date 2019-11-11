@@ -85,9 +85,6 @@ private:
   initialize_former_solutions();
 
   void
-  initialize_vorticity();
-
-  void
   initialize_acceleration_and_velocity_on_boundary();
 
   void
@@ -138,9 +135,6 @@ private:
   std::vector<VectorType> pressure;
 
   VectorType pressure_np;
-
-  std::vector<VectorType> vorticity;
-  VectorType              vorticity_np;
 
   std::vector<VectorType> acceleration;
   std::vector<VectorType> velocity_dbc;

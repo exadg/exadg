@@ -203,6 +203,10 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
 
+  AssertThrow(this->param.convective_problem() == false,
+              ExcMessage(
+                "Stability analysis can not be performed for nonlinear convective problems."));
+
   AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
               ExcMessage("Solution vector has to be zero for this stability analysis."));
 

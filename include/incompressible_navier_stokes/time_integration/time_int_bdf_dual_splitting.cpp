@@ -23,7 +23,6 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     pde_operator(pde_operator_in),
     velocity(this->order),
     pressure(this->order),
-    vorticity(this->param.order_extrapolation_pressure_nbc),
     acceleration(this->param.order_extrapolation_pressure_nbc),
     velocity_dbc(this->order),
     computing_times(4),
@@ -61,8 +60,6 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
 {
   TimeIntBDF<Number>::setup_derived();
 
-  initialize_vorticity();
-
   if(this->param.store_previous_boundary_values)
     initialize_acceleration_and_velocity_on_boundary();
 }
@@ -84,11 +81,6 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
   for(unsigned int i = 0; i < pressure.size(); ++i)
     this->operator_base->initialize_vector_pressure(pressure[i]);
   this->operator_base->initialize_vector_pressure(pressure_np);
-
-  // vorticity
-  for(unsigned int i = 0; i < vorticity.size(); ++i)
-    this->operator_base->initialize_vector_velocity(vorticity[i]);
-  this->operator_base->initialize_vector_velocity(vorticity_np);
 
   // acceleration
   if(this->param.store_previous_boundary_values)
@@ -122,24 +114,6 @@ TimeIntBDFDualSplitting<Number>::initialize_former_solutions()
     this->operator_base->prescribe_initial_conditions(velocity[i],
                                                       pressure[i],
                                                       this->get_previous_time(i));
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::initialize_vorticity()
-{
-  if(this->param.order_extrapolation_pressure_nbc > 0)
-  {
-    this->operator_base->compute_vorticity(vorticity[0], velocity[0]);
-  }
-
-  if(this->param.start_with_low_order == false)
-  {
-    for(unsigned int i = 1; i < vorticity.size(); ++i)
-    {
-      this->operator_base->compute_vorticity(vorticity[i], velocity[i]);
-    }
   }
 }
 
@@ -294,6 +268,10 @@ TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
 
+  AssertThrow(this->param.convective_problem() == false,
+              ExcMessage(
+                "Stability analysis can not be performed for nonlinear convective problems."));
+
   AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
               ExcMessage("Solution vector has to be zero for this stability analysis."));
 
@@ -311,10 +289,6 @@ TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
   {
     // set j-th element to 1
     velocity[0].local_element(j) = 1.0;
-
-    // compute vorticity using the current velocity vector
-    // (dual splitting scheme !!!)
-    this->operator_base->compute_vorticity(vorticity[0], velocity[0]);
 
     // solve time step
     this->solve_timestep();
@@ -362,9 +336,6 @@ TimeIntBDFDualSplitting<Number>::do_solve_timestep()
   projection_step();
 
   viscous_step();
-
-  // vorticity needs to be computed for the dual splitting scheme!
-  this->operator_base->compute_vorticity(vorticity_np, velocity_np);
 }
 
 template<typename Number>
@@ -583,20 +554,23 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
   }
 
   // II.4. viscous term of pressure Neumann boundary condition on Gamma_D
-  //       extrapolate vorticity and subsequently evaluate boundary face integral
-  //       (this is possible since pressure Neumann BC is linear in vorticity)
+  //       extrapolate velocity, evaluate vorticity, and subsequently evaluate boundary
+  //       face integral (this is possible since pressure Neumann BC is linear in vorticity)
   if(this->param.viscous_problem())
   {
     if(this->param.order_extrapolation_pressure_nbc > 0)
     {
-      VectorType extrapolation(vorticity[0]);
-      extrapolation = 0.0;
+      VectorType velocity_extra(velocity[0]);
+      velocity_extra = 0.0;
       for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
       {
-        extrapolation.add(this->extra_pressure_nbc.get_beta(i), vorticity[i]);
+        velocity_extra.add(this->extra_pressure_nbc.get_beta(i), velocity[i]);
       }
 
-      pde_operator->rhs_ppe_viscous_add(rhs, extrapolation);
+      VectorType vorticity(velocity_extra);
+      this->operator_base->compute_vorticity(vorticity, velocity_extra);
+
+      pde_operator->rhs_ppe_viscous_add(rhs, vorticity);
     }
   }
 
@@ -836,12 +810,6 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 
   push_back(pressure);
   pressure[0].swap(pressure_np);
-
-  push_back(vorticity);
-  if(this->param.order_extrapolation_pressure_nbc)
-  {
-    vorticity[0].swap(vorticity_np);
-  }
 }
 
 template<typename Number>
