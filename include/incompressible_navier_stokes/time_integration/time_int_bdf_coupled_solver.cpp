@@ -41,9 +41,6 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
     pde_operator->initialize_block_vector_velocity_pressure(solution[i]);
   pde_operator->initialize_block_vector_velocity_pressure(solution_np);
 
-  // temporal derivative term: sum_i (alpha_i * u_i)
-  this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
-
   // rhs_vector
   if(this->param.linear_problem_has_to_be_solved())
   {
@@ -231,27 +228,28 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
         rhs_vector.block(0).add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
 
+    VectorType sum_alphai_ui(solution[0].block(0));
+
     // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
     // and operator-integration-factor (OIF) splitting
     if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
     {
-      this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
+      this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
     }
     // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
     else
     {
-      this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(),
-                              solution[0].block(0));
+      sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
       for(unsigned int i = 1; i < solution.size(); ++i)
       {
-        this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
-                                solution[i].block(0));
+        sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
+                          solution[i].block(0));
       }
     }
 
     // apply mass matrix to sum_alphai_ui and add to rhs vector
-    this->operator_base->apply_mass_matrix_add(rhs_vector.block(0), this->sum_alphai_ui);
+    this->operator_base->apply_mass_matrix_add(rhs_vector.block(0), sum_alphai_ui);
 
     unsigned int linear_iterations =
       pde_operator->solve_linear_stokes_problem(solution_np,
@@ -274,17 +272,17 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
   }
   else // a nonlinear system of equations has to be solved
   {
+    VectorType sum_alphai_ui(solution[0].block(0));
+
     // calculate Sum_i (alpha_i/dt * u_i)
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(),
-                            solution[0].block(0));
+    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
     for(unsigned int i = 1; i < solution.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
-                              solution[i].block(0));
+      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i].block(0));
     }
 
-    VectorType rhs(this->sum_alphai_ui);
-    this->operator_base->apply_mass_matrix(rhs, this->sum_alphai_ui);
+    VectorType rhs(sum_alphai_ui);
+    this->operator_base->apply_mass_matrix(rhs, sum_alphai_ui);
     if(this->param.right_hand_side)
       this->operator_base->evaluate_add_body_force_term(rhs, this->get_next_time());
 

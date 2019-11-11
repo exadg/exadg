@@ -19,9 +19,12 @@
 
 using namespace dealii;
 
+template<typename Number>
 class TimeIntBDFBase : public TimeIntBase
 {
 public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
   /*
    * Constructor.
    */
@@ -132,7 +135,9 @@ protected:
    * This function implements the OIF sub-stepping algorithm.
    */
   virtual void
-  calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
+  calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
+                                          double const cfl,
+                                          double const cfl_oif);
 
   /*
    * Calculate time step size.
@@ -267,22 +272,22 @@ private:
    * Initializes the solution for OIF sub-stepping at time t_{n-i}.
    */
   virtual void
-  initialize_solution_oif_substepping(unsigned int i);
+  initialize_solution_oif_substepping(VectorType &, unsigned int i);
 
   /*
    * Adds result of OIF sub-stepping for outer loop index i to sum_alphai_ui.
    */
   virtual void
-  update_sum_alphai_ui_oif_substepping(unsigned int i);
+  update_sum_alphai_ui_oif_substepping(VectorType &, VectorType const &, unsigned int i);
 
   /*
    * Perform one time step for OIF sub-stepping and update the solution vectors (switch pointers).
    */
   virtual void
-  do_timestep_oif_substepping_and_update_vectors(double const start_time,
-                                                 double const time_step_size);
-
-private:
+  do_timestep_oif_substepping(VectorType &,
+                              VectorType &,
+                              double const start_time,
+                              double const time_step_size);
 };
 
 #endif /* INCLUDE_TIME_INTEGRATION_TIME_INT_BDF_BASE_H_ */

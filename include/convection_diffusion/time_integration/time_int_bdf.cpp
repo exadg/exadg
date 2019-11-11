@@ -18,13 +18,13 @@ namespace ConvDiff
 template<typename Number>
 TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator> operator_in,
                                InputParameters const &   param_in)
-  : TimeIntBDFBase(param_in.start_time,
-                   param_in.end_time,
-                   param_in.max_number_of_time_steps,
-                   param_in.order_time_integrator,
-                   param_in.start_with_low_order,
-                   param_in.adaptive_time_stepping,
-                   param_in.restart_data),
+  : TimeIntBDFBase<Number>(param_in.start_time,
+                           param_in.end_time,
+                           param_in.max_number_of_time_steps,
+                           param_in.order_time_integrator,
+                           param_in.start_with_low_order,
+                           param_in.adaptive_time_stepping,
+                           param_in.restart_data),
     pde_operator(operator_in),
     param(param_in),
     cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
@@ -45,7 +45,7 @@ TimeIntBDF<Number>::setup_derived()
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
      (param.equation_type == EquationType::Convection ||
       param.equation_type == EquationType::ConvectionDiffusion) &&
-     start_with_low_order == false)
+     this->start_with_low_order == false)
   {
     initialize_vec_convective_term();
   }
@@ -142,7 +142,6 @@ TimeIntBDF<Number>::allocate_vectors()
 
   pde_operator->initialize_dof_vector(solution_np);
 
-  pde_operator->initialize_dof_vector(sum_alphai_ui);
   pde_operator->initialize_dof_vector(rhs_vector);
 
   if(param.equation_type == EquationType::Convection ||
@@ -152,12 +151,6 @@ TimeIntBDF<Number>::allocate_vectors()
     {
       for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
         pde_operator->initialize_dof_vector(vec_convective_term[i]);
-    }
-
-    if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
-    {
-      pde_operator->initialize_dof_vector(solution_tilde_m);
-      pde_operator->initialize_dof_vector(solution_tilde_mp);
     }
   }
 }
@@ -204,8 +197,8 @@ TimeIntBDF<Number>::calculate_time_step_size()
     double const time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
     this->set_time_step_size(time_step);
 
-    pcout << "Calculation of time step size (user-specified):" << std::endl << std::endl;
-    print_parameter(pcout, "time step size", time_step);
+    this->pcout << "Calculation of time step size (user-specified):" << std::endl << std::endl;
+    print_parameter(this->pcout, "time step size", time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
@@ -230,14 +223,15 @@ TimeIntBDF<Number>::calculate_time_step_size()
     double time_step_global = calculate_time_step_cfl_global(
       cfl, max_velocity, h_min, degree, param.exponent_fe_degree_convection);
 
-    pcout << "Calculation of time step size according to CFL condition:" << std::endl << std::endl;
-    print_parameter(pcout, "h_min", h_min);
-    print_parameter(pcout, "U_max", max_velocity);
-    print_parameter(pcout, "CFL", cfl);
-    print_parameter(pcout, "Exponent fe_degree", param.exponent_fe_degree_convection);
-    print_parameter(pcout, "Time step size (CFL global)", time_step_global);
+    this->pcout << "Calculation of time step size according to CFL condition:" << std::endl
+                << std::endl;
+    print_parameter(this->pcout, "h_min", h_min);
+    print_parameter(this->pcout, "U_max", max_velocity);
+    print_parameter(this->pcout, "CFL", cfl);
+    print_parameter(this->pcout, "Exponent fe_degree", param.exponent_fe_degree_convection);
+    print_parameter(this->pcout, "Time step size (CFL global)", time_step_global);
 
-    if(adaptive_time_stepping == true)
+    if(this->adaptive_time_stepping == true)
     {
       double time_step_adap = std::numeric_limits<double>::max();
 
@@ -257,15 +251,17 @@ TimeIntBDF<Number>::calculate_time_step_size()
       // make sure that the maximum allowable time step size is not exceeded
       time_step = std::min(time_step, param.time_step_size_max);
 
-      print_parameter(pcout, "Time step size (CFL adaptive)", time_step);
+      print_parameter(this->pcout, "Time step size (CFL adaptive)", time_step);
     }
     else // constant time step size
     {
       time_step =
         adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step_global);
 
-      pcout << std::endl << "Adjust time step size to hit end time:" << std::endl << std::endl;
-      print_parameter(pcout, "Time step size", time_step);
+      this->pcout << std::endl
+                  << "Adjust time step size to hit end time:" << std::endl
+                  << std::endl;
+      print_parameter(this->pcout, "Time step size", time_step);
     }
 
     this->set_time_step_size(time_step);
@@ -275,18 +271,18 @@ TimeIntBDF<Number>::calculate_time_step_size()
     // calculate minimum vertex distance
     double const h_min = pde_operator->calculate_minimum_element_length();
 
-    double time_step =
-      calculate_time_step_max_efficiency(param.c_eff, h_min, degree, order, param.dt_refinements);
+    double time_step = calculate_time_step_max_efficiency(
+      param.c_eff, h_min, degree, this->order, param.dt_refinements);
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
 
     this->set_time_step_size(time_step);
 
-    pcout << std::endl
-          << "Calculation of time step size (max efficiency):" << std::endl
-          << std::endl;
-    print_parameter(pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
-    print_parameter(pcout, "Time step size", time_step);
+    this->pcout << std::endl
+                << "Calculation of time step size (max efficiency):" << std::endl
+                << std::endl;
+    print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
+    print_parameter(this->pcout, "Time step size", time_step);
   }
   else
   {
@@ -302,8 +298,8 @@ TimeIntBDF<Number>::calculate_time_step_size()
       ExcMessage(
         "Specified type of time step calculation is not compatible with OIF splitting approach!"));
 
-    pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
-    print_parameter(pcout, "CFL (OIF)", cfl_oif);
+    this->pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
+    print_parameter(this->pcout, "CFL (OIF)", cfl_oif);
   }
 }
 
@@ -448,8 +444,10 @@ TimeIntBDF<Number>::solve_timestep()
     }
 
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      rhs_vector.add(-extra.get_beta(i), vec_convective_term[i]);
+      rhs_vector.add(-this->extra.get_beta(i), vec_convective_term[i]);
   }
+
+  VectorType sum_alphai_ui(solution[0]);
 
   // calculate sum (alpha_i/dt * u_tilde_i) if operator-integration-factor splitting
   // is used to integrate the convective term
@@ -457,35 +455,36 @@ TimeIntBDF<Number>::solve_timestep()
       param.equation_type == EquationType::ConvectionDiffusion) &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);
+    calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, cfl, cfl_oif);
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else
   {
-    sum_alphai_ui.equ(bdf.get_alpha(0) / this->get_time_step_size(), solution[0]);
+    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0]);
     for(unsigned int i = 1; i < solution.size(); ++i)
-      sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution[i]);
+      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i]);
   }
 
   // apply mass matrix to sum_alphai_ui and add to rhs_vector
   pde_operator->apply_mass_matrix_add(rhs_vector, sum_alphai_ui);
 
   // extrapolate old solution to obtain a good initial guess for the solver
-  solution_np.equ(extra.get_beta(0), solution[0]);
+  solution_np.equ(this->extra.get_beta(0), solution[0]);
   for(unsigned int i = 1; i < solution.size(); ++i)
-    solution_np.add(extra.get_beta(i), solution[i]);
+    solution_np.add(this->extra.get_beta(i), solution[i]);
 
   // solve the linear system of equations
   bool const update_preconditioner =
     this->param.update_preconditioner &&
     (this->time_step_number % this->param.update_preconditioner_every_time_steps == 0);
 
-  unsigned int const N_iter = pde_operator->solve(solution_np,
-                                                  rhs_vector,
-                                                  update_preconditioner,
-                                                  bdf.get_gamma0() / this->get_time_step_size(),
-                                                  this->get_next_time(),
-                                                  velocity_ptr);
+  unsigned int const N_iter =
+    pde_operator->solve(solution_np,
+                        rhs_vector,
+                        update_preconditioner,
+                        this->bdf.get_gamma0() / this->get_time_step_size(),
+                        this->get_next_time(),
+                        velocity_ptr);
 
   iterations += N_iter;
   wall_time += timer.wall_time();
@@ -493,15 +492,17 @@ TimeIntBDF<Number>::solve_timestep()
   // write output
   if(print_solver_info())
   {
-    pcout << "Solve scalar convection-diffusion problem:" << std::endl
-          << "  Iterations: " << std::setw(6) << std::right << N_iter
-          << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    this->pcout << "Solve scalar convection-diffusion problem:" << std::endl
+                << "  Iterations: " << std::setw(6) << std::right << N_iter
+                << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
   }
 }
 
 template<typename Number>
 void
-TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif)
+TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
+                                                            double const cfl,
+                                                            double const cfl_oif)
 {
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
@@ -509,12 +510,13 @@ TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(double const cfl, do
   }
 
   // call function implemented in base class for the actual OIF sub-stepping
-  TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(cfl, cfl_oif);
+  TimeIntBDFBase<Number>::calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, cfl, cfl_oif);
 }
 
 template<typename Number>
 void
-TimeIntBDF<Number>::initialize_solution_oif_substepping(unsigned int i)
+TimeIntBDF<Number>::initialize_solution_oif_substepping(VectorType & solution_tilde_m,
+                                                        unsigned int i)
 {
   // initialize solution: u_tilde(s=0) = u(t_{n-i})
   solution_tilde_m = solution[i];
@@ -522,27 +524,29 @@ TimeIntBDF<Number>::initialize_solution_oif_substepping(unsigned int i)
 
 template<typename Number>
 void
-TimeIntBDF<Number>::update_sum_alphai_ui_oif_substepping(unsigned int i)
+TimeIntBDF<Number>::update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
+                                                         VectorType const & u_tilde_i,
+                                                         unsigned int       i)
 {
   // calculate sum (alpha_i/dt * u_tilde_i)
   if(i == 0)
-    sum_alphai_ui.equ(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
+    sum_alphai_ui.equ(this->bdf.get_alpha(i) / this->get_time_step_size(), u_tilde_i);
   else // i>0
-    sum_alphai_ui.add(bdf.get_alpha(i) / this->get_time_step_size(), solution_tilde_m);
+    sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), u_tilde_i);
 }
 
 template<typename Number>
 void
-TimeIntBDF<Number>::do_timestep_oif_substepping_and_update_vectors(double const start_time,
-                                                                   double const time_step_size)
+TimeIntBDF<Number>::do_timestep_oif_substepping(VectorType & solution_tilde_mp,
+                                                VectorType & solution_tilde_m,
+                                                double const start_time,
+                                                double const time_step_size)
 {
   // solve sub-step
   time_integrator_OIF->solve_timestep(solution_tilde_mp,
                                       solution_tilde_m,
                                       start_time,
                                       time_step_size);
-
-  solution_tilde_mp.swap(solution_tilde_m);
 }
 
 

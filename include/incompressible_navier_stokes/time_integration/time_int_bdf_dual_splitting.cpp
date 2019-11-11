@@ -91,9 +91,6 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
     for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
       this->operator_base->initialize_vector_velocity(velocity_dbc[i]);
   }
-
-  // Sum_i (alpha_i/dt * u_i)
-  this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
 }
 
 
@@ -383,25 +380,26 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   // apply inverse mass matrix
   this->operator_base->apply_inverse_mass_matrix(velocity_np, velocity_np);
 
+
   // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
   // and operator-integration-factor (OIF) splitting
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
+    VectorType sum_alphai_ui(velocity[0]);
+    this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
+    velocity_np.add(1.0, sum_alphai_ui);
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else
   {
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
-    for(unsigned int i = 1; i < velocity.size(); ++i)
+    for(unsigned int i = 0; i < velocity.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
+      velocity_np.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
     }
   }
 
   // solve discrete temporal derivative term for intermediate velocity u_hat
-  velocity_np.add(1.0, this->sum_alphai_ui);
   velocity_np *= this->get_time_step_size() / this->bdf.get_gamma0();
 
   if(this->print_solver_info())

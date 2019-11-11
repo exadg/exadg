@@ -98,9 +98,6 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
     for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
       this->operator_base->initialize_vector_pressure(pressure_dbc[i]);
   }
-
-  // Sum_i (alpha_i/dt * u_i)
-  this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
 }
 
 
@@ -493,24 +490,26 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
    *  calculate sum (alpha_i/dt * u_i): This term is relevant for both the explicit
    *  and the implicit formulation of the convective term
    */
+  VectorType sum_alphai_ui(velocity[0]);
+
   // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
   // and operator-integration-factor (OIF) splitting
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
+    this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else
   {
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
+    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
     for(unsigned int i = 1; i < velocity.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
+      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
     }
   }
 
-  this->operator_base->apply_mass_matrix_add(rhs, this->sum_alphai_ui);
+  this->operator_base->apply_mass_matrix_add(rhs, sum_alphai_ui);
 
   /*
    *  Right-hand side viscous term:
