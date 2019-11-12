@@ -72,7 +72,7 @@ void
 TimeIntBDF<Number>::setup_derived()
 {
   // In the case of an arbitrary Lagrangian-Eulerian formulation:
-  if(param.ale_formulation)
+  if(param.ale_formulation && param.restarted_simulation == false)
   {
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
@@ -282,6 +282,14 @@ TimeIntBDF<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
       }
     }
   }
+
+  if(this->param.ale_formulation)
+  {
+    for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
+    {
+      ia >> vec_grid_coordinates[i];
+    }
+  }
 }
 
 template<typename Number>
@@ -306,6 +314,14 @@ TimeIntBDF<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) 
       {
         oa << vec_convective_term[i];
       }
+    }
+  }
+
+  if(this->param.ale_formulation)
+  {
+    for(unsigned int i = 0; i < vec_grid_coordinates.size(); i++)
+    {
+      oa << vec_grid_coordinates[i];
     }
   }
 }
