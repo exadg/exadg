@@ -22,7 +22,7 @@ TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> oper
   : TimeIntBDF<Number>(operator_base_in, param_in),
     pde_operator(pde_operator_in),
     solution(this->order),
-    computing_times(2),
+    computing_times(3),
     computing_time_convective(0.0),
     iterations(2),
     N_iter_nonlinear(0.0),
@@ -662,13 +662,21 @@ void
 TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
                                           std::vector<double> &      wall_time) const
 {
-  name.resize(2);
-  std::vector<std::string> names = {"Coupled system", "Projection"};
-  name                           = names;
+  std::vector<std::string> names = {"Coupled system", "Projection", "ALE update"};
 
-  wall_time.resize(2);
-  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
+  unsigned int size = 2;
+
+  if(this->param.ale_formulation)
   {
+    size                            = 3;
+    this->computing_times[size - 1] = this->computation_time_ale_update;
+  }
+
+  name.resize(size);
+  wall_time.resize(size);
+  for(unsigned int i = 0; i < size; ++i)
+  {
+    name[i]      = names[i];
     wall_time[i] = this->computing_times[i];
   }
 }

@@ -104,10 +104,10 @@ private:
   BlockVectorType rhs_vector;
 
   // performance analysis: average number of iterations and solver time
-  std::vector<double>       computing_times;
-  double                    computing_time_convective;
-  std::vector<unsigned int> iterations;
-  unsigned int              N_iter_nonlinear;
+  mutable std::vector<double> computing_times;
+  double                      computing_time_convective;
+  std::vector<unsigned int>   iterations;
+  unsigned int                N_iter_nonlinear;
 
   // scaling factor continuity equation
   double scaling_factor_continuity;

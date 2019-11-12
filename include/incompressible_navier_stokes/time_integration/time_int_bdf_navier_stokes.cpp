@@ -29,6 +29,7 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
     cfl_oif(param_in.cfl_oif / std::pow(2.0, param.dt_refinements)),
     operator_base(operator_in),
     vec_convective_term(this->order),
+    computation_time_ale_update(0.0),
     vec_grid_coordinates(param_in.order_time_integrator)
 {
 }
@@ -130,6 +131,9 @@ template<typename Number>
 void
 TimeIntBDF<Number>::ale_update()
 {
+  Timer timer;
+  timer.restart();
+
   // move the mesh and compute grid coordinates at the end of the current time step t_{n+1}
   operator_base->move_mesh_and_fill_grid_coordinates_vector(grid_coordinates_np,
                                                             this->get_next_time());
@@ -145,6 +149,8 @@ TimeIntBDF<Number>::ale_update()
   // step
   operator_base->update_after_mesh_movement();
   operator_base->set_grid_velocity(grid_velocity);
+
+  computation_time_ale_update += timer.wall_time();
 }
 
 template<typename Number>

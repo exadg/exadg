@@ -26,7 +26,7 @@ TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
     pressure_dbc(param_in.order_pressure_extrapolation),
-    computing_times(3),
+    computing_times(4),
     computing_time_convective(0.0),
     iterations(3),
     N_iter_nonlinear_momentum(0)
@@ -1016,13 +1016,21 @@ void
 TimeIntBDFPressureCorrection<Number>::get_wall_times(std::vector<std::string> & name,
                                                      std::vector<double> &      wall_time) const
 {
-  name.resize(3);
-  std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
-  name                           = names;
+  std::vector<std::string> names = {"Momentum", "Pressure", "Projection", "ALE update"};
 
-  wall_time.resize(3);
-  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
+  unsigned int size = 3;
+
+  if(this->param.ale_formulation)
   {
+    size                            = 4;
+    this->computing_times[size - 1] = this->computation_time_ale_update;
+  }
+
+  name.resize(size);
+  wall_time.resize(size);
+  for(unsigned int i = 0; i < size; ++i)
+  {
+    name[i]      = names[i];
     wall_time[i] = this->computing_times[i];
   }
 }

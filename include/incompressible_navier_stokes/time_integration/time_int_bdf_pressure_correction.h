@@ -143,9 +143,9 @@ private:
   // stores pressure Dirichlet boundary values at previous times
   std::vector<VectorType> pressure_dbc;
 
-  std::vector<double>       computing_times;
-  double                    computing_time_convective;
-  std::vector<unsigned int> iterations;
+  mutable std::vector<double> computing_times;
+  double                      computing_time_convective;
+  std::vector<unsigned int>   iterations;
 
   unsigned int N_iter_nonlinear_momentum;
 };

@@ -136,9 +136,9 @@ private:
   std::vector<VectorType> acceleration;
   std::vector<VectorType> velocity_dbc;
 
-  std::vector<double>       computing_times;
-  double                    computing_time_convective;
-  std::vector<unsigned int> iterations;
+  mutable std::vector<double> computing_times;
+  double                      computing_time_convective;
+  std::vector<unsigned int>   iterations;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;

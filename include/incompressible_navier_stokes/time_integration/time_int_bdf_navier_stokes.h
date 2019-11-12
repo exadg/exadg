@@ -95,6 +95,9 @@ protected:
   std::vector<VectorType> vec_convective_term;
   VectorType              convective_term_np;
 
+  // measure time it takes to move the mesh and update relevant data structures
+  double computation_time_ale_update;
+
 private:
   virtual void
   do_solve_timestep() = 0;

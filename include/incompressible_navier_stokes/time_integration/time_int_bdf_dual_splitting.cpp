@@ -25,7 +25,7 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     pressure(this->order),
     acceleration(this->param.order_extrapolation_pressure_nbc),
     velocity_dbc(this->order),
-    computing_times(4),
+    computing_times(5),
     computing_time_convective(0.0),
     iterations(4),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
@@ -894,13 +894,22 @@ void
 TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
                                                 std::vector<double> &      wall_time) const
 {
-  name.resize(4);
-  std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
-  name                           = names;
+  std::vector<std::string> names = {
+    "Convection", "Pressure", "Projection", "Viscous", "ALE update"};
 
-  wall_time.resize(4);
-  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
+  unsigned int size = 4;
+
+  if(this->param.ale_formulation)
   {
+    size                            = 5;
+    this->computing_times[size - 1] = this->computation_time_ale_update;
+  }
+
+  name.resize(size);
+  wall_time.resize(size);
+  for(unsigned int i = 0; i < size; ++i)
+  {
+    name[i]      = names[i];
     wall_time[i] = this->computing_times[i];
   }
 }
