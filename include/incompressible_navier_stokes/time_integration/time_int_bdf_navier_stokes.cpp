@@ -94,8 +94,14 @@ TimeIntBDF<Number>::setup_derived()
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    if(this->param.ale_formulation == false)
+    // vec_convective_term does not have to be initialized in ALE case (the convective
+    // term is recomputed in each time step for all previous times on the new mesh).
+    // vec_convective_term does not have to be initialized in case of a restart, where
+    // the vectors are read from memory.
+    if(this->param.ale_formulation == false && this->param.restarted_simulation == false)
+    {
       initialize_vec_convective_term();
+    }
   }
 }
 
@@ -264,6 +270,18 @@ TimeIntBDF<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
     ia >> tmp;
     set_pressure(tmp, i);
   }
+
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false)
+    {
+      for(unsigned int i = 0; i < this->order; i++)
+      {
+        ia >> vec_convective_term[i];
+      }
+    }
+  }
 }
 
 template<typename Number>
@@ -277,6 +295,18 @@ TimeIntBDF<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) 
   for(unsigned int i = 0; i < this->order; i++)
   {
     oa << get_pressure(i);
+  }
+
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false)
+    {
+      for(unsigned int i = 0; i < this->order; i++)
+      {
+        oa << vec_convective_term[i];
+      }
+    }
   }
 }
 

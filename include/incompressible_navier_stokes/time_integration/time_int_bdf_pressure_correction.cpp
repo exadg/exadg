@@ -73,8 +73,43 @@ TimeIntBDFPressureCorrection<Number>::setup_derived()
 {
   TimeIntBDF<Number>::setup_derived();
 
-  if(this->param.store_previous_boundary_values)
+  // pressure_dbc does not have to be initialized in case of a restart, where
+  // the vectors are read from memory.
+  if(this->param.store_previous_boundary_values && this->param.restarted_simulation == false)
+  {
     initialize_pressure_on_boundary();
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+{
+  TimeIntBDF<Number>::read_restart_vectors(ia);
+
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < pressure_dbc.size(); i++)
+    {
+      ia >> pressure_dbc[i];
+    }
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::write_restart_vectors(
+  boost::archive::binary_oarchive & oa) const
+{
+  TimeIntBDF<Number>::write_restart_vectors(oa);
+
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < pressure_dbc.size(); i++)
+    {
+      oa << pressure_dbc[i];
+    }
+  }
 }
 
 template<typename Number>

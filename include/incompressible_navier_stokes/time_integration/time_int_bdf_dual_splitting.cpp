@@ -61,8 +61,52 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
 {
   TimeIntBDF<Number>::setup_derived();
 
-  if(this->param.store_previous_boundary_values)
+  // accelaration, velocity_dbc do not have to be initialized in case of a restart, where
+  // the vectors are read from memory.
+  if(this->param.store_previous_boundary_values && this->param.restarted_simulation == false)
+  {
     initialize_acceleration_and_velocity_on_boundary();
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFDualSplitting<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+{
+  TimeIntBDF<Number>::read_restart_vectors(ia);
+
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < acceleration.size(); i++)
+    {
+      ia >> acceleration[i];
+    }
+
+    for(unsigned int i = 0; i < velocity_dbc.size(); i++)
+    {
+      ia >> velocity_dbc[i];
+    }
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFDualSplitting<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+{
+  TimeIntBDF<Number>::write_restart_vectors(oa);
+
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < acceleration.size(); i++)
+    {
+      oa << acceleration[i];
+    }
+
+    for(unsigned int i = 0; i < velocity_dbc.size(); i++)
+    {
+      oa << velocity_dbc[i];
+    }
+  }
 }
 
 template<typename Number>

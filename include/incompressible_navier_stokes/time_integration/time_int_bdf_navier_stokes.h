@@ -62,6 +62,12 @@ protected:
   virtual void
   setup_derived() override;
 
+  virtual void
+  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+
+  virtual void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
+
   void
   solve_timestep();
 
@@ -145,12 +151,6 @@ private:
 
   virtual void
   set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */) = 0;
-
-  void
-  read_restart_vectors(boost::archive::binary_iarchive & ia);
-
-  void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
 
   void
   postprocessing() const;

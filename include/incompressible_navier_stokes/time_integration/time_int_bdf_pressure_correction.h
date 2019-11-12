@@ -67,6 +67,12 @@ private:
   void
   setup_derived() override;
 
+  virtual void
+  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+
+  virtual void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
+
   void
   initialize_pressure_on_boundary();
 
