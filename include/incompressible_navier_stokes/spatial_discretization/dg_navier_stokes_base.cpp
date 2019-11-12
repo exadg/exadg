@@ -1609,6 +1609,46 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
   }
 }
 
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::do_postprocessing(VectorType const & velocity,
+                                                   VectorType const & pressure,
+                                                   double const       time,
+                                                   unsigned int const time_step_number) const
+{
+  bool const standard = true;
+  if(standard)
+  {
+    this->postprocessor->do_postprocessing(velocity, pressure, time, time_step_number);
+  }
+  else // consider velocity and pressure errors instead
+  {
+    VectorType velocity_error;
+    this->initialize_vector_velocity(velocity_error);
+
+    VectorType pressure_error;
+    this->initialize_vector_pressure(pressure_error);
+
+    this->prescribe_initial_conditions(velocity_error, pressure_error, time);
+
+    velocity_error.add(-1.0, velocity);
+    pressure_error.add(-1.0, pressure);
+
+    this->postprocessor->do_postprocessing(velocity_error, // error!
+                                           pressure_error, // error!
+                                           time,
+                                           time_step_number);
+  }
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::do_postprocessing_steady_problem(VectorType const & velocity,
+                                                                  VectorType const & pressure) const
+{
+  this->postprocessor->do_postprocessing(velocity, pressure);
+}
+
 template class DGNavierStokesBase<2, float>;
 template class DGNavierStokesBase<3, float>;
 

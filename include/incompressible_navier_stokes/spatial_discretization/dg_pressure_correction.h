@@ -234,18 +234,6 @@ public:
   void
   rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
-  /*
-   * Postprocessing.
-   */
-  void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const;
-
-  void
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure) const;
-
 private:
   /*
    * Setup of momentum solver (operator, preconditioner, solver).

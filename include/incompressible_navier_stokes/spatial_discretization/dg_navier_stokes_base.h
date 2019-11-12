@@ -443,6 +443,19 @@ public:
   void
   move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
 
+  /*
+   * Postprocessing.
+   */
+  void
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number) const override;
+
+  void
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & pressure) const override;
+
 protected:
   /*
    * Projection step.

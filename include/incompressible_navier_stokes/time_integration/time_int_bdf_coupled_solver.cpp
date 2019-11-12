@@ -421,24 +421,6 @@ TimeIntBDFCoupled<Number>::projection_step()
 
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::postprocessing() const
-{
-  pde_operator->do_postprocessing(solution[0].block(0),
-                                  solution[0].block(1),
-                                  this->get_time(),
-                                  this->get_time_step_number());
-}
-
-template<typename Number>
-void
-TimeIntBDFCoupled<Number>::postprocessing_steady_problem() const
-{
-  pde_operator->do_postprocessing_steady_problem(solution[0].block(0), solution[0].block(1));
-}
-
-
-template<typename Number>
-void
 TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,

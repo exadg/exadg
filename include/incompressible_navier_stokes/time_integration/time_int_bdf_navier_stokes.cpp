@@ -501,6 +501,31 @@ TimeIntBDF<Number>::do_timestep_oif_substepping(VectorType & solution_tilde_mp,
   solution_tilde_mp.swap(solution_tilde_m);
 }
 
+template<typename Number>
+void
+TimeIntBDF<Number>::postprocessing() const
+{
+  // the mesh has to be at the correct position to allow a computation of
+  // errors at start_time
+  if(this->param.ale_formulation && this->get_time_step_number() == 1)
+  {
+    this->operator_base->move_mesh(this->get_time());
+    this->operator_base->update_after_mesh_movement();
+  }
+
+  this->operator_base->do_postprocessing(get_velocity(0),
+                                         get_pressure(0),
+                                         this->get_time(),
+                                         this->get_time_step_number());
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::postprocessing_steady_problem() const
+{
+  this->operator_base->do_postprocessing_steady_problem(get_velocity(0), get_pressure(0));
+}
+
 // instantiations
 
 template class TimeIntBDF<float>;

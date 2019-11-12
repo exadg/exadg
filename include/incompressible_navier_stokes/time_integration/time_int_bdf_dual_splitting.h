@@ -73,12 +73,6 @@ private:
   evaluate_convective_term();
 
   void
-  postprocessing() const;
-
-  void
-  postprocessing_steady_problem() const;
-
-  void
   update_time_integrator_constants();
 
   void

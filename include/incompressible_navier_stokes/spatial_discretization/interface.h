@@ -143,6 +143,16 @@ public:
 
   virtual void
   set_grid_velocity(VectorType velocity) = 0;
+
+  virtual void
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number) const = 0;
+
+  virtual void
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & pressure) const = 0;
 };
 
 /*
@@ -206,16 +216,6 @@ public:
                                  bool const &       update_preconditioner,
                                  unsigned int &     newton_iterations,
                                  unsigned int &     linear_iterations) = 0;
-
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const = 0;
-
-  virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const = 0;
 };
 
 /*
@@ -280,16 +280,6 @@ public:
 
   virtual void
   rhs_add_viscous_term(VectorType & dst, double const time) const = 0;
-
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const = 0;
-
-  virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const = 0;
 };
 
 /*
@@ -308,16 +298,6 @@ public:
   virtual ~OperatorPressureCorrection()
   {
   }
-
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const = 0;
-
-  virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const = 0;
 
   virtual void
   solve_linear_momentum_equation(VectorType &       solution,

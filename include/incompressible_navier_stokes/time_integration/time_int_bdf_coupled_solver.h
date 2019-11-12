@@ -79,12 +79,6 @@ private:
   projection_step();
 
   void
-  postprocessing() const;
-
-  void
-  postprocessing_steady_problem() const;
-
-  void
   prepare_vectors_for_next_timestep() override;
 
   LinearAlgebra::distributed::Vector<Number> const &

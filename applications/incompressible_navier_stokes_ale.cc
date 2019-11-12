@@ -37,9 +37,6 @@
 
 #include "../include/functionalities/print_general_infos.h"
 
-// ALE
-#include "../include/functionalities/moving_mesh.h"
-
 using namespace dealii;
 using namespace IncNS;
 
@@ -65,7 +62,7 @@ public:
   setup(InputParameters const & param) = 0;
 
   virtual void
-  solve() = 0;
+  solve() const = 0;
 
   virtual void
   analyze_computing_times() const = 0;
@@ -81,7 +78,7 @@ public:
   setup(InputParameters const & param);
 
   void
-  solve();
+  solve() const;
 
   void
   analyze_computing_times() const;
@@ -275,7 +272,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  // Depends on mapping which is initialized in constructor of MovingMesh
   AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
@@ -308,7 +304,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::solve()
+Problem<dim, Number>::solve() const
 {
   if(param.solver_type == SolverType::Unsteady)
   {
@@ -319,14 +315,7 @@ Problem<dim, Number>::solve()
     if(this->param.problem_type == ProblemType::Steady)
       time_integrator->timeloop_steady_problem();
     else if(this->param.problem_type == ProblemType::Unsteady)
-    {
-      // this is necessary to use the correct mesh for the computation of errors
-      // at start time t_0
-      if(this->param.ale_formulation)
-        navier_stokes_operation->move_mesh(param.start_time);
-
       time_integrator->timeloop();
-    }
     else
       AssertThrow(false, ExcMessage("Not implemented."));
   }

@@ -325,18 +325,6 @@ public:
   rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const;
 
   /*
-   * Postprocessing.
-   */
-  void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const;
-
-  void
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure) const;
-
-  /*
    * Block preconditioner
    */
   void

@@ -109,12 +109,6 @@ private:
   void
   prepare_vectors_for_next_timestep() override;
 
-  void
-  postprocessing() const;
-
-  void
-  postprocessing_steady_problem() const;
-
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 

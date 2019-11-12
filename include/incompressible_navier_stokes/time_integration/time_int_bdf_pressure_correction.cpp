@@ -179,23 +179,6 @@ TimeIntBDFPressureCorrection<Number>::set_pressure(VectorType const & pressure_i
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::postprocessing() const
-{
-  pde_operator->do_postprocessing(velocity[0],
-                                  pressure[0],
-                                  this->get_time(),
-                                  this->get_time_step_number());
-}
-
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::postprocessing_steady_problem() const
-{
-  pde_operator->do_postprocessing_steady_problem(velocity[0], pressure[0]);
-}
-
-template<typename Number>
-void
 TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,

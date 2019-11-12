@@ -131,9 +131,6 @@ private:
   virtual void
   solve_steady_problem() = 0;
 
-  virtual void
-  postprocessing_steady_problem() const = 0;
-
   virtual VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const = 0;
 
@@ -151,6 +148,12 @@ private:
 
   void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+
+  void
+  postprocessing() const;
+
+  void
+  postprocessing_steady_problem() const;
 
   // Operator-integration-factor splitting for convective term
   std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;

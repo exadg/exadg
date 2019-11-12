@@ -222,45 +222,6 @@ TimeIntBDFDualSplitting<Number>::set_pressure(VectorType const & pressure_in, un
 
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::postprocessing() const
-{
-  bool const standard = true;
-  if(standard)
-  {
-    pde_operator->do_postprocessing(velocity[0],
-                                    pressure[0],
-                                    this->get_time(),
-                                    this->get_time_step_number());
-  }
-  else // consider solution increment
-  {
-    VectorType velocity_incr;
-    this->operator_base->initialize_vector_velocity(velocity_incr);
-
-    VectorType pressure_incr;
-    this->operator_base->initialize_vector_pressure(pressure_incr);
-
-    velocity_incr = velocity[0];
-    velocity_incr.add(-1.0, velocity[1]);
-    pressure_incr = pressure[0];
-    pressure_incr.add(-1.0, pressure[1]);
-
-    pde_operator->do_postprocessing(velocity_incr,
-                                    pressure_incr,
-                                    this->get_time(),
-                                    this->get_time_step_number());
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFDualSplitting<Number>::postprocessing_steady_problem() const
-{
-  pde_operator->do_postprocessing_steady_problem(velocity[0], pressure[0]);
-}
-
-template<typename Number>
-void
 TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
