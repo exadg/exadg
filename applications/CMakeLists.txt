@@ -28,7 +28,6 @@ SET( SOURCE_FILES
      # Incompressible Navier-Stokes
      incompressible_navier_stokes_performance.cc
      incompressible_navier_stokes.cc
-     incompressible_navier_stokes_ale.cc
      incompressible_navier_stokes_two_domains.cc
 
      # incompressible flow with scalar transport
