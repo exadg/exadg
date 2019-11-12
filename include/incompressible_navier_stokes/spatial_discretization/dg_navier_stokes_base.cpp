@@ -303,8 +303,6 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
                             false /* is_mg */);
 
   Operators::ViscousKernelData viscous_kernel_data;
-  viscous_kernel_data.degree                       = param.degree_u;
-  viscous_kernel_data.degree_mapping               = mapping_degree;
   viscous_kernel_data.IP_factor                    = param.IP_factor_viscous;
   viscous_kernel_data.viscosity                    = param.viscosity;
   viscous_kernel_data.formulation_viscous_term     = param.formulation_viscous_term;
@@ -1061,9 +1059,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   laplace_operator_data.bc = boundary_descriptor_streamfunction;
 
-  laplace_operator_data.kernel_data.IP_factor      = 1.0;
-  laplace_operator_data.kernel_data.degree         = this->param.degree_u;
-  laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
+  laplace_operator_data.kernel_data.IP_factor = 1.0;
 
   typedef Poisson::LaplaceOperator<dim, Number> Laplace;
   Laplace                                       laplace_operator;
@@ -1271,6 +1267,21 @@ DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 
   inverse_mass_velocity.reinit();
   inverse_mass_velocity_scalar.reinit();
+
+  if(this->param.use_turbulence_model)
+  {
+    // the mesh (and hence the filter width) changes in case of ALE formulation
+    turbulence_model.calculate_filter_width(get_mapping());
+  }
+
+  if(this->param.viscous_problem())
+  {
+    // update SIPG penalty parameter of viscous operator which depends on the deformation
+    // of elements
+    viscous_kernel->calculate_penalty_parameter(matrix_free, dof_index_u);
+  }
+
+  // note that the update of div-div and continuity penalty terms is done separately
 }
 
 template<int dim, typename Number>

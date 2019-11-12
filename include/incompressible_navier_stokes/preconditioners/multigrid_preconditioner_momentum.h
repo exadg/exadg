@@ -141,10 +141,6 @@ public:
     Operators::ViscousKernelData viscous_kernel_data =
       this->pde_operator->get_viscous_kernel_data();
 
-    // The polynomial degree changes in case of p-multigrid, so we have to adapt
-    // viscous_kernel_data.
-    viscous_kernel_data.degree = this->level_info[level].degree();
-
     pde_operator_level->reinit(*this->matrix_free_objects[level],
                                *this->constraints[level],
                                data,

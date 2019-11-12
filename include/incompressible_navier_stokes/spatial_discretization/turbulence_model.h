@@ -88,6 +88,12 @@ public:
   void
   calculate_turbulent_viscosity(VectorType const & velocity) const;
 
+  /*
+   *  This function calculates the filter width for each cell.
+   */
+  void
+  calculate_filter_width(Mapping<dim> const & mapping);
+
 private:
   void
   cell_loop_set_coefficients(MatrixFree<dim, Number> const & data,
@@ -106,12 +112,6 @@ private:
                                       VectorType &,
                                       VectorType const & src,
                                       Range const &      face_range) const;
-
-  /*
-   *  This function calculates the filter width for each cell.
-   */
-  void
-  calculate_filter_width(Mapping<dim> const & mapping);
 
   /*
    *  This function adds the turbulent eddy-viscosity to the laminar viscosity

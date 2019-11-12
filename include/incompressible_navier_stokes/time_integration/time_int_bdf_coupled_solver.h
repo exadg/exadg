@@ -101,8 +101,6 @@ private:
   std::vector<BlockVectorType> solution;
   BlockVectorType              solution_np;
 
-  BlockVectorType rhs_vector;
-
   // performance analysis: average number of iterations and solver time
   mutable std::vector<double> computing_times;
   double                      computing_time_convective;

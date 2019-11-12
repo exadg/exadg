@@ -127,7 +127,6 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   for(unsigned int i = 0; i < pressure.size(); ++i)
     this->operator_base->initialize_vector_pressure(pressure[i]);
   this->operator_base->initialize_vector_pressure(pressure_np);
-  this->operator_base->initialize_vector_pressure(pressure_increment);
 
   if(this->param.store_previous_boundary_values)
   {
@@ -280,11 +279,15 @@ void
 TimeIntBDFPressureCorrection<Number>::do_solve_timestep()
 {
   // perform the substeps of the pressure-correction scheme
+
   momentum_step();
 
-  pressure_step();
+  VectorType pressure_increment;
+  pressure_increment.reinit(pressure_np, false /* init with zero */);
 
-  projection_step();
+  pressure_step(pressure_increment);
+
+  projection_step(pressure_increment);
 
   // evaluate convective term once the final solution at time
   // t_{n+1} is known
@@ -543,7 +546,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::pressure_step()
+TimeIntBDFPressureCorrection<Number>::pressure_step(VectorType & pressure_increment)
 {
   Timer timer;
   timer.restart();
@@ -555,7 +558,6 @@ TimeIntBDFPressureCorrection<Number>::pressure_step()
   // extrapolate old solution to get a good initial estimate for the solver
 
   // calculate initial guess for pressure solve
-  pressure_increment = 0.0;
 
   // extrapolate old solution to get a good initial estimate for the
   // pressure solution p_{n+1} at time t^{n+1}
@@ -584,7 +586,7 @@ TimeIntBDFPressureCorrection<Number>::pressure_step()
   unsigned int iterations_pressure = pde_operator->solve_pressure(pressure_increment, rhs);
 
   // calculate pressure p^{n+1} from pressure increment
-  pressure_update();
+  pressure_update(pressure_increment);
 
   // Special case: pure Dirichlet BC's
   // Adjust the pressure level in order to allow a calculation of the pressure error.
@@ -700,7 +702,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_pressure(VectorType & rhs) const
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::pressure_update()
+TimeIntBDFPressureCorrection<Number>::pressure_update(VectorType const & pressure_increment)
 {
   // First set pressure solution to zero.
   pressure_np = 0.0;
@@ -739,7 +741,8 @@ TimeIntBDFPressureCorrection<Number>::pressure_update()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
+TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType &       rhs,
+                                                     VectorType const & pressure_increment) const
 {
   /*
    *  I. calculate mass matrix term
@@ -785,14 +788,14 @@ TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::projection_step()
+TimeIntBDFPressureCorrection<Number>::projection_step(VectorType const & pressure_increment)
 {
   Timer timer;
   timer.restart();
 
   // compute right-hand-side vector
   VectorType rhs(velocity_np);
-  rhs_projection(rhs);
+  rhs_projection(rhs, pressure_increment);
 
   // apply inverse mass matrix: this is the solution if no penalty terms are applied
   // and serves as a good initial guess for the case with penalty terms

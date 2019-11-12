@@ -133,7 +133,7 @@ public:
    * Calls function of base class and does additional updates relevant for the pressure-correction
    * scheme.
    */
-  void
+  virtual void
   update_after_mesh_movement() override;
 
   /*

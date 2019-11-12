@@ -50,6 +50,9 @@ public:
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
         std::shared_ptr<FieldFunctions<dim>> const      field_functions);
 
+  virtual void
+  update_after_mesh_movement() override;
+
   /*
    * This function evaluates the rhs-contribution of the viscous term and adds the result to the
    * dst-vector.

@@ -47,6 +47,18 @@ DGNavierStokesProjectionMethods<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
+DGNavierStokesProjectionMethods<dim, Number>::update_after_mesh_movement()
+{
+  Base::update_after_mesh_movement();
+
+  // update SIPG penalty parameter of Laplace operator which depends on the deformation
+  // of elements
+  laplace_operator.calculate_penalty_parameter(this->get_matrix_free(),
+                                               this->get_dof_index_pressure());
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesProjectionMethods<dim, Number>::setup_pressure_poisson_solver()
 {
   initialize_preconditioner_pressure_poisson();
@@ -108,9 +120,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
   laplace_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     this->param.implement_block_diagonal_preconditioner_matrix_free;
 
-  laplace_operator_data.kernel_data.IP_factor      = this->param.IP_factor_pressure;
-  laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
-  laplace_operator_data.kernel_data.degree_mapping = this->get_mapping_degree();
+  laplace_operator_data.kernel_data.IP_factor = this->param.IP_factor_pressure;
 
   laplace_operator.reinit(this->get_matrix_free(), this->get_constraint_p(), laplace_operator_data);
 }

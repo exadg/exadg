@@ -65,7 +65,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, Number>::update_after_mesh_movement()
 {
-  DGNavierStokesBase<dim, Number>::update_after_mesh_movement();
+  ProjBase::update_after_mesh_movement();
 
   // inverse pressure mass matrix has to be updated
   inverse_mass_pressure.reinit();

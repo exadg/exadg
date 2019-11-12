@@ -26,31 +26,27 @@ using namespace dealii;
 template<int dim, typename Number>
 void
 calculate_penalty_parameter(AlignedVector<VectorizedArray<Number>> & array_penalty_parameter,
-                            MatrixFree<dim, Number> const &          data,
-                            Mapping<dim> const &                     mapping,
-                            unsigned int const                       degree,
+                            MatrixFree<dim, Number> const &          matrix_free,
                             unsigned int const                       dof_index = 0)
 {
-  unsigned int n_cells = data.n_cell_batches() + data.n_ghost_cell_batches();
+  unsigned int n_cells = matrix_free.n_cell_batches() + matrix_free.n_ghost_cell_batches();
   array_penalty_parameter.resize(n_cells);
 
+  Mapping<dim> const &       mapping = *matrix_free.get_mapping_info().mapping;
+  FiniteElement<dim> const & fe      = matrix_free.get_dof_handler(dof_index).get_fe();
+  unsigned int const         degree  = fe.degree;
+
   QGauss<dim>   quadrature(degree + 1);
-  FEValues<dim> fe_values(mapping,
-                          data.get_dof_handler(dof_index).get_fe(),
-                          quadrature,
-                          update_JxW_values);
+  FEValues<dim> fe_values(mapping, fe, quadrature, update_JxW_values);
 
   QGauss<dim - 1>   face_quadrature(degree + 1);
-  FEFaceValues<dim> fe_face_values(mapping,
-                                   data.get_dof_handler(dof_index).get_fe(),
-                                   face_quadrature,
-                                   update_JxW_values);
+  FEFaceValues<dim> fe_face_values(mapping, fe, face_quadrature, update_JxW_values);
 
   for(unsigned int i = 0; i < n_cells; ++i)
   {
-    for(unsigned int v = 0; v < data.n_components_filled(i); ++v)
+    for(unsigned int v = 0; v < matrix_free.n_components_filled(i); ++v)
     {
-      typename DoFHandler<dim>::cell_iterator cell = data.get_cell_iterator(i, v, dof_index);
+      typename DoFHandler<dim>::cell_iterator cell = matrix_free.get_cell_iterator(i, v, dof_index);
       fe_values.reinit(cell);
 
       // calculate cell volume

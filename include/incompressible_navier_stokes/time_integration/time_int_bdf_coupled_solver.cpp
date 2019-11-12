@@ -41,12 +41,6 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
   for(unsigned int i = 0; i < solution.size(); ++i)
     pde_operator->initialize_block_vector_velocity_pressure(solution[i]);
   pde_operator->initialize_block_vector_velocity_pressure(solution_np);
-
-  // rhs_vector
-  if(this->param.linear_problem_has_to_be_solved())
-  {
-    pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
-  }
 }
 
 template<typename Number>
@@ -197,6 +191,9 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
 
   if(this->param.linear_problem_has_to_be_solved())
   {
+    BlockVectorType rhs_vector;
+    pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
+
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
     // step
     pde_operator->rhs_stokes_problem(rhs_vector, this->get_next_time());

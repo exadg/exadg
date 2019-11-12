@@ -92,19 +92,19 @@ private:
   rhs_momentum(VectorType & rhs);
 
   void
-  pressure_step();
+  pressure_step(VectorType & pressure_increment);
 
   void
-  projection_step();
+  projection_step(VectorType const & pressure_increment);
 
   void
   evaluate_convective_term();
 
   void
-  rhs_projection(VectorType & rhs) const;
+  rhs_projection(VectorType & rhs, VectorType const & pressure_increment) const;
 
   void
-  pressure_update();
+  pressure_update(VectorType const & pressure_increment);
 
   void
   calculate_chi(double & chi) const;
@@ -137,8 +137,6 @@ private:
 
   VectorType              pressure_np;
   std::vector<VectorType> pressure;
-
-  VectorType pressure_increment;
 
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;

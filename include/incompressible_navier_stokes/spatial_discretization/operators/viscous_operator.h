@@ -26,8 +26,6 @@ struct ViscousKernelData
 {
   ViscousKernelData()
     : IP_factor(1.0),
-      degree(1),
-      degree_mapping(1),
       viscosity(1.0),
       formulation_viscous_term(FormulationViscousTerm::DivergenceFormulation),
       penalty_term_div_formulation(PenaltyTermDivergenceFormulation::Symmetrized),
@@ -38,8 +36,6 @@ struct ViscousKernelData
   }
 
   double                           IP_factor;
-  unsigned int                     degree;
-  unsigned int                     degree_mapping;
   double                           viscosity;
   FormulationViscousTerm           formulation_viscous_term;
   PenaltyTermDivergenceFormulation penalty_term_div_formulation;
@@ -60,6 +56,10 @@ private:
   typedef FaceIntegrator<dim, dim, Number> IntegratorFace;
 
 public:
+  ViscousKernel() : degree(1), tau(make_vectorized_array<Number>(0.0))
+  {
+  }
+
   void
   reinit(MatrixFree<dim, Number> const & matrix_free,
          ViscousKernelData const &       data,
@@ -67,17 +67,25 @@ public:
   {
     this->data = data;
 
-    MappingQGeneric<dim> mapping(data.degree_mapping);
-    IP::calculate_penalty_parameter<dim, Number>(
-      array_penalty_parameter, matrix_free, mapping, data.degree, dof_index);
+    FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+    degree                        = fe.degree;
+
+    calculate_penalty_parameter(matrix_free, dof_index);
 
     AssertThrow(data.viscosity >= 0.0, ExcMessage("Viscosity is not set!"));
 
     if(data.viscosity_is_variable)
     {
       // allocate vectors for variable coefficients and initialize with constant viscosity
-      viscosity_coefficients.initialize(matrix_free, data.degree, data.viscosity);
+      viscosity_coefficients.initialize(matrix_free, degree, data.viscosity);
     }
+  }
+
+  void
+  calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
+                              unsigned int const              dof_index)
+  {
+    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter, matrix_free, dof_index);
   }
 
   ViscousKernelData const &
@@ -142,14 +150,14 @@ public:
   {
     tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
                    integrator_p.read_cell_data(array_penalty_parameter)) *
-          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+          IP::get_penalty_factor<Number>(degree, data.IP_factor);
   }
 
   void
   reinit_boundary_face(IntegratorFace & integrator_m) const
   {
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
-          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+          IP::get_penalty_factor<Number>(degree, data.IP_factor);
   }
 
   void
@@ -161,12 +169,12 @@ public:
     {
       tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
                      integrator_p.read_cell_data(array_penalty_parameter)) *
-            IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+            IP::get_penalty_factor<Number>(degree, data.IP_factor);
     }
     else // boundary face
     {
       tau = integrator_m.read_cell_data(array_penalty_parameter) *
-            IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+            IP::get_penalty_factor<Number>(degree, data.IP_factor);
     }
   }
 
@@ -475,6 +483,8 @@ public:
 
 private:
   ViscousKernelData data;
+
+  unsigned int degree;
 
   AlignedVector<scalar> array_penalty_parameter;
 

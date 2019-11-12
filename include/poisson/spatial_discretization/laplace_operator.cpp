@@ -19,6 +19,15 @@ LaplaceOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_fr
 
 template<int dim, typename Number>
 void
+LaplaceOperator<dim, Number>::calculate_penalty_parameter(
+  MatrixFree<dim, Number> const & matrix_free,
+  unsigned int const              dof_index)
+{
+  kernel.calculate_penalty_parameter(matrix_free, dof_index);
+}
+
+template<int dim, typename Number>
+void
 LaplaceOperator<dim, Number>::rhs_add_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                                    VectorType const & src) const
 {
