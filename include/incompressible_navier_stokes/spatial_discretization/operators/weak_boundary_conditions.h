@@ -116,6 +116,54 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+    Tensor<1, dim, VectorizedArray<Number>>
+    calculate_exterior_value_from_dof_vector(
+      Tensor<1, dim, VectorizedArray<Number>> const & value_m,
+      unsigned int const                              q,
+      FaceIntegrator<dim, dim, Number> const &        integrator_bc,
+      OperatorType const &                            operator_type,
+      BoundaryTypeU const &                           boundary_type)
+{
+  // element e⁺
+  Tensor<1, dim, VectorizedArray<Number>> value_p;
+
+  if(boundary_type == BoundaryTypeU::Dirichlet)
+  {
+    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    {
+      Tensor<1, dim, VectorizedArray<Number>> g = integrator_bc.get_value(q);
+
+      value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
+    }
+    else if(operator_type == OperatorType::homogeneous)
+    {
+      value_p = -value_m;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+    }
+  }
+  else if(boundary_type == BoundaryTypeU::Neumann)
+  {
+    value_p = value_m;
+  }
+  else if(boundary_type == BoundaryTypeU::Symmetry)
+  {
+    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator_bc.get_normal_vector(q);
+
+    value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+  }
+
+  return value_p;
+}
+
 /*
  * Pressure:
  *

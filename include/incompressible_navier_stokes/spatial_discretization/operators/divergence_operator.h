@@ -173,6 +173,13 @@ private:
                        types::boundary_id const & boundary_id) const;
 
   void
+  do_boundary_integral_from_dof_vector(FaceIntegratorU &          velocity,
+                                       FaceIntegratorU &          velocity_exterior,
+                                       FaceIntegratorP &          pressure,
+                                       OperatorType const &       operator_type,
+                                       types::boundary_id const & boundary_id) const;
+
+  void
   cell_loop(MatrixFree<dim, Number> const & matrix_free,
             VectorType &                    dst,
             VectorType const &              src,
@@ -227,6 +234,9 @@ private:
   mutable double time;
 
   Operators::DivergenceKernel<dim, Number> kernel;
+
+  // needed if Dirichlet boundary condition is evaluated from dof vector
+  mutable VectorType const * velocity_bc;
 };
 
 } // namespace IncNS
