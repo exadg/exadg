@@ -21,11 +21,10 @@ struct MeshMovementData
     : temporal(MeshMovementAdvanceInTime::Undefined),
       shape(MeshMovementShape::Undefined),
       amplitude(0.0),
-      frequency(0.0),
+      period(1.0),
       t_start(0.0),
-      t_end(0.0),
-      spatial_number_of_oscillations(1),
-      damp_towards_bondaries(true)
+      t_end(1.0),
+      spatial_number_of_oscillations(1)
   {
   }
 
@@ -33,11 +32,10 @@ struct MeshMovementData
   MeshMovementShape         shape;
   Tensor<1, dim>            dimensions;
   double                    amplitude;
-  double                    frequency;
+  double                    period;
   double                    t_start;
   double                    t_end;
   double                    spatial_number_of_oscillations;
-  bool                      damp_towards_bondaries;
 };
 
 template<int dim>
@@ -50,7 +48,7 @@ public:
       left(-1.0 / 2.0 * width),
       right(-left),
       runtime(data_in.t_end - data_in.t_start),
-      time_period(runtime / data_in.frequency)
+      time_period(data_in.period)
   {
   }
 
@@ -59,8 +57,7 @@ public:
   {
     double displacement = 0.0;
 
-    displacement = compute_displacement_share(x, coordinate_direction) *
-                   compute_damping_share(x, coordinate_direction) * compute_time_share();
+    displacement = compute_displacement_share(x, coordinate_direction) * compute_time_share();
 
     return displacement;
   }
@@ -75,9 +72,7 @@ private:
     switch(data.shape)
     {
       case MeshMovementShape::Undefined:
-        AssertThrow(false,
-                    ExcMessage(
-                      "You are trying to use a mesh moving function but didn't specify its shape"));
+        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementShape."));
         break;
 
       case MeshMovementShape::Sin:
@@ -111,36 +106,6 @@ private:
   }
 
   double
-  compute_time_deriv_share() const
-  {
-    double solution = 0.0;
-
-    switch(data.temporal)
-    {
-      case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
-        break;
-
-      case MeshMovementAdvanceInTime::SinSquared:
-        solution = (4.0 * pi * std::sin(2.0 * pi * this->get_time() / time_period) *
-                    std::cos(2.0 * pi * this->get_time() / time_period) / time_period);
-        break;
-
-      case MeshMovementAdvanceInTime::Sin:
-        solution = std::cos(2.0 * pi * this->get_time() / time_period) * 2.0 * pi / time_period;
-        break;
-
-      default:
-        AssertThrow(false, ExcMessage("Not implemented."));
-        break;
-    }
-    return solution;
-  }
-
-  double
   compute_time_share() const
   {
     double solution = 0.0;
@@ -148,10 +113,7 @@ private:
     switch(data.temporal)
     {
       case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementAdvanceInTime."));
         break;
 
       case MeshMovementAdvanceInTime::SinSquared:
@@ -169,21 +131,8 @@ private:
     return solution;
   }
 
-  double
-  compute_damping_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const
-  {
-    double damp = 0.0;
-
-    if(this->data.damp_towards_bondaries == true)
-      damp = (1 - std::pow(x(coordinate_direction) / right, 2));
-    else
-      damp = 1.0;
-
-    return damp;
-  }
-
 protected:
-  const double                pi = numbers::PI;
+  double const                pi = numbers::PI;
   MeshMovementData<dim> const data;
   double const                width;
   double const                left;
@@ -202,7 +151,7 @@ public:
       height(data_in.dimensions[1]),
       depth(dim == 3 ? data_in.dimensions[2] : 1.0),
       runtime(data_in.t_end - data_in.t_start),
-      time_period(runtime / data_in.frequency)
+      time_period(data_in.period)
   {
   }
 
@@ -216,8 +165,7 @@ public:
 
     double displacement = 0.0;
 
-    displacement = compute_displacement_share(x, coordinate_direction) *
-                   compute_damping_share(x, coordinate_direction) * compute_time_share();
+    displacement = compute_displacement_share(x, coordinate_direction) * compute_time_share();
 
     return displacement;
   }
@@ -232,9 +180,7 @@ private:
     switch(data.shape)
     {
       case MeshMovementShape::Undefined:
-        AssertThrow(false,
-                    ExcMessage(
-                      "You are trying to use a mesh moving function but didn't specify its shape"));
+        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementShape."));
         break;
 
       case MeshMovementShape::Sin:
@@ -258,36 +204,6 @@ private:
   }
 
   double
-  compute_time_deriv_share() const
-  {
-    double solution = 0.0;
-
-    switch(data.temporal)
-    {
-      case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
-        break;
-
-      case MeshMovementAdvanceInTime::SinSquared:
-        solution = (4.0 * pi * std::sin(2.0 * pi * this->get_time() / time_period) *
-                    std::cos(2.0 * pi * this->get_time() / time_period) / time_period);
-        break;
-
-      case MeshMovementAdvanceInTime::Sin:
-        solution = std::cos(2.0 * pi * this->get_time() / time_period) * 2.0 * pi / time_period;
-        break;
-
-      default:
-        AssertThrow(false, ExcMessage("Not implemented."));
-        break;
-    }
-    return solution;
-  }
-
-  double
   compute_time_share() const
   {
     double solution = 0.0;
@@ -295,10 +211,7 @@ private:
     switch(data.temporal)
     {
       case MeshMovementAdvanceInTime::Undefined:
-        AssertThrow(
-          false,
-          ExcMessage(
-            "You are trying to use a mesh moving function but didn't specify how it is advanced in time"));
+        AssertThrow(false, ExcMessage("Undefined parameter MeshMovementAdvanceInTime."));
         break;
 
       case MeshMovementAdvanceInTime::SinSquared:
@@ -316,22 +229,8 @@ private:
     return solution;
   }
 
-  double
-  compute_damping_share(const Point<dim> & x, const unsigned int coordinate_direction = 0) const
-  {
-    double damp = 0.0;
-
-    if(this->data.damp_towards_bondaries == true)
-      damp = (1.0 -
-              std::pow(x(coordinate_direction) / (data.dimensions[coordinate_direction] / 2.0), 2));
-    else
-      damp = 1.0;
-
-    return damp;
-  }
-
 protected:
-  const double                pi = numbers::PI;
+  double const                pi = numbers::PI;
   MeshMovementData<dim> const data;
   double const                length;
   double const                height;
