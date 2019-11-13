@@ -843,14 +843,22 @@ template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::evaluate_convective_term()
 {
-  Timer timer;
-  timer.restart();
+  // evaluate convective term once solution_np is known
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false) // Eulerian case
+    {
+      Timer timer;
+      timer.restart();
 
-  this->operator_base->evaluate_convective_term(this->convective_term_np,
-                                                velocity_np,
-                                                this->get_next_time());
+      this->operator_base->evaluate_convective_term(this->convective_term_np,
+                                                    velocity_np,
+                                                    this->get_next_time());
 
-  computing_time_convective = timer.wall_time();
+      computing_time_convective = timer.wall_time();
+    }
+  }
 }
 
 template<typename Number>
