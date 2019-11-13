@@ -303,8 +303,8 @@ inline DEAL_II_ALWAYS_INLINE //
  *  direction depending on the operator type, the type of the boundary face
  *  and the given boundary conditions.
  *
- *  Divergence formulation: F(u) = nu * ( grad(u) + grad(u)^T )
- *  Laplace formulation: F(u) = nu * grad(u)
+ *  Divergence formulation: F(u) = F_nu(u) / nu = ( grad(u) + grad(u)^T )
+ *  Laplace formulation:    F(u) = F_nu(u) / nu =  grad(u)
  *
  *                            +---------------------------------+---------------------------------------+----------------------------------------------------+
  *                            | Dirichlet boundaries            | Neumann boundaries                    | symmetry boundaries                                |

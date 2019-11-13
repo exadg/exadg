@@ -33,8 +33,8 @@ namespace IncNS
  *   |                      | prescribe F(u)*n          | prescribe g_p                                  |
  *   +----------------------+---------------------------+------------------------------------------------+
  *
- *   Divergence formulation: F(u) = nu * ( grad(u) + grad(u)^T )
- *   Laplace formulation:    F(u) = nu * grad(u)
+ *   Divergence formulation: F(u) = F_nu(u) / nu = ( grad(u) + grad(u)^T )
+ *   Laplace formulation:    F(u) = F_nu(u) / nu = grad(u)
  */
 //clang-format on
 
@@ -104,9 +104,9 @@ struct BoundaryDescriptorP
   //  - pressure-correction: this solver always prescribes homogeneous Neumann BCs in the
   //                         pressure Poisson equation. Hence, no function has to be specified.
   //
-  //  - dual splitting: Specify a Function<dim> for the boundary condition dg_u/dt that has to
-  //                    be evaluated for the dual splitting scheme. But this is only necessary
-  //                    if the parameter store_previous_boundary_values == false.
+  //  - dual splitting: Specify a Function<dim> with dim components for the boundary condition
+  //                    dg_u/dt that has to be evaluated for the dual splitting scheme. But this
+  //                    is only necessary if the parameter store_previous_boundary_values == false.
   //                    Otherwise, the code automatically determines the time derivative dg_u/dt
   //                    numerically and no boundary condition has to be set by the user.
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
