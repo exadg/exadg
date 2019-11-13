@@ -648,7 +648,10 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
 
     iteration.resize(4);
     iteration[0] = n_iter_nonlinear;
-    iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
+    if(n_iter_nonlinear > std::numeric_limits<double>::min())
+      iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
+    else
+      iteration[1] = n_iter_linear_accumulated;
     iteration[2] = n_iter_linear_accumulated;
     iteration[3] = n_iter_projection;
   }
