@@ -23,7 +23,9 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     pde_operator(pde_operator_in),
     velocity(this->order),
     pressure(this->order),
+#ifdef EXTRAPOLATE_ACCELERATION
     acceleration(this->param.order_extrapolation_pressure_nbc),
+#endif
     velocity_dbc(this->order),
     computing_times(5),
     computing_time_convective(0.0),
@@ -77,10 +79,12 @@ TimeIntBDFDualSplitting<Number>::read_restart_vectors(boost::archive::binary_iar
 
   if(this->param.store_previous_boundary_values)
   {
+#ifdef EXTRAPOLATE_ACCELERATION
     for(unsigned int i = 0; i < acceleration.size(); i++)
     {
       ia >> acceleration[i];
     }
+#endif
 
     for(unsigned int i = 0; i < velocity_dbc.size(); i++)
     {
@@ -97,10 +101,12 @@ TimeIntBDFDualSplitting<Number>::write_restart_vectors(boost::archive::binary_oa
 
   if(this->param.store_previous_boundary_values)
   {
+#ifdef EXTRAPOLATE_ACCELERATION
     for(unsigned int i = 0; i < acceleration.size(); i++)
     {
       oa << acceleration[i];
     }
+#endif
 
     for(unsigned int i = 0; i < velocity_dbc.size(); i++)
     {
@@ -130,11 +136,15 @@ TimeIntBDFDualSplitting<Number>::allocate_vectors()
   // acceleration
   if(this->param.store_previous_boundary_values)
   {
+#ifdef EXTRAPOLATE_ACCELERATION
     for(unsigned int i = 0; i < acceleration.size(); ++i)
       this->operator_base->initialize_vector_velocity(acceleration[i]);
+#endif
 
     for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
       this->operator_base->initialize_vector_velocity(velocity_dbc[i]);
+
+    this->operator_base->initialize_vector_velocity(velocity_dbc_np);
   }
 }
 
@@ -163,15 +173,16 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundary()
 {
-  // temporary vectors used to store the velocity at different instants of time and
-  // used to calculate the acceleration via BDF time derivative
-  VectorType vel_np;
-  this->operator_base->initialize_vector_velocity(vel_np);
-
+#ifdef EXTRAPOLATE_ACCELERATION
   // accelerations will only be accessed if the order of extrapolation in the pressure
   // Neumann boundary condition is larger than 0.
   if(this->param.order_extrapolation_pressure_nbc > 0)
   {
+    // temporary vectors used to store the velocity at different instants of time and
+    // used to calculate the acceleration via BDF time derivative
+    VectorType vel_np;
+    this->operator_base->initialize_vector_velocity(vel_np);
+
     // Note that for BDF1 it can not be guaranteed that the results are the same for
     // start_with_low_order = true and false if the time derivative of the velocity
     // in the pressure Neumann boundary condition is computed numerically. This is due to
@@ -214,6 +225,7 @@ TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundar
       }
     }
   }
+#endif
 
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
   this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(velocity_dbc[0],
@@ -331,7 +343,13 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::do_solve_timestep()
 {
-  // perform the four substeps of the dual-splitting method
+#ifndef EXTRAPOLATE_ACCELERATION
+  // pre-computations
+  if(this->param.store_previous_boundary_values)
+    update_velocity_dbc();
+#endif
+
+  // perform the four sub-steps of the dual-splitting method
   convective_step();
 
   pressure_step();
@@ -343,6 +361,13 @@ TimeIntBDFDualSplitting<Number>::do_solve_timestep()
   // evaluate convective term once the final solution at time
   // t_{n+1} is known
   evaluate_convective_term();
+}
+
+template<typename Number>
+void
+TimeIntBDFDualSplitting<Number>::update_velocity_dbc()
+{
+  this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 }
 
 template<typename Number>
@@ -561,6 +586,7 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
   // II.3. pressure Neumann boundary condition: temporal derivative of velocity
   if(this->param.store_previous_boundary_values)
   {
+#ifdef EXTRAPOLATE_ACCELERATION
     VectorType temp(rhs);
     for(unsigned int i = 0; i < extra_pressure_nbc.get_order(); ++i)
     {
@@ -568,6 +594,12 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
       pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(temp, acceleration[i]);
       rhs.add(this->extra_pressure_nbc.get_beta(i), temp);
     }
+#else
+    VectorType acceleration(velocity_dbc_np);
+    compute_bdf_time_derivative(
+      acceleration, velocity_dbc_np, velocity_dbc, this->bdf, this->get_time_step_size());
+    pde_operator->rhs_ppe_nbc_numerical_time_derivative_add(rhs, acceleration);
+#endif
   }
   else
   {
@@ -790,9 +822,9 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 
   if(this->param.store_previous_boundary_values)
   {
+#ifdef EXTRAPOLATE_ACCELERATION
     // push back accelerations and compute new acceleration at the end
     // of the current time step before velocity_dbc is pushed back
-    VectorType velocity_dbc_np(velocity_dbc[0]);
     // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
     this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
@@ -836,13 +868,18 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
     //    }
     //
     //    // use boundary condition g_u for velocity_dbc!
-    //    VectorType velocity_dbc_np(velocity_dbc[0]);
     //    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
     //    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
     //    this->get_next_time());
     //
     //    push_back(velocity_dbc);
     //    velocity_dbc[0].swap(velocity_dbc_np);
+#else
+    // If we do not extrapolate the acceleration, we only have to care about the history of
+    // velocity Dirichlet boundary conditions, where velocity_dbc_np has already been updated.
+    push_back(velocity_dbc);
+    velocity_dbc[0].swap(velocity_dbc_np);
+#endif
   }
 
   push_back(velocity);

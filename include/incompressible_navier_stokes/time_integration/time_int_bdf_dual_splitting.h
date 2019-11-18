@@ -14,6 +14,9 @@
 
 using namespace dealii;
 
+// TODO
+//#define EXTRAPOLATE_ACCELERATION
+
 namespace IncNS
 {
 // forward declarations
@@ -44,6 +47,10 @@ public:
                           std::shared_ptr<InterfacePDE>  pde_operator_in,
                           InputParameters const &        param_in);
 
+  virtual ~TimeIntBDFDualSplitting()
+  {
+  }
+
   void
   postprocessing_stability_analysis();
 
@@ -71,6 +78,9 @@ private:
 
   void
   prepare_vectors_for_next_timestep() override;
+
+  void
+  update_velocity_dbc();
 
   void
   convective_step();
@@ -139,8 +149,11 @@ private:
 
   VectorType pressure_np;
 
+#ifdef EXTRAPOLATE_ACCELERATION
   std::vector<VectorType> acceleration;
+#endif
   std::vector<VectorType> velocity_dbc;
+  VectorType              velocity_dbc_np;
 
   mutable std::vector<double> computing_times;
   double                      computing_time_convective;
