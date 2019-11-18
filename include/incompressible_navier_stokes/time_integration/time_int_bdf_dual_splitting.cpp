@@ -420,14 +420,20 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::evaluate_convective_term()
 {
-  Timer timer;
-  timer.restart();
+  if(this->param.convective_problem())
+  {
+    if(this->param.ale_formulation == false) // Eulerian case
+    {
+      Timer timer;
+      timer.restart();
 
-  this->operator_base->evaluate_convective_term(this->convective_term_np,
-                                                velocity_np,
-                                                this->get_next_time());
+      this->operator_base->evaluate_convective_term(this->convective_term_np,
+                                                    velocity_np,
+                                                    this->get_next_time());
 
-  computing_time_convective = timer.wall_time();
+      computing_time_convective = timer.wall_time();
+    }
+  }
 }
 
 template<typename Number>
@@ -782,10 +788,10 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 {
   TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
 
-  // push back accelerations and compute new acceleration at the end
-  // of the current time step before velocity_dbc is pushed back
   if(this->param.store_previous_boundary_values)
   {
+    // push back accelerations and compute new acceleration at the end
+    // of the current time step before velocity_dbc is pushed back
     VectorType velocity_dbc_np(velocity_dbc[0]);
     // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
     this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
@@ -800,25 +806,44 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 
     push_back(velocity_dbc);
     velocity_dbc[0].swap(velocity_dbc_np);
-  }
 
-  // Method by Hesthaven and Warburton (Nodal DG Methods, Springer 2008)
-  // Compute acceleration and velocity vectors used for inhomogeneous boundary condition terms
-  // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
-  // velocity. Note: This variant leads to instabilities for small time step sizes.
-  //  if(this->param.use_velocity_dirichlet_bc_in_pressure_step == false)
-  //  {
-  //    push_back(acceleration);
-  //
-  //    if(this->param.order_extrapolation_pressure_nbc)
-  //    {
-  //      compute_bdf_time_derivative(
-  //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
-  //    }
-  //
-  //    push_back(velocity_dbc);
-  //    velocity_dbc[0].swap(velocity_np);
-  //  }
+    // Variant:
+    // Compute acceleration and velocity vectors used for inhomogeneous boundary condition terms
+    // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
+    // velocity. Note: This variant leads to instabilities for small time step sizes.
+    //    push_back(acceleration);
+    //
+    //    if(this->param.order_extrapolation_pressure_nbc)
+    //    {
+    //      compute_bdf_time_derivative(
+    //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
+    //    }
+    //
+    //    push_back(velocity_dbc);
+    //    velocity_dbc[0].swap(velocity_np);
+
+    // Another Variant:
+    // Compute acceleration used for inhomogeneous boundary condition terms
+    // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
+    // velocity.
+    //    push_back(acceleration);
+    //
+    //    // use interior solution u only for computation of time derivative (acceleration)
+    //    if(this->param.order_extrapolation_pressure_nbc)
+    //    {
+    //      compute_bdf_time_derivative(
+    //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
+    //    }
+    //
+    //    // use boundary condition g_u for velocity_dbc!
+    //    VectorType velocity_dbc_np(velocity_dbc[0]);
+    //    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+    //    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
+    //    this->get_next_time());
+    //
+    //    push_back(velocity_dbc);
+    //    velocity_dbc[0].swap(velocity_dbc_np);
+  }
 
   push_back(velocity);
   velocity[0].swap(velocity_np);
