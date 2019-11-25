@@ -548,7 +548,7 @@ DGNavierStokesDualSplitting<dim, Number>::
   local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
     MatrixFree<dim, Number> const & data,
     VectorType &                    dst,
-    VectorType const &              src,
+    VectorType const &              acceleration,
     Range const &                   face_range) const
 {
   unsigned int dof_index_velocity  = this->get_dof_index_velocity();
@@ -561,7 +561,7 @@ DGNavierStokesDualSplitting<dim, Number>::
   for(unsigned int face = face_range.first; face < face_range.second; face++)
   {
     integrator_velocity.reinit(face);
-    integrator_velocity.gather_evaluate(src, true, false);
+    integrator_velocity.gather_evaluate(acceleration, true, false);
 
     integrator_pressure.reinit(face);
 
