@@ -155,7 +155,7 @@ evaluate_scalar_quantity_in_point(
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> MY_PAIR;
 
   std::vector<MY_PAIR> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point);
+    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, 1.e-10);
 
   // loop over all adjacent cells
   for(typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin();
