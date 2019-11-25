@@ -626,7 +626,11 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
 
     unsigned int N_time_steps = this->get_time_step_number() - 1;
 
-    iteration.resize(2);
+    if(this->param.add_penalty_terms_to_monolithic_system)
+      iteration.resize(1);
+    else
+      iteration.resize(2);
+
     for(unsigned int i = 0; i < this->iterations.size(); ++i)
     {
       iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
@@ -646,14 +650,18 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
     double n_iter_linear_accumulated = (double)iterations[0] / (double)N_time_steps;
     double n_iter_projection         = (double)iterations[1] / (double)N_time_steps;
 
-    iteration.resize(4);
+    if(this->param.add_penalty_terms_to_monolithic_system)
+      iteration.resize(3);
+    else
+      iteration.resize(4);
     iteration[0] = n_iter_nonlinear;
     if(n_iter_nonlinear > std::numeric_limits<double>::min())
       iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
     else
       iteration[1] = n_iter_linear_accumulated;
     iteration[2] = n_iter_linear_accumulated;
-    iteration[3] = n_iter_projection;
+    if(!this->param.add_penalty_terms_to_monolithic_system)
+      iteration[3] = n_iter_projection;
   }
 }
 
