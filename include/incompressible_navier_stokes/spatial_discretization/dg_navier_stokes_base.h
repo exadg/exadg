@@ -18,6 +18,9 @@
 
 #include <deal.II/matrix_free/operators.h>
 
+// ALE
+#include "../../functionalities/moving_mesh.h"
+
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
 #include "../../incompressible_navier_stokes/user_interface/field_functions.h"
@@ -45,7 +48,7 @@
 // LES turbulence model
 #include "turbulence_model.h"
 
-// interface space-time
+// interface
 #include "interface.h"
 
 // preconditioners and solvers
@@ -69,9 +72,21 @@ template<int dim, typename Number>
 class DGNavierStokesBase : public dealii::Subscriptor, public Interface::OperatorBase<Number>
 {
 protected:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number>                           VectorType;
+  typedef MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>> MappingField;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
+
+  typedef DGNavierStokesBase<dim, Number> This;
+
+  typedef VectorizedArray<Number>                 scalar;
+  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
+
+  typedef std::pair<unsigned int, unsigned int> Range;
+
+  typedef FaceIntegrator<dim, dim, Number> FaceIntegratorU;
+  typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
   typedef float MultigridNumber;
 
@@ -85,10 +100,12 @@ protected:
 
   enum class QuadratureSelector
   {
-    velocity           = 0,
-    pressure           = 1,
-    velocity_nonlinear = 2,
-    n_variants         = velocity_nonlinear + 1
+    velocity               = 0,
+    pressure               = 1,
+    velocity_nonlinear     = 2,
+    velocity_gauss_lobatto = 3,
+    pressure_gauss_lobatto = 4,
+    n_variants             = pressure_gauss_lobatto + 1
   };
 
   static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
@@ -112,6 +129,12 @@ protected:
   static const unsigned int quad_index_u_nonlinear =
     static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::velocity_nonlinear);
+  static const unsigned int quad_index_u_gauss_lobatto =
+    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+      QuadratureSelector::velocity_gauss_lobatto);
+  static const unsigned int quad_index_p_gauss_lobatto =
+    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+      QuadratureSelector::pressure_gauss_lobatto);
 
 public:
   /*
@@ -165,6 +188,12 @@ public:
   get_quad_index_velocity_nonlinear() const;
 
   unsigned int
+  get_quad_index_velocity_gauss_lobatto() const;
+
+  unsigned int
+  get_quad_index_pressure_gauss_lobatto() const;
+
+  unsigned int
   get_quad_index_velocity_linearized() const;
 
   unsigned int
@@ -193,6 +222,9 @@ public:
 
   DoFHandler<dim> const &
   get_dof_handler_p() const;
+
+  AffineConstraints<double> const &
+  get_constraint_p() const;
 
   types::global_dof_index
   get_number_of_dofs() const;
@@ -229,6 +261,27 @@ public:
   prescribe_initial_conditions(VectorType & velocity,
                                VectorType & pressure,
                                double const time) const;
+
+  /*
+   * Fill a DoF vector with velocity Dirichlet values on Dirichlet boundaries.
+   *
+   * Note that this function only works as long as one uses a nodal FE_DGQ element with
+   * Gauss-Lobatto points. Otherwise, the quadrature formula used in this function does not match
+   * the nodes of the element, and the values injected by this function into the DoF vector are not
+   * the degrees of freedom of the underlying finite element space.
+   */
+  void
+  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
+
+  void
+  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
+
+  // In case of ALE, it might be necessary to also move the mesh
+  void
+  move_mesh_and_interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
+
+  void
+  move_mesh_and_interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
 
   /*
    * Time step calculation.
@@ -374,6 +427,35 @@ public:
   double
   calculate_dissipation_continuity_term(VectorType const & velocity) const;
 
+  // Arbitrary Lagrangian-Eulerian (ALE) formulation
+  virtual void
+  update_after_mesh_movement();
+
+  void
+  set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
+
+  void
+  set_grid_velocity(VectorType velocity);
+
+  void
+  move_mesh(double const time);
+
+  void
+  move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
+
+  /*
+   * Postprocessing.
+   */
+  void
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number) const override;
+
+  void
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & pressure) const override;
+
 protected:
   /*
    * Projection step.
@@ -384,6 +466,14 @@ protected:
   bool
   unsteady_problem_has_to_be_solved() const;
 
+  unsigned int
+  get_mapping_degree() const;
+
+private:
+  // currently needed for initialization of moving_mesh
+  parallel::TriangulationBase<dim> const & triangulation;
+
+protected:
   /*
    * List of input parameters.
    */
@@ -392,27 +482,28 @@ protected:
   /*
    * Basic finite element ingredients.
    */
+private:
   std::shared_ptr<FESystem<dim>> fe_u;
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
 
   unsigned int                          mapping_degree;
   std::shared_ptr<MappingQGeneric<dim>> mapping;
+  std::shared_ptr<MappingField>         mapping_ale;
 
-  DoFHandler<dim> dof_handler_u;
-  DoFHandler<dim> dof_handler_p;
-  DoFHandler<dim> dof_handler_u_scalar;
-
+  DoFHandler<dim>         dof_handler_u;
+  DoFHandler<dim>         dof_handler_p;
+  DoFHandler<dim>         dof_handler_u_scalar;
   MatrixFree<dim, Number> matrix_free;
 
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-
   /*
    * Special case: pure Dirichlet boundary conditions.
    */
   Point<dim>              first_point;
   types::global_dof_index dof_index_first_point;
 
+protected:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
@@ -438,6 +529,12 @@ protected:
    *
    */
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
+
+  /*
+   * Element variable used to store the current physical time. This variable is needed for the
+   * evaluation of certain integrals or weak forms.
+   */
+  double evaluation_time;
 
   /*
    * Operator kernels.
@@ -508,6 +605,11 @@ protected:
 
   ConditionalOStream pcout;
 
+  /*
+   * ALE formulation
+   */
+  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
+
 private:
   /*
    * Initialization functions called during setup phase.
@@ -540,10 +642,46 @@ private:
   void
   initialize_postprocessor();
 
+  void
+  cell_loop_empty(MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
+
+  void
+  face_loop_empty(MatrixFree<dim, Number> const &,
+                  VectorType &,
+                  VectorType const &,
+                  Range const &) const
+  {
+  }
+
+  void
+  local_interpolate_velocity_dirichlet_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                        VectorType &                    dst,
+                                                        VectorType const &              src,
+                                                        Range const & face_range) const;
+
+  void
+  local_interpolate_pressure_dirichlet_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                        VectorType &                    dst,
+                                                        VectorType const &              src,
+                                                        Range const & face_range) const;
+
   /*
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
+
+  /*
+   * MatrixFree Initialization Data
+   */
+  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
+  std::vector<Quadrature<1>>                       quadratures;
+  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec;
+  std::vector<const DoFHandler<dim> *>             dof_handler_vec;
 };
 
 } // namespace IncNS

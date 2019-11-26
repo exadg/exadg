@@ -9,6 +9,8 @@
 
 #include "postprocessor/evaluate_solution_in_given_point.h"
 
+#include <fstream>
+
 template<int dim, typename Number>
 PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator()
   : clear_files_pressure_difference(true)

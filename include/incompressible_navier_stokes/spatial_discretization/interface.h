@@ -63,6 +63,18 @@ public:
                                double const time) const = 0;
 
   virtual void
+  interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  move_mesh_and_interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  move_mesh_and_interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time) = 0;
+
+  virtual void
   evaluate_add_body_force_term(VectorType & dst, double const time) const = 0;
 
   virtual void
@@ -118,6 +130,29 @@ public:
 
   virtual void
   compute_vorticity(VectorType & dst, VectorType const & src) const = 0;
+
+  // Arbitrary Lagrangian-Eulerian (ALE) formulation
+  virtual void
+  update_after_mesh_movement() = 0;
+
+  virtual void
+  move_mesh(double const time) = 0;
+
+  virtual void
+  move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time) = 0;
+
+  virtual void
+  set_grid_velocity(VectorType velocity) = 0;
+
+  virtual void
+  do_postprocessing(VectorType const & velocity,
+                    VectorType const & pressure,
+                    double const       time,
+                    unsigned int const time_step_number) const = 0;
+
+  virtual void
+  do_postprocessing_steady_problem(VectorType const & velocity,
+                                   VectorType const & pressure) const = 0;
 };
 
 /*
@@ -181,16 +216,6 @@ public:
                                  bool const &       update_preconditioner,
                                  unsigned int &     newton_iterations,
                                  unsigned int &     linear_iterations) = 0;
-
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const = 0;
-
-  virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const = 0;
 };
 
 /*
@@ -210,14 +235,6 @@ public:
   {
   }
 
-  virtual void
-  evaluate_body_force_and_apply_inverse_mass_matrix(VectorType & dst, double const time) const = 0;
-
-  virtual void
-  evaluate_convective_term_and_apply_inverse_mass_matrix(VectorType &       dst,
-                                                         VectorType const & src,
-                                                         double const       time) const = 0;
-
   virtual unsigned int
   solve_pressure(VectorType & dst, VectorType const & src) const = 0;
 
@@ -226,6 +243,10 @@ public:
 
   virtual void
   rhs_velocity_divergence_term(VectorType & dst, double const & time) const = 0;
+
+  virtual void
+  rhs_velocity_divergence_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                            VectorType const & src) const = 0;
 
   virtual void
   rhs_ppe_div_term_convective_term_add(VectorType & dst, VectorType const & src) const = 0;
@@ -237,7 +258,13 @@ public:
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const = 0;
 
   virtual void
-  rhs_ppe_nbc_add(VectorType & dst, double const & time) = 0;
+  rhs_ppe_nbc_body_force_term_add(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  rhs_ppe_nbc_analytical_time_derivative_add(VectorType & dst, double const & time) = 0;
+
+  virtual void
+  rhs_ppe_nbc_numerical_time_derivative_add(VectorType & dst, VectorType const & src) = 0;
 
   virtual void
   rhs_ppe_viscous_add(VectorType & dst, VectorType const & src) const = 0;
@@ -253,16 +280,6 @@ public:
 
   virtual void
   rhs_add_viscous_term(VectorType & dst, double const time) const = 0;
-
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const = 0;
-
-  virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const = 0;
 };
 
 /*
@@ -281,16 +298,6 @@ public:
   virtual ~OperatorPressureCorrection()
   {
   }
-
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const = 0;
-
-  virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const = 0;
 
   virtual void
   solve_linear_momentum_equation(VectorType &       solution,
@@ -318,10 +325,24 @@ public:
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const = 0;
 
   virtual void
+  rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                   VectorType const & src) const = 0;
+
+  virtual void
   apply_inverse_pressure_mass_matrix(VectorType & dst, VectorType const & src) const = 0;
 
   virtual void
   rhs_pressure_gradient_term(VectorType & dst, double const time) const = 0;
+
+  virtual void
+  rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                          VectorType const & pressure) const = 0;
+
+  virtual void
+  evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(
+    VectorType &       dst,
+    VectorType const & src,
+    VectorType const & pressure) const = 0;
 
   virtual void
   evaluate_nonlinear_residual_steady(VectorType &       dst_u,

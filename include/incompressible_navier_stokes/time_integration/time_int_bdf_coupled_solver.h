@@ -53,13 +53,12 @@ public:
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
 
-
 private:
   void
-  setup_derived();
+  setup_derived() override;
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
   initialize_current_solution();
@@ -68,10 +67,7 @@ private:
   initialize_former_solutions();
 
   void
-  initialize_vec_convective_term();
-
-  void
-  solve_timestep();
+  do_solve_timestep();
 
   void
   solve_steady_problem();
@@ -83,13 +79,7 @@ private:
   projection_step();
 
   void
-  postprocessing() const;
-
-  void
-  postprocessing_steady_problem() const;
-
-  void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() override;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -111,14 +101,11 @@ private:
   std::vector<BlockVectorType> solution;
   BlockVectorType              solution_np;
 
-  BlockVectorType rhs_vector;
-
-  std::vector<VectorType> vec_convective_term;
-
   // performance analysis: average number of iterations and solver time
-  std::vector<Number>       computing_times;
-  std::vector<unsigned int> iterations;
-  unsigned int              N_iter_nonlinear;
+  mutable std::vector<double> computing_times;
+  double                      computing_time_convective;
+  std::vector<unsigned int>   iterations;
+  unsigned int                N_iter_nonlinear;
 
   // scaling factor continuity equation
   double scaling_factor_continuity;

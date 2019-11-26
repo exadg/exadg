@@ -7,14 +7,16 @@
 
 #include "dg_pressure_correction.h"
 
+#include "../../functionalities/moving_mesh.h"
+
 namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters,
-  std::shared_ptr<Postprocessor>       postprocessor)
-  : Base(triangulation, parameters, postprocessor)
+  InputParameters const &                  parameters,
+  std::shared_ptr<Postprocessor>           postprocessor)
+  : ProjBase(triangulation, parameters, postprocessor)
 {
 }
 
@@ -25,23 +27,48 @@ DGNavierStokesPressureCorrection<dim, Number>::~DGNavierStokesPressureCorrection
 
 template<int dim, typename Number>
 void
+DGNavierStokesPressureCorrection<dim, Number>::setup(
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+{
+  ProjBase::setup(periodic_face_pairs_in,
+                  boundary_descriptor_velocity_in,
+                  boundary_descriptor_pressure_in,
+                  field_functions_in);
+
+  setup_inverse_mass_matrix_operator_pressure();
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
   double const &     scaling_factor_time_derivative_term,
   VectorType const & velocity)
 {
   this->pcout << std::endl << "Setup solvers ..." << std::endl;
 
-  Base::setup_solvers(scaling_factor_time_derivative_term, velocity);
+  ProjBase::setup_solvers(scaling_factor_time_derivative_term, velocity);
 
   setup_momentum_solver();
 
-  Base::setup_pressure_poisson_solver();
+  ProjBase::setup_pressure_poisson_solver();
 
-  Base::setup_projection_solver();
-
-  setup_inverse_mass_matrix_operator_pressure();
+  ProjBase::setup_projection_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::update_after_mesh_movement()
+{
+  ProjBase::update_after_mesh_movement();
+
+  // inverse pressure mass matrix has to be updated
+  inverse_mass_pressure.reinit();
 }
 
 template<int dim, typename Number>
@@ -60,7 +87,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
   if(this->param.preconditioner_momentum == MomentumPreconditioner::InverseMassMatrix)
   {
     momentum_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
-      this->matrix_free,
+      this->get_matrix_free(),
       this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
@@ -186,7 +213,7 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_matrix_operato
 {
   // inverse mass matrix operator pressure (needed for pressure update in case of rotational
   // formulation)
-  inverse_mass_pressure.initialize(this->matrix_free,
+  inverse_mass_pressure.initialize(this->get_matrix_free(),
                                    this->param.get_degree_p(),
                                    this->get_dof_index_pressure(),
                                    this->get_quad_index_pressure());
@@ -215,7 +242,7 @@ void
 DGNavierStokesPressureCorrection<dim, Number>::rhs_add_viscous_term(VectorType & dst,
                                                                     double const time) const
 {
-  Base::do_rhs_add_viscous_term(dst, time);
+  ProjBase::do_rhs_add_viscous_term(dst, time);
 }
 
 template<int dim, typename Number>
@@ -329,6 +356,24 @@ DGNavierStokesPressureCorrection<dim, Number>::rhs_pressure_gradient_term(Vector
   this->gradient_operator.rhs(dst, time);
 }
 
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::
+  rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                          VectorType const & pressure) const
+{
+  this->gradient_operator.rhs_bc_from_dof_vector(dst, pressure);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesPressureCorrection<dim, Number>::
+  evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                               VectorType const & src,
+                                                               VectorType const & pressure) const
+{
+  this->gradient_operator.evaluate_bc_from_dof_vector(dst, src, pressure);
+}
 
 template<int dim, typename Number>
 void
@@ -344,7 +389,7 @@ unsigned int
 DGNavierStokesPressureCorrection<dim, Number>::solve_pressure(VectorType &       dst,
                                                               VectorType const & src) const
 {
-  return Base::do_solve_pressure(dst, src);
+  return ProjBase::do_solve_pressure(dst, src);
 }
 
 template<int dim, typename Number>
@@ -352,49 +397,16 @@ void
 DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst,
                                                                    double const & time) const
 {
-  Base::do_rhs_ppe_laplace_add(dst, time);
+  ProjBase::do_rhs_ppe_laplace_add(dst, time);
 }
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::do_postprocessing(
-  VectorType const & velocity,
-  VectorType const & pressure,
-  double const       time,
-  unsigned int const time_step_number) const
+DGNavierStokesPressureCorrection<dim, Number>::rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(
+  VectorType &       dst,
+  VectorType const & src) const
 {
-  bool const standard = true;
-  if(standard)
-  {
-    this->postprocessor->do_postprocessing(velocity, pressure, time, time_step_number);
-  }
-  else // consider velocity and pressure errors instead
-  {
-    VectorType velocity_error;
-    this->initialize_vector_velocity(velocity_error);
-
-    VectorType pressure_error;
-    this->initialize_vector_pressure(pressure_error);
-
-    this->prescribe_initial_conditions(velocity_error, pressure_error, time);
-
-    velocity_error.add(-1.0, velocity);
-    pressure_error.add(-1.0, pressure);
-
-    this->postprocessor->do_postprocessing(velocity_error, // error!
-                                           pressure_error, // error!
-                                           time,
-                                           time_step_number);
-  }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesPressureCorrection<dim, Number>::do_postprocessing_steady_problem(
-  VectorType const & velocity,
-  VectorType const & pressure) const
-{
-  this->postprocessor->do_postprocessing(velocity, pressure);
+  this->laplace_operator.rhs_add_dirichlet_bc_from_dof_vector(dst, src);
 }
 
 template class DGNavierStokesPressureCorrection<2, float>;

@@ -13,6 +13,8 @@
 
 #include "../spatial_discretization/dg_navier_stokes_base.h"
 
+#include <fstream>
+
 namespace IncNS
 {
 template<int dim, typename Number>

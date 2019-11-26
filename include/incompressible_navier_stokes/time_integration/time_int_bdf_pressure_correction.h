@@ -8,7 +8,7 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_PRESSURE_CORRECTION_H_
 
-#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
 
 #include "time_int_bdf_navier_stokes.h"
 
@@ -32,7 +32,8 @@ class TimeIntBDFPressureCorrection : public TimeIntBDF<Number>
 public:
   typedef TimeIntBDF<Number> Base;
 
-  typedef typename Base::VectorType VectorType;
+  typedef typename Base::VectorType      VectorType;
+  typedef typename Base::BlockVectorType BlockVectorType;
 
   typedef Interface::OperatorBase<Number>               InterfaceBase;
   typedef Interface::OperatorPressureCorrection<Number> InterfacePDE;
@@ -55,7 +56,7 @@ private:
   update_time_integrator_constants();
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
   initialize_current_solution();
@@ -64,16 +65,19 @@ private:
   initialize_former_solutions();
 
   void
-  setup_derived();
+  setup_derived() override;
+
+  virtual void
+  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+
+  virtual void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
 
   void
-  initialize_vec_convective_term();
+  initialize_pressure_on_boundary();
 
   void
-  initialize_vec_pressure_gradient_term();
-
-  void
-  solve_timestep();
+  do_solve_timestep();
 
   void
   solve_steady_problem();
@@ -88,16 +92,19 @@ private:
   rhs_momentum(VectorType & rhs);
 
   void
-  pressure_step();
+  pressure_step(VectorType & pressure_increment);
 
   void
-  projection_step();
+  projection_step(VectorType const & pressure_increment);
 
   void
-  rhs_projection(VectorType & rhs) const;
+  evaluate_convective_term();
 
   void
-  pressure_update();
+  rhs_projection(VectorType & rhs, VectorType const & pressure_increment) const;
+
+  void
+  pressure_update(VectorType const & pressure_increment);
 
   void
   calculate_chi(double & chi) const;
@@ -106,13 +113,7 @@ private:
   rhs_pressure(VectorType & rhs) const;
 
   void
-  prepare_vectors_for_next_timestep();
-
-  void
-  postprocessing() const;
-
-  void
-  postprocessing_steady_problem() const;
+  prepare_vectors_for_next_timestep() override;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -137,20 +138,18 @@ private:
   VectorType              pressure_np;
   std::vector<VectorType> pressure;
 
-  VectorType pressure_increment;
-
-  std::vector<VectorType> vec_convective_term;
-
   // incremental formulation of pressure-correction scheme
   unsigned int order_pressure_extrapolation;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_gradient;
 
-  std::vector<VectorType> vec_pressure_gradient_term;
+  // stores pressure Dirichlet boundary values at previous times
+  std::vector<VectorType> pressure_dbc;
 
-  std::vector<Number>       computing_times;
-  std::vector<unsigned int> iterations;
+  mutable std::vector<double> computing_times;
+  double                      computing_time_convective;
+  std::vector<unsigned int>   iterations;
 
   unsigned int N_iter_nonlinear_momentum;
 };

@@ -11,8 +11,8 @@ namespace CompNS
 {
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(parallel::TriangulationBase<dim> const & triangulation,
-                                    InputParameters const &              param_in,
-                                    std::shared_ptr<Postprocessor>       postprocessor_in)
+                                    InputParameters const &                  param_in,
+                                    std::shared_ptr<Postprocessor>           postprocessor_in)
   : dealii::Subscriptor(),
     param(param_in),
     fe(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim + 2)),
@@ -474,7 +474,6 @@ DGOperator<dim, Number>::setup_operators()
   ViscousOperatorData<dim> viscous_operator_data;
   viscous_operator_data.dof_index             = dof_index_all;
   viscous_operator_data.quad_index            = quad_index_overintegration_vis;
-  viscous_operator_data.degree                = param.degree;
   viscous_operator_data.IP_factor             = param.IP_factor;
   viscous_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
   viscous_operator_data.reference_density     = param.reference_density;
@@ -484,7 +483,7 @@ DGOperator<dim, Number>::setup_operators()
   viscous_operator_data.bc_rho                = boundary_descriptor_density;
   viscous_operator_data.bc_u                  = boundary_descriptor_velocity;
   viscous_operator_data.bc_E                  = boundary_descriptor_energy;
-  viscous_operator.initialize(*mapping, matrix_free, viscous_operator_data);
+  viscous_operator.initialize(matrix_free, viscous_operator_data);
 
   if(param.use_combined_operator == true)
   {

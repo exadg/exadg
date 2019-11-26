@@ -141,6 +141,9 @@ public:
   rhs(VectorType & dst, Number const evaluation_time) const;
 
   void
+  rhs_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
+
+  void
   rhs_add(VectorType & dst, Number const evaluation_time) const;
 
   // full operator, i.e., homogeneous and inhomogeneous contributions
@@ -168,6 +171,13 @@ private:
                        FaceIntegratorP &          pressure,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  void
+  do_boundary_integral_from_dof_vector(FaceIntegratorU &          velocity,
+                                       FaceIntegratorU &          velocity_exterior,
+                                       FaceIntegratorP &          pressure,
+                                       OperatorType const &       operator_type,
+                                       types::boundary_id const & boundary_id) const;
 
   void
   cell_loop(MatrixFree<dim, Number> const & matrix_free,
@@ -211,6 +221,12 @@ private:
                                     VectorType const &                            src,
                                     std::pair<unsigned int, unsigned int> const & face_range) const;
 
+  void
+  boundary_face_loop_inhom_operator_bc_from_dof_vector(MatrixFree<dim, Number> const & matrix_free,
+                                                       VectorType &                    dst,
+                                                       VectorType const &              src,
+                                                       Range const & face_range) const;
+
   MatrixFree<dim, Number> const * matrix_free;
 
   DivergenceOperatorData<dim> data;
@@ -218,6 +234,9 @@ private:
   mutable double time;
 
   Operators::DivergenceKernel<dim, Number> kernel;
+
+  // needed if Dirichlet boundary condition is evaluated from dof vector
+  mutable VectorType const * velocity_bc;
 };
 
 } // namespace IncNS

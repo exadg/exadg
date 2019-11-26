@@ -9,6 +9,8 @@
 
 #include "../../functionalities/print_functions.h"
 
+#include <deal.II/base/mpi.h>
+
 namespace IncNS
 {
 // standard constructor that initializes parameters
@@ -21,6 +23,10 @@ InputParameters::InputParameters()
     formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
     use_outflow_bc_convective_term(false),
     right_hand_side(false),
+
+    // ALE
+    ale_formulation(false),
+    neumann_with_variable_normal_vector(false),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
@@ -117,6 +123,9 @@ InputParameters::InputParameters()
     quad_rule_linearization(QuadratureRuleLinearization::Overintegration32k),
 
     // PROJECTION METHODS
+
+    // formulations
+    store_previous_boundary_values(true),
 
     // pressure Poisson equation
     IP_factor_pressure(1.),
@@ -216,14 +225,39 @@ InputParameters::check_input_parameters()
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
   if(equation_type == EquationType::Euler)
+  {
     AssertThrow(std::abs(viscosity) < 1.e-15,
                 ExcMessage(
                   "Make sure that the viscosity is zero when solving the Euler equations."));
+  }
 
   AssertThrow(formulation_viscous_term != FormulationViscousTerm::Undefined,
               ExcMessage("parameter must be defined"));
   AssertThrow(formulation_convective_term != FormulationConvectiveTerm::Undefined,
               ExcMessage("parameter must be defined"));
+
+  // ALE
+  if(ale_formulation)
+  {
+    AssertThrow(
+      formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
+      ExcMessage(
+        "Convective formulation of convective operator has to be used for ALE formulation."));
+
+    AssertThrow(
+      problem_type == ProblemType::Unsteady && solver_type == SolverType::Unsteady,
+      ExcMessage(
+        "Both problem type and solver type have to be Unsteady when using ALE formulation."));
+
+    AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::ExplicitOIF,
+                ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
+
+    AssertThrow(
+      convective_problem() == true,
+      ExcMessage(
+        "ALE formulation only implemented for equations that include the convective operator, "
+        "e.g., ALE is currently not available for the Stokes equations."));
+  }
 
   // PHYSICAL QUANTITIES
   AssertThrow(end_time > start_time, ExcMessage("parameter end_time must be defined"));
@@ -239,6 +273,7 @@ InputParameters::check_input_parameters()
     AssertThrow(treatment_of_convective_term != TreatmentOfConvectiveTerm::Undefined,
                 ExcMessage("parameter must be defined"));
   }
+
   AssertThrow(calculation_of_time_step_size != TimeStepCalculation::Undefined,
               ExcMessage("parameter must be defined"));
 
@@ -411,6 +446,9 @@ InputParameters::check_input_parameters()
 
     AssertThrow(cfl > 0., ExcMessage("parameter must be defined"));
     AssertThrow(cfl_oif > 0., ExcMessage("parameter must be defined"));
+
+    AssertThrow(ale_formulation == false,
+                ExcMessage("ALE formulation is not implemented for OIF substepping technique."));
   }
 
   // NUMERICAL PARAMETERS
@@ -535,6 +573,9 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   }
 
   print_parameter(pcout, "Right-hand side", right_hand_side);
+
+  print_parameter(pcout, "Use ALE formulation", ale_formulation);
+  print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
 }
 
 
@@ -801,6 +842,8 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
                   "Formulation convective term in BC",
                   enum_to_string(formulation_convective_term_bc));
 
+  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
+
   // projection method
   print_parameters_pressure_poisson(pcout);
 
@@ -884,6 +927,8 @@ InputParameters::print_parameters_pressure_correction(ConditionalOStream & pcout
   pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
   print_parameter(pcout, "Order of pressure extrapolation", order_pressure_extrapolation);
   print_parameter(pcout, "Rotational formulation", rotational_formulation);
+
+  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
 
   // projection method
   print_parameters_pressure_poisson(pcout);

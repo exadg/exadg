@@ -6,6 +6,7 @@
  */
 
 #include "input_parameters.h"
+#include <deal.II/base/exceptions.h>
 
 namespace Poisson
 {

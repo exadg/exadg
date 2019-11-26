@@ -14,7 +14,7 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
-  parallel::TriangulationBase<dim> const &            triangulation,
+  parallel::TriangulationBase<dim> const &        triangulation,
   InputParameters const &                         param_in,
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
   : dealii::Subscriptor(),
@@ -223,10 +223,8 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
 
   // diffusive operator
   Operators::DiffusiveKernelData diffusive_kernel_data;
-  diffusive_kernel_data.IP_factor      = param.IP_factor;
-  diffusive_kernel_data.diffusivity    = param.diffusivity;
-  diffusive_kernel_data.degree         = param.degree;
-  diffusive_kernel_data.degree_mapping = mapping_degree;
+  diffusive_kernel_data.IP_factor   = param.IP_factor;
+  diffusive_kernel_data.diffusivity = param.diffusivity;
 
   DiffusiveOperatorData<dim> diffusive_operator_data;
   diffusive_operator_data.dof_index            = 0;

@@ -9,6 +9,8 @@
 
 #include "lift_and_drag_calculation.h"
 
+#include <fstream>
+
 template<int dim, typename Number>
 void
 calculate_lift_and_drag_force(MatrixFree<dim, Number> const &      matrix_free,

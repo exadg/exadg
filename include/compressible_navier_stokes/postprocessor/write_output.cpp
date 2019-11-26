@@ -9,7 +9,6 @@
 #include <deal.II/numerics/data_out.h>
 
 #include "write_output.h"
-
 #include "../../postprocessor/write_output.h"
 
 namespace CompNS

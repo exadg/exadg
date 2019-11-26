@@ -8,11 +8,14 @@
 #ifndef INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_TIME_INTEGRATION_TIME_INT_BDF_DUAL_SPLITTING_H_
 
-#include <deal.II/lac/la_parallel_vector.h>
+#include <deal.II/lac/la_parallel_block_vector.h>
 
 #include "time_int_bdf_navier_stokes.h"
 
 using namespace dealii;
+
+// TODO
+//#define EXTRAPOLATE_ACCELERATION
 
 namespace IncNS
 {
@@ -34,7 +37,8 @@ class TimeIntBDFDualSplitting : public TimeIntBDF<Number>
 public:
   typedef TimeIntBDF<Number> Base;
 
-  typedef typename Base::VectorType VectorType;
+  typedef typename Base::VectorType      VectorType;
+  typedef typename Base::BlockVectorType BlockVectorType;
 
   typedef Interface::OperatorBase<Number>          InterfaceBase;
   typedef Interface::OperatorDualSplitting<Number> InterfacePDE;
@@ -42,6 +46,10 @@ public:
   TimeIntBDFDualSplitting(std::shared_ptr<InterfaceBase> operator_base_in,
                           std::shared_ptr<InterfacePDE>  pde_operator_in,
                           InputParameters const &        param_in);
+
+  virtual ~TimeIntBDFDualSplitting()
+  {
+  }
 
   void
   postprocessing_stability_analysis();
@@ -54,25 +62,31 @@ public:
 
 private:
   void
-  setup_derived();
+  setup_derived() override;
+
+  virtual void
+  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+
+  virtual void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
 
   void
-  solve_timestep();
+  do_solve_timestep();
 
   void
-  allocate_vectors();
+  allocate_vectors() override;
 
   void
-  prepare_vectors_for_next_timestep();
+  prepare_vectors_for_next_timestep() override;
+
+  void
+  update_velocity_dbc();
 
   void
   convective_step();
 
   void
-  postprocessing() const;
-
-  void
-  postprocessing_steady_problem() const;
+  evaluate_convective_term();
 
   void
   update_time_integrator_constants();
@@ -84,10 +98,7 @@ private:
   initialize_former_solutions();
 
   void
-  initialize_vorticity();
-
-  void
-  initialize_vec_convective_term();
+  initialize_acceleration_and_velocity_on_boundary();
 
   void
   pressure_step();
@@ -138,12 +149,15 @@ private:
 
   VectorType pressure_np;
 
-  std::vector<VectorType> vorticity;
+#ifdef EXTRAPOLATE_ACCELERATION
+  std::vector<VectorType> acceleration;
+#endif
+  std::vector<VectorType> velocity_dbc;
+  VectorType              velocity_dbc_np;
 
-  std::vector<VectorType> vec_convective_term;
-
-  std::vector<double>       computing_times;
-  std::vector<unsigned int> iterations;
+  mutable std::vector<double> computing_times;
+  double                      computing_time_convective;
+  std::vector<unsigned int>   iterations;
 
   // time integrator constants: extrapolation scheme
   ExtrapolationConstants extra_pressure_nbc;

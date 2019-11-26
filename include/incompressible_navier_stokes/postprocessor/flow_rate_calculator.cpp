@@ -7,6 +7,8 @@
 
 #include "flow_rate_calculator.h"
 
+#include <fstream>
+
 namespace IncNS
 {
 template<int dim, typename Number>

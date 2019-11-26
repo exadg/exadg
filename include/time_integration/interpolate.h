@@ -42,5 +42,4 @@ interpolate(VectorType &                            dst,
   }
 }
 
-
 #endif /* INCLUDE_TIME_INTEGRATION_INTERPOLATE_H_ */

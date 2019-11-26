@@ -116,6 +116,54 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+    Tensor<1, dim, VectorizedArray<Number>>
+    calculate_exterior_value_from_dof_vector(
+      Tensor<1, dim, VectorizedArray<Number>> const & value_m,
+      unsigned int const                              q,
+      FaceIntegrator<dim, dim, Number> const &        integrator_bc,
+      OperatorType const &                            operator_type,
+      BoundaryTypeU const &                           boundary_type)
+{
+  // element e⁺
+  Tensor<1, dim, VectorizedArray<Number>> value_p;
+
+  if(boundary_type == BoundaryTypeU::Dirichlet)
+  {
+    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    {
+      Tensor<1, dim, VectorizedArray<Number>> g = integrator_bc.get_value(q);
+
+      value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
+    }
+    else if(operator_type == OperatorType::homogeneous)
+    {
+      value_p = -value_m;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+    }
+  }
+  else if(boundary_type == BoundaryTypeU::Neumann)
+  {
+    value_p = value_m;
+  }
+  else if(boundary_type == BoundaryTypeU::Symmetry)
+  {
+    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator_bc.get_normal_vector(q);
+
+    value_p = value_m - 2.0 * (value_m * normal_m) * normal_m;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+  }
+
+  return value_p;
+}
+
 /*
  * Pressure:
  *
@@ -208,14 +256,55 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+  VectorizedArray<Number>
+  calculate_exterior_value_from_dof_vector(VectorizedArray<Number> const &        value_m,
+                                           unsigned int const                     q,
+                                           FaceIntegrator<dim, 1, Number> const & integrator_bc,
+                                           OperatorType const &                   operator_type,
+                                           BoundaryTypeP const &                  boundary_type,
+                                           double const & inverse_scaling_factor)
+{
+  VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.0);
+
+  if(boundary_type == BoundaryTypeP::Dirichlet)
+  {
+    if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
+    {
+      VectorizedArray<Number> g = integrator_bc.get_value(q);
+
+      value_p = -value_m + 2.0 * inverse_scaling_factor * g;
+    }
+    else if(operator_type == OperatorType::homogeneous)
+    {
+      value_p = -value_m;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
+    }
+  }
+  else if(boundary_type == BoundaryTypeP::Neumann)
+  {
+    value_p = value_m;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+  }
+
+  return value_p;
+}
+
 // clang-format off
 /*
  *  These two functions calculates the velocity gradient in normal
  *  direction depending on the operator type, the type of the boundary face
  *  and the given boundary conditions.
  *
- *  Divergence formulation: F(u) = nu * ( grad(u) + grad(u)^T )
- *  Laplace formulation: F(u) = nu * grad(u)
+ *  Divergence formulation: F(u) = F_nu(u) / nu = ( grad(u) + grad(u)^T )
+ *  Laplace formulation:    F(u) = F_nu(u) / nu =  grad(u)
  *
  *                            +---------------------------------+---------------------------------------+----------------------------------------------------+
  *                            | Dirichlet boundaries            | Neumann boundaries                    | symmetry boundaries                                |
@@ -250,7 +339,8 @@ inline DEAL_II_ALWAYS_INLINE //
       BoundaryTypeU const &                           boundary_type,
       types::boundary_id const                        boundary_id,
       std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
-      double const &                                  time)
+      double const &                                  time,
+      bool const                                      variable_normal_vector)
 {
   Tensor<1, dim, VectorizedArray<Number>> normal_gradient_p;
 
@@ -266,8 +356,16 @@ inline DEAL_II_ALWAYS_INLINE //
         boundary_descriptor->neumann_bc.find(boundary_id);
       Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
-      Tensor<1, dim, VectorizedArray<Number>> h =
-        evaluate_vectorial_function(it->second, q_points, time);
+      Tensor<1, dim, VectorizedArray<Number>> h;
+      if(variable_normal_vector == false)
+      {
+        h = evaluate_vectorial_function(it->second, q_points, time);
+      }
+      else
+      {
+        Tensor<1, dim, VectorizedArray<Number>> normals_m = integrator.get_normal_vector(q);
+        h = evaluate_vectorial_function_with_normal(it->second, q_points, normals_m, time);
+      }
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
     }

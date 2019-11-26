@@ -205,7 +205,7 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::postprocessing()
 {
-  pde_operator->do_postprocessing_steady_problem(solution.block(0), solution.block(1));
+  this->operator_base->do_postprocessing_steady_problem(solution.block(0), solution.block(1));
 }
 
 // instantiations

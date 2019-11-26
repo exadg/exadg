@@ -9,6 +9,8 @@
 
 #include "error_calculation.h"
 
+#include <fstream>
+
 template<int dim, typename VectorType>
 double
 calculate_error(bool const &                         relative_error,

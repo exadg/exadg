@@ -31,7 +31,7 @@ public:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
-  InverseMassMatrixOperator() : matrix_free(nullptr)
+  InverseMassMatrixOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
   {
   }
 
@@ -39,23 +39,30 @@ public:
 
   void
   initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              degree,
-             unsigned int const              dof_index,
-             unsigned int const              quad_index)
+             unsigned int const              degree_in,
+             unsigned int const              dof_index_in,
+             unsigned int const              quad_index_in)
   {
     this->matrix_free = &matrix_free_in;
+    dof_index         = dof_index_in;
+    quad_index        = quad_index_in;
 
-    coefficients.resize(Utilities::pow(degree + 1, dim));
+    coefficients.resize(Utilities::pow(degree_in + 1, dim));
 
-    fe_eval.reset(new Integrator(*matrix_free, dof_index, quad_index));
-
-    inverse.reset(new CellwiseInverseMass(*fe_eval));
+    reinit();
   }
 
   void
   apply(VectorType & dst, VectorType const & src) const
   {
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
+  }
+
+  void
+  reinit()
+  {
+    fe_eval.reset(new Integrator(*matrix_free, dof_index, quad_index));
+    inverse.reset(new CellwiseInverseMass(*fe_eval));
   }
 
 private:
@@ -81,6 +88,8 @@ private:
   }
 
   MatrixFree<dim, Number> const * matrix_free;
+
+  unsigned int dof_index, quad_index;
 
   std::shared_ptr<Integrator> fe_eval;
 

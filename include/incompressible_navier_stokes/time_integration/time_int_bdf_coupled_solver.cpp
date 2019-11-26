@@ -22,8 +22,8 @@ TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> oper
   : TimeIntBDF<Number>(operator_base_in, param_in),
     pde_operator(pde_operator_in),
     solution(this->order),
-    vec_convective_term(this->order),
-    computing_times(2),
+    computing_times(3),
+    computing_time_convective(0.0),
     iterations(2),
     N_iter_nonlinear(0.0),
     scaling_factor_continuity(1.0),
@@ -35,27 +35,12 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::allocate_vectors()
 {
+  TimeIntBDF<Number>::allocate_vectors();
+
   // solution
   for(unsigned int i = 0; i < solution.size(); ++i)
     pde_operator->initialize_block_vector_velocity_pressure(solution[i]);
   pde_operator->initialize_block_vector_velocity_pressure(solution_np);
-
-  // convective term
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
-  }
-
-  // temporal derivative term: sum_i (alpha_i * u_i)
-  this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
-
-  // rhs_vector
-  if(this->param.linear_problem_has_to_be_solved())
-  {
-    pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
-  }
 }
 
 template<typename Number>
@@ -84,35 +69,16 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::setup_derived()
 {
+  TimeIntBDF<Number>::setup_derived();
+
   // scaling factor continuity equation:
   // Calculate characteristic element length h
-  double characteristic_element_length = this->operator_base->calculate_minimum_element_length();
+  double minimum_element_length = this->operator_base->calculate_minimum_element_length();
 
   unsigned int const degree_u = this->operator_base->get_polynomial_degree();
 
   characteristic_element_length =
-    calculate_characteristic_element_length(characteristic_element_length, degree_u);
-
-  // convective term treated explicitly (additive decomposition)
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
-     this->param.start_with_low_order == false)
-  {
-    initialize_vec_convective_term();
-  }
-}
-
-template<typename Number>
-void
-TimeIntBDFCoupled<Number>::initialize_vec_convective_term()
-{
-  // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-  for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-  {
-    this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                  solution[i].block(0),
-                                                  this->get_previous_time(i));
-  }
+    calculate_characteristic_element_length(minimum_element_length, degree_u);
 }
 
 template<typename Number>
@@ -152,7 +118,7 @@ TimeIntBDFCoupled<Number>::set_pressure(VectorType const & pressure_in, unsigned
 
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::solve_timestep()
+TimeIntBDFCoupled<Number>::do_solve_timestep()
 {
   Timer timer;
   timer.restart();
@@ -225,6 +191,9 @@ TimeIntBDFCoupled<Number>::solve_timestep()
 
   if(this->param.linear_problem_has_to_be_solved())
   {
+    BlockVectorType rhs_vector;
+    pde_operator->initialize_block_vector_velocity_pressure(rhs_vector);
+
     // calculate rhs vector for the Stokes problem, i.e., the convective term is neglected in this
     // step
     pde_operator->rhs_stokes_problem(rhs_vector, this->get_next_time());
@@ -235,35 +204,44 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
-      this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                    solution[0].block(0),
-                                                    this->get_time());
+      if(this->param.ale_formulation)
+      {
+        // evaluate convective term for all previous times since the mesh has been updated
+        for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        {
+          // in a general setting, we only know the boundary conditions at time t_{n+1}
+          this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
+                                                        solution[i].block(0),
+                                                        this->get_next_time());
+        }
+      }
 
-      for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-        rhs_vector.block(0).add(-this->extra.get_beta(i), vec_convective_term[i]);
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+        rhs_vector.block(0).add(-this->extra.get_beta(i), this->vec_convective_term[i]);
     }
+
+    VectorType sum_alphai_ui(solution[0].block(0));
 
     // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
     // and operator-integration-factor (OIF) splitting
     if(this->param.convective_problem() &&
        this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
     {
-      this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
+      this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
     }
     // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
     else
     {
-      this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(),
-                              solution[0].block(0));
+      sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
       for(unsigned int i = 1; i < solution.size(); ++i)
       {
-        this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
-                                solution[i].block(0));
+        sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
+                          solution[i].block(0));
       }
     }
 
     // apply mass matrix to sum_alphai_ui and add to rhs vector
-    this->operator_base->apply_mass_matrix_add(rhs_vector.block(0), this->sum_alphai_ui);
+    this->operator_base->apply_mass_matrix_add(rhs_vector.block(0), sum_alphai_ui);
 
     unsigned int linear_iterations =
       pde_operator->solve_linear_stokes_problem(solution_np,
@@ -273,7 +251,6 @@ TimeIntBDFCoupled<Number>::solve_timestep()
                                                 this->get_scaling_factor_time_derivative_term());
 
     iterations[0] += linear_iterations;
-    computing_times[0] += timer.wall_time();
 
     // write output
     if(this->print_solver_info())
@@ -281,22 +258,23 @@ TimeIntBDFCoupled<Number>::solve_timestep()
       ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
       pcout << "Solve linear problem:" << std::endl
             << "  Iterations: " << std::setw(6) << std::right << linear_iterations
-            << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+            << "\t Wall time [s]: " << std::scientific
+            << timer.wall_time() + computing_time_convective << std::endl;
     }
   }
   else // a nonlinear system of equations has to be solved
   {
+    VectorType sum_alphai_ui(solution[0].block(0));
+
     // calculate Sum_i (alpha_i/dt * u_i)
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(),
-                            solution[0].block(0));
+    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), solution[0].block(0));
     for(unsigned int i = 1; i < solution.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(),
-                              solution[i].block(0));
+      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), solution[i].block(0));
     }
 
-    VectorType rhs(this->sum_alphai_ui);
-    this->operator_base->apply_mass_matrix(rhs, this->sum_alphai_ui);
+    VectorType rhs(sum_alphai_ui);
+    this->operator_base->apply_mass_matrix(rhs, sum_alphai_ui);
     if(this->param.right_hand_side)
       this->operator_base->evaluate_add_body_force_term(rhs, this->get_next_time());
 
@@ -314,7 +292,6 @@ TimeIntBDFCoupled<Number>::solve_timestep()
 
     N_iter_nonlinear += newton_iterations;
     iterations[0] += linear_iterations;
-    computing_times[0] += timer.wall_time();
 
     // write output
     if(this->print_solver_info())
@@ -361,19 +338,39 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     }
   }
 
+  computing_times[0] += timer.wall_time() + computing_time_convective;
+
+  // Projection step
+  timer.restart();
+
   // If the penalty terms are applied in a postprocessing step
   if(this->param.add_penalty_terms_to_monolithic_system == false)
   {
     // projection of velocity field using divergence and/or continuity penalty terms
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {
-      timer.restart();
-
       projection_step();
-
-      computing_times[1] += timer.wall_time();
     }
   }
+
+  computing_times[1] += timer.wall_time();
+
+  // Evaluation of convective term
+  timer.restart();
+
+  // evaluate convective term once solution_np is known
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false) // Eulerian case
+    {
+      this->operator_base->evaluate_convective_term(this->convective_term_np,
+                                                    solution_np.block(0),
+                                                    this->get_next_time());
+    }
+  }
+
+  computing_time_convective = timer.wall_time();
 }
 
 template<typename Number>
@@ -421,28 +418,14 @@ TimeIntBDFCoupled<Number>::projection_step()
 
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::postprocessing() const
-{
-  pde_operator->do_postprocessing(solution[0].block(0),
-                                  solution[0].block(1),
-                                  this->get_time(),
-                                  this->get_time_step_number());
-}
-
-template<typename Number>
-void
-TimeIntBDFCoupled<Number>::postprocessing_steady_problem() const
-{
-  pde_operator->do_postprocessing_steady_problem(solution[0].block(0), solution[0].block(1));
-}
-
-
-template<typename Number>
-void
 TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis"));
+
+  AssertThrow(this->param.convective_problem() == false,
+              ExcMessage(
+                "Stability analysis can not be performed for nonlinear convective problems."));
 
   AssertThrow(solution[0].block(0).l2_norm() < 1.e-15 && solution[0].block(1).l2_norm() < 1.e-15,
               ExcMessage("Solution vector has to be zero for this stability analysis."));
@@ -463,7 +446,7 @@ TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
     solution[0].block(0).local_element(j) = 1.0;
 
     // solve time step
-    solve_timestep();
+    this->solve_timestep();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)
@@ -500,14 +483,10 @@ template<typename Number>
 void
 TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
 {
+  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+
   push_back(solution);
   solution[0].swap(solution_np);
-
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    push_back(vec_convective_term);
-  }
 }
 
 template<typename Number>
@@ -647,7 +626,11 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
 
     unsigned int N_time_steps = this->get_time_step_number() - 1;
 
-    iteration.resize(2);
+    if(this->param.add_penalty_terms_to_monolithic_system)
+      iteration.resize(1);
+    else
+      iteration.resize(2);
+
     for(unsigned int i = 0; i < this->iterations.size(); ++i)
     {
       iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
@@ -667,11 +650,18 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
     double n_iter_linear_accumulated = (double)iterations[0] / (double)N_time_steps;
     double n_iter_projection         = (double)iterations[1] / (double)N_time_steps;
 
-    iteration.resize(4);
+    if(this->param.add_penalty_terms_to_monolithic_system)
+      iteration.resize(3);
+    else
+      iteration.resize(4);
     iteration[0] = n_iter_nonlinear;
-    iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
+    if(n_iter_nonlinear > std::numeric_limits<double>::min())
+      iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
+    else
+      iteration[1] = n_iter_linear_accumulated;
     iteration[2] = n_iter_linear_accumulated;
-    iteration[3] = n_iter_projection;
+    if(!this->param.add_penalty_terms_to_monolithic_system)
+      iteration[3] = n_iter_projection;
   }
 }
 
@@ -680,13 +670,21 @@ void
 TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
                                           std::vector<double> &      wall_time) const
 {
-  name.resize(2);
-  std::vector<std::string> names = {"Coupled system", "Projection"};
-  name                           = names;
+  std::vector<std::string> names = {"Coupled system", "Projection", "ALE update"};
 
-  wall_time.resize(2);
-  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
+  unsigned int size = 2;
+
+  if(this->param.ale_formulation)
   {
+    size                            = 3;
+    this->computing_times[size - 1] = this->computation_time_ale_update;
+  }
+
+  name.resize(size);
+  wall_time.resize(size);
+  for(unsigned int i = 0; i < size; ++i)
+  {
+    name[i]      = names[i];
     wall_time[i] = this->computing_times[i];
   }
 }

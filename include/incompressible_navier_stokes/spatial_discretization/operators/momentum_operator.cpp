@@ -291,20 +291,16 @@ MomentumOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) con
 
     if(this->data.convective_problem)
     {
-      vector u = convective_kernel->get_velocity_cell(q);
-
       if(this->data.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
       {
         gradient_flux +=
-          convective_kernel->get_volume_flux_linearized_divergence_formulation(u, value);
+          convective_kernel->get_volume_flux_linearized_divergence_formulation(value, q);
       }
       else if(this->data.formulation_convective_term ==
               FormulationConvectiveTerm::ConvectiveFormulation)
       {
-        tensor grad_u = convective_kernel->get_velocity_gradient_cell(q);
-
-        value_flux += convective_kernel->get_volume_flux_linearized_convective_formulation(
-          u, value, grad_u, gradient);
+        value_flux +=
+          convective_kernel->get_volume_flux_linearized_convective_formulation(value, gradient, q);
       }
       else
       {
@@ -347,7 +343,7 @@ MomentumOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
       std::tuple<vector, vector> flux =
         convective_kernel->calculate_flux_linearized_interior_and_neighbor(
-          u_m, u_p, value_m, value_p, normal_m);
+          u_m, u_p, value_m, value_p, normal_m, q);
 
       value_flux_m += std::get<0>(flux);
       value_flux_p += std::get<1>(flux);
@@ -403,8 +399,8 @@ MomentumOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrator_
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
 
-      value_flux_m +=
-        convective_kernel->calculate_flux_linearized_interior(u_m, u_p, value_m, value_p, normal_m);
+      value_flux_m += convective_kernel->calculate_flux_linearized_interior(
+        u_m, u_p, value_m, value_p, normal_m, q);
     }
 
     if(this->data.viscous_problem)
@@ -458,8 +454,8 @@ MomentumOperator<dim, Number>::do_face_int_integral_cell_based(IntegratorFace & 
       // are not calculated exactly.
       vector u_p = u_m;
 
-      value_flux_m +=
-        convective_kernel->calculate_flux_linearized_interior(u_m, u_p, value_m, value_p, normal_m);
+      value_flux_m += convective_kernel->calculate_flux_linearized_interior(
+        u_m, u_p, value_m, value_p, normal_m, q);
     }
 
     if(this->data.viscous_problem)
@@ -510,8 +506,8 @@ MomentumOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_
       vector u_m = convective_kernel->get_velocity_m(q);
       vector u_p = convective_kernel->get_velocity_p(q);
 
-      value_flux_p +=
-        convective_kernel->calculate_flux_linearized_interior(u_p, u_m, value_p, value_m, normal_p);
+      value_flux_p += convective_kernel->calculate_flux_linearized_interior(
+        u_p, u_m, value_p, value_m, normal_p, q);
     }
 
     if(this->data.viscous_problem)
@@ -578,7 +574,7 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
         u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
 
       value_flux_m += convective_kernel->calculate_flux_linearized_boundary(
-        u_m, u_p, value_m, value_p, normal_m, boundary_type);
+        u_m, u_p, value_m, value_p, normal_m, boundary_type, q);
     }
 
     if(this->data.viscous_problem)
@@ -600,14 +596,19 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
 
       vector normal_gradient_m =
         viscous_kernel->calculate_interior_normal_gradient(q, integrator, operator_type);
-      vector normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
-                                                                    q,
-                                                                    integrator,
-                                                                    operator_type,
-                                                                    boundary_type,
-                                                                    boundary_id,
-                                                                    this->data.bc,
-                                                                    this->time);
+
+      vector normal_gradient_p;
+
+      normal_gradient_p =
+        calculate_exterior_normal_gradient(normal_gradient_m,
+                                           q,
+                                           integrator,
+                                           operator_type,
+                                           boundary_type,
+                                           boundary_id,
+                                           this->data.bc,
+                                           this->time,
+                                           viscous_kernel->get_data().variable_normal_vector);
 
       vector value_flux = viscous_kernel->calculate_value_flux(
         normal_gradient_m, normal_gradient_p, value_m, value_p, normal_m, viscosity);

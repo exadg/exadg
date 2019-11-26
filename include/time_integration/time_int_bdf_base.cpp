@@ -7,13 +7,14 @@
 
 #include "time_int_bdf_base.h"
 
-TimeIntBDFBase::TimeIntBDFBase(double const        start_time_,
-                               double const        end_time_,
-                               unsigned int const  max_number_of_time_steps_,
-                               double const        order_,
-                               bool const          start_with_low_order_,
-                               bool const          adaptive_time_stepping_,
-                               RestartData const & restart_data_)
+template<typename Number>
+TimeIntBDFBase<Number>::TimeIntBDFBase(double const        start_time_,
+                                       double const        end_time_,
+                                       unsigned int const  max_number_of_time_steps_,
+                                       double const        order_,
+                                       bool const          start_with_low_order_,
+                                       bool const          adaptive_time_stepping_,
+                                       RestartData const & restart_data_)
   : TimeIntBase(start_time_, end_time_, max_number_of_time_steps_, restart_data_),
     order(order_),
     bdf(order_, start_with_low_order_),
@@ -24,8 +25,9 @@ TimeIntBDFBase::TimeIntBDFBase(double const        start_time_,
 {
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::setup(bool const do_restart)
+TimeIntBDFBase<Number>::setup(bool const do_restart)
 {
   this->pcout << std::endl << "Setup time integrator ..." << std::endl << std::endl;
 
@@ -44,8 +46,9 @@ TimeIntBDFBase::setup(bool const do_restart)
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::initialize_solution_and_calculate_timestep(bool do_restart)
+TimeIntBDFBase<Number>::initialize_solution_and_calculate_timestep(bool do_restart)
 {
   if(do_restart)
   {
@@ -58,8 +61,8 @@ TimeIntBDFBase::initialize_solution_and_calculate_timestep(bool do_restart)
     // The time step size might depend on the current solution.
     initialize_current_solution();
 
-    // The time step size has to be computed before the solution can be initialized at times t -
-    // dt[1], t - dt[1] - dt[2], etc.
+    // The time step size has to be computed before the solution can be initialized at times
+    // t - dt[1], t - dt[1] - dt[2], etc.
     calculate_time_step_size();
 
     // Finally, prescribe initial conditions at former instants of time. This is only necessary if
@@ -69,8 +72,9 @@ TimeIntBDFBase::initialize_solution_and_calculate_timestep(bool do_restart)
   }
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::timeloop_steady_problem()
+TimeIntBDFBase<Number>::timeloop_steady_problem()
 {
   this->global_timer.restart();
 
@@ -81,14 +85,16 @@ TimeIntBDFBase::timeloop_steady_problem()
   postprocessing_steady_problem();
 }
 
+template<typename Number>
 double
-TimeIntBDFBase::get_scaling_factor_time_derivative_term() const
+TimeIntBDFBase<Number>::get_scaling_factor_time_derivative_term() const
 {
   return bdf.get_gamma0() / time_steps[0];
 }
 
+template<typename Number>
 double
-TimeIntBDFBase::get_next_time() const
+TimeIntBDFBase<Number>::get_next_time() const
 {
   /*
    *   time t
@@ -100,8 +106,9 @@ TimeIntBDFBase::get_next_time() const
   return this->time + this->time_steps[0];
 }
 
+template<typename Number>
 double
-TimeIntBDFBase::get_previous_time(int const i /* t_{n-i} */) const
+TimeIntBDFBase<Number>::get_previous_time(int const i /* t_{n-i} */) const
 {
   /*
    *   time t
@@ -120,8 +127,9 @@ TimeIntBDFBase::get_previous_time(int const i /* t_{n-i} */) const
   return t;
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::reset_time(double const & current_time)
+TimeIntBDFBase<Number>::reset_time(double const & current_time)
 {
   // Only allow overwriting the time to a value smaller than start_time (which is needed when
   // coupling different solvers, different domains, etc.).
@@ -131,14 +139,16 @@ TimeIntBDFBase::reset_time(double const & current_time)
     AssertThrow(false, ExcMessage("The variable time may not be overwritten via public access."));
 }
 
+template<typename Number>
 double
-TimeIntBDFBase::get_time_step_size() const
+TimeIntBDFBase<Number>::get_time_step_size() const
 {
   return get_time_step_size(0);
 }
 
+template<typename Number>
 double
-TimeIntBDFBase::get_time_step_size(int const i /* dt[i] */) const
+TimeIntBDFBase<Number>::get_time_step_size(int const i /* dt[i] */) const
 {
   /*
    *   time t
@@ -154,14 +164,16 @@ TimeIntBDFBase::get_time_step_size(int const i /* dt[i] */) const
   return time_steps[i];
 }
 
+template<typename Number>
 std::vector<double>
-TimeIntBDFBase::get_time_step_vector() const
+TimeIntBDFBase<Number>::get_time_step_vector() const
 {
   return time_steps;
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::push_back_time_step_sizes()
+TimeIntBDFBase<Number>::push_back_time_step_sizes()
 {
   /*
    * push back time steps
@@ -179,8 +191,9 @@ TimeIntBDFBase::push_back_time_step_sizes()
     time_steps[i] = time_steps[i - 1];
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::set_time_step_size(double const & time_step_size)
+TimeIntBDFBase<Number>::set_time_step_size(double const & time_step_size)
 {
   // constant time step sizes
   if(adaptive_time_stepping == false)
@@ -200,8 +213,9 @@ TimeIntBDFBase::set_time_step_size(double const & time_step_size)
   }
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::do_timestep(bool const do_write_output)
+TimeIntBDFBase<Number>::do_timestep(bool const do_write_output)
 {
   update_time_integrator_constants();
 
@@ -229,8 +243,9 @@ TimeIntBDFBase::do_timestep(bool const do_write_output)
   }
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::update_time_integrator_constants()
+TimeIntBDFBase<Number>::update_time_integrator_constants()
 {
   if(adaptive_time_stepping == false) // constant time steps
   {
@@ -251,9 +266,14 @@ TimeIntBDFBase::update_time_integrator_constants()
   //  extra.print();
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif)
+TimeIntBDFBase<Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
+                                                                double const cfl,
+                                                                double const cfl_oif)
 {
+  VectorType solution_tilde_mp(sum_alphai_ui), solution_tilde_m(sum_alphai_ui);
+
   /*
    * Loop over all previous time instants required by the BDF scheme and calculate u_tilde by
    * substepping algorithm, i.e., integrate over time interval t_{n-i} <= t <= t_{n+1} for all 0 <=
@@ -277,7 +297,7 @@ TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(double const cfl, double
   for(unsigned int i = 0; i < order; ++i)
   {
     // initialize solution: u_tilde(s=0) = u(t_{n-i})
-    initialize_solution_oif_substepping(i);
+    initialize_solution_oif_substepping(solution_tilde_m, i);
 
     // integrate over time interval t_{n-i} <= t <= t_{n+1}
     // which are i+1 "macro" time steps
@@ -302,16 +322,23 @@ TimeIntBDFBase::calculate_sum_alphai_ui_oif_substepping(double const cfl, double
 
       for(int m = 0; m < M; ++m)
       {
-        do_timestep_oif_substepping_and_update_vectors(time_n_k + delta_s * m, delta_s);
+        do_timestep_oif_substepping(solution_tilde_mp,
+                                    solution_tilde_m,
+                                    time_n_k + delta_s * m,
+                                    delta_s);
+
+        solution_tilde_mp.swap(solution_tilde_m);
       }
     }
 
-    update_sum_alphai_ui_oif_substepping(i);
+    // note that solution_tilde_m contains the solution since swap() has been done last
+    update_sum_alphai_ui_oif_substepping(sum_alphai_ui, solution_tilde_m, i);
   }
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::do_read_restart(std::ifstream & in)
+TimeIntBDFBase<Number>::do_read_restart(std::ifstream & in)
 {
   boost::archive::binary_iarchive ia(in);
   read_restart_preamble(ia);
@@ -324,8 +351,9 @@ TimeIntBDFBase::do_read_restart(std::ifstream & in)
     calculate_time_step_size();
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::read_restart_preamble(boost::archive::binary_iarchive & ia)
+TimeIntBDFBase<Number>::read_restart_preamble(boost::archive::binary_iarchive & ia)
 {
   // Note that the operations done here must be in sync with the output.
 
@@ -358,8 +386,9 @@ TimeIntBDFBase::read_restart_preamble(boost::archive::binary_iarchive & ia)
     ia & time_steps[i];
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::do_write_restart(std::string const & filename) const
+TimeIntBDFBase<Number>::do_write_restart(std::string const & filename) const
 {
   std::ostringstream oss;
 
@@ -370,8 +399,9 @@ TimeIntBDFBase::do_write_restart(std::string const & filename) const
   write_restart_file(oss, filename);
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::write_restart_preamble(boost::archive::binary_oarchive & oa) const
+TimeIntBDFBase<Number>::write_restart_preamble(boost::archive::binary_oarchive & oa) const
 {
   unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
 
@@ -389,32 +419,45 @@ TimeIntBDFBase::write_restart_preamble(boost::archive::binary_oarchive & oa) con
     oa & time_steps[i];
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::postprocessing_steady_problem() const
+TimeIntBDFBase<Number>::postprocessing_steady_problem() const
 {
   AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::solve_steady_problem()
+TimeIntBDFBase<Number>::solve_steady_problem()
 {
   AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::initialize_solution_oif_substepping(unsigned int)
+TimeIntBDFBase<Number>::initialize_solution_oif_substepping(VectorType &, unsigned int)
 {
   AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::update_sum_alphai_ui_oif_substepping(unsigned int)
+TimeIntBDFBase<Number>::update_sum_alphai_ui_oif_substepping(VectorType &,
+                                                             VectorType const &,
+                                                             unsigned int)
 {
   AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
 }
 
+template<typename Number>
 void
-TimeIntBDFBase::do_timestep_oif_substepping_and_update_vectors(double const, double const)
+TimeIntBDFBase<Number>::do_timestep_oif_substepping(VectorType &,
+                                                    VectorType &,
+                                                    double const,
+                                                    double const)
 {
   AssertThrow(false, ExcMessage("This function has to be implemented by derived classes."));
 }
+
+template class TimeIntBDFBase<float>;
+template class TimeIntBDFBase<double>;

@@ -155,7 +155,7 @@ evaluate_scalar_quantity_in_point(
   typedef std::pair<typename DoFHandler<dim>::active_cell_iterator, Point<dim>> MY_PAIR;
 
   std::vector<MY_PAIR> adjacent_cells =
-    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point);
+    GridTools::find_all_active_cells_around_point(mapping, dof_handler, point, 1.e-10);
 
   // loop over all adjacent cells
   for(typename std::vector<MY_PAIR>::iterator cell = adjacent_cells.begin();
@@ -175,7 +175,7 @@ evaluate_scalar_quantity_in_point(
 
   // parallel computations: add results of all processors and calculate mean value
   counter = Utilities::MPI::sum(counter, MPI_COMM_WORLD);
-  Assert(counter > 0, ExcMessage("No points found."));
+  AssertThrow(counter > 0, ExcMessage("No points found."));
 
   solution_value = Utilities::MPI::sum(solution_value, MPI_COMM_WORLD);
   solution_value /= (double)counter;
@@ -220,7 +220,7 @@ evaluate_vectorial_quantity_in_point(
 
   // parallel computations: add results of all processors and calculate mean value
   counter = Utilities::MPI::sum(counter, MPI_COMM_WORLD);
-  Assert(counter > 0, ExcMessage("No points found."));
+  AssertThrow(counter > 0, ExcMessage("No points found."));
 
   for(unsigned int d = 0; d < dim; ++d)
     solution_value[d] = Utilities::MPI::sum(solution_value[d], MPI_COMM_WORLD);

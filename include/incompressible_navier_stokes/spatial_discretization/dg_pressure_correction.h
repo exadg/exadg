@@ -61,7 +61,7 @@ public:
 
   /*
    * The implementation of the Newton solver requires a function called
-   * 'evaluate_nonlinear_residual".
+   * 'evaluate_nonlinear_residual'.
    */
   void
   evaluate_nonlinear_residual(VectorType & dst, VectorType const & src)
@@ -83,28 +83,58 @@ class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<
                                          public Interface::OperatorPressureCorrection<Number>
 {
 private:
-  typedef DGNavierStokesProjectionMethods<dim, Number>  Base;
+  typedef DGNavierStokesBase<dim, Number>               Base;
+  typedef DGNavierStokesProjectionMethods<dim, Number>  ProjBase;
   typedef DGNavierStokesPressureCorrection<dim, Number> This;
 
   typedef typename Base::VectorType      VectorType;
   typedef typename Base::Postprocessor   Postprocessor;
   typedef typename Base::MultigridNumber MultigridNumber;
 
+  typedef typename Base::scalar scalar;
+  typedef typename Base::vector vector;
+  typedef typename Base::tensor tensor;
+
+  typedef typename Base::Range Range;
+
+  typedef typename Base::FaceIntegratorU FaceIntegratorU;
+  typedef typename Base::FaceIntegratorP FaceIntegratorP;
+
 public:
   /*
    * Constructor.
    */
   DGNavierStokesPressureCorrection(parallel::TriangulationBase<dim> const & triangulation,
-                                   InputParameters const &              parameters,
-                                   std::shared_ptr<Postprocessor>       postprocessor);
+                                   InputParameters const &                  parameters,
+                                   std::shared_ptr<Postprocessor>           postprocessor);
 
   /*
    * Destructor.
    */
   virtual ~DGNavierStokesPressureCorrection();
 
+  /*
+   * Calls setup() function of base class and additionally initializes the inverse pressure mass
+   * matrix operator needed for the pressure correction scheme, as well as the pressure mass matrix
+   * operator needed in the ALE case only (where the mass matrix may be evaluated at different times
+   * depending on the specific ALE formulation chosen).
+   */
+  virtual void
+  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                        periodic_face_pairs,
+        std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
+        std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
+
+  /*
+   * Calls function of base class and does additional updates relevant for the pressure-correction
+   * scheme.
+   */
+  virtual void
+  update_after_mesh_movement() override;
 
   /*
    * Momentum step:
@@ -175,6 +205,15 @@ public:
   void
   rhs_pressure_gradient_term(VectorType & dst, double const time) const;
 
+  void
+  rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                          VectorType const & pressure) const;
+
+  void
+  evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(VectorType &       dst,
+                                                               VectorType const & src,
+                                                               VectorType const & pressure) const;
+
   /*
    * Pressure update step.
    */
@@ -192,17 +231,8 @@ public:
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
-  /*
-   * Postprocessing.
-   */
   void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const;
-
-  void
-  do_postprocessing_steady_problem(VectorType const & velocity, VectorType const & pressure) const;
+  rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(VectorType & dst, VectorType const & src) const;
 
 private:
   /*

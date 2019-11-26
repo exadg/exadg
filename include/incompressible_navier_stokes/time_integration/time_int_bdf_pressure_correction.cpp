@@ -23,11 +23,11 @@ TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
     pde_operator(pde_operator_in),
     velocity(param_in.order_time_integrator),
     pressure(param_in.order_time_integrator),
-    vec_convective_term(param_in.order_time_integrator),
     order_pressure_extrapolation(param_in.order_pressure_extrapolation),
     extra_pressure_gradient(param_in.order_pressure_extrapolation, param_in.start_with_low_order),
-    vec_pressure_gradient_term(param_in.order_pressure_extrapolation),
-    computing_times(3),
+    pressure_dbc(param_in.order_pressure_extrapolation),
+    computing_times(4),
+    computing_time_convective(0.0),
     iterations(3),
     N_iter_nonlinear_momentum(0)
 {
@@ -50,36 +50,74 @@ TimeIntBDFPressureCorrection<Number>::update_time_integrator_constants()
   // step, etc.
   if(this->adaptive_time_stepping == false)
   {
+    // the "-1" indicates that the order of extrapolation of the pressure gradient is one order
+    // lower than the order of the BDF time integration scheme
     extra_pressure_gradient.update(this->get_time_step_number() - 1);
   }
   else // adaptive time stepping
   {
+    // the "-1" indicates that the order of extrapolation of the pressure gradient is one order
+    // lower than the order of the BDF time integration scheme
     extra_pressure_gradient.update(this->get_time_step_number() - 1, this->get_time_step_vector());
   }
 
   // use this function to check the correctness of the time integrator constants
-  //  std::cout << "Coefficients extrapolation scheme pressure: Time step = " <<
-  //  this->get_time_step_number() << std::endl; extra_pressure_gradient.print();
+  //    std::cout << "Coefficients extrapolation scheme pressure: Time step = "
+  //              << this->get_time_step_number() << std::endl;
+  //    extra_pressure_gradient.print(this->pcout);
 }
 
 template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::setup_derived()
 {
-  if(this->param.convective_problem() && this->start_with_low_order == false &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    initialize_vec_convective_term();
-  }
+  TimeIntBDF<Number>::setup_derived();
 
-  if(extra_pressure_gradient.get_order() > 0)
-    initialize_vec_pressure_gradient_term();
+  // pressure_dbc does not have to be initialized in case of a restart, where
+  // the vectors are read from memory.
+  if(this->param.store_previous_boundary_values && this->param.restarted_simulation == false)
+  {
+    initialize_pressure_on_boundary();
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+{
+  TimeIntBDF<Number>::read_restart_vectors(ia);
+
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < pressure_dbc.size(); i++)
+    {
+      ia >> pressure_dbc[i];
+    }
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDFPressureCorrection<Number>::write_restart_vectors(
+  boost::archive::binary_oarchive & oa) const
+{
+  TimeIntBDF<Number>::write_restart_vectors(oa);
+
+  if(this->param.store_previous_boundary_values)
+  {
+    for(unsigned int i = 0; i < pressure_dbc.size(); i++)
+    {
+      oa << pressure_dbc[i];
+    }
+  }
 }
 
 template<typename Number>
 void
 TimeIntBDFPressureCorrection<Number>::allocate_vectors()
 {
+  TimeIntBDF<Number>::allocate_vectors();
+
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
     this->operator_base->initialize_vector_velocity(velocity[i]);
@@ -89,22 +127,12 @@ TimeIntBDFPressureCorrection<Number>::allocate_vectors()
   for(unsigned int i = 0; i < pressure.size(); ++i)
     this->operator_base->initialize_vector_pressure(pressure[i]);
   this->operator_base->initialize_vector_pressure(pressure_np);
-  this->operator_base->initialize_vector_pressure(pressure_increment);
 
-  // vec_convective_term
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  if(this->param.store_previous_boundary_values)
   {
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
+    for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
+      this->operator_base->initialize_vector_pressure(pressure_dbc[i]);
   }
-
-  // vec_pressure_gradient_term
-  for(unsigned int i = 0; i < vec_pressure_gradient_term.size(); ++i)
-    this->operator_base->initialize_vector_velocity(vec_pressure_gradient_term[i]);
-
-  // Sum_i (alpha_i/dt * u_i)
-  this->operator_base->initialize_vector_velocity(this->sum_alphai_ui);
 }
 
 
@@ -130,27 +158,19 @@ TimeIntBDFPressureCorrection<Number>::initialize_former_solutions()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::initialize_vec_convective_term()
+TimeIntBDFPressureCorrection<Number>::initialize_pressure_on_boundary()
 {
-  // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-  for(unsigned int i = 1; i < vec_convective_term.size(); ++i)
-  {
-    this->operator_base->evaluate_convective_term(vec_convective_term[i],
-                                                  velocity[i],
-                                                  this->get_previous_time(i));
-  }
-}
+  // If start_with_low_order == true, no pressure extrapolation is used in the first time step
+  // even for the incremental pressure-correction scheme. Hence, there is no need to initialize
+  // the pressure_dbc vector in this case.
 
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::initialize_vec_pressure_gradient_term()
-{
-  // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
-  for(unsigned int i = 1; i < vec_pressure_gradient_term.size(); ++i)
+  if(this->param.start_with_low_order == false)
   {
-    this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[i],
-                                                         pressure[i],
-                                                         this->get_previous_time(i));
+    for(unsigned int i = 0; i < pressure_dbc.size(); ++i)
+    {
+      this->operator_base->move_mesh_and_interpolate_pressure_dirichlet_bc(
+        pressure_dbc[i], this->get_time() - double(i) * this->get_time_step_size());
+    }
   }
 }
 
@@ -193,27 +213,14 @@ TimeIntBDFPressureCorrection<Number>::set_pressure(VectorType const & pressure_i
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::postprocessing() const
-{
-  pde_operator->do_postprocessing(velocity[0],
-                                  pressure[0],
-                                  this->get_time(),
-                                  this->get_time_step_number());
-}
-
-template<typename Number>
-void
-TimeIntBDFPressureCorrection<Number>::postprocessing_steady_problem() const
-{
-  pde_operator->do_postprocessing_steady_problem(velocity[0], pressure[0]);
-}
-
-template<typename Number>
-void
 TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
+
+  AssertThrow(this->param.convective_problem() == false,
+              ExcMessage(
+                "Stability analysis can not be performed for nonlinear convective problems."));
 
   AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
               ExcMessage("Solution vector has to be zero for this stability analysis."));
@@ -234,7 +241,7 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
     velocity[0].local_element(j) = 1.0;
 
     // solve time step
-    solve_timestep();
+    this->solve_timestep();
 
     // dst-vector velocity_np is j-th column of propagation matrix
     for(unsigned int i = 0; i < size; ++i)
@@ -269,14 +276,22 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::solve_timestep()
+TimeIntBDFPressureCorrection<Number>::do_solve_timestep()
 {
   // perform the substeps of the pressure-correction scheme
+
   momentum_step();
 
-  pressure_step();
+  VectorType pressure_increment;
+  pressure_increment.reinit(pressure_np, false /* init with zero */);
 
-  projection_step();
+  pressure_step(pressure_increment);
+
+  projection_step(pressure_increment);
+
+  // evaluate convective term once the final solution at time
+  // t_{n+1} is known
+  evaluate_convective_term();
 }
 
 template<typename Number>
@@ -359,7 +374,7 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
                     << "Solve linear momentum equation for intermediate velocity:" << std::endl
                     << "  Iterations:        " << std::setw(6) << std::right
                     << linear_iterations_momentum << "\t Wall time [s]: " << std::scientific
-                    << timer.wall_time() << std::endl;
+                    << timer.wall_time() + computing_time_convective << std::endl;
       }
 
       iterations[0] += linear_iterations_momentum;
@@ -375,7 +390,8 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
         this->pcout << std::endl
                     << "Solve linear momentum equation for intermediate velocity:" << std::endl
                     << "  Iterations:        " << std::setw(6) << std::right << 0
-                    << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+                    << "\t Wall time [s]: " << std::scientific
+                    << timer.wall_time() + computing_time_convective << std::endl;
       }
     }
   }
@@ -425,7 +441,7 @@ TimeIntBDFPressureCorrection<Number>::momentum_step()
     N_iter_nonlinear_momentum += nonlinear_iterations_momentum;
   }
 
-  computing_times[0] += timer.wall_time();
+  computing_times[0] += timer.wall_time() + computing_time_convective;
 }
 
 template<typename Number>
@@ -439,12 +455,26 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
    */
   if(extra_pressure_gradient.get_order() > 0)
   {
-    this->operator_base->evaluate_pressure_gradient_term(vec_pressure_gradient_term[0],
-                                                         pressure[0],
-                                                         this->get_time());
-
     for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
-      rhs.add(-extra_pressure_gradient.get_beta(i), vec_pressure_gradient_term[i]);
+    {
+      VectorType temp(velocity[0]);
+      temp = 0.0;
+
+      if(this->param.store_previous_boundary_values)
+      {
+        pde_operator->evaluate_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp,
+                                                                                   pressure[i],
+                                                                                   pressure_dbc[i]);
+      }
+      else
+      {
+        this->operator_base->evaluate_pressure_gradient_term(temp,
+                                                             pressure[i],
+                                                             this->get_previous_time(i));
+      }
+
+      rhs.add(-extra_pressure_gradient.get_beta(i), temp);
+    }
   }
 
   /*
@@ -462,36 +492,45 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
-    this->operator_base->evaluate_convective_term(vec_convective_term[0],
-                                                  velocity[0],
-                                                  this->get_time());
+    if(this->param.ale_formulation)
+    {
+      for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+      {
+        // in a general setting, we only know the boundary conditions at time t_{n+1}
+        this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
+                                                      velocity[i],
+                                                      this->get_next_time());
+      }
+    }
 
-    for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
-      rhs.add(-this->extra.get_beta(i), vec_convective_term[i]);
+    for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
+      rhs.add(-this->extra.get_beta(i), this->vec_convective_term[i]);
   }
 
   /*
    *  calculate sum (alpha_i/dt * u_i): This term is relevant for both the explicit
    *  and the implicit formulation of the convective term
    */
+  VectorType sum_alphai_ui(velocity[0]);
+
   // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
   // and operator-integration-factor (OIF) splitting
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    this->calculate_sum_alphai_ui_oif_substepping(this->cfl, this->cfl_oif);
+    this->calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, this->cfl, this->cfl_oif);
   }
   // calculate sum (alpha_i/dt * u_i) for standard BDF discretization
   else
   {
-    this->sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
+    sum_alphai_ui.equ(this->bdf.get_alpha(0) / this->get_time_step_size(), velocity[0]);
     for(unsigned int i = 1; i < velocity.size(); ++i)
     {
-      this->sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
+      sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), velocity[i]);
     }
   }
 
-  this->operator_base->apply_mass_matrix_add(rhs, this->sum_alphai_ui);
+  this->operator_base->apply_mass_matrix_add(rhs, sum_alphai_ui);
 
   /*
    *  Right-hand side viscous term:
@@ -507,7 +546,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_momentum(VectorType & rhs)
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::pressure_step()
+TimeIntBDFPressureCorrection<Number>::pressure_step(VectorType & pressure_increment)
 {
   Timer timer;
   timer.restart();
@@ -519,7 +558,6 @@ TimeIntBDFPressureCorrection<Number>::pressure_step()
   // extrapolate old solution to get a good initial estimate for the solver
 
   // calculate initial guess for pressure solve
-  pressure_increment = 0.0;
 
   // extrapolate old solution to get a good initial estimate for the
   // pressure solution p_{n+1} at time t^{n+1}
@@ -548,7 +586,7 @@ TimeIntBDFPressureCorrection<Number>::pressure_step()
   unsigned int iterations_pressure = pde_operator->solve_pressure(pressure_increment, rhs);
 
   // calculate pressure p^{n+1} from pressure increment
-  pressure_update();
+  pressure_update(pressure_increment);
 
   // Special case: pure Dirichlet BC's
   // Adjust the pressure level in order to allow a calculation of the pressure error.
@@ -635,9 +673,16 @@ TimeIntBDFPressureCorrection<Number>::rhs_pressure(VectorType & rhs) const
   for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
   {
     // set temp to zero since rhs_ppe_laplace_add() adds into the vector
-    temp           = 0.0;
-    double const t = this->get_previous_time(i);
-    pde_operator->rhs_ppe_laplace_add(temp, t);
+    temp = 0.0;
+    if(this->param.store_previous_boundary_values)
+    {
+      pde_operator->rhs_ppe_laplace_add_dirichlet_bc_from_dof_vector(temp, pressure_dbc[i]);
+    }
+    else
+    {
+      pde_operator->rhs_ppe_laplace_add(temp, this->get_previous_time(i));
+    }
+
     rhs.add(-extra_pressure_gradient.get_beta(i), temp);
   }
 
@@ -657,7 +702,7 @@ TimeIntBDFPressureCorrection<Number>::rhs_pressure(VectorType & rhs) const
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::pressure_update()
+TimeIntBDFPressureCorrection<Number>::pressure_update(VectorType const & pressure_increment)
 {
   // First set pressure solution to zero.
   pressure_np = 0.0;
@@ -696,7 +741,8 @@ TimeIntBDFPressureCorrection<Number>::pressure_update()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
+TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType &       rhs,
+                                                     VectorType const & pressure_increment) const
 {
   /*
    *  I. calculate mass matrix term
@@ -717,29 +763,39 @@ TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType & rhs) const
    *  III. pressure gradient term: boundary conditions g_p(t_{n-i})
    *       in case of incremental formulation of pressure-correction scheme
    */
-  for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+  if(this->param.gradp_integrated_by_parts == true && this->param.gradp_use_boundary_data == true)
   {
-    // evaluate inhomogeneous parts of boundary face integrals
-    double const current_time = this->get_previous_time(i);
-    // note that the function rhs_...() already includes a factor of -1.0
-    pde_operator->rhs_pressure_gradient_term(temp, current_time);
+    for(unsigned int i = 0; i < extra_pressure_gradient.get_order(); ++i)
+    {
+      // evaluate inhomogeneous parts of boundary face integrals
+      // note that the function rhs_...() already includes a factor of -1.0
+      if(this->param.store_previous_boundary_values)
+      {
+        pde_operator->rhs_pressure_gradient_term_dirichlet_bc_from_dof_vector(temp,
+                                                                              pressure_dbc[i]);
+      }
+      else
+      {
+        pde_operator->rhs_pressure_gradient_term(temp, this->get_previous_time(i));
+      }
 
-    rhs.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
-              this->bdf.get_gamma0(),
-            temp);
+      rhs.add(-extra_pressure_gradient.get_beta(i) * this->get_time_step_size() /
+                this->bdf.get_gamma0(),
+              temp);
+    }
   }
 }
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::projection_step()
+TimeIntBDFPressureCorrection<Number>::projection_step(VectorType const & pressure_increment)
 {
   Timer timer;
   timer.restart();
 
   // compute right-hand-side vector
   VectorType rhs(velocity_np);
-  rhs_projection(rhs);
+  rhs_projection(rhs, pressure_increment);
 
   // apply inverse mass matrix: this is the solution if no penalty terms are applied
   // and serves as a good initial guess for the case with penalty terms
@@ -785,23 +841,48 @@ TimeIntBDFPressureCorrection<Number>::projection_step()
 
 template<typename Number>
 void
+TimeIntBDFPressureCorrection<Number>::evaluate_convective_term()
+{
+  // evaluate convective term once solution_np is known
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
+  {
+    if(this->param.ale_formulation == false) // Eulerian case
+    {
+      Timer timer;
+      timer.restart();
+
+      this->operator_base->evaluate_convective_term(this->convective_term_np,
+                                                    velocity_np,
+                                                    this->get_next_time());
+
+      computing_time_convective = timer.wall_time();
+    }
+  }
+}
+
+template<typename Number>
+void
 TimeIntBDFPressureCorrection<Number>::prepare_vectors_for_next_timestep()
 {
+  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+
   push_back(velocity);
   velocity[0].swap(velocity_np);
 
   push_back(pressure);
   pressure[0].swap(pressure_np);
 
-  if(this->param.convective_problem() &&
-     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
-  {
-    push_back(vec_convective_term);
-  }
-
   if(extra_pressure_gradient.get_order() > 0)
   {
-    push_back(vec_pressure_gradient_term);
+    if(this->param.store_previous_boundary_values)
+    {
+      push_back(pressure_dbc);
+
+      // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+      this->operator_base->interpolate_pressure_dirichlet_bc(pressure_dbc[0],
+                                                             this->get_next_time());
+    }
   }
 }
 
@@ -827,7 +908,7 @@ TimeIntBDFPressureCorrection<Number>::solve_steady_problem()
       velocity_tmp = velocity[0];
       pressure_tmp = pressure[0];
 
-      // calculate normm of solution
+      // calculate norm of solution
       double const norm_u = velocity_tmp.l2_norm();
       double const norm_p = pressure_tmp.l2_norm();
       double const norm   = std::sqrt(norm_u * norm_u + norm_p * norm_p);
@@ -981,13 +1062,21 @@ void
 TimeIntBDFPressureCorrection<Number>::get_wall_times(std::vector<std::string> & name,
                                                      std::vector<double> &      wall_time) const
 {
-  name.resize(3);
-  std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
-  name                           = names;
+  std::vector<std::string> names = {"Momentum", "Pressure", "Projection", "ALE update"};
 
-  wall_time.resize(3);
-  for(unsigned int i = 0; i < this->computing_times.size(); ++i)
+  unsigned int size = 3;
+
+  if(this->param.ale_formulation)
   {
+    size                            = 4;
+    this->computing_times[size - 1] = this->computation_time_ale_update;
+  }
+
+  name.resize(size);
+  wall_time.resize(size);
+  for(unsigned int i = 0; i < size; ++i)
+  {
+    name[i]      = names[i];
     wall_time[i] = this->computing_times[i];
   }
 }

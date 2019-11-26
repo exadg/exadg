@@ -11,6 +11,8 @@
 
 #include "../../postprocessor/write_output.h"
 
+#include <fstream>
+
 namespace ConvDiff
 {
 template<int dim, typename VectorType>

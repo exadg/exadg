@@ -142,6 +142,9 @@ public:
   rhs(VectorType & dst, Number const evaluation_time) const;
 
   void
+  rhs_bc_from_dof_vector(VectorType & dst, VectorType const & pressure_bc) const;
+
+  void
   rhs_add(VectorType & dst, Number const evaluation_time) const;
 
   // full operator, i.e., homogeneous and inhomogeneous contributions
@@ -150,6 +153,11 @@ public:
 
   void
   evaluate_add(VectorType & dst, VectorType const & src, Number const evaluation_time) const;
+
+  void
+  evaluate_bc_from_dof_vector(VectorType &       dst,
+                              VectorType const & src,
+                              VectorType const & pressure_bc) const;
 
 private:
   void
@@ -169,6 +177,13 @@ private:
                        FaceIntegratorU &          velocity,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  void
+  do_boundary_integral_from_dof_vector(FaceIntegratorP &          pressure,
+                                       FaceIntegratorP &          pressure_exterior,
+                                       FaceIntegratorU &          velocity,
+                                       OperatorType const &       operator_type,
+                                       types::boundary_id const & boundary_id) const;
 
   void
   cell_loop(MatrixFree<dim, Number> const & matrix_free,
@@ -212,6 +227,18 @@ private:
                                     VectorType const &              src,
                                     Range const &                   face_range) const;
 
+  void
+  boundary_face_loop_inhom_operator_bc_from_dof_vector(MatrixFree<dim, Number> const & matrix_free,
+                                                       VectorType &                    dst,
+                                                       VectorType const &              src,
+                                                       Range const & face_range) const;
+
+  void
+  boundary_face_loop_full_operator_bc_from_dof_vector(MatrixFree<dim, Number> const & matrix_free,
+                                                      VectorType &                    dst,
+                                                      VectorType const &              src,
+                                                      Range const & face_range) const;
+
   MatrixFree<dim, Number> const * matrix_free;
 
   GradientOperatorData<dim> data;
@@ -227,6 +254,9 @@ private:
   double inverse_scaling_factor_pressure;
 
   Operators::GradientKernel<dim, Number> kernel;
+
+  // needed if pressure Dirichlet boundary condition is evaluated from dof vector
+  mutable VectorType const * pressure_bc;
 };
 
 } // namespace IncNS

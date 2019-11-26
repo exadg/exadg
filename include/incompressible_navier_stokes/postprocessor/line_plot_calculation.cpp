@@ -7,6 +7,8 @@
 
 #include "line_plot_calculation.h"
 
+#include <fstream>
+
 template<int dim, typename Number>
 LinePlotCalculator<dim, Number>::LinePlotCalculator() : clear_files(true)
 {

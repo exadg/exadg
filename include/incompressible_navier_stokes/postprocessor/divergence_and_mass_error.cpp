@@ -7,6 +7,8 @@
 
 #include "divergence_and_mass_error.h"
 
+#include <fstream>
+
 namespace IncNS
 {
 template<int dim, typename Number>

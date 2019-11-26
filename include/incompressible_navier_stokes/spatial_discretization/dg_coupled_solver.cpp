@@ -12,8 +12,8 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &              parameters,
-  std::shared_ptr<Postprocessor>       postprocessor)
+  InputParameters const &                  parameters,
+  std::shared_ptr<Postprocessor>           postprocessor)
   : Base(triangulation, parameters, postprocessor), scaling_factor_continuity(1.0)
 {
 }
@@ -142,8 +142,8 @@ DGNavierStokesCoupled<dim, Number>::initialize_block_vector_velocity_pressure(
   // velocity(1st block) + pressure(2nd block)
   src.reinit(2);
 
-  this->matrix_free.initialize_dof_vector(src.block(0), this->get_dof_index_velocity());
-  this->matrix_free.initialize_dof_vector(src.block(1), this->get_dof_index_pressure());
+  this->get_matrix_free().initialize_dof_vector(src.block(0), this->get_dof_index_velocity());
+  this->get_matrix_free().initialize_dof_vector(src.block(1), this->get_dof_index_pressure());
 
   src.collect_sizes();
 }
@@ -383,47 +383,6 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVect
   // with respect to pressure gradient term and velocity divergence term
   // scale by scaling_factor_continuity
   dst.block(1) *= -scaling_factor_continuity;
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesCoupled<dim, Number>::do_postprocessing(VectorType const & velocity,
-                                                      VectorType const & pressure,
-                                                      double const       time,
-                                                      unsigned int const time_step_number) const
-{
-  bool const standard = true;
-  if(standard)
-  {
-    this->postprocessor->do_postprocessing(velocity, pressure, time, time_step_number);
-  }
-  else // consider velocity and pressure errors instead
-  {
-    VectorType velocity_error;
-    this->initialize_vector_velocity(velocity_error);
-
-    VectorType pressure_error;
-    this->initialize_vector_pressure(pressure_error);
-
-    this->prescribe_initial_conditions(velocity_error, pressure_error, time);
-
-    velocity_error.add(-1.0, velocity);
-    pressure_error.add(-1.0, pressure);
-
-    this->postprocessor->do_postprocessing(velocity_error, // error!
-                                           pressure_error, // error!
-                                           time,
-                                           time_step_number);
-  }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesCoupled<dim, Number>::do_postprocessing_steady_problem(
-  VectorType const & velocity,
-  VectorType const & pressure) const
-{
-  this->postprocessor->do_postprocessing(velocity, pressure);
 }
 
 template<int dim, typename Number>
@@ -695,12 +654,10 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
   {
     // multigrid V-cycle for negative Laplace operator
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index                  = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index                 = this->get_quad_index_pressure();
-    laplace_operator_data.operator_is_singular       = this->param.pure_dirichlet_bc;
-    laplace_operator_data.kernel_data.IP_factor      = 1.0;
-    laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
-    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
+    laplace_operator_data.dof_index             = this->get_dof_index_pressure();
+    laplace_operator_data.quad_index            = this->get_quad_index_pressure();
+    laplace_operator_data.operator_is_singular  = this->param.pure_dirichlet_bc;
+    laplace_operator_data.kernel_data.IP_factor = 1.0;
 
     laplace_operator_data.bc = this->boundary_descriptor_laplace;
 
@@ -757,16 +714,14 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
   if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
     Poisson::LaplaceOperatorData<dim> laplace_operator_data;
-    laplace_operator_data.dof_index                  = this->get_dof_index_pressure();
-    laplace_operator_data.quad_index                 = this->get_quad_index_pressure();
-    laplace_operator_data.bc                         = this->boundary_descriptor_laplace;
-    laplace_operator_data.kernel_data.IP_factor      = 1.0;
-    laplace_operator_data.kernel_data.degree         = this->param.get_degree_p();
-    laplace_operator_data.kernel_data.degree_mapping = this->mapping_degree;
+    laplace_operator_data.dof_index             = this->get_dof_index_pressure();
+    laplace_operator_data.quad_index            = this->get_quad_index_pressure();
+    laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
+    laplace_operator_data.kernel_data.IP_factor = 1.0;
 
     laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
     laplace_operator_classical->reinit(this->get_matrix_free(),
-                                       this->constraint_p,
+                                       this->get_constraint_p(),
                                        laplace_operator_data);
 
     solver_pressure_block.reset(
@@ -854,9 +809,7 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   // temporally) varying viscosities the diffusive operator has to be extended so that it can deal
   // with variable coefficients (and should be updated in case of time dependent problems before
   // applying the preconditioner).
-  diffusive_kernel_data.diffusivity    = this->param.viscosity;
-  diffusive_kernel_data.degree         = this->param.get_degree_p();
-  diffusive_kernel_data.degree_mapping = this->mapping_degree;
+  diffusive_kernel_data.diffusivity = this->param.viscosity;
 
   // combined convection-diffusion operator
   ConvDiff::OperatorData<dim> operator_data;
@@ -874,7 +827,9 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
   pressure_conv_diff_operator.reset(new ConvDiff::Operator<dim, Number>());
-  pressure_conv_diff_operator->reinit(this->get_matrix_free(), this->constraint_p, operator_data);
+  pressure_conv_diff_operator->reinit(this->get_matrix_free(),
+                                      this->get_constraint_p(),
+                                      operator_data);
 }
 
 // clang-format off

@@ -31,10 +31,11 @@ class OperatorOIF;
 
 
 template<typename Number>
-class TimeIntBDF : public TimeIntBDFBase
+class TimeIntBDF : public TimeIntBDFBase<Number>
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef typename TimeIntBDFBase<Number>::VectorType     VectorType;
+  typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
   typedef Interface::OperatorBase<Number> InterfaceBase;
 
@@ -51,24 +52,41 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
-protected:
   virtual void
   update_time_integrator_constants();
 
+protected:
+  virtual void
+  allocate_vectors() override;
+
+  virtual void
+  setup_derived() override;
+
+  virtual void
+  read_restart_vectors(boost::archive::binary_iarchive & ia) override;
+
+  virtual void
+  write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
+
+  void
+  solve_timestep();
+
   bool
   print_solver_info() const;
+
+  virtual void
+  prepare_vectors_for_next_timestep() override;
 
   /*
    * This function implements the OIF sub-stepping algorithm. Has to be implemented here
    * since functionality is related to incompressible flows only (nonlinear convective term).
    */
   void
-  calculate_sum_alphai_ui_oif_substepping(double const cfl, double const cfl_oif);
+  calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
+                                          double const cfl,
+                                          double const cfl_oif);
 
   InputParameters const & param;
-
-  // BDF time integration: Sum_i (alpha_i/dt * u_i)
-  VectorType sum_alphai_ui;
 
   // global cfl number
   double const cfl;
@@ -76,21 +94,42 @@ protected:
   // cfl number cfl_oif for operator-integration-factor splitting
   double const cfl_oif;
 
+  // spatial discretization operator
   std::shared_ptr<InterfaceBase> operator_base;
 
+  // convective term formulated explicitly
+  std::vector<VectorType> vec_convective_term;
+  VectorType              convective_term_np;
+
+  // measure time it takes to move the mesh and update relevant data structures
+  double computation_time_ale_update;
+
 private:
+  virtual void
+  do_solve_timestep() = 0;
+
+  void
+  ale_update();
+
+  void
+  initialize_vec_convective_term();
+
   void
   initialize_oif();
 
   void
-  initialize_solution_oif_substepping(unsigned int i);
+  initialize_solution_oif_substepping(VectorType & solution_tilde_m, unsigned int i);
 
   void
-  update_sum_alphai_ui_oif_substepping(unsigned int i);
+  update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
+                                       VectorType const & u_tilde_i,
+                                       unsigned int       i);
 
   void
-  do_timestep_oif_substepping_and_update_vectors(double const start_time,
-                                                 double const time_step_size);
+  do_timestep_oif_substepping(VectorType & solution_tilde_mp,
+                              VectorType & solution_tilde_m,
+                              double const start_time,
+                              double const time_step_size);
 
   void
   calculate_time_step_size();
@@ -100,9 +139,6 @@ private:
 
   virtual void
   solve_steady_problem() = 0;
-
-  virtual void
-  postprocessing_steady_problem() const = 0;
 
   virtual VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const = 0;
@@ -117,10 +153,10 @@ private:
   set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */) = 0;
 
   void
-  read_restart_vectors(boost::archive::binary_iarchive & ia);
+  postprocessing() const;
 
   void
-  write_restart_vectors(boost::archive::binary_oarchive & oa) const;
+  postprocessing_steady_problem() const;
 
   // Operator-integration-factor splitting for convective term
   std::shared_ptr<Interface::OperatorOIF<Number>> convective_operator_OIF;
@@ -129,9 +165,10 @@ private:
   std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>>
     time_integrator_OIF;
 
-  // solution vectors needed for OIF substepping of convective term
-  VectorType solution_tilde_m;
-  VectorType solution_tilde_mp;
+  // ALE
+  VectorType              grid_velocity;
+  std::vector<VectorType> vec_grid_coordinates;
+  VectorType              grid_coordinates_np;
 };
 
 } // namespace IncNS

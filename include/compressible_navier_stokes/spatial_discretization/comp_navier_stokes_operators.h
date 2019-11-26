@@ -975,7 +975,6 @@ struct ViscousOperatorData
   ViscousOperatorData()
     : dof_index(0),
       quad_index(0),
-      degree(1),
       IP_factor(1.0),
       dynamic_viscosity(1.0),
       reference_density(1.0),
@@ -988,8 +987,7 @@ struct ViscousOperatorData
   unsigned int dof_index;
   unsigned int quad_index;
 
-  unsigned int degree;
-  double       IP_factor;
+  double IP_factor;
 
   std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_rho;
   std::shared_ptr<CompNS::BoundaryDescriptor<dim>>       bc_u;
@@ -1020,17 +1018,19 @@ public:
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
   typedef Point<dim, VectorizedArray<Number>>     point;
 
-  ViscousOperator() : matrix_free(nullptr)
+  ViscousOperator() : matrix_free(nullptr), degree(1)
   {
   }
 
   void
-  initialize(Mapping<dim> const &             mapping,
-             MatrixFree<dim, Number> const &  matrix_free_in,
+  initialize(MatrixFree<dim, Number> const &  matrix_free_in,
              ViscousOperatorData<dim> const & data_in)
   {
     this->matrix_free = &matrix_free_in;
     this->data        = data_in;
+
+    FiniteElement<dim> const & fe = matrix_free->get_dof_handler(data.dof_index).get_fe();
+    degree                        = fe.degree;
 
     gamma  = data.heat_capacity_ratio;
     R      = data.specific_gas_constant;
@@ -1039,8 +1039,9 @@ public:
     nu     = mu / data.reference_density;
     lambda = data.thermal_conductivity;
 
-    IP::calculate_penalty_parameter<dim, Number>(
-      array_penalty_parameter, *matrix_free, mapping, data.degree, data.dof_index);
+    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter,
+                                                 *matrix_free,
+                                                 data.dof_index);
   }
 
   void
@@ -1071,7 +1072,7 @@ public:
   {
     scalar tau = std::max(fe_eval_m.read_cell_data(array_penalty_parameter),
                           fe_eval_p.read_cell_data(array_penalty_parameter)) *
-                 IP::get_penalty_factor<Number>(data.degree, data.IP_factor) * nu;
+                 IP::get_penalty_factor<Number>(degree, data.IP_factor) * nu;
 
     return tau;
   }
@@ -1081,7 +1082,7 @@ public:
     get_penalty_parameter(FaceIntegratorScalar & fe_eval) const
   {
     scalar tau = fe_eval.read_cell_data(array_penalty_parameter) *
-                 IP::get_penalty_factor<Number>(data.degree, data.IP_factor) * nu;
+                 IP::get_penalty_factor<Number>(degree, data.IP_factor) * nu;
 
     return tau;
   }
@@ -1656,6 +1657,8 @@ private:
   MatrixFree<dim, Number> const * matrix_free;
 
   ViscousOperatorData<dim> data;
+
+  unsigned int degree;
 
   // heat capacity ratio
   Number gamma;

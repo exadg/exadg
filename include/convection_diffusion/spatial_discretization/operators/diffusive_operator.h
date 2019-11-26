@@ -13,14 +13,12 @@ namespace Operators
 {
 struct DiffusiveKernelData
 {
-  DiffusiveKernelData() : IP_factor(1.0), degree(1), degree_mapping(1), diffusivity(1.0)
+  DiffusiveKernelData() : IP_factor(1.0), diffusivity(1.0)
   {
   }
 
-  double       IP_factor;
-  unsigned int degree;
-  unsigned int degree_mapping;
-  double       diffusivity;
+  double IP_factor;
+  double diffusivity;
 };
 
 template<int dim, typename Number>
@@ -36,7 +34,7 @@ private:
   typedef FaceIntegrator<dim, 1, Number> IntegratorFace;
 
 public:
-  DiffusiveKernel() : tau(make_vectorized_array<Number>(0.0))
+  DiffusiveKernel() : degree(1), tau(make_vectorized_array<Number>(0.0))
   {
   }
 
@@ -47,11 +45,19 @@ public:
   {
     data = data_in;
 
-    MappingQGeneric<dim> mapping(data_in.degree_mapping);
-    IP::calculate_penalty_parameter<dim, Number>(
-      array_penalty_parameter, matrix_free, mapping, data_in.degree, dof_index);
+    FiniteElement<dim> const & fe = matrix_free.get_dof_handler(dof_index).get_fe();
+    degree                        = fe.degree;
+
+    calculate_penalty_parameter(matrix_free, dof_index);
 
     AssertThrow(data.diffusivity > 0.0, ExcMessage("Diffusivity is not set!"));
+  }
+
+  void
+  calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
+                              unsigned int const              dof_index)
+  {
+    IP::calculate_penalty_parameter<dim, Number>(array_penalty_parameter, matrix_free, dof_index);
   }
 
   IntegratorFlags
@@ -86,14 +92,14 @@ public:
   {
     tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
                    integrator_p.read_cell_data(array_penalty_parameter)) *
-          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+          IP::get_penalty_factor<Number>(degree, data.IP_factor);
   }
 
   void
   reinit_boundary_face(IntegratorFace & integrator_m) const
   {
     tau = integrator_m.read_cell_data(array_penalty_parameter) *
-          IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+          IP::get_penalty_factor<Number>(degree, data.IP_factor);
   }
 
   void
@@ -105,12 +111,12 @@ public:
     {
       tau = std::max(integrator_m.read_cell_data(array_penalty_parameter),
                      integrator_p.read_cell_data(array_penalty_parameter)) *
-            IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+            IP::get_penalty_factor<Number>(degree, data.IP_factor);
     }
     else // boundary face
     {
       tau = integrator_m.read_cell_data(array_penalty_parameter) *
-            IP::get_penalty_factor<Number>(data.degree, data.IP_factor);
+            IP::get_penalty_factor<Number>(degree, data.IP_factor);
     }
   }
 
@@ -150,6 +156,8 @@ public:
 
 private:
   DiffusiveKernelData data;
+
+  unsigned int degree;
 
   AlignedVector<scalar> array_penalty_parameter;
 
