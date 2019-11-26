@@ -27,22 +27,30 @@ write_surface_mesh(Triangulation<dim> const & triangulation,
   DataOutFaces<dim, DoFHandler<dim>> data_out_surface(true /*surface only*/);
   data_out_surface.attach_triangulation(triangulation);
   data_out_surface.build_patches(mapping, n_subdivisions);
-  data_out_surface.write_vtu_with_pvtu_record(folder, file, counter);
+  data_out_surface.write_vtu_with_pvtu_record(folder, file, counter, 4);
 }
 
 template<int dim>
 void
 write_boundary_IDs(Triangulation<dim> const & triangulation,
                    std::string const &        folder,
-                   std::string const &        file)
+                   std::string const &        file,
+                   MPI_Comm const &           mpi_communicator = MPI_COMM_WORLD)
 {
-  unsigned int rank = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  const unsigned int rank = Utilities::MPI::this_mpi_process(mpi_communicator);
+
+  const unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_communicator);
+
+  const unsigned int n_digits = static_cast<int>(std::ceil(std::log10(std::fabs(n_ranks))));
 
   std::string filename =
-    folder + file + "_grid" + "_Proc" + Utilities::int_to_string(rank) + ".vtk";
+    folder + file + "_grid" + "." + Utilities::int_to_string(rank, n_digits) + ".vtk";
   std::ofstream output(filename.c_str());
 
-  GridOut grid_out;
+  GridOut           grid_out;
+  GridOutFlags::Vtk flags =
+    GridOutFlags::Vtk(false /* cells */, true /* faces */, false /* edges */);
+  grid_out.set_flags(flags);
   grid_out.write_vtk(triangulation, output);
 }
 

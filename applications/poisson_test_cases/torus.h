@@ -1,5 +1,7 @@
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 
+#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                                              INPUT PARAMETERS                                            */
@@ -7,8 +9,8 @@
 /************************************************************************************************************/
 
 // convergence studies in space
-unsigned int const DEGREE_MIN = 1;
-unsigned int const DEGREE_MAX = 7;
+unsigned int const DEGREE_MIN = 3;
+unsigned int const DEGREE_MAX = 3;
 
 unsigned int const REFINE_SPACE_MIN = 2;
 unsigned int const REFINE_SPACE_MAX = 2;
@@ -30,15 +32,16 @@ set_input_parameters(Poisson::InputParameters &param)
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
-  param.mapping = MappingType::Affine; //Isoparametric; // TODO does not converge with Isoparametric mapping
+  param.mapping = MappingType::Isoparametric;
   param.spatial_discretization = SpatialDiscretization::DG;
   param.IP_factor = 1.0;
 
   // SOLVER
   param.solver = Solver::CG;
   param.solver_data = SolverData(1e4, 1.e-20, 1.e-8);
+  param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::pMG;
+  param.multigrid_data.type = MultigridType::cphMG;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
   // MG coarse grid solver
@@ -70,9 +73,8 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
                                    Triangulation<dim>::cell_iterator> >         &/*periodic_faces*/)
 {
   double const r = 0.5, R = 1.5;
-  static TorusManifold<dim> manifold(R, r);
-  triangulation->set_manifold(0, manifold);
   GridGenerator::torus(*triangulation, R, r);
+//  GridGenerator::torus(*triangulation, R, r, 4, 1.5*numbers::PI); // open torus
 
   triangulation->refine_global(n_refine_space);
 }
