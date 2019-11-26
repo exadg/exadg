@@ -49,10 +49,10 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.time_step_size = 0.1;
-  param.order_time_integrator = 1; // 1; // 2; // 3;
+  param.order_time_integrator = 2; // 1; // 2; // 3;
   param.start_with_low_order = true; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
 
@@ -76,6 +76,7 @@ void set_input_parameters(InputParameters &param)
 
   // viscous term
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+  param.IP_factor_viscous = 1.0e0;
 
   // special case: pure DBC's
   param.pure_dirichlet_bc = true;
@@ -83,12 +84,12 @@ void set_input_parameters(InputParameters &param)
 
   // div-div and continuity penalty
   param.use_divergence_penalty = true;
-  param.divergence_penalty_factor = 1.0e1;
+  param.divergence_penalty_factor = 1.0e0;
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   param.type_penalty_parameter = TypePenaltyParameter::ViscousAndConvectiveTerms;
-  param.add_penalty_terms_to_monolithic_system = true;
+  param.add_penalty_terms_to_monolithic_system = false; //true;
 
   // PROJECTION METHODS
 
@@ -137,7 +138,14 @@ void set_input_parameters(InputParameters &param)
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix;
+  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid; //InverseMassMatrix;
+  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+  param.multigrid_data_velocity_block.type = MultigridType::phMG;
+  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
+  param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data_velocity_block.smoother_data.iterations = 5;
+  param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
+  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
 
   // preconditioner Schur-complement block
   param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;

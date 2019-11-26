@@ -420,11 +420,10 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   data.dimensions[1] = DIMENSIONS_X2;
   data.dimensions[2] = DIMENSIONS_X3;
   data.amplitude = MESH_MOVEMENT_AMPLITUDE;
-  data.frequency = MESH_MOVEMENT_FREQUENCY;
+  data.period = END_TIME/MESH_MOVEMENT_FREQUENCY;
   data.t_start = START_TIME;
   data.t_end = END_TIME;
   data.spatial_number_of_oscillations = SPATIAL_NUMBER_OF_OSCILLATIONS;
-  data.damp_towards_bondaries = MESH_MOVEMENT_DAMPED_TOWARDS_BOUNDARIES;
   field_functions->mesh_movement.reset(new RectangleMeshMovementFunctions<dim>(data));
 }
 

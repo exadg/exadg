@@ -42,7 +42,7 @@ using namespace IncNS;
 // specify the flow problem that has to be solved
 
 // template
-//#include "incompressible_navier_stokes_test_cases/template.h"
+#include "incompressible_navier_stokes_test_cases/template.h"
 
 // 2D Stokes flow
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
@@ -50,6 +50,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
 
 // 2D Navier-Stokes flow
+//#include "incompressible_navier_stokes_test_cases/free_stream_preservation_test.h"
 //#include "incompressible_navier_stokes_test_cases/couette.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille.h"
 //#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
@@ -76,11 +77,7 @@ using namespace IncNS;
 
 // ALE (2D/3D Navier-Stokes flow)
 //#include "incompressible_navier_stokes_ale_test_cases/poiseuille_ale.h"
-#include "incompressible_navier_stokes_ale_test_cases/vortex_ale.h"
-//#include "incompressible_navier_stokes_ale_test_cases/taylor_vortex_ale.h"
-//#include "incompressible_navier_stokes_ale_test_cases/free_stream_preservation_test.h"
 //#include "incompressible_navier_stokes_ale_test_cases/turbulent_channel_ale.h"
-//#include "incompressible_navier_stokes_ale_test_cases/3D_taylor_green_vortex_ale.h"
 
 // incompressible flow with scalar transport (but can also be used for pure fluid simulations)
 //#include "incompressible_flow_with_transport_test_cases/lung.h"

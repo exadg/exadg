@@ -10,6 +10,7 @@
 
 #include "../grid_tools/periodic_box.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -28,25 +29,34 @@ unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
 
 // set problem specific parameters like physical dimensions, etc.
-const double Re = 1600.0;
+double const Re = 1600.0;
 
-const double V_0 = 1.0;
-const double L = 1.0;
-const double p_0 = 0.0;
+double const V_0 = 1.0;
+double const L = 1.0;
+double const p_0 = 0.0;
 
-const double VISCOSITY = V_0*L/Re;
-const double MAX_VELOCITY = V_0;
-const double CHARACTERISTIC_TIME = L/V_0;
+double const pi = numbers::PI;
+double const LEFT = - pi * L, RIGHT = pi * L;
 
-std::string OUTPUT_FOLDER = "output/taylor_green_vortex/";
-std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string OUTPUT_NAME = "test";
+double const VISCOSITY = V_0*L/Re;
+double const MAX_VELOCITY = V_0;
+double const CHARACTERISTIC_TIME = L/V_0;
+double const END_TIME = 20.0*CHARACTERISTIC_TIME;
+
+std::string const OUTPUT_FOLDER = "output/taylor_green_vortex/";
+std::string const  OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
+std::string const OUTPUT_NAME = "test_exploit_symmetry"; //"test_ale";
 
 enum class MeshType{ Cartesian, Curvilinear };
-const MeshType MESH_TYPE = MeshType::Cartesian;
+MeshType const MESH_TYPE = MeshType::Cartesian;
 
 // only relevant for Cartesian mesh
-const unsigned int N_CELLS_1D_COARSE_GRID = 1;
+unsigned int const N_CELLS_1D_COARSE_GRID = 1;
+
+// moving mesh
+bool const ALE = false; //true;
+
+bool const EXPLOIT_SYMMETRIE = false; //true;
 
 namespace IncNS
 {
@@ -57,12 +67,16 @@ void set_input_parameters(InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation; //DivergenceFormulation;
   param.right_hand_side = false;
+
+  // ALE
+  param.ale_formulation                     = ALE;
+  param.neumann_with_variable_normal_vector = false;
 
   // PHYSICAL QUANTITIES
   param.start_time = 0.0;
-  param.end_time = 20.0*CHARACTERISTIC_TIME;
+  param.end_time = END_TIME;
   param.viscosity = VISCOSITY;
 
 
@@ -72,9 +86,9 @@ void set_input_parameters(InputParameters &param)
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
-  param.adaptive_time_stepping = false;
+  param.adaptive_time_stepping = true;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl_oif = 0.45; //0.2; //0.125;
+  param.cfl_oif = 0.2; //0.2; //0.125;
   param.cfl = param.cfl_oif * 1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-3; // 1.0e-4;
@@ -117,6 +131,7 @@ void set_input_parameters(InputParameters &param)
   param.divergence_penalty_factor = 1.0e0;
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
+  param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   param.add_penalty_terms_to_monolithic_system = false;
 
   // TURBULENCE
@@ -129,6 +144,11 @@ void set_input_parameters(InputParameters &param)
   param.turbulence_model_constant = 1.35;
 
   // PROJECTION METHODS
+
+  // formulation
+  // this test case only has periodic boundaries so that this parameter is not used.
+  // Deactivate in order to reduce memory requirements
+  param.store_previous_boundary_values = false;
 
   // pressure Poisson equation
   param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-3,100);
@@ -224,9 +244,13 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >        &periodic_faces)
 {
-  double const pi = numbers::PI;
-  double const left = - pi * L, right = pi * L;
   double const deformation = 0.5;
+
+  if(ALE)
+  {
+    AssertThrow(MESH_TYPE == MeshType::Cartesian,
+        ExcMessage("Taylor-Green vortex: Parameter MESH_TYPE is invalid for ALE."));
+  }
 
   bool curvilinear_mesh = false;
   if(MESH_TYPE == MeshType::Cartesian)
@@ -242,14 +266,50 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  create_periodic_box(triangulation,
-                      n_refine_space,
-                      periodic_faces,
-                      N_CELLS_1D_COARSE_GRID,
-                      left,
-                      right,
-                      curvilinear_mesh,
-                      deformation);
+  if(EXPLOIT_SYMMETRIE == false)
+  {
+    create_periodic_box(triangulation,
+                        n_refine_space,
+                        periodic_faces,
+                        N_CELLS_1D_COARSE_GRID,
+                        LEFT,
+                        RIGHT,
+                        curvilinear_mesh,
+                        deformation);
+  }
+  else
+  {
+    GridGenerator::subdivided_hyper_cube(*triangulation, N_CELLS_1D_COARSE_GRID, 0.0, RIGHT);
+
+    if(curvilinear_mesh)
+    {
+      unsigned int const               frequency = 2;
+      static DeformedCubeManifold<dim> manifold(0.0, RIGHT, deformation, frequency);
+      triangulation->set_all_manifold_ids(1);
+      triangulation->set_manifold(1, manifold);
+
+      std::vector<bool> vertex_touched(triangulation->n_vertices(), false);
+
+      for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
+          cell != triangulation->end();
+          ++cell)
+      {
+        for(unsigned int v = 0; v < GeometryInfo<dim>::vertices_per_cell; ++v)
+        {
+          if(vertex_touched[cell->vertex_index(v)] == false)
+          {
+            Point<dim> & vertex                   = cell->vertex(v);
+            Point<dim>   new_point                = manifold.push_forward(vertex);
+            vertex                                = new_point;
+            vertex_touched[cell->vertex_index(v)] = true;
+          }
+        }
+      }
+    }
+
+    // perform global refinements
+    triangulation->refine_global(n_refine_space);
+  }
 }
 
 /************************************************************************************************************/
@@ -313,11 +373,21 @@ public:
 
 template<int dim>
 void set_boundary_conditions(
-    std::shared_ptr<BoundaryDescriptorU<dim> > /*boundary_descriptor_velocity*/,
-    std::shared_ptr<BoundaryDescriptorP<dim> > /*boundary_descriptor_pressure*/)
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  // test case with pure periodic BC
-  // boundary descriptors remain empty for velocity and pressure
+  if(EXPLOIT_SYMMETRIE)
+  {
+    typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
+    boundary_descriptor_velocity->symmetry_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim))); // function will not be used
+    boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim))); // dg_u/dt=0 for dual splitting
+  }
+  else
+  {
+    // test case with pure periodic BC
+    // boundary descriptors remain empty for velocity and pressure
+  }
 }
 
 
@@ -328,6 +398,22 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new InitialSolutionPressure<dim>());
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+
+  if(ALE)
+  {
+    MeshMovementData<dim> data;
+    data.temporal = MeshMovementAdvanceInTime::Sin;
+    data.shape = MeshMovementShape::Sin;
+    data.dimensions[0] = std::abs(RIGHT-LEFT);
+    data.dimensions[1] = std::abs(RIGHT-LEFT);
+    data.dimensions[2] = std::abs(RIGHT-LEFT);
+    data.amplitude = RIGHT/6.0; // use a value <= RIGHT/4.0
+    data.period = END_TIME/40.0; // END_TIME/2.0;
+    data.t_start = 0.0;
+    data.t_end = END_TIME;
+    data.spatial_number_of_oscillations = 1.0;
+    field_functions->mesh_movement.reset(new CubeMeshMovementFunctions<dim>(data));
+  }
 }
 
 /************************************************************************************************************/
@@ -357,7 +443,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.degree = param.degree_u;
 
   // calculate div and mass error
-  pp_data.mass_data.calculate_error = false; //true;
+  pp_data.mass_data.calculate_error = false;
   pp_data.mass_data.start_time = 0.0;
   pp_data.mass_data.sample_every_time_steps = 1e2;
   pp_data.mass_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
@@ -371,7 +457,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
   // kinetic energy spectrum
-  pp_data.kinetic_energy_spectrum_data.calculate = true;
+  pp_data.kinetic_energy_spectrum_data.calculate = false; //true;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
   pp_data.kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;

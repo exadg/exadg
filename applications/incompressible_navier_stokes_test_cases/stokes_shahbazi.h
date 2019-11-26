@@ -17,21 +17,21 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 5;
-unsigned int const DEGREE_MAX = 5;
+unsigned int const DEGREE_MIN = 4;
+unsigned int const DEGREE_MAX = 4;
 
 unsigned int const REFINE_SPACE_MIN = 2;
 unsigned int const REFINE_SPACE_MAX = 2;
 
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MIN = 1;
+unsigned int const REFINE_TIME_MAX = 16;
 
 // set problem specific parameters like physical dimensions, etc.
-const double VISCOSITY = 1.0e0;
+double const VISCOSITY = 1.0e0;
 
 // perform stability analysis and compute eigenvalue spectrum
 // For this analysis one has to use the BDF1 scheme and homogeneous boundary conditions!!!
-bool stability_analysis = false;
+bool const STABILITY_ANALYSIS = false;
 
 namespace IncNS
 {
@@ -55,14 +55,14 @@ void set_input_parameters(InputParameters &param)
   param.solver_type = SolverType::Unsteady;
   param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  param.time_step_size = 1.e-3;
-  param.order_time_integrator = 2; // 1; // 2; // 3;
-  param.start_with_low_order = false; // true; // false;
+  param.time_step_size = 0.1; //1.e-3;
+  param.order_time_integrator = 1; // 1; // 2; // 3;
+  param.start_with_low_order = true; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
-  param.solver_info_data.print_to_screen = true;
-  param.solver_info_data.interval_time = (param.end_time-param.start_time)/10;
+  param.solver_info_data.print_to_screen = false; //true;
+  param.solver_info_data.interval_time = 1.0; //(param.end_time-param.start_time)/10;
 
 
   // SPATIAL DISCRETIZATION
@@ -90,10 +90,13 @@ void set_input_parameters(InputParameters &param)
   param.adjust_pressure_level = AdjustPressureLevel::ApplyZeroMeanValue; //ApplyAnalyticalSolutionInPoint;
 
   // div-div and continuity penalty terms
-  param.use_divergence_penalty = false;
-  param.use_continuity_penalty = false;
+  param.use_divergence_penalty = true;
+  param.use_continuity_penalty = true;
 
   // PROJECTION METHODS
+
+  // formulation
+  param.store_previous_boundary_values = true;
 
   // pressure Poisson equation
   param.solver_pressure_poisson = SolverPressurePoisson::CG;
@@ -102,7 +105,7 @@ void set_input_parameters(InputParameters &param)
 
   // projection step
   param.solver_projection = SolverProjection::CG;
-  param.solver_data_projection = SolverData(1000, 1.e-20, 1.e-12);
+  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-8);
   param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -215,7 +218,7 @@ public:
     else if (component == 1)
       result = exp_t*cos_x*(cos_ay+cos_a*cosh_y);
 
-    if(stability_analysis == true)
+    if(STABILITY_ANALYSIS == true)
       result = 0;
 
     return result;
@@ -247,7 +250,7 @@ public:
     double sinh_y = std::sinh(p[1]);
     result = lambda*cos_a*cos_x*sinh_y*exp_t;
 
-    if(stability_analysis == true)
+    if(STABILITY_ANALYSIS == true)
       result = 0;
 
     return result;
@@ -285,7 +288,7 @@ public:
     else if (component == 1)
       result = -lambda*exp_t*cos_x*(cos_ay+cos_a*cosh_y);
 
-    if(stability_analysis == true)
+    if(STABILITY_ANALYSIS == true)
       result = 0;
 
     return result;
@@ -343,7 +346,7 @@ construct_postprocessor(InputParameters const &param)
   // calculation of velocity error
   pp_data.error_data_u.analytical_solution_available = true;
   pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>());
-  pp_data.error_data_u.calculate_relative_errors = false;
+  pp_data.error_data_u.calculate_relative_errors = true; //false;
   pp_data.error_data_u.error_calc_start_time = param.start_time;
   pp_data.error_data_u.error_calc_interval_time = (param.end_time - param.start_time);
   pp_data.error_data_u.name = "velocity";
@@ -351,7 +354,7 @@ construct_postprocessor(InputParameters const &param)
   // ... pressure error
   pp_data.error_data_p.analytical_solution_available = true;
   pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>());
-  pp_data.error_data_p.calculate_relative_errors = false;
+  pp_data.error_data_p.calculate_relative_errors = true; //false;
   pp_data.error_data_p.error_calc_start_time = param.start_time;
   pp_data.error_data_p.error_calc_interval_time = (param.end_time - param.start_time);
   pp_data.error_data_p.name = "pressure";

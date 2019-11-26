@@ -21,7 +21,7 @@
 unsigned int const DEGREE_MIN = 3; // degree_velocity >= 2 for mixed-order formulation (degree_pressure >= 1)
 unsigned int const DEGREE_MAX = DEGREE_MIN;
 
-unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MIN = 1;
 unsigned int const REFINE_SPACE_MAX = REFINE_SPACE_MIN;
 
 unsigned int const REFINE_TIME_MIN = 0;
@@ -29,7 +29,7 @@ unsigned int const REFINE_TIME_MAX = REFINE_TIME_MIN;
 
 // select test case according to Schaefer and Turek benchmark definition: 2D-1/2/3, 3D-1/2/3
 ProblemType PROBLEM_TYPE = ProblemType::Unsteady;
-unsigned int const DIMENSION = 2;
+unsigned int const DIMENSION = 3;
 unsigned int const TEST_CASE = 3; // 1, 2 or 3
 double const Um = (DIMENSION == 2 ? (TEST_CASE==1 ? 0.3 : 1.5) : (TEST_CASE==1 ? 0.45 : 2.25));
 
@@ -41,7 +41,7 @@ double const VISCOSITY = 1.0e-3;
 double const END_TIME = (TEST_CASE==1) ? 1000.0 : 8.0;
 
 // CFL number (use CFL <= 0.4 - 0.6 for adaptive time stepping)
-double const CFL = 0.4;
+double const CFL = 0.6;
 
 // physical dimensions
 double const Y_C = 0.2; // center of cylinder (y-coordinate)
@@ -58,11 +58,11 @@ std::vector<double> Z_VALUES(N_POINTS_Z);
 std::vector<Tensor<1,DIMENSION,double> > VELOCITY_VALUES(N_POINTS_Y*N_POINTS_Z);
 
 // solver tolerances
-double const ABS_TOL_LINEAR = 1.e-12;
-double const REL_TOL_LINEAR = 1.e-6; // use 1.e-3 or smaller for pseudo-timestepping approach
+double const ABS_TOL = 1.e-12;
+double const REL_TOL = 1.e-3;
 
-double const ABS_TOL_NONLINEAR = 1.e-12;
-double const REL_TOL_NONLINEAR = 1.e-8;
+double const ABS_TOL_LINEAR = ABS_TOL;
+double const REL_TOL_LINEAR = REL_TOL;
 
 // writing output
 std::string OUTPUT_FOLDER = "output/FPC/";
@@ -140,9 +140,12 @@ void set_input_parameters(InputParameters &param)
 
   // PROJECTION METHODS
 
+  // formulation
+  param.store_previous_boundary_values = true;
+
   // pressure Poisson equation
   param.solver_pressure_poisson = SolverPressurePoisson::CG; //FGMRES;
-  param.solver_data_pressure_poisson = SolverData(1000,ABS_TOL_LINEAR,REL_TOL_LINEAR,30);
+  param.solver_data_pressure_poisson = SolverData(1000,ABS_TOL,REL_TOL,30);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -152,7 +155,7 @@ void set_input_parameters(InputParameters &param)
  
   // projection step
   param.solver_projection = SolverProjection::CG;
-  param.solver_data_projection = SolverData(1000, ABS_TOL_LINEAR, REL_TOL_LINEAR);
+  param.solver_data_projection = SolverData(1000, ABS_TOL, REL_TOL);
   param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
@@ -162,7 +165,7 @@ void set_input_parameters(InputParameters &param)
 
   // viscous step
   param.solver_viscous = SolverViscous::CG;
-  param.solver_data_viscous = SolverData(1000,ABS_TOL_LINEAR,REL_TOL_LINEAR);
+  param.solver_data_viscous = SolverData(1000,ABS_TOL,REL_TOL);
   param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //BlockJacobi; //Multigrid;
   param.update_preconditioner_viscous = false;
   param.multigrid_data_viscous.type = MultigridType::phMG;
@@ -174,10 +177,10 @@ void set_input_parameters(InputParameters &param)
   // momentum step
 
   // Newton solver
-  param.newton_solver_data_momentum = NewtonSolverData(100,ABS_TOL_NONLINEAR,REL_TOL_NONLINEAR);
+  param.newton_solver_data_momentum = NewtonSolverData(100,ABS_TOL,REL_TOL);
 
   // linear solver
-  param.solver_momentum = SolverMomentum::FGMRES; //GMRES; //FGMRES;
+  param.solver_momentum = SolverMomentum::GMRES; //FGMRES;
   param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
   param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
   param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
@@ -192,7 +195,7 @@ void set_input_parameters(InputParameters &param)
   // COUPLED NAVIER-STOKES SOLVER
 
   // nonlinear solver (Newton solver)
-  param.newton_solver_data_coupled = NewtonSolverData(100,ABS_TOL_NONLINEAR,REL_TOL_NONLINEAR);
+  param.newton_solver_data_coupled = NewtonSolverData(100,ABS_TOL,REL_TOL);
 
   // linear solver
   param.solver_coupled = SolverCoupled::FGMRES; //FGMRES;
@@ -510,12 +513,13 @@ construct_postprocessor(InputParameters const &param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME_VTU;
   pp_data.output_data.output_start_time = param.start_time;
   pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
   pp_data.output_data.write_divergence = true;
+  pp_data.output_data.write_higher_order = false;
   pp_data.output_data.degree = param.degree_u;
 
   // lift and drag

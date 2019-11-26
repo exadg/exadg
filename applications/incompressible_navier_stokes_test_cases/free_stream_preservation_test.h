@@ -27,7 +27,7 @@ double const U_X_MAX   = 1.0;
 double const VISCOSITY = 2.5e-2;
 
 double const LEFT  = -0.5;
-double const RIGHT = 0.5;
+double const RIGHT =  0.5;
 
 double const START_TIME = 0.0;
 double const END_TIME   = 10.0;
@@ -58,16 +58,16 @@ set_input_parameters(InputParameters & param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
-  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  param.order_time_integrator = 2;
+  param.temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
+  param.order_time_integrator = 3;
   param.start_with_low_order = false;
   param.adaptive_time_stepping = true;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.time_step_size = 0.25;
   param.dt_refinements = REFINE_TIME_MIN;
   param.max_velocity = std::sqrt(U_X_MAX*U_X_MAX + U_X_MAX*U_X_MAX);
-  param.cfl = 1.0;
+  param.cfl = 0.25;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
@@ -93,6 +93,14 @@ set_input_parameters(InputParameters & param)
   // special case: pure DBC's
   param.pure_dirichlet_bc     = true;
   param.adjust_pressure_level = AdjustPressureLevel::ApplyAnalyticalSolutionInPoint;
+
+  // div-div and continuity penalty
+  param.use_divergence_penalty = true;
+  param.divergence_penalty_factor = 1.0e0;
+  param.use_continuity_penalty = true;
+  param.continuity_penalty_factor = param.divergence_penalty_factor;
+  param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  param.add_penalty_terms_to_monolithic_system = true;
 
   // NUMERICAL PARAMETERS
   param.implement_block_diagonal_preconditioner_matrix_free = false;
@@ -123,6 +131,7 @@ set_input_parameters(InputParameters & param)
 
   // formulations
   param.order_extrapolation_pressure_nbc = param.order_time_integrator<=2 ? param.order_time_integrator : 2;
+  param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
 
   // viscous step
   param.solver_viscous = SolverViscous::CG;
@@ -136,7 +145,7 @@ set_input_parameters(InputParameters & param)
   // PRESSURE-CORRECTION SCHEME
 
   // formulation
-  param.order_pressure_extrapolation = param.order_time_integrator - 1;
+  param.order_pressure_extrapolation = std::min(2, (int)param.order_time_integrator) - 1;  // J_p = J-1, but not larger than 1
   param.rotational_formulation       = true;
 
   // momentum step
@@ -146,7 +155,7 @@ set_input_parameters(InputParameters & param)
 
   // linear solver
   param.solver_momentum = SolverMomentum::FGMRES;
-  param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-12, 100);
+  param.solver_data_momentum = SolverData(1e4, 1.e-14, 1.e-14, 100);
   param.update_preconditioner_momentum = false;
   param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
   param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
@@ -161,7 +170,7 @@ set_input_parameters(InputParameters & param)
 
   // linear solver
   param.solver_coupled = SolverCoupled::FGMRES;
-  param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-12, 100);
+  param.solver_data_coupled = SolverData(1e4, 1.e-14, 1.e-14, 100);
 
   // preconditioner linear solver
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
@@ -279,7 +288,7 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
     data.shape = MeshMovementShape::Sin;
     data.dimensions[0] = std::abs(RIGHT-LEFT);
     data.dimensions[1] = std::abs(RIGHT-LEFT);
-    data.amplitude = 0.12 * (RIGHT-LEFT);
+    data.amplitude = 0.08 * (RIGHT-LEFT);
     data.period = (END_TIME-START_TIME)/10.0;
     data.t_start = START_TIME;
     data.t_end = END_TIME;
@@ -301,11 +310,11 @@ construct_postprocessor(InputParameters const & param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output                    = true;
+  pp_data.output_data.write_output                    = false; //true;
   pp_data.output_data.output_folder                   = "output/free_stream_preservation/vtu/";
   pp_data.output_data.output_name                     = "test";
   pp_data.output_data.output_start_time               = param.start_time;
-  pp_data.output_data.output_interval_time            = (param.end_time - param.start_time) / 100;
+  pp_data.output_data.output_interval_time            = (param.end_time - param.start_time)/10;
   pp_data.output_data.write_higher_order              = true;
   pp_data.output_data.degree                          = param.degree_u;
 
@@ -314,7 +323,7 @@ construct_postprocessor(InputParameters const & param)
   pp_data.error_data_u.analytical_solution.reset(new AnalyticalSolutionVelocity<dim>());
   pp_data.error_data_u.calculate_relative_errors = true;
   pp_data.error_data_u.error_calc_start_time     = param.start_time;
-  pp_data.error_data_u.error_calc_interval_time  = (param.end_time - param.start_time)/100;
+  pp_data.error_data_u.error_calc_interval_time  = (param.end_time - param.start_time)/10;
   pp_data.error_data_u.name                      = "velocity";
 
   // ... pressure error
@@ -322,7 +331,7 @@ construct_postprocessor(InputParameters const & param)
   pp_data.error_data_p.analytical_solution.reset(new AnalyticalSolutionPressure<dim>());
   pp_data.error_data_p.calculate_relative_errors = true;
   pp_data.error_data_p.error_calc_start_time     = param.start_time;
-  pp_data.error_data_p.error_calc_interval_time  = (param.end_time - param.start_time)/100;
+  pp_data.error_data_p.error_calc_interval_time  = (param.end_time - param.start_time)/10;
   pp_data.error_data_p.name                      = "pressure";
 
   std::shared_ptr<PostProcessorBase<dim, Number>> pp;
