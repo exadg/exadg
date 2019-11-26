@@ -11,7 +11,8 @@ enum class MeshMovementAdvanceInTime
 enum class MeshMovementShape
 {
   Undefined,
-  Sin
+  Sin,
+  SineAligned
 };
 
 template<int dim>
@@ -95,6 +96,12 @@ private:
             std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
             data.amplitude *
             std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width);
+        break;
+
+      case MeshMovementShape::SineAligned:
+        solution = std::sin(2.0 * pi * (x(coordinate_direction) - left) *
+                            data.spatial_number_of_oscillations / width) *
+                   data.amplitude;
         break;
 
       default:
