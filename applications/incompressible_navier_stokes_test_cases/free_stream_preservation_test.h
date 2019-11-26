@@ -285,7 +285,7 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     MeshMovementData<dim> data;
     data.temporal = MeshMovementAdvanceInTime::Sin;
-    data.shape = MeshMovementShape::Sin;
+    data.shape = MeshMovementShape::SineAligned; //Sin;
     data.dimensions[0] = std::abs(RIGHT-LEFT);
     data.dimensions[1] = std::abs(RIGHT-LEFT);
     data.amplitude = 0.08 * (RIGHT-LEFT);
@@ -310,11 +310,11 @@ construct_postprocessor(InputParameters const & param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output                    = false; //true;
+  pp_data.output_data.write_output                    = false;
   pp_data.output_data.output_folder                   = "output/free_stream_preservation/vtu/";
   pp_data.output_data.output_name                     = "test";
   pp_data.output_data.output_start_time               = param.start_time;
-  pp_data.output_data.output_interval_time            = (param.end_time - param.start_time)/10;
+  pp_data.output_data.output_interval_time            = (param.end_time - param.start_time)/100;
   pp_data.output_data.write_higher_order              = true;
   pp_data.output_data.degree                          = param.degree_u;
 
