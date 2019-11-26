@@ -9,6 +9,8 @@
 
 using namespace dealii;
 
+//#define MAPPING_Q_CACHE
+
 template<int dim, typename Number>
 class MovingMesh
 {
@@ -51,11 +53,13 @@ private:
   // Finite Element (use a continuous finite element space to describe the mesh movement)
   std::shared_ptr<FESystem<dim>> fe;
 
-  // DoFHandler
-  DoFHandler<dim> dof_handler;
-
+#ifndef MAPPING_Q_CACHE
   // vectors with grid coordinates for all multigrid levels
   std::vector<VectorType> grid_coordinates;
+#endif
+
+  // DoFHandler
+  DoFHandler<dim> dof_handler;
 };
 
 #endif /*INCLUDE_MOVING_MESH_H_*/

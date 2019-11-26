@@ -11,8 +11,10 @@ MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & tri
   : polynomial_degree(polynomial_degree),
     mesh_movement_function(function),
     fe(new FESystem<dim>(FE_Q<dim>(polynomial_degree), dim)),
-    dof_handler(triangulation),
-    grid_coordinates(triangulation.n_global_levels())
+#ifndef MAPPING_Q_CACHE
+    grid_coordinates(triangulation.n_global_levels()),
+#endif
+    dof_handler(triangulation)
 {
   dof_handler.distribute_dofs(*fe);
   dof_handler.distribute_mg_dofs();
@@ -24,10 +26,11 @@ MovingMesh<dim, Number>::initialize_mapping_ale(double const time, Mapping<dim> 
 {
   std::shared_ptr<Mapping<dim>> mapping_ale;
 
-  if(true)
-    mapping_ale.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
-  else
-    mapping_ale.reset(new MappingQCache<dim>(polynomial_degree));
+#ifdef MAPPING_Q_CACHE
+  mapping_ale.reset(new MappingQCache<dim>(polynomial_degree));
+#else
+  mapping_ale.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
+#endif
 
   move_mesh_analytical(time, mapping, *mapping_ale);
 
@@ -40,10 +43,14 @@ MovingMesh<dim, Number>::move_mesh_analytical(double const         time,
                                               Mapping<dim> const & mapping,
                                               Mapping<dim> &       mapping_ale)
 {
-  (void)mapping_ale;
-
   mesh_movement_function->set_time(time);
 
+#ifdef MAPPING_Q_CACHE
+  (void)mapping;
+  (void)mapping_ale;
+  // TODO
+#else
+  (void)mapping_ale;
   unsigned int nlevel = dof_handler.get_triangulation().n_global_levels();
   for(unsigned int level = 0; level < nlevel; ++level)
   {
@@ -88,6 +95,7 @@ MovingMesh<dim, Number>::move_mesh_analytical(double const         time,
     grid_coordinates[level] += displacement;
     grid_coordinates[level].update_ghost_values();
   }
+#endif
 }
 
 template<int dim, typename Number>
