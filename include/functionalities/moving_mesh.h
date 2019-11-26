@@ -9,7 +9,7 @@
 
 using namespace dealii;
 
-//#define MAPPING_Q_CACHE
+#define MAPPING_Q_CACHE
 
 template<int dim, typename Number>
 class MovingMesh
@@ -33,7 +33,9 @@ public:
    * the initial mesh position has to be used for this function.
    */
   void
-  move_mesh_analytical(double const time, Mapping<dim> const & mapping, Mapping<dim> & mapping_ale);
+  move_mesh_analytical(double const                  time,
+                       Mapping<dim> const &          mapping,
+                       std::shared_ptr<Mapping<dim>> mapping_ale);
 
   /*
    * This function extracts the grid coordinates of the current mesh configuration, i.e.,
@@ -46,6 +48,9 @@ public:
 
 private:
   unsigned int polynomial_degree;
+
+  // needed for re-initialization of MappingQCache
+  parallel::TriangulationBase<dim> const & triangulation;
 
   // An analytical function that describes the mesh movement
   std::shared_ptr<Function<dim>> mesh_movement_function;
