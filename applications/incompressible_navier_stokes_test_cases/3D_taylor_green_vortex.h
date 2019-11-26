@@ -56,7 +56,7 @@ unsigned int const N_CELLS_1D_COARSE_GRID = 1;
 // moving mesh
 bool const ALE = false; //true;
 
-bool const EXPLOIT_SYMMETRIE = false; //true;
+bool const EXPLOIT_SYMMETRY = false; //true;
 
 namespace IncNS
 {
@@ -266,7 +266,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  if(EXPLOIT_SYMMETRIE == false)
+  if(EXPLOIT_SYMMETRY == false)
   {
     create_periodic_box(triangulation,
                         n_refine_space,
@@ -376,7 +376,7 @@ void set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
 {
-  if(EXPLOIT_SYMMETRIE)
+  if(EXPLOIT_SYMMETRY)
   {
     typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
