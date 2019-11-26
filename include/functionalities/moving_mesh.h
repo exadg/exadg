@@ -23,15 +23,15 @@ public:
    * This function initialized the MappingFEField object that is used to describe
    * a moving mesh.
    */
-  std::shared_ptr<MappingFEField<dim, dim, VectorType>>
-  initialize_mapping_fe_field(double const time, Mapping<dim> const & mapping);
+  std::shared_ptr<Mapping<dim>>
+  initialize_mapping_ale(double const time, Mapping<dim> const & mapping);
 
   /*
    * This function is formulated w.r.t. reference coordinates, i.e., the mapping describing
    * the initial mesh position has to be used for this function.
    */
   void
-  move_mesh_analytical(double const time, Mapping<dim> const & mapping);
+  move_mesh_analytical(double const time, Mapping<dim> const & mapping, Mapping<dim> & mapping_ale);
 
   /*
    * This function extracts the grid coordinates of the current mesh configuration, i.e.,
@@ -43,6 +43,8 @@ public:
                                Mapping<dim> const &    mapping);
 
 private:
+  unsigned int polynomial_degree;
+
   // An analytical function that describes the mesh movement
   std::shared_ptr<Function<dim>> mesh_movement_function;
 

@@ -72,8 +72,7 @@ template<int dim, typename Number>
 class DGNavierStokesBase : public dealii::Subscriptor, public Interface::OperatorBase<Number>
 {
 protected:
-  typedef LinearAlgebra::distributed::Vector<Number>                           VectorType;
-  typedef MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>> MappingField;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
@@ -432,7 +431,7 @@ public:
   update_after_mesh_movement();
 
   void
-  set_mapping_ale(std::shared_ptr<MappingField> mapping_in);
+  set_mapping_ale(std::shared_ptr<Mapping<dim>> mapping_in);
 
   void
   set_grid_velocity(VectorType velocity);
@@ -489,7 +488,7 @@ private:
 
   unsigned int                          mapping_degree;
   std::shared_ptr<MappingQGeneric<dim>> mapping;
-  std::shared_ptr<MappingField>         mapping_ale;
+  std::shared_ptr<Mapping<dim>>         mapping_ale;
 
   DoFHandler<dim>         dof_handler_u;
   DoFHandler<dim>         dof_handler_p;

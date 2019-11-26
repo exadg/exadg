@@ -1,13 +1,15 @@
 #include "moving_mesh.h"
 
 #include <deal.II/dofs/dof_tools.h>
+#include <deal.II/fe/mapping_q_cache.h>
 #include <deal.II/numerics/vector_tools.h>
 
 template<int dim, typename Number>
 MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & triangulation,
                                     unsigned int const                       polynomial_degree,
                                     std::shared_ptr<Function<dim>> const     function)
-  : mesh_movement_function(function),
+  : polynomial_degree(polynomial_degree),
+    mesh_movement_function(function),
     fe(new FESystem<dim>(FE_Q<dim>(polynomial_degree), dim)),
     dof_handler(triangulation),
     grid_coordinates(triangulation.n_global_levels())
@@ -17,22 +19,29 @@ MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & tri
 }
 
 template<int dim, typename Number>
-std::shared_ptr<MappingFEField<dim, dim, LinearAlgebra::distributed::Vector<Number>>>
-MovingMesh<dim, Number>::initialize_mapping_fe_field(double const         time,
-                                                     Mapping<dim> const & mapping)
+std::shared_ptr<Mapping<dim>>
+MovingMesh<dim, Number>::initialize_mapping_ale(double const time, Mapping<dim> const & mapping)
 {
-  move_mesh_analytical(time, mapping);
+  std::shared_ptr<Mapping<dim>> mapping_ale;
 
-  std::shared_ptr<MappingFEField<dim, dim, VectorType>> mapping_fe_field;
-  mapping_fe_field.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
+  if(true)
+    mapping_ale.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
+  else
+    mapping_ale.reset(new MappingQCache<dim>(polynomial_degree));
 
-  return mapping_fe_field;
+  move_mesh_analytical(time, mapping, *mapping_ale);
+
+  return mapping_ale;
 }
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::move_mesh_analytical(double const time, Mapping<dim> const & mapping)
+MovingMesh<dim, Number>::move_mesh_analytical(double const         time,
+                                              Mapping<dim> const & mapping,
+                                              Mapping<dim> &       mapping_ale)
 {
+  (void)mapping_ale;
+
   mesh_movement_function->set_time(time);
 
   unsigned int nlevel = dof_handler.get_triangulation().n_global_levels();
