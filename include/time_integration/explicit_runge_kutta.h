@@ -52,7 +52,7 @@ public:
   }
 
   void
-  solve_timestep(VectorType & dst, VectorType & src, double time, double time_step)
+  solve_timestep(VectorType & dst, VectorType & src, double const time, double const time_step)
   {
     if(order == 1) // explicit Euler method
     {
@@ -156,7 +156,6 @@ public:
       this->underlying_operator->evaluate(vec_temp, vec_rhs, time + time_step);
       dst.add(time_step / 6., vec_temp);
     }
-
     else
     {
       AssertThrow(order <= 4,
