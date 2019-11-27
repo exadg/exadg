@@ -251,6 +251,9 @@ TimeIntBDF<Number>::initialize_oif()
     {
       AssertThrow(false, ExcMessage("Not implemented."));
     }
+
+    AssertThrow(time_integrator_OIF.get() != 0,
+                ExcMessage("OIF time integrator has not been initialized correctly."));
   }
 }
 
@@ -549,8 +552,6 @@ TimeIntBDF<Number>::do_timestep_oif_substepping(VectorType & solution_tilde_mp,
                                       solution_tilde_m,
                                       start_time,
                                       time_step_size);
-
-  solution_tilde_mp.swap(solution_tilde_m);
 }
 
 template<typename Number>
