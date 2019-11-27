@@ -445,7 +445,8 @@ template<typename Number>
 void
 TimeIntBDFDualSplitting<Number>::evaluate_convective_term()
 {
-  if(this->param.convective_problem())
+  if(this->param.convective_problem() &&
+     this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false) // Eulerian case
     {
