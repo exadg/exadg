@@ -87,7 +87,9 @@ LiftAndDragCalculator<dim, Number>::LiftAndDragCalculator()
     dof_index_velocity(0),
     dof_index_pressure(1),
     quad_index(0),
+    c_L_min(std::numeric_limits<double>::max()),
     c_L_max(-std::numeric_limits<double>::max()),
+    c_D_min(std::numeric_limits<double>::max()),
     c_D_max(-std::numeric_limits<double>::max())
 {
 }
@@ -134,7 +136,9 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
     Force /= reference_value;
 
     double const drag = Force[0], lift = Force[1];
+    c_D_min = std::min(c_D_min, drag);
     c_D_max = std::max(c_D_max, drag);
+    c_L_min = std::min(c_L_min, lift);
     c_L_max = std::max(c_L_max, lift);
 
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -154,11 +158,13 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
         // clang-format off
         f_drag << std::setw(precision+8) << std::left << "time t"
                << std::setw(precision+8) << std::left << "c_D(t)"
+               << std::setw(precision+8) << std::left << "c_D_min"
                << std::setw(precision+8) << std::left << "c_D_max"
                << std::endl;
 
         f_lift << std::setw(precision+8) << std::left << "time t"
                << std::setw(precision+8) << std::left << "c_L(t)"
+               << std::setw(precision+8) << std::left << "c_L_min"
                << std::setw(precision+8) << std::left << "c_L_max"
                << std::endl;
         // clang-format on
@@ -175,6 +181,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
       f_drag << std::scientific << std::setprecision(precision)
              << std::setw(precision+8) << std::left << time
              << std::setw(precision+8) << std::left << drag
+             << std::setw(precision+8) << std::left << c_D_min
              << std::setw(precision+8) << std::left << c_D_max
              << std::endl;
 
@@ -183,6 +190,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
       f_lift << std::scientific << std::setprecision(precision)
              << std::setw(precision+8) << std::left << time
              << std::setw(precision+8) << std::left << lift
+             << std::setw(precision+8) << std::left << c_L_min
              << std::setw(precision+8) << std::left << c_L_max
              << std::endl;
 

@@ -21,7 +21,7 @@
 unsigned int const DEGREE_MIN = 3; // degree_velocity >= 2 for mixed-order formulation (degree_pressure >= 1)
 unsigned int const DEGREE_MAX = DEGREE_MIN;
 
-unsigned int const REFINE_SPACE_MIN = 1;
+unsigned int const REFINE_SPACE_MIN = 0;
 unsigned int const REFINE_SPACE_MAX = REFINE_SPACE_MIN;
 
 unsigned int const REFINE_TIME_MIN = 0;
@@ -94,14 +94,15 @@ void set_input_parameters(InputParameters &param)
   param.solver_type = SolverType::Unsteady;
   param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = true;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = true;
   param.max_velocity = Um;
   param.cfl = CFL;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-3;
-  param.order_time_integrator = 2;
-  param.start_with_low_order = true;
+  param.time_step_size_max = 1.e-2;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
