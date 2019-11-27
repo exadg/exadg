@@ -8,6 +8,9 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
+#include <deal.II/distributed/fully_distributed_tria.h>
+#include <deal.II/distributed/fully_distributed_tria_util.h>
+
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/functionalities/linear_interpolation.h"
 
@@ -18,7 +21,7 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 3; // degree_velocity >= 2 for mixed-order formulation (degree_pressure >= 1)
+unsigned int const DEGREE_MIN = 4; // degree_velocity >= 2 for mixed-order formulation (degree_pressure >= 1)
 unsigned int const DEGREE_MAX = DEGREE_MIN;
 
 unsigned int const REFINE_SPACE_MIN = 0;
@@ -94,12 +97,14 @@ void set_input_parameters(InputParameters &param)
   param.solver_type = SolverType::Unsteady;
   param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   param.order_time_integrator = 2;
   param.start_with_low_order = true;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = true;
   param.max_velocity = Um;
   param.cfl = CFL;
+  param.cfl_oif = CFL;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-3;
   param.time_step_size_max = 1.e-2;
@@ -209,13 +214,12 @@ void set_input_parameters(InputParameters &param)
 
   // preconditioner velocity/momentum block
   param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
-  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionConvectionDiffusion;
+  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data_velocity_block.type = MultigridType::phMG;
-  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Jacobi; //Chebyshev; 
-  param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
   param.multigrid_data_velocity_block.smoother_data.iterations = 5;
-  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::GMRES; //CG;
-  param.multigrid_data_velocity_block.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::BlockJacobi; //PointJacobi; //AMG;
+  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //CG;
   param.multigrid_data_velocity_block.coarse_problem.solver_data.rel_tol = 1.e-3;
   param.multigrid_data_velocity_block.coarse_problem.amg_data.data.smoother_type = "Chebyshev";
   param.multigrid_data_velocity_block.coarse_problem.amg_data.data.smoother_sweeps = 1;
@@ -224,7 +228,7 @@ void set_input_parameters(InputParameters &param)
   param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
   param.multigrid_data_pressure_block.type = MultigridType::phMG;
-  param.multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
   param.multigrid_data_pressure_block.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi; //AMG;
   param.multigrid_data_pressure_block.coarse_problem.solver_data.rel_tol = 1.e-3;
   param.multigrid_data_pressure_block.coarse_problem.amg_data.data.smoother_type = "Chebyshev";
@@ -243,7 +247,7 @@ void set_input_parameters(InputParameters &param)
 
 template<int dim>
 void
-create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+do_create_grid_and_set_boundary_ids(Triangulation<dim> & triangulation,
                                  unsigned int const                            n_refine_space,
                                  std::vector<GridTools::PeriodicFacePair<typename
                                    Triangulation<dim>::cell_iterator> >        &periodic_faces)
@@ -279,8 +283,8 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
        ExcMessage("Specified manifold type not implemented"));
  }
 
- create_triangulation(*triangulation);
- triangulation->set_manifold(MANIFOLD_ID, *cylinder_manifold);
+ create_triangulation(triangulation);
+ triangulation.set_manifold(MANIFOLD_ID, *cylinder_manifold);
 
  // generate vector of manifolds and apply manifold to all cells that have been marked
  static std::vector<std::shared_ptr<Manifold<dim> > > manifold_vec;
@@ -288,18 +292,56 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 
  for(unsigned int i=0;i<manifold_ids.size();++i)
  {
-   for (typename Triangulation<dim>::cell_iterator cell = triangulation->begin(); cell != triangulation->end(); ++cell)
+   for (typename Triangulation<dim>::cell_iterator cell = triangulation.begin(); cell != triangulation.end(); ++cell)
    {
      if(cell->manifold_id() == manifold_ids[i])
      {
        manifold_vec[i] = std::shared_ptr<Manifold<dim> >(
            static_cast<Manifold<dim>*>(new OneSidedCylindricalManifold<dim>(cell,face_ids[i],center)));
-       triangulation->set_manifold(manifold_ids[i],*(manifold_vec[i]));
+       triangulation.set_manifold(manifold_ids[i],*(manifold_vec[i]));
      }
    }
  }
 
- triangulation->refine_global(n_refine_space);
+ triangulation.refine_global(n_refine_space);
+}
+
+template<int dim>
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >        &periodic_faces)
+{
+  if(auto tria_fully_dist = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
+  {
+    const auto construction_data =
+        parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<dim,
+                                                                                                     dim>(
+          [&](dealii::Triangulation<dim, dim> & tria) mutable {
+            do_create_grid_and_set_boundary_ids(tria, n_refine_space, periodic_faces);
+          },
+          [](dealii::Triangulation<dim, dim> & tria,
+             const MPI_Comm                comm,
+             const unsigned int /* group_size */) {
+            // metis partitioning
+            GridTools::partition_triangulation(Utilities::MPI::n_mpi_processes(comm), tria);
+            // p4est partitioning
+//            GridTools::partition_triangulation_zorder(Utilities::MPI::n_mpi_processes(comm), tria);
+          },
+          tria_fully_dist->get_communicator(),
+          1 /* group size */,
+          true /* construct multigrid levels */);
+        tria_fully_dist->create_triangulation(construction_data);
+  }
+  else if(auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> *>(&*triangulation))
+  {
+    do_create_grid_and_set_boundary_ids(*tria, n_refine_space, periodic_faces);
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Unknown triangulation!"));
+  }
 }
 
 
@@ -521,6 +563,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
   pp_data.output_data.write_divergence = true;
   pp_data.output_data.write_higher_order = false;
+  pp_data.output_data.write_processor_id = true;
   pp_data.output_data.degree = param.degree_u;
 
   // lift and drag
