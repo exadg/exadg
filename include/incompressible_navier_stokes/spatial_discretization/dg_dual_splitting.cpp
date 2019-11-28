@@ -100,7 +100,10 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
                                   fe,
                                   this->get_mapping(),
                                   this->momentum_operator,
-                                  MultigridOperatorType::ReactionDiffusion);
+                                  MultigridOperatorType::ReactionDiffusion,
+                                  this->param.ale_formulation,
+                                  &this->momentum_operator.get_data().bc->dirichlet_bc,
+                                  &this->periodic_face_pairs);
   }
   else
   {
@@ -766,9 +769,10 @@ DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_laplace_add(VectorType &   dst
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesDualSplitting<dim, Number>::solve_pressure(VectorType &       dst,
-                                                         VectorType const & src) const
+                                                         VectorType const & src,
+                                                         bool const update_preconditioner) const
 {
-  return ProjBase::do_solve_pressure(dst, src);
+  return ProjBase::do_solve_pressure(dst, src, update_preconditioner);
 }
 
 template<int dim, typename Number>

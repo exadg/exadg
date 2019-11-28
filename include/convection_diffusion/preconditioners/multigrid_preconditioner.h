@@ -104,7 +104,7 @@ public:
   }
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  initialize_matrix_free(unsigned int const level, Mapping<dim> const & mapping)
+  do_initialize_matrix_free(unsigned int const level) override
   {
     std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
     matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
@@ -141,7 +141,7 @@ public:
     if(data.convective_kernel_data.velocity_type == TypeVelocityField::Function)
     {
       QGauss<1> quadrature(this->level_info[level].degree() + 1);
-      matrix_free->reinit(mapping,
+      matrix_free->reinit(*this->mapping,
                           *this->dof_handlers[level],
                           *this->constraints[level],
                           quadrature,
@@ -168,7 +168,7 @@ public:
       quadrature_vec[0] = QGauss<1>(this->level_info[level].degree() + 1);
 
       matrix_free->reinit(
-        mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
+        *this->mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
     }
     else
     {

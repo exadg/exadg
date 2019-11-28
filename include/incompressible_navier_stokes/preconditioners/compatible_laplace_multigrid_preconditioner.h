@@ -36,12 +36,19 @@ public:
   typedef typename Base::VectorType        VectorType;
   typedef typename Base::VectorTypeMG      VectorTypeMG;
 
+  typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
+
+  CompatibleLaplaceMultigridPreconditioner() : mesh_is_moving(false)
+  {
+  }
+
   void
   initialize(MultigridData const &                      mg_data,
              const parallel::TriangulationBase<dim> *   tria,
              const FiniteElement<dim> &                 fe,
              Mapping<dim> const &                       mapping,
              CompatibleLaplaceOperatorData<dim> const & data_in,
+             bool const                                 mesh_is_moving,
              Map const *                                dirichlet_bc        = nullptr,
              PeriodicFacePairs *                        periodic_face_pairs = nullptr)
   {
@@ -57,12 +64,48 @@ public:
     data.divergence_operator_data.dof_index_pressure = data.dof_index_pressure;
     data.divergence_operator_data.quad_index         = 0;
 
+    this->mesh_is_moving = mesh_is_moving;
+
     Base::initialize(
       mg_data, tria, fe, mapping, data.operator_is_singular, dirichlet_bc, periodic_face_pairs);
   }
 
+  void
+  update() override
+  {
+    // update of this multigrid preconditioner is only needed
+    // if the mesh is moving
+    if(mesh_is_moving)
+    {
+      this->update_matrix_free();
+
+      update_operators_after_mesh_movement();
+
+      this->update_smoothers();
+
+      // singular operators do not occur for this operator
+      this->update_coarse_solver(data.operator_is_singular);
+    }
+  }
+
+private:
+  void
+  initialize_matrix_free() override
+  {
+    if(mesh_is_moving)
+    {
+      matrix_free_data_update.resize(0, this->n_levels - 1);
+    }
+
+    dof_handler_vec.resize(0, this->n_levels - 1);
+    constraint_matrix_vec.resize(0, this->n_levels - 1);
+    quadrature_vec.resize(0, this->n_levels - 1);
+
+    Base::initialize_matrix_free();
+  }
+
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  initialize_matrix_free(unsigned int const level, Mapping<dim> const & mapping)
+  do_initialize_matrix_free(unsigned int const level) override
   {
     std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
     matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
@@ -71,34 +114,29 @@ public:
     auto & dof_handler_u = *this->dof_handlers_velocity[level];
 
     // dof_handler
-    std::vector<const DoFHandler<dim> *> dof_handler_vec;
     // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
-    dof_handler_vec.resize(2);
-    dof_handler_vec[data.dof_index_velocity] = &dof_handler_u;
-    dof_handler_vec[data.dof_index_pressure] = &dof_handler_p;
+    dof_handler_vec[level].resize(2);
+    dof_handler_vec[level][data.dof_index_velocity] = &dof_handler_u;
+    dof_handler_vec[level][data.dof_index_pressure] = &dof_handler_p;
 
     // constraint matrix
-    std::vector<AffineConstraints<double> const *> constraint_matrix_vec;
     // TODO: instead of 2 use something more general like DofHandlerSelector::n_variants
-    constraint_matrix_vec.resize(2);
-    constraint_matrix_vec[data.dof_index_velocity] = &*this->constraints_velocity[level];
-    constraint_matrix_vec[data.dof_index_pressure] = &*this->constraints[level];
+    constraint_matrix_vec[level].resize(2);
+    constraint_matrix_vec[level][data.dof_index_velocity] = &*this->constraints_velocity[level];
+    constraint_matrix_vec[level][data.dof_index_pressure] = &*this->constraints[level];
 
     // quadratures
+    quadrature_vec[level].resize(2);
     // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature
     // formula that is used for the gradient operator and the divergence operator (and the inverse
     // velocity mass matrix operator)
-    std::vector<Quadrature<1>> quadrature_vec;
-    quadrature_vec.resize(2);
-    quadrature_vec[0] =
+    quadrature_vec[level][0] =
       QGauss<1>(this->level_info[level].degree() + 1 + (data.degree_u - data.degree_p));
-    // quadrature formula with (fe_degree_velocity+1) quadrature points: this is the quadrature is
-    // needed for p-transfer
-    quadrature_vec[1] = QGauss<1>(this->level_info[level].degree() + 1);
+    // quadrature formula with (fe_degree_p+1) quadrature points: this is the quadrature
+    // that is needed for p-transfer
+    quadrature_vec[level][1] = QGauss<1>(this->level_info[level].degree() + 1);
 
-    // additional data
-    typename MatrixFree<dim, MultigridNumber>::AdditionalData addit_data;
-
+    MatrixFreeData addit_data;
     addit_data.mapping_update_flags =
       (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
        update_values);
@@ -124,8 +162,19 @@ public:
     //  this->level_info[level].level);
     //}
 
-    matrix_free->reinit(
-      mapping, dof_handler_vec, constraint_matrix_vec, quadrature_vec, addit_data);
+    if(mesh_is_moving)
+    {
+      matrix_free_data_update[level] = addit_data;
+      matrix_free_data_update[level].initialize_indices =
+        false; // connectivity of elements stays the same
+      matrix_free_data_update[level].initialize_mapping = true;
+    }
+
+    matrix_free->reinit(*this->mapping,
+                        dof_handler_vec[level],
+                        constraint_matrix_vec[level],
+                        quadrature_vec[level],
+                        addit_data);
 
     return matrix_free;
   }
@@ -191,11 +240,51 @@ public:
                                                     this->constraints_velocity);
   }
 
+  void
+  do_update_matrix_free(unsigned int const level) override
+  {
+    this->matrix_free_objects[level]->reinit(*this->mapping,
+                                             dof_handler_vec[level],
+                                             constraint_matrix_vec[level],
+                                             quadrature_vec[level],
+                                             matrix_free_data_update[level]);
+  }
+
+  /*
+   * This function performs the updates that are necessary after the mesh has been moved
+   * and after matrix_free has been updated.
+   */
+  void
+  update_operators_after_mesh_movement()
+  {
+    for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+    {
+      get_operator(level)->update_after_mesh_movement();
+    }
+  }
+
+  std::shared_ptr<PDEOperator>
+  get_operator(unsigned int level)
+  {
+    std::shared_ptr<MGOperator> mg_operator =
+      std::dynamic_pointer_cast<MGOperator>(this->operators[level]);
+
+    return mg_operator->get_pde_operator();
+  }
+
   MGLevelObject<std::shared_ptr<const DoFHandler<dim>>>     dof_handlers_velocity;
   MGLevelObject<std::shared_ptr<MGConstrainedDoFs>>         constrained_dofs_velocity;
   MGLevelObject<std::shared_ptr<AffineConstraints<double>>> constraints_velocity;
 
   CompatibleLaplaceOperatorData<dim> data;
+
+  MGLevelObject<MatrixFreeData> matrix_free_data_update;
+
+  MGLevelObject<std::vector<const DoFHandler<dim> *>>           dof_handler_vec;
+  MGLevelObject<std::vector<AffineConstraints<double> const *>> constraint_matrix_vec;
+  MGLevelObject<std::vector<Quadrature<1>>>                     quadrature_vec;
+
+  bool mesh_is_moving;
 };
 
 } // namespace IncNS

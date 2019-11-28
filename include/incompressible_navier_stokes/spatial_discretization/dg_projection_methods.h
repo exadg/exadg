@@ -71,7 +71,9 @@ public:
    * This function solves the pressure Poisson equation and returns the number of iterations.
    */
   unsigned int
-  do_solve_pressure(VectorType & dst, VectorType const & src) const;
+  do_solve_pressure(VectorType &       dst,
+                    VectorType const & src,
+                    bool const         update_preconditioner) const;
 
   /*
    * This function applies the projection operator (used for throughput measurements).

@@ -236,7 +236,9 @@ public:
   }
 
   virtual unsigned int
-  solve_pressure(VectorType & dst, VectorType const & src) const = 0;
+  solve_pressure(VectorType &       dst,
+                 VectorType const & src,
+                 bool const         update_preconditioner) const = 0;
 
   virtual void
   apply_velocity_divergence_term(VectorType & dst, VectorType const & src) const = 0;
@@ -319,7 +321,9 @@ public:
   rhs_add_viscous_term(VectorType & dst, double const time) const = 0;
 
   virtual unsigned int
-  solve_pressure(VectorType & dst, VectorType const & src) const = 0;
+  solve_pressure(VectorType &       dst,
+                 VectorType const & src,
+                 bool const         update_preconditioner) const = 0;
 
   virtual void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const = 0;

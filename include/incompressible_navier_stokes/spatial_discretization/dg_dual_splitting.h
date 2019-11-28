@@ -96,7 +96,7 @@ public:
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;
 
   unsigned int
-  solve_pressure(VectorType & dst, VectorType const & src) const;
+  solve_pressure(VectorType & dst, VectorType const & src, bool const update_preconditioner) const;
 
 
   /*

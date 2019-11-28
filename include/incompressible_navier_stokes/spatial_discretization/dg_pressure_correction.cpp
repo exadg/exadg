@@ -124,7 +124,10 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
                                   fe,
                                   this->get_mapping(),
                                   this->momentum_operator,
-                                  this->param.multigrid_operator_type_momentum);
+                                  this->param.multigrid_operator_type_momentum,
+                                  this->param.ale_formulation,
+                                  &this->momentum_operator.get_data().bc->dirichlet_bc,
+                                  &this->periodic_face_pairs);
   }
   else
   {
@@ -386,10 +389,12 @@ DGNavierStokesPressureCorrection<dim, Number>::apply_inverse_pressure_mass_matri
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesPressureCorrection<dim, Number>::solve_pressure(VectorType &       dst,
-                                                              VectorType const & src) const
+DGNavierStokesPressureCorrection<dim, Number>::solve_pressure(
+  VectorType &       dst,
+  VectorType const & src,
+  bool const         update_preconditioner) const
 {
-  return ProjBase::do_solve_pressure(dst, src);
+  return ProjBase::do_solve_pressure(dst, src, update_preconditioner);
 }
 
 template<int dim, typename Number>

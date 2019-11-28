@@ -9,6 +9,7 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_
 
 #include "../../../operators/operator_base.h"
+#include "../../user_interface/boundary_descriptor.h"
 #include "continuity_penalty_operator.h"
 #include "divergence_penalty_operator.h"
 
@@ -40,6 +41,7 @@ namespace IncNS
 /*
  *  Operator data.
  */
+template<int dim>
 struct ProjectionOperatorData : public OperatorBaseData
 {
   ProjectionOperatorData()
@@ -51,13 +53,15 @@ struct ProjectionOperatorData : public OperatorBaseData
 
   // specify which penalty terms are used
   bool use_divergence_penalty, use_continuity_penalty;
+
+  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
 
 template<int dim, typename Number>
-class ProjectionOperator : public OperatorBase<dim, Number, ProjectionOperatorData, dim>
+class ProjectionOperator : public OperatorBase<dim, Number, ProjectionOperatorData<dim>, dim>
 {
 private:
-  typedef OperatorBase<dim, Number, ProjectionOperatorData, dim> Base;
+  typedef OperatorBase<dim, Number, ProjectionOperatorData<dim>, dim> Base;
 
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
@@ -76,25 +80,25 @@ public:
   }
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         ProjectionOperatorData const &    data);
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         AffineConstraints<double> const &   constraint_matrix,
+         ProjectionOperatorData<dim> const & data);
 
   void
   reinit(MatrixFree<dim, Number> const &                matrix_free,
          AffineConstraints<double> const &              constraint_matrix,
-         ProjectionOperatorData const &                 data,
+         ProjectionOperatorData<dim> const &            data,
          Operators::DivergencePenaltyKernelData const & div_kernel_data,
          Operators::ContinuityPenaltyKernelData const & conti_kernel_data);
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         ProjectionOperatorData const &    data,
-         std::shared_ptr<DivKernel>        div_penalty_kernel,
-         std::shared_ptr<ContiKernel>      conti_penalty_kernel);
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         AffineConstraints<double> const &   constraint_matrix,
+         ProjectionOperatorData<dim> const & data,
+         std::shared_ptr<DivKernel>          div_penalty_kernel,
+         std::shared_ptr<ContiKernel>        conti_penalty_kernel);
 
-  ProjectionOperatorData
+  ProjectionOperatorData<dim>
   get_data() const;
 
   Operators::DivergencePenaltyKernelData

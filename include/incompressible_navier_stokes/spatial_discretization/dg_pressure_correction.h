@@ -226,7 +226,7 @@ public:
    * pressure Poisson equation.
    */
   unsigned int
-  solve_pressure(VectorType & dst, VectorType const & src) const;
+  solve_pressure(VectorType & dst, VectorType const & src, bool const update_preconditioner) const;
 
   void
   rhs_ppe_laplace_add(VectorType & dst, double const & time) const;

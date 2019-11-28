@@ -34,7 +34,7 @@ public:
   void
   update()
   {
-    // do nothing
+    inverse_mass_matrix_operator.reinit();
   }
 
 private:

@@ -28,6 +28,13 @@ LaplaceOperator<dim, Number>::calculate_penalty_parameter(
 
 template<int dim, typename Number>
 void
+LaplaceOperator<dim, Number>::update_after_mesh_movement()
+{
+  calculate_penalty_parameter(this->get_matrix_free(), this->get_data().dof_index);
+}
+
+template<int dim, typename Number>
+void
 LaplaceOperator<dim, Number>::rhs_add_dirichlet_bc_from_dof_vector(VectorType &       dst,
                                                                    VectorType const & src) const
 {

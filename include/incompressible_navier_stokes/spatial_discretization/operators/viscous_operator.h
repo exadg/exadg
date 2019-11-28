@@ -533,6 +533,9 @@ public:
          ViscousOperatorData<dim> const &                       data,
          std::shared_ptr<Operators::ViscousKernel<dim, Number>> viscous_kernel);
 
+  void
+  update();
+
 private:
   void
   reinit_face(unsigned int const face) const;

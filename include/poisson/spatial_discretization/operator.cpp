@@ -107,6 +107,7 @@ DGOperator<dim, Number>::setup_solver()
                                   fe,
                                   *mapping,
                                   laplace_operator.get_data(),
+                                  false /* moving_mesh */,
                                   &laplace_operator.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }

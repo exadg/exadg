@@ -583,7 +583,14 @@ TimeIntBDFPressureCorrection<Number>::pressure_step(VectorType & pressure_increm
   }
 
   // solve linear system of equations
-  unsigned int iterations_pressure = pde_operator->solve_pressure(pressure_increment, rhs);
+  bool const update_preconditioner =
+    this->param.update_preconditioner_pressure_poisson &&
+    ((this->time_step_number - 1) %
+       this->param.update_preconditioner_pressure_poisson_every_time_steps ==
+     0);
+
+  unsigned int iterations_pressure =
+    pde_operator->solve_pressure(pressure_increment, rhs, update_preconditioner);
 
   // calculate pressure p^{n+1} from pressure increment
   pressure_update(pressure_increment);
