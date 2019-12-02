@@ -81,7 +81,7 @@ DGNavierStokesBase<dim, Number>::setup(
       ExcMessage(
         "Variable moving_mesh needs to be initialized in case of ale_formulation == true."));
 
-    mapping_ale = moving_mesh->initialize_mapping_fe_field(param.start_time, *mapping);
+    mapping_ale = moving_mesh->initialize_mapping_ale(param.start_time, *mapping);
   }
 
   initialize_boundary_descriptor_laplace();
@@ -793,7 +793,7 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
-    moving_mesh->move_mesh_analytical(time, *mapping);
+    moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
 
   field_functions->initial_solution_velocity->set_time(time);
   field_functions->initial_solution_pressure->set_time(time);
@@ -829,7 +829,7 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_velocity_dirichlet_bc
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
   {
-    moving_mesh->move_mesh_analytical(time, *mapping);
+    moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
 
     // we also need to update matrix_free
     update_after_mesh_movement();
@@ -847,7 +847,7 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_pressure_dirichlet_bc
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
   {
-    moving_mesh->move_mesh_analytical(time, *mapping);
+    moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
 
     // we also need to update matrix_free
     update_after_mesh_movement();
@@ -1288,7 +1288,7 @@ DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_mapping_ale(std::shared_ptr<MappingField> mapping_in)
+DGNavierStokesBase<dim, Number>::set_mapping_ale(std::shared_ptr<Mapping<dim>> mapping_in)
 {
   mapping_ale = mapping_in;
 }
@@ -1304,7 +1304,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::move_mesh(double const time)
 {
-  moving_mesh->move_mesh_analytical(time, *mapping);
+  moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
 }
 
 template<int dim, typename Number>
