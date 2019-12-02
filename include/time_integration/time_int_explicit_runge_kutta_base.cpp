@@ -90,7 +90,9 @@ TimeIntExplRKBase<Number>::do_timestep(bool const do_write_output)
 
   if(adaptive_time_stepping == true)
   {
-    double const dt = recalculate_time_step_size();
+    double dt = recalculate_time_step_size();
+    // make sure that the end time is hit exactly
+    dt = std::min(end_time - time, dt);
     this->set_time_step_size(dt);
   }
 
