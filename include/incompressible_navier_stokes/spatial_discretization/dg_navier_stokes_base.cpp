@@ -406,24 +406,26 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   if(param.use_continuity_penalty)
   {
     // Kernel
-    Operators::ContinuityPenaltyKernelData conti_penalty_data;
+    Operators::ContinuityPenaltyKernelData kernel_data;
 
-    conti_penalty_data.type_penalty_parameter = param.type_penalty_parameter;
-    conti_penalty_data.which_components       = param.continuity_penalty_components;
-    conti_penalty_data.viscosity              = param.viscosity;
-    conti_penalty_data.degree                 = param.degree_u;
-    conti_penalty_data.penalty_factor         = param.continuity_penalty_factor;
+    kernel_data.type_penalty_parameter = param.type_penalty_parameter;
+    kernel_data.which_components       = param.continuity_penalty_components;
+    kernel_data.viscosity              = param.viscosity;
+    kernel_data.degree                 = param.degree_u;
+    kernel_data.penalty_factor         = param.continuity_penalty_factor;
 
     conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
     conti_penalty_kernel->reinit(matrix_free,
                                  get_dof_index_velocity(),
                                  get_quad_index_velocity_linear(),
-                                 conti_penalty_data);
+                                 kernel_data);
 
     // Operator
-    ContinuityPenaltyData operator_data;
-    operator_data.dof_index  = get_dof_index_velocity();
-    operator_data.quad_index = get_quad_index_velocity_linear();
+    ContinuityPenaltyData<dim> operator_data;
+    operator_data.dof_index         = get_dof_index_velocity();
+    operator_data.quad_index        = get_quad_index_velocity_linear();
+    operator_data.use_boundary_data = param.continuity_penalty_use_boundary_data;
+    operator_data.bc                = this->boundary_descriptor_velocity;
 
     conti_penalty_operator.reinit(matrix_free, operator_data, conti_penalty_kernel);
   }
@@ -439,6 +441,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
       ProjectionOperatorData<dim> data;
       data.use_divergence_penalty = param.use_divergence_penalty;
       data.use_continuity_penalty = param.use_continuity_penalty;
+      data.use_boundary_data      = param.continuity_penalty_use_boundary_data;
       data.bc                     = this->boundary_descriptor_velocity;
       data.dof_index              = get_dof_index_velocity();
       data.quad_index             = get_quad_index_velocity_linear();

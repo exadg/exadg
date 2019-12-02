@@ -9,7 +9,6 @@
 #define INCLUDE_INCOMPRESSIBLE_NAVIER_STOKES_SPATIAL_DISCRETIZATION_OPERATORS_PROJECTION_OPERATOR_H_
 
 #include "../../../operators/operator_base.h"
-#include "../../user_interface/boundary_descriptor.h"
 #include "continuity_penalty_operator.h"
 #include "divergence_penalty_operator.h"
 
@@ -47,12 +46,15 @@ struct ProjectionOperatorData : public OperatorBaseData
   ProjectionOperatorData()
     : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
       use_divergence_penalty(true),
-      use_continuity_penalty(true)
+      use_continuity_penalty(true),
+      use_boundary_data(false)
   {
   }
 
   // specify which penalty terms are used
   bool use_divergence_penalty, use_continuity_penalty;
+
+  bool use_boundary_data;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
@@ -122,6 +124,9 @@ private:
 
   void
   reinit_face(unsigned int const face) const;
+
+  void
+  reinit_boundary_face(unsigned int const face) const;
 
   void
   reinit_face_cell_based(unsigned int const       cell,

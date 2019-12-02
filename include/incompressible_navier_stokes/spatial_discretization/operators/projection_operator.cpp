@@ -171,6 +171,15 @@ ProjectionOperator<dim, Number>::reinit_face(unsigned int const face) const
 
 template<int dim, typename Number>
 void
+ProjectionOperator<dim, Number>::reinit_boundary_face(unsigned int const face) const
+{
+  Base::reinit_boundary_face(face);
+
+  conti_kernel->reinit_boundary_face(*this->integrator_m);
+}
+
+template<int dim, typename Number>
+void
 ProjectionOperator<dim, Number>::reinit_face_cell_based(unsigned int const       cell,
                                                         unsigned int const       face,
                                                         types::boundary_id const boundary_id) const
@@ -256,14 +265,30 @@ ProjectionOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                                       OperatorType const &       operator_type,
                                                       types::boundary_id const & boundary_id) const
 {
-  (void)operator_type;
-  (void)boundary_id;
-
-  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  if(this->data.use_boundary_data == true)
   {
-    vector flux; // continuity penalty term is zero on boundary faces
+    BoundaryTypeU boundary_type = this->data.bc->get_boundary_type(boundary_id);
 
-    integrator_m.submit_value(flux, q);
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      vector u_m = calculate_interior_value(q, integrator_m, operator_type);
+      vector u_p = calculate_exterior_value(
+        u_m, q, integrator_m, operator_type, boundary_type, boundary_id, this->data.bc, this->time);
+      vector normal_m = integrator_m.get_normal_vector(q);
+
+      vector flux = time_step_size * conti_kernel->calculate_flux(u_m, u_p, normal_m);
+
+      integrator_m.submit_value(flux, q);
+    }
+  }
+  else
+  {
+    for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+    {
+      vector flux; // continuity penalty term is zero on boundary faces if u_p = u_m
+
+      integrator_m.submit_value(flux, q);
+    }
   }
 }
 

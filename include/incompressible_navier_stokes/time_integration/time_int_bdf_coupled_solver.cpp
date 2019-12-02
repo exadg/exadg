@@ -380,10 +380,6 @@ TimeIntBDFCoupled<Number>::projection_step()
   Timer timer;
   timer.restart();
 
-  // right-hand side term: apply mass matrix
-  VectorType rhs(solution_np.block(0));
-  this->operator_base->apply_mass_matrix(rhs, solution_np.block(0));
-
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // calculate the penalty parameter for the divergence and continuity penalty term
   VectorType velocity_extrapolated(solution[0].block(0));
@@ -394,6 +390,15 @@ TimeIntBDFCoupled<Number>::projection_step()
   // update projection operator
   this->operator_base->update_projection_operator(velocity_extrapolated,
                                                   this->get_time_step_size());
+
+  // right-hand side term: apply mass matrix
+  VectorType rhs(solution_np.block(0));
+  this->operator_base->apply_mass_matrix(rhs, solution_np.block(0));
+
+  // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
+  // rhs-vector if desired
+  if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+    this->pde_operator->rhs_projection_operator(rhs, this->get_next_time());
 
   bool const update_preconditioner =
     this->param.update_preconditioner_projection &&

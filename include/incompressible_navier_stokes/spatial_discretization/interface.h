@@ -189,6 +189,9 @@ public:
   virtual void
   rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const = 0;
 
+  virtual void
+  rhs_projection_operator(VectorType & dst, double const & time = 0.0) const = 0;
+
   virtual unsigned int
   solve_linear_stokes_problem(BlockVectorType &       dst,
                               BlockVectorType const & src,
