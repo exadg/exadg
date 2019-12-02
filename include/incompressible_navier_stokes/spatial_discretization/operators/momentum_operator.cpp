@@ -130,6 +130,13 @@ MomentumOperator<dim, Number>::set_solution_linearization(VectorType const & vel
 
 template<int dim, typename Number>
 void
+MomentumOperator<dim, Number>::update_after_mesh_movement()
+{
+  viscous_kernel->calculate_penalty_parameter(this->get_matrix_free(), this->get_data().dof_index);
+}
+
+template<int dim, typename Number>
+void
 MomentumOperator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
   convective_kernel->set_velocity_copy(velocity);

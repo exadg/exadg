@@ -53,8 +53,7 @@ DGNavierStokesProjectionMethods<dim, Number>::update_after_mesh_movement()
 
   // update SIPG penalty parameter of Laplace operator which depends on the deformation
   // of elements
-  laplace_operator.calculate_penalty_parameter(this->get_matrix_free(),
-                                               this->get_dof_index_pressure());
+  laplace_operator.update_after_mesh_movement();
 }
 
 template<int dim, typename Number>
@@ -161,6 +160,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
                                   fe,
                                   this->get_mapping(),
                                   laplace_operator.get_data(),
+                                  this->param.ale_formulation,
                                   &laplace_operator.get_data().bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
@@ -241,8 +241,10 @@ DGNavierStokesProjectionMethods<dim, Number>::do_rhs_ppe_laplace_add(VectorType 
 
 template<int dim, typename Number>
 unsigned int
-DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(VectorType &       dst,
-                                                                VectorType const & src) const
+DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(
+  VectorType &       dst,
+  VectorType const & src,
+  bool const         update_preconditioner) const
 {
   // Check multigrid algorithm
 
@@ -264,9 +266,7 @@ DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(VectorType &    
   //  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
   // call pressure Poisson solver
-  // Note: currently no update of pressure Poisson preconditioner implemented -> might be necessary
-  // for moving meshes where the pressure Poisson operator becomes time-dependent
-  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, false);
+  unsigned int n_iter = this->pressure_poisson_solver->solve(dst, src, update_preconditioner);
 
   return n_iter;
 }

@@ -14,15 +14,17 @@
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
-  MultigridData const &                data,
+  MultigridData const &                    data,
   parallel::TriangulationBase<dim> const * tria,
-  FiniteElement<dim> const &           fe,
-  Mapping<dim> const &                 mapping,
-  bool const                           operator_is_singular,
-  Map const *                          dirichlet_bc,
-  PeriodicFacePairs *                  periodic_face_pairs)
+  FiniteElement<dim> const &               fe,
+  Mapping<dim> const &                     mapping,
+  bool const                               operator_is_singular,
+  Map const *                              dirichlet_bc,
+  PeriodicFacePairs *                      periodic_face_pairs)
 {
   this->data = data;
+
+  this->mapping = &mapping;
 
   bool const is_dg = fe.dofs_per_vertex == 0;
 
@@ -31,7 +33,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize(
   this->initialize_dof_handler_and_constraints(
     operator_is_singular, periodic_face_pairs, fe, tria, dirichlet_bc);
 
-  this->initialize_matrix_free(mapping);
+  this->initialize_matrix_free();
 
   this->initialize_operators();
 
@@ -82,8 +84,8 @@ template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_levels(
   parallel::TriangulationBase<dim> const * tria,
-  unsigned int const                   degree,
-  bool const                           is_dg)
+  unsigned int const                       degree,
+  bool const                               is_dg)
 {
   MultigridType const mg_type = data.type;
 
@@ -277,11 +279,11 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::mg_transfer_to_contin
 template<int dim, typename Number, typename MultigridNumber>
 void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_dof_handler_and_constraints(
-  bool const                           operator_is_singular,
-  PeriodicFacePairs *                  periodic_face_pairs_in,
-  FiniteElement<dim> const &           fe,
+  bool const                               operator_is_singular,
+  PeriodicFacePairs *                      periodic_face_pairs_in,
+  FiniteElement<dim> const &               fe,
   parallel::TriangulationBase<dim> const * tria,
-  Map const *                          dirichlet_bc_in)
+  Map const *                              dirichlet_bc_in)
 {
   bool const is_dg = fe.dofs_per_vertex == 0;
 
@@ -323,7 +325,7 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
     bool                                                        is_singular,
     PeriodicFacePairs &                                         periodic_face_pairs,
     FiniteElement<dim> const &                                  fe,
-    parallel::TriangulationBase<dim> const *                        tria,
+    parallel::TriangulationBase<dim> const *                    tria,
     Map const &                                                 dirichlet_bc,
     std::vector<MGLevelInfo> &                                  level_info,
     std::vector<MGDoFHandlerIdentifier> &                       p_levels,
@@ -388,30 +390,45 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::
 
 template<int dim, typename Number, typename MultigridNumber>
 void
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_free(
-  Mapping<dim> const & mapping)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_free()
 {
   this->matrix_free_objects.resize(0, this->n_levels - 1);
 
   for(unsigned int level = coarse_level; level <= fine_level; level++)
-    this->matrix_free_objects[level] = this->initialize_matrix_free(level, mapping);
+    this->matrix_free_objects[level] = this->do_initialize_matrix_free(level);
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_matrix_free()
+{
+  for(unsigned int level = coarse_level; level <= fine_level; level++)
+    this->do_update_matrix_free(level);
 }
 
 
 template<int dim, typename Number, typename MultigridNumber>
 std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_matrix_free(
-  unsigned int const   level,
-  Mapping<dim> const & mapping)
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::do_initialize_matrix_free(
+  unsigned int const level)
 {
   (void)level;
-  (void)mapping;
 
   AssertThrow(false, ExcMessage("This function needs to be implemented by derived classes."));
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
 
   return matrix_free;
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::do_update_matrix_free(
+  unsigned int const level)
+{
+  (void)level;
+
+  AssertThrow(false, ExcMessage("This function needs to be implemented by derived classes."));
 }
 
 template<int dim, typename Number, typename MultigridNumber>
@@ -560,6 +577,17 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_smoother(
     {
       AssertThrow(false, ExcMessage("Specified MultigridSmoother not implemented!"));
     }
+  }
+}
+
+template<int dim, typename Number, typename MultigridNumber>
+void
+MultigridPreconditionerBase<dim, Number, MultigridNumber>::update_smoothers()
+{
+  // Skip coarsest level
+  for(unsigned int level = this->coarse_level + 1; level <= this->fine_level; ++level)
+  {
+    this->update_smoother(level);
   }
 }
 

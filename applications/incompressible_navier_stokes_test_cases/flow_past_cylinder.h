@@ -21,7 +21,7 @@
 /************************************************************************************************************/
 
 // convergence studies in space or time
-unsigned int const DEGREE_MIN = 4; // degree_velocity >= 2 for mixed-order formulation (degree_pressure >= 1)
+unsigned int const DEGREE_MIN = 2; // degree_velocity >= 2 for mixed-order formulation (degree_pressure >= 1)
 unsigned int const DEGREE_MAX = DEGREE_MIN;
 
 unsigned int const REFINE_SPACE_MIN = 0;
@@ -95,7 +95,7 @@ void set_input_parameters(InputParameters &param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   param.order_time_integrator = 2;
@@ -158,11 +158,18 @@ void set_input_parameters(InputParameters &param)
   param.multigrid_data_pressure_poisson.smoother_data.iterations = 5;
   param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
   param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+  param.update_preconditioner_pressure_poisson = false;
  
   // projection step
   param.solver_projection = SolverProjection::CG;
   param.solver_data_projection = SolverData(1000, ABS_TOL, REL_TOL);
   param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  param.multigrid_data_projection.type = MultigridType::phcMG;
+  param.multigrid_data_projection.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data_projection.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+  param.update_preconditioner_projection = false;
+  param.update_preconditioner_projection_every_time_steps = 10;
 
   // HIGH-ORDER DUAL SPLITTING SCHEME
 
@@ -172,11 +179,11 @@ void set_input_parameters(InputParameters &param)
   // viscous step
   param.solver_viscous = SolverViscous::CG;
   param.solver_data_viscous = SolverData(1000,ABS_TOL,REL_TOL);
-  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix; //BlockJacobi; //Multigrid;
+  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;//Multigrid;
   param.update_preconditioner_viscous = false;
-  param.multigrid_data_viscous.type = MultigridType::phMG;
+  param.multigrid_data_viscous.type = MultigridType::phcMG;
   param.multigrid_data_viscous.coarse_problem.solver = MultigridCoarseGridSolver::CG;
-  param.multigrid_data_viscous.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
+  param.multigrid_data_viscous.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
 
   // PRESSURE-CORRECTION SCHEME
 
@@ -186,11 +193,13 @@ void set_input_parameters(InputParameters &param)
   param.newton_solver_data_momentum = NewtonSolverData(100,ABS_TOL,REL_TOL);
 
   // linear solver
-  param.solver_momentum = SolverMomentum::GMRES; //FGMRES;
+  param.solver_momentum = SolverMomentum::CG; //FGMRES;
   param.solver_data_momentum = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
   param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix;
-  param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
-  param.multigrid_data_momentum.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
+  param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+  param.multigrid_data_momentum.type = MultigridType::phcMG;
+  param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data_momentum.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
   param.update_preconditioner_momentum = false;
 
   // formulation
@@ -207,19 +216,20 @@ void set_input_parameters(InputParameters &param)
   param.solver_coupled = SolverCoupled::FGMRES; //FGMRES;
   param.solver_data_coupled = SolverData(1e4, ABS_TOL_LINEAR, REL_TOL_LINEAR, 100);
 
-  param.update_preconditioner_coupled = true;
+  param.update_preconditioner_coupled = false;
 
   // preconditioning linear solver
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
 
   // preconditioner velocity/momentum block
-  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  param.preconditioner_velocity_block = MomentumPreconditioner::InverseMassMatrix; //Multigrid;
   param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
-  param.multigrid_data_velocity_block.type = MultigridType::phMG;
+  param.multigrid_data_velocity_block.type = MultigridType::phcMG;
   param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
   param.multigrid_data_velocity_block.smoother_data.iterations = 5;
-  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //CG;
+  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data_velocity_block.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
   param.multigrid_data_velocity_block.coarse_problem.solver_data.rel_tol = 1.e-3;
   param.multigrid_data_velocity_block.coarse_problem.amg_data.data.smoother_type = "Chebyshev";
   param.multigrid_data_velocity_block.coarse_problem.amg_data.data.smoother_sweeps = 1;
@@ -227,9 +237,9 @@ void set_input_parameters(InputParameters &param)
   // preconditioner Schur-complement block
   param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-  param.multigrid_data_pressure_block.type = MultigridType::phMG;
-  param.multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
-  param.multigrid_data_pressure_block.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi; //AMG;
+  param.multigrid_data_pressure_block.type = MultigridType::cphMG;
+  param.multigrid_data_pressure_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //CG;
+//  param.multigrid_data_pressure_block.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
   param.multigrid_data_pressure_block.coarse_problem.solver_data.rel_tol = 1.e-3;
   param.multigrid_data_pressure_block.coarse_problem.amg_data.data.smoother_type = "Chebyshev";
   param.multigrid_data_pressure_block.coarse_problem.amg_data.data.smoother_sweeps = 1;

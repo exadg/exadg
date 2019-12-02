@@ -133,13 +133,15 @@ InputParameters::InputParameters()
     solver_data_pressure_poisson(SolverData(1e4, 1.e-12, 1.e-6, 100)),
     preconditioner_pressure_poisson(PreconditionerPressurePoisson::Multigrid),
     multigrid_data_pressure_poisson(MultigridData()),
+    update_preconditioner_pressure_poisson(false),
+    update_preconditioner_pressure_poisson_every_time_steps(1),
 
     // projection step
     solver_projection(SolverProjection::CG),
     solver_data_projection(SolverData(1000, 1.e-12, 1.e-6, 100)),
     preconditioner_projection(PreconditionerProjection::InverseMassMatrix),
     multigrid_data_projection(MultigridData()),
-    update_preconditioner_projection(true),
+    update_preconditioner_projection(false),
     update_preconditioner_projection_every_time_steps(1),
     preconditioner_block_diagonal_projection(Elementwise::Preconditioner::InverseMassMatrix),
     solver_data_block_diagonal_projection(SolverData(1000, 1.e-12, 1.e-2, 1000)),
@@ -787,6 +789,17 @@ InputParameters::print_parameters_pressure_poisson(ConditionalOStream & pcout)
 
   print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_pressure_poisson));
 
+  print_parameter(pcout,
+                  "Update preconditioner pressure step",
+                  update_preconditioner_pressure_poisson);
+
+  if(update_preconditioner_pressure_poisson)
+  {
+    print_parameter(pcout,
+                    "Update preconditioner every time steps",
+                    update_preconditioner_pressure_poisson_every_time_steps);
+  }
+
   if(preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
     multigrid_data_pressure_poisson.print(pcout);
@@ -808,6 +821,17 @@ InputParameters::print_parameters_projection_step(ConditionalOStream & pcout)
                       "Preconditioner projection step",
                       enum_to_string(preconditioner_projection));
 
+      print_parameter(pcout,
+                      "Update preconditioner projection step",
+                      update_preconditioner_projection);
+
+      if(update_preconditioner_projection)
+      {
+        print_parameter(pcout,
+                        "Update preconditioner every time steps",
+                        update_preconditioner_projection_every_time_steps);
+      }
+
       if(preconditioner_projection == PreconditionerProjection::BlockJacobi &&
          implement_block_diagonal_preconditioner_matrix_free)
       {
@@ -822,10 +846,6 @@ InputParameters::print_parameters_projection_step(ConditionalOStream & pcout)
       {
         multigrid_data_projection.print(pcout);
       }
-
-      print_parameter(pcout,
-                      "Update preconditioner projection step",
-                      update_preconditioner_projection);
     }
   }
 }
@@ -860,12 +880,19 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
 
   print_parameter(pcout, "Preconditioner viscous step", enum_to_string(preconditioner_viscous));
 
+  print_parameter(pcout, "Update preconditioner viscous", update_preconditioner_viscous);
+
+  if(update_preconditioner_viscous)
+  {
+    print_parameter(pcout,
+                    "Update preconditioner every time steps",
+                    update_preconditioner_viscous_every_time_steps);
+  }
+
   if(preconditioner_viscous == PreconditionerViscous::Multigrid)
   {
     multigrid_data_viscous.print(pcout);
   }
-
-  print_parameter(pcout, "Udpate preconditioner viscous", update_preconditioner_viscous);
 }
 
 void
@@ -873,8 +900,15 @@ InputParameters::print_parameters_pressure_correction(ConditionalOStream & pcout
 {
   pcout << std::endl << "Pressure-correction scheme:" << std::endl;
 
+  // formulations of pressure-correction scheme
+  pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
+  print_parameter(pcout, "Order of pressure extrapolation", order_pressure_extrapolation);
+  print_parameter(pcout, "Rotational formulation", rotational_formulation);
+
+  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
+
   // Momentum step
-  pcout << "  Momentum step:" << std::endl;
+  pcout << std::endl << "  Momentum step:" << std::endl;
 
   // Newton solver
   if(equation_type == EquationType::NavierStokes &&
@@ -896,15 +930,6 @@ InputParameters::print_parameters_pressure_correction(ConditionalOStream & pcout
 
   print_parameter(pcout, "Preconditioner", enum_to_string(preconditioner_momentum));
 
-  if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
-  {
-    print_parameter(pcout,
-                    "Multigrid operator type",
-                    enum_to_string(multigrid_operator_type_momentum));
-
-    multigrid_data_momentum.print(pcout);
-  }
-
   print_parameter(pcout, "Update of preconditioner", update_preconditioner_momentum);
 
   if(update_preconditioner_momentum == true)
@@ -923,12 +948,14 @@ InputParameters::print_parameters_pressure_correction(ConditionalOStream & pcout
                     update_preconditioner_momentum_every_time_steps);
   }
 
-  // formulations of pressure-correction scheme
-  pcout << std::endl << "  Formulation of pressure-correction scheme:" << std::endl;
-  print_parameter(pcout, "Order of pressure extrapolation", order_pressure_extrapolation);
-  print_parameter(pcout, "Rotational formulation", rotational_formulation);
+  if(preconditioner_momentum == MomentumPreconditioner::Multigrid)
+  {
+    print_parameter(pcout,
+                    "Multigrid operator type",
+                    enum_to_string(multigrid_operator_type_momentum));
 
-  print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
+    multigrid_data_momentum.print(pcout);
+  }
 
   // projection method
   print_parameters_pressure_poisson(pcout);

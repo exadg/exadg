@@ -437,6 +437,13 @@ public:
   // description: see declaration of MultigridData
   MultigridData multigrid_data_pressure_poisson;
 
+  // Update preconditioner before solving the linear system of equations.
+  bool update_preconditioner_pressure_poisson;
+
+  // Update preconditioner every ... time steps.
+  // This variable is only used if update of preconditioner is true.
+  unsigned int update_preconditioner_pressure_poisson_every_time_steps;
+
   // PROJECTION STEP
 
   // description: see enum declaration

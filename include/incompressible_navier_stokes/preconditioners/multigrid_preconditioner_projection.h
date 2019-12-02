@@ -34,12 +34,12 @@ private:
   typedef typename Base::VectorType        VectorType;
   typedef typename Base::VectorTypeMG      VectorTypeMG;
 
+  typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
+
 public:
-  MultigridPreconditionerProjection() : pde_operator(nullptr)
+  MultigridPreconditionerProjection() : pde_operator(nullptr), mesh_is_moving(false)
   {
   }
-
-  virtual ~MultigridPreconditionerProjection(){};
 
   void
   initialize(MultigridData const &                    mg_data,
@@ -47,6 +47,7 @@ public:
              FiniteElement<dim> const &               fe,
              Mapping<dim> const &                     mapping,
              PDEOperatorNumber const &                pde_operator,
+             bool const                               mesh_is_moving,
              Map const *                              dirichlet_bc        = nullptr,
              PeriodicFacePairs *                      periodic_face_pairs = nullptr)
   {
@@ -55,6 +56,8 @@ public:
     data            = this->pde_operator->get_data();
     data.dof_index  = 0;
     data.quad_index = 0;
+
+    this->mesh_is_moving = mesh_is_moving;
 
     Base::initialize(mg_data,
                      tria,
@@ -65,14 +68,46 @@ public:
                      periodic_face_pairs);
   }
 
+  /*
+   * This function updates the multigrid preconditioner.
+   */
+  void
+  update() override
+  {
+    if(mesh_is_moving)
+    {
+      this->update_matrix_free();
+    }
+
+    update_operators();
+
+    this->update_smoothers();
+
+    // singular operators do not occur for this operator
+    this->update_coarse_solver(false /* operator_is_singular */);
+  }
+
+private:
+  void
+  initialize_matrix_free() override
+  {
+    if(mesh_is_moving)
+    {
+      matrix_free_data_update.resize(0, this->n_levels - 1);
+    }
+
+    quadrature.resize(0, this->n_levels - 1);
+
+    Base::initialize_matrix_free();
+  }
+
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  initialize_matrix_free(unsigned int const level, Mapping<dim> const & mapping)
+  do_initialize_matrix_free(unsigned int const level) override
   {
     std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
     matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
 
-    // additional data
-    typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
+    MatrixFreeData additional_data;
 
     additional_data.mg_level              = this->level_info[level].h_level();
     additional_data.tasks_parallel_scheme = MatrixFree<dim, MultigridNumber>::AdditionalData::none;
@@ -100,9 +135,20 @@ public:
                                           this->level_info[level].h_level());
     }
 
-    QGauss<1> quadrature(this->level_info[level].degree() + 1);
-    matrix_free->reinit(
-      mapping, *this->dof_handlers[level], *this->constraints[level], quadrature, additional_data);
+    if(mesh_is_moving)
+    {
+      matrix_free_data_update[level] = additional_data;
+      matrix_free_data_update[level].initialize_indices =
+        false; // connectivity of elements stays the same
+      matrix_free_data_update[level].initialize_mapping = true;
+    }
+
+    quadrature[level] = QGauss<1>(this->level_info[level].degree() + 1);
+    matrix_free->reinit(*this->mapping,
+                        *this->dof_handlers[level],
+                        *this->constraints[level],
+                        quadrature[level],
+                        additional_data);
 
     return matrix_free;
   }
@@ -135,21 +181,16 @@ public:
     return mg_operator;
   }
 
-  /*
-   * This function updates the multigrid preconditioner.
-   */
-  virtual void
-  update()
+  void
+  do_update_matrix_free(unsigned int const level) override
   {
-    update_operators();
-
-    update_smoothers();
-
-    // singular operators do not occur for this operator
-    this->update_coarse_solver(false /* operator_is_singular */);
+    this->matrix_free_objects[level]->reinit(*this->mapping,
+                                             *this->dof_handlers[level],
+                                             *this->constraints[level],
+                                             quadrature[level],
+                                             matrix_free_data_update[level]);
   }
 
-private:
   /*
    * This function updates the multigrid operators for all levels
    */
@@ -196,20 +237,6 @@ private:
     }
   }
 
-  /*
-   * This function updates the smoother for all multigrid levels.
-   * The prerequisite to call this function is that the multigrid operators have been updated.
-   */
-  void
-  update_smoothers()
-  {
-    // Skip coarsest level
-    for(unsigned int level = this->coarse_level + 1; level <= this->fine_level; ++level)
-    {
-      this->update_smoother(level);
-    }
-  }
-
   std::shared_ptr<PDEOperator>
   get_operator(unsigned int level)
   {
@@ -219,9 +246,15 @@ private:
     return mg_operator->get_pde_operator();
   }
 
-  ProjectionOperatorData data;
+  ProjectionOperatorData<dim> data;
 
   PDEOperatorNumber const * pde_operator;
+
+  MGLevelObject<MatrixFreeData> matrix_free_data_update;
+
+  MGLevelObject<Quadrature<1>> quadrature;
+
+  bool mesh_is_moving;
 };
 
 } // namespace IncNS

@@ -477,7 +477,10 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
                                 fe,
                                 this->get_mapping(),
                                 this->momentum_operator,
-                                this->param.multigrid_operator_type_velocity_block);
+                                this->param.multigrid_operator_type_velocity_block,
+                                this->param.ale_formulation,
+                                &this->momentum_operator.get_data().bc->dirichlet_bc,
+                                &this->periodic_face_pairs);
 }
 
 template<int dim, typename Number>
@@ -647,8 +650,12 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
       dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
     const FiniteElement<dim> & fe = dof_handler.get_fe();
 
-    mg_preconditioner->initialize(
-      mg_data, tria, fe, this->get_mapping(), compatible_laplace_operator_data);
+    mg_preconditioner->initialize(mg_data,
+                                  tria,
+                                  fe,
+                                  this->get_mapping(),
+                                  compatible_laplace_operator_data,
+                                  this->param.ale_formulation);
   }
   else if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
@@ -681,6 +688,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
                                   fe,
                                   this->get_mapping(),
                                   laplace_operator_data,
+                                  this->param.ale_formulation,
                                   &laplace_operator_data.bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
@@ -948,6 +956,50 @@ DGNavierStokesCoupled<dim, Number>::update_block_preconditioner()
   preconditioner_momentum->update();
 
   // pressure block
+  if(this->param.ale_formulation) // only if mesh is moving
+  {
+    auto type           = this->param.preconditioner_pressure_block;
+    auto type_laplacian = this->param.discretization_of_laplacian;
+    // inverse mass matrix
+    if(type == SchurComplementPreconditioner::InverseMassMatrix ||
+       type == SchurComplementPreconditioner::CahouetChabard ||
+       (type == SchurComplementPreconditioner::Elman &&
+        type_laplacian == DiscretizationOfLaplacian::Compatible) ||
+       type == SchurComplementPreconditioner::PressureConvectionDiffusion)
+    {
+      inv_mass_matrix_preconditioner_schur_complement->update();
+    }
+
+    // Laplace operator
+    if(type == SchurComplementPreconditioner::LaplaceOperator ||
+       type == SchurComplementPreconditioner::CahouetChabard ||
+       type == SchurComplementPreconditioner::Elman ||
+       type == SchurComplementPreconditioner::PressureConvectionDiffusion)
+    {
+      if(this->param.exact_inversion_of_laplace_operator == true)
+      {
+        if(type_laplacian == DiscretizationOfLaplacian::Classical)
+        {
+          laplace_operator_classical->update_after_mesh_movement();
+        }
+        else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
+        {
+          // nothin to do
+
+          // the class DGNavierStokesBase takes care that the
+          // gradient operator, divergence operator, and inverse mass
+          // matrix operator are up to date. The compatible Laplace operator
+          // only has pointers to these operators.
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented"));
+        }
+      }
+
+      multigrid_preconditioner_schur_complement->update();
+    }
+  }
 }
 
 template<int dim, typename Number>

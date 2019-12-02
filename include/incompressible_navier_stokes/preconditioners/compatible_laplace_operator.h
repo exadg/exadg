@@ -66,6 +66,9 @@ public:
                    AffineConstraints<double> const &          constraint_matrix,
                    CompatibleLaplaceOperatorData<dim> const & operator_data);
 
+  void
+  update_after_mesh_movement();
+
   virtual void
   update_block_diagonal_preconditioner() const
   {
@@ -195,7 +198,7 @@ private:
    * for each level of the multigrid algorithm. Accordingly, in a first step one has to setup own
    * objects of MatrixFree, GradientOperator, DivergenceOperator, e.g.,
    * own_matrix_free_storage.reinit(...); and later initialize the CompatibleLaplaceOperator with
-   * these ojects by setting the above pointers to the own_objects_storage, e.g., data =
+   * these objects by setting the above pointers to the own_objects_storage, e.g., data =
    * &own_matrix_free_storage;
    */
   MatrixFree<dim, Number> own_matrix_free_storage;

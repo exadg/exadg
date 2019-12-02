@@ -481,7 +481,14 @@ TimeIntBDFDualSplitting<Number>::pressure_step()
   }
 
   // solve linear system of equations
-  unsigned int iterations_pressure = pde_operator->solve_pressure(pressure_np, rhs);
+  bool const update_preconditioner =
+    this->param.update_preconditioner_pressure_poisson &&
+    ((this->time_step_number - 1) %
+       this->param.update_preconditioner_pressure_poisson_every_time_steps ==
+     0);
+
+  unsigned int iterations_pressure =
+    pde_operator->solve_pressure(pressure_np, rhs, update_preconditioner);
 
   // special case: pure Dirichlet BC's
   // Adjust the pressure level in order to allow a calculation of the pressure error.

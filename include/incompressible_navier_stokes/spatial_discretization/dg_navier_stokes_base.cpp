@@ -233,18 +233,18 @@ DGNavierStokesBase<dim, Number>::initialize_matrix_free()
   additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
   additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
-  if(param.ale_formulation == true)
-  {
-    additional_data_ale                    = additional_data;
-    additional_data_ale.initialize_indices = false; // connectivity of elements stays the same
-    additional_data_ale.initialize_mapping = true;
-  }
-
   if(param.use_cell_based_face_loops)
   {
     auto tria = dynamic_cast<parallel::distributed::Triangulation<dim> const *>(
       &dof_handler_u.get_triangulation());
     Categorization::do_cell_based_loops(*tria, additional_data);
+  }
+
+  if(param.ale_formulation == true)
+  {
+    additional_data_ale                    = additional_data;
+    additional_data_ale.initialize_indices = false; // connectivity of elements stays the same
+    additional_data_ale.initialize_mapping = true;
   }
 
   // dof handler
@@ -436,9 +436,10 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
         param.add_penalty_terms_to_monolithic_system == false))
     {
       // setup projection operator
-      ProjectionOperatorData data;
+      ProjectionOperatorData<dim> data;
       data.use_divergence_penalty = param.use_divergence_penalty;
       data.use_continuity_penalty = param.use_continuity_penalty;
+      data.bc                     = this->boundary_descriptor_velocity;
       data.dof_index              = get_dof_index_velocity();
       data.quad_index             = get_quad_index_velocity_linear();
       data.use_cell_based_loops   = param.use_cell_based_face_loops;
@@ -1092,6 +1093,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
                                 fe,
                                 get_mapping(),
                                 laplace_operator.get_data(),
+                                this->param.ale_formulation,
                                 &laplace_operator.get_data().bc->dirichlet_bc,
                                 &periodic_face_pairs);
 
@@ -1278,7 +1280,7 @@ DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
   {
     // update SIPG penalty parameter of viscous operator which depends on the deformation
     // of elements
-    viscous_kernel->calculate_penalty_parameter(matrix_free, dof_index_u);
+    viscous_operator.update();
   }
 
   // note that the update of div-div and continuity penalty terms is done separately
@@ -1413,18 +1415,21 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
       std::shared_ptr<MULTIGRID> mg_preconditioner =
         std::dynamic_pointer_cast<MULTIGRID>(preconditioner_projection);
 
-      auto & dof_handler = this->get_dof_handler_u();
+      auto const & dof_handler = this->get_dof_handler_u();
 
       parallel::TriangulationBase<dim> const * tria =
-        dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
+        dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
 
-      const FiniteElement<dim> & fe = dof_handler.get_fe();
+      FiniteElement<dim> const & fe = dof_handler.get_fe();
 
       mg_preconditioner->initialize(this->param.multigrid_data_projection,
                                     tria,
                                     fe,
                                     this->get_mapping(),
-                                    *this->projection_operator);
+                                    *this->projection_operator,
+                                    this->param.ale_formulation,
+                                    &this->projection_operator->get_data().bc->dirichlet_bc,
+                                    &this->periodic_face_pairs);
     }
     else
     {

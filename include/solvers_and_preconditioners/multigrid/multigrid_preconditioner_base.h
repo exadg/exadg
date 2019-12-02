@@ -56,18 +56,22 @@ protected:
   typedef LinearAlgebra::distributed::Vector<MultigridNumber> VectorTypeMG;
 
 public:
+  MultigridPreconditionerBase() : mapping(nullptr), n_levels(1), coarse_level(0), fine_level(0)
+  {
+  }
+
   virtual ~MultigridPreconditionerBase()
   {
   }
 
   void
-  initialize(MultigridData const &                data,
+  initialize(MultigridData const &                    data,
              parallel::TriangulationBase<dim> const * tria,
-             FiniteElement<dim> const &           fe,
-             Mapping<dim> const &                 mapping,
-             bool const                           operator_is_singular = false,
-             Map const *                          dirichlet_bc         = nullptr,
-             PeriodicFacePairs *                  periodic_face_pairs  = nullptr);
+             FiniteElement<dim> const &               fe,
+             Mapping<dim> const &                     mapping,
+             bool const                               operator_is_singular = false,
+             Map const *                              dirichlet_bc         = nullptr,
+             PeriodicFacePairs *                      periodic_face_pairs  = nullptr);
 
   /*
    * This function applies the multigrid preconditioner dst = P^{-1} src.
@@ -93,6 +97,26 @@ public:
 
 protected:
   /*
+   * This function initializes the matrix-free objects for all multigrid levels.
+   */
+  virtual void
+  initialize_matrix_free();
+
+  /*
+   * This function updates the matrix-free objects for all multigrid levels, which
+   * is necessary if the domain changes over time.
+   */
+  void
+  update_matrix_free();
+
+  /*
+   * This function updates the smoother for all multigrid levels.
+   * The prerequisite to call this function is that the multigrid operators have been updated.
+   */
+  void
+  update_smoothers();
+
+  /*
    * Update functions that have to be called/implemented by derived classes.
    */
   virtual void
@@ -105,18 +129,18 @@ protected:
    * Dof-handlers and constraints.
    */
   virtual void
-  initialize_dof_handler_and_constraints(bool                                 is_singular,
-                                         PeriodicFacePairs *                  periodic_face_pairs,
-                                         FiniteElement<dim> const &           fe,
+  initialize_dof_handler_and_constraints(bool                       is_singular,
+                                         PeriodicFacePairs *        periodic_face_pairs,
+                                         FiniteElement<dim> const & fe,
                                          parallel::TriangulationBase<dim> const * tria,
-                                         Map const *                          dirichlet_bc);
+                                         Map const *                              dirichlet_bc);
 
   void
   do_initialize_dof_handler_and_constraints(
     bool                                                        is_singular,
     PeriodicFacePairs &                                         periodic_face_pairs,
     FiniteElement<dim> const &                                  fe,
-    parallel::TriangulationBase<dim> const *                        tria,
+    parallel::TriangulationBase<dim> const *                    tria,
     Map const &                                                 dirichlet_bc,
     std::vector<MGLevelInfo> &                                  level_info,
     std::vector<MGDoFHandlerIdentifier> &                       p_levels,
@@ -137,6 +161,8 @@ protected:
   MGLevelObject<std::shared_ptr<Operator>>                         operators;
   MGTransferMF_MGLevelObject<dim, VectorTypeMG>                    transfers;
 
+  Mapping<dim> const * mapping;
+
   std::vector<MGDoFHandlerIdentifier> p_levels;
   std::vector<MGLevelInfo>            level_info;
   unsigned int                        n_levels;
@@ -152,8 +178,8 @@ private:
    */
   void
   initialize_levels(parallel::TriangulationBase<dim> const * tria,
-                    unsigned int const                   degree,
-                    bool const                           is_dg);
+                    unsigned int const                       degree,
+                    bool const                               is_dg);
 
   void
   check_levels(std::vector<MGLevelInfo> const & level_info);
@@ -170,11 +196,11 @@ private:
   /*
    * Data structures needed for matrix-free operator evaluation.
    */
-  void
-  initialize_matrix_free(Mapping<dim> const & mapping);
-
   virtual std::shared_ptr<MatrixFree<dim, MultigridNumber>>
-  initialize_matrix_free(unsigned int const level, Mapping<dim> const & mapping);
+  do_initialize_matrix_free(unsigned int const level);
+
+  virtual void
+  do_update_matrix_free(unsigned int const level);
 
   /*
    * Initializes the multigrid operators for all multigrid levels.

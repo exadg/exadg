@@ -196,6 +196,9 @@ public:
   calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
                               unsigned int const              dof_index);
 
+  void
+  update_after_mesh_movement();
+
   // Some more functionality on top of what is provided by the base class.
   // This function evaluates the inhomogeneous boundary face integrals where the
   // Dirichlet boundary condition is extracted from a dof vector instead of a Function<dim>.

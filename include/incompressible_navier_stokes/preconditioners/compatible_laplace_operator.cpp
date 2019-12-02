@@ -48,6 +48,18 @@ CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
 
 template<int dim, typename Number>
 void
+CompatibleLaplaceOperator<dim, Number>::update_after_mesh_movement()
+{
+  // Make sure that this function is only called if the operator
+  // is a multigrid operator.
+  AssertThrow(inv_mass_matrix_operator == &own_inv_mass_matrix_operator_storage,
+              ExcMessage("Logical error detected."));
+
+  own_inv_mass_matrix_operator_storage.reinit();
+}
+
+template<int dim, typename Number>
+void
 CompatibleLaplaceOperator<dim, Number>::initialize(
   MatrixFree<dim, Number> const &                     matrix_free_in,
   CompatibleLaplaceOperatorData<dim> const &          operator_data_in,

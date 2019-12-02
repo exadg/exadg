@@ -27,6 +27,13 @@ ViscousOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_fr
 
 template<int dim, typename Number>
 void
+ViscousOperator<dim, Number>::update()
+{
+  kernel->calculate_penalty_parameter(this->get_matrix_free(), this->get_data().dof_index);
+}
+
+template<int dim, typename Number>
+void
 ViscousOperator<dim, Number>::reinit(
   MatrixFree<dim, Number> const &                        matrix_free,
   AffineConstraints<double> const &                      constraint_matrix,
