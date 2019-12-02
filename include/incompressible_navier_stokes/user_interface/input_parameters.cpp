@@ -729,6 +729,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   if(use_continuity_penalty == true)
   {
+    print_parameter(pcout, "Use boundary data", continuity_penalty_use_boundary_data);
     print_parameter(pcout, "Penalty factor continuity", continuity_penalty_factor);
 
     print_parameter(pcout,
