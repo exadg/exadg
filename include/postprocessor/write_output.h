@@ -37,19 +37,21 @@ write_boundary_IDs(Triangulation<dim> const & triangulation,
                    std::string const &        file,
                    MPI_Comm const &           mpi_communicator = MPI_COMM_WORLD)
 {
-  const unsigned int rank = Utilities::MPI::this_mpi_process(mpi_communicator);
-
+  const unsigned int rank    = Utilities::MPI::this_mpi_process(mpi_communicator);
   const unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_communicator);
 
   const unsigned int n_digits = static_cast<int>(std::ceil(std::log10(std::fabs(n_ranks))));
 
   std::string filename =
-    folder + file + "_grid" + "." + Utilities::int_to_string(rank, n_digits) + ".vtk";
+    folder + file + "_boundary_IDs" + "." + Utilities::int_to_string(rank, n_digits) + ".vtk";
   std::ofstream output(filename.c_str());
 
   GridOut           grid_out;
-  GridOutFlags::Vtk flags =
-    GridOutFlags::Vtk(false /* cells */, true /* faces */, false /* edges */);
+  GridOutFlags::Vtk flags;
+  flags.output_cells         = false;
+  flags.output_faces         = true;
+  flags.output_edges         = false;
+  flags.output_only_relevant = false;
   grid_out.set_flags(flags);
   grid_out.write_vtk(triangulation, output);
 }

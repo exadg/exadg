@@ -574,6 +574,8 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.write_divergence = true;
   pp_data.output_data.write_higher_order = false;
   pp_data.output_data.write_processor_id = true;
+  pp_data.output_data.write_surface_mesh = true;
+  pp_data.output_data.write_boundary_IDs = true;
   pp_data.output_data.degree = param.degree_u;
 
   // lift and drag
