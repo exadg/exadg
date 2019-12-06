@@ -12,7 +12,9 @@
 
 #include "../../../operators/integrator_flags.h"
 #include "../../../operators/mapping_flags.h"
+#include "../../user_interface/boundary_descriptor.h"
 #include "../../user_interface/input_parameters.h"
+#include "weak_boundary_conditions.h"
 
 using namespace dealii;
 
@@ -39,7 +41,7 @@ namespace IncNS
  *            use viscous term:     tau_conti_viscous = K * nu / h
  *
  *                                  where h_eff = h / (k_u+1) and
- *                                  h = V_e^{1/3} with the element volume V_e
+ *                                  h = V_e^{1/dim} with the element volume V_e
  *
  *            use both terms:       tau_conti = tau_conti_conv + tau_conti_viscous
  */
@@ -135,9 +137,8 @@ public:
 
     // no cell integrals
 
-    flags.inner_faces = update_JxW_values | update_normal_vectors;
-
-    // no boundary face integrals
+    flags.inner_faces    = update_JxW_values | update_normal_vectors;
+    flags.boundary_faces = update_JxW_values | update_normal_vectors | update_quadrature_points;
 
     return flags;
   }
@@ -195,6 +196,12 @@ public:
   }
 
   void
+  reinit_boundary_face(IntegratorFace & integrator_m) const
+  {
+    tau = integrator_m.read_cell_data(array_penalty_parameter);
+  }
+
+  void
   reinit_face_cell_based(types::boundary_id const boundary_id,
                          IntegratorFace &         integrator_m,
                          IntegratorFace &         integrator_p) const
@@ -206,7 +213,6 @@ public:
     }
     else // boundary face
     {
-      // will not be used since the continuity penalty operator is zero on boundary faces
       tau = integrator_m.read_cell_data(array_penalty_parameter);
     }
   }
@@ -252,15 +258,20 @@ private:
 
 } // namespace Operators
 
+template<int dim>
 struct ContinuityPenaltyData
 {
-  ContinuityPenaltyData() : dof_index(0), quad_index(0)
+  ContinuityPenaltyData() : dof_index(0), quad_index(0), use_boundary_data(false)
   {
   }
 
   unsigned int dof_index;
 
   unsigned int quad_index;
+
+  bool use_boundary_data;
+
+  std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
 
 template<int dim, typename Number>
@@ -283,18 +294,33 @@ public:
   ContinuityPenaltyOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const & matrix_free,
-         ContinuityPenaltyData const &   data,
-         std::shared_ptr<Kernel> const   kernel);
+  reinit(MatrixFree<dim, Number> const &    matrix_free,
+         ContinuityPenaltyData<dim> const & data,
+         std::shared_ptr<Kernel> const      kernel);
 
   void
   update(VectorType const & velocity);
 
+  // homogeneous operator
   void
   apply(VectorType & dst, VectorType const & src) const;
 
   void
   apply_add(VectorType & dst, VectorType const & src) const;
+
+  // inhomogeneous operator
+  void
+  rhs(VectorType & dst, Number const evaluation_time) const;
+
+  void
+  rhs_add(VectorType & dst, Number const evaluation_time) const;
+
+  // full operator, i.e., homogeneous and inhomogeneous contributions
+  void
+  evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const;
+
+  void
+  evaluate_add(VectorType & dst, VectorType const & src, Number const evaluation_time) const;
 
 private:
   void
@@ -310,17 +336,42 @@ private:
             Range const &                   face_range) const;
 
   void
-  boundary_face_loop_empty(MatrixFree<dim, Number> const & matrix_free,
+  face_loop_empty(MatrixFree<dim, Number> const & matrix_free,
+                  VectorType &                    dst,
+                  VectorType const &              src,
+                  Range const &                   face_range) const;
+
+  void
+  boundary_face_loop_hom(MatrixFree<dim, Number> const & matrix_free,
+                         VectorType &                    dst,
+                         VectorType const &              src,
+                         Range const &                   face_range) const;
+
+  void
+  boundary_face_loop_full(MatrixFree<dim, Number> const & matrix_free,
+                          VectorType &                    dst,
+                          VectorType const &              src,
+                          Range const &                   face_range) const;
+
+  void
+  boundary_face_loop_inhom(MatrixFree<dim, Number> const & matrix_free,
                            VectorType &                    dst,
                            VectorType const &              src,
-                           Range const &                   range) const;
+                           Range const &                   face_range) const;
 
   void
   do_face_integral(IntegratorFace & integrator_m, IntegratorFace & integrator_p) const;
 
+  void
+  do_boundary_integral(IntegratorFace &           integrator_m,
+                       OperatorType const &       operator_type,
+                       types::boundary_id const & boundary_id) const;
+
   MatrixFree<dim, Number> const * matrix_free;
 
-  ContinuityPenaltyData data;
+  ContinuityPenaltyData<dim> data;
+
+  mutable double time;
 
   std::shared_ptr<Operators::ContinuityPenaltyKernel<dim, Number>> kernel;
 };

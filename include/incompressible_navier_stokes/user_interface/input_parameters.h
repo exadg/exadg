@@ -311,22 +311,24 @@ public:
   AdjustPressureLevel adjust_pressure_level;
 
   // use div-div penalty term
-  // Note that this parameter is currently only relevant for the coupled solver
   bool use_divergence_penalty;
 
   // penalty factor of divergence penalty term
   double divergence_penalty_factor;
 
   // use continuity penalty term
-  // Note that this parameter is currently only relevant for the coupled solver
   bool use_continuity_penalty;
+
+  // penalty factor of continuity penalty term
+  double continuity_penalty_factor;
 
   // specify which components of the velocity field to penalize, i.e., normal
   // components only or all components
   ContinuityPenaltyComponents continuity_penalty_components;
 
-  // penalty factor of continuity penalty term
-  double continuity_penalty_factor;
+  // specify whether boundary conditions prescribed for the velocity should be
+  // used in continuity penalty operator. Otherwise, boundary faces are ignored.
+  bool continuity_penalty_use_boundary_data;
 
   // type of penalty parameter (see enum declaration for more information)
   TypePenaltyParameter type_penalty_parameter;

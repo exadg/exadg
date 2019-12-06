@@ -106,8 +106,9 @@ InputParameters::InputParameters()
     use_divergence_penalty(true),
     divergence_penalty_factor(1.),
     use_continuity_penalty(true),
-    continuity_penalty_components(ContinuityPenaltyComponents::Normal),
     continuity_penalty_factor(1.),
+    continuity_penalty_components(ContinuityPenaltyComponents::Normal),
+    continuity_penalty_use_boundary_data(false),
     type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
     add_penalty_terms_to_monolithic_system(false),
 
@@ -348,6 +349,15 @@ InputParameters::check_input_parameters()
   {
     AssertThrow(continuity_penalty_components != ContinuityPenaltyComponents::Undefined,
                 ExcMessage("Parameter must be defined"));
+
+    if(continuity_penalty_use_boundary_data == true && solver_type == SolverType::Unsteady)
+    {
+      AssertThrow(
+        temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
+        ExcMessage(
+          "Applying boundary conditions for continuity penalty operator is only possible for monolithic solver. "
+          "The standard velocity boundary conditions would be inconsistent in case of splitting schemes."));
+    }
   }
 
   if(use_divergence_penalty == true || use_continuity_penalty == true)
@@ -719,6 +729,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   if(use_continuity_penalty == true)
   {
+    print_parameter(pcout, "Use boundary data", continuity_penalty_use_boundary_data);
     print_parameter(pcout, "Penalty factor continuity", continuity_penalty_factor);
 
     print_parameter(pcout,

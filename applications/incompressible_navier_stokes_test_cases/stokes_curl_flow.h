@@ -43,13 +43,13 @@ void set_input_parameters(InputParameters &param)
 
   // PHYSICAL QUANTITIES
   param.start_time = 0.0;
-  param.end_time = 1.0e3;
+  param.end_time = 1.0e4;
   param.viscosity = VISCOSITY;
 
 
   // TEMPORAL DISCRETIZATION
-  param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
+  param.solver_type = SolverType::Steady;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
   param.time_step_size = 0.1;
   param.order_time_integrator = 2; // 1; // 2; // 3;
@@ -63,7 +63,7 @@ void set_input_parameters(InputParameters &param)
   //pseudo-timestepping
   param.convergence_criterion_steady_problem = ConvergenceCriterionSteadyProblem::SolutionIncrement;
   param.abs_tol_steady = 1e-8;
-  param.rel_tol_steady = 1e-8;
+  param.rel_tol_steady = 1e-6;
 
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
@@ -87,9 +87,10 @@ void set_input_parameters(InputParameters &param)
   param.divergence_penalty_factor = 1.0e0;
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
+  param.continuity_penalty_use_boundary_data = true;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   param.type_penalty_parameter = TypePenaltyParameter::ViscousAndConvectiveTerms;
-  param.add_penalty_terms_to_monolithic_system = false; //true;
+  param.add_penalty_terms_to_monolithic_system = true;
 
   // PROJECTION METHODS
 
@@ -148,7 +149,7 @@ void set_input_parameters(InputParameters &param)
   param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
 
   // preconditioner Schur-complement block
-  param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard;
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::InverseMassMatrix; //CahouetChabard;
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
 }
 
@@ -302,8 +303,10 @@ void set_boundary_conditions(
 template<int dim>
 void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
-  field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
-  field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
+//  field_functions->initial_solution_velocity.reset(new AnalyticalSolutionVelocity<dim>());
+//  field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
+  field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->right_hand_side.reset(new RightHandSide<dim>());
 }

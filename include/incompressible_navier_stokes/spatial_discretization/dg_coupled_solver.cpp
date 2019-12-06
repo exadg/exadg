@@ -173,6 +173,15 @@ DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(
 
 template<int dim, typename Number>
 void
+DGNavierStokesCoupled<dim, Number>::rhs_projection_operator(VectorType &   dst,
+                                                            double const & time) const
+{
+  this->projection_operator->set_time(time);
+  this->projection_operator->rhs_add(dst);
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
                                                        double const &    time) const
 {
@@ -183,10 +192,14 @@ DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
   this->viscous_operator.set_time(time);
   this->viscous_operator.rhs_add(dst.block(0));
 
+  if(this->param.add_penalty_terms_to_monolithic_system)
+  {
+    if(this->param.use_continuity_penalty == true)
+      this->conti_penalty_operator.rhs_add(dst.block(0), time);
+  }
+
   if(this->param.right_hand_side == true)
     this->rhs_operator.evaluate_add(dst.block(0), time);
-
-  // Divergence and continuity penalty operators: no contribution to rhs
 
   // pressure-block
   this->divergence_operator.rhs(dst.block(1), time);
@@ -311,7 +324,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
     if(this->param.use_divergence_penalty == true)
       this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      this->conti_penalty_operator.apply_add(dst.block(0), src.block(0));
+      this->conti_penalty_operator.evaluate_add(dst.block(0), src.block(0), time);
   }
 
   // gradient operator scaled by scaling_factor_continuity
@@ -368,7 +381,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVect
     if(this->param.use_divergence_penalty == true)
       this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
     if(this->param.use_continuity_penalty == true)
-      this->conti_penalty_operator.apply_add(dst.block(0), src.block(0));
+      this->conti_penalty_operator.evaluate_add(dst.block(0), src.block(0), time);
   }
 
   // gradient operator scaled by scaling_factor_continuity
