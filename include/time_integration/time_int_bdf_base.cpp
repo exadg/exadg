@@ -233,9 +233,7 @@ TimeIntBDFBase<Number>::do_timestep(bool const do_write_output)
   if(adaptive_time_stepping == true)
   {
     push_back_time_step_sizes();
-    double dt = recalculate_time_step_size();
-    // make sure that the end time is hit exactly
-    dt = std::min(end_time - time, dt);
+    double const dt = recalculate_time_step_size();
     set_time_step_size(dt);
   }
 
