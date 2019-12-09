@@ -15,8 +15,8 @@
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 2;
-unsigned int const REFINE_SPACE_MAX = 2;
+unsigned int const REFINE_SPACE_MIN = 1;
+unsigned int const REFINE_SPACE_MAX = 1;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -58,9 +58,9 @@ set_input_parameters(InputParameters & param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  param.order_time_integrator = 2;
+  param.order_time_integrator = 1;
   param.start_with_low_order = false;
   param.adaptive_time_stepping = true;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -91,8 +91,8 @@ set_input_parameters(InputParameters & param)
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // velocity pressure coupling terms
-  param.gradp_formulation = FormulationPressureGradientTerm::Strong;
-  param.divu_formulation = FormulationVelocityDivergenceTerm::Strong;
+  param.gradp_formulation = FormulationPressureGradientTerm::Weak;
+  param.divu_formulation = FormulationVelocityDivergenceTerm::Weak;
 
   // special case: pure DBC's
   param.pure_dirichlet_bc     = true;
@@ -314,7 +314,7 @@ construct_postprocessor(InputParameters const & param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output                    = true;
+  pp_data.output_data.write_output                    = false;
   pp_data.output_data.output_folder                   = "output/free_stream_preservation/vtu/";
   pp_data.output_data.output_name                     = "test";
   pp_data.output_data.output_start_time               = param.start_time;
