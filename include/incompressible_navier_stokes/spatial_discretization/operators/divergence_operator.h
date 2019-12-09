@@ -86,7 +86,8 @@ struct DivergenceOperatorData
       dof_index_pressure(1),
       quad_index(0),
       integration_by_parts(true),
-      use_boundary_data(true)
+      use_boundary_data(true),
+      formulation(FormulationVelocityDivergenceTerm::Weak)
   {
   }
 
@@ -97,6 +98,8 @@ struct DivergenceOperatorData
 
   bool integration_by_parts;
   bool use_boundary_data;
+
+  FormulationVelocityDivergenceTerm formulation;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };

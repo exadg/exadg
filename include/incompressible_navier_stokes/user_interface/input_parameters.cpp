@@ -92,10 +92,12 @@ InputParameters::InputParameters()
 
     // gradient term
     gradp_integrated_by_parts(true),
+    gradp_formulation(FormulationPressureGradientTerm::Weak),
     gradp_use_boundary_data(true),
 
     // divergence term
     divu_integrated_by_parts(true),
+    divu_formulation(FormulationVelocityDivergenceTerm::Weak),
     divu_use_boundary_data(true),
 
     // special case: pure DBC's
@@ -706,11 +708,19 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   // pressure gradient term
   print_parameter(pcout, "Grad(p) - integration by parts", gradp_integrated_by_parts);
-  print_parameter(pcout, "Grad(p) - use boundary data", gradp_use_boundary_data);
+  if(gradp_integrated_by_parts)
+  {
+    print_parameter(pcout, "Grad(p) - formulation", enum_to_string(gradp_formulation));
+    print_parameter(pcout, "Grad(p) - use boundary data", gradp_use_boundary_data);
+  }
 
   // divergence term
   print_parameter(pcout, "Div(u) . integration by parts", divu_integrated_by_parts);
-  print_parameter(pcout, "Div(u) - use boundary data", divu_use_boundary_data);
+  if(divu_integrated_by_parts)
+  {
+    print_parameter(pcout, "Div(u) - formulation", enum_to_string(divu_formulation));
+    print_parameter(pcout, "Div(u) - use boundary data", divu_use_boundary_data);
+  }
 
   // special case pure DBC's
   print_parameter(pcout, "Pure Dirichlet BC's", pure_dirichlet_bc);
