@@ -43,24 +43,13 @@ public:
   }
 
   /*
-   *  This function implements the central flux as numerical flux function for the weak formulation.
+   *  This function implements the central flux as numerical flux function.
    */
   inline DEAL_II_ALWAYS_INLINE //
     scalar
-    calculate_flux_weak(scalar const & value_m, scalar const & value_p) const
+    calculate_flux(scalar const & value_m, scalar const & value_p) const
   {
     return 0.5 * (value_m + value_p);
-  }
-
-  /*
-   *  This function implements the central flux as numerical flux function for the strong
-   * formulation (integration by parts performed twice).
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_flux_strong(scalar const & value_m, scalar const & value_p) const
-  {
-    return -0.5 * (value_m - value_p);
   }
 
   /*

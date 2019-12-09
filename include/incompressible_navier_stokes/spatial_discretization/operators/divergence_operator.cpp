@@ -181,19 +181,27 @@ DivergenceOperator<dim, Number>::do_face_integral(FaceIntegratorU & velocity_m,
     vector value_m = velocity_m.get_value(q);
     vector value_p = velocity_p.get_value(q);
 
-    vector flux;
+    vector flux = kernel.calculate_flux(value_m, value_p);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
-      flux = kernel.calculate_flux_weak(value_m, value_p);
+    {
+      scalar flux_times_normal = flux * velocity_m.get_normal_vector(q);
+
+      pressure_m.submit_value(flux_times_normal, q);
+      // minus sign since n⁺ = - n⁻
+      pressure_p.submit_value(-flux_times_normal, q);
+    }
     else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
-      flux = kernel.calculate_flux_strong(value_m, value_p);
+    {
+      vector normal = velocity_m.get_normal_vector(q);
+
+      pressure_m.submit_value((flux - value_m) * normal, q);
+      // minus sign since n⁺ = - n⁻
+      pressure_p.submit_value((flux - value_p) * (-normal), q);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("Not implemented."));
-
-    scalar flux_times_normal = flux * velocity_m.get_normal_vector(q);
-
-    pressure_m.submit_value(flux_times_normal, q);
-    // minus sign since n⁺ = - n⁻
-    pressure_p.submit_value(-flux_times_normal, q);
+    }
   }
 }
 
@@ -208,8 +216,6 @@ DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &         
 
   for(unsigned int q = 0; q < pressure.n_q_points; ++q)
   {
-    vector flux;
-
     vector value_m = calculate_interior_value(q, velocity, operator_type);
     vector value_p;
     if(data.use_boundary_data == true)
@@ -222,15 +228,20 @@ DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &         
       value_p = value_m;
     }
 
+    vector flux   = kernel.calculate_flux(value_m, value_p);
+    vector normal = velocity.get_normal_vector(q);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
-      flux = kernel.calculate_flux_weak(value_m, value_p);
+    {
+      pressure.submit_value(flux * normal, q);
+    }
     else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
-      flux = kernel.calculate_flux_strong(value_m, value_p);
+    {
+      pressure.submit_value((flux - value_m) * normal, q);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("Not implemented."));
-
-    scalar flux_times_normal = flux * velocity.get_normal_vector(q);
-    pressure.submit_value(flux_times_normal, q);
+    }
   }
 }
 
@@ -247,8 +258,6 @@ DivergenceOperator<dim, Number>::do_boundary_integral_from_dof_vector(
 
   for(unsigned int q = 0; q < pressure.n_q_points; ++q)
   {
-    vector flux;
-
     vector value_m = calculate_interior_value(q, velocity, operator_type);
     vector value_p;
     if(data.use_boundary_data == true)
@@ -261,15 +270,20 @@ DivergenceOperator<dim, Number>::do_boundary_integral_from_dof_vector(
       value_p = value_m;
     }
 
+    vector flux   = kernel.calculate_flux(value_m, value_p);
+    vector normal = velocity.get_normal_vector(q);
     if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
-      flux = kernel.calculate_flux_weak(value_m, value_p);
+    {
+      pressure.submit_value(flux * normal, q);
+    }
     else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
-      flux = kernel.calculate_flux_strong(value_m, value_p);
+    {
+      pressure.submit_value((flux - value_m) * normal, q);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("Not implemented."));
-
-    scalar flux_times_normal = flux * velocity.get_normal_vector(q);
-    pressure.submit_value(flux_times_normal, q);
+    }
   }
 }
 

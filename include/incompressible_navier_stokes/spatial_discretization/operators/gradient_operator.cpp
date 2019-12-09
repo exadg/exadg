@@ -207,19 +207,27 @@ GradientOperator<dim, Number>::do_face_integral(FaceIntegratorP & pressure_m,
     scalar value_m = pressure_m.get_value(q);
     scalar value_p = pressure_p.get_value(q);
 
-    scalar flux;
+    scalar flux = kernel.calculate_flux(value_m, value_p);
     if(data.formulation == FormulationPressureGradientTerm::Weak)
-      flux = kernel.calculate_flux_weak(value_m, value_p);
+    {
+      vector flux_times_normal = flux * pressure_m.get_normal_vector(q);
+
+      velocity_m.submit_value(flux_times_normal, q);
+      // minus sign since n⁺ = - n⁻
+      velocity_p.submit_value(-flux_times_normal, q);
+    }
     else if(data.formulation == FormulationPressureGradientTerm::Strong)
-      flux = kernel.calculate_flux_strong(value_m, value_p);
+    {
+      vector normal = pressure_m.get_normal_vector(q);
+
+      velocity_m.submit_value((flux - value_m) * normal, q);
+      // minus sign since n⁺ = - n⁻
+      velocity_p.submit_value((flux - value_p) * (-normal), q);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("Not implemented."));
-
-    vector flux_times_normal = flux * pressure_m.get_normal_vector(q);
-
-    velocity_m.submit_value(flux_times_normal, q);
-    // minus sign since n⁺ = - n⁻
-    velocity_p.submit_value(-flux_times_normal, q);
+    }
   }
 }
 
@@ -254,17 +262,20 @@ GradientOperator<dim, Number>::do_boundary_integral(FaceIntegratorP &          p
       value_p = value_m;
     }
 
-    scalar flux;
+    scalar flux   = kernel.calculate_flux(value_m, value_p);
+    vector normal = pressure.get_normal_vector(q);
     if(data.formulation == FormulationPressureGradientTerm::Weak)
-      flux = kernel.calculate_flux_weak(value_m, value_p);
+    {
+      velocity.submit_value(flux * normal, q);
+    }
     else if(data.formulation == FormulationPressureGradientTerm::Strong)
-      flux = kernel.calculate_flux_strong(value_m, value_p);
+    {
+      velocity.submit_value((flux - value_m) * normal, q);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("Not implemented."));
-
-    vector flux_times_normal = flux * pressure.get_normal_vector(q);
-
-    velocity.submit_value(flux_times_normal, q);
+    }
   }
 }
 
@@ -294,17 +305,22 @@ GradientOperator<dim, Number>::do_boundary_integral_from_dof_vector(
       value_p = value_m;
     }
 
-    scalar flux;
+    scalar flux   = kernel.calculate_flux(value_m, value_p);
+    vector normal = pressure.get_normal_vector(q);
     if(data.formulation == FormulationPressureGradientTerm::Weak)
-      flux = kernel.calculate_flux_weak(value_m, value_p);
+    {
+      velocity.submit_value(flux * normal, q);
+    }
     else if(data.formulation == FormulationPressureGradientTerm::Strong)
-      flux = kernel.calculate_flux_strong(value_m, value_p);
+    {
+      vector normal = pressure.get_normal_vector(q);
+
+      velocity.submit_value((flux - value_m) * normal, q);
+    }
     else
+    {
       AssertThrow(false, ExcMessage("Not implemented."));
-
-    vector flux_times_normal = flux * pressure.get_normal_vector(q);
-
-    velocity.submit_value(flux_times_normal, q);
+    }
   }
 }
 
@@ -332,7 +348,7 @@ GradientOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_
 
       velocity.integrate_scatter(false, true, dst);
     }
-    else // integration_by_parts == false
+    else
     {
       pressure.gather_evaluate(src, false, true);
 
@@ -527,7 +543,7 @@ GradientOperator<dim, Number>::boundary_face_loop_full_operator_bc_from_dof_vect
   VectorType const &              src,
   Range const &                   face_range) const
 {
-  if(data.integration_by_parts == true && data.use_boundary_data == true)
+  if(data.integration_by_parts == true)
   {
     FaceIntegratorU velocity(matrix_free, true, data.dof_index_velocity, data.quad_index);
     FaceIntegratorP pressure(matrix_free, true, data.dof_index_pressure, data.quad_index);
