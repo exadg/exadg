@@ -181,7 +181,13 @@ DivergenceOperator<dim, Number>::do_face_integral(FaceIntegratorU & velocity_m,
     vector value_m = velocity_m.get_value(q);
     vector value_p = velocity_p.get_value(q);
 
-    vector flux = kernel.calculate_flux(value_m, value_p);
+    vector flux;
+    if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
+      flux = kernel.calculate_flux_weak(value_m, value_p);
+    else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
+      flux = kernel.calculate_flux_strong(value_m, value_p);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
 
     scalar flux_times_normal = flux * velocity_m.get_normal_vector(q);
 
@@ -216,7 +222,12 @@ DivergenceOperator<dim, Number>::do_boundary_integral(FaceIntegratorU &         
       value_p = value_m;
     }
 
-    flux = kernel.calculate_flux(value_m, value_p);
+    if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
+      flux = kernel.calculate_flux_weak(value_m, value_p);
+    else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
+      flux = kernel.calculate_flux_strong(value_m, value_p);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
 
     scalar flux_times_normal = flux * velocity.get_normal_vector(q);
     pressure.submit_value(flux_times_normal, q);
@@ -250,7 +261,12 @@ DivergenceOperator<dim, Number>::do_boundary_integral_from_dof_vector(
       value_p = value_m;
     }
 
-    flux = kernel.calculate_flux(value_m, value_p);
+    if(data.formulation == FormulationVelocityDivergenceTerm::Weak)
+      flux = kernel.calculate_flux_weak(value_m, value_p);
+    else if(data.formulation == FormulationVelocityDivergenceTerm::Strong)
+      flux = kernel.calculate_flux_strong(value_m, value_p);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
 
     scalar flux_times_normal = flux * velocity.get_normal_vector(q);
     pressure.submit_value(flux_times_normal, q);
@@ -273,7 +289,8 @@ DivergenceOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matri
 
     velocity.reinit(cell);
 
-    if(data.integration_by_parts == true)
+    if(data.integration_by_parts == true &&
+       data.formulation == FormulationVelocityDivergenceTerm::Weak)
     {
       velocity.gather_evaluate(src, true, false, false);
 

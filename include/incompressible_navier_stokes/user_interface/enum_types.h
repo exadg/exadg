@@ -316,6 +316,33 @@ enum class AdjustPressureLevel
 std::string
 enum_to_string(AdjustPressureLevel const enum_type);
 
+
+/*
+ *  Formulation of velocity divergence term
+ */
+enum class FormulationVelocityDivergenceTerm
+{
+  Undefined,
+  Weak,
+  Strong
+};
+
+std::string
+enum_to_string(FormulationVelocityDivergenceTerm const enum_type);
+
+/*
+ *  Formulation of pressure gradient term
+ */
+enum class FormulationPressureGradientTerm
+{
+  Undefined,
+  Weak,
+  Strong
+};
+
+std::string
+enum_to_string(FormulationPressureGradientTerm const enum_type);
+
 /*
  * Continuity penalty term: apply penalty term to all velocity components or to
  * normal components only.

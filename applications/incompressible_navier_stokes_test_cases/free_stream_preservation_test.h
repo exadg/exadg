@@ -15,8 +15,8 @@
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 2;
+unsigned int const REFINE_SPACE_MAX = 2;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -40,7 +40,7 @@ void
 set_input_parameters(InputParameters & param)
 {
   // MATHEMATICAL MODEL
-  param.dim = 2;
+  param.dim = 3;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
@@ -58,9 +58,9 @@ set_input_parameters(InputParameters & param)
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
-  param.temporal_discretization = TemporalDiscretization::BDFPressureCorrection;
-  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit;
-  param.order_time_integrator = 3;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.adaptive_time_stepping = true;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -89,6 +89,10 @@ set_input_parameters(InputParameters & param)
 
   // viscous term
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+
+  // velocity pressure coupling terms
+  param.gradp_formulation = FormulationPressureGradientTerm::Strong;
+  param.divu_formulation = FormulationVelocityDivergenceTerm::Strong;
 
   // special case: pure DBC's
   param.pure_dirichlet_bc     = true;
@@ -285,7 +289,7 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     MeshMovementData<dim> data;
     data.temporal = MeshMovementAdvanceInTime::Sin;
-    data.shape = MeshMovementShape::SineAligned; //Sin;
+    data.shape = MeshMovementShape::Sin;
     data.dimensions[0] = std::abs(RIGHT-LEFT);
     data.dimensions[1] = std::abs(RIGHT-LEFT);
     data.amplitude = 0.08 * (RIGHT-LEFT);
@@ -299,7 +303,7 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 /************************************************************************************************************/
 /*                                                                                                          */
-/*                                              POSTPROCESSOR */
+/*                                              POSTPROCESSOR                                               */
 /*                                                                                                          */
 /************************************************************************************************************/
 
@@ -310,7 +314,7 @@ construct_postprocessor(InputParameters const & param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output                    = false;
+  pp_data.output_data.write_output                    = true;
   pp_data.output_data.output_folder                   = "output/free_stream_preservation/vtu/";
   pp_data.output_data.output_name                     = "test";
   pp_data.output_data.output_start_time               = param.start_time;

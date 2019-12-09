@@ -344,6 +344,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   gradient_operator_data.dof_index_pressure   = dof_index_p;
   gradient_operator_data.quad_index           = quad_index_u;
   gradient_operator_data.integration_by_parts = param.gradp_integrated_by_parts;
+  gradient_operator_data.formulation          = param.gradp_formulation;
   gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
   gradient_operator_data.bc                   = boundary_descriptor_pressure;
   gradient_operator.reinit(matrix_free, gradient_operator_data);
@@ -354,6 +355,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   divergence_operator_data.dof_index_pressure   = dof_index_p;
   divergence_operator_data.quad_index           = quad_index_u;
   divergence_operator_data.integration_by_parts = param.divu_integrated_by_parts;
+  divergence_operator_data.formulation          = param.divu_formulation;
   divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
   divergence_operator_data.bc                   = boundary_descriptor_velocity;
   divergence_operator.reinit(matrix_free, divergence_operator_data);

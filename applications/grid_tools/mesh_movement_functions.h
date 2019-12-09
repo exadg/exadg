@@ -12,6 +12,7 @@ enum class MeshMovementShape
 {
   Undefined,
   Sin,
+  SineZeroAtBoundary,
   SineAligned
 };
 
@@ -93,6 +94,31 @@ private:
                1.0);
         else if(coordinate_direction == 2)
           solution =
+            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
+            data.amplitude *
+            std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width);
+        break;
+
+      case MeshMovementShape::SineZeroAtBoundary:
+        if(coordinate_direction == 0)
+          solution =
+            std::sin(pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
+            std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *
+            data.amplitude *
+            (dim == 3 ?
+               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
+               1.0);
+        else if(coordinate_direction == 1)
+          solution =
+            std::sin(pi * (x(1) - left) * data.spatial_number_of_oscillations / width) *
+            std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
+            data.amplitude *
+            (dim == 3 ?
+               std::sin(2.0 * pi * (x(2) - left) * data.spatial_number_of_oscillations / width) :
+               1.0);
+        else if(coordinate_direction == 2)
+          solution =
+            std::sin(pi * (x(2) - left) * data.spatial_number_of_oscillations / width) *
             std::sin(2.0 * pi * (x(0) - left) * data.spatial_number_of_oscillations / width) *
             data.amplitude *
             std::sin(2.0 * pi * (x(1) - left) * data.spatial_number_of_oscillations / width);

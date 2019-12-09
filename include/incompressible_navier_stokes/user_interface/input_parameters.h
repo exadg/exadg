@@ -294,11 +294,17 @@ public:
   // integration by parts of grad(P)
   bool gradp_integrated_by_parts;
 
+  // type for formulation
+  FormulationPressureGradientTerm gradp_formulation;
+
   // use boundary data if integrated by parts
   bool gradp_use_boundary_data;
 
   // integration by parts of div(U)
   bool divu_integrated_by_parts;
+
+  // type of formulation
+  FormulationVelocityDivergenceTerm divu_formulation;
 
   // use boundary data if integrated by parts
   bool divu_use_boundary_data;

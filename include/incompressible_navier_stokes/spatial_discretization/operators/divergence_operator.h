@@ -44,13 +44,24 @@ public:
   }
 
   /*
-   *  This function implements the central flux as numerical flux function.
+   *  This function implements the central flux as numerical flux function for the weak formulation.
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    calculate_flux(vector const & value_m, vector const & value_p) const
+    calculate_flux_weak(vector const & value_m, vector const & value_p) const
   {
     return 0.5 * (value_m + value_p);
+  }
+
+  /*
+   *  This function implements the central flux as numerical flux function for the strong
+   * formulation (integration by parts performed twice).
+   */
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_flux_strong(vector const & value_m, vector const & value_p) const
+  {
+    return -0.5 * (value_m - value_p);
   }
 
   /*
@@ -86,7 +97,8 @@ struct DivergenceOperatorData
       dof_index_pressure(1),
       quad_index(0),
       integration_by_parts(true),
-      use_boundary_data(true)
+      use_boundary_data(true),
+      formulation(FormulationVelocityDivergenceTerm::Weak)
   {
   }
 
@@ -97,6 +109,8 @@ struct DivergenceOperatorData
 
   bool integration_by_parts;
   bool use_boundary_data;
+
+  FormulationVelocityDivergenceTerm formulation;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };

@@ -207,7 +207,13 @@ GradientOperator<dim, Number>::do_face_integral(FaceIntegratorP & pressure_m,
     scalar value_m = pressure_m.get_value(q);
     scalar value_p = pressure_p.get_value(q);
 
-    scalar flux = kernel.calculate_flux(value_m, value_p);
+    scalar flux;
+    if(data.formulation == FormulationPressureGradientTerm::Weak)
+      flux = kernel.calculate_flux_weak(value_m, value_p);
+    else if(data.formulation == FormulationPressureGradientTerm::Strong)
+      flux = kernel.calculate_flux_strong(value_m, value_p);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
 
     vector flux_times_normal = flux * pressure_m.get_normal_vector(q);
 
@@ -248,7 +254,13 @@ GradientOperator<dim, Number>::do_boundary_integral(FaceIntegratorP &          p
       value_p = value_m;
     }
 
-    scalar flux = kernel.calculate_flux(value_m, value_p);
+    scalar flux;
+    if(data.formulation == FormulationPressureGradientTerm::Weak)
+      flux = kernel.calculate_flux_weak(value_m, value_p);
+    else if(data.formulation == FormulationPressureGradientTerm::Strong)
+      flux = kernel.calculate_flux_strong(value_m, value_p);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
 
     vector flux_times_normal = flux * pressure.get_normal_vector(q);
 
@@ -282,7 +294,13 @@ GradientOperator<dim, Number>::do_boundary_integral_from_dof_vector(
       value_p = value_m;
     }
 
-    scalar flux = kernel.calculate_flux(value_m, value_p);
+    scalar flux;
+    if(data.formulation == FormulationPressureGradientTerm::Weak)
+      flux = kernel.calculate_flux_weak(value_m, value_p);
+    else if(data.formulation == FormulationPressureGradientTerm::Strong)
+      flux = kernel.calculate_flux_strong(value_m, value_p);
+    else
+      AssertThrow(false, ExcMessage("Not implemented."));
 
     vector flux_times_normal = flux * pressure.get_normal_vector(q);
 
@@ -305,7 +323,8 @@ GradientOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_
     velocity.reinit(cell);
     pressure.reinit(cell);
 
-    if(data.integration_by_parts == true)
+    if(data.integration_by_parts == true &&
+       data.formulation == FormulationPressureGradientTerm::Weak)
     {
       pressure.gather_evaluate(src, true, false);
 
