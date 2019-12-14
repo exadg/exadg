@@ -1212,10 +1212,17 @@ double
 DGNavierStokesBase<dim, Number>::calculate_dissipation_convective_term(VectorType const & velocity,
                                                                        double const time) const
 {
-  VectorType dst;
-  dst.reinit(velocity, false);
-  convective_operator.evaluate_nonlinear_operator(dst, velocity, time);
-  return velocity * dst;
+  if(param.convective_problem())
+  {
+    VectorType dst;
+    dst.reinit(velocity, false);
+    convective_operator.evaluate_nonlinear_operator(dst, velocity, time);
+    return velocity * dst;
+  }
+  else
+  {
+    return 0.0;
+  }
 }
 
 template<int dim, typename Number>
@@ -1223,10 +1230,17 @@ double
 DGNavierStokesBase<dim, Number>::calculate_dissipation_viscous_term(
   VectorType const & velocity) const
 {
-  VectorType dst;
-  dst.reinit(velocity, false);
-  viscous_operator.apply(dst, velocity);
-  return velocity * dst;
+  if(param.viscous_problem())
+  {
+    VectorType dst;
+    dst.reinit(velocity, false);
+    viscous_operator.apply(dst, velocity);
+    return velocity * dst;
+  }
+  else
+  {
+    return 0.0;
+  }
 }
 
 template<int dim, typename Number>
