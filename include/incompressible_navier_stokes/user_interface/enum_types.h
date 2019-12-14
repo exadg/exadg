@@ -322,7 +322,6 @@ enum_to_string(AdjustPressureLevel const enum_type);
  */
 enum class FormulationVelocityDivergenceTerm
 {
-  Undefined,
   Weak,
   Strong
 };
@@ -335,7 +334,6 @@ enum_to_string(FormulationVelocityDivergenceTerm const enum_type);
  */
 enum class FormulationPressureGradientTerm
 {
-  Undefined,
   Weak,
   Strong
 };
