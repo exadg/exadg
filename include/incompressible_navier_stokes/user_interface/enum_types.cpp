@@ -455,6 +455,48 @@ enum_to_string(AdjustPressureLevel const enum_type)
 }
 
 std::string
+enum_to_string(FormulationVelocityDivergenceTerm const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case FormulationVelocityDivergenceTerm::Weak:
+      string_type = "Weak";
+      break;
+    case FormulationVelocityDivergenceTerm::Strong:
+      string_type = "Strong";
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
+enum_to_string(FormulationPressureGradientTerm const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case FormulationPressureGradientTerm::Weak:
+      string_type = "Weak";
+      break;
+    case FormulationPressureGradientTerm::Strong:
+      string_type = "Strong";
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
+std::string
 enum_to_string(ContinuityPenaltyComponents const enum_type)
 {
   std::string string_type;
