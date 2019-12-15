@@ -56,43 +56,6 @@ struct KineticEnergySpectrumData
   unsigned int evaluation_points_per_cell;
 };
 
-#ifdef USE_DEAL_SPECTRUM
-#  include "../../3rdparty/deal.spectrum/src/deal-spectrum.h"
-#else
-namespace dealspectrum
-{
-class DealSpectrumWrapper
-{
-public:
-  DealSpectrumWrapper(bool, bool)
-  {
-  }
-
-  virtual ~DealSpectrumWrapper()
-  {
-  }
-
-  template<typename T>
-  void
-  init(int, int, int, int, T &)
-  {
-  }
-
-  void
-  execute(const double *)
-  {
-  }
-
-  int
-  get_results(double *&, double *&, double *&, double &, double &)
-  {
-    return 0;
-  }
-};
-
-} // namespace dealspectrum
-#endif
-
 template<int dim, typename Number>
 class KineticEnergySpectrumCalculator
 {
@@ -113,12 +76,11 @@ private:
   void
   do_evaluate(VectorType const & velocity, double const time, unsigned int const time_step_number);
 
-  bool                              clear_files;
-  dealspectrum::DealSpectrumWrapper deal_spectrum_wrapper;
-  KineticEnergySpectrumData         data;
-  unsigned int                      counter;
-  bool                              reset_counter;
-  const unsigned int                precision = 12;
+  bool                      clear_files;
+  KineticEnergySpectrumData data;
+  unsigned int              counter;
+  bool                      reset_counter;
+  const unsigned int        precision = 12;
 };
 
 

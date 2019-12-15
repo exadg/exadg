@@ -133,6 +133,15 @@ PROJECT(exadg)
 
 ADD_LIBRARY(exadg  ${TARGET_SRC})
 
+option(USE_DEAL_SPECTRUM "Use deal.spectrum" OFF)
+IF(${USE_DEAL_SPECTRUM})
+    add_definitions(-DUSE_DEAL_SPECTRUM)
+    include_directories($ENV{FFTW_INC})
+    FIND_LIBRARY(FFTW3 fftw3 HINTS $ENV{FFTW_LIB})
+    MESSAGE(${FFTW3})
+    target_link_libraries(exadg ${FFTW3})
+ENDIF()
+
 # Define custom targets to easily switch the build type:
 ADD_CUSTOM_TARGET(debug
   COMMAND ${CMAKE_COMMAND} -DCMAKE_BUILD_TYPE=Debug ${CMAKE_SOURCE_DIR}

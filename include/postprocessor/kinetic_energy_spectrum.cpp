@@ -9,10 +9,51 @@
 
 #include <fstream>
 
+#ifdef USE_DEAL_SPECTRUM
+#  include "../../3rdparty/deal.spectrum/src/deal-spectrum.h"
+#else
+namespace dealspectrum
+{
+class DealSpectrumWrapper
+{
+public:
+  DealSpectrumWrapper(bool, bool)
+  {
+  }
+
+  virtual ~DealSpectrumWrapper()
+  {
+  }
+
+  template<typename T>
+  void
+  init(int, int, int, int, T &)
+  {
+  }
+
+  void
+  execute(const double *)
+  {
+  }
+
+  int
+  get_results(double *&, double *&, double *&, double &, double &)
+  {
+    return 0;
+  }
+};
+
+} // namespace dealspectrum
+#endif
+
+static std::shared_ptr<dealspectrum::DealSpectrumWrapper> deal_spectrum_wrapper;
+
 template<int dim, typename Number>
 KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator()
-  : clear_files(true), deal_spectrum_wrapper(false, true), counter(0), reset_counter(true)
+  : clear_files(true), counter(0), reset_counter(true)
 {
+  if(deal_spectrum_wrapper == nullptr)
+    deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(false, true));
 }
 
 template<int dim, typename Number>
@@ -33,7 +74,7 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
 
     unsigned int evaluation_points = std::max(data.degree + 1, data.evaluation_points_per_cell);
 
-    deal_spectrum_wrapper.init(dim, cells, data.degree + 1, evaluation_points, tria);
+    deal_spectrum_wrapper->init(dim, cells, data.degree + 1, evaluation_points, tria);
   }
 }
 
@@ -115,7 +156,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
 
     // extract beginning of vector...
     const Number * temp = velocity.begin();
-    deal_spectrum_wrapper.execute((double *)temp);
+    deal_spectrum_wrapper->execute((double *)temp);
 
     // write output file
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
@@ -140,7 +181,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
       double * C;
       double   e_physical = 0.0;
       double   e_spectral = 0.0;
-      int len = deal_spectrum_wrapper.get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
+      int len = deal_spectrum_wrapper->get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
 
       f << std::endl
         << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl

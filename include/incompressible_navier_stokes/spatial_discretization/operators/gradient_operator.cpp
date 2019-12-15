@@ -313,8 +313,6 @@ GradientOperator<dim, Number>::do_boundary_integral_from_dof_vector(
     }
     else if(data.formulation == FormulationPressureGradientTerm::Strong)
     {
-      vector normal = pressure.get_normal_vector(q);
-
       velocity.submit_value((flux - value_m) * normal, q);
     }
     else
