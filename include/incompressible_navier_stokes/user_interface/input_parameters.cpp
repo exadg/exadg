@@ -576,9 +576,13 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
-  print_parameter(pcout, "Formulation of viscous term", enum_to_string(formulation_viscous_term));
 
-  if(equation_type == EquationType::NavierStokes)
+  if(this->viscous_problem())
+  {
+    print_parameter(pcout, "Formulation of viscous term", enum_to_string(formulation_viscous_term));
+  }
+
+  if(this->convective_problem())
   {
     print_parameter(pcout,
                     "Formulation of convective term",
@@ -688,7 +692,7 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Number of h-refinements", h_refinements);
 
-  if(equation_type == EquationType::NavierStokes)
+  if(this->convective_problem())
   {
     print_parameter(pcout, "Convective term - Upwind factor", upwind_factor);
     print_parameter(pcout,
@@ -696,14 +700,17 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
                     enum_to_string(type_dirichlet_bc_convective));
   }
 
-  print_parameter(pcout, "Viscous term - IP formulation", enum_to_string(IP_formulation_viscous));
-  print_parameter(pcout, "Viscous term - IP factor", IP_factor_viscous);
-
-  if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+  if(this->viscous_problem())
   {
-    print_parameter(pcout,
-                    "Penalty term formulation viscous term",
-                    enum_to_string(penalty_term_div_formulation));
+    print_parameter(pcout, "Viscous term - IP formulation", enum_to_string(IP_formulation_viscous));
+    print_parameter(pcout, "Viscous term - IP factor", IP_factor_viscous);
+
+    if(formulation_viscous_term == FormulationViscousTerm::DivergenceFormulation)
+    {
+      print_parameter(pcout,
+                      "Penalty term formulation viscous term",
+                      enum_to_string(penalty_term_div_formulation));
+    }
   }
 
   // pressure gradient term
@@ -733,7 +740,9 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
   print_parameter(pcout, "Use divergence penalty term", use_divergence_penalty);
 
   if(use_divergence_penalty == true)
+  {
     print_parameter(pcout, "Penalty factor divergence", divergence_penalty_factor);
+  }
 
   print_parameter(pcout, "Use continuity penalty term", use_continuity_penalty);
 
@@ -879,9 +888,12 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
   // formulations
   print_parameter(pcout, "Order of extrapolation pressure NBC", order_extrapolation_pressure_nbc);
 
-  print_parameter(pcout,
-                  "Formulation convective term in BC",
-                  enum_to_string(formulation_convective_term_bc));
+  if(this->convective_problem())
+  {
+    print_parameter(pcout,
+                    "Formulation convective term in BC",
+                    enum_to_string(formulation_convective_term_bc));
+  }
 
   print_parameter(pcout, "Store previous boundary values", store_previous_boundary_values);
 
@@ -893,26 +905,29 @@ InputParameters::print_parameters_dual_splitting(ConditionalOStream & pcout)
   print_parameters_projection_step(pcout);
 
   // Viscous step
-  pcout << std::endl << "  Viscous step:" << std::endl;
-
-  print_parameter(pcout, "Solver viscous step", enum_to_string(solver_viscous));
-
-  solver_data_viscous.print(pcout);
-
-  print_parameter(pcout, "Preconditioner viscous step", enum_to_string(preconditioner_viscous));
-
-  print_parameter(pcout, "Update preconditioner viscous", update_preconditioner_viscous);
-
-  if(update_preconditioner_viscous)
+  if(this->viscous_problem())
   {
-    print_parameter(pcout,
-                    "Update preconditioner every time steps",
-                    update_preconditioner_viscous_every_time_steps);
-  }
+    pcout << std::endl << "  Viscous step:" << std::endl;
 
-  if(preconditioner_viscous == PreconditionerViscous::Multigrid)
-  {
-    multigrid_data_viscous.print(pcout);
+    print_parameter(pcout, "Solver viscous step", enum_to_string(solver_viscous));
+
+    solver_data_viscous.print(pcout);
+
+    print_parameter(pcout, "Preconditioner viscous step", enum_to_string(preconditioner_viscous));
+
+    print_parameter(pcout, "Update preconditioner viscous", update_preconditioner_viscous);
+
+    if(update_preconditioner_viscous)
+    {
+      print_parameter(pcout,
+                      "Update preconditioner every time steps",
+                      update_preconditioner_viscous_every_time_steps);
+    }
+
+    if(preconditioner_viscous == PreconditionerViscous::Multigrid)
+    {
+      multigrid_data_viscous.print(pcout);
+    }
   }
 }
 
