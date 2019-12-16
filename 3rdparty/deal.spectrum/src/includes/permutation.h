@@ -25,8 +25,8 @@ namespace dealspectrum
 {
 // data structures needed for the following comparator for index sorting
 unsigned long int * array_list; // position in local array ...
-int * array_proc; // element resides on process ...
-int   __rank;     // rank of this process
+int *               array_proc; // element resides on process ...
+int                 __rank;     // rank of this process
 
 /**
  * Special comparator for sorting of indices such that:
@@ -96,10 +96,10 @@ public:
     this->initialized = true;
 
     // help variables...
-    dim        = s.dim;
-    int rank   = s.rank;
+    dim                      = s.dim;
+    int               rank   = s.rank;
     unsigned long int points = s.points_dst;
-    int n      = s.cells;
+    int               n      = s.cells;
 
     int start, end, start_, end_;
     // ... my range of the space filling curve
@@ -109,31 +109,32 @@ public:
     bsize = FFT.bsize;
 
     // data structures for determining the communication partners...
-    int   has_length = (end - start) * pow(points, dim);
+    int                 has_length = (end - start) * pow(points, dim);
     unsigned long int * has        = new unsigned long int[has_length];
-    int * has_procs  = new int[has_length];
-    send_buffer      = new double[has_length * dim];
-    send_index       = new int[has_length];
+    int *               has_procs  = new int[has_length];
+    send_buffer                    = new double[has_length * dim];
+    send_index                     = new int[has_length];
 
-    int   want_length = (end_ - start_) * pow(n * points, dim - 1);
+    int                 want_length = (end_ - start_) * pow(n * points, dim - 1);
     unsigned long int * want        = new unsigned long int[want_length];
-    int * want_procs  = new int[want_length];
-    recv_buffer       = new double[want_length * dim];
-    recv_index        = new int[want_length];
+    int *               want_procs  = new int[want_length];
+    recv_buffer                     = new double[want_length * dim];
+    recv_index                      = new int[want_length];
 
     // S.1: determine all dofs this process posses (+procs)
     for(int ii = start, counter = 0; ii < end; ii++)
     {
       int i = MAP.indices(ii);
-      for(int K = 0; K < (dim == 3 ? points : 1); K++)
-        for(int J = 0; J < points; J++)
-          for(int I = 0; I < points; I++, counter++)
+      for(unsigned long int K = 0; K < (dim == 3 ? points : 1); K++)
+        for(unsigned long int J = 0; J < points; J++)
+          for(unsigned long int I = 0; I < points; I++, counter++)
           {
             // ... determine dof
-            unsigned long int temp = ((dim == 3 ? ((MAP.lbf(i * dim + 2) * points + K) * points * n) : 0) +
-                        MAP.lbf(i * dim + 1) * points + J) *
-                         points * n +
-                       (MAP.lbf(i * dim + 0) * points + I);
+            unsigned long int temp =
+              ((dim == 3 ? ((MAP.lbf(i * dim + 2) * points + K) * points * n) : 0) +
+               MAP.lbf(i * dim + 1) * points + J) *
+                points * n +
+              (MAP.lbf(i * dim + 0) * points + I);
             has[counter] = temp;
             // ... which process does need this dof?
             int proc           = FFT.indices_proc_rows(temp / pow(n * points, dim - 1));
@@ -191,8 +192,8 @@ public:
       for(int jj = 0; jj < pow(n * points, dim - 1); jj++, counter++)
       {
         // ... determine dof
-        unsigned long int temp      = ii * pow(n * points, dim - 1) + jj;
-        want[counter] = temp;
+        unsigned long int temp = ii * pow(n * points, dim - 1) + jj;
+        want[counter]          = temp;
         // ... determine owning process
         int t = dim == 3 ? (temp % pn) / points + ((temp % (pn * pn)) / pn) / points * n +
                              (temp / pn / pn) / points * n * n :
