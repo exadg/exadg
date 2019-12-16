@@ -24,7 +24,7 @@
 namespace dealspectrum
 {
 // data structures needed for the following comparator for index sorting
-int * array_list; // position in local array ...
+unsigned long int * array_list; // position in local array ...
 int * array_proc; // element resides on process ...
 int   __rank;     // rank of this process
 
@@ -98,7 +98,7 @@ public:
     // help variables...
     dim        = s.dim;
     int rank   = s.rank;
-    int points = s.points_dst;
+    unsigned long int points = s.points_dst;
     int n      = s.cells;
 
     int start, end, start_, end_;
@@ -110,13 +110,13 @@ public:
 
     // data structures for determining the communication partners...
     int   has_length = (end - start) * pow(points, dim);
-    int * has        = new int[has_length];
+    unsigned long int * has        = new unsigned long int[has_length];
     int * has_procs  = new int[has_length];
     send_buffer      = new double[has_length * dim];
     send_index       = new int[has_length];
 
     int   want_length = (end_ - start_) * pow(n * points, dim - 1);
-    int * want        = new int[want_length];
+    unsigned long int * want        = new unsigned long int[want_length];
     int * want_procs  = new int[want_length];
     recv_buffer       = new double[want_length * dim];
     recv_index        = new int[want_length];
@@ -130,7 +130,7 @@ public:
           for(int I = 0; I < points; I++, counter++)
           {
             // ... determine dof
-            int temp = ((dim == 3 ? ((MAP.lbf(i * dim + 2) * points + K) * points * n) : 0) +
+            unsigned long int temp = ((dim == 3 ? ((MAP.lbf(i * dim + 2) * points + K) * points * n) : 0) +
                         MAP.lbf(i * dim + 1) * points + J) *
                          points * n +
                        (MAP.lbf(i * dim + 0) * points + I);
@@ -191,7 +191,7 @@ public:
       for(int jj = 0; jj < pow(n * points, dim - 1); jj++, counter++)
       {
         // ... determine dof
-        int temp      = ii * pow(n * points, dim - 1) + jj;
+        unsigned long int temp      = ii * pow(n * points, dim - 1) + jj;
         want[counter] = temp;
         // ... determine owning process
         int t = dim == 3 ? (temp % pn) / points + ((temp % (pn * pn)) / pn) / points * n +
