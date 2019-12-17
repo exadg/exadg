@@ -764,7 +764,8 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
     print_parameter(pcout, "Type of penalty parameter", enum_to_string(type_penalty_parameter));
   }
 
-  if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution ||
+     temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     if(use_divergence_penalty == true || use_continuity_penalty == true)
     {
