@@ -14,6 +14,11 @@ using namespace dealii;
 
 struct MappingFlags
 {
+  MappingFlags()
+    : cells(update_default), inner_faces(update_default), boundary_faces(update_default)
+  {
+  }
+
   MappingFlags
   operator||(MappingFlags const & other)
   {
