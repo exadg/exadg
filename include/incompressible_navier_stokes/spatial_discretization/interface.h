@@ -121,6 +121,9 @@ public:
   update_turbulence_model(VectorType const & velocity) = 0;
 
   virtual void
+  rhs_add_projection_operator(VectorType & dst, double const time) const = 0;
+
+  virtual void
   update_projection_operator(VectorType const & velocity, double const time_step_size) const = 0;
 
   virtual unsigned int
@@ -188,9 +191,6 @@ public:
 
   virtual void
   rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const = 0;
-
-  virtual void
-  rhs_projection_operator(VectorType & dst, double const & time = 0.0) const = 0;
 
   virtual unsigned int
   solve_linear_stokes_problem(BlockVectorType &       dst,

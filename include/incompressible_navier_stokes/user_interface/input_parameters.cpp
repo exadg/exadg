@@ -112,7 +112,7 @@ InputParameters::InputParameters()
     continuity_penalty_components(ContinuityPenaltyComponents::Normal),
     continuity_penalty_use_boundary_data(false),
     type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
-    add_penalty_terms_to_monolithic_system(false),
+    apply_penalty_terms_in_postprocessing_step(true),
 
     // TURBULENCE
     use_turbulence_model(false),
@@ -352,13 +352,16 @@ InputParameters::check_input_parameters()
     AssertThrow(continuity_penalty_components != ContinuityPenaltyComponents::Undefined,
                 ExcMessage("Parameter must be defined"));
 
-    if(continuity_penalty_use_boundary_data == true && solver_type == SolverType::Unsteady)
+    if(continuity_penalty_use_boundary_data == true)
     {
-      AssertThrow(
-        temporal_discretization == TemporalDiscretization::BDFCoupledSolution,
-        ExcMessage(
-          "Applying boundary conditions for continuity penalty operator is only possible for monolithic solver. "
-          "The standard velocity boundary conditions would be inconsistent in case of splitting schemes."));
+      if(temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+      {
+        AssertThrow(
+          apply_penalty_terms_in_postprocessing_step == true,
+          ExcMessage(
+            "Penalty terms have to be applied in postprocessing step if boundary data is used. "
+            "Otherwise, the boundary condition will be inconsistent and temporal accuracy is limited to low order."));
+      }
     }
   }
 
@@ -372,8 +375,8 @@ InputParameters::check_input_parameters()
   {
     if(use_divergence_penalty == true || use_continuity_penalty == true)
     {
-      AssertThrow(add_penalty_terms_to_monolithic_system == true,
-                  ExcMessage("Use add_penalty_terms_to_monolithic_system = true, "
+      AssertThrow(apply_penalty_terms_in_postprocessing_step == false,
+                  ExcMessage("Use apply_penalty_terms_in_postprocessing_step = false, "
                              "otherwise the penalty terms will be ignored by the steady solver."));
     }
   }
@@ -766,8 +769,8 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
     if(use_divergence_penalty == true || use_continuity_penalty == true)
     {
       print_parameter(pcout,
-                      "Add penalty terms to monolithic system",
-                      add_penalty_terms_to_monolithic_system);
+                      "Apply penalty terms in postprocessing step",
+                      apply_penalty_terms_in_postprocessing_step);
     }
   }
 }
@@ -1101,9 +1104,9 @@ InputParameters::print_parameters_coupled_solver(ConditionalOStream & pcout)
   // projection_step
   if(use_divergence_penalty == true || use_continuity_penalty == true)
   {
-    if(add_penalty_terms_to_monolithic_system == false)
+    if(apply_penalty_terms_in_postprocessing_step == true)
     {
-      pcout << std::endl << "Postprocessing of velocity:" << std::endl;
+      pcout << std::endl << "Postprocessing of velocity (penalty terms):" << std::endl;
       print_parameters_projection_step(pcout);
     }
   }

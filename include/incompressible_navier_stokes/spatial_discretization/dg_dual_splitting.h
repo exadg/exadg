@@ -98,7 +98,6 @@ public:
   unsigned int
   solve_pressure(VectorType & dst, VectorType const & src, bool const update_preconditioner) const;
 
-
   /*
    * Viscous step.
    */

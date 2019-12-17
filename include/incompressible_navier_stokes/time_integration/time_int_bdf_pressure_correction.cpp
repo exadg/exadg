@@ -791,6 +791,9 @@ TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType &       rhs,
               temp);
     }
   }
+
+  if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+    this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
 }
 
 template<typename Number>
@@ -799,6 +802,22 @@ TimeIntBDFPressureCorrection<Number>::projection_step(VectorType const & pressur
 {
   Timer timer;
   timer.restart();
+
+  // extrapolate velocity to time t_n+1 and use this velocity field to
+  // calculate the penalty parameter for the divergence and continuity penalty term
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
+  {
+    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+    {
+      VectorType velocity_extrapolated;
+      velocity_extrapolated.reinit(velocity[0]);
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+
+      this->operator_base->update_projection_operator(velocity_extrapolated,
+                                                      this->get_time_step_size());
+    }
+  }
 
   // compute right-hand-side vector
   VectorType rhs(velocity_np);
@@ -810,27 +829,20 @@ TimeIntBDFPressureCorrection<Number>::projection_step(VectorType const & pressur
 
   unsigned int iterations_projection = 0;
 
-  // extrapolate velocity to time t_n+1 and use this velocity field to
-  // calculate the penalty parameter for the divergence and continuity penalty term
-  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    VectorType velocity_extrapolated;
-    velocity_extrapolated.reinit(velocity[0]);
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-      velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+    {
+      // solve linear system of equations
+      bool const update_preconditioner =
+        this->param.update_preconditioner_projection &&
+        ((this->time_step_number - 1) %
+           this->param.update_preconditioner_projection_every_time_steps ==
+         0);
 
-    this->operator_base->update_projection_operator(velocity_extrapolated,
-                                                    this->get_time_step_size());
-
-    // solve linear system of equations
-    bool const update_preconditioner =
-      this->param.update_preconditioner_projection &&
-      ((this->time_step_number - 1) %
-         this->param.update_preconditioner_projection_every_time_steps ==
-       0);
-
-    iterations_projection =
-      this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
+      iterations_projection =
+        this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
+    }
   }
 
   // write output

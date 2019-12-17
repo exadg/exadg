@@ -406,6 +406,9 @@ public:
   void
   update_projection_operator(VectorType const & velocity, double const time_step_size) const;
 
+  void
+  rhs_add_projection_operator(VectorType & dst, double const time) const;
+
   unsigned int
   solve_projection(VectorType &       dst,
                    VectorType const & src,

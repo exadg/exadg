@@ -437,7 +437,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     if(param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme ||
        param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection ||
        (param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution &&
-        param.add_penalty_terms_to_monolithic_system == false))
+        param.apply_penalty_terms_in_postprocessing_step == true))
     {
       // setup projection operator
       ProjectionOperatorData<dim> data;
@@ -1283,6 +1283,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 {
+  // TODO
   matrix_free.reinit(
     get_mapping(), dof_handler_vec, constraint_matrix_vec, quadratures, additional_data_ale);
 
@@ -1537,6 +1538,15 @@ DGNavierStokesBase<dim, Number>::update_projection_operator(VectorType const & v
   // Update projection operator, i.e., the penalty parameters that depend on the velocity field
   // and the time step size
   projection_operator->update(velocity, time_step_size);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::rhs_add_projection_operator(VectorType & dst,
+                                                             double const time) const
+{
+  this->projection_operator->set_time(time);
+  this->projection_operator->rhs_add(dst);
 }
 
 template<int dim, typename Number>
