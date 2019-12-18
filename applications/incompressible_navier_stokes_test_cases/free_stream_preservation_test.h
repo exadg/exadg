@@ -1,8 +1,8 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_H_
-#  define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_VORTEX_H_
+#define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_ALE_TEST_CASES_FREE_STREAM_PRESERVATION_H_
 
-#  include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-#  include "../grid_tools/dealii_extensions.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/dealii_extensions.h"
 #include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
@@ -15,8 +15,8 @@
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 1;
-unsigned int const REFINE_SPACE_MAX = 1;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -40,7 +40,7 @@ void
 set_input_parameters(InputParameters & param)
 {
   // MATHEMATICAL MODEL
-  param.dim = 3;
+  param.dim = 2;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
@@ -91,8 +91,8 @@ set_input_parameters(InputParameters & param)
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
   // velocity pressure coupling terms
-  param.gradp_formulation = FormulationPressureGradientTerm::Weak;
-  param.divu_formulation = FormulationVelocityDivergenceTerm::Weak;
+  param.gradp_formulation = FormulationPressureGradientTerm::Strong; //TODO //Weak;
+  param.divu_formulation = FormulationVelocityDivergenceTerm::Strong; //TODO //Weak;
 
   // special case: pure DBC's
   param.pure_dirichlet_bc     = true;
@@ -104,7 +104,11 @@ set_input_parameters(InputParameters & param)
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  param.apply_penalty_terms_in_postprocessing_step = false;
+  param.continuity_penalty_use_boundary_data = true;
+  if(param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+    param.apply_penalty_terms_in_postprocessing_step = false;
+  else
+    param.apply_penalty_terms_in_postprocessing_step = true;
 
   // NUMERICAL PARAMETERS
   param.implement_block_diagonal_preconditioner_matrix_free = false;
