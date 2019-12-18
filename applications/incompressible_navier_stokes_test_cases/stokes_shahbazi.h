@@ -55,7 +55,7 @@ void set_input_parameters(InputParameters &param)
   param.solver_type = SolverType::Unsteady;
   param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified;
-  param.time_step_size = 0.1; //1.e-3;
+  param.time_step_size = param.end_time;
   param.order_time_integrator = 1; // 1; // 2; // 3;
   param.start_with_low_order = true; // true; // false;
   param.dt_refinements = REFINE_TIME_MIN;
@@ -94,6 +94,8 @@ void set_input_parameters(InputParameters &param)
   // div-div and continuity penalty terms
   param.use_divergence_penalty = true;
   param.use_continuity_penalty = true;
+  param.continuity_penalty_use_boundary_data = true;
+  param.apply_penalty_terms_in_postprocessing_step = true;
 
   // PROJECTION METHODS
 
