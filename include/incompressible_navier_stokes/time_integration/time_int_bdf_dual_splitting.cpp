@@ -866,7 +866,7 @@ TimeIntBDFDualSplitting<Number>::penalty_step()
          this->param.update_preconditioner_projection_every_time_steps ==
        0);
 
-    // use velocity_extrapolated as initial guess
+    // use solution of previous step as initial guess
     unsigned int iterations_projection =
       this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
 
