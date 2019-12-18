@@ -897,6 +897,7 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
     // push back accelerations and compute new acceleration at the end
     // of the current time step before velocity_dbc is pushed back
     // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+
     this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
     push_back(acceleration);
@@ -910,41 +911,46 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
     push_back(velocity_dbc);
     velocity_dbc[0].swap(velocity_dbc_np);
 
-    // Variant:
+
+    // Variant 3:
     // Compute acceleration and velocity vectors used for inhomogeneous boundary condition terms
     // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
     // velocity. Note: This variant leads to instabilities for small time step sizes.
-    //    push_back(acceleration);
-    //
-    //    if(this->param.order_extrapolation_pressure_nbc)
-    //    {
-    //      compute_bdf_time_derivative(
-    //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
-    //    }
-    //
-    //    push_back(velocity_dbc);
-    //    velocity_dbc[0].swap(velocity_np);
+    /*
+    push_back(acceleration);
 
-    // Another Variant:
+    if(this->param.order_extrapolation_pressure_nbc)
+    {
+      compute_bdf_time_derivative(
+        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
+    }
+
+    push_back(velocity_dbc);
+    velocity_dbc[0].swap(velocity_np);
+    */
+
+    // Variant 3b:
     // Compute acceleration used for inhomogeneous boundary condition terms
     // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
-    // velocity.
-    //    push_back(acceleration);
-    //
-    //    // use interior solution u only for computation of time derivative (acceleration)
-    //    if(this->param.order_extrapolation_pressure_nbc)
-    //    {
-    //      compute_bdf_time_derivative(
-    //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
-    //    }
-    //
-    //    // use boundary condition g_u for velocity_dbc!
-    //    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
-    //    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
-    //    this->get_next_time());
-    //
-    //    push_back(velocity_dbc);
-    //    velocity_dbc[0].swap(velocity_dbc_np);
+    // velocity. But use boundary data g_u for velocity_dbc for intermediate velocity u_hat.
+    /*
+    push_back(acceleration);
+
+    // use interior solution u only for computation of time derivative (acceleration)
+    if(this->param.order_extrapolation_pressure_nbc)
+    {
+      compute_bdf_time_derivative(
+        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
+    }
+
+    // use boundary condition g_u for velocity_dbc!
+    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
+    this->get_next_time());
+
+    push_back(velocity_dbc);
+    velocity_dbc[0].swap(velocity_dbc_np);
+    */
 #else
     // If we do not extrapolate the acceleration, we only have to care about the history of
     // velocity Dirichlet boundary conditions, where velocity_dbc_np has already been updated.
