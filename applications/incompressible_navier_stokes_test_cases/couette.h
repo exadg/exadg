@@ -82,7 +82,7 @@ void set_input_parameters(InputParameters &param)
   param.pure_dirichlet_bc = false;
 
   // divergence and continuity penalty terms
-  param.add_penalty_terms_to_monolithic_system = true;
+  param.apply_penalty_terms_in_postprocessing_step = false;
 
   // PROJECTION METHODS
 

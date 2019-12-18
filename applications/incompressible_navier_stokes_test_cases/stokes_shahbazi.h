@@ -80,10 +80,12 @@ void set_input_parameters(InputParameters &param)
   // gradient term
   param.gradp_integrated_by_parts = true;
   param.gradp_use_boundary_data = true;
+  param.gradp_formulation = FormulationPressureGradientTerm::Weak;
 
   // divergence term
   param.divu_integrated_by_parts = true;
   param.divu_use_boundary_data = true;
+  param.divu_formulation = FormulationVelocityDivergenceTerm::Weak;
 
   // special case: pure DBC's
   param.pure_dirichlet_bc = true;

@@ -27,8 +27,8 @@ unsigned int const DEGREE_MAX = 8;
 unsigned int const REFINE_SPACE_MIN = 2;
 unsigned int const REFINE_SPACE_MAX = 2;
 
-unsigned int const REFINE_TIME_MIN = 0; //2;
-unsigned int const REFINE_TIME_MAX = 8; //12;
+unsigned int const REFINE_TIME_MIN = 2;
+unsigned int const REFINE_TIME_MAX = 12;
 
 
 // set problem specific parameters like physical dimensions, etc.
@@ -38,7 +38,7 @@ double const VISCOSITY = 2.5e-2; //1.e-2; //2.5e-2;
 double const LEFT  = -0.5;
 double const RIGHT = 0.5;
 
-double const END_TIME = 1.0; //0.5;
+double const END_TIME = 1.0;
 
 FormulationViscousTerm const FORMULATION_VISCOUS_TERM = FormulationViscousTerm::LaplaceFormulation;
 
@@ -46,7 +46,7 @@ enum class MeshType{ UniformCartesian, ComplexSurfaceManifold, ComplexVolumeMani
 MeshType const MESH_TYPE = MeshType::UniformCartesian;
 
 // moving mesh
-bool const ALE = false; //TODO true;
+bool const ALE = false;
 
 namespace IncNS
 {
@@ -74,14 +74,14 @@ void set_input_parameters(InputParameters &param)
   param.solver_type = SolverType::Unsteady;
   param.temporal_discretization = TemporalDiscretization::BDFCoupledSolution;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
-  param.order_time_integrator = 3;
+  param.order_time_integrator = 2;
   param.start_with_low_order = false;
-  param.adaptive_time_stepping = true;
-  param.calculation_of_time_step_size = TimeStepCalculation::CFL; //UserSpecified; //CFL;
-  param.time_step_size = END_TIME; //0.25;
+  param.adaptive_time_stepping = false;
+  param.calculation_of_time_step_size = TimeStepCalculation::UserSpecified; //UserSpecified; //CFL;
+  param.time_step_size = END_TIME;
   param.dt_refinements = REFINE_TIME_MIN;
   param.max_velocity = 1.4 * U_X_MAX;
-  param.cfl = 100.0; //0.4;
+  param.cfl = 0.2; //0.4;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.c_eff = 8.0;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK3Stage7Reg2;
@@ -113,6 +113,10 @@ void set_input_parameters(InputParameters &param)
   // viscous term
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
 
+  // velocity pressure coupling terms
+  param.gradp_formulation = FormulationPressureGradientTerm::Weak;
+  param.divu_formulation = FormulationVelocityDivergenceTerm::Weak;
+
   // special case: pure DBC's
   param.pure_dirichlet_bc = false;
 
@@ -122,7 +126,8 @@ void set_input_parameters(InputParameters &param)
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  param.add_penalty_terms_to_monolithic_system = true;
+  param.continuity_penalty_use_boundary_data = true;
+  param.apply_penalty_terms_in_postprocessing_step = false;
 
   // NUMERICAL PARAMETERS
   param.implement_block_diagonal_preconditioner_matrix_free = false;
@@ -603,10 +608,10 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   {
     MeshMovementData<dim> data;
     data.temporal = MeshMovementAdvanceInTime::Sin;
-    data.shape = MeshMovementShape::Sin;
+    data.shape = MeshMovementShape::Sin; //SineAligned;
     data.dimensions[0] = std::abs(RIGHT-LEFT);
     data.dimensions[1] = std::abs(RIGHT-LEFT);
-    data.amplitude = 0.08 * (RIGHT-LEFT); //0.12 * (RIGHT-LEFT); // use <= 0.15 * (RIGHT-LEFT)
+    data.amplitude = 0.08 * (RIGHT-LEFT); //0.12 * (RIGHT-LEFT); // A_max = (RIGHT-LEFT)/(2*pi)
     data.period = 4.0*END_TIME;
     data.t_start = 0.0;
     data.t_end = END_TIME;

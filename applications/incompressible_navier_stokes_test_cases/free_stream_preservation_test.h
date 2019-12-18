@@ -104,7 +104,7 @@ set_input_parameters(InputParameters & param)
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  param.add_penalty_terms_to_monolithic_system = true;
+  param.apply_penalty_terms_in_postprocessing_step = false;
 
   // NUMERICAL PARAMETERS
   param.implement_block_diagonal_preconditioner_matrix_free = false;
