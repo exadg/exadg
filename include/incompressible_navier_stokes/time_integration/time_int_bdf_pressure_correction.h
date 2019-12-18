@@ -42,6 +42,10 @@ public:
                                std::shared_ptr<InterfacePDE>  operator_pressure_correction_in,
                                InputParameters const &        param_in);
 
+  virtual ~TimeIntBDFPressureCorrection()
+  {
+  }
+
   void
   postprocessing_stability_analysis();
 

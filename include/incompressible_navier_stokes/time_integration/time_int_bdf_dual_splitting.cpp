@@ -27,9 +27,9 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     acceleration(this->param.order_extrapolation_pressure_nbc),
 #endif
     velocity_dbc(this->order),
-    computing_times(5),
+    computing_times(6),
     computing_time_convective(0.0),
-    iterations(4),
+    iterations(5),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
                        this->param.start_with_low_order)
 {
@@ -859,9 +859,6 @@ TimeIntBDFDualSplitting<Number>::penalty_step()
     if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
       this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
 
-    // penalty terms
-    unsigned int iterations_projection = 0;
-
     // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_projection &&
@@ -870,18 +867,22 @@ TimeIntBDFDualSplitting<Number>::penalty_step()
        0);
 
     // use velocity_extrapolated as initial guess
-    iterations_projection =
+    unsigned int iterations_projection =
       this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
 
     // write output
     if(this->print_solver_info())
     {
       this->pcout << std::endl
-                  << "Solve projection step final:" << std::endl
+                  << "Solve penalty step:" << std::endl
                   << "  Iterations:        " << std::setw(6) << std::right << iterations_projection
                   << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
     }
+
+    iterations[4] += iterations_projection;
   }
+
+  computing_times[4] += timer.wall_time();
 }
 
 template<typename Number>
@@ -1052,15 +1053,22 @@ void
 TimeIntBDFDualSplitting<Number>::get_iterations(std::vector<std::string> & name,
                                                 std::vector<double> &      iteration) const
 {
-  name.resize(4);
+  unsigned int             size  = 4;
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
-  name                           = names;
+
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
+  {
+    names.push_back("Penalty terms");
+    size++;
+  }
 
   unsigned int N_time_steps = this->get_time_step_number() - 1;
 
-  iteration.resize(4);
-  for(unsigned int i = 0; i < this->iterations.size(); ++i)
+  name.resize(size);
+  iteration.resize(size);
+  for(unsigned int i = 0; i < size; ++i)
   {
+    name[i]      = names[i];
     iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
   }
 }
@@ -1070,14 +1078,20 @@ void
 TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
                                                 std::vector<double> &      wall_time) const
 {
-  std::vector<std::string> names = {
-    "Convection", "Pressure", "Projection", "Viscous", "ALE update"};
+  unsigned int             size  = 4;
+  std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
 
-  unsigned int size = 4;
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
+  {
+    names.push_back("Penalty terms");
+    size++;
+  }
 
   if(this->param.ale_formulation)
   {
-    size                            = 5;
+    names.push_back("ALE update");
+    size++;
+
     this->computing_times[size - 1] = this->computation_time_ale_update;
   }
 

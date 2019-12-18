@@ -625,40 +625,46 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
 
   if(this->param.linear_problem_has_to_be_solved())
   {
-    name.resize(2);
-    std::vector<std::string> names = {"Coupled system", "Projection"};
-    name                           = names;
-
-    unsigned int N_time_steps = this->get_time_step_number() - 1;
+    unsigned int             size  = 1;
+    std::vector<std::string> names = {"Coupled system"};
 
     if(this->param.apply_penalty_terms_in_postprocessing_step)
-      iteration.resize(2);
-    else
-      iteration.resize(1);
+    {
+      names.push_back("Penalty terms");
+      size++;
+    }
 
-    for(unsigned int i = 0; i < this->iterations.size(); ++i)
+    name = names;
+
+    // fill iteration vector
+    iteration.resize(size);
+    for(unsigned int i = 0; i < size; ++i)
     {
       iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
     }
   }
   else // nonlinear system of equations in momentum step
   {
-    name.resize(4);
+    unsigned int             size  = 3;
     std::vector<std::string> names = {"Coupled system (nonlinear)",
                                       "Coupled system (linear)",
-                                      "Coupled system (linear-accumulated)",
-                                      "Projection"};
+                                      "Coupled system (linear-accumulated)"};
 
-    name = names;
+    if(this->param.apply_penalty_terms_in_postprocessing_step)
+    {
+      names.push_back("Penalty terms");
+      size++;
+    }
 
     double n_iter_nonlinear          = (double)N_iter_nonlinear / (double)N_time_steps;
     double n_iter_linear_accumulated = (double)iterations[0] / (double)N_time_steps;
     double n_iter_projection         = (double)iterations[1] / (double)N_time_steps;
 
-    if(this->param.apply_penalty_terms_in_postprocessing_step)
-      iteration.resize(4);
-    else
-      iteration.resize(3);
+    name = names;
+
+    // fill iteration vector
+    iteration.resize(size);
+
     iteration[0] = n_iter_nonlinear;
     if(n_iter_nonlinear > std::numeric_limits<double>::min())
       iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
@@ -675,13 +681,20 @@ void
 TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
                                           std::vector<double> &      wall_time) const
 {
-  std::vector<std::string> names = {"Coupled system", "Projection", "ALE update"};
+  unsigned int             size  = 1;
+  std::vector<std::string> names = {"Coupled system"};
 
-  unsigned int size = 2;
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
+  {
+    names.push_back("Penalty terms");
+    size++;
+  }
 
   if(this->param.ale_formulation)
   {
-    size                            = 3;
+    names.push_back("ALE update");
+    size++;
+
     this->computing_times[size - 1] = this->computation_time_ale_update;
   }
 

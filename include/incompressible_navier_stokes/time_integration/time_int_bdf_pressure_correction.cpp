@@ -1075,13 +1075,14 @@ void
 TimeIntBDFPressureCorrection<Number>::get_wall_times(std::vector<std::string> & name,
                                                      std::vector<double> &      wall_time) const
 {
-  std::vector<std::string> names = {"Momentum", "Pressure", "Projection", "ALE update"};
-
-  unsigned int size = 3;
+  unsigned int             size  = 3;
+  std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
 
   if(this->param.ale_formulation)
   {
-    size                            = 4;
+    names.push_back("ALE update");
+    size++;
+
     this->computing_times[size - 1] = this->computation_time_ale_update;
   }
 
