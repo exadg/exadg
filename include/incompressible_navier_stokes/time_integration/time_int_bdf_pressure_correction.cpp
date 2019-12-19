@@ -791,9 +791,6 @@ TimeIntBDFPressureCorrection<Number>::rhs_projection(VectorType &       rhs,
               temp);
     }
   }
-
-  if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
-    this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
 }
 
 template<typename Number>
@@ -823,6 +820,12 @@ TimeIntBDFPressureCorrection<Number>::projection_step(VectorType const & pressur
   // apply inverse mass matrix: this is the solution if no penalty terms are applied
   // and serves as a good initial guess for the case with penalty terms
   this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs);
+
+  // add inhomogeneous contributions of continuity penalty terms after computing
+  // the initial guess for the linear system of equations to make sure that the initial
+  // guess is as accurate as possible
+  if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+    this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
 
   unsigned int iterations_projection = 0;
 
