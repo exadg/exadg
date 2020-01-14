@@ -5,9 +5,11 @@
  *      Author: fehn
  */
 
+#include <fstream>
+
 #include "kinetic_energy_spectrum.h"
 
-#include <fstream>
+#include "../functionalities/mirror_dof_vector_taylor_green.h"
 
 #ifdef USE_DEAL_SPECTRUM
 #  include "../../3rdparty/deal.spectrum/src/deal-spectrum.h"
@@ -60,21 +62,47 @@ template<int dim, typename Number>
 void
 KineticEnergySpectrumCalculator<dim, Number>::setup(
   MatrixFree<dim, Number> const &   matrix_free_data_in,
-  Triangulation<dim, dim> const &   tria,
+  DoFHandler<dim> const &           dof_handler_in,
   KineticEnergySpectrumData const & data_in)
 {
-  data = data_in;
+  data        = data_in;
+  dof_handler = &dof_handler_in;
 
   if(data.calculate == true)
   {
-    int local_cells = matrix_free_data_in.n_physical_cells();
-    int cells       = local_cells;
-    MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
-    cells = round(pow(cells, 1.0 / dim));
-
     unsigned int evaluation_points = std::max(data.degree + 1, data.evaluation_points_per_cell);
 
-    deal_spectrum_wrapper->init(dim, cells, data.degree + 1, evaluation_points, tria);
+    // create data structures for full system
+    if(data.exploit_symmetry)
+    {
+      MPI_Comm const comm = MPI_COMM_WORLD;
+      tria_full.reset(new parallel::distributed::Triangulation<dim>(
+        comm,
+        Triangulation<dim>::limit_level_difference_at_vertices,
+        parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
+      GridGenerator::subdivided_hyper_cube(*tria_full,
+                                           data.n_cells_1d_coarse_grid,
+                                           -data.length_symmetric_domain,
+                                           +data.length_symmetric_domain);
+      tria_full->refine_global(data.refine_level + 1);
+
+      fe_full.reset(new FESystem<dim>(FE_DGQ<dim>(data.degree), dim));
+      dof_handler_full.reset(new DoFHandler<dim>(*tria_full));
+      dof_handler_full->distribute_dofs(*fe_full);
+
+      int cells = tria_full->n_global_active_cells();
+      cells     = round(pow(cells, 1.0 / dim));
+      deal_spectrum_wrapper->init(dim, cells, data.degree + 1, evaluation_points, *tria_full);
+    }
+    else
+    {
+      int local_cells = matrix_free_data_in.n_physical_cells();
+      int cells       = local_cells;
+      MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
+      cells = round(pow(cells, 1.0 / dim));
+      deal_spectrum_wrapper->init(
+        dim, cells, data.degree + 1, evaluation_points, dof_handler->get_triangulation());
+    }
   }
 }
 
@@ -88,7 +116,26 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
   {
     if(time_step_number >= 0) // unsteady problem
     {
-      do_evaluate(velocity, time, time_step_number);
+      if(data.exploit_symmetry)
+      {
+        unsigned int n_cells_1d = data.n_cells_1d_coarse_grid * std::pow(2, data.refine_level);
+
+        velocity_full.reset(new VectorType());
+        initialize_dof_vector(*velocity_full, *dof_handler_full);
+
+        apply_taylor_green_symmetry(*dof_handler,
+                                    *dof_handler_full,
+                                    n_cells_1d,
+                                    data.length_symmetric_domain / static_cast<double>(n_cells_1d),
+                                    velocity,
+                                    *velocity_full);
+
+        do_evaluate(*velocity_full, time, time_step_number);
+      }
+      else
+      {
+        do_evaluate(velocity, time, time_step_number);
+      }
     }
     else // steady problem (time_step_number = -1)
     {

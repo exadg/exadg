@@ -20,17 +20,39 @@
 
 // convergence studies in space or time
 unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
+unsigned int const DEGREE_MAX = DEGREE_MIN;
 
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
+unsigned int const REFINE_SPACE_MIN = 4;
+unsigned int const REFINE_SPACE_MAX = REFINE_SPACE_MIN;
+
+// only relevant for Cartesian mesh
+unsigned int const N_CELLS_1D_COARSE_GRID = 1;
 
 unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+unsigned int const REFINE_TIME_MAX = REFINE_TIME_MIN;
 
-// set problem specific parameters like physical dimensions, etc.
+// moving mesh
+bool const ALE = false;
+
+// reduce dofs by exploiting symmetry
+bool const EXPLOIT_SYMMETRY = false;
+
+// inviscid limit
+bool const INVISCID = false;
+
+// Reynolds number
 double const Re = 1600.0;
 
+// output folder and output name
+std::string const OUTPUT_FOLDER = "output/taylor_green_vortex/";
+std::string const  OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
+std::string const OUTPUT_NAME = "standard";
+
+// mesh type
+enum class MeshType{ Cartesian, Curvilinear };
+MeshType const MESH_TYPE = MeshType::Cartesian;
+
+// set problem specific parameters like physical dimensions, etc.
 double const V_0 = 1.0;
 double const L = 1.0;
 double const p_0 = 0.0;
@@ -38,25 +60,10 @@ double const p_0 = 0.0;
 double const pi = numbers::PI;
 double const LEFT = - pi * L, RIGHT = pi * L;
 
-double const VISCOSITY = V_0*L/Re;
+double const VISCOSITY = INVISCID ? 0.0 : V_0*L/Re;
 double const MAX_VELOCITY = V_0;
 double const CHARACTERISTIC_TIME = L/V_0;
 double const END_TIME = 20.0*CHARACTERISTIC_TIME;
-
-std::string const OUTPUT_FOLDER = "output/taylor_green_vortex/";
-std::string const  OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string const OUTPUT_NAME = "test";
-
-enum class MeshType{ Cartesian, Curvilinear };
-MeshType const MESH_TYPE = MeshType::Cartesian;
-
-// only relevant for Cartesian mesh
-unsigned int const N_CELLS_1D_COARSE_GRID = 1;
-
-// moving mesh
-bool const ALE = false;
-
-bool const EXPLOIT_SYMMETRY = false;
 
 namespace IncNS
 {
@@ -65,9 +72,14 @@ void set_input_parameters(InputParameters &param)
   // MATHEMATICAL MODEL
   param.dim = 3;
   param.problem_type = ProblemType::Unsteady;
-  param.equation_type = EquationType::NavierStokes;
+  if(INVISCID)
+    param.equation_type = EquationType::Euler;
+  else
+    param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::DivergenceFormulation;
+  if(ALE)
+    param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = false;
 
   // ALE
@@ -83,17 +95,18 @@ void set_input_parameters(InputParameters &param)
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
   param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme; //BDFPressureCorrection; //BDFCoupledSolution;
-  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //Explicit; //Implicit;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.time_integrator_oif = TimeIntegratorOIF::ExplRK2Stage2;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = true;
+  param.adaptive_time_stepping_limiting_factor = 3.0;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl_oif = 0.4; //0.2; //0.125;
+  param.cfl_oif = 0.25; //0.2; //0.125;
   param.cfl = param.cfl_oif * 1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
-  param.time_step_size = 1.0e-3; // 1.0e-4;
+  param.time_step_size = 1.0e-3;
   param.order_time_integrator = 2; // 1; // 2; // 3;
-  param.start_with_low_order = true; // true; // false;
+  param.start_with_low_order = true;
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
@@ -136,8 +149,8 @@ void set_input_parameters(InputParameters &param)
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  param.continuity_penalty_use_boundary_data = true;
   param.apply_penalty_terms_in_postprocessing_step = true;
+  param.continuity_penalty_use_boundary_data = true;
 
   // TURBULENCE
   param.use_turbulence_model = false;
@@ -464,11 +477,15 @@ construct_postprocessor(InputParameters const &param)
   pp_data.kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
   // kinetic energy spectrum
-  pp_data.kinetic_energy_spectrum_data.calculate = false;
+  pp_data.kinetic_energy_spectrum_data.calculate = true;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
   pp_data.kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;
   pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree_u + 1) * 2.0;
+  pp_data.kinetic_energy_spectrum_data.exploit_symmetry = EXPLOIT_SYMMETRY;
+  pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid = N_CELLS_1D_COARSE_GRID;
+  pp_data.kinetic_energy_spectrum_data.refine_level = param.h_refinements;
+  pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = RIGHT;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

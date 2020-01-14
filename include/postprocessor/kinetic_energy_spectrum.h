@@ -9,6 +9,7 @@
 #define INCLUDE_POSTPROCESSOR_KINETIC_ENERGY_SPECTRUM_H_
 
 // deal.II
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/lac/la_parallel_vector.h>
 #include "deal.II/matrix_free/matrix_free.h"
 
@@ -26,7 +27,12 @@ struct KineticEnergySpectrumData
       filename_prefix("energy_spectrum"),
       output_tolerance(std::numeric_limits<double>::min()),
       degree(0),
-      evaluation_points_per_cell(0)
+      evaluation_points_per_cell(0),
+      exploit_symmetry(false),
+      n_cells_1d_coarse_grid(1),
+      refine_level(0),
+      length_symmetric_domain(numbers::PI)
+
   {
   }
 
@@ -43,6 +49,14 @@ struct KineticEnergySpectrumData
         print_parameter(pcout, "Calculate every time interval", calculate_every_time_interval);
       print_parameter(pcout, "Output precision", output_tolerance);
       print_parameter(pcout, "Evaluation points per cell", evaluation_points_per_cell);
+
+      print_parameter(pcout, "Exploit symmetry", exploit_symmetry);
+      if(exploit_symmetry)
+      {
+        print_parameter(pcout, "n_cells_1d_coarse_grid", n_cells_1d_coarse_grid);
+        print_parameter(pcout, "refine_level", refine_level);
+        print_parameter(pcout, "length_symmetric_domain", length_symmetric_domain);
+      }
     }
   }
 
@@ -54,6 +68,13 @@ struct KineticEnergySpectrumData
   double       output_tolerance;
   unsigned int degree;
   unsigned int evaluation_points_per_cell;
+
+  // exploit symmetry for Navier-Stokes simulation and mirror dof-vector
+  // according to Taylor-Green symmetries for evaluation of energy spectrum.
+  bool         exploit_symmetry;
+  unsigned int n_cells_1d_coarse_grid;
+  unsigned int refine_level;
+  double       length_symmetric_domain;
 };
 
 template<int dim, typename Number>
@@ -66,7 +87,7 @@ public:
 
   void
   setup(MatrixFree<dim, Number> const &   matrix_free_data_in,
-        Triangulation<dim, dim> const &   tria,
+        DoFHandler<dim> const &           dof_handler_in,
         KineticEnergySpectrumData const & data_in);
 
   void
@@ -81,6 +102,13 @@ private:
   unsigned int              counter;
   bool                      reset_counter;
   const unsigned int        precision = 12;
+
+  SmartPointer<DoFHandler<dim> const> dof_handler;
+
+  std::shared_ptr<VectorType>                       velocity_full;
+  std::shared_ptr<parallel::TriangulationBase<dim>> tria_full;
+  std::shared_ptr<FESystem<dim>>                    fe_full;
+  std::shared_ptr<DoFHandler<dim>>                  dof_handler_full;
 };
 
 
