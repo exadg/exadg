@@ -307,7 +307,7 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.divergence_penalty_factor = 1.0e0;
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
-  param.add_penalty_terms_to_monolithic_system = false;
+  param.apply_penalty_terms_in_postprocessing_step = true;
 
   // TURBULENCE
   param.use_turbulence_model = false;

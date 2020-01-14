@@ -325,12 +325,6 @@ public:
   rhs_stokes_problem(BlockVectorType & dst, double const & time = 0.0) const;
 
   /*
-   * This function calculates the right-hand side of the continuity penalty operator.
-   */
-  void
-  rhs_projection_operator(VectorType & dst, double const & time = 0.0) const;
-
-  /*
    * Block preconditioner
    */
   void

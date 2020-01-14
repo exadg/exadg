@@ -113,6 +113,9 @@ private:
   rhs_projection(VectorType & rhs) const;
 
   void
+  penalty_step();
+
+  void
   viscous_step();
 
   void

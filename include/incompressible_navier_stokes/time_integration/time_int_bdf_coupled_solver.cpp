@@ -162,7 +162,7 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
   // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations
   // instead of applying these terms in a postprocessing step.
-  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {
@@ -344,7 +344,7 @@ TimeIntBDFCoupled<Number>::do_solve_timestep()
   timer.restart();
 
   // If the penalty terms are applied in a postprocessing step
-  if(this->param.add_penalty_terms_to_monolithic_system == false)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == true)
   {
     // projection of velocity field using divergence and/or continuity penalty terms
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
@@ -398,14 +398,14 @@ TimeIntBDFCoupled<Number>::projection_step()
   // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
   // rhs-vector if desired
   if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
-    this->pde_operator->rhs_projection_operator(rhs, this->get_next_time());
+    this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
 
   bool const update_preconditioner =
     this->param.update_preconditioner_projection &&
     ((this->time_step_number - 1) % this->param.update_preconditioner_projection_every_time_steps ==
      0);
 
-  // solve projection (where also the preconditioner is updated)
+  // solve projection (and update preconditioner if desired)
   unsigned int iterations_postprocessing =
     this->operator_base->solve_projection(solution_np.block(0), rhs, update_preconditioner);
 
@@ -625,47 +625,53 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
 
   if(this->param.linear_problem_has_to_be_solved())
   {
-    name.resize(2);
-    std::vector<std::string> names = {"Coupled system", "Projection"};
-    name                           = names;
+    unsigned int             size  = 1;
+    std::vector<std::string> names = {"Coupled system"};
 
-    unsigned int N_time_steps = this->get_time_step_number() - 1;
+    if(this->param.apply_penalty_terms_in_postprocessing_step)
+    {
+      names.push_back("Penalty terms");
+      size++;
+    }
 
-    if(this->param.add_penalty_terms_to_monolithic_system)
-      iteration.resize(1);
-    else
-      iteration.resize(2);
+    name = names;
 
-    for(unsigned int i = 0; i < this->iterations.size(); ++i)
+    // fill iteration vector
+    iteration.resize(size);
+    for(unsigned int i = 0; i < size; ++i)
     {
       iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
     }
   }
   else // nonlinear system of equations in momentum step
   {
-    name.resize(4);
+    unsigned int             size  = 3;
     std::vector<std::string> names = {"Coupled system (nonlinear)",
                                       "Coupled system (linear)",
-                                      "Coupled system (linear-accumulated)",
-                                      "Projection"};
+                                      "Coupled system (linear-accumulated)"};
 
-    name = names;
+    if(this->param.apply_penalty_terms_in_postprocessing_step)
+    {
+      names.push_back("Penalty terms");
+      size++;
+    }
 
     double n_iter_nonlinear          = (double)N_iter_nonlinear / (double)N_time_steps;
     double n_iter_linear_accumulated = (double)iterations[0] / (double)N_time_steps;
     double n_iter_projection         = (double)iterations[1] / (double)N_time_steps;
 
-    if(this->param.add_penalty_terms_to_monolithic_system)
-      iteration.resize(3);
-    else
-      iteration.resize(4);
+    name = names;
+
+    // fill iteration vector
+    iteration.resize(size);
+
     iteration[0] = n_iter_nonlinear;
     if(n_iter_nonlinear > std::numeric_limits<double>::min())
       iteration[1] = n_iter_linear_accumulated / n_iter_nonlinear;
     else
       iteration[1] = n_iter_linear_accumulated;
     iteration[2] = n_iter_linear_accumulated;
-    if(!this->param.add_penalty_terms_to_monolithic_system)
+    if(this->param.apply_penalty_terms_in_postprocessing_step)
       iteration[3] = n_iter_projection;
   }
 }
@@ -675,13 +681,20 @@ void
 TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
                                           std::vector<double> &      wall_time) const
 {
-  std::vector<std::string> names = {"Coupled system", "Projection", "ALE update"};
+  unsigned int             size  = 1;
+  std::vector<std::string> names = {"Coupled system"};
 
-  unsigned int size = 2;
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
+  {
+    names.push_back("Penalty terms");
+    size++;
+  }
 
   if(this->param.ale_formulation)
   {
-    size                            = 3;
+    names.push_back("ALE update");
+    size++;
+
     this->computing_times[size - 1] = this->computation_time_ale_update;
   }
 

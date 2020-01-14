@@ -27,9 +27,9 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
     acceleration(this->param.order_extrapolation_pressure_nbc),
 #endif
     velocity_dbc(this->order),
-    computing_times(5),
+    computing_times(6),
     computing_time_convective(0.0),
-    iterations(4),
+    iterations(5),
     extra_pressure_nbc(this->param.order_extrapolation_pressure_nbc,
                        this->param.start_with_low_order)
 {
@@ -358,6 +358,9 @@ TimeIntBDFDualSplitting<Number>::do_solve_timestep()
 
   viscous_step();
 
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
+    penalty_step();
+
   // evaluate convective term once the final solution at time
   // t_{n+1} is known
   evaluate_convective_term();
@@ -584,7 +587,6 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
   // II.1. pressure Dirichlet boundary conditions
   pde_operator->rhs_ppe_laplace_add(rhs, this->get_next_time());
 
-
   // II.2. pressure Neumann boundary condition: body force vector
   if(this->param.right_hand_side)
   {
@@ -614,7 +616,7 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
     pde_operator->rhs_ppe_nbc_analytical_time_derivative_add(rhs, this->get_next_time());
   }
 
-  // II.4. viscous term of pressure Neumann boundary condition on Gamma_D
+  // II.4. viscous term of pressure Neumann boundary condition on Gamma_D:
   //       extrapolate velocity, evaluate vorticity, and subsequently evaluate boundary
   //       face integral (this is possible since pressure Neumann BC is linear in vorticity)
   if(this->param.viscous_problem())
@@ -635,8 +637,7 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
     }
   }
 
-  // II.5. convective term of pressure Neumann boundary condition on Gamma_D
-  //       (only if we do not solve the Stokes equations)
+  // II.5. convective term of pressure Neumann boundary condition on Gamma_D:
   //       evaluate convective term and subsequently extrapolate rhs vectors
   //       (the convective term is nonlinear!)
   if(this->param.convective_problem())
@@ -669,6 +670,22 @@ TimeIntBDFDualSplitting<Number>::projection_step()
   Timer timer;
   timer.restart();
 
+  // extrapolate velocity to time t_n+1 and use this velocity field to
+  // calculate the penalty parameter for the divergence and continuity penalty term
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
+  {
+    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+    {
+      VectorType velocity_extrapolated;
+      velocity_extrapolated.reinit(velocity[0]);
+      for(unsigned int i = 0; i < velocity.size(); ++i)
+        velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+
+      this->operator_base->update_projection_operator(velocity_extrapolated,
+                                                      this->get_time_step_size());
+    }
+  }
+
   // compute right-hand-side vector
   VectorType rhs(velocity_np);
   rhs_projection(rhs);
@@ -678,30 +695,22 @@ TimeIntBDFDualSplitting<Number>::projection_step()
   this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs);
 
   // penalty terms
-  VectorType velocity_extrapolated;
-
   unsigned int iterations_projection = 0;
 
-  // extrapolate velocity to time t_n+1 and use this velocity field to
-  // calculate the penalty parameter for the divergence and continuity penalty term
-  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
-    velocity_extrapolated.reinit(velocity[0]);
-    for(unsigned int i = 0; i < velocity.size(); ++i)
-      velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+    if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+    {
+      // solve linear system of equations
+      bool const update_preconditioner =
+        this->param.update_preconditioner_projection &&
+        ((this->time_step_number - 1) %
+           this->param.update_preconditioner_projection_every_time_steps ==
+         0);
 
-    this->operator_base->update_projection_operator(velocity_extrapolated,
-                                                    this->get_time_step_size());
-
-    // solve linear system of equations
-    bool const update_preconditioner =
-      this->param.update_preconditioner_projection &&
-      ((this->time_step_number - 1) %
-         this->param.update_preconditioner_projection_every_time_steps ==
-       0);
-
-    iterations_projection =
-      this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
+      iterations_projection =
+        this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
+    }
   }
 
   // write output
@@ -824,6 +833,60 @@ TimeIntBDFDualSplitting<Number>::rhs_viscous(VectorType & rhs) const
 
 template<typename Number>
 void
+TimeIntBDFDualSplitting<Number>::penalty_step()
+{
+  Timer timer;
+  timer.restart();
+
+  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+  {
+    // extrapolate velocity to time t_n+1 and use this velocity field to
+    // calculate the penalty parameter for the divergence and continuity penalty term
+    VectorType velocity_extrapolated;
+    velocity_extrapolated.reinit(velocity[0]);
+    for(unsigned int i = 0; i < velocity.size(); ++i)
+      velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
+
+    this->operator_base->update_projection_operator(velocity_extrapolated,
+                                                    this->get_time_step_size());
+
+    // compute right-hand-side vector
+    VectorType rhs(velocity_np);
+    this->operator_base->apply_mass_matrix(rhs, velocity_np);
+
+    // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
+    // rhs-vector if desired
+    if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+      this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
+
+    // solve linear system of equations
+    bool const update_preconditioner =
+      this->param.update_preconditioner_projection &&
+      ((this->time_step_number - 1) %
+         this->param.update_preconditioner_projection_every_time_steps ==
+       0);
+
+    // use solution of previous step as initial guess
+    unsigned int iterations_projection =
+      this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
+
+    // write output
+    if(this->print_solver_info())
+    {
+      this->pcout << std::endl
+                  << "Solve penalty step:" << std::endl
+                  << "  Iterations:        " << std::setw(6) << std::right << iterations_projection
+                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl;
+    }
+
+    iterations[4] += iterations_projection;
+  }
+
+  computing_times[4] += timer.wall_time();
+}
+
+template<typename Number>
+void
 TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 {
   TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
@@ -834,6 +897,7 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
     // push back accelerations and compute new acceleration at the end
     // of the current time step before velocity_dbc is pushed back
     // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+
     this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
     push_back(acceleration);
@@ -847,41 +911,46 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
     push_back(velocity_dbc);
     velocity_dbc[0].swap(velocity_dbc_np);
 
-    // Variant:
+
+    // Variant 3:
     // Compute acceleration and velocity vectors used for inhomogeneous boundary condition terms
     // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
     // velocity. Note: This variant leads to instabilities for small time step sizes.
-    //    push_back(acceleration);
-    //
-    //    if(this->param.order_extrapolation_pressure_nbc)
-    //    {
-    //      compute_bdf_time_derivative(
-    //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
-    //    }
-    //
-    //    push_back(velocity_dbc);
-    //    velocity_dbc[0].swap(velocity_np);
+    /*
+    push_back(acceleration);
 
-    // Another Variant:
+    if(this->param.order_extrapolation_pressure_nbc)
+    {
+      compute_bdf_time_derivative(
+        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
+    }
+
+    push_back(velocity_dbc);
+    velocity_dbc[0].swap(velocity_np);
+    */
+
+    // Variant 3b:
     // Compute acceleration used for inhomogeneous boundary condition terms
     // on the rhs of the pressure Poisson equation as a function of the numerical solution for the
-    // velocity.
-    //    push_back(acceleration);
-    //
-    //    // use interior solution u only for computation of time derivative (acceleration)
-    //    if(this->param.order_extrapolation_pressure_nbc)
-    //    {
-    //      compute_bdf_time_derivative(
-    //        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
-    //    }
-    //
-    //    // use boundary condition g_u for velocity_dbc!
-    //    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
-    //    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
-    //    this->get_next_time());
-    //
-    //    push_back(velocity_dbc);
-    //    velocity_dbc[0].swap(velocity_dbc_np);
+    // velocity. But use boundary data g_u for velocity_dbc for intermediate velocity u_hat.
+    /*
+    push_back(acceleration);
+
+    // use interior solution u only for computation of time derivative (acceleration)
+    if(this->param.order_extrapolation_pressure_nbc)
+    {
+      compute_bdf_time_derivative(
+        acceleration[0], velocity_np, velocity, this->bdf, this->get_time_step_size());
+    }
+
+    // use boundary condition g_u for velocity_dbc!
+    // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
+    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
+    this->get_next_time());
+
+    push_back(velocity_dbc);
+    velocity_dbc[0].swap(velocity_dbc_np);
+    */
 #else
     // If we do not extrapolate the acceleration, we only have to care about the history of
     // velocity Dirichlet boundary conditions, where velocity_dbc_np has already been updated.
@@ -990,15 +1059,22 @@ void
 TimeIntBDFDualSplitting<Number>::get_iterations(std::vector<std::string> & name,
                                                 std::vector<double> &      iteration) const
 {
-  name.resize(4);
+  unsigned int             size  = 4;
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
-  name                           = names;
+
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
+  {
+    names.push_back("Penalty terms");
+    size++;
+  }
 
   unsigned int N_time_steps = this->get_time_step_number() - 1;
 
-  iteration.resize(4);
-  for(unsigned int i = 0; i < this->iterations.size(); ++i)
+  name.resize(size);
+  iteration.resize(size);
+  for(unsigned int i = 0; i < size; ++i)
   {
+    name[i]      = names[i];
     iteration[i] = (double)this->iterations[i] / (double)N_time_steps;
   }
 }
@@ -1008,14 +1084,20 @@ void
 TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
                                                 std::vector<double> &      wall_time) const
 {
-  std::vector<std::string> names = {
-    "Convection", "Pressure", "Projection", "Viscous", "ALE update"};
+  unsigned int             size  = 4;
+  std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
 
-  unsigned int size = 4;
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
+  {
+    names.push_back("Penalty terms");
+    size++;
+  }
 
   if(this->param.ale_formulation)
   {
-    size                            = 5;
+    names.push_back("ALE update");
+    size++;
+
     this->computing_times[size - 1] = this->computation_time_ale_update;
   }
 

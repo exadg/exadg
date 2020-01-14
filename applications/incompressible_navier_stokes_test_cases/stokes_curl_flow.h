@@ -90,7 +90,7 @@ void set_input_parameters(InputParameters &param)
   param.continuity_penalty_use_boundary_data = true;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
   param.type_penalty_parameter = TypePenaltyParameter::ViscousAndConvectiveTerms;
-  param.add_penalty_terms_to_monolithic_system = true;
+  param.apply_penalty_terms_in_postprocessing_step = false;
 
   // PROJECTION METHODS
 

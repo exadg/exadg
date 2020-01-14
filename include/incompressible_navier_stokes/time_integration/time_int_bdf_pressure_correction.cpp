@@ -800,16 +800,6 @@ TimeIntBDFPressureCorrection<Number>::projection_step(VectorType const & pressur
   Timer timer;
   timer.restart();
 
-  // compute right-hand-side vector
-  VectorType rhs(velocity_np);
-  rhs_projection(rhs, pressure_increment);
-
-  // apply inverse mass matrix: this is the solution if no penalty terms are applied
-  // and serves as a good initial guess for the case with penalty terms
-  this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs);
-
-  unsigned int iterations_projection = 0;
-
   // extrapolate velocity to time t_n+1 and use this velocity field to
   // calculate the penalty parameter for the divergence and continuity penalty term
   if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
@@ -821,7 +811,26 @@ TimeIntBDFPressureCorrection<Number>::projection_step(VectorType const & pressur
 
     this->operator_base->update_projection_operator(velocity_extrapolated,
                                                     this->get_time_step_size());
+  }
 
+  // compute right-hand-side vector
+  VectorType rhs(velocity_np);
+  rhs_projection(rhs, pressure_increment);
+
+  // apply inverse mass matrix: this is the solution if no penalty terms are applied
+  // and serves as a good initial guess for the case with penalty terms
+  this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs);
+
+  // add inhomogeneous contributions of continuity penalty terms after computing
+  // the initial guess for the linear system of equations to make sure that the initial
+  // guess is as accurate as possible
+  if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
+    this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
+
+  unsigned int iterations_projection = 0;
+
+  if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
+  {
     // solve linear system of equations
     bool const update_preconditioner =
       this->param.update_preconditioner_projection &&
@@ -1069,13 +1078,14 @@ void
 TimeIntBDFPressureCorrection<Number>::get_wall_times(std::vector<std::string> & name,
                                                      std::vector<double> &      wall_time) const
 {
-  std::vector<std::string> names = {"Momentum", "Pressure", "Projection", "ALE update"};
-
-  unsigned int size = 3;
+  unsigned int             size  = 3;
+  std::vector<std::string> names = {"Momentum", "Pressure", "Projection"};
 
   if(this->param.ale_formulation)
   {
-    size                            = 4;
+    names.push_back("ALE update");
+    size++;
+
     this->computing_times[size - 1] = this->computation_time_ale_update;
   }
 

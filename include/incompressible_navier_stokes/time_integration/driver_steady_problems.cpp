@@ -79,7 +79,7 @@ DriverSteadyProblems<Number>::solve()
   // Update divergence and continuity penalty operator in case
   // that these terms are added to the monolithic system of equations
   // instead of applying these terms in a postprocessing step.
-  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
     if(this->param.use_divergence_penalty == true || this->param.use_continuity_penalty == true)
     {

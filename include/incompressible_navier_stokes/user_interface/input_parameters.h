@@ -339,10 +339,13 @@ public:
   // type of penalty parameter (see enum declaration for more information)
   TypePenaltyParameter type_penalty_parameter;
 
-  // Add divergence and continuity penalty terms to monolithic system of equations.
-  // This parameter is only relevant for the coupled solution approach but not for
-  // the projection-type solution methods.
-  bool add_penalty_terms_to_monolithic_system;
+  // Divergence and continuity penalty terms are applied in a postprocessing step
+  // if set to true.
+  // Otherwise, penalty terms are added to the monolithic systems of equations in case of
+  // the monolithic solver, or to the projection step in case of the dual splitting scheme.
+  // For the pressure-correction scheme, this parameter is irrelevant since the projection
+  // step is the last step of the splitting scheme anyway.
+  bool apply_penalty_terms_in_postprocessing_step;
 
 
   /**************************************************************************************/

@@ -22,8 +22,8 @@
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 3;
+unsigned int const REFINE_SPACE_MAX = 3;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -45,7 +45,7 @@ double const END_TIME = 20.0*CHARACTERISTIC_TIME;
 
 std::string const OUTPUT_FOLDER = "output/taylor_green_vortex/";
 std::string const  OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string const OUTPUT_NAME = "test_exploit_symmetry"; //"test_ale";
+std::string const OUTPUT_NAME = "test";
 
 enum class MeshType{ Cartesian, Curvilinear };
 MeshType const MESH_TYPE = MeshType::Cartesian;
@@ -54,9 +54,9 @@ MeshType const MESH_TYPE = MeshType::Cartesian;
 unsigned int const N_CELLS_1D_COARSE_GRID = 1;
 
 // moving mesh
-bool const ALE = false; //true;
+bool const ALE = false;
 
-bool const EXPLOIT_SYMMETRY = false; //true;
+bool const EXPLOIT_SYMMETRY = false;
 
 namespace IncNS
 {
@@ -67,7 +67,7 @@ void set_input_parameters(InputParameters &param)
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
-  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation; //DivergenceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = false;
 
   // ALE
@@ -88,7 +88,7 @@ void set_input_parameters(InputParameters &param)
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = true;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl_oif = 0.2; //0.2; //0.125;
+  param.cfl_oif = 0.4; //0.2; //0.125;
   param.cfl = param.cfl_oif * 1.0;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-3; // 1.0e-4;
@@ -126,13 +126,18 @@ void set_input_parameters(InputParameters &param)
   // special case: pure DBC's (only periodic BCs -> pure_dirichlet_bc = true)
   param.pure_dirichlet_bc = true;
 
+  // velocity pressure coupling terms
+  param.gradp_formulation = FormulationPressureGradientTerm::Weak;
+  param.divu_formulation = FormulationVelocityDivergenceTerm::Weak;
+
   // div-div and continuity penalty
   param.use_divergence_penalty = true;
   param.divergence_penalty_factor = 1.0e0;
   param.use_continuity_penalty = true;
   param.continuity_penalty_factor = param.divergence_penalty_factor;
   param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
-  param.add_penalty_terms_to_monolithic_system = false;
+  param.continuity_penalty_use_boundary_data = true;
+  param.apply_penalty_terms_in_postprocessing_step = true;
 
   // TURBULENCE
   param.use_turbulence_model = false;
@@ -151,7 +156,7 @@ void set_input_parameters(InputParameters &param)
   param.store_previous_boundary_values = false;
 
   // pressure Poisson equation
-  param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-3,100);
+  param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
   param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
   param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
@@ -159,7 +164,7 @@ void set_input_parameters(InputParameters &param)
 
   // projection step
   param.solver_projection = SolverProjection::CG;
-  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-3);
+  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
   param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
   param.multigrid_data_projection.type = MultigridType::phMG;
   param.multigrid_data_projection.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -177,7 +182,7 @@ void set_input_parameters(InputParameters &param)
 
   // viscous step
   param.solver_viscous = SolverViscous::CG;
-  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-3);
+  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
   param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
   param.multigrid_data_viscous.type = MultigridType::cphMG;
   param.multigrid_data_viscous.smoother_data.smoother = MultigridSmoother::Chebyshev; //Jacobi;
@@ -190,7 +195,7 @@ void set_input_parameters(InputParameters &param)
   // momentum step
 
   // Newton solver
-  param.newton_solver_data_momentum = NewtonSolverData(100,1.e-20,1.e-6);
+  param.newton_solver_data_momentum = NewtonSolverData(100,1.e-12,1.e-6);
 
   // linear solver
   param.solver_momentum = SolverMomentum::GMRES;
@@ -215,7 +220,10 @@ void set_input_parameters(InputParameters &param)
 
   // linear solver
   param.solver_coupled = SolverCoupled::GMRES;
-  param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
+  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+    param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-2, 100);
+  else
+    param.solver_data_coupled = SolverData(1e3, 1.e-12, 1.e-6, 100);
 
   // preconditioning linear solver
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
@@ -226,8 +234,6 @@ void set_input_parameters(InputParameters &param)
   // preconditioner Schur-complement block
   param.preconditioner_pressure_block = SchurComplementPreconditioner::CahouetChabard; //PressureConvectionDiffusion;
   param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
-  param.exact_inversion_of_laplace_operator = false;
-  param.solver_data_pressure_block = SolverData(1e4, 1.e-12, 1.e-6, 100);
 }
 }
 
@@ -408,7 +414,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
     data.dimensions[1] = std::abs(RIGHT-LEFT);
     data.dimensions[2] = std::abs(RIGHT-LEFT);
     data.amplitude = RIGHT/6.0; // use a value <= RIGHT/4.0
-    data.period = END_TIME/40.0; // END_TIME/2.0;
+    data.period = CHARACTERISTIC_TIME;
     data.t_start = 0.0;
     data.t_end = END_TIME;
     data.spatial_number_of_oscillations = 1.0;
@@ -429,7 +435,7 @@ construct_postprocessor(InputParameters const &param)
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = true;
+  pp_data.output_data.write_output = false;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
   pp_data.output_data.output_start_time = param.start_time;
@@ -440,6 +446,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.write_vorticity_magnitude = true;
   pp_data.output_data.write_q_criterion = true;
   pp_data.output_data.write_processor_id = true;
+  pp_data.output_data.write_higher_order = false;
   pp_data.output_data.degree = param.degree_u;
 
   // calculate div and mass error
@@ -457,7 +464,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
 
   // kinetic energy spectrum
-  pp_data.kinetic_energy_spectrum_data.calculate = false; //true;
+  pp_data.kinetic_energy_spectrum_data.calculate = false;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
   pp_data.kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;

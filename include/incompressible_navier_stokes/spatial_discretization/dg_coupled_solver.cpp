@@ -54,7 +54,7 @@ DGNavierStokesCoupled<dim, Number>::setup_solvers(
 
   initialize_solver_coupled();
 
-  if(this->param.add_penalty_terms_to_monolithic_system == false)
+  if(this->param.apply_penalty_terms_in_postprocessing_step)
     this->setup_projection_solver();
 
   this->pcout << std::endl << "... done!" << std::endl;
@@ -173,15 +173,6 @@ DGNavierStokesCoupled<dim, Number>::solve_linear_stokes_problem(
 
 template<int dim, typename Number>
 void
-DGNavierStokesCoupled<dim, Number>::rhs_projection_operator(VectorType &   dst,
-                                                            double const & time) const
-{
-  this->projection_operator->set_time(time);
-  this->projection_operator->rhs_add(dst);
-}
-
-template<int dim, typename Number>
-void
 DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
                                                        double const &    time) const
 {
@@ -192,7 +183,7 @@ DGNavierStokesCoupled<dim, Number>::rhs_stokes_problem(BlockVectorType & dst,
   this->viscous_operator.set_time(time);
   this->viscous_operator.rhs_add(dst.block(0));
 
-  if(this->param.add_penalty_terms_to_monolithic_system)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
     if(this->param.use_continuity_penalty == true)
       this->conti_penalty_operator.rhs_add(dst.block(0), time);
@@ -223,7 +214,7 @@ DGNavierStokesCoupled<dim, Number>::apply_linearized_problem(
   this->momentum_operator.vmult(dst.block(0), src.block(0));
 
   // Divergence and continuity penalty operators
-  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
     if(this->param.use_divergence_penalty == true)
       this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
@@ -319,7 +310,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual(
   }
 
   // Divergence and continuity penalty operators
-  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
     if(this->param.use_divergence_penalty == true)
       this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
@@ -376,7 +367,7 @@ DGNavierStokesCoupled<dim, Number>::evaluate_nonlinear_residual_steady(BlockVect
   }
 
   // Divergence and continuity penalty operators
-  if(this->param.add_penalty_terms_to_monolithic_system == true)
+  if(this->param.apply_penalty_terms_in_postprocessing_step == false)
   {
     if(this->param.use_divergence_penalty == true)
       this->div_penalty_operator.apply_add(dst.block(0), src.block(0));
