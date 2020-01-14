@@ -106,7 +106,8 @@ protected:
             VectorType const &              velocity,
             Number &                        energy,
             Number &                        enstrophy,
-            Number &                        dissipation);
+            Number &                        dissipation,
+            Number &                        max_vorticity);
 
   void
   cell_loop(MatrixFree<dim, Number> const &               data,
