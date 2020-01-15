@@ -116,25 +116,29 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
   {
     if(time_step_number >= 0) // unsteady problem
     {
-      if(data.exploit_symmetry)
+      if(needs_to_be_evaluated(time, time_step_number))
       {
-        unsigned int n_cells_1d = data.n_cells_1d_coarse_grid * std::pow(2, data.refine_level);
+        if(data.exploit_symmetry)
+        {
+          unsigned int n_cells_1d = data.n_cells_1d_coarse_grid * std::pow(2, data.refine_level);
 
-        velocity_full.reset(new VectorType());
-        initialize_dof_vector(*velocity_full, *dof_handler_full);
+          velocity_full.reset(new VectorType());
+          initialize_dof_vector(*velocity_full, *dof_handler_full);
 
-        apply_taylor_green_symmetry(*dof_handler,
-                                    *dof_handler_full,
-                                    n_cells_1d,
-                                    data.length_symmetric_domain / static_cast<double>(n_cells_1d),
-                                    velocity,
-                                    *velocity_full);
+          apply_taylor_green_symmetry(*dof_handler,
+                                      *dof_handler_full,
+                                      n_cells_1d,
+                                      data.length_symmetric_domain /
+                                        static_cast<double>(n_cells_1d),
+                                      velocity,
+                                      *velocity_full);
 
-        do_evaluate(*velocity_full, time, time_step_number);
-      }
-      else
-      {
-        do_evaluate(velocity, time, time_step_number);
+          do_evaluate(*velocity_full, time);
+        }
+        else
+        {
+          do_evaluate(velocity, time);
+        }
       }
     }
     else // steady problem (time_step_number = -1)
@@ -148,10 +152,10 @@ KineticEnergySpectrumCalculator<dim, Number>::evaluate(VectorType const & veloci
 }
 
 template<int dim, typename Number>
-void
-KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & velocity,
-                                                          double const       time,
-                                                          unsigned int const time_step_number)
+bool
+KineticEnergySpectrumCalculator<dim, Number>::needs_to_be_evaluated(
+  double const       time,
+  unsigned int const time_step_number)
 {
   bool evaluate = false;
 
@@ -195,60 +199,65 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
                   "calculate_every_time_interval > 0.0 or calculate_every_time_steps > 0."));
   }
 
-  if(evaluate)
+  return evaluate;
+}
+
+template<int dim, typename Number>
+void
+KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & velocity,
+                                                          double const       time)
+{
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    std::cout << std::endl
+              << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl;
+
+  // extract beginning of vector...
+  const Number * temp = velocity.begin();
+  deal_spectrum_wrapper->execute((double *)temp);
+
+  // write output file
+  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
   {
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-      std::cout << std::endl
-                << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl;
+    std::ostringstream filename;
+    filename << data.filename_prefix;
 
-    // extract beginning of vector...
-    const Number * temp = velocity.begin();
-    deal_spectrum_wrapper->execute((double *)temp);
-
-    // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    std::ofstream f;
+    if(clear_files == true)
     {
-      std::ostringstream filename;
-      filename << data.filename_prefix;
+      f.open(filename.str().c_str(), std::ios::trunc);
+      clear_files = false;
+    }
+    else
+    {
+      f.open(filename.str().c_str(), std::ios::app);
+    }
 
-      std::ofstream f;
-      if(clear_files == true)
+    // get tabularized results ...
+    double * kappa;
+    double * E;
+    double * C;
+    double   e_physical = 0.0;
+    double   e_spectral = 0.0;
+    int len = deal_spectrum_wrapper->get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
+
+    f << std::endl
+      << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl
+      << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << std::endl
+      << "  Energy physical space e_phy = " << e_physical << std::endl
+      << "  Energy spectral space e_spe = " << e_spectral << std::endl
+      << "  Difference  |e_phy - e_spe| = " << std::abs(e_physical - e_spectral) << std::endl
+      << std::endl
+      << "    k  k (avg)              E(k)" << std::endl;
+
+    // ... and print it line by line:
+    for(int i = 0; i < len; i++)
+    {
+      if(E[i] > data.output_tolerance)
       {
-        f.open(filename.str().c_str(), std::ios::trunc);
-        clear_files = false;
-      }
-      else
-      {
-        f.open(filename.str().c_str(), std::ios::app);
-      }
-
-      // get tabularized results ...
-      double * kappa;
-      double * E;
-      double * C;
-      double   e_physical = 0.0;
-      double   e_spectral = 0.0;
-      int len = deal_spectrum_wrapper->get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
-
-      f << std::endl
-        << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl
-        << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << std::endl
-        << "  Energy physical space e_phy = " << e_physical << std::endl
-        << "  Energy spectral space e_spe = " << e_spectral << std::endl
-        << "  Difference  |e_phy - e_spe| = " << std::abs(e_physical - e_spectral) << std::endl
-        << std::endl
-        << "    k  k (avg)              E(k)" << std::endl;
-
-      // ... and print it line by line:
-      for(int i = 0; i < len; i++)
-      {
-        if(E[i] > data.output_tolerance)
-        {
-          f << std::scientific << std::setprecision(0)
-            << std::setw(2 + ceil(std::max(3.0, log(len) / log(10)))) << i << std::scientific
-            << std::setprecision(precision) << std::setw(precision + 8) << kappa[i] << "   " << E[i]
-            << std::endl;
-        }
+        f << std::scientific << std::setprecision(0)
+          << std::setw(2 + ceil(std::max(3.0, log(len) / log(10)))) << i << std::scientific
+          << std::setprecision(precision) << std::setw(precision + 8) << kappa[i] << "   " << E[i]
+          << std::endl;
       }
     }
   }

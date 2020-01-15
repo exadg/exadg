@@ -94,8 +94,11 @@ public:
   evaluate(VectorType const & velocity, double const & time, int const & time_step_number);
 
 private:
+  bool
+  needs_to_be_evaluated(double const time, unsigned int const time_step_number);
+
   void
-  do_evaluate(VectorType const & velocity, double const time, unsigned int const time_step_number);
+  do_evaluate(VectorType const & velocity, double const time);
 
   bool                      clear_files;
   KineticEnergySpectrumData data;
