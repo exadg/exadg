@@ -77,7 +77,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
     {
       // clang-format off
       std::ostringstream filename;
-      filename << this->data.filename_prefix;
+      filename << this->data.filename;
 
       std::ofstream f;
       if(this->clear_files == true)

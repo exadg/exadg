@@ -68,6 +68,8 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
   data        = data_in;
   dof_handler = &dof_handler_in;
 
+  clear_files = data.clear_file;
+
   if(data.calculate == true)
   {
     unsigned int evaluation_points = std::max(data.degree + 1, data.evaluation_points_per_cell);
@@ -219,7 +221,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
   if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
   {
     std::ostringstream filename;
-    filename << data.filename_prefix;
+    filename << data.filename;
 
     std::ofstream f;
     if(clear_files == true)

@@ -256,7 +256,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.kinetic_energy_data.evaluate_individual_terms = false;
   pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
   pp_data.kinetic_energy_data.viscosity = VISCOSITY;
-  pp_data.kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
+  pp_data.kinetic_energy_data.filename = OUTPUT_FOLDER + OUTPUT_NAME;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

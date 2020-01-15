@@ -26,6 +26,8 @@ KineticEnergyCalculator<dim, Number>::setup(MatrixFree<dim, Number> const & matr
   dof_index   = dof_index_in;
   quad_index  = quad_index_in;
   data        = kinetic_energy_data_in;
+
+  clear_files = data.clear_file;
 }
 
 template<int dim, typename Number>
@@ -63,7 +65,7 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
     {
       // clang-format off
       std::ostringstream filename;
-      filename << data.filename_prefix;
+      filename << data.filename;
 
       std::ofstream f;
       if(clear_files == true)

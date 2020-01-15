@@ -22,7 +22,8 @@ struct KineticEnergyData
       evaluate_individual_terms(false),
       calculate_every_time_steps(std::numeric_limits<unsigned int>::max()),
       viscosity(1.0),
-      filename_prefix("kinetic_energy")
+      filename("kinetic_energy"),
+      clear_file(true)
   {
   }
 
@@ -36,7 +37,8 @@ struct KineticEnergyData
       print_parameter(pcout, "Calculate energy", calculate);
       print_parameter(pcout, "Evaluate individual terms", evaluate_individual_terms);
       print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
-      print_parameter(pcout, "Filename", filename_prefix);
+      print_parameter(pcout, "Filename", filename);
+      print_parameter(pcout, "Clear file", clear_file);
     }
   }
 
@@ -54,7 +56,8 @@ struct KineticEnergyData
   double viscosity;
 
   // filename
-  std::string filename_prefix;
+  std::string filename;
+  bool        clear_file;
 };
 
 template<int dim, typename Number>

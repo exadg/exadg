@@ -35,7 +35,7 @@ unsigned int const REFINE_TIME_MAX = REFINE_TIME_MIN;
 bool const ALE = false;
 
 // reduce dofs by exploiting symmetry
-bool const EXPLOIT_SYMMETRY = false;
+bool const EXPLOIT_SYMMETRY = true;
 
 // inviscid limit
 bool const INVISCID = false;
@@ -46,7 +46,10 @@ double const Re = 1600.0;
 // output folder and output name
 std::string const OUTPUT_FOLDER = "output/taylor_green_vortex/";
 std::string const  OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string const OUTPUT_NAME = "standard";
+std::string const OUTPUT_NAME = "128_l4_k3_symm_adaptive_cfl0-25";
+
+bool WRITE_RESTART = false;
+bool RESTARTED_SIMULATION = false;
 
 // mesh type
 enum class MeshType{ Cartesian, Curvilinear };
@@ -106,8 +109,16 @@ void set_input_parameters(InputParameters &param)
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-3;
   param.order_time_integrator = 2; // 1; // 2; // 3;
-  param.start_with_low_order = true;
+  param.start_with_low_order = !RESTARTED_SIMULATION;
   param.dt_refinements = REFINE_TIME_MIN;
+
+  // restart
+  param.restarted_simulation = RESTARTED_SIMULATION;
+  param.restart_data.write_restart = WRITE_RESTART;
+  param.restart_data.interval_time = 1.0;
+  param.restart_data.interval_wall_time = 1.e6;
+  param.restart_data.interval_time_steps = 1e8;
+  param.restart_data.filename = OUTPUT_FOLDER + "restart";
 
   // output of solver information
   param.solver_info_data.print_to_screen = true;
@@ -473,19 +484,21 @@ construct_postprocessor(InputParameters const &param)
   pp_data.kinetic_energy_data.calculate = true;
   pp_data.kinetic_energy_data.evaluate_individual_terms = true;
   pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
-  pp_data.kinetic_energy_data.viscosity = VISCOSITY;
-  pp_data.kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME;
+  pp_data.kinetic_energy_data.viscosity = param.viscosity;
+  pp_data.kinetic_energy_data.filename = OUTPUT_FOLDER + OUTPUT_NAME;
+  pp_data.kinetic_energy_data.clear_file = !param.restarted_simulation;
 
   // kinetic energy spectrum
   pp_data.kinetic_energy_spectrum_data.calculate = true;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-  pp_data.kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
+  pp_data.kinetic_energy_spectrum_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;
-  pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree_u + 1) * 2.0;
+  pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree_u + 1);
   pp_data.kinetic_energy_spectrum_data.exploit_symmetry = EXPLOIT_SYMMETRY;
   pp_data.kinetic_energy_spectrum_data.n_cells_1d_coarse_grid = N_CELLS_1D_COARSE_GRID;
   pp_data.kinetic_energy_spectrum_data.refine_level = param.h_refinements;
   pp_data.kinetic_energy_spectrum_data.length_symmetric_domain = RIGHT;
+  pp_data.kinetic_energy_spectrum_data.clear_file = !param.restarted_simulation;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

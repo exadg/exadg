@@ -24,7 +24,8 @@ struct KineticEnergySpectrumData
       start_time(0.0),
       calculate_every_time_steps(-1),
       calculate_every_time_interval(-1.0),
-      filename_prefix("energy_spectrum"),
+      filename("energy_spectrum"),
+      clear_file(true),
       output_tolerance(std::numeric_limits<double>::min()),
       degree(0),
       evaluation_points_per_cell(0),
@@ -47,6 +48,9 @@ struct KineticEnergySpectrumData
         print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
       if(calculate_every_time_interval >= 0.0)
         print_parameter(pcout, "Calculate every time interval", calculate_every_time_interval);
+      print_parameter(pcout, "Filename", filename);
+      print_parameter(pcout, "Clear file", clear_file);
+
       print_parameter(pcout, "Output precision", output_tolerance);
       print_parameter(pcout, "Evaluation points per cell", evaluation_points_per_cell);
 
@@ -64,7 +68,8 @@ struct KineticEnergySpectrumData
   double       start_time;
   int          calculate_every_time_steps;
   double       calculate_every_time_interval;
-  std::string  filename_prefix;
+  std::string  filename;
+  bool         clear_file;
   double       output_tolerance;
   unsigned int degree;
   unsigned int evaluation_points_per_cell;
