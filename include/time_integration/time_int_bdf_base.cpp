@@ -52,6 +52,14 @@ TimeIntBDFBase<Number>::initialize_solution_and_calculate_timestep(bool do_resta
 {
   if(do_restart)
   {
+    if(order > 1)
+    {
+      AssertThrow(
+        start_with_low_order == false,
+        ExcMessage(
+          "In case of higher order time integration, start_with_low_order should be false when restarting the simulation."));
+    }
+
     // The solution vectors and the current time, the time step size, etc. have to be read from
     // restart files.
     read_restart();

@@ -26,6 +26,8 @@ KineticEnergyCalculator<dim, Number>::setup(MatrixFree<dim, Number> const & matr
   dof_index   = dof_index_in;
   quad_index  = quad_index_in;
   data        = kinetic_energy_data_in;
+
+  clear_files = data.clear_file;
 }
 
 template<int dim, typename Number>
@@ -54,16 +56,16 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
 {
   if((time_step_number - 1) % data.calculate_every_time_steps == 0)
   {
-    Number kinetic_energy = 1.0, enstrophy = 1.0, dissipation = 1.0;
+    Number kinetic_energy = 0.0, enstrophy = 0.0, dissipation = 0.0, max_vorticity = 0.0;
 
-    integrate(*matrix_free, velocity, kinetic_energy, enstrophy, dissipation);
+    integrate(*matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
 
     // write output file
     if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
     {
       // clang-format off
       std::ostringstream filename;
-      filename << data.filename_prefix;
+      filename << data.filename;
 
       std::ofstream f;
       if(clear_files == true)
@@ -74,7 +76,7 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
           << "Enstrophy: E = 1/V * 1/2 * (rot(u),rot(u))_Omega, where V=(1,1)_Omega" << std::endl;
 
         f << std::endl
-          << "  Time                Kin. energy         dissipation         enstrophy"
+          << "  Time                Kin. energy         dissipation         enstrophy           max_vorticity"
           << std::endl;
 
         clear_files = false;
@@ -90,6 +92,7 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
         << std::setw(precision + 8) << kinetic_energy
         << std::setw(precision + 8) << dissipation
         << std::setw(precision + 8) << enstrophy
+        << std::setw(precision + 8) << max_vorticity
         << std::endl;
       // clang-format on
     }
@@ -102,9 +105,10 @@ KineticEnergyCalculator<dim, Number>::integrate(MatrixFree<dim, Number> const & 
                                                 VectorType const &              velocity,
                                                 Number &                        energy,
                                                 Number &                        enstrophy,
-                                                Number &                        dissipation)
+                                                Number &                        dissipation,
+                                                Number &                        max_vorticity)
 {
-  std::vector<Number> dst(4, 0.0);
+  std::vector<Number> dst(5, 0.0);
   matrix_free.cell_loop(&KineticEnergyCalculator<dim, Number>::cell_loop, this, dst, velocity);
 
   // sum over all MPI processes
@@ -117,6 +121,8 @@ KineticEnergyCalculator<dim, Number>::integrate(MatrixFree<dim, Number> const & 
   energy /= volume;
   enstrophy /= volume;
   dissipation /= volume;
+
+  max_vorticity = Utilities::MPI::max(dst.at(4), MPI_COMM_WORLD);
 
   return volume;
 }
@@ -131,10 +137,11 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
 {
   CellIntegrator<dim, dim, Number> fe_eval(matrix_free, dof_index, quad_index);
 
-  Number volume      = 0.;
-  Number energy      = 0.;
-  Number enstrophy   = 0.;
-  Number dissipation = 0.;
+  Number volume        = 0.;
+  Number energy        = 0.;
+  Number enstrophy     = 0.;
+  Number dissipation   = 0.;
+  Number max_vorticity = 0.;
 
   // Loop over all elements
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
@@ -143,10 +150,11 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
     fe_eval.read_dof_values(src);
     fe_eval.evaluate(true, true);
 
-    scalar volume_vec      = make_vectorized_array<Number>(0.);
-    scalar energy_vec      = make_vectorized_array<Number>(0.);
-    scalar enstrophy_vec   = make_vectorized_array<Number>(0.);
-    scalar dissipation_vec = make_vectorized_array<Number>(0.);
+    scalar volume_vec        = make_vectorized_array<Number>(0.);
+    scalar energy_vec        = make_vectorized_array<Number>(0.);
+    scalar enstrophy_vec     = make_vectorized_array<Number>(0.);
+    scalar dissipation_vec   = make_vectorized_array<Number>(0.);
+    scalar max_vorticity_vec = make_vectorized_array<Number>(0.);
 
     for(unsigned int q = 0; q < fe_eval.n_q_points; ++q)
     {
@@ -164,6 +172,8 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
       scalar norm_omega = omega * omega;
 
       enstrophy_vec += fe_eval.JxW(q) * make_vectorized_array<Number>(0.5) * norm_omega;
+
+      max_vorticity_vec = std::max(max_vorticity_vec, std::sqrt(norm_omega));
     }
 
     // sum over entries of VectorizedArray, but only over those
@@ -174,6 +184,8 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
       energy += energy_vec[v];
       enstrophy += enstrophy_vec[v];
       dissipation += dissipation_vec[v];
+
+      max_vorticity = std::max(max_vorticity, max_vorticity_vec[v]);
     }
   }
 
@@ -181,6 +193,7 @@ KineticEnergyCalculator<dim, Number>::cell_loop(
   dst.at(1) += energy;
   dst.at(2) += enstrophy;
   dst.at(3) += dissipation;
+  dst.at(4) = std::max(dst.at(4), max_vorticity);
 }
 
 template class KineticEnergyCalculator<2, float>;

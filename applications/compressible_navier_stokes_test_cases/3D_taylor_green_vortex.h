@@ -283,13 +283,13 @@ construct_postprocessor(CompNS::InputParameters const &param)
   pp_data.kinetic_energy_data.calculate = true;
   pp_data.kinetic_energy_data.calculate_every_time_steps = 1;
   pp_data.kinetic_energy_data.viscosity = DYN_VISCOSITY/RHO_0;
-  pp_data.kinetic_energy_data.filename_prefix = OUTPUT_FOLDER + FILENAME;
+  pp_data.kinetic_energy_data.filename = OUTPUT_FOLDER + FILENAME;
 
   // kinetic energy spectrum
   pp_data.kinetic_energy_spectrum_data.calculate = true;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_steps = -1;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
-  pp_data.kinetic_energy_spectrum_data.filename_prefix = OUTPUT_FOLDER + "spectrum_" + FILENAME;
+  pp_data.kinetic_energy_spectrum_data.filename = OUTPUT_FOLDER + "spectrum_" + FILENAME;
   pp_data.kinetic_energy_spectrum_data.degree = param.degree;
   pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree+1)*1;
   pp_data.kinetic_energy_spectrum_data.output_tolerance = 1.e-12;

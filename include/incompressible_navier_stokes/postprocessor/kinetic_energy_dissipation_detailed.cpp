@@ -57,10 +57,10 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
 {
   if((time_step_number - 1) % this->data.calculate_every_time_steps == 0)
   {
-    Number kinetic_energy = 1.0, enstrophy = 1.0, dissipation = 1.0;
+    Number kinetic_energy = 0.0, enstrophy = 0.0, dissipation = 0.0, max_vorticity = 0.0;
 
-    Number volume =
-      this->integrate(*this->matrix_free, velocity, kinetic_energy, enstrophy, dissipation);
+    Number volume = this->integrate(
+      *this->matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
 
     AssertThrow(navier_stokes_operator != nullptr, ExcMessage("Invalid pointer."));
     Number dissipation_convective =
@@ -77,7 +77,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
     {
       // clang-format off
       std::ostringstream filename;
-      filename << this->data.filename_prefix;
+      filename << this->data.filename;
 
       std::ofstream f;
       if(this->clear_files == true)
@@ -92,7 +92,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
           << "Dissipation continuity penalty term: eps_conti = 1/V * a_C(u,u)_Omega, where V=(1,1)_Omega" << std::endl;
 
         f << std::endl
-          << "  Time                Kin. energy         dissipation         enstrophy           convective          viscous             divergence          continuity"
+          << "  Time                Kin. energy         dissipation         enstrophy           max_vorticity       convective          viscous             divergence          continuity"
           << std::endl;
 
         this->clear_files = false;
@@ -108,6 +108,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
         << std::setw(precision + 8) << kinetic_energy
         << std::setw(precision + 8) << dissipation
         << std::setw(precision + 8) << enstrophy
+        << std::setw(precision + 8) << max_vorticity
         << std::setw(precision + 8) << dissipation_convective
         << std::setw(precision + 8) << dissipation_viscous
         << std::setw(precision + 8) << dissipation_divergence
