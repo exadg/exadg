@@ -68,7 +68,7 @@ public:
    * Set the time step size.
    */
   virtual void
-  set_time_step_size(double const & time_step_size) = 0;
+  set_current_time_step_size(double const & time_step_size) = 0;
 
   /*
    * Get the current time t_{n}.

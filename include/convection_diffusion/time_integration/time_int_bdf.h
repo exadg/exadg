@@ -49,6 +49,17 @@ public:
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
                            std::vector<double> const &             times_in);
 
+  void
+  extrapolate_solution(VectorType & vector)
+  {
+    // make sure that the time integrator constants are up-to-date
+    this->update_time_integrator_constants();
+
+    vector.equ(this->extra.get_beta(0), this->solution[0]);
+    for(unsigned int i = 1; i < solution.size(); ++i)
+      vector.add(this->extra.get_beta(i), this->solution[i]);
+  }
+
 private:
   void
   allocate_vectors();
@@ -62,7 +73,7 @@ private:
   void
   initialize_vec_convective_term();
 
-  void
+  double
   calculate_time_step_size();
 
   double

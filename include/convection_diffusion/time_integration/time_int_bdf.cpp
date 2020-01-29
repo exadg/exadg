@@ -187,15 +187,16 @@ TimeIntBDF<Number>::initialize_vec_convective_term()
 }
 
 template<typename Number>
-void
+double
 TimeIntBDF<Number>::calculate_time_step_size()
 {
+  double time_step = 1.0;
+
   unsigned int const degree = pde_operator->get_polynomial_degree();
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    double const time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
-    this->set_time_step_size(time_step);
+    time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
 
     this->pcout << "Calculation of time step size (user-specified):" << std::endl << std::endl;
     print_parameter(this->pcout, "time step size", time_step);
@@ -205,8 +206,6 @@ TimeIntBDF<Number>::calculate_time_step_size()
     AssertThrow(param.equation_type == EquationType::Convection ||
                   param.equation_type == EquationType::ConvectionDiffusion,
                 ExcMessage("Specified type of time step calculation does not make sense!"));
-
-    double time_step = 1.0;
 
     double const h_min = pde_operator->calculate_minimum_element_length();
 
@@ -263,20 +262,16 @@ TimeIntBDF<Number>::calculate_time_step_size()
                   << std::endl;
       print_parameter(this->pcout, "Time step size", time_step);
     }
-
-    this->set_time_step_size(time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
     // calculate minimum vertex distance
     double const h_min = pde_operator->calculate_minimum_element_length();
 
-    double time_step = calculate_time_step_max_efficiency(
+    time_step = calculate_time_step_max_efficiency(
       param.c_eff, h_min, degree, this->order, param.dt_refinements);
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
-
-    this->set_time_step_size(time_step);
 
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
@@ -301,6 +296,8 @@ TimeIntBDF<Number>::calculate_time_step_size()
     this->pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
     print_parameter(this->pcout, "CFL (OIF)", cfl_oif);
   }
+
+  return time_step;
 }
 
 template<typename Number>

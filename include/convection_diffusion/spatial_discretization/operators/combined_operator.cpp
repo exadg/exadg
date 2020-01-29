@@ -55,14 +55,16 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
-  convective_kernel.set_velocity_copy(velocity);
+  if(this->data.convective_problem)
+    convective_kernel.set_velocity_copy(velocity);
 }
 
 template<int dim, typename Number>
 void
 Operator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
-  convective_kernel.set_velocity_ptr(velocity);
+  if(this->data.convective_problem)
+    convective_kernel.set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>

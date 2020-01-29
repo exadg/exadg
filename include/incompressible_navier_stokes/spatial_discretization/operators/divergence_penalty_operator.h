@@ -48,7 +48,9 @@ struct DivergencePenaltyKernelData
     : type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
       viscosity(0.0),
       degree(1),
-      penalty_factor(1.0)
+      penalty_factor(1.0),
+      buoyancy_term(false),
+      characteristic_velocity_buoyancy_term(1.0)
   {
   }
 
@@ -63,6 +65,12 @@ struct DivergencePenaltyKernelData
 
   // the penalty term can be scaled by 'penalty_factor'
   double penalty_factor;
+
+  // include buoyancy term in calculation of penalty factor
+  bool buoyancy_term;
+
+  // for the buoyancy term, a characteristic velocity has to be specified
+  double characteristic_velocity_buoyancy_term;
 };
 
 template<int dim, typename Number>
@@ -159,6 +167,9 @@ public:
           norm_U_mean += integrator.JxW(q) * integrator.get_value(q).norm();
         }
         norm_U_mean /= volume;
+
+        if(data.buoyancy_term)
+          norm_U_mean += data.characteristic_velocity_buoyancy_term;
 
         tau_convective =
           norm_U_mean * std::exp(std::log(volume) / (double)dim) / (double)(data.degree + 1);

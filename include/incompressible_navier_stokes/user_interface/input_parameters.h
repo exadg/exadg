@@ -112,7 +112,11 @@ public:
 
   // if the body force vector on the right-hand side of the momentum equation of the
   // Navier-Stokes equations is unequal zero, set right_hand_side = true
+  // This parameter also has to be true when considering the Boussinesq term.
   bool right_hand_side;
+
+  // Boussinesq term (natural convection through buoyancy forces)
+  bool boussinesq_term;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -141,7 +145,10 @@ public:
   // kinematic viscosity
   double viscosity;
 
-
+  // Boussinesg term
+  double               thermal_expansion_coefficient;
+  double               reference_temperature;
+  Tensor<1, 3, double> gravitational_force;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -328,6 +335,14 @@ public:
   // penalty factor of continuity penalty term
   double continuity_penalty_factor;
 
+  // Divergence and continuity penalty terms are applied in a postprocessing step
+  // if set to true.
+  // Otherwise, penalty terms are added to the monolithic systems of equations in case of
+  // the monolithic solver, or to the projection step in case of the dual splitting scheme.
+  // For the pressure-correction scheme, this parameter is irrelevant since the projection
+  // step is the last step of the splitting scheme anyway.
+  bool apply_penalty_terms_in_postprocessing_step;
+
   // specify which components of the velocity field to penalize, i.e., normal
   // components only or all components
   ContinuityPenaltyComponents continuity_penalty_components;
@@ -339,13 +354,12 @@ public:
   // type of penalty parameter (see enum declaration for more information)
   TypePenaltyParameter type_penalty_parameter;
 
-  // Divergence and continuity penalty terms are applied in a postprocessing step
-  // if set to true.
-  // Otherwise, penalty terms are added to the monolithic systems of equations in case of
-  // the monolithic solver, or to the projection step in case of the dual splitting scheme.
-  // For the pressure-correction scheme, this parameter is irrelevant since the projection
-  // step is the last step of the splitting scheme anyway.
-  bool apply_penalty_terms_in_postprocessing_step;
+  // include buoyancy term in penalty parameter
+  bool penalty_parameter_include_buoyancy_term;
+
+  // characteristic velocity related to buoyancy term (we typically choose gravitational
+  // acceleration g times characteristic length of domain in direction of g.
+  double characteristic_velocity_buoyancy_term;
 
 
   /**************************************************************************************/

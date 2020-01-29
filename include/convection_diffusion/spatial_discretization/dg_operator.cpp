@@ -786,18 +786,7 @@ DGOperator<dim, Number>::solve(VectorType &       sol,
                                double const       time,
                                VectorType const * velocity)
 {
-  combined_operator.set_scaling_factor_mass_matrix(scaling_factor);
-  combined_operator.set_time(time);
-
-  if(param.linear_system_including_convective_term_has_to_be_solved())
-  {
-    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    {
-      AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
-
-      combined_operator.set_velocity_ptr(*velocity);
-    }
-  }
+  update_conv_diff_operator(time, scaling_factor, velocity);
 
   unsigned int const iterations = iterative_solver->solve(sol, rhs, update_preconditioner);
 

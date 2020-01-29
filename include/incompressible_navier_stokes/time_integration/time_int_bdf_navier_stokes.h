@@ -131,7 +131,7 @@ private:
                               double const start_time,
                               double const time_step_size);
 
-  void
+  double
   calculate_time_step_size();
 
   double

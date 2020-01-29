@@ -333,9 +333,21 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
   // body force operator
   RHSOperatorData<dim> rhs_data;
-  rhs_data.dof_index     = dof_index_u;
-  rhs_data.quad_index    = quad_index_u;
-  rhs_data.kernel_data.f = field_functions->right_hand_side;
+  rhs_data.dof_index                   = dof_index_u;
+  rhs_data.dof_index_scalar            = dof_index_u_scalar;
+  rhs_data.quad_index                  = quad_index_u;
+  rhs_data.kernel_data.f               = field_functions->right_hand_side;
+  rhs_data.kernel_data.boussinesq_term = param.boussinesq_term;
+  if(param.boussinesq_term)
+  {
+    rhs_data.kernel_data.thermal_expansion_coefficient = param.thermal_expansion_coefficient;
+    rhs_data.kernel_data.reference_temperature         = param.reference_temperature;
+    Tensor<1, dim, double> g;
+    for(unsigned int d = 0; d < dim; ++d)
+      g[d] = param.gravitational_force[d];
+    rhs_data.kernel_data.gravitational_force = g;
+  }
+
   rhs_operator.reinit(matrix_free, rhs_data);
 
   // gradient operator
@@ -390,6 +402,9 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     div_penalty_data.viscosity              = param.viscosity;
     div_penalty_data.degree                 = param.degree_u;
     div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
+    div_penalty_data.buoyancy_term          = param.penalty_parameter_include_buoyancy_term;
+    div_penalty_data.characteristic_velocity_buoyancy_term =
+      param.characteristic_velocity_buoyancy_term;
 
     div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
     div_penalty_kernel->reinit(matrix_free,
@@ -415,6 +430,8 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     kernel_data.viscosity              = param.viscosity;
     kernel_data.degree                 = param.degree_u;
     kernel_data.penalty_factor         = param.continuity_penalty_factor;
+    kernel_data.buoyancy_term          = param.penalty_parameter_include_buoyancy_term;
+    kernel_data.characteristic_velocity_buoyancy_term = param.characteristic_velocity_buoyancy_term;
 
     conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
     conti_penalty_kernel->reinit(matrix_free,
@@ -977,6 +994,15 @@ DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressu
     vec_temp2.local_element(i) = 1.;
 
   pressure.add(exact - current, vec_temp2);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::set_temperature(VectorType const & temperature)
+{
+  AssertThrow(param.boussinesq_term, ExcMessage("Invalid parameters detected."));
+
+  rhs_operator.set_temperature(temperature);
 }
 
 template<int dim, typename Number>

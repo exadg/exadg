@@ -61,9 +61,10 @@ using namespace dealii;
 // specify the test case that has to be solved
 
 // template
-#include "incompressible_flow_with_transport_test_cases/template.h"
+//#include "incompressible_flow_with_transport_test_cases/template.h"
 
 //#include "incompressible_flow_with_transport_test_cases/cavity.h"
+#include "incompressible_flow_with_transport_test_cases/natural_convection.h"
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
 template<typename Number>
@@ -150,7 +151,7 @@ private:
   typedef IncNS::DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
   typedef IncNS::DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
 
-  std::shared_ptr<DGBase> navier_stokes_operation;
+  std::shared_ptr<DGBase> navier_stokes_operator;
 
   typedef IncNS::PostProcessorBase<dim, Number> Postprocessor;
 
@@ -174,6 +175,8 @@ private:
   std::vector<std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>> scalar_postprocessor;
 
   std::vector<std::shared_ptr<TimeIntBase>> scalar_time_integrator;
+
+  mutable LinearAlgebra::distributed::Vector<Number> temperature;
 
   /*
    * Computation time (wall clock time).
@@ -299,47 +302,47 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   // initialize postprocessor
   fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param);
 
-  // initialize navier_stokes_operation
+  // initialize navier_stokes_operator
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
-    std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
+    std::shared_ptr<DGCoupled> navier_stokes_operator_coupled;
 
-    navier_stokes_operation_coupled.reset(
+    navier_stokes_operator_coupled.reset(
       new DGCoupled(*triangulation, fluid_param, fluid_postprocessor));
 
-    navier_stokes_operation = navier_stokes_operation_coupled;
+    navier_stokes_operator = navier_stokes_operator_coupled;
 
-    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operation_coupled,
-                                                   navier_stokes_operation_coupled,
+    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
+                                                   navier_stokes_operator_coupled,
                                                    fluid_param));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
   {
-    std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
+    std::shared_ptr<DGDualSplitting> navier_stokes_operator_dual_splitting;
 
-    navier_stokes_operation_dual_splitting.reset(
+    navier_stokes_operator_dual_splitting.reset(
       new DGDualSplitting(*triangulation, fluid_param, fluid_postprocessor));
 
-    navier_stokes_operation = navier_stokes_operation_dual_splitting;
+    navier_stokes_operator = navier_stokes_operator_dual_splitting;
 
-    fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting,
-                                                         navier_stokes_operation_dual_splitting,
+    fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
+                                                         navier_stokes_operator_dual_splitting,
                                                          fluid_param));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
   {
-    std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
+    std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
 
-    navier_stokes_operation_pressure_correction.reset(
+    navier_stokes_operator_pressure_correction.reset(
       new DGPressureCorrection(*triangulation, fluid_param, fluid_postprocessor));
 
-    navier_stokes_operation = navier_stokes_operation_pressure_correction;
+    navier_stokes_operator = navier_stokes_operator_pressure_correction;
 
     fluid_time_integrator.reset(
-      new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction,
-                                    navier_stokes_operation_pressure_correction,
+      new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
+                                    navier_stokes_operator_pressure_correction,
                                     fluid_param));
   }
   else
@@ -347,18 +350,18 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
-  navier_stokes_operation->setup(periodic_faces,
-                                 fluid_boundary_descriptor_velocity,
-                                 fluid_boundary_descriptor_pressure,
-                                 fluid_field_functions);
+  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
+  navier_stokes_operator->setup(periodic_faces,
+                                fluid_boundary_descriptor_velocity,
+                                fluid_boundary_descriptor_pressure,
+                                fluid_field_functions);
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers
   // depends on quantities such as the time_step_size or gamma0!!!)
   fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
-  navier_stokes_operation->setup_solvers(
+  navier_stokes_operator->setup_solvers(
     fluid_time_integrator->get_scaling_factor_time_derivative_term(),
     fluid_time_integrator->get_velocity());
 
@@ -406,6 +409,25 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                   ExcMessage("Specified time integration scheme is not implemented!"));
     }
 
+    if(scalar_param[i].restarted_simulation == false)
+    {
+      // The parameter start_with_low_order has to be true.
+      // This is due to the fact that the setup function of the time integrator initializes
+      // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
+      // start_with_low_order == false. However, the combined time step size
+      // is not known at this point since we have to first communicate the time step size
+      // in order to find the minimum time step size. Overwriting the time step size would
+      // imply that the time step sizes are non constant for a time integrator, but the
+      // time integration constants are initialized based on the assumption of constant
+      // time step size. Hence, the easiest way to avoid these kind of
+      // inconsistencies is to preclude the case start_with_low_order == false.
+      // In case of a restart, start_with_low_order = false is possible since it has been
+      // enforced that all previous time steps are identical for fluid and scalar transport.
+      AssertThrow(fluid_param.start_with_low_order == true &&
+                    scalar_param[i].start_with_low_order == true,
+                  ExcMessage("start_with_low_order has to be true for this solver."));
+    }
+
     scalar_time_integrator[i]->setup(scalar_param[i].restarted_simulation);
 
     // adaptive time stepping
@@ -418,17 +440,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
       use_adaptive_time_stepping = true;
     }
-
-    // The parameter start_with_low_order has to be true.
-    // This is due to the fact that the setup function of the time integrator initializes
-    // the solution at previous time instants t_0 - dt, t_0 - 2*dt, ... in case of
-    // start_with_low_order == false. However, the combined time step size
-    // is not known at this point since we have to first communicate the time step size
-    // in order to find the minimum time step size. Hence, the easiest way to avoid these kind of
-    // inconsistencies is to preclude the case start_with_low_order == false.
-    AssertThrow(fluid_param.start_with_low_order == true &&
-                  scalar_param[i].start_with_low_order == true,
-                ExcMessage("start_with_low_order has to be true for this solver."));
 
     // setup solvers in case of BDF time integration (solution of linear systems of equations)
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
@@ -450,6 +461,11 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
       conv_diff_operator[i]->setup_operators_and_solver(scaling_factor, velocity);
     }
   }
+
+  // Boussinesq term
+  // assume that the first scalar quantity with index 0 is the active scalar coupled to
+  // the incompressible Navier-Stokes equations via the Boussinesq term
+  conv_diff_operator[0]->initialize_dof_vector(temperature);
 
   setup_time = timer.wall_time();
 }
@@ -518,12 +534,12 @@ Problem<dim, Number>::synchronize_time_step_size() const
   // Set the same time step size for both solvers
 
   // fluid
-  fluid_time_integrator->set_time_step_size(time_step_size);
+  fluid_time_integrator->set_current_time_step_size(time_step_size);
 
   // scalar transport
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    scalar_time_integrator[i]->set_time_step_size(time_step_size);
+    scalar_time_integrator[i]->set_current_time_step_size(time_step_size);
   }
 }
 
@@ -547,6 +563,17 @@ Problem<dim, Number>::run_timeloop() const
 
   while(!finished_fluid || !finished_all_scalars)
   {
+    if(fluid_param.boussinesq_term)
+    {
+      // assume that the first scalar quantity with index 0 is the active scalar coupled to
+      // the incompressible Navier-Stokes equations via the Boussinesq term
+      std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
+        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[0]);
+      scalar_time_integrator_BDF->extrapolate_solution(temperature);
+
+      navier_stokes_operator->set_temperature(temperature);
+    }
+
     // fluid: advance one time step
     finished_fluid = fluid_time_integrator->advance_one_timestep(!finished_fluid);
 
@@ -807,7 +834,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
 
   // Throughput in DoFs/s per time step per core
-  types::global_dof_index DoFs = this->navier_stokes_operation->get_number_of_dofs();
+  types::global_dof_index DoFs = this->navier_stokes_operator->get_number_of_dofs();
 
   for(unsigned int i = 0; i < n_scalars; ++i)
   {

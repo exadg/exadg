@@ -38,7 +38,7 @@ TimeIntExplRKBase<Number>::get_time_step_size() const
 
 template<typename Number>
 void
-TimeIntExplRKBase<Number>::set_time_step_size(double const & time_step_size)
+TimeIntExplRKBase<Number>::set_current_time_step_size(double const & time_step_size)
 {
   time_step = time_step_size;
 }
@@ -90,8 +90,7 @@ TimeIntExplRKBase<Number>::do_timestep(bool const do_write_output)
 
   if(adaptive_time_stepping == true)
   {
-    double const dt = recalculate_time_step_size();
-    this->set_time_step_size(dt);
+    this->time_step = recalculate_time_step_size();
   }
 
   if(this->restart_data.write_restart == true)

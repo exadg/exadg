@@ -59,22 +59,22 @@ public:
   {
     data = data_in;
 
-    if(data_in.velocity_type == TypeVelocityField::DoFVector)
+    if(data.velocity_type == TypeVelocityField::DoFVector)
     {
       integrator_velocity.reset(
-        new CellIntegratorVelocity(matrix_free, data_in.dof_index_velocity, quad_index));
+        new CellIntegratorVelocity(matrix_free, data.dof_index_velocity, quad_index));
 
       integrator_velocity_m.reset(
-        new FaceIntegratorVelocity(matrix_free, true, data_in.dof_index_velocity, quad_index));
+        new FaceIntegratorVelocity(matrix_free, true, data.dof_index_velocity, quad_index));
 
       integrator_velocity_p.reset(
-        new FaceIntegratorVelocity(matrix_free, false, data_in.dof_index_velocity, quad_index));
+        new FaceIntegratorVelocity(matrix_free, false, data.dof_index_velocity, quad_index));
 
       // use own storage of velocity vector only in case of multigrid
       if(is_mg)
       {
         velocity.reset();
-        matrix_free.initialize_dof_vector(velocity.own(), data_in.dof_index_velocity);
+        matrix_free.initialize_dof_vector(velocity.own(), data.dof_index_velocity);
       }
     }
   }

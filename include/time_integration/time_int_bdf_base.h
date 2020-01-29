@@ -77,7 +77,7 @@ public:
    * size.
    */
   void
-  set_time_step_size(double const & time_step_size);
+  set_current_time_step_size(double const & time_step_size);
 
   /*
    * Setup function where allocations/initializations are done. Calls another function
@@ -142,7 +142,7 @@ protected:
   /*
    * Calculate time step size.
    */
-  virtual void
+  virtual double
   calculate_time_step_size() = 0;
 
   /*
@@ -188,11 +188,11 @@ private:
   initialize_oif() = 0;
 
   /*
-   * Initializes the solution vectors by prescribing initial conditions are reading data from
-   * restart files and calculates the time step size.
+   * Initializes the solution vectors by prescribing initial conditions or reading data from
+   * restart files and initializes the time step size.
    */
   virtual void
-  initialize_solution_and_calculate_timestep(bool do_restart);
+  initialize_solution_and_time_step_size(bool do_restart);
 
   /*
    * Initializes the solution vectors at time t
