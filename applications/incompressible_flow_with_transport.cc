@@ -61,11 +61,16 @@ using namespace dealii;
 // specify the test case that has to be solved
 
 // template
-//#include "incompressible_flow_with_transport_test_cases/template.h"
+#include "incompressible_flow_with_transport_test_cases/template.h"
 
+// passive scalar
 //#include "incompressible_flow_with_transport_test_cases/cavity.h"
-#include "incompressible_flow_with_transport_test_cases/natural_convection.h"
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
+
+// natural convection (active scalar)
+//#include "incompressible_flow_with_transport_test_cases/cavity_natural_convection.h"
+//#include "incompressible_flow_with_transport_test_cases/rayleigh_bernard.h"
+//#include "incompressible_flow_with_transport_test_cases/rising_bubble.h"
 
 template<typename Number>
 class ProblemBase

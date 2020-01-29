@@ -56,7 +56,7 @@ double const THERMAL_DIFFUSIVITY = KINEMATIC_VISCOSITY / PRANDTL;
 
 // output
 bool const WRITE_OUTPUT = true;
-std::string const OUTPUT_FOLDER = "output_flow_with_transport/natural_convection/";
+std::string const OUTPUT_FOLDER = "output/natural_convection/";
 std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string const OUTPUT_NAME = "test";
 double const OUTPUT_START_TIME = START_TIME;
@@ -233,7 +233,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   // PHYSICAL QUANTITIES
   param.start_time = START_TIME;
   param.end_time = END_TIME;
-  param.diffusivity = KINEMATIC_VISCOSITY;
+  param.diffusivity = THERMAL_DIFFUSIVITY;
 
   // TEMPORAL DISCRETIZATION
   param.temporal_discretization = TemporalDiscretization::BDF;
