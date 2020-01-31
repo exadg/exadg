@@ -46,9 +46,9 @@ double const CFL = CFL_OIF;
 double const MAX_VELOCITY = 1.0;
 bool const ADAPTIVE_TIME_STEPPING = true;
 
-double const T_REF = 300.0;
 double const DELTA_T = 20.0;
 double const G = 10.0;
+double const BETA = 1.0/300.0;
 
 double const KINEMATIC_VISCOSITY = 1.0e-4;
 double const PRANDTL = 1.0;
@@ -84,8 +84,7 @@ void set_input_parameters(InputParameters &param)
   param.start_time = START_TIME;
   param.end_time = END_TIME;
   param.viscosity = KINEMATIC_VISCOSITY;
-  param.reference_temperature = T_REF;
-  param.thermal_expansion_coefficient = 1.0/param.reference_temperature;
+  param.thermal_expansion_coefficient = BETA;
   param.gravitational_force[0] = 0.0;
   param.gravitational_force[1] = -G;
   param.gravitational_force[2] = 0.0;
@@ -142,9 +141,6 @@ void set_input_parameters(InputParameters &param)
   param.continuity_penalty_use_boundary_data = true;
   param.apply_penalty_terms_in_postprocessing_step = true;
   param.type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  param.penalty_parameter_include_buoyancy_term = true;
-  param.characteristic_velocity_buoyancy_term = 20.0*std::sqrt(G*RIGHT);
-
 
   // NUMERICAL PARAMETERS
   param.implement_block_diagonal_preconditioner_matrix_free = false;
@@ -285,6 +281,9 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.solver = Solver::CG;
   param.solver_data = SolverData(1e4, 1.e-12, 1.e-6, 100);
   param.preconditioner = Preconditioner::InverseMassMatrix;
+  param.multigrid_data.type = MultigridType::pMG;
+  param.multigrid_data.p_sequence = PSequenceType::Bisect;
+  param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   param.update_preconditioner = false;
 
   // output of solver information
@@ -293,6 +292,8 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
 
   // NUMERICAL PARAMETERS
   param.use_combined_operator = true;
+  param.filter_solution = false;
+  param.use_overintegration = true;
 }
 }
 
@@ -411,8 +412,8 @@ set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boun
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
-  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ConstantFunction<dim>(T_REF)));
-  boundary_descriptor->dirichlet_bc.insert(pair(1,new Functions::ConstantFunction<dim>(T_REF+DELTA_T)));
+  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
+  boundary_descriptor->dirichlet_bc.insert(pair(1,new Functions::ConstantFunction<dim>(DELTA_T)));
 }
 
 template<int dim>
@@ -421,7 +422,7 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functi
 {
   (void)scalar_index; // only one scalar quantity considered
 
-  field_functions->initial_solution.reset(new Functions::ConstantFunction<dim>(T_REF));
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
 }

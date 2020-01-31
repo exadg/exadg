@@ -24,8 +24,8 @@ unsigned int const DIM = 2;
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
+unsigned int const REFINE_SPACE_MIN = 6;
+unsigned int const REFINE_SPACE_MAX = 6;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -45,10 +45,10 @@ double const MAX_VELOCITY = 1.0;
 bool const ADAPTIVE_TIME_STEPPING = true;
 
 double const G = 9.81;
-double const T_REF = 300;
-double const DELTA_T = 0.75; //TODO //0.5;
+double const BETA = 1.0/300.0;
+double const DELTA_T = 0.75;
 
-double const KINEMATIC_VISCOSITY = 1.0e-3;
+double const KINEMATIC_VISCOSITY = 1.0e-11;
 double const THERMAL_DIFFUSIVITY = KINEMATIC_VISCOSITY;
 
 // output
@@ -81,8 +81,7 @@ void set_input_parameters(InputParameters &param)
   param.start_time = START_TIME;
   param.end_time = END_TIME;
   param.viscosity = KINEMATIC_VISCOSITY;
-  param.reference_temperature = T_REF;
-  param.thermal_expansion_coefficient = 1.0/param.reference_temperature;
+  param.thermal_expansion_coefficient = BETA;
   param.gravitational_force[0] = 0.0;
   param.gravitational_force[1] = -G;
   param.gravitational_force[2] = 0.0;
@@ -139,8 +138,6 @@ void set_input_parameters(InputParameters &param)
   param.continuity_penalty_use_boundary_data = true;
   param.apply_penalty_terms_in_postprocessing_step = true;
   param.type_penalty_parameter = TypePenaltyParameter::ConvectiveTerm;
-  param.penalty_parameter_include_buoyancy_term = true;
-  param.characteristic_velocity_buoyancy_term = 400.0*std::sqrt(G*L);
 
   // NUMERICAL PARAMETERS
   param.implement_block_diagonal_preconditioner_matrix_free = false;
@@ -281,7 +278,11 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.solver = Solver::CG;
   param.solver_data = SolverData(1e4, 1.e-12, 1.e-6, 100);
   param.preconditioner = Preconditioner::InverseMassMatrix;
+  param.multigrid_data.type = MultigridType::pMG;
+  param.multigrid_data.p_sequence = PSequenceType::Bisect;
+  param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
   param.update_preconditioner = false;
+
 
   // output of solver information
   param.solver_info_data.print_to_screen = true;
@@ -289,6 +290,8 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
 
   // NUMERICAL PARAMETERS
   param.use_combined_operator = true;
+  param.filter_solution = false;
+  param.use_overintegration = true;
 }
 }
 
@@ -430,7 +433,7 @@ public:
     double const r_b = 0.25*L;
     double const factor = radius < r_b ? DELTA_T/2.0*(1+std::cos(numbers::PI*radius/r_b)) : 0.0;
 
-    return (T_REF + DELTA_T*factor);
+    return (DELTA_T*factor);
   }
 };
 
@@ -442,7 +445,7 @@ set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boun
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
-  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ConstantFunction<dim>(T_REF)));
+  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
 }
 
 template<int dim>
