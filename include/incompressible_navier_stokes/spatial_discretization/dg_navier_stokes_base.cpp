@@ -341,7 +341,6 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   if(param.boussinesq_term)
   {
     rhs_data.kernel_data.thermal_expansion_coefficient = param.thermal_expansion_coefficient;
-    rhs_data.kernel_data.reference_temperature         = param.reference_temperature;
     Tensor<1, dim, double> g;
     for(unsigned int d = 0; d < dim; ++d)
       g[d] = param.gravitational_force[d];
@@ -402,9 +401,6 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     div_penalty_data.viscosity              = param.viscosity;
     div_penalty_data.degree                 = param.degree_u;
     div_penalty_data.penalty_factor         = param.divergence_penalty_factor;
-    div_penalty_data.buoyancy_term          = param.penalty_parameter_include_buoyancy_term;
-    div_penalty_data.characteristic_velocity_buoyancy_term =
-      param.characteristic_velocity_buoyancy_term;
 
     div_penalty_kernel.reset(new Operators::DivergencePenaltyKernel<dim, Number>());
     div_penalty_kernel->reinit(matrix_free,
@@ -430,8 +426,6 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
     kernel_data.viscosity              = param.viscosity;
     kernel_data.degree                 = param.degree_u;
     kernel_data.penalty_factor         = param.continuity_penalty_factor;
-    kernel_data.buoyancy_term          = param.penalty_parameter_include_buoyancy_term;
-    kernel_data.characteristic_velocity_buoyancy_term = param.characteristic_velocity_buoyancy_term;
 
     conti_penalty_kernel.reset(new Operators::ContinuityPenaltyKernel<dim, Number>());
     conti_penalty_kernel->reinit(matrix_free,

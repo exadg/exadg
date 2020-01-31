@@ -93,14 +93,14 @@ public:
   initialize_operator(unsigned int const level)
   {
     // initialize pde_operator in a first step
-    std::shared_ptr<PDEOperator> pde_operator(new PDEOperator());
+    std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
 
-    pde_operator->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+    pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
     // initialize MGOperator which is a wrapper around the PDEOperator
-    std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator));
+    std::shared_ptr<MGOperator> mg_operator_level(new MGOperator(pde_operator_level));
 
-    return mg_operator;
+    return mg_operator_level;
   }
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
@@ -258,6 +258,62 @@ public:
     this->update_coarse_solver(data.operator_is_singular);
   }
 
+  // TODO
+  void
+  project_and_prolongate(VectorType & solution_fine) const
+  {
+    unsigned int smoothing_levels = std::min((unsigned int)1, this->n_levels - 1);
+
+    solution.resize(0, this->n_levels - 1);
+
+    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
+    VectorTypeMG         vector_fine;
+    VectorTypeMG const * vector_fine_ptr;
+    if(std::is_same<MultigridNumber, Number>::value)
+    {
+      vector_fine_ptr = reinterpret_cast<VectorTypeMG const *>(&solution_fine);
+    }
+    else
+    {
+      vector_fine     = solution_fine;
+      vector_fine_ptr = &vector_fine;
+    }
+
+    for(unsigned int level = this->fine_level - smoothing_levels; level <= this->fine_level;
+        ++level)
+    {
+      AssertThrow(this->get_operator(level).get() != 0, ExcMessage("invalid pointer"));
+      this->get_operator(level)->initialize_dof_vector(solution[level]);
+      if(level == this->fine_level)
+        solution[level] = *vector_fine_ptr;
+    }
+
+    do_project_and_prolongate(this->operators.max_level(), smoothing_levels);
+
+    solution_fine = solution[this->operators.max_level()];
+  }
+
+  void
+  do_project_and_prolongate(unsigned int const level, unsigned int const smoothing_levels) const
+  {
+    // call coarse grid solver
+    if(level == this->fine_level - smoothing_levels)
+    {
+      // do nothing
+
+      return;
+    }
+
+    // restriction
+    this->transfers.interpolate(level, solution[level - 1], solution[level]);
+
+    // coarse grid correction
+    do_project_and_prolongate(level - 1, smoothing_levels);
+
+    // prolongation
+    this->transfers.prolongate(level, solution[level], solution[level - 1]);
+  }
+
 private:
   /*
    *  This function updates mg_matrices
@@ -338,7 +394,7 @@ private:
   }
 
   std::shared_ptr<PDEOperator>
-  get_operator(unsigned int level)
+  get_operator(unsigned int level) const
   {
     std::shared_ptr<MGOperator> mg_operator =
       std::dynamic_pointer_cast<MGOperator>(this->operators[level]);
@@ -357,6 +413,9 @@ private:
   PDEOperatorNumber const * pde_operator;
 
   MultigridOperatorType mg_operator_type;
+
+  // TODO
+  mutable MGLevelObject<VectorTypeMG> solution;
 };
 
 } // namespace ConvDiff

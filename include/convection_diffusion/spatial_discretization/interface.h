@@ -82,6 +82,10 @@ public:
   virtual void
   project_velocity(VectorType & velocity, double const time) const = 0;
 
+  // TODO
+  virtual void
+  filter_solution(VectorType & solution) const = 0;
+
   // time integration: prescribe initial conditions
   virtual void
   prescribe_initial_conditions(VectorType & src, double const evaluation_time) const = 0;

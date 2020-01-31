@@ -22,8 +22,7 @@ namespace Operators
 template<int dim>
 struct RHSKernelData
 {
-  RHSKernelData()
-    : boussinesq_term(false), thermal_expansion_coefficient(1.0), reference_temperature(0.0)
+  RHSKernelData() : boussinesq_term(false), thermal_expansion_coefficient(1.0)
   {
   }
 
@@ -32,7 +31,6 @@ struct RHSKernelData
   // Boussinesq term
   bool                   boussinesq_term;
   double                 thermal_expansion_coefficient;
-  double                 reference_temperature;
   Tensor<1, dim, double> gravitational_force;
 };
 
@@ -81,10 +79,8 @@ public:
 
     if(data.boussinesq_term)
     {
-      scalar T      = integrator_temperature.get_value(q);
-      scalar T_ref  = make_vectorized_array<Number>(data.reference_temperature);
-      scalar factor = 1.0 - data.thermal_expansion_coefficient * (T - T_ref);
-      flux += factor * data.gravitational_force;
+      scalar delta_T = integrator_temperature.get_value(q);
+      flux += data.gravitational_force * (1.0 - data.thermal_expansion_coefficient * delta_T);
     }
 
     return flux;

@@ -34,7 +34,6 @@ InputParameters::InputParameters()
     end_time(-1.),
     viscosity(-1.),
     thermal_expansion_coefficient(1.0),
-    reference_temperature(0.0),
     gravitational_force(Tensor<1, 3, double>({0.0, 0.0, 0.0})),
 
     // TEMPORAL DISCRETIZATION
@@ -117,8 +116,6 @@ InputParameters::InputParameters()
     continuity_penalty_components(ContinuityPenaltyComponents::Normal),
     continuity_penalty_use_boundary_data(false),
     type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
-    penalty_parameter_include_buoyancy_term(false),
-    characteristic_velocity_buoyancy_term(1.0),
 
     // TURBULENCE
     use_turbulence_model(false),
@@ -625,7 +622,6 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout
   if(boussinesq_term)
   {
     print_parameter(pcout, "Thermal expansion coefficient", thermal_expansion_coefficient);
-    print_parameter(pcout, "Reference temperature", reference_temperature);
     print_parameter(pcout, "Gravitational acceleration", gravitational_force.norm());
   }
 }
@@ -787,12 +783,6 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
   if(use_divergence_penalty == true || use_continuity_penalty == true)
   {
     print_parameter(pcout, "Type of penalty parameter", enum_to_string(type_penalty_parameter));
-    print_parameter(pcout,
-                    "Include buoyancy term in penalty parameter",
-                    penalty_parameter_include_buoyancy_term);
-    print_parameter(pcout,
-                    "Characteristic velocity buoyancy term",
-                    characteristic_velocity_buoyancy_term);
   }
 }
 

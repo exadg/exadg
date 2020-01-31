@@ -486,6 +486,13 @@ TimeIntBDF<Number>::solve_timestep()
   iterations += N_iter;
   wall_time += timer.wall_time();
 
+  // TODO: implement filtering as a separate module
+  // filtering is currently based on multigrid implementation and can therefore
+  // only be used in combination with semi-implicit BDF time integration and
+  // multigrid preconditioner
+  if(param.filter_solution)
+    pde_operator->filter_solution(solution_np);
+
   // write output
   if(print_solver_info())
   {

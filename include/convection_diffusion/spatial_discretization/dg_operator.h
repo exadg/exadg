@@ -58,7 +58,7 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::TriangulationBase<dim> const &            triangulation,
+  DGOperator(parallel::TriangulationBase<dim> const &        triangulation,
              InputParameters const &                         param_in,
              std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in);
 
@@ -261,6 +261,10 @@ public:
   do_postprocessing(VectorType const & solution,
                     double const       time             = 0.0,
                     int const          time_step_number = -1) const;
+
+  // TODO: implement filtering as a separate module
+  void
+  filter_solution(VectorType & solution) const;
 
 private:
   /*

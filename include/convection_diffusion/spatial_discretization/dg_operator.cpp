@@ -154,8 +154,17 @@ DGOperator<dim, Number>::initialize_matrix_free()
     constraint_vec[1] = &constraint_dummy;
 
     std::vector<Quadrature<1>> quadrature_vec;
-    quadrature_vec.resize(1);
-    quadrature_vec[0] = QGauss<1>(param.degree + 1);
+    if(param.use_overintegration)
+    {
+      quadrature_vec.resize(2);
+      quadrature_vec[0] = QGauss<1>(param.degree + 1);
+      quadrature_vec[1] = QGauss<1>(param.degree + (param.degree + 2) / 2);
+    }
+    else
+    {
+      quadrature_vec.resize(1);
+      quadrature_vec[0] = QGauss<1>(param.degree + 1);
+    }
 
     matrix_free.reinit(*mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
   }
@@ -208,7 +217,7 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
 
   ConvectiveOperatorData<dim> convective_operator_data;
   convective_operator_data.dof_index            = 0;
-  convective_operator_data.quad_index           = 0;
+  convective_operator_data.quad_index           = param.use_overintegration ? 1 : 0;
   convective_operator_data.bc                   = boundary_descriptor;
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -250,8 +259,6 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
 
   // merged operator
   OperatorData<dim> combined_operator_data;
-  combined_operator_data.dof_index            = 0;
-  combined_operator_data.quad_index           = 0;
   combined_operator_data.bc                   = boundary_descriptor;
   combined_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   combined_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -300,6 +307,10 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
 
   combined_operator_data.convective_kernel_data = convective_kernel_data;
   combined_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
+
+  combined_operator_data.dof_index = 0;
+  combined_operator_data.quad_index =
+    (param.use_overintegration && combined_operator_data.convective_problem) ? 1 : 0;
 
   combined_operator.reinit(matrix_free, constraint_matrix, combined_operator_data);
 
@@ -878,6 +889,19 @@ DGOperator<dim, Number>::do_postprocessing(VectorType const & solution,
                                            int const          time_step_number) const
 {
   postprocessor->do_postprocessing(solution, time, time_step_number);
+}
+
+// TODO: implement filtering as a separate module
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::filter_solution(VectorType & solution) const
+{
+  typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+
+  std::shared_ptr<MULTIGRID> mg_preconditioner =
+    std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+  if(mg_preconditioner.get() != 0)
+    mg_preconditioner->project_and_prolongate(solution);
 }
 
 template<int dim, typename Number>

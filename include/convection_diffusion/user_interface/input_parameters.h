@@ -301,6 +301,12 @@ public:
   // with an implicit treatment of the convective term, i.e., in cases where the convective
   // term has to be evaluated more than once at a given time t.
   bool store_analytical_velocity_in_dof_vector;
+
+  // filter solution after each time step
+  bool filter_solution;
+
+  // use 3/2 overintegration rule for convective term
+  bool use_overintegration;
 };
 
 } // namespace ConvDiff

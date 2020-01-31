@@ -147,7 +147,6 @@ public:
 
   // Boussinesg term
   double               thermal_expansion_coefficient;
-  double               reference_temperature;
   Tensor<1, 3, double> gravitational_force;
 
   /**************************************************************************************/
@@ -353,14 +352,6 @@ public:
 
   // type of penalty parameter (see enum declaration for more information)
   TypePenaltyParameter type_penalty_parameter;
-
-  // include buoyancy term in penalty parameter
-  bool penalty_parameter_include_buoyancy_term;
-
-  // characteristic velocity related to buoyancy term (we typically choose gravitational
-  // acceleration g times characteristic length of domain in direction of g.
-  double characteristic_velocity_buoyancy_term;
-
 
   /**************************************************************************************/
   /*                                                                                    */
