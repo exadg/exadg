@@ -50,6 +50,15 @@ public:
    * Perform only one time step (which is used when coupling different solvers, equations, etc.).
    */
   bool
+  advance_one_timestep_pre_solve();
+
+  void
+  advance_one_timestep_solve();
+
+  void
+  advance_one_timestep_post_solve(bool write_final_output);
+
+  bool
   advance_one_timestep(bool write_final_output);
 
   /*
@@ -86,8 +95,17 @@ public:
    * Do one time step including different updates before and after the actual solution of the
    * current time step.
    */
+  void
+  do_timestep(bool const do_write_output = true);
+
   virtual void
-  do_timestep(bool const do_write_output = true) = 0;
+  do_timestep_pre_solve() = 0;
+
+  virtual void
+  solve_timestep() = 0;
+
+  virtual void
+  do_timestep_post_solve(bool const do_write_output = true) = 0;
 
   /*
    * Postprocessing of solution.
@@ -193,6 +211,13 @@ private:
    */
   virtual void
   do_read_restart(std::ifstream & in) = 0;
+
+  /*
+   * Variables that store the current status of the time integrator. These variables are needed
+   * when coupling solvers in a partitioned way or when simultaneously integrating in time on
+   * several domains with different start and end times for the different domains.
+   */
+  bool started, finished;
 };
 
 

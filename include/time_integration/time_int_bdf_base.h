@@ -110,8 +110,11 @@ protected:
    * Do one time step including different updates before and after the actual solution of the
    * current time step.
    */
+  virtual void
+  do_timestep_pre_solve();
+
   void
-  do_timestep(bool const do_write_output = true);
+  do_timestep_post_solve(bool const do_write_output);
 
   /*
    * Update the time integrator constants.

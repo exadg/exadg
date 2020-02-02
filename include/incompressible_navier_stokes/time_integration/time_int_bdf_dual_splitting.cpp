@@ -250,6 +250,13 @@ TimeIntBDFDualSplitting<Number>::get_velocity() const
 
 template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFDualSplitting<Number>::get_velocity_np() const
+{
+  return velocity_np;
+}
+
+template<typename Number>
+LinearAlgebra::distributed::Vector<Number> const &
 TimeIntBDFDualSplitting<Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
@@ -341,8 +348,10 @@ TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
 
 template<typename Number>
 void
-TimeIntBDFDualSplitting<Number>::do_solve_timestep()
+TimeIntBDFDualSplitting<Number>::solve_timestep()
 {
+  this->output_solver_info_header();
+
 #ifndef EXTRAPOLATE_ACCELERATION
   // pre-computations
   if(this->param.store_previous_boundary_values)

@@ -71,7 +71,7 @@ private:
   write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
 
   void
-  do_solve_timestep();
+  solve_timestep() override;
 
   void
   allocate_vectors() override;
@@ -129,6 +129,9 @@ private:
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
+
+  LinearAlgebra::distributed::Vector<Number> const &
+  get_velocity_np() const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity(unsigned int i /* t_{n-i} */) const;

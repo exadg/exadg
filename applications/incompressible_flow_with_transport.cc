@@ -71,6 +71,7 @@ using namespace dealii;
 //#include "incompressible_flow_with_transport_test_cases/cavity_natural_convection.h"
 //#include "incompressible_flow_with_transport_test_cases/rayleigh_bernard.h"
 //#include "incompressible_flow_with_transport_test_cases/rising_bubble.h"
+//#include "incompressible_flow_with_transport_test_cases/mantle_convection.h"
 
 template<typename Number>
 class ProblemBase
@@ -454,14 +455,9 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
       double const scaling_factor =
         scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term();
 
-      // To initialize solvers and preconditioners for the convection-diffusion problem,
-      // a numerical velocity field has to be provided.
-      std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
-      std::vector<double>                                             times;
-      fluid_time_integrator->get_velocities_and_times(velocities, times);
-
-      AssertThrow(times[0] == fluid_time_integrator->get_time(), ExcMessage("Logical error."));
-      LinearAlgebra::distributed::Vector<Number> const * velocity = velocities[0];
+      LinearAlgebra::distributed::Vector<Number> vector;
+      navier_stokes_operator->initialize_vector_velocity(vector);
+      LinearAlgebra::distributed::Vector<Number> const * velocity = &vector;
 
       conv_diff_operator[i]->setup_operators_and_solver(scaling_factor, velocity);
     }
@@ -568,51 +564,80 @@ Problem<dim, Number>::run_timeloop() const
 
   while(!finished_fluid || !finished_all_scalars)
   {
-    if(fluid_param.boussinesq_term)
-    {
-      // assume that the first scalar quantity with index 0 is the active scalar coupled to
-      // the incompressible Navier-Stokes equations via the Boussinesq term
-      std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
-        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[0]);
-      scalar_time_integrator_BDF->extrapolate_solution(temperature);
-
-      navier_stokes_operator->set_temperature(temperature);
-    }
-
-    // fluid: advance one time step
-    finished_fluid = fluid_time_integrator->advance_one_timestep(!finished_fluid);
-
-    // At this point, we need to communicate between fluid solver and scalar transport solver, i.e.,
-    // ask the fluid solver for the velocity field and hand it over to the scalar transport solver
-    std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
-    std::vector<double>                                             times;
-    fluid_time_integrator->get_velocities_and_times(velocities, times);
+    /*
+     * pre solve
+     */
+    finished_fluid = fluid_time_integrator->advance_one_timestep_pre_solve();
 
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+      finished_scalar[i] = scalar_time_integrator[i]->advance_one_timestep_pre_solve();
+    }
+
+
+    /*
+     * partitioned iteration
+     */
+    unsigned int const iter_max = 1;
+    for(unsigned int iter = 0; iter < iter_max; ++iter)
+    {
+      if(fluid_param.boussinesq_term)
       {
-        std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> time_int_scalar =
-          std::dynamic_pointer_cast<ConvDiff::TimeIntExplRK<Number>>(scalar_time_integrator[i]);
-        time_int_scalar->set_velocities_and_times(velocities, times);
+        // assume that the first scalar quantity with index 0 is the active scalar coupled to
+        // the incompressible Navier-Stokes equations via the Boussinesq term
+        std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[0]);
+        scalar_time_integrator_BDF->extrapolate_solution(temperature);
+        navier_stokes_operator->set_temperature(temperature);
       }
-      else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+
+      // fluid: advance one time step
+      fluid_time_integrator->advance_one_timestep_solve();
+
+      // At this point, we need to communicate between fluid solver and scalar transport solver,
+      // i.e., ask the fluid solver for the velocity field and hand it over to the scalar transport
+      // solver
+      std::vector<LinearAlgebra::distributed::Vector<Number> const *> velocities;
+      std::vector<double>                                             times;
+      fluid_time_integrator->get_velocities_and_times_np(velocities, times);
+
+      for(unsigned int i = 0; i < n_scalars; ++i)
       {
-        std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_int_scalar =
-          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
-        time_int_scalar->set_velocities_and_times(velocities, times);
+        if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+        {
+          std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> time_int_scalar =
+            std::dynamic_pointer_cast<ConvDiff::TimeIntExplRK<Number>>(scalar_time_integrator[i]);
+          time_int_scalar->set_velocities_and_times(velocities, times);
+        }
+        else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+        {
+          std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_int_scalar =
+            std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+          time_int_scalar->set_velocities_and_times(velocities, times);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
       }
-      else
+
+      // scalar transport: advance one time step
+      for(unsigned int i = 0; i < n_scalars; ++i)
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
+        scalar_time_integrator[i]->advance_one_timestep_solve();
       }
     }
 
-    // scalar transport: advance one time step
+    /*
+     * post solve
+     */
+    fluid_time_integrator->advance_one_timestep_post_solve(!finished_fluid);
+
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      finished_scalar[i] = scalar_time_integrator[i]->advance_one_timestep(!finished_scalar[i]);
+      scalar_time_integrator[i]->advance_one_timestep_post_solve(!finished_scalar[i]);
     }
+
 
     if(use_adaptive_time_stepping == true)
     {

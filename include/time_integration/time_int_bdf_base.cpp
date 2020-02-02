@@ -223,16 +223,15 @@ TimeIntBDFBase<Number>::set_current_time_step_size(double const & time_step_size
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::do_timestep(bool const do_write_output)
+TimeIntBDFBase<Number>::do_timestep_pre_solve()
 {
   update_time_integrator_constants();
+}
 
-  output_solver_info_header();
-
-  solve_timestep();
-
-  output_remaining_time(do_write_output);
-
+template<typename Number>
+void
+TimeIntBDFBase<Number>::do_timestep_post_solve(bool const do_write_output)
+{
   prepare_vectors_for_next_timestep();
 
   time += time_steps[0];
@@ -248,6 +247,8 @@ TimeIntBDFBase<Number>::do_timestep(bool const do_write_output)
   {
     write_restart();
   }
+
+  output_remaining_time(do_write_output);
 }
 
 template<typename Number>

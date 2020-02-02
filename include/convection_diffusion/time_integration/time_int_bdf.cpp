@@ -387,6 +387,8 @@ template<typename Number>
 void
 TimeIntBDF<Number>::solve_timestep()
 {
+  this->output_solver_info_header();
+
   Timer timer;
   timer.restart();
 
@@ -407,7 +409,7 @@ TimeIntBDF<Number>::solve_timestep()
       }
       else
       {
-        AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12,
+        AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12 * param.end_time,
                     ExcMessage("Invalid assumption."));
 
         velocity_ptr = velocities[0];
@@ -427,7 +429,7 @@ TimeIntBDF<Number>::solve_timestep()
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      AssertThrow(std::abs(times[1] - this->get_time()) < 1.e-12,
+      AssertThrow(std::abs(times[1] - this->get_time()) < 1.e-12 * param.end_time,
                   ExcMessage("Invalid assumption."));
 
       pde_operator->evaluate_convective_term(vec_convective_term[0],

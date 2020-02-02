@@ -18,7 +18,9 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
     pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
     time_step_number(1),
     max_number_of_time_steps(max_number_of_time_steps_),
-    restart_data(restart_data_)
+    restart_data(restart_data_),
+    started(false),
+    finished(false)
 {
 }
 
@@ -42,9 +44,9 @@ TimeIntBase::timeloop()
 }
 
 bool
-TimeIntBase::advance_one_timestep(bool write_final_output)
+TimeIntBase::advance_one_timestep_pre_solve()
 {
-  bool started = time > (start_time - eps);
+  started = time > (start_time - eps);
 
   // If the time integrator has not yet started, simply increment physical time without solving the
   // current time step.
@@ -63,12 +65,32 @@ TimeIntBase::advance_one_timestep(bool write_final_output)
   }
 
   // check if we have reached the end of the time loop
-  bool finished = !(time < (end_time - eps) && time_step_number <= max_number_of_time_steps);
+  finished = !(time < (end_time - eps) && time_step_number <= max_number_of_time_steps);
 
   // advance one time step and perform postprocessing
   if(started && !finished)
   {
-    do_timestep();
+    do_timestep_pre_solve();
+  }
+
+  return finished;
+}
+
+void
+TimeIntBase::advance_one_timestep_solve()
+{
+  if(started && !finished)
+  {
+    solve_timestep();
+  }
+}
+
+void
+TimeIntBase::advance_one_timestep_post_solve(bool write_final_output)
+{
+  if(started && !finished)
+  {
+    do_timestep_post_solve();
 
     postprocessing();
   }
@@ -78,6 +100,16 @@ TimeIntBase::advance_one_timestep(bool write_final_output)
   {
     pcout << std::endl << "... done!" << std::endl;
   }
+}
+
+bool
+TimeIntBase::advance_one_timestep(bool write_final_output)
+{
+  advance_one_timestep_pre_solve();
+
+  advance_one_timestep_solve();
+
+  advance_one_timestep_post_solve(write_final_output);
 
   return finished;
 }
@@ -92,6 +124,16 @@ double
 TimeIntBase::get_number_of_time_steps() const
 {
   return this->get_time_step_number() - 1;
+}
+
+void
+TimeIntBase::do_timestep(bool const do_write_output)
+{
+  do_timestep_pre_solve();
+
+  solve_timestep();
+
+  do_timestep_post_solve(do_write_output);
 }
 
 unsigned int

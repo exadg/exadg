@@ -52,6 +52,10 @@ public:
   get_velocities_and_times(std::vector<VectorType const *> & velocities,
                            std::vector<double> &             times) const;
 
+  void
+  get_velocities_and_times_np(std::vector<VectorType const *> & velocities,
+                              std::vector<double> &             times) const;
+
   virtual void
   update_time_integrator_constants();
 
@@ -67,9 +71,6 @@ protected:
 
   virtual void
   write_restart_vectors(boost::archive::binary_oarchive & oa) const override;
-
-  void
-  solve_timestep();
 
   bool
   print_solver_info() const;
@@ -105,8 +106,8 @@ protected:
   double computation_time_ale_update;
 
 private:
-  virtual void
-  do_solve_timestep() = 0;
+  void
+  do_timestep_pre_solve() override;
 
   void
   ale_update();
@@ -142,6 +143,9 @@ private:
 
   virtual VectorType const &
   get_velocity(unsigned int i /* t_{n-i} */) const = 0;
+
+  virtual VectorType const &
+  get_velocity_np() const = 0;
 
   virtual VectorType const &
   get_pressure(unsigned int i /* t_{n-i} */) const = 0;

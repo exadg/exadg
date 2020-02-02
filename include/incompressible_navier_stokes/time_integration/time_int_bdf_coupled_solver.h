@@ -67,7 +67,7 @@ private:
   initialize_former_solutions();
 
   void
-  do_solve_timestep();
+  solve_timestep() override;
 
   void
   solve_steady_problem();
@@ -83,6 +83,9 @@ private:
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
+
+  LinearAlgebra::distributed::Vector<Number> const &
+  get_velocity_np() const;
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity(unsigned int i /* t_{n-i} */) const;
