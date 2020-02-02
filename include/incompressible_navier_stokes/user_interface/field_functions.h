@@ -39,6 +39,7 @@ struct FieldFunctions
    * the momentum equation of the incompressible Navier-Stokes equations.
    */
   std::shared_ptr<Function<dim>> right_hand_side;
+  std::shared_ptr<Function<dim>> gravitational_force; // Boussinesq term
 
   /*
    * A function that describes a mesh movement analytically and that is used in case of an

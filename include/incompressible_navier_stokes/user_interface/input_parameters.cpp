@@ -34,7 +34,7 @@ InputParameters::InputParameters()
     end_time(-1.),
     viscosity(-1.),
     thermal_expansion_coefficient(1.0),
-    gravitational_force(Tensor<1, 3, double>({0.0, 0.0, 0.0})),
+    reference_temperature(0.0),
 
     // TEMPORAL DISCRETIZATION
     solver_type(SolverType::Undefined),
@@ -622,7 +622,7 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout
   if(boussinesq_term)
   {
     print_parameter(pcout, "Thermal expansion coefficient", thermal_expansion_coefficient);
-    print_parameter(pcout, "Gravitational acceleration", gravitational_force.norm());
+    print_parameter(pcout, "Reference temperature", reference_temperature);
   }
 }
 

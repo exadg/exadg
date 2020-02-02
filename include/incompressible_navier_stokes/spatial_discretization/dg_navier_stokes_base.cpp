@@ -333,19 +333,14 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
   // body force operator
   RHSOperatorData<dim> rhs_data;
-  rhs_data.dof_index                   = dof_index_u;
-  rhs_data.dof_index_scalar            = dof_index_u_scalar;
-  rhs_data.quad_index                  = quad_index_u;
-  rhs_data.kernel_data.f               = field_functions->right_hand_side;
-  rhs_data.kernel_data.boussinesq_term = param.boussinesq_term;
-  if(param.boussinesq_term)
-  {
-    rhs_data.kernel_data.thermal_expansion_coefficient = param.thermal_expansion_coefficient;
-    Tensor<1, dim, double> g;
-    for(unsigned int d = 0; d < dim; ++d)
-      g[d] = param.gravitational_force[d];
-    rhs_data.kernel_data.gravitational_force = g;
-  }
+  rhs_data.dof_index                                 = dof_index_u;
+  rhs_data.dof_index_scalar                          = dof_index_u_scalar;
+  rhs_data.quad_index                                = quad_index_u;
+  rhs_data.kernel_data.f                             = field_functions->right_hand_side;
+  rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
+  rhs_data.kernel_data.thermal_expansion_coefficient = param.thermal_expansion_coefficient;
+  rhs_data.kernel_data.reference_temperature         = param.reference_temperature;
+  rhs_data.kernel_data.gravitational_force           = field_functions->gravitational_force;
 
   rhs_operator.reinit(matrix_free, rhs_data);
 

@@ -146,8 +146,8 @@ public:
   double viscosity;
 
   // Boussinesg term
-  double               thermal_expansion_coefficient;
-  Tensor<1, 3, double> gravitational_force;
+  double thermal_expansion_coefficient;
+  double reference_temperature;
 
   /**************************************************************************************/
   /*                                                                                    */

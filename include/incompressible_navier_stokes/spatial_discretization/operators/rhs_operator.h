@@ -22,16 +22,18 @@ namespace Operators
 template<int dim>
 struct RHSKernelData
 {
-  RHSKernelData() : boussinesq_term(false), thermal_expansion_coefficient(1.0)
+  RHSKernelData()
+    : boussinesq_term(false), thermal_expansion_coefficient(1.0), reference_temperature(0.0)
   {
   }
 
   std::shared_ptr<Function<dim>> f;
 
   // Boussinesq term
-  bool                   boussinesq_term;
-  double                 thermal_expansion_coefficient;
-  Tensor<1, dim, double> gravitational_force;
+  bool                           boussinesq_term;
+  double                         thermal_expansion_coefficient;
+  double                         reference_temperature;
+  std::shared_ptr<Function<dim>> gravitational_force;
 };
 
 template<int dim, typename Number>
@@ -75,15 +77,17 @@ public:
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    vector flux = evaluate_vectorial_function(data.f, q_points, time);
+    vector f = evaluate_vectorial_function(data.f, q_points, time);
 
     if(data.boussinesq_term)
     {
-      scalar delta_T = integrator_temperature.get_value(q);
-      flux += data.gravitational_force * (1.0 - data.thermal_expansion_coefficient * delta_T);
+      vector g     = evaluate_vectorial_function(data.gravitational_force, q_points, time);
+      scalar T     = integrator_temperature.get_value(q);
+      scalar T_ref = data.reference_temperature;
+      f += g * (1.0 - data.thermal_expansion_coefficient * (T - T_ref));
     }
 
-    return flux;
+    return f;
   }
 
 private:
