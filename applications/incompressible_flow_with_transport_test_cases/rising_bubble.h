@@ -24,8 +24,8 @@ unsigned int const DIM = 2;
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = 3;
 
-unsigned int const REFINE_SPACE_MIN = 6;
-unsigned int const REFINE_SPACE_MAX = 6;
+unsigned int const REFINE_SPACE_MIN = 5;
+unsigned int const REFINE_SPACE_MAX = 5;
 
 unsigned int const REFINE_TIME_MIN = 0;
 unsigned int const REFINE_TIME_MAX = 0;
@@ -45,6 +45,7 @@ double const MAX_VELOCITY = 1.0;
 bool const ADAPTIVE_TIME_STEPPING = true;
 
 double const G = 9.81;
+double const T_REF = 0.0;
 double const BETA = 1.0/300.0;
 double const DELTA_T = 0.75;
 
@@ -82,9 +83,7 @@ void set_input_parameters(InputParameters &param)
   param.end_time = END_TIME;
   param.viscosity = KINEMATIC_VISCOSITY;
   param.thermal_expansion_coefficient = BETA;
-  param.gravitational_force[0] = 0.0;
-  param.gravitational_force[1] = -G;
-  param.gravitational_force[2] = 0.0;
+  param.reference_temperature = T_REF;
 
 
   // TEMPORAL DISCRETIZATION
@@ -339,6 +338,27 @@ namespace IncNS
 /************************************************************************************************************/
 
 template<int dim>
+class Gravitation : public Function<dim>
+{
+public:
+Gravitation (const double time = 0.)
+   :
+   Function<dim>(dim, time)
+ {}
+
+ double value (const Point<dim>    &,
+               const unsigned int  component) const
+ {
+   double g = 0.0;
+
+   if(component == 1)
+     g = -G;
+
+   return g;
+ }
+};
+
+template<int dim>
 void set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
@@ -359,6 +379,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->gravitational_force.reset(new Gravitation<dim>());
 }
 
 /************************************************************************************************************/
@@ -433,7 +454,7 @@ public:
     double const r_b = 0.25*L;
     double const factor = radius < r_b ? DELTA_T/2.0*(1+std::cos(numbers::PI*radius/r_b)) : 0.0;
 
-    return (DELTA_T*factor);
+    return (T_REF + DELTA_T*factor);
   }
 };
 
@@ -445,7 +466,7 @@ set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boun
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
-  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
+  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ConstantFunction<dim>(T_REF)));
 }
 
 template<int dim>

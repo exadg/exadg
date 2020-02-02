@@ -49,6 +49,7 @@ double const PRANDTL = 1.0;
 double const RE = 1.e5;
 double const RA = RE*RE*PRANDTL;
 double const G = 10.0;
+double const T_REF = 0.0;
 double const BETA = 1.0/300.0;
 double const U = 1.0;
 
@@ -89,10 +90,7 @@ void set_input_parameters(InputParameters &param)
   param.end_time = END_TIME;
   param.viscosity = KINEMATIC_VISCOSITY;
   param.thermal_expansion_coefficient = BETA;
-  param.gravitational_force[0] = 0.0;
-  param.gravitational_force[1] = -G;
-  param.gravitational_force[2] = 0.0;
-
+  param.reference_temperature = T_REF;
 
   // TEMPORAL DISCRETIZATION
   param.solver_type = SolverType::Unsteady;
@@ -377,6 +375,27 @@ namespace IncNS
 /************************************************************************************************************/
 
 template<int dim>
+class Gravitation : public Function<dim>
+{
+public:
+Gravitation (const double time = 0.)
+   :
+   Function<dim>(dim, time)
+ {}
+
+ double value (const Point<dim>    &,
+               const unsigned int  component) const
+ {
+   double g = 0.0;
+
+   if(component == 1)
+     g = -G;
+
+   return g;
+ }
+};
+
+template<int dim>
 void set_boundary_conditions(
     std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
     std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
@@ -399,6 +418,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->gravitational_force.reset(new Gravitation<dim>());
 }
 
 /************************************************************************************************************/
@@ -458,7 +478,7 @@ public:
     if(dim == 3)
       T_PERTURBATION *= std::pow(std::sin(numbers::PI * p[2] / (LENGTH/4.)),2.0);
 
-    return (DELTA_T + T_PERTURBATION);
+    return (T_REF + DELTA_T + T_PERTURBATION);
   }
 };
 
@@ -470,7 +490,7 @@ set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boun
 
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
-  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(1)));
+  boundary_descriptor->dirichlet_bc.insert(pair(0,new Functions::ConstantFunction<dim>(T_REF)));
   boundary_descriptor->dirichlet_bc.insert(pair(1,new DirichletBC<dim>()));
 }
 
@@ -480,7 +500,7 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functi
 {
   (void)scalar_index; // only one scalar quantity considered
 
-  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->initial_solution.reset(new Functions::ConstantFunction<dim>(T_REF));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
 }
