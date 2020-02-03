@@ -289,7 +289,7 @@ private:
    * Initializes individual operators (mass, convective, viscous terms, rhs).
    */
   void
-  setup_operators(double const scaling_factor_mass_matrix, VectorType const * velocity = nullptr);
+  setup_operators(double const scaling_factor_mass_matrix);
 
   /*
    * Initializes the preconditioner.

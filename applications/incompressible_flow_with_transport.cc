@@ -448,7 +448,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     }
 
     // setup solvers in case of BDF time integration (solution of linear systems of equations)
-    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+    {
+      conv_diff_operator[i]->setup_operators_and_solver(
+        /* no parameter since they are only needed for BDF */);
+    }
+    else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
       std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
         std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
@@ -460,6 +465,14 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
       LinearAlgebra::distributed::Vector<Number> const * velocity = &vector;
 
       conv_diff_operator[i]->setup_operators_and_solver(scaling_factor, velocity);
+    }
+    else
+    {
+      AssertThrow(scalar_param[i].temporal_discretization ==
+                      ConvDiff::TemporalDiscretization::ExplRK ||
+                    scalar_param[i].temporal_discretization ==
+                      ConvDiff::TemporalDiscretization::BDF,
+                  ExcMessage("Specified time integration scheme is not implemented!"));
     }
   }
 

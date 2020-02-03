@@ -191,8 +191,7 @@ DGOperator<dim, Number>::get_dof_index_velocity() const
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_matrix,
-                                         VectorType const * velocity)
+DGOperator<dim, Number>::setup_operators(double const scaling_factor_mass_matrix)
 {
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
@@ -313,18 +312,6 @@ DGOperator<dim, Number>::setup_operators(double const       scaling_factor_mass_
     (param.use_overintegration && combined_operator_data.convective_problem) ? 1 : 0;
 
   combined_operator.reinit(matrix_free, constraint_matrix, combined_operator_data);
-
-  // The velocity vector needs to be set in case the velocity field is stored in DoF Vector.
-  // Otherwise, certain preconditioners requiring the velocity field during initialization can not
-  // be initialized.
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-  {
-    AssertThrow(velocity != nullptr,
-                ExcMessage(
-                  "In case of a numerical velocity field, a velocity vector has to be provided."));
-
-    combined_operator.set_velocity_ptr(*velocity);
-  }
 }
 
 template<int dim, typename Number>
@@ -334,10 +321,22 @@ DGOperator<dim, Number>::setup_operators_and_solver(double const       scaling_f
 {
   pcout << std::endl << "Setup operators and solver ..." << std::endl;
 
-  setup_operators(scaling_factor_mass_matrix, velocity);
+  setup_operators(scaling_factor_mass_matrix);
 
   if(param.linear_system_has_to_be_solved())
   {
+    // The velocity vector needs to be set in case the velocity field is stored in DoF vector.
+    // Otherwise, certain preconditioners requiring the velocity field during initialization can not
+    // be initialized.
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    {
+      AssertThrow(
+        velocity != nullptr,
+        ExcMessage("In case of a numerical velocity field, a velocity vector has to be provided."));
+
+      combined_operator.set_velocity_ptr(*velocity);
+    }
+
     initialize_preconditioner();
 
     initialize_solver();
@@ -570,7 +569,6 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
         AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
-
         convective_operator.set_velocity_ptr(*velocity);
       }
 
