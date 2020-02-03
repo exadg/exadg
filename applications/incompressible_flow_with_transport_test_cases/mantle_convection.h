@@ -170,6 +170,7 @@ void set_input_parameters(InputParameters &param)
   param.solver_viscous = SolverViscous::CG;
   param.solver_data_viscous = SolverData(1000,1.e-30,RELTOL);
   param.preconditioner_viscous = PreconditionerViscous::Multigrid; //InverseMassMatrix;
+  param.multigrid_data_viscous.type = MultigridType::cphMG;
 
 
   // PRESSURE-CORRECTION SCHEME
@@ -188,6 +189,7 @@ void set_input_parameters(InputParameters &param)
   param.solver_momentum = SolverMomentum::FGMRES;
   param.solver_data_momentum = SolverData(1e4,1.e-30,1.e-6,100);
   param.preconditioner_momentum = MomentumPreconditioner::Multigrid;
+  param.multigrid_data_momentum.type = MultigridType::cphMG;
   param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
 
   // COUPLED NAVIER-STOKES SOLVER
@@ -199,7 +201,6 @@ void set_input_parameters(InputParameters &param)
   param.solver_coupled = SolverCoupled::GMRES;
   param.solver_data_coupled = SolverData(1e3, 1.e-30, RELTOL, 100);
   param.use_scaling_continuity = false;
-  param.scaling_factor_continuity =1.0;
 
   // preconditioner linear solver
   param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
@@ -207,14 +208,14 @@ void set_input_parameters(InputParameters &param)
 
   // preconditioner velocity/momentum block
   param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  param.multigrid_data_velocity_block.type = MultigridType::cphMG;
   param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
   param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev;
   param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
   param.multigrid_data_velocity_block.smoother_data.iterations = 5;
 
   // preconditioner Schur-complement block
-  param.preconditioner_pressure_block = SchurComplementPreconditioner::InverseMassMatrix; //CahouetChabard;
-  param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::InverseMassMatrix;
 }
 
 }
@@ -322,7 +323,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
                              R1,
                              (dim == 3) ? 96 : 12);
 
-  Point<dim> center = Point<dim>(0.,0.,0.);
+  Point<dim> center = dim == 2 ? Point<dim>(0.,0.) : Point<dim>(0.,0.,0.);
 
   typename Triangulation<dim>::cell_iterator cell;
   for(cell = triangulation->begin(); cell != triangulation->end(); ++cell)
