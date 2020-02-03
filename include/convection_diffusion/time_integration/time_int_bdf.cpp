@@ -600,6 +600,18 @@ TimeIntBDF<Number>::set_velocities_and_times(std::vector<VectorType const *> con
   times      = times_in;
 }
 
+template<typename Number>
+void
+TimeIntBDF<Number>::extrapolate_solution(VectorType & vector)
+{
+  // make sure that the time integrator constants are up-to-date
+  this->update_time_integrator_constants();
+
+  vector.equ(this->extra.get_beta(0), this->solution[0]);
+  for(unsigned int i = 1; i < solution.size(); ++i)
+    vector.add(this->extra.get_beta(i), this->solution[i]);
+}
+
 // instantiations
 
 template class TimeIntBDF<float>;

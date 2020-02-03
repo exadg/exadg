@@ -56,6 +56,13 @@ TimeIntExplRK<Number>::set_velocities_and_times(
 
 template<typename Number>
 void
+TimeIntExplRK<Number>::extrapolate_solution(VectorType & vector)
+{
+  vector.equ(1.0, this->solution_n);
+}
+
+template<typename Number>
+void
 TimeIntExplRK<Number>::initialize_vectors()
 {
   pde_operator->initialize_dof_vector(this->solution_n);

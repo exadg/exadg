@@ -50,15 +50,7 @@ public:
                            std::vector<double> const &             times_in);
 
   void
-  extrapolate_solution(VectorType & vector)
-  {
-    // make sure that the time integrator constants are up-to-date
-    this->update_time_integrator_constants();
-
-    vector.equ(this->extra.get_beta(0), this->solution[0]);
-    for(unsigned int i = 1; i < solution.size(); ++i)
-      vector.add(this->extra.get_beta(i), this->solution[i]);
-  }
+  extrapolate_solution(VectorType & vector);
 
 private:
   void

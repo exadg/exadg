@@ -581,13 +581,30 @@ Problem<dim, Number>::run_timeloop() const
     unsigned int const iter_max = 1;
     for(unsigned int iter = 0; iter < iter_max; ++iter)
     {
+      // At this point, we need to communicate between fluid solver and scalar transport solver,
+      // i.e., ask the scalar transport solver for the temperature and hand it over to the fluid
+      // solver
       if(fluid_param.boussinesq_term)
       {
         // assume that the first scalar quantity with index 0 is the active scalar coupled to
         // the incompressible Navier-Stokes equations via the Boussinesq term
-        std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
-          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[0]);
-        scalar_time_integrator_BDF->extrapolate_solution(temperature);
+        if(scalar_param[0].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+        {
+          std::shared_ptr<ConvDiff::TimeIntExplRK<Number>> time_int_scalar =
+            std::dynamic_pointer_cast<ConvDiff::TimeIntExplRK<Number>>(scalar_time_integrator[0]);
+          time_int_scalar->extrapolate_solution(temperature);
+        }
+        else if(scalar_param[0].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
+        {
+          std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_int_scalar =
+            std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[0]);
+          time_int_scalar->extrapolate_solution(temperature);
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
+
         navier_stokes_operator->set_temperature(temperature);
       }
 

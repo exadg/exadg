@@ -77,7 +77,7 @@ template<typename Number>
 void
 TimeIntExplRKBase<Number>::do_timestep_pre_solve()
 {
-  output_solver_info_header();
+  // nothing to do
 }
 
 template<typename Number>
