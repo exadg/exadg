@@ -515,11 +515,11 @@ TimeIntBDF<Number>::get_velocities_and_times_np(std::vector<VectorType const *> 
    * and the discrete time instants that can be used for interpolation
    *
    *   time t
-   *  -------->              t_{n-1}   t_{n}     t_{n+1}
+   *  -------->     t_{n-2}   t_{n-1}   t_{n}     t_{n+1}
    *  _______________|_________|________|___________|___________\
    *                 |         |        |           |           /
-   *                         sol[2]   sol[1]     sol[0]
-   *                       times[2]  times[1]   times[0]
+   *               sol[3]   sol[2]    sol[1]     sol[0]
+   *              times[3] times[2]  times[1]   times[0]
    */
   unsigned int current_order = this->order;
   if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
@@ -530,12 +530,12 @@ TimeIntBDF<Number>::get_velocities_and_times_np(std::vector<VectorType const *> 
   AssertThrow(current_order > 0 && current_order <= this->order,
               ExcMessage("Invalid parameter current_order"));
 
-  velocities.resize(current_order);
-  times.resize(current_order);
+  velocities.resize(current_order + 1);
+  times.resize(current_order + 1);
 
   velocities.at(0) = &get_velocity_np();
   times.at(0)      = this->get_next_time();
-  for(unsigned int i = 0; i < current_order - 1; ++i)
+  for(unsigned int i = 0; i < current_order; ++i)
   {
     velocities.at(i + 1) = &get_velocity(i);
     times.at(i + 1)      = this->get_previous_time(i);
