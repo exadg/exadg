@@ -49,6 +49,9 @@ public:
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
                            std::vector<double> const &             times_in);
 
+  void
+  extrapolate_solution(VectorType & vector);
+
 private:
   void
   allocate_vectors();
@@ -62,7 +65,7 @@ private:
   void
   initialize_vec_convective_term();
 
-  void
+  double
   calculate_time_step_size();
 
   double

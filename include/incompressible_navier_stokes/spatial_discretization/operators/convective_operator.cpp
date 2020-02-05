@@ -42,7 +42,7 @@ ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matr
 
   AssertThrow(false,
               ExcMessage(
-                "This reinit() function can not be used to initialize the viscous operator."));
+                "This reinit() function can not be used to initialize the convective operator."));
 }
 
 template<int dim, typename Number>

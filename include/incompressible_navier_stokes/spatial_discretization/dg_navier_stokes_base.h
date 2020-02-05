@@ -317,6 +317,12 @@ public:
   shift_pressure_mean_value(VectorType & pressure, double const & time = 0.0) const;
 
   /*
+   *  Boussinesq approximation
+   */
+  void
+  set_temperature(VectorType const & temperature);
+
+  /*
    * Computation of derived quantities which is needed for postprocessing but some of them are also
    * needed, e.g., for special splitting-type time integration schemes.
    */

@@ -36,7 +36,7 @@ public:
   get_time_step_size() const;
 
   void
-  set_time_step_size(double const & time_step_size);
+  set_current_time_step_size(double const & time_step_size);
 
 protected:
   // solution vectors
@@ -50,10 +50,10 @@ protected:
 
 private:
   void
-  do_timestep(bool const do_write_output = true);
+  do_timestep_pre_solve();
 
-  virtual void
-  solve_timestep() = 0;
+  void
+  do_timestep_post_solve(bool const do_write_output);
 
   void
   prepare_vectors_for_next_timestep();

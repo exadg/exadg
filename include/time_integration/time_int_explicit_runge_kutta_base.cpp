@@ -38,7 +38,7 @@ TimeIntExplRKBase<Number>::get_time_step_size() const
 
 template<typename Number>
 void
-TimeIntExplRKBase<Number>::set_time_step_size(double const & time_step_size)
+TimeIntExplRKBase<Number>::set_current_time_step_size(double const & time_step_size)
 {
   time_step = time_step_size;
 }
@@ -75,14 +75,15 @@ TimeIntExplRKBase<Number>::setup(bool const do_restart)
 
 template<typename Number>
 void
-TimeIntExplRKBase<Number>::do_timestep(bool const do_write_output)
+TimeIntExplRKBase<Number>::do_timestep_pre_solve()
 {
-  output_solver_info_header();
+  // nothing to do
+}
 
-  solve_timestep();
-
-  output_remaining_time(do_write_output);
-
+template<typename Number>
+void
+TimeIntExplRKBase<Number>::do_timestep_post_solve(bool const do_write_output)
+{
   prepare_vectors_for_next_timestep();
 
   this->time += time_step;
@@ -90,14 +91,15 @@ TimeIntExplRKBase<Number>::do_timestep(bool const do_write_output)
 
   if(adaptive_time_stepping == true)
   {
-    double const dt = recalculate_time_step_size();
-    this->set_time_step_size(dt);
+    this->time_step = recalculate_time_step_size();
   }
 
   if(this->restart_data.write_restart == true)
   {
     this->write_restart();
   }
+
+  output_remaining_time(do_write_output);
 }
 
 template<typename Number>

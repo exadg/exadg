@@ -221,8 +221,8 @@ Problem<dim, Number>::synchronize_time_step_size() const
   }
 
   // set the time step size
-  time_integrator_1->set_time_step_size(time_step_size);
-  time_integrator_2->set_time_step_size(time_step_size);
+  time_integrator_1->set_current_time_step_size(time_step_size);
+  time_integrator_2->set_current_time_step_size(time_step_size);
 }
 
 template<int dim, typename Number>

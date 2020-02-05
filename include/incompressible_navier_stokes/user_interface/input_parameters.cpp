@@ -23,6 +23,7 @@ InputParameters::InputParameters()
     formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
     use_outflow_bc_convective_term(false),
     right_hand_side(false),
+    boussinesq_term(false),
 
     // ALE
     ale_formulation(false),
@@ -32,6 +33,8 @@ InputParameters::InputParameters()
     start_time(0.),
     end_time(-1.),
     viscosity(-1.),
+    thermal_expansion_coefficient(1.0),
+    reference_temperature(0.0),
 
     // TEMPORAL DISCRETIZATION
     solver_type(SolverType::Undefined),
@@ -109,10 +112,10 @@ InputParameters::InputParameters()
     divergence_penalty_factor(1.),
     use_continuity_penalty(true),
     continuity_penalty_factor(1.),
+    apply_penalty_terms_in_postprocessing_step(true),
     continuity_penalty_components(ContinuityPenaltyComponents::Normal),
     continuity_penalty_use_boundary_data(false),
     type_penalty_parameter(TypePenaltyParameter::ConvectiveTerm),
-    apply_penalty_terms_in_postprocessing_step(true),
 
     // TURBULENCE
     use_turbulence_model(false),
@@ -594,6 +597,7 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   }
 
   print_parameter(pcout, "Right-hand side", right_hand_side);
+  print_parameter(pcout, "Boussinesq term", boussinesq_term);
 
   print_parameter(pcout, "Use ALE formulation", ale_formulation);
   print_parameter(pcout, "NBC with variable normal vector", neumann_with_variable_normal_vector);
@@ -614,6 +618,12 @@ InputParameters::print_parameters_physical_quantities(ConditionalOStream & pcout
 
   // viscosity
   print_parameter(pcout, "Viscosity", viscosity);
+
+  if(boussinesq_term)
+  {
+    print_parameter(pcout, "Thermal expansion coefficient", thermal_expansion_coefficient);
+    print_parameter(pcout, "Reference temperature", reference_temperature);
+  }
 }
 
 void
@@ -749,6 +759,17 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
 
   print_parameter(pcout, "Use continuity penalty term", use_continuity_penalty);
 
+  if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution ||
+     temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    if(use_divergence_penalty == true || use_continuity_penalty == true)
+    {
+      print_parameter(pcout,
+                      "Apply penalty terms in postprocessing step",
+                      apply_penalty_terms_in_postprocessing_step);
+    }
+  }
+
   if(use_continuity_penalty == true)
   {
     print_parameter(pcout, "Use boundary data", continuity_penalty_use_boundary_data);
@@ -762,17 +783,6 @@ InputParameters::print_parameters_spatial_discretization(ConditionalOStream & pc
   if(use_divergence_penalty == true || use_continuity_penalty == true)
   {
     print_parameter(pcout, "Type of penalty parameter", enum_to_string(type_penalty_parameter));
-  }
-
-  if(temporal_discretization == TemporalDiscretization::BDFCoupledSolution ||
-     temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-  {
-    if(use_divergence_penalty == true || use_continuity_penalty == true)
-    {
-      print_parameter(pcout,
-                      "Apply penalty terms in postprocessing step",
-                      apply_penalty_terms_in_postprocessing_step);
-    }
   }
 }
 

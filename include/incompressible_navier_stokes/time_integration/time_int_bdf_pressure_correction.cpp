@@ -183,6 +183,13 @@ TimeIntBDFPressureCorrection<Number>::get_velocity() const
 
 template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFPressureCorrection<Number>::get_velocity_np() const
+{
+  return velocity_np;
+}
+
+template<typename Number>
+LinearAlgebra::distributed::Vector<Number> const &
 TimeIntBDFPressureCorrection<Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
@@ -276,8 +283,10 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
 
 template<typename Number>
 void
-TimeIntBDFPressureCorrection<Number>::do_solve_timestep()
+TimeIntBDFPressureCorrection<Number>::solve_timestep()
 {
+  this->output_solver_info_header();
+
   // perform the substeps of the pressure-correction scheme
 
   momentum_step();

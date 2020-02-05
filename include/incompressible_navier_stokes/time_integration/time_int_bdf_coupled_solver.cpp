@@ -97,6 +97,13 @@ TimeIntBDFCoupled<Number>::get_velocity(unsigned int i) const
 
 template<typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
+TimeIntBDFCoupled<Number>::get_velocity_np() const
+{
+  return solution_np.block(0);
+}
+
+template<typename Number>
+LinearAlgebra::distributed::Vector<Number> const &
 TimeIntBDFCoupled<Number>::get_pressure(unsigned int i) const
 {
   return solution[i].block(1);
@@ -118,8 +125,10 @@ TimeIntBDFCoupled<Number>::set_pressure(VectorType const & pressure_in, unsigned
 
 template<typename Number>
 void
-TimeIntBDFCoupled<Number>::do_solve_timestep()
+TimeIntBDFCoupled<Number>::solve_timestep()
 {
+  this->output_solver_info_header();
+
   Timer timer;
   timer.restart();
 

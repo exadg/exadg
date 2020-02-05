@@ -333,9 +333,15 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
   // body force operator
   RHSOperatorData<dim> rhs_data;
-  rhs_data.dof_index     = dof_index_u;
-  rhs_data.quad_index    = quad_index_u;
-  rhs_data.kernel_data.f = field_functions->right_hand_side;
+  rhs_data.dof_index                                 = dof_index_u;
+  rhs_data.dof_index_scalar                          = dof_index_u_scalar;
+  rhs_data.quad_index                                = quad_index_u;
+  rhs_data.kernel_data.f                             = field_functions->right_hand_side;
+  rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
+  rhs_data.kernel_data.thermal_expansion_coefficient = param.thermal_expansion_coefficient;
+  rhs_data.kernel_data.reference_temperature         = param.reference_temperature;
+  rhs_data.kernel_data.gravitational_force           = field_functions->gravitational_force;
+
   rhs_operator.reinit(matrix_free, rhs_data);
 
   // gradient operator
@@ -977,6 +983,15 @@ DGNavierStokesBase<dim, Number>::shift_pressure_mean_value(VectorType &   pressu
     vec_temp2.local_element(i) = 1.;
 
   pressure.add(exact - current, vec_temp2);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::set_temperature(VectorType const & temperature)
+{
+  AssertThrow(param.boussinesq_term, ExcMessage("Invalid parameters detected."));
+
+  rhs_operator.set_temperature(temperature);
 }
 
 template<int dim, typename Number>

@@ -125,12 +125,12 @@ TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
 
 template<typename Number>
 void
-TimeIntBDF<Number>::solve_timestep()
+TimeIntBDF<Number>::do_timestep_pre_solve()
 {
+  TimeIntBDFBase<Number>::do_timestep_pre_solve();
+
   if(param.ale_formulation)
     ale_update();
-
-  do_solve_timestep();
 }
 
 template<typename Number>
@@ -330,24 +330,22 @@ TimeIntBDF<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) 
 }
 
 template<typename Number>
-void
+double
 TimeIntBDF<Number>::calculate_time_step_size()
 {
+  double time_step = 1.0;
+
   unsigned int const degree_u = operator_base->get_polynomial_degree();
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    double const time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
-
-    this->set_time_step_size(time_step);
+    time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
 
     this->pcout << "User specified time step size:" << std::endl << std::endl;
     print_parameter(this->pcout, "time step size", time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
-    double time_step = 1.0;
-
     double const h_min = operator_base->calculate_minimum_element_length();
 
     double time_step_global = calculate_time_step_cfl_global(
@@ -389,19 +387,15 @@ TimeIntBDF<Number>::calculate_time_step_size()
                   << std::endl;
       print_parameter(this->pcout, "Time step size", time_step);
     }
-
-    this->set_time_step_size(time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
     double const h_min = operator_base->calculate_minimum_element_length();
 
-    double time_step = calculate_time_step_max_efficiency(
+    time_step = calculate_time_step_max_efficiency(
       param.c_eff, h_min, degree_u, this->order, param.dt_refinements);
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
-
-    this->set_time_step_size(time_step);
 
     this->pcout << "Calculation of time step size (max efficiency):" << std::endl << std::endl;
     print_parameter(this->pcout, "C_eff", param.c_eff / std::pow(2, param.dt_refinements));
@@ -423,6 +417,8 @@ TimeIntBDF<Number>::calculate_time_step_size()
     this->pcout << std::endl << "OIF sub-stepping for convective term:" << std::endl << std::endl;
     print_parameter(this->pcout, "CFL (OIF)", cfl_oif);
   }
+
+  return time_step;
 }
 
 template<typename Number>
@@ -488,6 +484,7 @@ TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & v
    *  _______________|_________|________|___________|___________\
    *                 |         |        |           |           /
    *               sol[2]    sol[1]   sol[0]
+   *             times[2]  times[1]  times[0]
    */
   unsigned int current_order = this->order;
   if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
@@ -505,6 +502,43 @@ TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & v
   {
     velocities.at(i) = &get_velocity(i);
     times.at(i)      = this->get_previous_time(i);
+  }
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::get_velocities_and_times_np(std::vector<VectorType const *> & velocities,
+                                                std::vector<double> &             times) const
+{
+  /*
+   * the convective term is nonlinear, so we have to initialize the transport velocity
+   * and the discrete time instants that can be used for interpolation
+   *
+   *   time t
+   *  -------->     t_{n-2}   t_{n-1}   t_{n}     t_{n+1}
+   *  _______________|_________|________|___________|___________\
+   *                 |         |        |           |           /
+   *               sol[3]   sol[2]    sol[1]     sol[0]
+   *              times[3] times[2]  times[1]   times[0]
+   */
+  unsigned int current_order = this->order;
+  if(this->time_step_number <= this->order && this->param.start_with_low_order == true)
+  {
+    current_order = this->time_step_number;
+  }
+
+  AssertThrow(current_order > 0 && current_order <= this->order,
+              ExcMessage("Invalid parameter current_order"));
+
+  velocities.resize(current_order + 1);
+  times.resize(current_order + 1);
+
+  velocities.at(0) = &get_velocity_np();
+  times.at(0)      = this->get_next_time();
+  for(unsigned int i = 0; i < current_order; ++i)
+  {
+    velocities.at(i + 1) = &get_velocity(i);
+    times.at(i + 1)      = this->get_previous_time(i);
   }
 }
 

@@ -187,15 +187,16 @@ TimeIntBDF<Number>::initialize_vec_convective_term()
 }
 
 template<typename Number>
-void
+double
 TimeIntBDF<Number>::calculate_time_step_size()
 {
+  double time_step = 1.0;
+
   unsigned int const degree = pde_operator->get_polynomial_degree();
 
   if(param.calculation_of_time_step_size == TimeStepCalculation::UserSpecified)
   {
-    double const time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
-    this->set_time_step_size(time_step);
+    time_step = calculate_const_time_step(param.time_step_size, param.dt_refinements);
 
     this->pcout << "Calculation of time step size (user-specified):" << std::endl << std::endl;
     print_parameter(this->pcout, "time step size", time_step);
@@ -205,8 +206,6 @@ TimeIntBDF<Number>::calculate_time_step_size()
     AssertThrow(param.equation_type == EquationType::Convection ||
                   param.equation_type == EquationType::ConvectionDiffusion,
                 ExcMessage("Specified type of time step calculation does not make sense!"));
-
-    double time_step = 1.0;
 
     double const h_min = pde_operator->calculate_minimum_element_length();
 
@@ -263,20 +262,16 @@ TimeIntBDF<Number>::calculate_time_step_size()
                   << std::endl;
       print_parameter(this->pcout, "Time step size", time_step);
     }
-
-    this->set_time_step_size(time_step);
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::MaxEfficiency)
   {
     // calculate minimum vertex distance
     double const h_min = pde_operator->calculate_minimum_element_length();
 
-    double time_step = calculate_time_step_max_efficiency(
+    time_step = calculate_time_step_max_efficiency(
       param.c_eff, h_min, degree, this->order, param.dt_refinements);
 
     time_step = adjust_time_step_to_hit_end_time(param.start_time, param.end_time, time_step);
-
-    this->set_time_step_size(time_step);
 
     this->pcout << std::endl
                 << "Calculation of time step size (max efficiency):" << std::endl
@@ -301,6 +296,8 @@ TimeIntBDF<Number>::calculate_time_step_size()
     this->pcout << std::endl << "OIF substepping for convective term:" << std::endl << std::endl;
     print_parameter(this->pcout, "CFL (OIF)", cfl_oif);
   }
+
+  return time_step;
 }
 
 template<typename Number>
@@ -390,6 +387,8 @@ template<typename Number>
 void
 TimeIntBDF<Number>::solve_timestep()
 {
+  this->output_solver_info_header();
+
   Timer timer;
   timer.restart();
 
@@ -410,7 +409,7 @@ TimeIntBDF<Number>::solve_timestep()
       }
       else
       {
-        AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12,
+        AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12 * param.end_time,
                     ExcMessage("Invalid assumption."));
 
         velocity_ptr = velocities[0];
@@ -430,7 +429,7 @@ TimeIntBDF<Number>::solve_timestep()
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      AssertThrow(std::abs(times[1] - this->get_time()) < 1.e-12,
+      AssertThrow(std::abs(times[1] - this->get_time()) < 1.e-12 * param.end_time,
                   ExcMessage("Invalid assumption."));
 
       pde_operator->evaluate_convective_term(vec_convective_term[0],
@@ -488,6 +487,13 @@ TimeIntBDF<Number>::solve_timestep()
 
   iterations += N_iter;
   wall_time += timer.wall_time();
+
+  // TODO: implement filtering as a separate module
+  // filtering is currently based on multigrid implementation and can therefore
+  // only be used in combination with semi-implicit BDF time integration and
+  // multigrid preconditioner
+  if(param.filter_solution)
+    pde_operator->filter_solution(solution_np);
 
   // write output
   if(print_solver_info())
@@ -592,6 +598,18 @@ TimeIntBDF<Number>::set_velocities_and_times(std::vector<VectorType const *> con
 {
   velocities = velocities_in;
   times      = times_in;
+}
+
+template<typename Number>
+void
+TimeIntBDF<Number>::extrapolate_solution(VectorType & vector)
+{
+  // make sure that the time integrator constants are up-to-date
+  this->update_time_integrator_constants();
+
+  vector.equ(this->extra.get_beta(0), this->solution[0]);
+  for(unsigned int i = 1; i < solution.size(); ++i)
+    vector.add(this->extra.get_beta(i), this->solution[i]);
 }
 
 // instantiations

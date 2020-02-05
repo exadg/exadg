@@ -10,7 +10,7 @@
 namespace IncNS
 {
 template<int dim, typename Number>
-RHSOperator<dim, Number>::RHSOperator() : matrix_free(nullptr), time(0.0)
+RHSOperator<dim, Number>::RHSOperator() : matrix_free(nullptr), time(0.0), temperature(nullptr)
 {
 }
 
@@ -47,11 +47,19 @@ RHSOperator<dim, Number>::evaluate_add(VectorType & dst, Number const evaluation
 
 template<int dim, typename Number>
 void
-RHSOperator<dim, Number>::do_cell_integral(Integrator & integrator) const
+RHSOperator<dim, Number>::set_temperature(VectorType const & T)
+{
+  this->temperature = &T;
+}
+
+template<int dim, typename Number>
+void
+RHSOperator<dim, Number>::do_cell_integral(Integrator &       integrator,
+                                           IntegratorScalar & integrator_temperature) const
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    integrator.submit_value(kernel.get_volume_flux(integrator, q, time), q);
+    integrator.submit_value(kernel.get_volume_flux(integrator, integrator_temperature, q, time), q);
   }
 }
 
@@ -66,11 +74,19 @@ RHSOperator<dim, Number>::cell_loop(MatrixFree<dim, Number> const & matrix_free,
 
   Integrator integrator(matrix_free, data.dof_index, data.quad_index);
 
+  IntegratorScalar integrator_temperature(matrix_free, data.dof_index_scalar, data.quad_index);
+
   for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
   {
     integrator.reinit(cell);
 
-    do_cell_integral(integrator);
+    if(data.kernel_data.boussinesq_term)
+    {
+      integrator_temperature.reinit(cell);
+      integrator_temperature.gather_evaluate(*temperature, true, false);
+    }
+
+    do_cell_integral(integrator, integrator_temperature);
 
     integrator.integrate_scatter(true, false, dst);
   }

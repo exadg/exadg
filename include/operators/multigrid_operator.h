@@ -31,6 +31,8 @@ public:
   std::shared_ptr<Operator>
   get_pde_operator() const
   {
+    AssertThrow(pde_operator.get() != 0, ExcMessage("Invalid pointer"));
+
     return pde_operator;
   }
 

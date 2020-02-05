@@ -37,8 +37,8 @@ TimeIntBDFBase<Number>::setup(bool const do_restart)
   // allocate global solution vectors
   allocate_vectors();
 
-  // initializes the solution and calculates the time step size
-  initialize_solution_and_calculate_timestep(do_restart);
+  // initializes the solution and the time step size
+  initialize_solution_and_time_step_size(do_restart);
 
   // this is where the setup of derived classes is performed
   setup_derived();
@@ -48,16 +48,17 @@ TimeIntBDFBase<Number>::setup(bool const do_restart)
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::initialize_solution_and_calculate_timestep(bool do_restart)
+TimeIntBDFBase<Number>::initialize_solution_and_time_step_size(bool do_restart)
 {
   if(do_restart)
   {
-    if(order > 1)
+    if(order > 1 && start_with_low_order == true)
     {
-      AssertThrow(
-        start_with_low_order == false,
-        ExcMessage(
-          "In case of higher order time integration, start_with_low_order should be false when restarting the simulation."));
+      this->pcout << "WARNING A higher-order time integration scheme is used, " << std::endl
+                  << "WARNING but the simulation is started with first-order after the restart."
+                  << std::endl
+                  << "WARNING Make sure that the parameter start_with_low_order is set correctly."
+                  << std::endl;
     }
 
     // The solution vectors and the current time, the time step size, etc. have to be read from
@@ -71,7 +72,11 @@ TimeIntBDFBase<Number>::initialize_solution_and_calculate_timestep(bool do_resta
 
     // The time step size has to be computed before the solution can be initialized at times
     // t - dt[1], t - dt[1] - dt[2], etc.
-    calculate_time_step_size();
+    time_steps[0] = calculate_time_step_size();
+
+    // initialize time_steps array as a preparation for initialize_former_solutions()
+    for(unsigned int i = 1; i < order; ++i)
+      time_steps[i] = time_steps[0];
 
     // Finally, prescribe initial conditions at former instants of time. This is only necessary if
     // the time integrator starts with a high-order scheme in the first time step.
@@ -201,9 +206,11 @@ TimeIntBDFBase<Number>::push_back_time_step_sizes()
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::set_time_step_size(double const & time_step_size)
+TimeIntBDFBase<Number>::set_current_time_step_size(double const & time_step_size)
 {
-  // constant time step sizes
+  // constant time step sizes: allow setting of time step size only in the first
+  // time step or after a restart (where time_step_number is also 1), e.g., to continue
+  // will smaller time step sizes
   if(adaptive_time_stepping == false)
   {
     AssertThrow(time_step_number == 1,
@@ -212,27 +219,19 @@ TimeIntBDFBase<Number>::set_time_step_size(double const & time_step_size)
   }
 
   time_steps[0] = time_step_size;
-
-  // Fill time_steps array in the first time step
-  if(time_step_number == 1)
-  {
-    for(unsigned int i = 1; i < order; ++i)
-      time_steps[i] = time_steps[0];
-  }
 }
 
 template<typename Number>
 void
-TimeIntBDFBase<Number>::do_timestep(bool const do_write_output)
+TimeIntBDFBase<Number>::do_timestep_pre_solve()
 {
   update_time_integrator_constants();
+}
 
-  output_solver_info_header();
-
-  solve_timestep();
-
-  output_remaining_time(do_write_output);
-
+template<typename Number>
+void
+TimeIntBDFBase<Number>::do_timestep_post_solve(bool const do_write_output)
+{
   prepare_vectors_for_next_timestep();
 
   time += time_steps[0];
@@ -241,14 +240,15 @@ TimeIntBDFBase<Number>::do_timestep(bool const do_write_output)
   if(adaptive_time_stepping == true)
   {
     push_back_time_step_sizes();
-    double const dt = recalculate_time_step_size();
-    set_time_step_size(dt);
+    time_steps[0] = recalculate_time_step_size();
   }
 
   if(restart_data.write_restart == true)
   {
     write_restart();
   }
+
+  output_remaining_time(do_write_output);
 }
 
 template<typename Number>
@@ -356,7 +356,7 @@ TimeIntBDFBase<Number>::do_read_restart(std::ifstream & in)
   // start_with_low_order = true has to be used. Otherwise, the old solutions would not fit the
   // time step increments.
   if(start_with_low_order == true)
-    calculate_time_step_size();
+    time_steps[0] = calculate_time_step_size();
 }
 
 template<typename Number>

@@ -22,7 +22,18 @@ namespace Operators
 template<int dim>
 struct RHSKernelData
 {
+  RHSKernelData()
+    : boussinesq_term(false), thermal_expansion_coefficient(1.0), reference_temperature(0.0)
+  {
+  }
+
   std::shared_ptr<Function<dim>> f;
+
+  // Boussinesq term
+  bool                           boussinesq_term;
+  double                         thermal_expansion_coefficient;
+  double                         reference_temperature;
+  std::shared_ptr<Function<dim>> gravitational_force;
 };
 
 template<int dim, typename Number>
@@ -33,6 +44,7 @@ private:
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
   typedef CellIntegrator<dim, dim, Number> Integrator;
+  typedef CellIntegrator<dim, 1, Number>   IntegratorScalar;
 
 public:
   void
@@ -58,11 +70,29 @@ public:
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux(Integrator const & integrator, unsigned int const q, Number const & time) const
+    get_volume_flux(Integrator const &       integrator,
+                    IntegratorScalar const & integrator_temperature,
+                    unsigned int const       q,
+                    Number const &           time) const
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    return evaluate_vectorial_function(data.f, q_points, time);
+    vector f = evaluate_vectorial_function(data.f, q_points, time);
+
+    if(data.boussinesq_term)
+    {
+      vector g     = evaluate_vectorial_function(data.gravitational_force, q_points, time);
+      scalar T     = integrator_temperature.get_value(q);
+      scalar T_ref = data.reference_temperature;
+      f += g * (1.0 - data.thermal_expansion_coefficient * (T - T_ref));
+      // TODO: for the dual splitting scheme we observed in one example that it might be
+      // advantageous to only solve for the dynamic pressure variations and drop the constant 1.0 in
+      // the above term that leads to a static pressure, in order improve robustness of the
+      // splitting scheme.
+      //      f += g * (- data.thermal_expansion_coefficient * (T - T_ref));
+    }
+
+    return f;
   }
 
 private:
@@ -75,12 +105,14 @@ private:
 template<int dim>
 struct RHSOperatorData
 {
-  RHSOperatorData() : dof_index(0), quad_index(0)
+  RHSOperatorData() : dof_index(0), quad_index(0), dof_index_scalar(2)
   {
   }
 
   unsigned int dof_index;
   unsigned int quad_index;
+
+  unsigned int dof_index_scalar;
 
   Operators::RHSKernelData<dim> kernel_data;
 };
@@ -97,6 +129,8 @@ public:
 
   typedef CellIntegrator<dim, dim, Number> Integrator;
 
+  typedef CellIntegrator<dim, 1, Number> IntegratorScalar;
+
   RHSOperator();
 
   void
@@ -108,9 +142,12 @@ public:
   void
   evaluate_add(VectorType & dst, Number const evaluation_time) const;
 
+  void
+  set_temperature(VectorType const & T);
+
 private:
   void
-  do_cell_integral(Integrator & integrator) const;
+  do_cell_integral(Integrator & integrator, IntegratorScalar & integrator_temperature) const;
 
   void
   cell_loop(MatrixFree<dim, Number> const & matrix_free,
@@ -125,6 +162,8 @@ private:
   mutable double time;
 
   Operators::RHSKernel<dim, Number> kernel;
+
+  VectorType const * temperature;
 };
 } // namespace IncNS
 

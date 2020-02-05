@@ -287,7 +287,8 @@ public:
 
   // Evaluate convective term and diffusive term at once instead of implementing each
   // operator separately and subsequently looping over all operators. This parameter is
-  // only relevant in case of fully explicit time integration.
+  // only relevant in case of fully explicit time stepping. In case of semi-implicit or
+  // fully implicit time integration the combined operator will always be used.
   bool use_combined_operator;
 
   // In case that the velocity field is prescribed analytically, it might be advantageous
@@ -300,6 +301,12 @@ public:
   // with an implicit treatment of the convective term, i.e., in cases where the convective
   // term has to be evaluated more than once at a given time t.
   bool store_analytical_velocity_in_dof_vector;
+
+  // filter solution after each time step
+  bool filter_solution;
+
+  // use 3/2 overintegration rule for convective term
+  bool use_overintegration;
 };
 
 } // namespace ConvDiff

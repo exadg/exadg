@@ -58,7 +58,7 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::TriangulationBase<dim> const &            triangulation,
+  DGOperator(parallel::TriangulationBase<dim> const &        triangulation,
              InputParameters const &                         param_in,
              std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in);
 
@@ -262,6 +262,10 @@ public:
                     double const       time             = 0.0,
                     int const          time_step_number = -1) const;
 
+  // TODO: implement filtering as a separate module
+  void
+  filter_solution(VectorType & solution) const;
+
 private:
   /*
    * Initializes DoFHandlers.
@@ -285,7 +289,7 @@ private:
    * Initializes individual operators (mass, convective, viscous terms, rhs).
    */
   void
-  setup_operators(double const scaling_factor_mass_matrix, VectorType const * velocity = nullptr);
+  setup_operators(double const scaling_factor_mass_matrix);
 
   /*
    * Initializes the preconditioner.

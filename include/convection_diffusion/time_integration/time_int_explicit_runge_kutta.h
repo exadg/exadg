@@ -48,6 +48,9 @@ public:
   set_velocities_and_times(std::vector<VectorType const *> const & velocities_in,
                            std::vector<double> const &             times_in);
 
+  void
+  extrapolate_solution(VectorType & vector);
+
 private:
   void
   initialize_vectors();
