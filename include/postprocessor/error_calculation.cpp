@@ -11,25 +11,28 @@
 
 #include <fstream>
 
-template<int dim, typename VectorType>
+template<int dim, typename Number>
 double
-calculate_error(bool const &                         relative_error,
-                DoFHandler<dim> const &              dof_handler,
-                Mapping<dim> const &                 mapping,
-                VectorType const &                   numerical_solution,
-                std::shared_ptr<Function<dim>> const analytical_solution,
-                double const &                       time,
-                VectorTools::NormType const &        norm_type,
-                unsigned int const                   additional_quadrature_points = 3)
+calculate_error(bool const &                                       relative_error,
+                DoFHandler<dim> const &                            dof_handler,
+                Mapping<dim> const &                               mapping,
+                LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
+                std::shared_ptr<Function<dim>> const               analytical_solution,
+                double const &                                     time,
+                VectorTools::NormType const &                      norm_type,
+                unsigned int const                                 additional_quadrature_points = 3)
 {
   double error = 1.0;
   analytical_solution->set_time(time);
+
+  LinearAlgebra::distributed::Vector<double> numerical_solution_double;
+  numerical_solution_double = numerical_solution;
 
   // calculate error norm
   Vector<double> error_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
   VectorTools::integrate_difference(mapping,
                                     dof_handler,
-                                    numerical_solution,
+                                    numerical_solution_double,
                                     *analytical_solution,
                                     error_norm_per_cell,
                                     QGauss<dim>(dof_handler.get_fe().degree +
@@ -43,7 +46,7 @@ calculate_error(bool const &                         relative_error,
   {
     // calculate solution norm
     Vector<double> solution_norm_per_cell(dof_handler.get_triangulation().n_active_cells());
-    VectorType     zero_solution;
+    LinearAlgebra::distributed::Vector<double> zero_solution;
     zero_solution.reinit(numerical_solution);
     VectorTools::integrate_difference(mapping,
                                       dof_handler,
