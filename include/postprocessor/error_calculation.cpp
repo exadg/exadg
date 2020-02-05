@@ -11,16 +11,16 @@
 
 #include <fstream>
 
-template<int dim, typename Number>
+template<int dim, typename VectorType>
 double
-calculate_error(bool const &                                       relative_error,
-                DoFHandler<dim> const &                            dof_handler,
-                Mapping<dim> const &                               mapping,
-                LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
-                std::shared_ptr<Function<dim>> const               analytical_solution,
-                double const &                                     time,
-                VectorTools::NormType const &                      norm_type,
-                unsigned int const                                 additional_quadrature_points = 3)
+calculate_error(bool const &                         relative_error,
+                DoFHandler<dim> const &              dof_handler,
+                Mapping<dim> const &                 mapping,
+                VectorType const &                   numerical_solution,
+                std::shared_ptr<Function<dim>> const analytical_solution,
+                double const &                       time,
+                VectorTools::NormType const &        norm_type,
+                unsigned int const                   additional_quadrature_points = 3)
 {
   double error = 1.0;
   analytical_solution->set_time(time);
