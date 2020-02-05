@@ -321,7 +321,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
                              Point<dim>(),
                              R0,
                              R1,
-                             (dim == 3) ? 96 : 12);
+                             12);
 
   Point<dim> center = dim == 2 ? Point<dim>(0.,0.) : Point<dim>(0.,0.,0.);
 
