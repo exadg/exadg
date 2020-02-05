@@ -1,5 +1,5 @@
 /*
- * rayleigh_bernard.h
+ * rising_bubble.h
  *
  *  Created on: Jan 26, 2020
  *      Author: fehn
