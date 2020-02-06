@@ -130,8 +130,8 @@ weight_residuum(MatrixFree &                                   data_1,
 
 #else
   (void)data_1;
-  const int points = Utilities::pow(fe_degree_1 + 1, dim);
-  auto      values = fe_eval1.begin_dof_values();
+  auto points = fe_eval1.dofs_per_cell;
+  auto values = fe_eval1.begin_dof_values();
 
   for(unsigned int i = 0; i < points; i++)
     values[i] = values[i] * weights[i + points * cell];
@@ -267,6 +267,13 @@ MGTransferMFP<dim, Number, VectorType, components>::do_prolongate(VectorType &  
 
 template<int dim, typename Number, typename VectorType, int components>
 MGTransferMFP<dim, Number, VectorType, components>::MGTransferMFP()
+  : data_1_cm(nullptr),
+    data_2_cm(nullptr),
+    degree_1(0),
+    degree_2(0),
+    dof_handler_index(0),
+    quad_index(0),
+    is_dg(false)
 {
 }
 
@@ -332,7 +339,8 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
                relevant_dofs,
                data_1_cm->get_vector_partitioner()->get_mpi_communicator());
 
-    std::vector<types::global_dof_index> dof_indices(Utilities::pow(this->degree_1 + 1, dim));
+    std::vector<types::global_dof_index> dof_indices(Utilities::pow(this->degree_1 + 1, dim) *
+                                                     components);
     for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
       for(unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
       {
@@ -345,16 +353,17 @@ MGTransferMFP<dim, Number, VectorType, components>::reinit(
     vec.compress(VectorOperation::add);
     vec.update_ghost_values();
 
-
-    weights.resize(data_1_cm->n_macro_cells() * Utilities::pow(this->degree_1 + 1, dim));
+    weights.resize(data_1_cm->n_macro_cells() * Utilities::pow(this->degree_1 + 1, dim) *
+                   components);
 
     for(unsigned int cell = 0; cell < data_1_cm->n_macro_cells(); ++cell)
       for(unsigned int v = 0; v < data_1_cm->n_components_filled(cell); v++)
       {
         auto cell_v = data_1_cm->get_cell_iterator(cell, v, dof_handler_index);
         cell_v->get_mg_dof_indices(dof_indices);
-        for(unsigned int i = 0; i < dof_indices.size(); i++)
-          weights[cell * Utilities::pow(this->degree_1 + 1, dim) + i][v] =
+
+        for(unsigned int i = 0; i < Utilities::pow(this->degree_1 + 1, dim) * components; i++)
+          weights[cell * Utilities::pow(this->degree_1 + 1, dim) * components + i][v] =
             1.0 / vec[dof_indices[data_1_cm->get_shape_info(dof_handler_index)
                                     .lexicographic_numbering[i]]];
       }
