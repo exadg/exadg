@@ -32,7 +32,9 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  DriverSteadyProblems(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
+  DriverSteadyProblems(std::shared_ptr<Operator> operator_in,
+                       InputParameters const &   param_in,
+                       MPI_Comm const &          mpi_comm_in);
 
   void
   setup();
@@ -59,6 +61,8 @@ private:
   std::shared_ptr<Operator> pde_operator;
 
   InputParameters const & param;
+
+  MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
 

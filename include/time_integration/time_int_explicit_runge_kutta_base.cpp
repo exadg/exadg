@@ -12,8 +12,9 @@ TimeIntExplRKBase<Number>::TimeIntExplRKBase(double const &      start_time_,
                                              double const &      end_time_,
                                              unsigned int const  max_number_of_time_steps_,
                                              RestartData const & restart_data_,
-                                             bool const          adaptive_time_stepping_)
-  : TimeIntBase(start_time_, end_time_, max_number_of_time_steps_, restart_data_),
+                                             bool const          adaptive_time_stepping_,
+                                             MPI_Comm const &    mpi_comm_)
+  : TimeIntBase(start_time_, end_time_, max_number_of_time_steps_, restart_data_, mpi_comm_),
     time_step(1.0),
     adaptive_time_stepping(adaptive_time_stepping_)
 {
@@ -118,7 +119,7 @@ TimeIntExplRKBase<Number>::do_write_restart(std::string const & filename) const
 
   boost::archive::binary_oarchive oa(oss);
 
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(this->mpi_comm);
 
   // 1. ranks
   oa & n_ranks;
@@ -147,7 +148,7 @@ TimeIntExplRKBase<Number>::do_read_restart(std::ifstream & in)
   unsigned int n_old_ranks = 1;
   ia &         n_old_ranks;
 
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(this->mpi_comm);
   AssertThrow(n_old_ranks == n_ranks,
               ExcMessage("Tried to restart with " + Utilities::to_string(n_ranks) +
                          " processes, "

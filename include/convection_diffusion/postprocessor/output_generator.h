@@ -23,7 +23,7 @@ class OutputGenerator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  OutputGenerator();
+  OutputGenerator(MPI_Comm const & comm);
 
   void
   setup(DoFHandler<dim> const & dof_handler_in,
@@ -34,6 +34,8 @@ public:
   evaluate(VectorType const & solution, double const & time, int const & time_step_number);
 
 private:
+  MPI_Comm const & mpi_comm;
+
   unsigned int output_counter;
   bool         reset_counter;
 

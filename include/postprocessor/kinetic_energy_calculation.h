@@ -72,7 +72,7 @@ public:
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
   typedef Tensor<2, dim, VectorizedArray<Number>> tensor;
 
-  KineticEnergyCalculator();
+  KineticEnergyCalculator(MPI_Comm const & comm);
 
   void
   setup(MatrixFree<dim, Number> const & matrix_free_in,
@@ -117,6 +117,8 @@ protected:
             std::vector<Number> &                         dst,
             VectorType const &                            src,
             std::pair<unsigned int, unsigned int> const & cell_range);
+
+  MPI_Comm const & mpi_comm;
 
   bool clear_files;
 

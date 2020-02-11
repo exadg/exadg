@@ -56,7 +56,8 @@ protected:
   typedef LinearAlgebra::distributed::Vector<MultigridNumber> VectorTypeMG;
 
 public:
-  MultigridPreconditionerBase() : mapping(nullptr), n_levels(1), coarse_level(0), fine_level(0)
+  MultigridPreconditionerBase(MPI_Comm const & comm)
+    : mapping(nullptr), n_levels(1), coarse_level(0), fine_level(0), mpi_comm(comm)
   {
   }
 
@@ -243,6 +244,8 @@ private:
    */
   virtual void
   initialize_multigrid_preconditioner();
+
+  MPI_Comm const & mpi_comm;
 
   MultigridData data;
 

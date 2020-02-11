@@ -37,7 +37,9 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntExplRK(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
+  TimeIntExplRK(std::shared_ptr<Operator> operator_in,
+                InputParameters const &   param_in,
+                MPI_Comm const &          mpi_comm_in);
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;

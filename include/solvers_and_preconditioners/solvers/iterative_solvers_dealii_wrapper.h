@@ -126,7 +126,9 @@ private:
 
 template<class NUMBER>
 void
-output_eigenvalues(const std::vector<NUMBER> & eigenvalues, const std::string & text)
+output_eigenvalues(const std::vector<NUMBER> & eigenvalues,
+                   const std::string &         text,
+                   MPI_Comm const &            mpi_comm)
 {
   //    deallog << text << std::endl;
   //    for (unsigned int j = 0; j < eigenvalues.size(); ++j)
@@ -135,7 +137,7 @@ output_eigenvalues(const std::vector<NUMBER> & eigenvalues, const std::string & 
   //      }
   //    deallog << std::endl;
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::cout << text << std::endl;
     for(unsigned int j = 0; j < eigenvalues.size(); ++j)
@@ -174,10 +176,12 @@ class GMRESSolver : public IterativeSolverBase<VectorType>
 public:
   GMRESSolver(Operator const &        underlying_operator_in,
               Preconditioner &        preconditioner_in,
-              GMRESSolverData const & solver_data_in)
+              GMRESSolverData const & solver_data_in,
+              MPI_Comm const &        mpi_comm_in)
     : underlying_operator(underlying_operator_in),
       preconditioner(preconditioner_in),
-      solver_data(solver_data_in)
+      solver_data(solver_data_in),
+      mpi_comm(mpi_comm_in)
   {
   }
 
@@ -201,7 +205,8 @@ public:
     {
       solver.connect_eigenvalues_slot(std::bind(output_eigenvalues<std::complex<double>>,
                                                 std::placeholders::_1,
-                                                "Eigenvalues: "),
+                                                "Eigenvalues: ",
+                                                mpi_comm),
                                       true);
     }
 
@@ -232,6 +237,8 @@ private:
   Operator const &      underlying_operator;
   Preconditioner &      preconditioner;
   GMRESSolverData const solver_data;
+
+  MPI_Comm const & mpi_comm;
 };
 
 struct FGMRESSolverData

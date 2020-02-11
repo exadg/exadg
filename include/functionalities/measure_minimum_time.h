@@ -18,17 +18,18 @@ private:
          ConvergenceTable & convergence_table,
          std::string        label,
          std::string        likwid_suffix,
-         Function           f)
+         Function           f,
+         MPI_Comm const &   mpi_comm)
   {
     int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(mpi_comm, &rank);
     Timer  time;
     double min_time = std::numeric_limits<double>::max();
     double max_time = 0.0;
     double sum_time = 0.0;
     for(int i = 0; i < best_of; i++)
     {
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(mpi_comm);
 #ifdef LIKWID_PERFMON
       std::string likwid_label = label + likwid_suffix;
       LIKWID_MARKER_START(likwid_label.c_str());
@@ -37,13 +38,13 @@ private:
 #endif
       time.restart();
       f();
-      MPI_Barrier(MPI_COMM_WORLD);
+      MPI_Barrier(mpi_comm);
       double temp = time.wall_time();
 #ifdef LIKWID_PERFMON
       LIKWID_MARKER_STOP(likwid_label.c_str());
 #endif
       double temp_global;
-      MPI_Reduce(&temp, &temp_global, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+      MPI_Reduce(&temp, &temp_global, 1, MPI_DOUBLE, MPI_MAX, 0, mpi_comm);
       min_time = std::min(min_time, temp_global);
       max_time = std::max(max_time, temp_global);
       sum_time += temp;

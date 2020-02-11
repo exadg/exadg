@@ -43,7 +43,7 @@ class PostProcessor : public PostProcessorBase<dim, Number>
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  PostProcessor(PostProcessorData<dim> const & postprocessor_data);
+  PostProcessor(PostProcessorData<dim> const & postprocessor_data, MPI_Comm const & comm);
 
   virtual ~PostProcessor();
 
@@ -69,6 +69,8 @@ private:
 
   void
   calculate_additional_vectors(VectorType const & solution);
+
+  MPI_Comm const & mpi_comm;
 
   PostProcessorData<dim> pp_data;
 

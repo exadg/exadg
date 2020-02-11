@@ -86,7 +86,7 @@ class ErrorCalculator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  ErrorCalculator();
+  ErrorCalculator(MPI_Comm const & comm);
 
   void
   setup(DoFHandler<dim> const &           dof_handler_in,
@@ -99,6 +99,8 @@ public:
 private:
   void
   do_evaluate(VectorType const & solution_vector, double const time);
+
+  MPI_Comm const & mpi_comm;
 
   unsigned int error_counter;
   bool         reset_counter;

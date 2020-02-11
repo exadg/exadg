@@ -54,7 +54,8 @@ public:
 
   LinePlotCalculatorStatistics(const DoFHandler<dim> & dof_handler_velocity_in,
                                const DoFHandler<dim> & dof_handler_pressure_in,
-                               const Mapping<dim> &    mapping_in);
+                               const Mapping<dim> &    mapping_in,
+                               MPI_Comm const &        mpi_comm_in);
 
   void
   setup(LinePlotData<dim> const & line_plot_data_in);
@@ -151,7 +152,8 @@ public:
 
   LinePlotCalculatorStatisticsHomogeneousDirection(const DoFHandler<dim> & dof_handler_velocity_in,
                                                    const DoFHandler<dim> & dof_handler_pressure_in,
-                                                   const Mapping<dim> &    mapping_in);
+                                                   const Mapping<dim> &    mapping_in,
+                                                   MPI_Comm const &        comm_in);
 
   void
   setup(LinePlotData<dim> const & line_statistics_data_in);

@@ -10,15 +10,17 @@
 TimeIntBase::TimeIntBase(double const &      start_time_,
                          double const &      end_time_,
                          unsigned int const  max_number_of_time_steps_,
-                         RestartData const & restart_data_)
+                         RestartData const & restart_data_,
+                         MPI_Comm const &    mpi_comm_)
   : start_time(start_time_),
     end_time(end_time_),
     time(start_time_),
     eps(1.e-10),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_) == 0),
     time_step_number(1),
     max_number_of_time_steps(max_number_of_time_steps_),
     restart_data(restart_data_),
+    mpi_comm(mpi_comm_),
     started(false),
     finished(false)
 {
@@ -154,11 +156,11 @@ TimeIntBase::write_restart() const
           << std::endl
           << " Writing restart file at time t = " << this->get_time() << ":" << std::endl;
 
-    std::string const filename = restart_filename(restart_data.filename);
+    std::string const filename = restart_filename(restart_data.filename, mpi_comm);
 
     rename_restart_files(filename);
 
-    do_write_restart(restart_filename(restart_data.filename));
+    do_write_restart(restart_filename(restart_data.filename, mpi_comm));
 
     pcout << std::endl
           << " ... done!" << std::endl
@@ -174,7 +176,7 @@ TimeIntBase::read_restart()
         << std::endl
         << " Reading restart file:" << std::endl;
 
-  std::string   filename = restart_filename(restart_data.filename);
+  std::string   filename = restart_filename(restart_data.filename, mpi_comm);
   std::ifstream in(filename);
   AssertThrow(in, ExcMessage("File " + filename + " does not exist."));
 

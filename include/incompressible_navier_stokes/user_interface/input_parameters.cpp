@@ -222,10 +222,8 @@ InputParameters::InputParameters()
 }
 
 void
-InputParameters::check_input_parameters()
+InputParameters::check_input_parameters(ConditionalOStream & pcout)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-
   // MATHEMATICAL MODEL
   AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
 

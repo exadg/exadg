@@ -85,7 +85,8 @@ template<int dim>
 inline double
 calculate_max_velocity(Triangulation<dim> const &     triangulation,
                        std::shared_ptr<Function<dim>> velocity,
-                       double const                   time)
+                       double const                   time,
+                       MPI_Comm const &               mpi_comm)
 {
   typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
                                                     endc = triangulation.end();
@@ -110,7 +111,7 @@ calculate_max_velocity(Triangulation<dim> const &     triangulation,
         max_U = U;
     }
   }
-  double const global_max_U = Utilities::MPI::max(max_U, MPI_COMM_WORLD);
+  double const global_max_U = Utilities::MPI::max(max_U, mpi_comm);
 
   return global_max_U;
 }
@@ -167,7 +168,8 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
                               double const                         cfl,
                               unsigned int const                   degree,
                               double const                         exponent_fe_degree,
-                              CFLConditionType const               cfl_condition_type)
+                              CFLConditionType const               cfl_condition_type,
+                              MPI_Comm const &                     mpi_comm)
 {
   CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
@@ -220,7 +222,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
   }
 
   // find minimum over all processors
-  new_time_step = Utilities::MPI::min(new_time_step, MPI_COMM_WORLD);
+  new_time_step = Utilities::MPI::min(new_time_step, mpi_comm);
 
   return new_time_step;
 }
@@ -238,7 +240,8 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
                               double const                                           cfl,
                               unsigned int const                                     degree,
                               double const           exponent_fe_degree,
-                              CFLConditionType const cfl_condition_type)
+                              CFLConditionType const cfl_condition_type,
+                              MPI_Comm const &       mpi_comm)
 {
   CellIntegrator<dim, dim, value_type> fe_eval(data, dof_index, quad_index);
 
@@ -294,7 +297,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &               
   }
 
   // find minimum over all processors
-  new_time_step = Utilities::MPI::min(new_time_step, MPI_COMM_WORLD);
+  new_time_step = Utilities::MPI::min(new_time_step, mpi_comm);
 
   // Cut time step size after, e.g., 4 digits of accuracy in order to make sure that there is no
   // drift in the time step size depending on the number of processors when using adaptive time

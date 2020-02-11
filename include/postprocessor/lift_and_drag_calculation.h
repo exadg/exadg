@@ -58,7 +58,7 @@ class LiftAndDragCalculator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  LiftAndDragCalculator();
+  LiftAndDragCalculator(MPI_Comm const & comm);
 
   void
   setup(DoFHandler<dim> const &         dof_handler_velocity_in,
@@ -72,6 +72,8 @@ public:
   evaluate(VectorType const & velocity, VectorType const & pressure, Number const & time) const;
 
 private:
+  MPI_Comm const & mpi_comm;
+
   mutable bool clear_files_lift_and_drag;
 
   SmartPointer<DoFHandler<dim> const> dof_handler_velocity;

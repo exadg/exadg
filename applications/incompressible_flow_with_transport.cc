@@ -96,7 +96,7 @@ template<int dim, typename Number = double>
 class Problem : public ProblemBase<Number>
 {
 public:
-  Problem(unsigned int const n_scalars);
+  Problem(MPI_Comm const & mpi_comm, unsigned int const n_scalars);
 
   void
   setup(IncNS::InputParameters const &                 fluid_param_in,
@@ -133,6 +133,8 @@ private:
 
   void
   analyze_iterations_transport() const;
+
+  MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
 
@@ -195,8 +197,9 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem(unsigned int const n_scalars)
-  : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+Problem<dim, Number>::Problem(MPI_Comm const & comm, unsigned int const n_scalars)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     n_scalars(n_scalars),
     use_adaptive_time_stepping(false),
     overall_time(0.0),
@@ -236,11 +239,11 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
   print_header();
   print_dealii_info<Number>(pcout);
-  print_MPI_info(pcout);
+  print_MPI_info(pcout, mpi_comm);
 
   // parameters (fluid + scalar)
   fluid_param = fluid_param_in;
-  fluid_param.check_input_parameters();
+  fluid_param.check_input_parameters(pcout);
   fluid_param.print(pcout, "List of input parameters for fluid solver:");
 
   scalar_param = scalar_param_in;
@@ -266,7 +269,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     }
 
     triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
+      mpi_comm,
       dealii::Triangulation<dim>::none,
       parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
@@ -279,7 +282,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
         ExcMessage("Parameter triangulation_type is different for fluid field and scalar field"));
     }
 
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
   }
   else
   {
@@ -306,7 +309,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // initialize postprocessor
-  fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param);
+  fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param, mpi_comm);
 
   // initialize navier_stokes_operator
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
@@ -314,13 +317,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     std::shared_ptr<DGCoupled> navier_stokes_operator_coupled;
 
     navier_stokes_operator_coupled.reset(
-      new DGCoupled(*triangulation, fluid_param, fluid_postprocessor));
+      new DGCoupled(*triangulation, fluid_param, fluid_postprocessor, mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
 
-    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
-                                                   navier_stokes_operator_coupled,
-                                                   fluid_param));
+    fluid_time_integrator.reset(new TimeIntCoupled(
+      navier_stokes_operator_coupled, navier_stokes_operator_coupled, fluid_param, mpi_comm));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -328,13 +330,14 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     std::shared_ptr<DGDualSplitting> navier_stokes_operator_dual_splitting;
 
     navier_stokes_operator_dual_splitting.reset(
-      new DGDualSplitting(*triangulation, fluid_param, fluid_postprocessor));
+      new DGDualSplitting(*triangulation, fluid_param, fluid_postprocessor, mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
 
     fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
                                                          navier_stokes_operator_dual_splitting,
-                                                         fluid_param));
+                                                         fluid_param,
+                                                         mpi_comm));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -342,14 +345,15 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
 
     navier_stokes_operator_pressure_correction.reset(
-      new DGPressureCorrection(*triangulation, fluid_param, fluid_postprocessor));
+      new DGPressureCorrection(*triangulation, fluid_param, fluid_postprocessor, mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;
 
     fluid_time_integrator.reset(
       new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
                                     navier_stokes_operator_pressure_correction,
-                                    fluid_param));
+                                    fluid_param,
+                                    mpi_comm));
   }
   else
   {
@@ -384,12 +388,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     ConvDiff::set_field_functions(scalar_field_functions[i], i);
 
     // initialize postprocessor
-    scalar_postprocessor[i] = ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], i);
+    scalar_postprocessor[i] =
+      ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], mpi_comm, i);
 
     // initialize convection diffusion operation
-    conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
-                                                                      scalar_param[i],
-                                                                      scalar_postprocessor[i]));
+    conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(
+      *triangulation, scalar_param[i], scalar_postprocessor[i], mpi_comm));
 
     conv_diff_operator[i]->setup(periodic_faces,
                                  scalar_boundary_descriptor[i],
@@ -399,12 +403,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
     {
       scalar_time_integrator[i].reset(
-        new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i], scalar_param[i]));
+        new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i], scalar_param[i], mpi_comm));
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
       scalar_time_integrator[i].reset(
-        new ConvDiff::TimeIntBDF<Number>(conv_diff_operator[i], scalar_param[i]));
+        new ConvDiff::TimeIntBDF<Number>(conv_diff_operator[i], scalar_param[i], mpi_comm));
     }
     else
     {
@@ -717,8 +721,7 @@ Problem<dim, Number>::analyze_computing_times_fluid(double const overall_time_av
   double sum_of_substeps = 0.0;
   for(unsigned int i = 0; i < computing_times.size(); ++i)
   {
-    Utilities::MPI::MinMaxAvg data =
-      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
     this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
                 << std::scientific << std::setw(10) << std::right << data.avg << " s  "
                 << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -779,8 +782,7 @@ Problem<dim, Number>::analyze_computing_times_transport(double const overall_tim
     double sum_of_substeps = 0.0;
     for(unsigned int i = 0; i < computing_times.size(); ++i)
     {
-      Utilities::MPI::MinMaxAvg data =
-        Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+      Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
       this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
                   << std::scientific << std::setw(10) << std::right << data.avg << " s  "
                   << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -853,18 +855,16 @@ Problem<dim, Number>::analyze_computing_times() const
   // Wall times
 
   this->pcout << std::endl << "Wall times:" << std::endl;
-  Utilities::MPI::MinMaxAvg overall_time_data =
-    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
-  double const overall_time_avg = overall_time_data.avg;
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
 
   double const time_fluid_avg  = analyze_computing_times_fluid(overall_time_avg);
   double const time_scalar_avg = analyze_computing_times_transport(overall_time_avg);
 
   this->pcout << std::endl;
 
-  Utilities::MPI::MinMaxAvg setup_time_data =
-    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
-  double const setup_time_avg = setup_time_data.avg;
+  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
+  double const              setup_time_avg  = setup_time_data.avg;
   this->pcout << "  " << std::setw(length) << std::left << "Setup" << std::setprecision(2)
               << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -882,7 +882,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
   // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   this->pcout << std::endl
               << "Computational costs (fluid + transport, including setup + postprocessing):"
@@ -935,6 +935,8 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+
     AssertThrow(DEGREE_MIN == DEGREE_MAX, ExcMessage("Invalid parameters!"));
     AssertThrow(REFINE_SPACE_MIN == REFINE_SPACE_MAX, ExcMessage("Invalid parameters!"));
     AssertThrow(REFINE_TIME_MIN == 0, ExcMessage("Invalid parameters!"));
@@ -961,9 +963,9 @@ main(int argc, char ** argv)
     std::shared_ptr<ProblemBase<Number>> problem;
 
     if(fluid_param.dim == 2)
-      problem.reset(new Problem<2, Number>(N_SCALARS));
+      problem.reset(new Problem<2, Number>(mpi_comm, N_SCALARS));
     else if(fluid_param.dim == 3)
-      problem.reset(new Problem<3, Number>(N_SCALARS));
+      problem.reset(new Problem<3, Number>(mpi_comm, N_SCALARS));
     else
       AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 

@@ -14,10 +14,9 @@
 using namespace dealii;
 
 inline std::string
-restart_filename(std::string const & name)
+restart_filename(std::string const & name, MPI_Comm const & mpi_comm)
 {
-  std::string const rank =
-    Utilities::int_to_string(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD));
+  std::string const rank = Utilities::int_to_string(Utilities::MPI::this_mpi_process(mpi_comm));
 
   std::string const filename = name + "." + rank + ".restart";
 

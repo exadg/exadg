@@ -15,8 +15,9 @@ template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
   parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor)
-  : Base(triangulation, parameters, postprocessor)
+  std::shared_ptr<Postprocessor>           postprocessor,
+  MPI_Comm const &                         mpi_comm)
+  : Base(triangulation, parameters, postprocessor, mpi_comm)
 {
   AssertThrow(this->param.get_degree_p() > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
@@ -145,7 +146,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
 
     typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-    preconditioner_pressure_poisson.reset(new MULTIGRID());
+    preconditioner_pressure_poisson.reset(new MULTIGRID(this->mpi_comm));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);

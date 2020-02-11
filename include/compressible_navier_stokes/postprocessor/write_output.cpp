@@ -8,8 +8,8 @@
 // deal.II
 #include <deal.II/numerics/data_out.h>
 
-#include "write_output.h"
 #include "../../postprocessor/write_output.h"
+#include "write_output.h"
 
 namespace CompNS
 {
@@ -20,7 +20,8 @@ write_output(OutputData const &                              output_data,
              Mapping<dim> const &                            mapping,
              VectorType const &                              solution_conserved,
              std::vector<SolutionField<dim, Number>> const & additional_fields,
-             unsigned int const                              output_counter)
+             unsigned int const                              output_counter,
+             MPI_Comm const &                                mpi_comm)
 {
   std::string folder = output_data.output_folder, file = output_data.output_name;
 
@@ -73,7 +74,7 @@ write_output(OutputData const &                              output_data,
 
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
-  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, 4);
+  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, 4, mpi_comm);
 
   // write surface mesh
   if(output_data.write_surface_mesh)
@@ -83,12 +84,14 @@ write_output(OutputData const &                              output_data,
                        output_data.degree,
                        folder,
                        file + "_surface",
-                       output_counter);
+                       output_counter,
+                       mpi_comm);
   }
 }
 
 template<int dim, typename Number>
-OutputGenerator<dim, Number>::OutputGenerator() : output_counter(0), reset_counter(true)
+OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm)
+  : mpi_comm(comm), output_counter(0), reset_counter(true)
 {
 }
 
@@ -112,7 +115,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
   {
     write_boundary_IDs(dof_handler->get_triangulation(),
                        output_data.output_folder,
-                       output_data.output_name);
+                       output_data.output_name,
+                       mpi_comm);
   }
 }
 
@@ -124,7 +128,7 @@ OutputGenerator<dim, Number>::evaluate(
   double const &                                  time,
   int const &                                     time_step_number)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   if(output_data.write_output == true)
   {
@@ -159,7 +163,8 @@ OutputGenerator<dim, Number>::evaluate(
                                               *mapping,
                                               solution_conserved,
                                               additional_fields,
-                                              output_counter);
+                                              output_counter,
+                                              mpi_comm);
 
         ++output_counter;
       }
@@ -170,8 +175,13 @@ OutputGenerator<dim, Number>::evaluate(
             << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"
             << std::endl;
 
-      write_output<dim, Number, VectorType>(
-        output_data, *dof_handler, *mapping, solution_conserved, additional_fields, output_counter);
+      write_output<dim, Number, VectorType>(output_data,
+                                            *dof_handler,
+                                            *mapping,
+                                            solution_conserved,
+                                            additional_fields,
+                                            output_counter,
+                                            mpi_comm);
 
       ++output_counter;
     }

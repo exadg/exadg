@@ -13,6 +13,7 @@
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_tools.h>
 #include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/tria_description.h>
 
 // spatial discretization
 #include "../include/poisson/spatial_discretization/operator.h"
@@ -148,7 +149,7 @@ template<int dim, typename Number = double>
 class Problem : public ProblemBase
 {
 public:
-  Problem();
+  Problem(MPI_Comm const & mpi_comm);
 
   void
   setup(InputParameters const & param);
@@ -162,6 +163,8 @@ public:
 private:
   void
   print_header();
+
+  MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
 
@@ -192,8 +195,9 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem()
-  : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+Problem<dim, Number>::Problem(MPI_Comm const & comm)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     overall_time(0.0),
     setup_time(0.0),
     iterations(0),
@@ -227,7 +231,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   print_header();
   print_dealii_info<Number>(pcout);
-  print_MPI_info(pcout);
+  print_MPI_info(pcout, mpi_comm);
 
   param = param_in;
   param.check_input_parameters();
@@ -237,13 +241,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   if(param.triangulation_type == TriangulationType::Distributed)
   {
     triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
+      mpi_comm,
       dealii::Triangulation<dim>::none,
       parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
   else if(param.triangulation_type == TriangulationType::FullyDistributed)
   {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
   }
   else
   {
@@ -267,17 +271,18 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize Poisson operator
-  poisson_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
+  poisson_operator.reset(
+    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
 
   poisson_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 
   if(true)
   {
     // this variant is only for comparison
-    double AR = calculate_aspect_ratio_vertex_distance(*triangulation);
+    double AR = calculate_aspect_ratio_vertex_distance(*triangulation, mpi_comm);
     std::cout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(param.degree + 1);
@@ -356,9 +361,8 @@ Problem<dim, Number>::analyze_computing_times() const
   }
 
   // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data =
-    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
-  double const overall_time_avg = overall_time_data.avg;
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
 
   // wall times
   this->pcout << std::endl << "Wall times:" << std::endl;
@@ -384,8 +388,7 @@ Problem<dim, Number>::analyze_computing_times() const
   double sum_of_substeps = 0.0;
   for(unsigned int i = 0; i < computing_times.size(); ++i)
   {
-    Utilities::MPI::MinMaxAvg data =
-      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
     this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
                 << std::scientific << std::setw(10) << std::right << data.avg << " s  "
                 << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -394,9 +397,8 @@ Problem<dim, Number>::analyze_computing_times() const
     sum_of_substeps += data.avg;
   }
 
-  Utilities::MPI::MinMaxAvg setup_time_data =
-    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
-  double const setup_time_avg = setup_time_data.avg;
+  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
+  double const              setup_time_avg  = setup_time_data.avg;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
               << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -415,7 +417,7 @@ Problem<dim, Number>::analyze_computing_times() const
 
   // computational costs in CPUh
   // Throughput in DoF/s per time step per core
-  unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
   types::global_dof_index const DoFs            = poisson_operator->get_number_of_dofs();
 
   this->pcout << std::endl
@@ -460,16 +462,16 @@ Problem<dim, Number>::analyze_computing_times() const
 }
 
 void
-do_run(InputParameters const & param)
+do_run(InputParameters const & param, MPI_Comm const & mpi_comm)
 {
   // setup problem and run simulation
   typedef double               Number;
   std::shared_ptr<ProblemBase> problem;
 
   if(param.dim == 2)
-    problem.reset(new Problem<2, Number>());
+    problem.reset(new Problem<2, Number>(mpi_comm));
   else if(param.dim == 3)
-    problem.reset(new Problem<3, Number>());
+    problem.reset(new Problem<3, Number>(mpi_comm));
   else
     AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 
@@ -481,7 +483,7 @@ do_run(InputParameters const & param)
   }
   catch(...)
   {
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::cerr << std::endl
                 << std::endl
@@ -500,6 +502,8 @@ main(int argc, char ** argv)
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
     // set parameters
     InputParameters param;
@@ -520,7 +524,7 @@ main(int argc, char ** argv)
           // reset mesh refinement
           param.h_refinements = h_refinements;
 
-          do_run(param);
+          do_run(param, mpi_comm);
         }
       }
     }
@@ -557,7 +561,7 @@ main(int argc, char ** argv)
         param.h_refinements = std::get<1>(*iter);
         SUBDIVISIONS_MESH   = std::get<2>(*iter);
 
-        do_run(param);
+        do_run(param, mpi_comm);
       }
     }
 #endif
@@ -569,7 +573,7 @@ main(int argc, char ** argv)
     }
 
     // summarize results for all polynomial degrees and problem sizes
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
     pcout << std::endl
           << "_________________________________________________________________________________"

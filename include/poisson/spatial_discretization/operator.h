@@ -53,7 +53,8 @@ public:
 
   DGOperator(parallel::TriangulationBase<dim> const &                  triangulation,
              Poisson::InputParameters const &                          param,
-             std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor);
+             std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor,
+             MPI_Comm const &                                          mpi_comm);
 
   void
   setup(PeriodicFaces const                                     periodic_face_pairs,
@@ -124,6 +125,8 @@ private:
 
   void
   setup_postprocessor();
+
+  MPI_Comm const & mpi_comm;
 
   Poisson::InputParameters const & param;
 

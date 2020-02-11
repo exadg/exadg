@@ -4,7 +4,7 @@
 class DynamicConvergenceTable
 {
 public:
-  DynamicConvergenceTable()
+  DynamicConvergenceTable(MPI_Comm const & comm) : mpi_comm(comm)
   {
     this->add_new_row();
   }
@@ -41,7 +41,7 @@ public:
   print(FILE * f) const
   {
     int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(mpi_comm, &rank);
 
     if(rank)
       return;
@@ -91,6 +91,8 @@ public:
   }
 
 private:
+  MPI_Comm const & mpi_comm;
+
   mutable std::vector<std::map<std::string, double>> vec;
 };
 

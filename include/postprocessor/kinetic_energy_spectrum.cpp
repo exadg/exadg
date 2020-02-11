@@ -51,8 +51,8 @@ public:
 static std::shared_ptr<dealspectrum::DealSpectrumWrapper> deal_spectrum_wrapper;
 
 template<int dim, typename Number>
-KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator()
-  : clear_files(true), counter(0), reset_counter(true)
+KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator(MPI_Comm const & comm)
+  : mpi_comm(comm), clear_files(true), counter(0), reset_counter(true)
 {
   if(deal_spectrum_wrapper == nullptr)
     deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(false, true));
@@ -77,9 +77,8 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
     // create data structures for full system
     if(data.exploit_symmetry)
     {
-      MPI_Comm const comm = MPI_COMM_WORLD;
       tria_full.reset(new parallel::distributed::Triangulation<dim>(
-        comm,
+        mpi_comm,
         Triangulation<dim>::limit_level_difference_at_vertices,
         parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
       GridGenerator::subdivided_hyper_cube(*tria_full,
@@ -100,7 +99,7 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
     {
       int local_cells = matrix_free_data_in.n_physical_cells();
       int cells       = local_cells;
-      MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD);
+      MPI_Allreduce(MPI_IN_PLACE, &cells, 1, MPI_INTEGER, MPI_SUM, mpi_comm);
       cells = round(pow(cells, 1.0 / dim));
       deal_spectrum_wrapper->init(
         dim, cells, data.degree + 1, evaluation_points, dof_handler->get_triangulation());
@@ -209,7 +208,7 @@ void
 KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & velocity,
                                                           double const       time)
 {
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     std::cout << std::endl
               << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl;
 
@@ -218,7 +217,7 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
   deal_spectrum_wrapper->execute((double *)temp);
 
   // write output file
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::ostringstream filename;
     filename << data.filename;

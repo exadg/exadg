@@ -16,13 +16,15 @@ template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &        triangulation,
   InputParameters const &                         param_in,
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in)
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+  MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
     param(param_in),
     fe(param.degree),
     mapping_degree(1),
     dof_handler(triangulation),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+    mpi_comm(mpi_comm_in),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     postprocessor(postprocessor_in)
 {
   if(param.mapping == MappingType::Affine)
@@ -385,7 +387,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
 
     typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-    preconditioner.reset(new MULTIGRID());
+    preconditioner.reset(new MULTIGRID(this->mpi_comm));
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
 
@@ -452,7 +454,7 @@ DGOperator<dim, Number>::initialize_solver()
     // initialize solver
     iterative_solver.reset(
       new GMRESSolver<Operator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        combined_operator, *preconditioner, solver_data));
+        combined_operator, *preconditioner, solver_data, mpi_comm));
   }
   else if(param.solver == Solver::FGMRES)
   {
@@ -817,7 +819,8 @@ DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
                                                     cfl,
                                                     param.degree,
                                                     exponent_degree,
-                                                    param.adaptive_time_stepping_cfl_type);
+                                                    param.adaptive_time_stepping_cfl_type,
+                                                    mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -835,21 +838,25 @@ DGOperator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
                                                     cfl,
                                                     param.degree,
                                                     exponent_degree,
-                                                    param.adaptive_time_stepping_cfl_type);
+                                                    param.adaptive_time_stepping_cfl_type,
+                                                    mpi_comm);
 }
 
 template<int dim, typename Number>
 double
 DGOperator<dim, Number>::calculate_maximum_velocity(double const time) const
 {
-  return calculate_max_velocity(dof_handler.get_triangulation(), field_functions->velocity, time);
+  return calculate_max_velocity(dof_handler.get_triangulation(),
+                                field_functions->velocity,
+                                time,
+                                mpi_comm);
 }
 
 template<int dim, typename Number>
 double
 DGOperator<dim, Number>::calculate_minimum_element_length() const
 {
-  return calculate_minimum_vertex_distance(dof_handler.get_triangulation());
+  return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 }
 
 template<int dim, typename Number>

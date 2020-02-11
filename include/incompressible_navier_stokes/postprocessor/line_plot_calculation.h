@@ -26,7 +26,7 @@ class LinePlotCalculator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  LinePlotCalculator();
+  LinePlotCalculator(MPI_Comm const & comm);
 
   void
   setup(DoFHandler<dim> const &   dof_handler_velocity_in,
@@ -38,6 +38,8 @@ public:
   evaluate(VectorType const & velocity, VectorType const & pressure) const;
 
 private:
+  MPI_Comm const & mpi_comm;
+
   mutable bool clear_files;
 
   SmartPointer<DoFHandler<dim> const> dof_handler_velocity;

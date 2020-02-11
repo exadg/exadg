@@ -37,8 +37,9 @@ private:
   typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
 
 public:
-  MultigridPreconditioner()
-    : pde_operator(nullptr),
+  MultigridPreconditioner(MPI_Comm const & comm)
+    : Base(comm),
+      pde_operator(nullptr),
       mg_operator_type(MultigridOperatorType::ReactionDiffusion),
       mesh_is_moving(false)
   {

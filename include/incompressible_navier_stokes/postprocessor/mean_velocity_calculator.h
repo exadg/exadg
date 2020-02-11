@@ -75,7 +75,8 @@ public:
   MeanVelocityCalculator(MatrixFree<dim, Number> const &         matrix_free_in,
                          unsigned int const                      dof_index_in,
                          unsigned int const                      quad_index_in,
-                         MeanVelocityCalculatorData<dim> const & data_in);
+                         MeanVelocityCalculatorData<dim> const & data_in,
+                         MPI_Comm const &                        comm_in);
 
   /*
    * Calculates the mean velocity through a given cross section of the domain by dividing
@@ -146,6 +147,8 @@ private:
   bool                                    area_has_been_initialized, volume_has_been_initialized;
   double                                  area, volume;
   mutable bool                            clear_files;
+
+  MPI_Comm const & mpi_comm;
 };
 
 } // namespace IncNS

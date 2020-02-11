@@ -11,11 +11,12 @@
 
 void
 print_throughput(std::vector<std::pair<unsigned int, double>> const & wall_times,
-                 std::string const &                                  name)
+                 std::string const &                                  name,
+                 MPI_Comm const &                                     mpi_comm)
 {
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // clang-format off
     std::cout << std::endl
@@ -46,11 +47,12 @@ print_throughput(std::vector<std::pair<unsigned int, double>> const & wall_times
 void
 print_throughput(
   std::vector<std::tuple<unsigned int, types::global_dof_index, double>> const & wall_times,
-  std::string const &                                                            name)
+  std::string const &                                                            name,
+  MPI_Comm const &                                                               mpi_comm)
 {
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     // clang-format off
     std::cout << std::endl

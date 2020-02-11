@@ -12,7 +12,6 @@
 #  include <metis.h>
 #endif
 
-#include <deal.II/distributed/fully_distributed_tria_util.h>
 #include <deal.II/grid/grid_reordering.h>
 #include <vector>
 
@@ -318,7 +317,9 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
   timer.restart();
 
   // collect faces and their ids for the non-reordered triangulation
-  std::map<std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>, unsigned int> map;
+  std::map<std::pair<std::pair<unsigned int, unsigned int>, std::pair<unsigned int, unsigned int>>,
+           unsigned int>
+    map;
 
   {
     dealii::Triangulation<3> tria;
@@ -328,9 +329,10 @@ void lung_unrefined(dealii::Triangulation<3> &                                  
     unsigned int counter = outlet_id_first; // counter for outlets
     for(auto cell : tria.active_cell_iterators())
     {
-    // the mesh is generated in a way that inlet/outlets are one faces with normal vector
-    // in positive or negative z-direction (faces 4/5)
-      if(cell->at_boundary(5) && cell->material_id() == (unsigned int) LungID::create_root()) // inlet
+      // the mesh is generated in a way that inlet/outlets are one faces with normal vector
+      // in positive or negative z-direction (faces 4/5)
+      if(cell->at_boundary(5) &&
+         cell->material_id() == (unsigned int)LungID::create_root()) // inlet
         map[face_vertices(cell->face(5))] = 1;
 
       if(cell->at_boundary(4)) // outlets (>1)
@@ -798,7 +800,7 @@ void lung(dealii::parallel::distributed::Triangulation<3> &              tria,
   tria.refine_global(refinements);
   update_mapping(tria, deform);
 
-  outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
+  outlet_id_last = Utilities::MPI::max(outlet_id_last, tria.get_communicator());
 }
 
 void lung(dealii::parallel::fullydistributed::Triangulation<2> &         tria,
@@ -843,8 +845,7 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
 
   // create partitioned triangulation ...
   const auto construction_data =
-    parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<3,
-                                                                                                 3>(
+    TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<3, 3>(
       [&](dealii::Triangulation<3, 3> & tria) mutable {
         // ... by creating a refined sequential triangulation and partition it
         lung_unrefined(tria,
@@ -868,7 +869,7 @@ void lung(dealii::parallel::fullydistributed::Triangulation<3> & tria,
   tria.create_triangulation(construction_data);
   update_mapping(tria, deform);
 
-  outlet_id_last = Utilities::MPI::max(outlet_id_last, MPI_COMM_WORLD);
+  outlet_id_last = Utilities::MPI::max(outlet_id_last, tria.get_communicator());
 
   timings["create_triangulation_0_overall"] = timer.wall_time();
 }

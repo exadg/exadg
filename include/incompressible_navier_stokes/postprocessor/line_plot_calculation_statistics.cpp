@@ -9,19 +9,15 @@
 
 template<int dim>
 LinePlotCalculatorStatistics<dim>::LinePlotCalculatorStatistics(
-  const DoFHandler<dim> & dof_handler_velocity_in,
-  const DoFHandler<dim> & dof_handler_pressure_in,
-  const Mapping<dim> &    mapping_in)
+  DoFHandler<dim> const & dof_handler_velocity_in,
+  DoFHandler<dim> const & dof_handler_pressure_in,
+  Mapping<dim> const &    mapping_in,
+  MPI_Comm const &        mpi_comm)
   : clear_files(true),
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                   &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                      &dof_handler_velocity.get_triangulation())
-                      ->get_communicator()) :
-                   MPI_COMM_SELF),
+    communicator(mpi_comm),
     cell_data_has_been_initialized(false),
     number_of_samples(0),
     write_final_output(false)
@@ -605,17 +601,13 @@ template<int dim>
 LinePlotCalculatorStatisticsHomogeneousDirection<dim>::
   LinePlotCalculatorStatisticsHomogeneousDirection(const DoFHandler<dim> & dof_handler_velocity_in,
                                                    const DoFHandler<dim> & dof_handler_pressure_in,
-                                                   const Mapping<dim> &    mapping_in)
+                                                   const Mapping<dim> &    mapping_in,
+                                                   MPI_Comm const &        mpi_comm)
   : clear_files(true),
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                   &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                      &dof_handler_velocity.get_triangulation())
-                      ->get_communicator()) :
-                   MPI_COMM_SELF),
+    communicator(mpi_comm),
     number_of_samples(0),
     averaging_direction(2),
     write_final_output(false)

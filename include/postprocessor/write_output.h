@@ -21,13 +21,14 @@ write_surface_mesh(Triangulation<dim> const & triangulation,
                    unsigned int               n_subdivisions,
                    std::string const &        folder,
                    std::string const &        file,
-                   unsigned int const         counter)
+                   unsigned int const         counter,
+                   MPI_Comm const &           mpi_comm)
 {
   // write surface mesh only
   DataOutFaces<dim, DoFHandler<dim>> data_out_surface(true /*surface only*/);
   data_out_surface.attach_triangulation(triangulation);
   data_out_surface.build_patches(mapping, n_subdivisions);
-  data_out_surface.write_vtu_with_pvtu_record(folder, file, counter, 4);
+  data_out_surface.write_vtu_with_pvtu_record(folder, file, counter, 4, mpi_comm);
 }
 
 template<int dim>
@@ -35,7 +36,7 @@ void
 write_boundary_IDs(Triangulation<dim> const & triangulation,
                    std::string const &        folder,
                    std::string const &        file,
-                   MPI_Comm const &           mpi_communicator = MPI_COMM_WORLD)
+                   MPI_Comm const &           mpi_communicator)
 {
   const unsigned int rank    = Utilities::MPI::this_mpi_process(mpi_communicator);
   const unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_communicator);

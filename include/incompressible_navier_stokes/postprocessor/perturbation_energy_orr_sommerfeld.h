@@ -62,7 +62,7 @@ public:
   typedef VectorizedArray<Number>                 scalar;
   typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
-  PerturbationEnergyCalculator();
+  PerturbationEnergyCalculator(MPI_Comm const & comm);
 
   void
   setup(MatrixFree<dim, Number> const & matrix_free_data_in,
@@ -92,6 +92,8 @@ private:
                 std::vector<Number> &                         dst,
                 VectorType const &                            src,
                 std::pair<unsigned int, unsigned int> const & cell_range);
+
+  MPI_Comm const & mpi_comm;
 
   bool   clear_files;
   bool   initial_perturbation_energy_has_been_calculated;

@@ -75,8 +75,10 @@ public:
     AMGData amg_data;
   };
 
-  MGCoarseKrylov(Operator const & matrix, AdditionalData const & additional_data)
-    : coarse_matrix(matrix), additional_data(additional_data)
+  MGCoarseKrylov(Operator const &       matrix,
+                 AdditionalData const & additional_data,
+                 MPI_Comm const &       comm)
+    : coarse_matrix(matrix), additional_data(additional_data), mpi_comm(comm)
   {
     if(additional_data.preconditioner == MultigridCoarseGridPreconditioner::PointJacobi)
     {
@@ -233,7 +235,7 @@ public:
         }
 
         solver.reset(new GMRESSolver<Operator, PreconditionerBase<MultigridNumber>, VectorType>(
-          coarse_matrix, *preconditioner, solver_data));
+          coarse_matrix, *preconditioner, solver_data, mpi_comm));
       }
       else
       {
@@ -254,6 +256,8 @@ private:
   std::shared_ptr<PreconditionerBase<TrilinosNumber>> preconditioner_trilinos;
 
   AdditionalData additional_data;
+
+  MPI_Comm const & mpi_comm;
 };
 
 

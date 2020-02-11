@@ -15,8 +15,9 @@ template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
   parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor)
-  : ProjBase(triangulation, parameters, postprocessor)
+  std::shared_ptr<Postprocessor>           postprocessor,
+  MPI_Comm const &                         mpi_comm)
+  : ProjBase(triangulation, parameters, postprocessor, mpi_comm)
 {
 }
 
@@ -106,7 +107,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
   {
     typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-    momentum_preconditioner.reset(new MULTIGRID());
+    momentum_preconditioner.reset(new MULTIGRID(this->mpi_comm));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(momentum_preconditioner);
@@ -170,7 +171,7 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_solver()
     // setup solver
     momentum_linear_solver.reset(
       new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *momentum_preconditioner, solver_data));
+        this->momentum_operator, *momentum_preconditioner, solver_data, this->mpi_comm));
   }
   else if(this->param.solver_momentum == SolverMomentum::FGMRES)
   {

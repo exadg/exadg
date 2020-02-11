@@ -26,7 +26,8 @@ write_output(OutputData const &                                 output_data,
              LinearAlgebra::distributed::Vector<Number> const & velocity,
              LinearAlgebra::distributed::Vector<Number> const & pressure,
              std::vector<SolutionField<dim, Number>> const &    additional_fields,
-             unsigned int const                                 output_counter)
+             unsigned int const                                 output_counter,
+             MPI_Comm const &                                   mpi_comm)
 {
   std::string folder = output_data.output_folder, file = output_data.output_name;
 
@@ -74,7 +75,7 @@ write_output(OutputData const &                                 output_data,
 
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
-  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, 4);
+  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, 4, mpi_comm);
 
   // write surface mesh
   if(output_data.write_surface_mesh)
@@ -84,13 +85,14 @@ write_output(OutputData const &                                 output_data,
                        output_data.degree,
                        folder,
                        file + "_surface",
-                       output_counter);
+                       output_counter,
+                       mpi_comm);
   }
 }
 
 template<int dim, typename Number>
-OutputGenerator<dim, Number>::OutputGenerator()
-  : output_counter(0), reset_counter(true), counter_mean_velocity(0)
+OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm)
+  : mpi_comm(comm), output_counter(0), reset_counter(true), counter_mean_velocity(0)
 {
 }
 
@@ -120,7 +122,8 @@ OutputGenerator<dim, Number>::setup(NavierStokesOperator const & navier_stokes_o
   {
     write_boundary_IDs(dof_handler_velocity->get_triangulation(),
                        output_data.output_folder,
-                       output_data.output_name);
+                       output_data.output_name,
+                       mpi_comm);
   }
 }
 
@@ -133,7 +136,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
 {
   if(output_data.write_output == true)
   {
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
     if(time_step_number >= 0) // unsteady problem
     {
@@ -169,7 +172,8 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
                           velocity,
                           pressure,
                           additional_fields,
-                          output_counter);
+                          output_counter,
+                          mpi_comm);
 
         ++output_counter;
       }
@@ -189,7 +193,8 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & velocity,
                         velocity,
                         pressure,
                         additional_fields,
-                        output_counter);
+                        output_counter,
+                        mpi_comm);
 
       ++output_counter;
     }
@@ -313,7 +318,7 @@ template<int dim, typename Number>
 void
 OutputGenerator<dim, Number>::compute_processor_id(VectorType & dst) const
 {
-  dst = Utilities::MPI::this_mpi_process(MPI_COMM_WORLD);
+  dst = Utilities::MPI::this_mpi_process(mpi_comm);
 }
 
 template<int dim, typename Number>

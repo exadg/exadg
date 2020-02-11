@@ -19,12 +19,14 @@ namespace IncNS
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
                                                    std::shared_ptr<OperatorPDE>  operator_in,
-                                                   InputParameters const &       param_in)
+                                                   InputParameters const &       param_in,
+                                                   MPI_Comm const &              mpi_comm_in)
   : operator_base(operator_base_in),
     pde_operator(operator_in),
     param(param_in),
+    mpi_comm(mpi_comm_in),
     computing_times(1),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
 }
 

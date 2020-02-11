@@ -10,8 +10,9 @@
 #include <fstream>
 
 template<int dim, typename Number>
-PerturbationEnergyCalculator<dim, Number>::PerturbationEnergyCalculator()
-  : clear_files(true),
+PerturbationEnergyCalculator<dim, Number>::PerturbationEnergyCalculator(MPI_Comm const & comm)
+  : mpi_comm(comm),
+    clear_files(true),
     initial_perturbation_energy_has_been_calculated(false),
     initial_perturbation_energy(1.0),
     matrix_free_data(nullptr),
@@ -75,7 +76,7 @@ PerturbationEnergyCalculator<dim, Number>::do_evaluate(VectorType const & veloci
     }
 
     // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       // clang-format off
       unsigned int l = matrix_free_data->get_dof_handler(dof_index)
@@ -123,7 +124,7 @@ PerturbationEnergyCalculator<dim, Number>::integrate(
   matrix_free_data.cell_loop(&This::local_compute, this, dst, velocity);
 
   // sum over all MPI processes
-  energy = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
+  energy = Utilities::MPI::sum(dst.at(0), mpi_comm);
 }
 
 template<int dim, typename Number>

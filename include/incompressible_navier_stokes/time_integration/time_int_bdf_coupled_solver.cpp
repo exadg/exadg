@@ -18,8 +18,9 @@ namespace IncNS
 template<typename Number>
 TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
                                              std::shared_ptr<InterfacePDE>  pde_operator_in,
-                                             InputParameters const &        param_in)
-  : TimeIntBDF<Number>(operator_base_in, param_in),
+                                             InputParameters const &        param_in,
+                                             MPI_Comm const &               mpi_comm_in)
+  : TimeIntBDF<Number>(operator_base_in, param_in, mpi_comm_in),
     pde_operator(pde_operator_in),
     solution(this->order),
     computing_times(3),
@@ -264,11 +265,10 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     // write output
     if(this->print_solver_info())
     {
-      ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-      pcout << "Solve linear problem:" << std::endl
-            << "  Iterations: " << std::setw(6) << std::right << linear_iterations
-            << "\t Wall time [s]: " << std::scientific
-            << timer.wall_time() + computing_time_convective << std::endl;
+      this->pcout << "Solve linear problem:" << std::endl
+                  << "  Iterations: " << std::setw(6) << std::right << linear_iterations
+                  << "\t Wall time [s]: " << std::scientific
+                  << timer.wall_time() + computing_time_convective << std::endl;
     }
   }
   else // a nonlinear system of equations has to be solved
@@ -305,18 +305,17 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     // write output
     if(this->print_solver_info())
     {
-      ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
-
-      pcout << "Solve nonlinear problem:" << std::endl
-            << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
-            << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
-            << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
-            << std::right
-            << ((newton_iterations > 0) ? (double(linear_iterations) / (double)newton_iterations) :
-                                          linear_iterations)
-            << " (avg)" << std::endl
-            << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
-            << std::right << linear_iterations << " (tot)" << std::endl;
+      this->pcout << "Solve nonlinear problem:" << std::endl
+                  << "  Newton iterations: " << std::setw(6) << std::right << newton_iterations
+                  << "\t Wall time [s]: " << std::scientific << timer.wall_time() << std::endl
+                  << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
+                  << std::right
+                  << ((newton_iterations > 0) ?
+                        (double(linear_iterations) / (double)newton_iterations) :
+                        linear_iterations)
+                  << " (avg)" << std::endl
+                  << "  Linear iterations: " << std::setw(6) << std::fixed << std::setprecision(2)
+                  << std::right << linear_iterations << " (tot)" << std::endl;
     }
   }
 
@@ -444,7 +443,7 @@ TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
   AssertThrow(solution[0].block(0).l2_norm() < 1.e-15 && solution[0].block(1).l2_norm() < 1.e-15,
               ExcMessage("Solution vector has to be zero for this stability analysis."));
 
-  AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
+  AssertThrow(Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
               ExcMessage("Number of MPI processes has to be 1."));
 
   std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;
