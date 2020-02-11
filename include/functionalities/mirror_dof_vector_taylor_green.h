@@ -72,7 +72,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
 
     // ... has (symm)
     for(const auto & cell : dof_handler_symm.active_cell_iterators())
-      if(cell->active() && cell->is_locally_owned())
+      if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
         for(unsigned int i = 0; i < dim; i++)
@@ -86,7 +86,7 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
 
     // want (full)
     for(const auto & cell : dof_handler.active_cell_iterators())
-      if(cell->active() && cell->is_locally_owned())
+      if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
         for(unsigned int i = 0; i < dim; i++)
