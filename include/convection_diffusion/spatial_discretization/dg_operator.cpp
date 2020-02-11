@@ -663,52 +663,20 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::rhs(VectorType & dst, double const time, VectorType const * velocity) const
 {
-  // evaluate each operator separately
-  if(param.use_combined_operator == false)
+  // no need to set scaling_factor_mass_matrix because the mass matrix does not contribute to rhs
+
+  if(param.linear_system_including_convective_term_has_to_be_solved())
   {
-    // set dst to zero since we call functions of type ..._add()
-    dst = 0;
-
-    // diffusive operator
-    if(param.equation_type == EquationType::Diffusion ||
-       param.equation_type == EquationType::ConvectionDiffusion)
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      diffusive_operator.set_time(time);
-      diffusive_operator.rhs_add(dst);
-    }
+      AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
 
-    // convective operator
-    if(param.linear_system_including_convective_term_has_to_be_solved())
-    {
-      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-      {
-        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
-
-        convective_operator.set_velocity_ptr(*velocity);
-      }
-
-      convective_operator.set_time(time);
-      convective_operator.rhs_add(dst);
+      combined_operator.set_velocity_ptr(*velocity);
     }
   }
-  else // param.use_combined_operator == true
-  {
-    // no need to set scaling_factor_mass_matrix because the mass matrix does not contribute to the
-    // rhs
 
-    if(param.linear_system_including_convective_term_has_to_be_solved())
-    {
-      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-      {
-        AssertThrow(velocity != nullptr, ExcMessage("velocity pointer is not initialized."));
-
-        combined_operator.set_velocity_ptr(*velocity);
-      }
-    }
-
-    combined_operator.set_time(time);
-    combined_operator.rhs(dst);
-  }
+  combined_operator.set_time(time);
+  combined_operator.rhs(dst);
 
   // rhs operator f(t)
   if(param.right_hand_side == true)
