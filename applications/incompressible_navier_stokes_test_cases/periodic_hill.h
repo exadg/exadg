@@ -406,9 +406,10 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessorPeriodicHill(PostProcessorDataPeriodicHill<dim> const & pp_data_periodic_hill_in)
+  PostProcessorPeriodicHill(PostProcessorDataPeriodicHill<dim> const & pp_data_periodic_hill_in,
+                            MPI_Comm const &                           mpi_comm)
     :
-    Base(pp_data_periodic_hill_in.pp_data),
+    Base(pp_data_periodic_hill_in.pp_data, mpi_comm),
     pp_data_periodic_hill(pp_data_periodic_hill_in),
     time_old(START_TIME)
   {}
@@ -423,13 +424,15 @@ public:
         pde_operator.get_matrix_free(),
         pde_operator.get_dof_index_velocity(),
         pde_operator.get_quad_index_velocity_linear(),
-        pp_data_periodic_hill.mean_velocity_data));
+        pp_data_periodic_hill.mean_velocity_data,
+        this->mpi_comm));
 
     // evaluation of characteristic quantities along lines
     line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneousDirection<dim>(
         pde_operator.get_dof_handler_u(),
         pde_operator.get_dof_handler_p(),
-        pde_operator.get_mapping()));
+        pde_operator.get_mapping(),
+        this->mpi_comm));
 
     line_plot_calculator_statistics->setup(pp_data_periodic_hill.pp_data.line_plot_data);
   }
@@ -480,7 +483,7 @@ private:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   PostProcessorData<dim> pp_data;
 
@@ -603,7 +606,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data_periodic_hill.mean_velocity_data.write_to_file = true;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessorPeriodicHill<dim,Number>(pp_data_periodic_hill));
+  pp.reset(new PostProcessorPeriodicHill<dim,Number>(pp_data_periodic_hill, mpi_comm));
 
   return pp;
 }

@@ -123,14 +123,14 @@ set_analytical_solution(std::shared_ptr<ConvDiff::AnalyticalSolution<dim>> analy
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(ConvDiff::InputParameters const &param)
+construct_postprocessor(ConvDiff::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   (void)param;
 
   PostProcessorData<dim> pp_data;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

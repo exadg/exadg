@@ -382,7 +382,7 @@ void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_fun
 
 template<int dim, typename Number>
 std::shared_ptr<CompNS::PostProcessorBase<dim, Number> >
-construct_postprocessor(CompNS::InputParameters const &param)
+construct_postprocessor(CompNS::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   CompNS::PostProcessorData<dim> pp_data;
 
@@ -433,7 +433,7 @@ construct_postprocessor(CompNS::InputParameters const &param)
   pp_data.pressure_difference_data.filename = OUTPUT_FOLDER + FILENAME + "_pressure_difference";
 
   std::shared_ptr<CompNS::PostProcessorBase<dim, Number> > pp;
-  pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data));
+  pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
   return pp;
 }

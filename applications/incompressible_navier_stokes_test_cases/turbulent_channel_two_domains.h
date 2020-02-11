@@ -707,13 +707,14 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel)
+  PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel,
+                                MPI_Comm const &                               mpi_comm)
     :
-    Base(pp_data_turb_channel.pp_data),
+    Base(pp_data_turb_channel.pp_data, mpi_comm),
     write_final_output(true),
     turb_ch_data(pp_data_turb_channel.turb_ch_data)
   {
-    inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_turb_channel.inflow_data));
+    inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_turb_channel.inflow_data, mpi_comm));
   }
 
   void setup(Operator const & pde_operator)
@@ -838,14 +839,14 @@ initialize_postprocessor_data(PostProcessorDataTurbulentChannel<2> pp_data,
 // two-domain solver
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param, unsigned int const domain_id)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm, unsigned int const domain_id)
 {
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
 
   PostProcessorDataTurbulentChannel<dim> pp_data;
   initialize_postprocessor_data(pp_data, param, domain_id);
 
-  pp.reset(new PostProcessorTurbulentChannel<dim,Number>(pp_data));
+  pp.reset(new PostProcessorTurbulentChannel<dim,Number>(pp_data,mpi_comm));
 
   return pp;
 }
