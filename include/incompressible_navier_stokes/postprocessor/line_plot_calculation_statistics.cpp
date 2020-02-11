@@ -122,13 +122,14 @@ LinePlotCalculatorStatistics<dim>::do_evaluate(VectorType const & velocity,
       bool velocity_has_to_be_evaluated = false;
       bool pressure_has_to_be_evaluated = false;
 
-      for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+      for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+            line->quantities.begin();
           quantity != line->quantities.end();
           ++quantity)
       {
         // make sure that the averaging type is correct
-        const QuantityStatistics<dim> * quantity_statistics =
-          dynamic_cast<const QuantityStatistics<dim> *>(*quantity);
+        std::shared_ptr<QuantityStatistics<dim>> quantity_statistics =
+          std::dynamic_pointer_cast<QuantityStatistics<dim>>(*quantity);
 
         AssertThrow(
           quantity_statistics->average_homogeneous_direction == false,
@@ -151,8 +152,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate(VectorType const & velocity,
 
       // take the first quantity to get the normal vector. All quantities for the
       // current line must have the same averaging type
-      const QuantityStatistics<dim> * quantity =
-        dynamic_cast<const QuantityStatistics<dim> *>(line->quantities[0]);
+      std::shared_ptr<QuantityStatistics<dim>> quantity =
+        std::dynamic_pointer_cast<QuantityStatistics<dim>>(line->quantities[0]);
 
       Tensor<1, dim, double> normal_vector;
       Tensor<1, dim, double> unit_vector_1, unit_vector_2;
@@ -273,7 +274,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate(VectorType const & velocity,
       ++line, ++line_iterator)
   {
     bool evaluate_velocity = false;
-    for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+    for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+          line->quantities.begin();
         quantity != line->quantities.end();
         ++quantity)
     {
@@ -291,7 +293,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate(VectorType const & velocity,
     }
 
     bool evaluate_pressure = false;
-    for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+    for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+          line->quantities.begin();
         quantity != line->quantities.end();
         ++quantity)
     {
@@ -336,7 +339,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
       // increment counter (because this is a locally owned cell)
       counter_vector_local[p] += 1;
 
-      for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
+      for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+            line.quantities.begin();
           quantity != line.quantities.end();
           ++quantity)
       {
@@ -363,7 +367,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
   Utilities::MPI::sum(counter_vector_local, communicator, counter_vector_local);
 
   // Perform MPI communcation as well as averaging for all quantities of the current line.
-  for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
+  for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+        line.quantities.begin();
       quantity != line.quantities.end();
       ++quantity)
   {
@@ -424,7 +429,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & press
       // increment counter (because this is a locally owned cell)
       counter_vector_local[p] += 1;
 
-      for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
+      for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+            line.quantities.begin();
           quantity != line.quantities.end();
           ++quantity)
       {
@@ -451,7 +457,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & press
   Utilities::MPI::sum(counter_vector_local, communicator, counter_vector_local);
 
   // Perform MPI communcation as well as averaging for all quantities of the current line.
-  for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
+  for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+        line.quantities.begin();
       quantity != line.quantities.end();
       ++quantity)
   {
@@ -492,9 +499,10 @@ LinePlotCalculatorStatistics<dim>::do_write_output() const
         line != data.lines.end();
         ++line, ++line_iterator)
     {
-      std::string filename_prefix = data.filename_prefix + line->name;
+      std::string filename_prefix = data.directory + line->name;
 
-      for(typename std::vector<Quantity *>::const_iterator quantity = line->quantities.begin();
+      for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+            line->quantities.begin();
           quantity != line->quantities.end();
           ++quantity)
       {
@@ -657,8 +665,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::setup(
   // quantities are averaged over the same homogeneous direction for all lines
   AssertThrow(data.lines.size() > 0, ExcMessage("Empty data"));
   AssertThrow(data.lines[0].quantities.size() > 0, ExcMessage("Empty data"));
-  const QuantityStatistics<dim> * quantity =
-    dynamic_cast<const QuantityStatistics<dim> *>(data.lines[0].quantities[0]);
+  std::shared_ptr<QuantityStatistics<dim>> quantity =
+    std::dynamic_pointer_cast<QuantityStatistics<dim>>(data.lines[0].quantities[0]);
   averaging_direction = quantity->averaging_direction;
 
   AssertThrow(averaging_direction == 0 || averaging_direction == 1 || averaging_direction == 2,
@@ -676,11 +684,13 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::setup(
     reynolds_global[line_iterator].resize(line->n_points);
 
     // make sure that all lines/quantities really use the same averaging direction
-    for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+    for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+          line->quantities.begin();
         quantity != line->quantities.end();
         ++quantity)
     {
-      QuantityStatistics<dim> * stats_ptr = dynamic_cast<QuantityStatistics<dim> *>(*quantity);
+      std::shared_ptr<QuantityStatistics<dim>> stats_ptr =
+        std::dynamic_pointer_cast<QuantityStatistics<dim>>(*quantity);
 
       // make sure that the averaging type is correct
       AssertThrow(
@@ -718,7 +728,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::setup(
           ++line, ++line_iterator)
       {
         bool velocity_has_to_be_evaluated = false;
-        for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+        for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+              line->quantities.begin();
             quantity != line->quantities.end();
             ++quantity)
         {
@@ -789,7 +800,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::setup(
           line != data.lines.end();
           ++line, ++line_iterator)
       {
-        for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+        for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+              line->quantities.begin();
             quantity != line->quantities.end();
             ++quantity)
         {
@@ -837,15 +849,16 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::setup(
         }
 
         // cells and reference points for reference pressure (only one point for each line)
-        for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+        for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+              line->quantities.begin();
             quantity != line->quantities.end();
             ++quantity)
         {
           // evaluate quantities that involve pressure
           if((*quantity)->type == QuantityType::PressureCoefficient)
           {
-            QuantityStatisticsPressureCoefficient<dim> * quantity_ref_pressure =
-              dynamic_cast<QuantityStatisticsPressureCoefficient<dim> *>(*quantity);
+            std::shared_ptr<QuantityStatisticsPressureCoefficient<dim>> quantity_ref_pressure =
+              std::dynamic_pointer_cast<QuantityStatisticsPressureCoefficient<dim>>(*quantity);
 
             // First, we move the line to the position of the current cell (vertex 0) in
             // averaging direction and check whether this new point is inside the current cell
@@ -935,7 +948,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_evaluate(VectorType co
       ++line, ++line_iterator)
   {
     bool evaluate_velocity = false;
-    for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+    for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+          line->quantities.begin();
         quantity != line->quantities.end();
         ++quantity)
     {
@@ -951,7 +965,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_evaluate(VectorType co
       do_evaluate_velocity(velocity, *line, line_iterator);
 
     bool evaluate_pressure = false;
-    for(typename std::vector<Quantity *>::iterator quantity = line->quantities.begin();
+    for(typename std::vector<std::shared_ptr<Quantity>>::iterator quantity =
+          line->quantities.begin();
         quantity != line->quantities.end();
         ++quantity)
     {
@@ -1036,7 +1051,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_evaluate_velocity(
         // calculate integrals in homogeneous direction
         length_local[p] += JxW;
 
-        for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
+        for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+              line.quantities.begin();
             quantity != line.quantities.end();
             ++quantity)
         {
@@ -1071,8 +1087,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_evaluate_velocity(
             for(unsigned int j = 0; j < velocity_vector.size(); ++j)
               velocity_gradient += outer_product(velocity_vector[j], fe_values.shape_grad(j, q));
 
-            const QuantityStatisticsSkinFriction<dim> * quantity_skin_friction =
-              dynamic_cast<const QuantityStatisticsSkinFriction<dim> *>(*quantity);
+            std::shared_ptr<QuantityStatisticsSkinFriction<dim>> quantity_skin_friction =
+              std::dynamic_pointer_cast<QuantityStatisticsSkinFriction<dim>>(*quantity);
 
             Tensor<1, dim, double> normal  = quantity_skin_friction->normal_vector;
             Tensor<1, dim, double> tangent = quantity_skin_friction->tangent_vector;
@@ -1088,7 +1104,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_evaluate_velocity(
 
   Utilities::MPI::sum(length_local, communicator, length_local);
 
-  for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
+  for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+        line.quantities.begin();
       quantity != line.quantities.end();
       ++quantity)
   {
@@ -1147,7 +1164,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_evaluate_pressure(
   Line<dim> const &  line,
   unsigned int const line_iterator)
 {
-  for(typename std::vector<Quantity *>::const_iterator quantity = line.quantities.begin();
+  for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+        line.quantities.begin();
       quantity != line.quantities.end();
       ++quantity)
   {
@@ -1293,9 +1311,10 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_write_output() const
         line != data.lines.end();
         ++line, ++line_iterator)
     {
-      std::string filename_prefix = data.filename_prefix + line->name;
+      std::string filename_prefix = data.directory + line->name;
 
-      for(typename std::vector<Quantity *>::const_iterator quantity = line->quantities.begin();
+      for(typename std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+            line->quantities.begin();
           quantity != line->quantities.end();
           ++quantity)
       {
@@ -1395,8 +1414,8 @@ LinePlotCalculatorStatisticsHomogeneousDirection<dim>::do_write_output() const
 
         if((*quantity)->type == QuantityType::SkinFriction)
         {
-          QuantityStatisticsSkinFriction<dim> * averaging_quantity =
-            dynamic_cast<QuantityStatisticsSkinFriction<dim> *>(*quantity);
+          std::shared_ptr<QuantityStatisticsSkinFriction<dim>> averaging_quantity =
+            std::dynamic_pointer_cast<QuantityStatisticsSkinFriction<dim>>(*quantity);
 
           std::string   filename = filename_prefix + "_wall_shear_stress" + ".txt";
           std::ofstream f;

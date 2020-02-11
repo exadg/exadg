@@ -66,12 +66,6 @@ double const SAMPLE_START_TIME = 0.0*FLOW_THROUGH_TIME; // TODO
 double const SAMPLE_END_TIME = END_TIME;
 unsigned int const SAMPLE_EVERY_TIMESTEPS = 1;
 bool const CALCULATE_STATISTICS = true;
-
-QuantityStatistics<3> QUANTITY_VELOCITY;
-QuantityStatistics<3> QUANTITY_REYNOLDS;
-//QuantityStatistics<DIMENSION> QUANTITY_PRESSURE;
-//QuantityStatisticsPressureCoefficient<DIMENSION> QUANTITY_PRESSURE_COEFF;
-//QuantityStatisticsSkinFriction<3> QUANTITY_SKIN_FRICTION;
 const unsigned int N_POINTS_LINE = std::pow(2.0,REFINE_SPACE_MIN)*(DEGREE_MIN+1)*2;
 
 // data structures that we need to control the mass flow rate:
@@ -498,7 +492,7 @@ construct_postprocessor(InputParameters const &param)
 
   // line plot data: calculate statistics along lines
   pp_data.line_plot_data.write_output = true;
-  pp_data.line_plot_data.filename_prefix = OUTPUT_FOLDER;
+  pp_data.line_plot_data.directory = OUTPUT_FOLDER;
   pp_data.line_plot_data.statistics_data.calculate_statistics = CALCULATE_STATISTICS;
   pp_data.line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
   pp_data.line_plot_data.statistics_data.sample_end_time = END_TIME;
@@ -506,14 +500,18 @@ construct_postprocessor(InputParameters const &param)
   pp_data.line_plot_data.statistics_data.write_output_every_timesteps = SAMPLE_EVERY_TIMESTEPS*100;
 
   // mean velocity
-  QUANTITY_VELOCITY.type = QuantityType::Velocity;
-  QUANTITY_VELOCITY.average_homogeneous_direction = true;
-  QUANTITY_VELOCITY.averaging_direction = 2;
+  std::shared_ptr<QuantityStatistics<dim>> quantity_velocity;
+  quantity_velocity.reset(new QuantityStatistics<dim>());
+  quantity_velocity->type = QuantityType::Velocity;
+  quantity_velocity->average_homogeneous_direction = true;
+  quantity_velocity->averaging_direction = 2;
 
   // Reynolds stresses
-  QUANTITY_REYNOLDS.type = QuantityType::ReynoldsStresses;
-  QUANTITY_REYNOLDS.average_homogeneous_direction = true;
-  QUANTITY_REYNOLDS.averaging_direction = 2;
+  std::shared_ptr<QuantityStatistics<dim>> quantity_reynolds;
+  quantity_reynolds.reset(new QuantityStatistics<dim>());
+  quantity_reynolds->type = QuantityType::ReynoldsStresses;
+  quantity_reynolds->average_homogeneous_direction = true;
+  quantity_reynolds->averaging_direction = 2;
 
   // lines
   Line<dim> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8;
@@ -551,24 +549,24 @@ construct_postprocessor(InputParameters const &param)
   vel_8.n_points = N_POINTS_LINE;
 
   // set the quantities that we want to compute along the lines
-  vel_0.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_0.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_1.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_1.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_2.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_2.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_3.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_3.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_4.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_4.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_5.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_5.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_6.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_6.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_7.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_7.quantities.push_back(&QUANTITY_REYNOLDS);
-  vel_8.quantities.push_back(&QUANTITY_VELOCITY);
-  vel_8.quantities.push_back(&QUANTITY_REYNOLDS);
+  vel_0.quantities.push_back(quantity_velocity);
+  vel_0.quantities.push_back(quantity_reynolds);
+  vel_1.quantities.push_back(quantity_velocity);
+  vel_1.quantities.push_back(quantity_reynolds);
+  vel_2.quantities.push_back(quantity_velocity);
+  vel_2.quantities.push_back(quantity_reynolds);
+  vel_3.quantities.push_back(quantity_velocity);
+  vel_3.quantities.push_back(quantity_reynolds);
+  vel_4.quantities.push_back(quantity_velocity);
+  vel_4.quantities.push_back(quantity_reynolds);
+  vel_5.quantities.push_back(quantity_velocity);
+  vel_5.quantities.push_back(quantity_reynolds);
+  vel_6.quantities.push_back(quantity_velocity);
+  vel_6.quantities.push_back(quantity_reynolds);
+  vel_7.quantities.push_back(quantity_velocity);
+  vel_7.quantities.push_back(quantity_reynolds);
+  vel_8.quantities.push_back(quantity_velocity);
+  vel_8.quantities.push_back(quantity_reynolds);
 
   // set line names
   vel_0.name = "x_0";

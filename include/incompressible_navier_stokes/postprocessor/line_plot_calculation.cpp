@@ -51,10 +51,11 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
         points[i] = line->begin + double(i) / double(n_points - 1) * (line->end - line->begin);
 
       // filename prefix for current line
-      std::string filename_prefix = data.filename_prefix + "_" + line->name;
+      std::string filename_prefix = data.directory + line->name;
 
       // write output for all specified quantities
-      for(std::vector<Quantity *>::const_iterator quantity = line->quantities.begin();
+      for(std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+            line->quantities.begin();
           quantity != line->quantities.end();
           ++quantity)
       {

@@ -110,8 +110,6 @@ unsigned int WRITE_OUTPUT_EVERY_TIMESTEPS = SAMPLE_EVERY_TIMESTEPS*100;
 unsigned int N_POINTS_LINE_AXIAL = 400;
 unsigned int N_POINTS_LINE_RADIAL = 64;
 unsigned int N_POINTS_LINE_CIRCUMFERENTIAL = 32;
-QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
-QuantityStatistics<DIMENSION> QUANTITY_VELOCITY_CIRCUMFERENTIAL;
 
 // data structures that we need in order to apply the velocity inflow profile:
 
@@ -950,7 +948,7 @@ initialize_postprocessor_data(PostProcessorDataFDA<dim> &pp_data_fda,
 
     // evaluation of quantities along lines
     pp_data_fda.line_plot_data.write_output = true;
-    pp_data_fda.line_plot_data.filename_prefix = OUTPUT_FOLDER;
+    pp_data_fda.line_plot_data.directory = OUTPUT_FOLDER;
     pp_data_fda.line_plot_data.statistics_data.calculate_statistics = true;
     pp_data_fda.line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
     pp_data_fda.line_plot_data.statistics_data.sample_end_time = END_TIME;
@@ -1011,29 +1009,33 @@ initialize_postprocessor_data(PostProcessorDataFDA<dim> &pp_data_fda,
     // quantities
 
     // no additional averaging in space for centerline velocity
-    QUANTITY_VELOCITY.type = QuantityType::Velocity;
+    std::shared_ptr<QuantityStatistics<dim>> quantity_velocity;
+    quantity_velocity.reset(new QuantityStatistics<dim>());
+    quantity_velocity->type = QuantityType::Velocity;
 
     // additional averaging is performed in circumferential direction
     // for radial profiles (rotationally symmetric geometry)
-    QUANTITY_VELOCITY_CIRCUMFERENTIAL.type = QuantityType::Velocity;
-    QUANTITY_VELOCITY_CIRCUMFERENTIAL.average_circumferential = true;
-    QUANTITY_VELOCITY_CIRCUMFERENTIAL.n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
     Tensor<1,dim,double> normal; normal[2] = 1.0;
-    QUANTITY_VELOCITY_CIRCUMFERENTIAL.normal_vector = normal;
+    std::shared_ptr<QuantityStatistics<dim>> quantity_velocity_circumferential;
+    quantity_velocity_circumferential.reset(new QuantityStatistics<dim>());
+    quantity_velocity_circumferential->type = QuantityType::Velocity;
+    quantity_velocity_circumferential->average_circumferential = true;
+    quantity_velocity_circumferential->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    quantity_velocity_circumferential->normal_vector = normal;
 
-    axial_profile.quantities.push_back(&QUANTITY_VELOCITY);
-    radial_profile_z1.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z2.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z3.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z4.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z5.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z6.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z7.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z8.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z9.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z10.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z11.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
-    radial_profile_z12.quantities.push_back(&QUANTITY_VELOCITY_CIRCUMFERENTIAL);
+    axial_profile.quantities.push_back(quantity_velocity);
+    radial_profile_z1.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z2.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z3.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z4.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z5.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z6.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z7.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z8.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z9.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z10.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z11.quantities.push_back(quantity_velocity_circumferential);
+    radial_profile_z12.quantities.push_back(quantity_velocity_circumferential);
 
     // names
     axial_profile.name = "axial_profile";

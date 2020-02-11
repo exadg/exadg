@@ -82,11 +82,6 @@ double const END_TIME = 6.0;
 unsigned int const SAMPLE_EVERY_TIMESTEPS = 10;
 
 // postprocessing and output
-QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
-QuantityStatisticsSkinFriction<3> QUANTITY_SKIN_FRICTION;
-QuantityStatistics<DIMENSION> QUANTITY_REYNOLDS;
-QuantityStatistics<DIMENSION> QUANTITY_PRESSURE;
-QuantityStatisticsPressureCoefficient<DIMENSION> QUANTITY_PRESSURE_COEFF;
 const unsigned int N_POINTS_LINE = 101;
 
 // output folders and names
@@ -884,7 +879,7 @@ initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
 
     // line plot data: calculate statistics along lines
     pp_data.line_plot_data.write_output = true;
-    pp_data.line_plot_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
+    pp_data.line_plot_data.directory = OUTPUT_FOLDER + OUTPUT_NAME_2;
     pp_data.line_plot_data.statistics_data.calculate_statistics = true;
     pp_data.line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
     pp_data.line_plot_data.statistics_data.sample_end_time = END_TIME;
@@ -892,35 +887,45 @@ initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
     pp_data.line_plot_data.statistics_data.write_output_every_timesteps = SAMPLE_EVERY_TIMESTEPS*10;
 
     // mean velocity
-    QUANTITY_VELOCITY.type = QuantityType::Velocity;
-    QUANTITY_VELOCITY.average_homogeneous_direction = true;
-    QUANTITY_VELOCITY.averaging_direction = 2;
+    std::shared_ptr<QuantityStatistics<dim>> quantity_velocity;
+    quantity_velocity.reset(new QuantityStatistics<dim>());
+    quantity_velocity->type = QuantityType::Velocity;
+    quantity_velocity->average_homogeneous_direction = true;
+    quantity_velocity->averaging_direction = 2;
 
     // Reynolds stresses
-    QUANTITY_REYNOLDS.type = QuantityType::ReynoldsStresses;
-    QUANTITY_REYNOLDS.average_homogeneous_direction = true;
-    QUANTITY_REYNOLDS.averaging_direction = 2;
+    std::shared_ptr<QuantityStatistics<dim>> quantity_reynolds;
+    quantity_reynolds.reset(new QuantityStatistics<dim>());
+    quantity_reynolds->type = QuantityType::ReynoldsStresses;
+    quantity_reynolds->average_homogeneous_direction = true;
+    quantity_reynolds->averaging_direction = 2;
 
     // skin friction
     Tensor<1,dim,double> normal; normal[1] = 1.0;
     Tensor<1,dim,double> tangent; tangent[0] = 1.0;
-    QUANTITY_SKIN_FRICTION.type = QuantityType::SkinFriction;
-    QUANTITY_SKIN_FRICTION.average_homogeneous_direction = true;
-    QUANTITY_SKIN_FRICTION.averaging_direction = 2;
-    QUANTITY_SKIN_FRICTION.normal_vector = normal;
-    QUANTITY_SKIN_FRICTION.tangent_vector = tangent;
-    QUANTITY_SKIN_FRICTION.viscosity = VISCOSITY;
+    std::shared_ptr<QuantityStatisticsSkinFriction<dim>> quantity_skin_friction;
+    quantity_skin_friction.reset(new QuantityStatisticsSkinFriction<dim>());
+    quantity_skin_friction->type = QuantityType::SkinFriction;
+    quantity_skin_friction->average_homogeneous_direction = true;
+    quantity_skin_friction->averaging_direction = 2;
+    quantity_skin_friction->normal_vector = normal;
+    quantity_skin_friction->tangent_vector = tangent;
+    quantity_skin_friction->viscosity = VISCOSITY;
 
     // mean pressure
-    QUANTITY_PRESSURE.type = QuantityType::Pressure;
-    QUANTITY_PRESSURE.average_homogeneous_direction = true;
-    QUANTITY_PRESSURE.averaging_direction = 2;
+    std::shared_ptr<QuantityStatistics<dim>> quantity_pressure;
+    quantity_pressure.reset(new QuantityStatistics<dim>());
+    quantity_pressure->type = QuantityType::Pressure;
+    quantity_pressure->average_homogeneous_direction = true;
+    quantity_pressure->averaging_direction = 2;
 
     // mean pressure coefficient
-    QUANTITY_PRESSURE_COEFF.type = QuantityType::PressureCoefficient;
-    QUANTITY_PRESSURE_COEFF.average_homogeneous_direction = true;
-    QUANTITY_PRESSURE_COEFF.averaging_direction = 2;
-    QUANTITY_PRESSURE_COEFF.reference_point = Point<DIMENSION>(X1_COORDINATE_INFLOW,0,0);
+    std::shared_ptr<QuantityStatisticsPressureCoefficient<dim>> quantity_pressure_coeff;
+    quantity_pressure_coeff.reset(new QuantityStatisticsPressureCoefficient<dim>());
+    quantity_pressure_coeff->type = QuantityType::PressureCoefficient;
+    quantity_pressure_coeff->average_homogeneous_direction = true;
+    quantity_pressure_coeff->averaging_direction = 2;
+    quantity_pressure_coeff->reference_point = Point<DIMENSION>(X1_COORDINATE_INFLOW,0,0);
 
     // lines
     Line<dim> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8, vel_9, vel_10, vel_11, Cp_1, Cp_2, Cf;
@@ -975,35 +980,35 @@ initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
     Cf.n_points = N_POINTS_LINE;
 
     // set the quantities that we want to compute along the lines
-    vel_0.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_0.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_1.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_1.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_2.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_2.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_3.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_3.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_4.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_4.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_5.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_5.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_6.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_6.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_7.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_7.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_8.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_8.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_9.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_9.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_10.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_10.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_11.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_11.quantities.push_back(&QUANTITY_REYNOLDS);
-    Cp_1.quantities.push_back(&QUANTITY_PRESSURE);
-    Cp_1.quantities.push_back(&QUANTITY_PRESSURE_COEFF);
-    Cp_2.quantities.push_back(&QUANTITY_PRESSURE);
-    Cp_2.quantities.push_back(&QUANTITY_PRESSURE_COEFF);
-    Cf.quantities.push_back(&QUANTITY_SKIN_FRICTION);
+    vel_0.quantities.push_back(quantity_velocity);
+    vel_0.quantities.push_back(quantity_pressure);
+    vel_1.quantities.push_back(quantity_velocity);
+    vel_1.quantities.push_back(quantity_pressure);
+    vel_2.quantities.push_back(quantity_velocity);
+    vel_2.quantities.push_back(quantity_pressure);
+    vel_3.quantities.push_back(quantity_velocity);
+    vel_3.quantities.push_back(quantity_pressure);
+    vel_4.quantities.push_back(quantity_velocity);
+    vel_4.quantities.push_back(quantity_pressure);
+    vel_5.quantities.push_back(quantity_velocity);
+    vel_5.quantities.push_back(quantity_pressure);
+    vel_6.quantities.push_back(quantity_velocity);
+    vel_6.quantities.push_back(quantity_pressure);
+    vel_7.quantities.push_back(quantity_velocity);
+    vel_7.quantities.push_back(quantity_pressure);
+    vel_8.quantities.push_back(quantity_velocity);
+    vel_8.quantities.push_back(quantity_pressure);
+    vel_9.quantities.push_back(quantity_velocity);
+    vel_9.quantities.push_back(quantity_pressure);
+    vel_10.quantities.push_back(quantity_velocity);
+    vel_10.quantities.push_back(quantity_pressure);
+    vel_11.quantities.push_back(quantity_velocity);
+    vel_11.quantities.push_back(quantity_pressure);
+    Cp_1.quantities.push_back(quantity_pressure);
+    Cp_1.quantities.push_back(quantity_pressure_coeff);
+    Cp_2.quantities.push_back(quantity_pressure);
+    Cp_2.quantities.push_back(quantity_pressure_coeff);
+    Cf.quantities.push_back(quantity_skin_friction);
 
     // set line names
     vel_0.name = "vel_0";

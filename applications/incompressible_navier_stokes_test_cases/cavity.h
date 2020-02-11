@@ -242,11 +242,11 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 /************************************************************************************************************/
 
 template<int dim>
-class AnalyticalSolutionVelocity : public Function<dim>
+class DirichletBC : public Function<dim>
 {
 public:
-  AnalyticalSolutionVelocity (const unsigned int  n_components = dim,
-                              const double        time = 0.)
+  DirichletBC (const unsigned int  n_components = dim,
+               const double        time = 0.)
     :
     Function<dim>(n_components, time)
   {}
@@ -288,7 +288,7 @@ void set_boundary_conditions(
   typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
 
   // fill boundary descriptor velocity
-  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new AnalyticalSolutionVelocity<dim>()));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new DirichletBC<dim>()));
 
   // fill boundary descriptor pressure
   boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
@@ -300,7 +300,6 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 {
   field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
   field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
-  // This function will not be used since no analytical solution is available for this flow problem
   field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
 }
@@ -329,36 +328,42 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.write_processor_id = true;
   pp_data.output_data.degree = param.degree_u;
 
-  // line plot data
-  pp_data.line_plot_data.write_output = false;
-  pp_data.line_plot_data.filename_prefix = OUTPUT_FOLDER;
+  // consider line plots only for two-dimensional case
+  if(dim == 2)
+  {
+    // line plot data
+    pp_data.line_plot_data.write_output = true;
+    pp_data.line_plot_data.directory = OUTPUT_FOLDER;
 
-  // which quantities
-  Quantity* quantity_u = new Quantity();
-  quantity_u->type = QuantityType::Velocity;
-//  Quantity quantity_p;
-//  quantity_p.type = QuantityType::Pressure;
+    // which quantities
+    std::shared_ptr<Quantity> quantity_u;
+    quantity_u.reset(new Quantity());
+    quantity_u->type = QuantityType::Velocity;
+    std::shared_ptr<Quantity> quantity_p;
+    quantity_p.reset(new Quantity());
+    quantity_p->type = QuantityType::Pressure;
 
-  // lines
-  Line<dim> vert_line, hor_line;
+    // lines
+    Line<dim> vert_line, hor_line;
 
-  // vertical line
-  vert_line.begin = Point<dim>(0.5,0.0);
-  vert_line.end = Point<dim>(0.5,1.0);
-  vert_line.name = "vert_line";
-  vert_line.n_points = 100001; //2001;
-  vert_line.quantities.push_back(quantity_u);
-  //vert_line.quantities.push_back(quantity_p);
-  pp_data.line_plot_data.lines.push_back(vert_line);
+    // vertical line
+    vert_line.begin = Point<dim>(0.5,0.0);
+    vert_line.end = Point<dim>(0.5,1.0);
+    vert_line.name = OUTPUT_NAME + "_vert_line";
+    vert_line.n_points = 100001; //2001;
+    vert_line.quantities.push_back(quantity_u);
+    vert_line.quantities.push_back(quantity_p);
+    pp_data.line_plot_data.lines.push_back(vert_line);
 
-  // horizontal line
-  hor_line.begin = Point<dim>(0.0,0.5);
-  hor_line.end = Point<dim>(1.0,0.5);
-  hor_line.name = "hor_line";
-  hor_line.n_points = 10001; //2001;
-  hor_line.quantities.push_back(quantity_u);
-  //hor_line.quantities.push_back(quantity_p);
-  pp_data.line_plot_data.lines.push_back(hor_line);
+    // horizontal line
+    hor_line.begin = Point<dim>(0.0,0.5);
+    hor_line.end = Point<dim>(1.0,0.5);
+    hor_line.name = OUTPUT_NAME + "_hor_line";
+    hor_line.n_points = 10001; //2001;
+    hor_line.quantities.push_back(quantity_u);
+    hor_line.quantities.push_back(quantity_p);
+    pp_data.line_plot_data.lines.push_back(hor_line);
+  }
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
   pp.reset(new PostProcessor<dim,Number>(pp_data));

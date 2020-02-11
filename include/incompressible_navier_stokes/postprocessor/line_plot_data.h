@@ -128,7 +128,7 @@ struct Line
   /*
    *  Specify for which fields/quantities to write output
    */
-  std::vector<Quantity *> quantities;
+  std::vector<std::shared_ptr<Quantity>> quantities;
 };
 
 struct StatisticsData
@@ -176,7 +176,7 @@ struct StatisticsData
 template<int dim>
 struct LinePlotData
 {
-  LinePlotData() : write_output(false), filename_prefix("output/"), precision(10)
+  LinePlotData() : write_output(false), directory("output/"), precision(10)
 
   {
   }
@@ -198,9 +198,9 @@ struct LinePlotData
   bool write_output;
 
   /*
-   *  filename prefix (output folder)
+   *  output folder
    */
-  std::string filename_prefix;
+  std::string directory;
 
   /*
    *  precision (number of decimal places when writing to files)
