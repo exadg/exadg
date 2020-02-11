@@ -39,6 +39,8 @@ namespace dealspectrum
  */
 class Bijection
 {
+  MPI_Comm const & comm;  
+    
   // reference to DEAL.SPECTRUM setup
   Setup & s;
   // is initialized?
@@ -52,7 +54,7 @@ public:
    * Constructor
    * @param s DEAL.SPECTRUM setup
    */
-  Bijection(Setup & s) : s(s), initialized(false)
+  Bijection(MPI_Comm const & comm, Setup & s) : comm(comm), s(s), initialized(false)
   {
   }
 
@@ -82,13 +84,13 @@ public:
 
     if(s.dim == 2)
     {
-      dealii::parallel::distributed::Triangulation<2> triangulation(MPI_COMM_WORLD);
+      dealii::parallel::distributed::Triangulation<2> triangulation(comm);
       dealii::GridGenerator::subdivided_hyper_cube(triangulation, n, 0, 2 * dealii::numbers::PI);
       init(triangulation);
     }
     else if(s.dim == 3)
     {
-      dealii::parallel::distributed::Triangulation<3> triangulation(MPI_COMM_WORLD);
+      dealii::parallel::distributed::Triangulation<3> triangulation(comm);
       dealii::GridGenerator::subdivided_hyper_cube(triangulation, n, 0, 2 * dealii::numbers::PI);
       init(triangulation);
     }
@@ -147,7 +149,7 @@ public:
       std::vector<int> cells_sum(s.size);
       int              cells_local = temp_indices.size();
 
-      MPI_Allgather(&cells_local, 1, MPI_INT, &cells[0], 1, MPI_INT, MPI_COMM_WORLD);
+      MPI_Allgather(&cells_local, 1, MPI_INT, &cells[0], 1, MPI_INT, comm);
 
       cells_sum[0] = 0;
       for(int i = 1; i < s.size; i++)
@@ -162,7 +164,7 @@ public:
                      &cells[0],
                      &cells_sum[0],
                      MPI_INT,
-                     MPI_COMM_WORLD);
+                     comm);
 
       int * Y = new int[s.dim];
 

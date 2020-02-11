@@ -66,6 +66,7 @@ cmp(const void * a, const void * b)
  */
 class Permutator
 {
+  MPI_Comm const & comm;
   // reference to DEAL.SPECTRUM setup
   Setup & s;
   // is initialized?
@@ -76,7 +77,7 @@ public:
    * Constructor
    * @param s DEAL.SPECTRUM setup
    */
-  Permutator(Setup & s) : s(s), initialized(false)
+  Permutator(MPI_Comm const & comm, Setup & s) : comm(comm), s(s), initialized(false)
   {
   }
 
@@ -397,7 +398,7 @@ public:
                 MPI_DOUBLE,
                 recv_procs[i],
                 0,
-                MPI_COMM_WORLD,
+                comm,
                 recv_requests + i - 1);
 
     // scatter data ...
@@ -414,7 +415,7 @@ public:
                 MPI_DOUBLE,
                 send_procs[i],
                 0,
-                MPI_COMM_WORLD,
+                comm,
                 send_requests + i - 1);
     }
 

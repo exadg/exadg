@@ -19,7 +19,7 @@ namespace dealspectrum
 class DealSpectrumWrapper
 {
 public:
-  DealSpectrumWrapper(bool, bool)
+  DealSpectrumWrapper(MPI_Comm const & , bool, bool)
   {
   }
 
@@ -55,7 +55,7 @@ KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator(MP
   : mpi_comm(comm), clear_files(true), counter(0), reset_counter(true)
 {
   if(deal_spectrum_wrapper == nullptr)
-    deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(false, true));
+    deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(mpi_comm, false, true));
 }
 
 template<int dim, typename Number>
