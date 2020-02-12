@@ -9,8 +9,10 @@ template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &                  triangulation,
   Poisson::InputParameters const &                          param_in,
-  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor_in)
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor_in,
+  MPI_Comm const &                                          mpi_comm_in)
   : dealii::Subscriptor(),
+    mpi_comm(mpi_comm_in),
     param(param_in),
     fe_dgq(param.degree),
     fe_q(param.degree),
@@ -49,7 +51,7 @@ DGOperator<dim, Number>::setup(
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions_in)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
   pcout << std::endl << "Setup Poisson operation ..." << std::endl;
 
   periodic_face_pairs = periodic_face_pairs_in;
@@ -71,7 +73,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup_solver()
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
   pcout << std::endl << "Setup solver ..." << std::endl;
 
   // initialize preconditioner
@@ -92,7 +94,7 @@ DGOperator<dim, Number>::setup_solver()
 
     typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-    preconditioner.reset(new MULTIGRID());
+    preconditioner.reset(new MULTIGRID(this->mpi_comm));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
@@ -221,7 +223,7 @@ DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
       std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
 
     CheckMultigrid<dim, Number, LaplaceOperator<dim, Number>, MULTIGRID, MultigridNumber>
-      check_multigrid(laplace_operator, mg_preconditioner);
+      check_multigrid(laplace_operator, mg_preconditioner, mpi_comm);
 
     check_multigrid.check();
   }
@@ -308,7 +310,7 @@ DGOperator<dim, Number>::create_dofs()
 
   unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
 
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl

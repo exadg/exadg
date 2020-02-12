@@ -11,10 +11,10 @@
 
 // print MPI info
 void
-print_MPI_info(ConditionalOStream const & pcout)
+print_MPI_info(ConditionalOStream const & pcout, MPI_Comm const & mpi_comm)
 {
   pcout << std::endl << "MPI info:" << std::endl << std::endl;
-  print_parameter(pcout, "Number of processes", Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD));
+  print_parameter(pcout, "Number of processes", Utilities::MPI::n_mpi_processes(mpi_comm));
 }
 
 template<typename Number>
@@ -65,8 +65,8 @@ print_dealii_info(ConditionalOStream const & pcout)
 // print grid info
 template<int dim>
 void
-print_grid_data(ConditionalOStream const &           pcout,
-                unsigned int const                   n_refine_space,
+print_grid_data(ConditionalOStream const &               pcout,
+                unsigned int const                       n_refine_space,
                 parallel::TriangulationBase<dim> const & triangulation)
 {
   pcout << std::endl
@@ -79,10 +79,10 @@ print_grid_data(ConditionalOStream const &           pcout,
 
 template<int dim>
 void
-print_grid_data(ConditionalOStream const &           pcout,
-                unsigned int const                   n_refine_space_1,
+print_grid_data(ConditionalOStream const &               pcout,
+                unsigned int const                       n_refine_space_1,
                 parallel::TriangulationBase<dim> const & triangulation_1,
-                unsigned int const                   n_refine_space_2,
+                unsigned int const                       n_refine_space_2,
                 parallel::TriangulationBase<dim> const & triangulation_2)
 {
   pcout << std::endl

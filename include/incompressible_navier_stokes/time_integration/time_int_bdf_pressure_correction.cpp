@@ -18,8 +18,9 @@ template<typename Number>
 TimeIntBDFPressureCorrection<Number>::TimeIntBDFPressureCorrection(
   std::shared_ptr<InterfaceBase> operator_base_in,
   std::shared_ptr<InterfacePDE>  pde_operator_in,
-  InputParameters const &        param_in)
-  : TimeIntBDF<Number>(operator_base_in, param_in),
+  InputParameters const &        param_in,
+  MPI_Comm const &               mpi_comm_in)
+  : TimeIntBDF<Number>(operator_base_in, param_in, mpi_comm_in),
     pde_operator(pde_operator_in),
     velocity(param_in.order_time_integrator),
     pressure(param_in.order_time_integrator),
@@ -232,7 +233,7 @@ TimeIntBDFPressureCorrection<Number>::postprocessing_stability_analysis()
   AssertThrow(velocity[0].l2_norm() < 1.e-15 && pressure[0].l2_norm() < 1.e-15,
               ExcMessage("Solution vector has to be zero for this stability analysis."));
 
-  AssertThrow(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD) == 1,
+  AssertThrow(Utilities::MPI::n_mpi_processes(this->mpi_comm) == 1,
               ExcMessage("Number of MPI processes has to be 1."));
 
   std::cout << std::endl << "Analysis of eigenvalue spectrum:" << std::endl;

@@ -40,7 +40,8 @@ public:
 
   DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
                        std::shared_ptr<OperatorPDE>  operator_in,
-                       InputParameters const &       param_in);
+                       InputParameters const &       param_in,
+                       MPI_Comm const &              mpi_comm_in);
 
   void
   setup();
@@ -71,6 +72,8 @@ private:
   std::shared_ptr<OperatorPDE>  pde_operator;
 
   InputParameters const & param;
+
+  MPI_Comm const & mpi_comm;
 
   std::vector<double> computing_times;
 

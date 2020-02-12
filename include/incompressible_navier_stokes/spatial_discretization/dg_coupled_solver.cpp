@@ -13,8 +13,9 @@ template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor)
-  : Base(triangulation, parameters, postprocessor), scaling_factor_continuity(1.0)
+  std::shared_ptr<Postprocessor>           postprocessor,
+  MPI_Comm const &                         mpi_comm)
+  : Base(triangulation, parameters, postprocessor, mpi_comm), scaling_factor_continuity(1.0)
 {
 }
 
@@ -83,7 +84,7 @@ DGNavierStokesCoupled<dim, Number>::initialize_solver_coupled()
 
     linear_solver.reset(
       new GMRESSolver<LinearOperatorCoupled<dim, Number>, Preconditioner, BlockVectorType>(
-        linear_operator, block_preconditioner, solver_data));
+        linear_operator, block_preconditioner, solver_data, this->mpi_comm));
   }
   else if(this->param.solver_coupled == SolverCoupled::FGMRES)
   {
@@ -465,7 +466,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_momentum()
 {
   typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-  preconditioner_momentum.reset(new MULTIGRID());
+  preconditioner_momentum.reset(new MULTIGRID(this->mpi_comm));
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner_momentum);
@@ -641,7 +642,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
 
     typedef CompatibleLaplaceMultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-    multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+    multigrid_preconditioner_schur_complement.reset(new MULTIGRID(this->mpi_comm));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
@@ -676,7 +677,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
 
     typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-    multigrid_preconditioner_schur_complement.reset(new MULTIGRID());
+    multigrid_preconditioner_schur_complement.reset(new MULTIGRID(this->mpi_comm));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
@@ -1210,7 +1211,7 @@ DGNavierStokesCoupled<dim, Number>::apply_preconditioner_velocity_block(
       bool const print_iterations = false;
       if(print_iterations)
       {
-        ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+        ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(this->mpi_comm) == 0);
         pcout << "Number of iterations for inner solver = " << iterations << std::endl;
       }
     }

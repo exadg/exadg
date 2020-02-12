@@ -1,5 +1,3 @@
- #include <deal.II/distributed/fully_distributed_tria.h>
- #include <deal.II/distributed/fully_distributed_tria_util.h>
 
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 
@@ -192,8 +190,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
   if(auto tria_fully_dist = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
     const auto construction_data =
-        parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<3,
-                                                                                                     3>(
+        TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<3,3>(
           [&](dealii::Triangulation<3, 3> & tria) mutable {
             do_create_grid_and_set_boundary_ids(tria, n_refine_space, periodic_faces);
           },
@@ -268,7 +265,7 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
-construct_postprocessor(Poisson::InputParameters const &param)
+construct_postprocessor(Poisson::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
@@ -277,7 +274,7 @@ construct_postprocessor(Poisson::InputParameters const &param)
   pp_data.output_data.degree = param.degree;
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
-  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));
+  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

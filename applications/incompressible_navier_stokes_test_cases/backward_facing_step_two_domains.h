@@ -754,9 +754,9 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessorBFS(PostProcessorDataBFS<dim> const & pp_data_bfs_in)
+  PostProcessorBFS(PostProcessorDataBFS<dim> const & pp_data_bfs_in, MPI_Comm const &mpi_comm)
     :
-    Base(pp_data_bfs_in.pp_data),
+    Base(pp_data_bfs_in.pp_data, mpi_comm),
     write_final_output(true),
     write_final_output_lines(true),
     pp_data_bfs(pp_data_bfs_in)
@@ -779,18 +779,17 @@ public:
     // inflow data
     if(pp_data_bfs.inflow_data.write_inflow_data)
     {
-      inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_bfs.inflow_data));
+      inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_bfs.inflow_data, this->mpi_comm));
       inflow_data_calculator->setup(pde_operator.get_dof_handler_u(),
                                     pde_operator.get_mapping());
     }
 
-    if(pp_data_bfs.pp_data.line_plot_data.calculate)
-    {
-      // evaluation of characteristic quantities along lines
-      line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneous<dim>(
-          pde_operator.get_dof_handler_u(),
-          pde_operator.get_dof_handler_p(),
-          pde_operator.get_mapping()));
+    // evaluation of characteristic quantities along lines
+    line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneous<dim>(
+        pde_operator.get_dof_handler_u(),
+        pde_operator.get_dof_handler_p(),
+        pde_operator.get_mapping(),
+        this->mpi_comm));
 
       line_plot_calculator_statistics->setup(pp_data_bfs.pp_data.line_plot_data);
     }
@@ -1119,14 +1118,14 @@ initialize_postprocessor_data(PostProcessorDataBFS<2> &pp_data,
 // two-domain solver
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param, unsigned int const domain_id)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm, unsigned int const domain_id)
 {
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
 
   PostProcessorDataBFS<dim> pp_data;
   initialize_postprocessor_data(pp_data, param, domain_id);
 
-  pp.reset(new PostProcessorBFS<dim,Number>(pp_data));
+  pp.reset(new PostProcessorBFS<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

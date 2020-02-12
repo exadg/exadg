@@ -95,7 +95,7 @@ template<int dim, typename Number = double>
 class Problem : public ProblemBase
 {
 public:
-  Problem();
+  Problem(MPI_Comm const & mpi_comm);
 
   void
   setup(InputParameters const & param);
@@ -106,6 +106,8 @@ public:
 private:
   void
   print_header();
+
+  MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
 
@@ -132,8 +134,9 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem()
-  : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+Problem<dim, Number>::Problem(MPI_Comm const & comm)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     n_repetitions_inner(N_REPETITIONS_INNER),
     n_repetitions_outer(N_REPETITIONS_OUTER)
 {
@@ -160,7 +163,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 {
   print_header();
   print_dealii_info<Number>(pcout);
-  print_MPI_info(pcout);
+  print_MPI_info(pcout, mpi_comm);
 
   param = param_in;
   param.check_input_parameters();
@@ -170,13 +173,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   if(param.triangulation_type == TriangulationType::Distributed)
   {
     triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
+      mpi_comm,
       dealii::Triangulation<dim>::none,
       parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
   else if(param.triangulation_type == TriangulationType::FullyDistributed)
   {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
   }
   else
   {
@@ -201,10 +204,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize Poisson operator
-  poisson_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
+  poisson_operator.reset(
+    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
 
   poisson_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 }
@@ -279,7 +283,7 @@ Problem<dim, Number>::apply_operator()
   types::global_dof_index dofs              = poisson_operator->get_number_of_dofs();
   double                  dofs_per_walltime = (double)dofs / wall_time;
 
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // clang-format off
   pcout << std::endl
@@ -295,16 +299,16 @@ Problem<dim, Number>::apply_operator()
 }
 
 void
-do_run(InputParameters const & param)
+do_run(InputParameters const & param, MPI_Comm const & mpi_comm)
 {
   // setup problem and run simulation
   typedef double               Number;
   std::shared_ptr<ProblemBase> problem;
 
   if(param.dim == 2)
-    problem.reset(new Problem<2, Number>());
+    problem.reset(new Problem<2, Number>(mpi_comm));
   else if(param.dim == 3)
-    problem.reset(new Problem<3, Number>());
+    problem.reset(new Problem<3, Number>(mpi_comm));
   else
     AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 
@@ -319,6 +323,8 @@ main(int argc, char ** argv)
   try
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
+
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
     // set parameters
     InputParameters param;
@@ -339,7 +345,7 @@ main(int argc, char ** argv)
           // reset mesh refinement
           param.h_refinements = h_refinements;
 
-          do_run(param);
+          do_run(param, mpi_comm);
         }
       }
     }
@@ -376,7 +382,7 @@ main(int argc, char ** argv)
         param.h_refinements = std::get<1>(*iter);
         SUBDIVISIONS_MESH   = std::get<2>(*iter);
 
-        do_run(param);
+        do_run(param, mpi_comm);
       }
     }
 #endif
@@ -387,7 +393,7 @@ main(int argc, char ** argv)
                              "for RunType::FixedProblemSize or RunType::IncreasingProblemSize."));
     }
 
-    print_throughput(WALL_TIMES, "Laplace operator");
+    print_throughput(WALL_TIMES, "Laplace operator", mpi_comm);
     WALL_TIMES.clear();
   }
   catch(std::exception & exc)

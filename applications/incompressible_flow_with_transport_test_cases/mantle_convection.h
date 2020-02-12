@@ -408,7 +408,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   (void)param;
 
@@ -424,7 +424,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.degree = param.degree_u;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }
@@ -495,6 +495,7 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functi
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(ConvDiff::InputParameters const &param,
+                        MPI_Comm const &                 mpi_comm,
                         unsigned int const              scalar_index)
 {
   PostProcessorData<dim> pp_data;
@@ -506,7 +507,7 @@ construct_postprocessor(ConvDiff::InputParameters const &param,
   pp_data.output_data.degree = param.degree;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

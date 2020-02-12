@@ -759,9 +759,9 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessorLung(PostProcessorDataLung<dim> const & pp_data_in)
+  PostProcessorLung(PostProcessorDataLung<dim> const & pp_data_in, MPI_Comm const &comm)
     :
-    Base(pp_data_in.pp_data),
+    Base(pp_data_in.pp_data, comm),
     pp_data_lung(pp_data_in),
     time_last(START_TIME)
   {
@@ -780,10 +780,10 @@ public:
 
     flow_rate_calculator.reset(new FlowRateCalculator<dim,Number>(
         pde_operator.get_matrix_free(),
-        pde_operator.get_dof_handler_u(),
         pde_operator.get_dof_index_velocity(),
         pde_operator.get_quad_index_velocity_linear(),
-        pp_data_lung.flow_rate_data));
+        pp_data_lung.flow_rate_data,
+        this->mpi_comm));
   }
 
   void do_postprocessing(VectorType const &velocity,
@@ -848,7 +848,7 @@ private:
                std::ostringstream const & filename)
   {
     // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
     {
       std::ofstream f;
       if(time_step_number == 1)
@@ -881,7 +881,7 @@ private:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   (void)param;
 
@@ -912,7 +912,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data_lung.flow_rate_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME + "_flow_rate";
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessorLung<dim,Number>(pp_data_lung));
+  pp.reset(new PostProcessorLung<dim,Number>(pp_data_lung, mpi_comm));
 
   return pp;
 }
@@ -987,7 +987,8 @@ set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_functi
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(ConvDiff::InputParameters const &param,
-                        unsigned int const              scalar_index)
+                        MPI_Comm const &                 mpi_comm,
+                        unsigned int const               scalar_index)
 {
   PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = WRITE_OUTPUT;
@@ -999,7 +1000,7 @@ construct_postprocessor(ConvDiff::InputParameters const &param,
   pp_data.output_data.write_higher_order = HIGH_ORDER_OUTPUT;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

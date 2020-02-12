@@ -81,10 +81,10 @@ template<int dim, typename Number>
 class InflowDataCalculator
 {
 public:
-  InflowDataCalculator(InflowData<dim> const & inflow_data_in);
+  InflowDataCalculator(InflowData<dim> const & inflow_data, MPI_Comm const & comm);
 
   void
-  setup(DoFHandler<dim> const & dof_handler_velocity_in, Mapping<dim> const & mapping_in);
+  setup(DoFHandler<dim> const & dof_handler_velocity, Mapping<dim> const & mapping);
 
   void
   calculate(LinearAlgebra::distributed::Vector<Number> const & velocity);
@@ -94,6 +94,8 @@ private:
   SmartPointer<Mapping<dim> const>    mapping;
   InflowData<dim>                     inflow_data;
   bool                                inflow_data_has_been_initialized;
+
+  MPI_Comm const & mpi_comm;
 
   std::vector<std::vector<std::pair<unsigned int, std::vector<Number>>>>
     array_dof_index_and_shape_values;

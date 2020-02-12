@@ -88,7 +88,7 @@ class KineticEnergySpectrumCalculator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  KineticEnergySpectrumCalculator();
+  KineticEnergySpectrumCalculator(MPI_Comm const & mpi_comm);
 
   void
   setup(MatrixFree<dim, Number> const &   matrix_free_data_in,
@@ -104,6 +104,8 @@ private:
 
   void
   do_evaluate(VectorType const & velocity, double const time);
+
+  MPI_Comm const & mpi_comm;
 
   bool                      clear_files;
   KineticEnergySpectrumData data;

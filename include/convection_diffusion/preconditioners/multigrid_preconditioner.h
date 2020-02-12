@@ -35,6 +35,11 @@ public:
   typedef typename Base::VectorType        VectorType;
   typedef typename Base::VectorTypeMG      VectorTypeMG;
 
+  MultigridPreconditioner(MPI_Comm const & mpi_comm)
+    : Base(mpi_comm), pde_operator(nullptr), mg_operator_type(MultigridOperatorType::Undefined)
+  {
+  }
+
   virtual ~MultigridPreconditioner(){};
 
   void

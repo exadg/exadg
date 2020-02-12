@@ -32,6 +32,7 @@ namespace dealspectrum
 class Interpolator
 {
 public:
+  MPI_Comm const & comm;
   // reference to DEAL.SPECTRUM setup
   Setup & s;
   // is initialized?
@@ -60,7 +61,7 @@ public:
    * Constructor
    * @param s DEAL.SPECTRUM setup
    */
-  Interpolator(Setup & s) : s(s), initialized(false)
+  Interpolator(MPI_Comm const & comm, Setup & s) : comm(comm), s(s), initialized(false)
   {
   }
 
@@ -327,9 +328,9 @@ public:
     // ooen file ...
     MPI_File fh;
     if(type == 0)
-      MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+      MPI_File_open(comm, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
     else
-      MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+      MPI_File_open(comm, filename, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 
     // ... set view
     MPI_File_set_view(fh, disp, MPI_DOUBLE, MPI_DOUBLE, "native", MPI_INFO_NULL);

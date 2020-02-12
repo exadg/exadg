@@ -781,13 +781,13 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessorFDA(PostProcessorDataFDA<dim> const & pp_data_in)
+  PostProcessorFDA(PostProcessorDataFDA<dim> const & pp_data_in, MPI_Comm const &mpi_comm)
     :
-    Base(pp_data_in.pp_data),
+    Base(pp_data_in.pp_data, mpi_comm),
     pp_data_fda(pp_data_in),
     time_old(START_TIME_PRECURSOR)
   {
-    inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_in.inflow_data));
+    inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_in.inflow_data, mpi_comm));
   }
 
   void setup(Operator const & pde_operator)
@@ -804,13 +804,15 @@ public:
         pde_operator.get_matrix_free(),
         pde_operator.get_dof_index_velocity(),
         pde_operator.get_quad_index_velocity_linear(),
-        pp_data_fda.mean_velocity_data));
+        pp_data_fda.mean_velocity_data,
+        this->mpi_comm));
 
     // evaluation of results along lines
     line_plot_calculator_statistics.reset(new LinePlotCalculatorStatistics<dim>(
         pde_operator.get_dof_handler_u(),
         pde_operator.get_dof_handler_p(),
-        pde_operator.get_mapping()));
+        pde_operator.get_mapping(),
+        this->mpi_comm));
 
     line_plot_calculator_statistics->setup(pp_data_fda.line_plot_data);
   }
@@ -1131,14 +1133,14 @@ initialize_postprocessor_data(PostProcessorDataFDA<2> pp_data_fda,
 // two-domain solver
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param, unsigned int const domain_id)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm, unsigned int const domain_id)
 {
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
 
   PostProcessorDataFDA<dim> pp_data_fda;
   initialize_postprocessor_data(pp_data_fda, param, domain_id);
 
-  pp.reset(new PostProcessorFDA<dim,Number>(pp_data_fda));
+  pp.reset(new PostProcessorFDA<dim,Number>(pp_data_fda, mpi_comm));
 
   return pp;
 }
@@ -1146,14 +1148,14 @@ construct_postprocessor(InputParameters const &param, unsigned int const domain_
 // standard case of single-domain solver: call function with domain_id = 2
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
 
   PostProcessorDataFDA<dim> pp_data_fda;
   initialize_postprocessor_data(pp_data_fda, param, 2 /* nozzle domain */);
 
-  pp.reset(new PostProcessorFDA<dim,Number>(pp_data_fda));
+  pp.reset(new PostProcessorFDA<dim,Number>(pp_data_fda, mpi_comm));
 
   return pp;
 }

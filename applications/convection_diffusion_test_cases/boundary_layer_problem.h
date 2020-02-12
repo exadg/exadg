@@ -252,7 +252,7 @@ void set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim> > field_f
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(ConvDiff::InputParameters const &param)
+construct_postprocessor(ConvDiff::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
@@ -268,7 +268,7 @@ construct_postprocessor(ConvDiff::InputParameters const &param)
   pp_data.error_data.error_calc_interval_time = (param.end_time-param.start_time)/20;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

@@ -42,7 +42,8 @@ public:
 
   TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
                     std::shared_ptr<InterfacePDE>  pde_operator_in,
-                    InputParameters const &        param_in);
+                    InputParameters const &        param_in,
+                    MPI_Comm const &               mpi_comm_in);
 
   void
   postprocessing_stability_analysis();

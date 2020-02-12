@@ -14,8 +14,9 @@ TimeIntBDFBase<Number>::TimeIntBDFBase(double const        start_time_,
                                        double const        order_,
                                        bool const          start_with_low_order_,
                                        bool const          adaptive_time_stepping_,
-                                       RestartData const & restart_data_)
-  : TimeIntBase(start_time_, end_time_, max_number_of_time_steps_, restart_data_),
+                                       RestartData const & restart_data_,
+                                       MPI_Comm const &    mpi_comm_)
+  : TimeIntBase(start_time_, end_time_, max_number_of_time_steps_, restart_data_, mpi_comm_),
     order(order_),
     bdf(order_, start_with_low_order_),
     extra(order_, start_with_low_order_),
@@ -369,7 +370,7 @@ TimeIntBDFBase<Number>::read_restart_preamble(boost::archive::binary_iarchive & 
   unsigned int n_old_ranks = 1;
   ia &         n_old_ranks;
 
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_comm);
   AssertThrow(n_old_ranks == n_ranks,
               ExcMessage("Tried to restart with " + Utilities::to_string(n_ranks) +
                          " processes, "
@@ -411,7 +412,7 @@ template<typename Number>
 void
 TimeIntBDFBase<Number>::write_restart_preamble(boost::archive::binary_oarchive & oa) const
 {
-  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int n_ranks = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   // 1. ranks
   oa & n_ranks;

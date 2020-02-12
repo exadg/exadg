@@ -24,7 +24,8 @@ public:
                     double const &      end_time_,
                     unsigned int const  max_number_of_time_steps_,
                     RestartData const & restart_data_,
-                    bool const          adaptive_time_stepping_);
+                    bool const          adaptive_time_stepping_,
+                    MPI_Comm const &    mpi_comm_);
 
   void
   setup(bool const do_restart = false);
@@ -74,10 +75,10 @@ private:
   recalculate_time_step_size() const = 0;
 
   void
-  do_write_restart(std::string const & filename) const;
+  do_write_restart(std::string const & filename) const override;
 
   void
-  do_read_restart(std::ifstream & in);
+  do_read_restart(std::ifstream & in) override;
 };
 
 

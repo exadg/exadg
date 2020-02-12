@@ -50,7 +50,7 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessor(PostProcessorData<dim> const & postprocessor_data);
+  PostProcessor(PostProcessorData<dim> const & postprocessor_data, MPI_Comm const & mpi_comm);
 
   virtual ~PostProcessor();
 
@@ -62,6 +62,9 @@ public:
                     VectorType const & pressure,
                     double const       time             = 0.0,
                     int const          time_step_number = -1);
+
+protected:
+  MPI_Comm const & mpi_comm;
 
 private:
   PostProcessorData<dim> pp_data;

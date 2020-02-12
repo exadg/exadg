@@ -16,12 +16,14 @@ namespace ConvDiff
 {
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                                     InputParameters const &   param_in)
+                                     InputParameters const &   param_in,
+                                     MPI_Comm const &          mpi_comm_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,
                               param_in.restart_data,
-                              param_in.adaptive_time_stepping),
+                              param_in.adaptive_time_stepping,
+                              mpi_comm_in),
     pde_operator(operator_in),
     param(param_in),
     time_step_diff(1.0),

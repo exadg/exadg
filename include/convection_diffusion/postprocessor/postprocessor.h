@@ -37,7 +37,7 @@ private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
 public:
-  PostProcessor(PostProcessorData<dim> const & pp_data_in);
+  PostProcessor(PostProcessorData<dim> const & pp_data_in, MPI_Comm const & mpi_comm);
 
   void
   setup(DoFHandler<dim> const & dof_handler, Mapping<dim> const & mapping);
@@ -49,6 +49,8 @@ public:
 
 private:
   PostProcessorData<dim> pp_data;
+
+  MPI_Comm const & mpi_comm;
 
   OutputGenerator<dim, Number> output_generator;
   ErrorCalculator<dim, Number> error_calculator;

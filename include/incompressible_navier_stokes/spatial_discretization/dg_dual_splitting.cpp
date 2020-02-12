@@ -15,8 +15,9 @@ template<int dim, typename Number>
 DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   parallel::TriangulationBase<dim> const & triangulation,
   InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor)
-  : ProjBase(triangulation, parameters, postprocessor)
+  std::shared_ptr<Postprocessor>           postprocessor,
+  MPI_Comm const &                         mpi_comm)
+  : ProjBase(triangulation, parameters, postprocessor, mpi_comm)
 {
 }
 
@@ -83,7 +84,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   {
     typedef MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-    helmholtz_preconditioner.reset(new MULTIGRID());
+    helmholtz_preconditioner.reset(new MULTIGRID(this->mpi_comm));
 
     std::shared_ptr<MULTIGRID> mg_preconditioner =
       std::dynamic_pointer_cast<MULTIGRID>(helmholtz_preconditioner);
@@ -156,7 +157,7 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_solver()
 
     helmholtz_solver.reset(
       new GMRESSolver<MomentumOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        this->momentum_operator, *helmholtz_preconditioner, solver_data));
+        this->momentum_operator, *helmholtz_preconditioner, solver_data, this->mpi_comm));
   }
   else if(this->param.solver_viscous == SolverViscous::FGMRES)
   {

@@ -120,7 +120,7 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number>>
-construct_postprocessor(InputParameters const & param)
+construct_postprocessor(InputParameters const & param, MPI_Comm const &mpi_comm)
 {
   (void)param;
 
@@ -128,7 +128,7 @@ construct_postprocessor(InputParameters const & param)
   PostProcessorData<dim> pp_data;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-  pp.reset(new PostProcessor<dim, Number>(pp_data));
+  pp.reset(new PostProcessor<dim, Number>(pp_data,mpi_comm));
 
   return pp;
 }

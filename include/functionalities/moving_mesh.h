@@ -19,7 +19,8 @@ public:
 
   MovingMesh(parallel::TriangulationBase<dim> const & triangulation,
              unsigned int const                       polynomial_degree,
-             std::shared_ptr<Function<dim>> const     mesh_movement_function);
+             std::shared_ptr<Function<dim>> const     mesh_movement_function,
+             MPI_Comm const &                         mpi_comm);
 
   /*
    * This function initialized the MappingFEField object that is used to describe
@@ -54,6 +55,9 @@ private:
 
   // An analytical function that describes the mesh movement
   std::shared_ptr<Function<dim>> mesh_movement_function;
+
+  // MPI communciator
+  MPI_Comm const & mpi_comm;
 
   // Finite Element (use a continuous finite element space to describe the mesh movement)
   std::shared_ptr<FESystem<dim>> fe;

@@ -30,6 +30,8 @@ namespace dealspectrum
  */
 class SpectralAnalysis
 {
+  MPI_Comm const & comm;
+    
   // reference to DEAL.SPECTRUM setup
   Setup & s;
   // is initialized?
@@ -42,7 +44,7 @@ public:
    * Constructor
    * @param s DEAL.SPECTRUM setup
    */
-  SpectralAnalysis(Setup & s) : s(s), initialized(false)
+  SpectralAnalysis(MPI_Comm const & comm, Setup & s) : comm(comm), s(s), initialized(false)
   {
   }
 
@@ -97,12 +99,12 @@ public:
 
     // ...get local size of local output arrays
     ptrdiff_t local_elements = 0;
-    alloc_local = fftw_mpi_local_size(dim, n, MPI_COMM_WORLD, &local_elements, &local_start);
+    alloc_local = fftw_mpi_local_size(dim, n, comm, &local_elements, &local_start);
     local_end   = local_start + local_elements;
 
     // determine how many rows each process has
     int * global_elements = new int[size];
-    MPI_Allgather(&local_elements, 1, MPI_INTEGER, global_elements, 1, MPI_INTEGER, MPI_COMM_WORLD);
+    MPI_Allgather(&local_elements, 1, MPI_INTEGER, global_elements, 1, MPI_INTEGER, comm);
 
     // ... save for each row by whom it is owned
     _indices_proc_rows = new int[N];
@@ -187,19 +189,19 @@ public:
   execute()
   {
     // perform FFT for u
-    fftw_plan pu = fftw_mpi_plan_dft_r2c(dim, n, u_real, u_comp, MPI_COMM_WORLD, FFTW_ESTIMATE);
+    fftw_plan pu = fftw_mpi_plan_dft_r2c(dim, n, u_real, u_comp, comm, FFTW_ESTIMATE);
     fftw_execute(pu);
     fftw_destroy_plan(pu);
 
     // ... for v
-    fftw_plan pv = fftw_mpi_plan_dft_r2c(dim, n, v_real, v_comp, MPI_COMM_WORLD, FFTW_ESTIMATE);
+    fftw_plan pv = fftw_mpi_plan_dft_r2c(dim, n, v_real, v_comp, comm, FFTW_ESTIMATE);
     fftw_execute(pv);
     fftw_destroy_plan(pv);
 
     // ... for w
     if(dim == 3)
     {
-      fftw_plan pw = fftw_mpi_plan_dft_r2c(dim, n, w_real, w_comp, MPI_COMM_WORLD, FFTW_ESTIMATE);
+      fftw_plan pw = fftw_mpi_plan_dft_r2c(dim, n, w_real, w_comp, comm, FFTW_ESTIMATE);
       fftw_execute(pw);
       fftw_destroy_plan(pw);
     }
@@ -262,8 +264,8 @@ public:
     // ... and make to energy 0.5*u^2
     e_spectral *= 0.5;
 
-    MPI_Reduce(&e_physical, &this->e_d, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(&e_spectral, &this->e_s, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&e_physical, &this->e_d, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(&e_spectral, &this->e_s, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
   }
 
   /**
@@ -335,9 +337,9 @@ public:
     }
 
     // ... sum up local results to global result
-    MPI_Reduce(e, E, N, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(k, K, N, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-    MPI_Reduce(c, C, N, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(e, E, N, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(k, K, N, MPI_DOUBLE, MPI_SUM, 0, comm);
+    MPI_Reduce(c, C, N, MPI_DOUBLE, MPI_SUM, 0, comm);
 
     // ... normalize results
     for(int i = 0; i < N; i++)
@@ -393,7 +395,7 @@ public:
 
     // read file
     MPI_File fh;
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    MPI_File_open(comm, filename, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 
     MPI_File_set_view(fh, disp + delta_all * 0, MPI_DOUBLE, MPI_DOUBLE, "native", MPI_INFO_NULL);
     MPI_File_write_all(fh, u_real, dofs, MPI_DOUBLE, MPI_STATUSES_IGNORE);
@@ -435,7 +437,7 @@ public:
 
     // read file
     MPI_File fh;
-    MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+    MPI_File_open(comm, filename, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
 
     MPI_File_set_view(fh, disp + delta_all * 0, MPI_DOUBLE, MPI_DOUBLE, "native", MPI_INFO_NULL);
     MPI_File_read_all(fh, u_real, dofs, MPI_DOUBLE, MPI_STATUSES_IGNORE);

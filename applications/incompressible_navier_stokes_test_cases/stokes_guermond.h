@@ -402,7 +402,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   PostProcessorData<dim> pp_data;
 
@@ -432,7 +432,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.error_data_p.name = "pressure";
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

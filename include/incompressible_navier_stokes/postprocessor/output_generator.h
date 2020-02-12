@@ -120,7 +120,7 @@ public:
 
   typedef DGNavierStokesBase<dim, Number> NavierStokesOperator;
 
-  OutputGenerator();
+  OutputGenerator(MPI_Comm const & comm);
 
   void
   setup(NavierStokesOperator const & navier_stokes_operator_in,
@@ -152,6 +152,8 @@ private:
   calculate_additional_fields(VectorType const & velocity,
                               double const &     time,
                               int const &        time_step_number);
+
+  MPI_Comm const & mpi_comm;
 
   unsigned int output_counter;
   bool         reset_counter;

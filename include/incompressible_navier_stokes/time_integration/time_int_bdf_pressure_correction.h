@@ -40,7 +40,8 @@ public:
 
   TimeIntBDFPressureCorrection(std::shared_ptr<InterfaceBase> operator_base_in,
                                std::shared_ptr<InterfacePDE>  operator_pressure_correction_in,
-                               InputParameters const &        param_in);
+                               InputParameters const &        param_in,
+                               MPI_Comm const &               mpi_comm_in);
 
   virtual ~TimeIntBDFPressureCorrection()
   {

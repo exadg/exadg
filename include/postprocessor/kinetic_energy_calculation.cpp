@@ -10,8 +10,8 @@
 #include <fstream>
 
 template<int dim, typename Number>
-KineticEnergyCalculator<dim, Number>::KineticEnergyCalculator()
-  : clear_files(true), matrix_free(nullptr), dof_index(0), quad_index(0)
+KineticEnergyCalculator<dim, Number>::KineticEnergyCalculator(MPI_Comm const & comm)
+  : mpi_comm(comm), clear_files(true), matrix_free(nullptr), dof_index(0), quad_index(0)
 {
 }
 
@@ -61,7 +61,7 @@ KineticEnergyCalculator<dim, Number>::calculate_basic(VectorType const & velocit
     integrate(*matrix_free, velocity, kinetic_energy, enstrophy, dissipation, max_vorticity);
 
     // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       // clang-format off
       std::ostringstream filename;
@@ -113,16 +113,16 @@ KineticEnergyCalculator<dim, Number>::integrate(MatrixFree<dim, Number> const & 
 
   // sum over all MPI processes
   Number volume = 1.0;
-  volume        = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
-  energy        = Utilities::MPI::sum(dst.at(1), MPI_COMM_WORLD);
-  enstrophy     = Utilities::MPI::sum(dst.at(2), MPI_COMM_WORLD);
-  dissipation   = Utilities::MPI::sum(dst.at(3), MPI_COMM_WORLD);
+  volume        = Utilities::MPI::sum(dst.at(0), mpi_comm);
+  energy        = Utilities::MPI::sum(dst.at(1), mpi_comm);
+  enstrophy     = Utilities::MPI::sum(dst.at(2), mpi_comm);
+  dissipation   = Utilities::MPI::sum(dst.at(3), mpi_comm);
 
   energy /= volume;
   enstrophy /= volume;
   dissipation /= volume;
 
-  max_vorticity = Utilities::MPI::max(dst.at(4), MPI_COMM_WORLD);
+  max_vorticity = Utilities::MPI::max(dst.at(4), mpi_comm);
 
   return volume;
 }

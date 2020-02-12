@@ -12,7 +12,8 @@
 namespace IncNS
 {
 template<int dim, typename Number>
-KineticEnergyCalculatorDetailed<dim, Number>::KineticEnergyCalculatorDetailed()
+KineticEnergyCalculatorDetailed<dim, Number>::KineticEnergyCalculatorDetailed(MPI_Comm const & comm)
+  : KineticEnergyCalculator<dim, Number>(comm)
 {
 }
 
@@ -73,7 +74,7 @@ KineticEnergyCalculatorDetailed<dim, Number>::calculate_detailed(
       navier_stokes_operator->calculate_dissipation_continuity_term(velocity) / volume;
 
     // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(this->mpi_comm) == 0)
     {
       // clang-format off
       std::ostringstream filename;

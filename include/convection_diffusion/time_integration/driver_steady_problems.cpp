@@ -14,10 +14,12 @@ namespace ConvDiff
 {
 template<typename Number>
 DriverSteadyProblems<Number>::DriverSteadyProblems(std::shared_ptr<Operator> operator_in,
-                                                   InputParameters const &   param_in)
+                                                   InputParameters const &   param_in,
+                                                   MPI_Comm const &          mpi_comm_in)
   : pde_operator(operator_in),
     param(param_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+    mpi_comm(mpi_comm_in),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     computing_times(1)
 {
 }

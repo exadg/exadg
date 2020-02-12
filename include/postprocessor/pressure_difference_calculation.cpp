@@ -12,8 +12,8 @@
 #include <fstream>
 
 template<int dim, typename Number>
-PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator()
-  : clear_files_pressure_difference(true)
+PressureDifferenceCalculator<dim, Number>::PressureDifferenceCalculator(MPI_Comm const & comm)
+  : mpi_comm(comm), clear_files_pressure_difference(true)
 {
 }
 
@@ -43,13 +43,13 @@ PressureDifferenceCalculator<dim, Number>::evaluate(VectorType const & pressure,
     point_2 = pressure_difference_data.point_2;
 
     evaluate_scalar_quantity_in_point(
-      *dof_handler_pressure, *mapping, pressure, point_1, pressure_1);
+      pressure_1, *dof_handler_pressure, *mapping, pressure, point_1, mpi_comm);
     evaluate_scalar_quantity_in_point(
-      *dof_handler_pressure, *mapping, pressure, point_2, pressure_2);
+      pressure_2, *dof_handler_pressure, *mapping, pressure, point_2, mpi_comm);
 
     Number const pressure_difference = pressure_1 - pressure_2;
 
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::string filename = pressure_difference_data.filename;
 

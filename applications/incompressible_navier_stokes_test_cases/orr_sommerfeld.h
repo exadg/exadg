@@ -377,10 +377,11 @@ public:
 
   typedef typename Base::Operator Operator;
 
-  PostProcessorOrrSommerfeld(PostProcessorDataOrrSommerfeld<dim> const & pp_data_os)
+  PostProcessorOrrSommerfeld(PostProcessorDataOrrSommerfeld<dim> const & pp_data_os, MPI_Comm const &mpi_comm)
     :
-    Base(pp_data_os.pp_data),
-    energy_data(pp_data_os.energy_data)
+    Base(pp_data_os.pp_data, mpi_comm),
+    energy_data(pp_data_os.energy_data),
+    energy_calculator(mpi_comm)
   {}
 
   void
@@ -415,7 +416,7 @@ public:
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   PostProcessorData<dim> pp_data;
 
@@ -440,7 +441,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data_os.energy_data.omega_i = OMEGA.imag();
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessorOrrSommerfeld<dim,Number>(pp_data_os));
+  pp.reset(new PostProcessorOrrSommerfeld<dim,Number>(pp_data_os, mpi_comm));
 
   return pp;
 }

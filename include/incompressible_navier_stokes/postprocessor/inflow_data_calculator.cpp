@@ -11,8 +11,9 @@
 #include "../../postprocessor/evaluate_solution_in_given_point.h"
 
 template<int dim, typename Number>
-InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & inflow_data_in)
-  : inflow_data(inflow_data_in), inflow_data_has_been_initialized(false)
+InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & inflow_data_in,
+                                                        MPI_Comm const &        comm)
+  : inflow_data(inflow_data_in), inflow_data_has_been_initialized(false), mpi_comm(comm)
 {
 }
 
@@ -114,10 +115,10 @@ InflowDataCalculator<dim, Number>::calculate(
     }
 
     // sum over all processors
-    Utilities::MPI::sum(array_counter, MPI_COMM_WORLD, array_counter);
+    Utilities::MPI::sum(array_counter, mpi_comm, array_counter);
     Utilities::MPI::sum(
       ArrayView<const double>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()),
-      MPI_COMM_WORLD,
+      mpi_comm,
       ArrayView<double>(&(*inflow_data.array)[0][0], dim * inflow_data.array->size()));
 
     // divide by counter in order to get the mean value (averaged over all
