@@ -7,6 +7,8 @@
 
 #include <fstream>
 
+//#define OUTPUT_DEBUG_INFO
+
 template<int dim>
 StatisticsManager<dim>::StatisticsManager(const DoFHandler<dim> & dof_handler_velocity,
                                           const Mapping<dim> &    mapping_in)
@@ -126,11 +128,13 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
         }
       }
 
-      //    std::cout<<std::endl<<"Intermediate vector with y-coordinates:"<<std::endl;
-      //    for(unsigned int i=0; i<y_glob.size();++i)
-      //      std::cout<<"y_glob["<<i<<"]="<<y_glob[i]<<std::endl;
-      //    std::vector<double> y_temp;
-      //    y_temp = y_glob;
+#ifdef OUTPUT_DEBUG_INFO
+      std::cout << std::endl << "Intermediate vector with y-coordinates:" << std::endl;
+      for(unsigned int i = 0; i < y_glob.size(); ++i)
+        std::cout << "y_glob[" << i << "]=" << y_glob[i] << std::endl;
+      std::vector<double> y_temp;
+      y_temp = y_glob;
+#endif
 
       // y_glob contains y-coordinates using the exact mapping
 
@@ -175,6 +179,7 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
         if(cell->is_locally_owned())
         {
           // loop over all y-coordinates of current cell
+          unsigned int idx = 0;
           for(unsigned int i = 0; i < n_points_y_per_cell; ++i)
           {
             fe_values[i]->reinit(typename Triangulation<dim>::active_cell_iterator(cell));
@@ -184,20 +189,30 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
             // find index within the y-values: first do a binary search to find
             // the next larger value of y in the list...
             const double y = fe_values[i]->quadrature_point(0)[1];
-            // std::lower_bound: returns iterator to first element that is >= y
-            // Note that the vector y_glob has to be sorted. As a result, the
-            // index might be too large.
-            unsigned int idx =
-              std::distance(y_glob.begin(), std::lower_bound(y_glob.begin(), y_glob.end(), y));
 
-            // make sure that the index does not exceed the array bounds in case of round-off errors
-            if(idx == y_glob.size())
-              idx--;
+            // identify index for first point located on the boundary of the cell because for this
+            // point the mapping can not cause any trouble. For interior points, the deviations
+            // introduced may the mapping can be so strong that the identification of the index is
+            // no longer unique.
+            if(i == 0)
+            {
+              idx =
+                std::distance(y_glob.begin(), std::lower_bound(y_glob.begin(), y_glob.end(), y));
 
-            // reduce index by 1 in case that the previous point is closer to y than
-            // the next point
-            if(idx > 0 && std::abs(y_glob[idx - 1] - y) < std::abs(y_glob[idx] - y))
-              idx--;
+              // make sure that the index does not exceed the array bounds in case of round-off
+              // errors
+              if(idx == y_glob.size())
+                idx--;
+
+              // reduce index by 1 in case that the previous point is closer to y than
+              // the next point
+              if(idx > 0 && std::abs(y_glob[idx - 1] - y) < std::abs(y_glob[idx] - y))
+                idx--;
+            }
+            else // simply increment index for subsequent points of a cell
+            {
+              ++idx;
+            }
 
             y_processor[idx] = y;
           }
@@ -206,18 +221,21 @@ StatisticsManager<dim>::setup(const std::function<double(double const &)> & grid
 
       Utilities::MPI::max(y_processor, communicator, y_glob);
 
-      //    // print final vector
-      //    std::cout<<std::endl<<"Final vector with y-coordinates:"<<std::endl;
-      //    for(unsigned int i=0; i<y_glob.size();++i)
-      //      std::cout<<"y_glob["<<i<<"]="<<y_glob[i]<<std::endl;
-      //
-      //    // compare intermediate and final vector
-      //    for(unsigned int i=0; i<y_glob.size();++i)
-      //      std::cout<<"y_temp["<<i<<"]="<<y_temp[i]<<"
-      //      "<<"y_glob["<<i<<"]="<<y_glob[i]<<std::endl;
+#ifdef OUTPUT_DEBUG_INFO
+      // print final vector
+      std::cout << std::endl << "Final vector with y-coordinates:" << std::endl;
+      for(unsigned int i = 0; i < y_glob.size(); ++i)
+        std::cout << "y_glob[" << i << "] = " << y_glob[i] << std::endl;
+
+      // compare intermediate and final vector
+      for(unsigned int i = 0; i < y_glob.size(); ++i)
+        std::cout << "y_temp[" << i << "] = " << y_temp[i] << " "
+                  << "y_glob[" << i << "] = " << y_glob[i] << std::endl;
+#endif
     }
-    else
+    else // turb_channel_data.cells_are_stretched == false
     {
+      // use equidistant distribution of points within each cell
       for(unsigned int cell = 0; cell < n_cells_y_dir; cell++)
       {
         // determine lower and upper y-coordinates of current cell in physical space
