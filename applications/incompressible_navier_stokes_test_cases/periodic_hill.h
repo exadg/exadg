@@ -9,7 +9,7 @@
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_TURBULENT_CHANNEL_H_
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.h"
 
 /************************************************************************************************************/
@@ -420,7 +420,7 @@ public:
         pp_data_periodic_hill.mean_velocity_data));
 
     // evaluation of characteristic quantities along lines
-    line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneousDirection<dim>(
+    line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneous<dim>(
         pde_operator.get_dof_handler_u(),
         pde_operator.get_dof_handler_p(),
         pde_operator.get_mapping()));
@@ -458,7 +458,7 @@ public:
   }
 
 private:
-  // postprocessor data supplemented with data required for FDA benchmark
+  // postprocessor data supplemented with data required for periodic hill
   PostProcessorDataPeriodicHill<dim> pp_data_periodic_hill;
 
   // calculate flow rate in precursor domain so that the flow rate can be
@@ -469,7 +469,7 @@ private:
   double time_old;
 
   // line plot statistics with averaging in homogeneous direction
-  std::shared_ptr<LinePlotCalculatorStatisticsHomogeneousDirection<dim> > line_plot_calculator_statistics;
+  std::shared_ptr<LinePlotCalculatorStatisticsHomogeneous<dim> > line_plot_calculator_statistics;
 };
 
 template<int dim, typename Number>
@@ -491,7 +491,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.output_data.degree = param.degree_u;
 
   // line plot data: calculate statistics along lines
-  pp_data.line_plot_data.write_output = true;
+  pp_data.line_plot_data.calculate = true;
   pp_data.line_plot_data.directory = OUTPUT_FOLDER;
   pp_data.line_plot_data.statistics_data.calculate_statistics = CALCULATE_STATISTICS;
   pp_data.line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
@@ -500,84 +500,109 @@ construct_postprocessor(InputParameters const &param)
   pp_data.line_plot_data.statistics_data.write_output_every_timesteps = SAMPLE_EVERY_TIMESTEPS*100;
 
   // mean velocity
-  std::shared_ptr<QuantityStatistics<dim>> quantity_velocity;
-  quantity_velocity.reset(new QuantityStatistics<dim>());
+  std::shared_ptr<Quantity> quantity_velocity;
+  quantity_velocity.reset(new Quantity());
   quantity_velocity->type = QuantityType::Velocity;
-  quantity_velocity->average_homogeneous_direction = true;
-  quantity_velocity->averaging_direction = 2;
 
   // Reynolds stresses
-  std::shared_ptr<QuantityStatistics<dim>> quantity_reynolds;
-  quantity_reynolds.reset(new QuantityStatistics<dim>());
+  std::shared_ptr<Quantity> quantity_reynolds;
+  quantity_reynolds.reset(new Quantity());
   quantity_reynolds->type = QuantityType::ReynoldsStresses;
-  quantity_reynolds->average_homogeneous_direction = true;
-  quantity_reynolds->averaging_direction = 2;
 
   // lines
-  Line<dim> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8;
+  std::shared_ptr<LineHomogeneousAveraging<dim>> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8;
+  vel_0.reset(new LineHomogeneousAveraging<dim>());
+  vel_1.reset(new LineHomogeneousAveraging<dim>());
+  vel_2.reset(new LineHomogeneousAveraging<dim>());
+  vel_3.reset(new LineHomogeneousAveraging<dim>());
+  vel_4.reset(new LineHomogeneousAveraging<dim>());
+  vel_5.reset(new LineHomogeneousAveraging<dim>());
+  vel_6.reset(new LineHomogeneousAveraging<dim>());
+  vel_7.reset(new LineHomogeneousAveraging<dim>());
+  vel_8.reset(new LineHomogeneousAveraging<dim>());
+
+  vel_0->average_homogeneous_direction = true;
+  vel_1->average_homogeneous_direction = true;
+  vel_2->average_homogeneous_direction = true;
+  vel_3->average_homogeneous_direction = true;
+  vel_4->average_homogeneous_direction = true;
+  vel_5->average_homogeneous_direction = true;
+  vel_6->average_homogeneous_direction = true;
+  vel_7->average_homogeneous_direction = true;
+  vel_8->average_homogeneous_direction = true;
+
+  vel_0->averaging_direction = 2;
+  vel_1->averaging_direction = 2;
+  vel_2->averaging_direction = 2;
+  vel_3->averaging_direction = 2;
+  vel_4->averaging_direction = 2;
+  vel_5->averaging_direction = 2;
+  vel_6->averaging_direction = 2;
+  vel_7->averaging_direction = 2;
+  vel_8->averaging_direction = 2;
 
   // begin and end points of all lines
   double const eps = 1.e-10;
-  vel_0.begin = Point<dim> (0*H, H+f(0*H)+eps,0);
-  vel_0.end =   Point<dim> (0*H, H+HEIGHT-eps,0);
-  vel_1.begin = Point<dim> (1*H, H+f(1*H)+eps,0);
-  vel_1.end =   Point<dim> (1*H, H+HEIGHT-eps,0);
-  vel_2.begin = Point<dim> (2*H, H+f(2*H)+eps,0);
-  vel_2.end =   Point<dim> (2*H, H+HEIGHT-eps,0);
-  vel_3.begin = Point<dim> (3*H, H+f(3*H)+eps,0);
-  vel_3.end =   Point<dim> (3*H, H+HEIGHT-eps,0);
-  vel_4.begin = Point<dim> (4*H, H+f(4*H)+eps,0);
-  vel_4.end =   Point<dim> (4*H, H+HEIGHT-eps,0);
-  vel_5.begin = Point<dim> (5*H, H+f(5*H)+eps,0);
-  vel_5.end =   Point<dim> (5*H, H+HEIGHT-eps,0);
-  vel_6.begin = Point<dim> (6*H, H+f(6*H)+eps,0);
-  vel_6.end =   Point<dim> (6*H, H+HEIGHT-eps,0);
-  vel_7.begin = Point<dim> (7*H, H+f(7*H)+eps,0);
-  vel_7.end =   Point<dim> (7*H, H+HEIGHT-eps,0);
-  vel_8.begin = Point<dim> (8*H, H+f(8*H)+eps,0);
-  vel_8.end =   Point<dim> (8*H, H+HEIGHT-eps,0);
+  vel_0->begin = Point<dim> (0*H, H+f(0*H)+eps,0);
+  vel_0->end =   Point<dim> (0*H, H+HEIGHT-eps,0);
+  vel_1->begin = Point<dim> (1*H, H+f(1*H)+eps,0);
+  vel_1->end =   Point<dim> (1*H, H+HEIGHT-eps,0);
+  vel_2->begin = Point<dim> (2*H, H+f(2*H)+eps,0);
+  vel_2->end =   Point<dim> (2*H, H+HEIGHT-eps,0);
+  vel_3->begin = Point<dim> (3*H, H+f(3*H)+eps,0);
+  vel_3->end =   Point<dim> (3*H, H+HEIGHT-eps,0);
+  vel_4->begin = Point<dim> (4*H, H+f(4*H)+eps,0);
+  vel_4->end =   Point<dim> (4*H, H+HEIGHT-eps,0);
+  vel_5->begin = Point<dim> (5*H, H+f(5*H)+eps,0);
+  vel_5->end =   Point<dim> (5*H, H+HEIGHT-eps,0);
+  vel_6->begin = Point<dim> (6*H, H+f(6*H)+eps,0);
+  vel_6->end =   Point<dim> (6*H, H+HEIGHT-eps,0);
+  vel_7->begin = Point<dim> (7*H, H+f(7*H)+eps,0);
+  vel_7->end =   Point<dim> (7*H, H+HEIGHT-eps,0);
+  vel_8->begin = Point<dim> (8*H, H+f(8*H)+eps,0);
+  vel_8->end =   Point<dim> (8*H, H+HEIGHT-eps,0);
 
   // set the number of points along the lines
-  vel_0.n_points = N_POINTS_LINE;
-  vel_1.n_points = N_POINTS_LINE;
-  vel_2.n_points = N_POINTS_LINE;
-  vel_3.n_points = N_POINTS_LINE;
-  vel_4.n_points = N_POINTS_LINE;
-  vel_5.n_points = N_POINTS_LINE;
-  vel_6.n_points = N_POINTS_LINE;
-  vel_7.n_points = N_POINTS_LINE;
-  vel_8.n_points = N_POINTS_LINE;
+  vel_0->n_points = N_POINTS_LINE;
+  vel_1->n_points = N_POINTS_LINE;
+  vel_2->n_points = N_POINTS_LINE;
+  vel_3->n_points = N_POINTS_LINE;
+  vel_4->n_points = N_POINTS_LINE;
+  vel_5->n_points = N_POINTS_LINE;
+  vel_6->n_points = N_POINTS_LINE;
+  vel_7->n_points = N_POINTS_LINE;
+  vel_8->n_points = N_POINTS_LINE;
 
   // set the quantities that we want to compute along the lines
-  vel_0.quantities.push_back(quantity_velocity);
-  vel_0.quantities.push_back(quantity_reynolds);
-  vel_1.quantities.push_back(quantity_velocity);
-  vel_1.quantities.push_back(quantity_reynolds);
-  vel_2.quantities.push_back(quantity_velocity);
-  vel_2.quantities.push_back(quantity_reynolds);
-  vel_3.quantities.push_back(quantity_velocity);
-  vel_3.quantities.push_back(quantity_reynolds);
-  vel_4.quantities.push_back(quantity_velocity);
-  vel_4.quantities.push_back(quantity_reynolds);
-  vel_5.quantities.push_back(quantity_velocity);
-  vel_5.quantities.push_back(quantity_reynolds);
-  vel_6.quantities.push_back(quantity_velocity);
-  vel_6.quantities.push_back(quantity_reynolds);
-  vel_7.quantities.push_back(quantity_velocity);
-  vel_7.quantities.push_back(quantity_reynolds);
-  vel_8.quantities.push_back(quantity_velocity);
-  vel_8.quantities.push_back(quantity_reynolds);
+  vel_0->quantities.push_back(quantity_velocity);
+  vel_0->quantities.push_back(quantity_reynolds);
+  vel_1->quantities.push_back(quantity_velocity);
+  vel_1->quantities.push_back(quantity_reynolds);
+  vel_2->quantities.push_back(quantity_velocity);
+  vel_2->quantities.push_back(quantity_reynolds);
+  vel_3->quantities.push_back(quantity_velocity);
+  vel_3->quantities.push_back(quantity_reynolds);
+  vel_4->quantities.push_back(quantity_velocity);
+  vel_4->quantities.push_back(quantity_reynolds);
+  vel_5->quantities.push_back(quantity_velocity);
+  vel_5->quantities.push_back(quantity_reynolds);
+  vel_6->quantities.push_back(quantity_velocity);
+  vel_6->quantities.push_back(quantity_reynolds);
+  vel_7->quantities.push_back(quantity_velocity);
+  vel_7->quantities.push_back(quantity_reynolds);
+  vel_8->quantities.push_back(quantity_velocity);
+  vel_8->quantities.push_back(quantity_reynolds);
 
   // set line names
-  vel_0.name = "x_0";
-  vel_1.name = "x_1";
-  vel_2.name = "x_2";
-  vel_3.name = "x_3";
-  vel_4.name = "x_4";
-  vel_5.name = "x_5";
-  vel_6.name = "x_6";
-  vel_7.name = "x_7";
-  vel_8.name = "x_8";
+  vel_0->name = "x_0";
+  vel_1->name = "x_1";
+  vel_2->name = "x_2";
+  vel_3->name = "x_3";
+  vel_4->name = "x_4";
+  vel_5->name = "x_5";
+  vel_6->name = "x_6";
+  vel_7->name = "x_7";
+  vel_8->name = "x_8";
 
   // insert lines
   pp_data.line_plot_data.lines.push_back(vel_0);

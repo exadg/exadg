@@ -344,24 +344,26 @@ construct_postprocessor(InputParameters const &param)
     quantity_p->type = QuantityType::Pressure;
 
     // lines
-    Line<dim> vert_line, hor_line;
+    std::shared_ptr<Line<dim>> vert_line, hor_line;
 
     // vertical line
-    vert_line.begin = Point<dim>(0.5,0.0);
-    vert_line.end = Point<dim>(0.5,1.0);
-    vert_line.name = OUTPUT_NAME + "_vert_line";
-    vert_line.n_points = 100001; //2001;
-    vert_line.quantities.push_back(quantity_u);
-    vert_line.quantities.push_back(quantity_p);
+    vert_line.reset(new Line<dim>());
+    vert_line->begin = Point<dim>(0.5,0.0);
+    vert_line->end = Point<dim>(0.5,1.0);
+    vert_line->name = OUTPUT_NAME + "_vert_line";
+    vert_line->n_points = 100001; //2001;
+    vert_line->quantities.push_back(quantity_u);
+    vert_line->quantities.push_back(quantity_p);
     pp_data.line_plot_data.lines.push_back(vert_line);
 
     // horizontal line
-    hor_line.begin = Point<dim>(0.0,0.5);
-    hor_line.end = Point<dim>(1.0,0.5);
-    hor_line.name = OUTPUT_NAME + "_hor_line";
-    hor_line.n_points = 10001; //2001;
-    hor_line.quantities.push_back(quantity_u);
-    hor_line.quantities.push_back(quantity_p);
+    hor_line.reset(new Line<dim>());
+    hor_line->begin = Point<dim>(0.0,0.5);
+    hor_line->end = Point<dim>(1.0,0.5);
+    hor_line->name = OUTPUT_NAME + "_hor_line";
+    hor_line->n_points = 10001; //2001;
+    hor_line->quantities.push_back(quantity_u);
+    hor_line->quantities.push_back(quantity_p);
     pp_data.line_plot_data.lines.push_back(hor_line);
   }
 

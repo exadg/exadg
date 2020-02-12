@@ -947,7 +947,7 @@ initialize_postprocessor_data(PostProcessorDataFDA<dim> &pp_data_fda,
     pp_data_fda.pp_data = pp_data;
 
     // evaluation of quantities along lines
-    pp_data_fda.line_plot_data.write_output = true;
+    pp_data_fda.line_plot_data.calculate = true;
     pp_data_fda.line_plot_data.directory = OUTPUT_FOLDER;
     pp_data_fda.line_plot_data.statistics_data.calculate_statistics = true;
     pp_data_fda.line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
@@ -956,101 +956,146 @@ initialize_postprocessor_data(PostProcessorDataFDA<dim> &pp_data_fda,
     pp_data_fda.line_plot_data.statistics_data.write_output_every_timesteps = WRITE_OUTPUT_EVERY_TIMESTEPS;
 
     // lines
-    Line<dim> axial_profile, radial_profile_z1, radial_profile_z2, radial_profile_z3, radial_profile_z4,
+    std::shared_ptr<LineCircumferentialAveraging<dim>> axial_profile, radial_profile_z1, radial_profile_z2, radial_profile_z3, radial_profile_z4,
               radial_profile_z5, radial_profile_z6, radial_profile_z7, radial_profile_z8, radial_profile_z9,
               radial_profile_z10, radial_profile_z11, radial_profile_z12;
+
+    axial_profile.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z1.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z2.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z3.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z4.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z5.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z6.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z7.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z8.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z9.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z10.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z11.reset(new LineCircumferentialAveraging<dim>());
+    radial_profile_z12.reset(new LineCircumferentialAveraging<dim>());
 
     double z_1 = -0.088, z_2 = - 0.064, z_3 = -0.048, z_4 = -0.02, z_5 = -0.008, z_6 = 0.0,
            z_7 = 0.008, z_8 = 0.016, z_9 = 0.024, z_10 = 0.032, z_11 = 0.06, z_12 = 0.08;
 
     // begin and end points of all lines
-    axial_profile.begin =      Point<dim> (0,0,Z1_INFLOW);
-    axial_profile.end =        Point<dim> (0,0,Z2_OUTFLOW);
-    radial_profile_z1.begin =  Point<dim> (0,0,z_1);
-    radial_profile_z1.end =    Point<dim> (radius_function(z_1),0,z_1);
-    radial_profile_z2.begin =  Point<dim> (0,0,z_2);
-    radial_profile_z2.end =    Point<dim> (radius_function(z_2),0,z_2);
-    radial_profile_z3.begin =  Point<dim> (0,0,z_3);
-    radial_profile_z3.end =    Point<dim> (radius_function(z_3),0,z_3);
-    radial_profile_z4.begin =  Point<dim> (0,0,z_4);
-    radial_profile_z4.end =    Point<dim> (radius_function(z_4),0,z_4);
-    radial_profile_z5.begin =  Point<dim> (0,0,z_5);
-    radial_profile_z5.end =    Point<dim> (radius_function(z_5),0,z_5);
-    radial_profile_z6.begin =  Point<dim> (0,0,z_6);
-    radial_profile_z6.end =    Point<dim> (radius_function(z_6),0,z_6);
-    radial_profile_z7.begin =  Point<dim> (0,0,z_7);
-    radial_profile_z7.end =    Point<dim> (radius_function(z_7),0,z_7);
-    radial_profile_z8.begin =  Point<dim> (0,0,z_8);
-    radial_profile_z8.end =    Point<dim> (radius_function(z_8),0,z_8);
-    radial_profile_z9.begin =  Point<dim> (0,0,z_9);
-    radial_profile_z9.end =    Point<dim> (radius_function(z_9),0,z_9);
-    radial_profile_z10.begin = Point<dim> (0,0,z_10);
-    radial_profile_z10.end =   Point<dim> (radius_function(z_10),0,z_10);
-    radial_profile_z11.begin = Point<dim> (0,0,z_11);
-    radial_profile_z11.end =   Point<dim> (radius_function(z_11),0,z_11);
-    radial_profile_z12.begin = Point<dim> (0,0,z_12);
-    radial_profile_z12.end =   Point<dim> (radius_function(z_12),0,z_12);
+    axial_profile->begin =      Point<dim> (0,0,Z1_INFLOW);
+    axial_profile->end =        Point<dim> (0,0,Z2_OUTFLOW);
+    radial_profile_z1->begin =  Point<dim> (0,0,z_1);
+    radial_profile_z1->end =    Point<dim> (radius_function(z_1),0,z_1);
+    radial_profile_z2->begin =  Point<dim> (0,0,z_2);
+    radial_profile_z2->end =    Point<dim> (radius_function(z_2),0,z_2);
+    radial_profile_z3->begin =  Point<dim> (0,0,z_3);
+    radial_profile_z3->end =    Point<dim> (radius_function(z_3),0,z_3);
+    radial_profile_z4->begin =  Point<dim> (0,0,z_4);
+    radial_profile_z4->end =    Point<dim> (radius_function(z_4),0,z_4);
+    radial_profile_z5->begin =  Point<dim> (0,0,z_5);
+    radial_profile_z5->end =    Point<dim> (radius_function(z_5),0,z_5);
+    radial_profile_z6->begin =  Point<dim> (0,0,z_6);
+    radial_profile_z6->end =    Point<dim> (radius_function(z_6),0,z_6);
+    radial_profile_z7->begin =  Point<dim> (0,0,z_7);
+    radial_profile_z7->end =    Point<dim> (radius_function(z_7),0,z_7);
+    radial_profile_z8->begin =  Point<dim> (0,0,z_8);
+    radial_profile_z8->end =    Point<dim> (radius_function(z_8),0,z_8);
+    radial_profile_z9->begin =  Point<dim> (0,0,z_9);
+    radial_profile_z9->end =    Point<dim> (radius_function(z_9),0,z_9);
+    radial_profile_z10->begin = Point<dim> (0,0,z_10);
+    radial_profile_z10->end =   Point<dim> (radius_function(z_10),0,z_10);
+    radial_profile_z11->begin = Point<dim> (0,0,z_11);
+    radial_profile_z11->end =   Point<dim> (radius_function(z_11),0,z_11);
+    radial_profile_z12->begin = Point<dim> (0,0,z_12);
+    radial_profile_z12->end =   Point<dim> (radius_function(z_12),0,z_12);
 
     // number of points
-    axial_profile.n_points =      N_POINTS_LINE_AXIAL;
-    radial_profile_z1.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z2.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z3.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z4.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z5.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z6.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z7.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z8.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z9.n_points =  N_POINTS_LINE_RADIAL;
-    radial_profile_z10.n_points = N_POINTS_LINE_RADIAL;
-    radial_profile_z11.n_points = N_POINTS_LINE_RADIAL;
-    radial_profile_z12.n_points = N_POINTS_LINE_RADIAL;
+    axial_profile->n_points =      N_POINTS_LINE_AXIAL;
+    radial_profile_z1->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z2->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z3->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z4->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z5->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z6->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z7->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z8->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z9->n_points =  N_POINTS_LINE_RADIAL;
+    radial_profile_z10->n_points = N_POINTS_LINE_RADIAL;
+    radial_profile_z11->n_points = N_POINTS_LINE_RADIAL;
+    radial_profile_z12->n_points = N_POINTS_LINE_RADIAL;
+
+    axial_profile->average_circumferential = false;
+    radial_profile_z1->average_circumferential = true;
+    radial_profile_z2->average_circumferential = true;
+    radial_profile_z3->average_circumferential = true;
+    radial_profile_z4->average_circumferential = true;
+    radial_profile_z5->average_circumferential = true;
+    radial_profile_z6->average_circumferential = true;
+    radial_profile_z7->average_circumferential = true;
+    radial_profile_z8->average_circumferential = true;
+    radial_profile_z9->average_circumferential = true;
+    radial_profile_z10->average_circumferential = true;
+    radial_profile_z11->average_circumferential = true;
+    radial_profile_z12->average_circumferential = true;
+
+    radial_profile_z1->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z2->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z3->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z4->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z5->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z6->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z7->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z8->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z9->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z10->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z11->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+    radial_profile_z12->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
+
+    Tensor<1,dim,double> normal; normal[2] = 1.0;
+    radial_profile_z1->normal_vector = normal;
+    radial_profile_z2->normal_vector = normal;
+    radial_profile_z3->normal_vector = normal;
+    radial_profile_z4->normal_vector = normal;
+    radial_profile_z5->normal_vector = normal;
+    radial_profile_z6->normal_vector = normal;
+    radial_profile_z7->normal_vector = normal;
+    radial_profile_z8->normal_vector = normal;
+    radial_profile_z9->normal_vector = normal;
+    radial_profile_z10->normal_vector = normal;
+    radial_profile_z11->normal_vector = normal;
+    radial_profile_z12->normal_vector = normal;
 
     // quantities
 
     // no additional averaging in space for centerline velocity
-    std::shared_ptr<QuantityStatistics<dim>> quantity_velocity;
-    quantity_velocity.reset(new QuantityStatistics<dim>());
+    std::shared_ptr<Quantity> quantity_velocity;
+    quantity_velocity.reset(new Quantity());
     quantity_velocity->type = QuantityType::Velocity;
 
-    // additional averaging is performed in circumferential direction
-    // for radial profiles (rotationally symmetric geometry)
-    Tensor<1,dim,double> normal; normal[2] = 1.0;
-    std::shared_ptr<QuantityStatistics<dim>> quantity_velocity_circumferential;
-    quantity_velocity_circumferential.reset(new QuantityStatistics<dim>());
-    quantity_velocity_circumferential->type = QuantityType::Velocity;
-    quantity_velocity_circumferential->average_circumferential = true;
-    quantity_velocity_circumferential->n_points_circumferential = N_POINTS_LINE_CIRCUMFERENTIAL;
-    quantity_velocity_circumferential->normal_vector = normal;
-
-    axial_profile.quantities.push_back(quantity_velocity);
-    radial_profile_z1.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z2.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z3.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z4.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z5.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z6.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z7.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z8.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z9.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z10.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z11.quantities.push_back(quantity_velocity_circumferential);
-    radial_profile_z12.quantities.push_back(quantity_velocity_circumferential);
+    axial_profile->quantities.push_back(quantity_velocity);
+    radial_profile_z1->quantities.push_back(quantity_velocity);
+    radial_profile_z2->quantities.push_back(quantity_velocity);
+    radial_profile_z3->quantities.push_back(quantity_velocity);
+    radial_profile_z4->quantities.push_back(quantity_velocity);
+    radial_profile_z5->quantities.push_back(quantity_velocity);
+    radial_profile_z6->quantities.push_back(quantity_velocity);
+    radial_profile_z7->quantities.push_back(quantity_velocity);
+    radial_profile_z8->quantities.push_back(quantity_velocity);
+    radial_profile_z9->quantities.push_back(quantity_velocity);
+    radial_profile_z10->quantities.push_back(quantity_velocity);
+    radial_profile_z11->quantities.push_back(quantity_velocity);
+    radial_profile_z12->quantities.push_back(quantity_velocity);
 
     // names
-    axial_profile.name = "axial_profile";
-    radial_profile_z1.name = "radial_profile_z1";
-    radial_profile_z2.name = "radial_profile_z2";
-    radial_profile_z3.name = "radial_profile_z3";
-    radial_profile_z4.name = "radial_profile_z4";
-    radial_profile_z5.name = "radial_profile_z5";
-    radial_profile_z6.name = "radial_profile_z6";
-    radial_profile_z7.name = "radial_profile_z7";
-    radial_profile_z8.name = "radial_profile_z8";
-    radial_profile_z9.name = "radial_profile_z9";
-    radial_profile_z10.name = "radial_profile_z10";
-    radial_profile_z11.name = "radial_profile_z11";
-    radial_profile_z12.name = "radial_profile_z12";
+    axial_profile->name = "axial_profile";
+    radial_profile_z1->name = "radial_profile_z1";
+    radial_profile_z2->name = "radial_profile_z2";
+    radial_profile_z3->name = "radial_profile_z3";
+    radial_profile_z4->name = "radial_profile_z4";
+    radial_profile_z5->name = "radial_profile_z5";
+    radial_profile_z6->name = "radial_profile_z6";
+    radial_profile_z7->name = "radial_profile_z7";
+    radial_profile_z8->name = "radial_profile_z8";
+    radial_profile_z9->name = "radial_profile_z9";
+    radial_profile_z10->name = "radial_profile_z10";
+    radial_profile_z11->name = "radial_profile_z11";
+    radial_profile_z12->name = "radial_profile_z12";
 
     // insert lines
     pp_data_fda.line_plot_data.lines.push_back(axial_profile);

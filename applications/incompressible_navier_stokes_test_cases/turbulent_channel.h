@@ -10,6 +10,7 @@
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/postprocessor/statistics_manager.h"
+#include "../grid_tools/grid_functions_turbulent_channel.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -207,8 +208,6 @@ void set_input_parameters(InputParameters &param)
 /*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
 /*                                                                                                          */
 /************************************************************************************************************/
-
-#include "../grid_tools/grid_functions_turbulent_channel.h"
 
 template<int dim>
 void
