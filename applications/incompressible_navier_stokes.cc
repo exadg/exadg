@@ -529,6 +529,28 @@ main(int argc, char ** argv)
         for(unsigned int dt_refinements = REFINE_TIME_MIN; dt_refinements <= REFINE_TIME_MAX;
             ++dt_refinements)
         {
+          // new communicator
+          MPI_Comm sub_comm;
+
+#ifdef USE_SUB_COMMUNICATOR_FOR_FFTW
+          const int n = N_CORES_PER_NODE;
+
+          const int rank     = Utilities::MPI::this_mpi_process(mpi_comm);
+          const int size     = Utilities::MPI::n_mpi_processes(mpi_comm);
+          const int flag     = 1;
+          const int new_rank = rank + (rank % n) * size;
+
+          // split default communicator into two groups
+          MPI_Comm_split(mpi_comm, flag, new_rank, &sub_comm);
+
+          if(rank == 0)
+            std::cout << std::endl
+                      << "Created sub communicator with stride of " << N_CORES_PER_NODE
+                      << std::endl;
+#else
+          sub_comm = mpi_comm;
+#endif
+
           // reset degree
           param.degree_u = degree;
 
@@ -543,9 +565,9 @@ main(int argc, char ** argv)
           std::shared_ptr<ProblemBase<Number>> problem;
 
           if(param.dim == 2)
-            problem.reset(new Problem<2, Number>(mpi_comm));
+            problem.reset(new Problem<2, Number>(sub_comm));
           else if(param.dim == 3)
-            problem.reset(new Problem<3, Number>(mpi_comm));
+            problem.reset(new Problem<3, Number>(sub_comm));
           else
             AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 
@@ -554,6 +576,11 @@ main(int argc, char ** argv)
           problem->solve();
 
           problem->analyze_computing_times();
+
+#ifdef USE_SUB_COMMUNICATOR_FOR_FFTW
+          // free communicator
+          MPI_Comm_free(&sub_comm);
+#endif
         }
       }
     }
