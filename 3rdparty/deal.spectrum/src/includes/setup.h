@@ -33,6 +33,9 @@ class Setup
 public:
   // length of header (8 ints)
   const int HEADER_LENGTH = 8;
+  
+  MPI_Comm const & comm;
+  
   // is initialized?
   bool initialized;
   // file type (0) sfc + cell-wise (1) row-wise
@@ -61,12 +64,12 @@ public:
   /**
    * Constructor
    */
-  Setup() : initialized(false), points_dst(0)
+  Setup(MPI_Comm const & comm) : comm(comm), initialized(false), points_dst(0)
   {
     // extract mpi-rank and ...
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(comm, &rank);
     // ... mpi-size
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(comm, &size);
   }
 
   /**
@@ -121,7 +124,7 @@ public:
     }
 
     // broadcast header to all processes
-    MPI_Bcast(&crit, 5, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&crit, 5, MPI_INT, 0, comm);
 
     if(this->initialized)
     {
@@ -187,7 +190,7 @@ public:
     }
 
     // synchronize all processes (not necessary)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm);
   }
 };
 

@@ -37,8 +37,8 @@ public:
    * @param inplace   create energy spectrum at run time
    *
    */
-  DealSpectrumWrapper(bool write, bool inplace)
-    : write(write), inplace(inplace), s(), h(s), ipol(s), fftc(s), fftw(s)
+  DealSpectrumWrapper(MPI_Comm const & comm, bool write, bool inplace)
+    : comm(comm), write(write), inplace(inplace), s(comm), h(comm,s), ipol(comm, s), fftc(comm, s), fftw(comm, s)
   {
   }
 
@@ -152,6 +152,8 @@ public:
   }
 
 private:
+  MPI_Comm const & comm; 
+    
   // flush flow field to hard drive?
   const bool write;
 
