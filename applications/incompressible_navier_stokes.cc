@@ -69,7 +69,6 @@ using namespace IncNS;
 // 3D Navier-Stokes flow
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
-//#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
 //#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/periodic_hill.h"

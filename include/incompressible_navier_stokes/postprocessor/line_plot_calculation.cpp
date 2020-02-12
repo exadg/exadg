@@ -32,30 +32,32 @@ void
 LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
                                           VectorType const & pressure) const
 {
-  if(data.write_output == true)
+  if(data.calculate == true)
   {
     // precision
     unsigned int const precision = data.precision;
 
     // loop over all lines
-    for(typename std::vector<Line<dim>>::const_iterator line = data.lines.begin();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line = data.lines.begin();
         line != data.lines.end();
         ++line)
     {
       // store all points along current line in a vector
-      unsigned int            n_points = line->n_points;
+      unsigned int            n_points = (*line)->n_points;
       std::vector<Point<dim>> points(n_points);
 
       // we consider straight lines with an equidistant distribution of points along the line
       for(unsigned int i = 0; i < n_points; ++i)
-        points[i] = line->begin + double(i) / double(n_points - 1) * (line->end - line->begin);
+        points[i] =
+          (*line)->begin + double(i) / double(n_points - 1) * ((*line)->end - (*line)->begin);
 
       // filename prefix for current line
-      std::string filename_prefix = data.filename_prefix + "_" + line->name;
+      std::string filename_prefix = data.directory + (*line)->name;
 
       // write output for all specified quantities
-      for(std::vector<Quantity *>::const_iterator quantity = line->quantities.begin();
-          quantity != line->quantities.end();
+      for(std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =
+            (*line)->quantities.begin();
+          quantity != (*line)->quantities.end();
           ++quantity)
       {
         if((*quantity)->type == QuantityType::Velocity)

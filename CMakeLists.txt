@@ -112,7 +112,8 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.cpp 
      include/incompressible_navier_stokes/postprocessor/kinetic_energy_dissipation_detailed.cpp 
      include/incompressible_navier_stokes/postprocessor/line_plot_calculation.cpp 
-     include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.cpp 
+     include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.cpp
+     include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.cpp 
      include/incompressible_navier_stokes/postprocessor/perturbation_energy_orr_sommerfeld.cpp 
      include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.cpp 
      include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp 
