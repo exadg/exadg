@@ -51,7 +51,7 @@ linear_interpolation_1d(double const &                              y,
 
 template<int dim, typename Number>
 Number
-linear_interpolation_2d_cartesian(Point<dim> const &                          p,
+linear_interpolation_2d_cartesian(Point<dim> const &                          point,
                                   std::vector<Number> const &                 y_values,
                                   std::vector<Number> const &                 z_values,
                                   std::vector<Tensor<1, dim, Number>> const & solution_values,
@@ -61,10 +61,22 @@ linear_interpolation_2d_cartesian(Point<dim> const &                          p,
 
   Number result = 0.0;
 
-  Number const tol = 1.e-2;
+  Number const tol = 1.e-10;
 
   unsigned int const n_points_y = y_values.size();
   unsigned int const n_points_z = z_values.size();
+
+  // make sure that point does not exceed bounds
+  Point<dim> p = point;
+
+  if(p[1] < y_values[0])
+    p[1] = y_values[0];
+  if(p[1] > y_values[n_points_y - 1])
+    p[1] = y_values[n_points_y - 1];
+  if(p[2] < z_values[0])
+    p[2] = z_values[0];
+  if(p[2] > z_values[n_points_z - 1])
+    p[2] = z_values[n_points_z - 1];
 
   AssertThrow((y_values[0] - tol < p[1]) && (p[1] < y_values[n_points_y - 1] + tol) &&
                 (z_values[0] - tol < p[2]) && (p[2] < z_values[n_points_z - 1] + tol),

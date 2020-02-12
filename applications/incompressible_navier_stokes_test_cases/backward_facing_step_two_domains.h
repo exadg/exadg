@@ -10,7 +10,7 @@
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/functionalities/linear_interpolation.h"
-#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/line_plot_calculation_statistics_homogeneous.h"
 #include "../../include/postprocessor/statistics_manager.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/inflow_data_calculator.h"
 
@@ -82,15 +82,10 @@ double const END_TIME = 6.0;
 unsigned int const SAMPLE_EVERY_TIMESTEPS = 10;
 
 // postprocessing and output
-QuantityStatistics<DIMENSION> QUANTITY_VELOCITY;
-QuantityStatisticsSkinFriction<3> QUANTITY_SKIN_FRICTION;
-QuantityStatistics<DIMENSION> QUANTITY_REYNOLDS;
-QuantityStatistics<DIMENSION> QUANTITY_PRESSURE;
-QuantityStatisticsPressureCoefficient<DIMENSION> QUANTITY_PRESSURE_COEFF;
 const unsigned int N_POINTS_LINE = 101;
 
 // output folders and names
-std::string OUTPUT_FOLDER = "output/bfs/test2/";
+std::string OUTPUT_FOLDER = "output/bfs/";
 std::string OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
 std::string OUTPUT_NAME_1 = "precursor";
 std::string OUTPUT_NAME_2 = "bfs";
@@ -165,8 +160,9 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
   param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
+  param.adaptive_time_stepping = true;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl = 0.5;
+  param.cfl = 0.3;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-1;
   param.order_time_integrator = 2; // 1; // 2; // 3;
@@ -353,8 +349,8 @@ public:
   { }
 
   /*
-   *  push_forward operation that maps point xi in reference coordinates [0,1]^d to
-   *  point x in physical coordinates
+   *  push_forward operation that maps point xi in reference coordinates
+   *  to point x in physical coordinates
    */
   Point<dim> push_forward(const Point<dim> &xi) const
   {
@@ -366,7 +362,7 @@ public:
 
   /*
    *  pull_back operation that maps point x in physical coordinates
-   *  to point xi in reference coordinates [0,1]^d
+   *  to point xi in reference coordinates
    */
   Point<dim> pull_back(const Point<dim> &x) const
   {
@@ -772,13 +768,16 @@ public:
     Base::setup(pde_operator);
 
     // turbulent channel statistics for precursor simulation
-    statistics_turb_ch.reset(new StatisticsManager<dim>(pde_operator.get_dof_handler_u(),
-                                                        pde_operator.get_mapping()));
+    if(pp_data_bfs.turb_ch_data.calculate_statistics)
+    {
+      statistics_turb_ch.reset(new StatisticsManager<dim>(pde_operator.get_dof_handler_u(),
+                                                          pde_operator.get_mapping()));
 
-    statistics_turb_ch->setup(&grid_transform_turb_channel, pp_data_bfs.turb_ch_data);
+      statistics_turb_ch->setup(&grid_transform_turb_channel, pp_data_bfs.turb_ch_data);
+    }
 
     // inflow data
-    if(pp_data_bfs.inflow_data.write_inflow_data == true)
+    if(pp_data_bfs.inflow_data.write_inflow_data)
     {
       inflow_data_calculator.reset(new InflowDataCalculator<dim,Number>(pp_data_bfs.inflow_data, this->mpi_comm));
       inflow_data_calculator->setup(pde_operator.get_dof_handler_u(),
@@ -786,13 +785,14 @@ public:
     }
 
     // evaluation of characteristic quantities along lines
-    line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneousDirection<dim>(
+    line_plot_calculator_statistics.reset(new LinePlotCalculatorStatisticsHomogeneous<dim>(
         pde_operator.get_dof_handler_u(),
         pde_operator.get_dof_handler_p(),
         pde_operator.get_mapping(),
         this->mpi_comm));
 
-    line_plot_calculator_statistics->setup(pp_data_bfs.pp_data.line_plot_data);
+      line_plot_calculator_statistics->setup(pp_data_bfs.pp_data.line_plot_data);
+    }
   }
 
   void do_postprocessing(VectorType const &velocity,
@@ -808,16 +808,22 @@ public:
 
 
     // turbulent channel statistics
-    statistics_turb_ch->evaluate(velocity,time,time_step_number);
+    if(pp_data_bfs.turb_ch_data.calculate_statistics)
+    {
+      statistics_turb_ch->evaluate(velocity,time,time_step_number);
+    }
 
     // inflow data
-    if(pp_data_bfs.inflow_data.write_inflow_data == true)
+    if(pp_data_bfs.inflow_data.write_inflow_data)
     {
       inflow_data_calculator->calculate(velocity);
     }
 
     // line plot statistics
-    line_plot_calculator_statistics->evaluate(velocity,pressure,time,time_step_number);
+    if(pp_data_bfs.pp_data.line_plot_data.calculate)
+    {
+      line_plot_calculator_statistics->evaluate(velocity,pressure,time,time_step_number);
+    }
   }
 
   bool write_final_output;
@@ -825,12 +831,12 @@ public:
   PostProcessorDataBFS<dim> pp_data_bfs;
   std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
   std::shared_ptr<InflowDataCalculator<dim, Number> > inflow_data_calculator;
-  std::shared_ptr<LinePlotCalculatorStatisticsHomogeneousDirection<dim> > line_plot_calculator_statistics;
+  std::shared_ptr<LinePlotCalculatorStatisticsHomogeneous<dim> > line_plot_calculator_statistics;
 };
 
 template<int dim>
 void
-initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
+initialize_postprocessor_data(PostProcessorDataBFS<dim> &pp_data_bfs,
                               InputParameters const     &param,
                               unsigned int const        domain_id)
 {
@@ -848,6 +854,8 @@ initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
     pp_data.output_data.output_interval_time = (END_TIME-START_TIME)/60;
     pp_data.output_data.write_divergence = true;
     pp_data.output_data.write_q_criterion = true;
+    pp_data.output_data.write_boundary_IDs = true;
+    pp_data.output_data.write_processor_id = true;
     pp_data.output_data.degree = param.degree_u;
 
     pp_data_bfs.pp_data = pp_data;
@@ -881,11 +889,13 @@ initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
     pp_data.output_data.output_interval_time = (END_TIME-START_TIME)/60;
     pp_data.output_data.write_divergence = true;
     pp_data.output_data.write_q_criterion = true;
+    pp_data.output_data.write_boundary_IDs = true;
+    pp_data.output_data.write_processor_id = true;
     pp_data.output_data.degree = param.degree_u;
 
     // line plot data: calculate statistics along lines
-    pp_data.line_plot_data.write_output = true;
-    pp_data.line_plot_data.filename_prefix = OUTPUT_FOLDER + OUTPUT_NAME_2;
+    pp_data.line_plot_data.calculate = true;
+    pp_data.line_plot_data.directory = OUTPUT_FOLDER;
     pp_data.line_plot_data.statistics_data.calculate_statistics = true;
     pp_data.line_plot_data.statistics_data.sample_start_time = SAMPLE_START_TIME;
     pp_data.line_plot_data.statistics_data.sample_end_time = END_TIME;
@@ -893,135 +903,182 @@ initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
     pp_data.line_plot_data.statistics_data.write_output_every_timesteps = SAMPLE_EVERY_TIMESTEPS*10;
 
     // mean velocity
-    QUANTITY_VELOCITY.type = QuantityType::Velocity;
-    QUANTITY_VELOCITY.average_homogeneous_direction = true;
-    QUANTITY_VELOCITY.averaging_direction = 2;
+    std::shared_ptr<Quantity> quantity_velocity;
+    quantity_velocity.reset(new Quantity());
+    quantity_velocity->type = QuantityType::Velocity;
 
     // Reynolds stresses
-    QUANTITY_REYNOLDS.type = QuantityType::ReynoldsStresses;
-    QUANTITY_REYNOLDS.average_homogeneous_direction = true;
-    QUANTITY_REYNOLDS.averaging_direction = 2;
+    std::shared_ptr<Quantity> quantity_reynolds;
+    quantity_reynolds.reset(new Quantity());
+    quantity_reynolds->type = QuantityType::ReynoldsStresses;
 
     // skin friction
     Tensor<1,dim,double> normal; normal[1] = 1.0;
     Tensor<1,dim,double> tangent; tangent[0] = 1.0;
-    QUANTITY_SKIN_FRICTION.type = QuantityType::SkinFriction;
-    QUANTITY_SKIN_FRICTION.average_homogeneous_direction = true;
-    QUANTITY_SKIN_FRICTION.averaging_direction = 2;
-    QUANTITY_SKIN_FRICTION.normal_vector = normal;
-    QUANTITY_SKIN_FRICTION.tangent_vector = tangent;
-    QUANTITY_SKIN_FRICTION.viscosity = VISCOSITY;
+    std::shared_ptr<QuantitySkinFriction<dim>> quantity_skin_friction;
+    quantity_skin_friction.reset(new QuantitySkinFriction<dim>());
+    quantity_skin_friction->type = QuantityType::SkinFriction;
+    quantity_skin_friction->normal_vector = normal;
+    quantity_skin_friction->tangent_vector = tangent;
+    quantity_skin_friction->viscosity = VISCOSITY;
 
     // mean pressure
-    QUANTITY_PRESSURE.type = QuantityType::Pressure;
-    QUANTITY_PRESSURE.average_homogeneous_direction = true;
-    QUANTITY_PRESSURE.averaging_direction = 2;
+    std::shared_ptr<Quantity> quantity_pressure;
+    quantity_pressure.reset(new Quantity());
+    quantity_pressure->type = QuantityType::Pressure;
 
     // mean pressure coefficient
-    QUANTITY_PRESSURE_COEFF.type = QuantityType::PressureCoefficient;
-    QUANTITY_PRESSURE_COEFF.average_homogeneous_direction = true;
-    QUANTITY_PRESSURE_COEFF.averaging_direction = 2;
-    QUANTITY_PRESSURE_COEFF.reference_point = Point<DIMENSION>(X1_COORDINATE_INFLOW,0,0);
+    std::shared_ptr<QuantityPressureCoefficient<dim>> quantity_pressure_coeff;
+    quantity_pressure_coeff.reset(new QuantityPressureCoefficient<dim>());
+    quantity_pressure_coeff->type = QuantityType::PressureCoefficient;
+    quantity_pressure_coeff->reference_point = Point<DIMENSION>(X1_COORDINATE_INFLOW,0,0);
 
     // lines
-    Line<dim> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8, vel_9, vel_10, vel_11, Cp_1, Cp_2, Cf;
+    std::shared_ptr<LineHomogeneousAveraging<dim>> vel_0, vel_1, vel_2, vel_3, vel_4, vel_5, vel_6, vel_7, vel_8, vel_9, vel_10, vel_11, Cp_1, Cp_2, Cf;
+    vel_0.reset(new LineHomogeneousAveraging<dim>());
+    vel_1.reset(new LineHomogeneousAveraging<dim>());
+    vel_2.reset(new LineHomogeneousAveraging<dim>());
+    vel_3.reset(new LineHomogeneousAveraging<dim>());
+    vel_4.reset(new LineHomogeneousAveraging<dim>());
+    vel_5.reset(new LineHomogeneousAveraging<dim>());
+    vel_6.reset(new LineHomogeneousAveraging<dim>());
+    vel_7.reset(new LineHomogeneousAveraging<dim>());
+    vel_8.reset(new LineHomogeneousAveraging<dim>());
+    vel_9.reset(new LineHomogeneousAveraging<dim>());
+    vel_10.reset(new LineHomogeneousAveraging<dim>());
+    vel_11.reset(new LineHomogeneousAveraging<dim>());
+    Cp_1.reset(new LineHomogeneousAveraging<dim>());
+    Cp_2.reset(new LineHomogeneousAveraging<dim>());
+    Cf.reset(new LineHomogeneousAveraging<dim>());
+
+    vel_0->average_homogeneous_direction = true;
+    vel_1->average_homogeneous_direction = true;
+    vel_2->average_homogeneous_direction = true;
+    vel_3->average_homogeneous_direction = true;
+    vel_4->average_homogeneous_direction = true;
+    vel_5->average_homogeneous_direction = true;
+    vel_6->average_homogeneous_direction = true;
+    vel_7->average_homogeneous_direction = true;
+    vel_8->average_homogeneous_direction = true;
+    vel_9->average_homogeneous_direction = true;
+    vel_10->average_homogeneous_direction = true;
+    vel_11->average_homogeneous_direction = true;
+    Cp_1->average_homogeneous_direction = true;
+    Cp_2->average_homogeneous_direction = true;
+    Cf->average_homogeneous_direction = true;
+
+    vel_0->averaging_direction = 2;
+    vel_1->averaging_direction = 2;
+    vel_2->averaging_direction = 2;
+    vel_3->averaging_direction = 2;
+    vel_4->averaging_direction = 2;
+    vel_5->averaging_direction = 2;
+    vel_6->averaging_direction = 2;
+    vel_7->averaging_direction = 2;
+    vel_8->averaging_direction = 2;
+    vel_9->averaging_direction = 2;
+    vel_10->averaging_direction = 2;
+    vel_11->averaging_direction = 2;
+    Cp_1->averaging_direction = 2;
+    Cp_2->averaging_direction = 2;
+    Cf->averaging_direction = 2;
 
     // begin and end points of all lines
-    vel_0.begin = Point<dim> (X1_COORDINATE_INFLOW,   0,0);
-    vel_0.end =   Point<dim> (X1_COORDINATE_INFLOW, 2*H,0);
-    vel_1.begin = Point<dim> (0*H,   0,0);
-    vel_1.end =   Point<dim> (0*H, 2*H,0);
-    vel_2.begin = Point<dim> (1*H,-1*H,0);
-    vel_2.end =   Point<dim> (1*H, 2*H,0);
-    vel_3.begin = Point<dim> (2*H,-1*H,0);
-    vel_3.end =   Point<dim> (2*H, 2*H,0);
-    vel_4.begin = Point<dim> (3*H,-1*H,0);
-    vel_4.end =   Point<dim> (3*H, 2*H,0);
-    vel_5.begin = Point<dim> (4*H,-1*H,0);
-    vel_5.end =   Point<dim> (4*H, 2*H,0);
-    vel_6.begin = Point<dim> (5*H,-1*H,0);
-    vel_6.end =   Point<dim> (5*H, 2*H,0);
-    vel_7.begin = Point<dim> (6*H,-1*H,0);
-    vel_7.end =   Point<dim> (6*H, 2*H,0);
-    vel_8.begin = Point<dim> (7*H,-1*H,0);
-    vel_8.end =   Point<dim> (7*H, 2*H,0);
-    vel_9.begin = Point<dim> (8*H,-1*H,0);
-    vel_9.end =   Point<dim> (8*H, 2*H,0);
-    vel_10.begin = Point<dim> (9*H,-1*H,0);
-    vel_10.end =   Point<dim> (9*H, 2*H,0);
-    vel_11.begin = Point<dim> (10*H,-1*H,0);
-    vel_11.end =   Point<dim> (10*H, 2*H,0);
-    Cp_1.begin = Point<dim> (X1_COORDINATE_INFLOW,0,0);
-    Cp_1.end =   Point<dim> (0,0,0);
-    Cp_2.begin = Point<dim> (0,-H,0);
-    Cp_2.end =   Point<dim> (X1_COORDINATE_OUTFLOW,-H,0);
-    Cf.begin = Point<dim> (0,-H,0);
-    Cf.end =   Point<dim> (X1_COORDINATE_OUTFLOW,-H,0);
+    vel_0->begin = Point<dim> (X1_COORDINATE_INFLOW,   0,0);
+    vel_0->end =   Point<dim> (X1_COORDINATE_INFLOW, 2*H,0);
+    vel_1->begin = Point<dim> (0*H,   0,0);
+    vel_1->end =   Point<dim> (0*H, 2*H,0);
+    vel_2->begin = Point<dim> (1*H,-1*H,0);
+    vel_2->end =   Point<dim> (1*H, 2*H,0);
+    vel_3->begin = Point<dim> (2*H,-1*H,0);
+    vel_3->end =   Point<dim> (2*H, 2*H,0);
+    vel_4->begin = Point<dim> (3*H,-1*H,0);
+    vel_4->end =   Point<dim> (3*H, 2*H,0);
+    vel_5->begin = Point<dim> (4*H,-1*H,0);
+    vel_5->end =   Point<dim> (4*H, 2*H,0);
+    vel_6->begin = Point<dim> (5*H,-1*H,0);
+    vel_6->end =   Point<dim> (5*H, 2*H,0);
+    vel_7->begin = Point<dim> (6*H,-1*H,0);
+    vel_7->end =   Point<dim> (6*H, 2*H,0);
+    vel_8->begin = Point<dim> (7*H,-1*H,0);
+    vel_8->end =   Point<dim> (7*H, 2*H,0);
+    vel_9->begin = Point<dim> (8*H,-1*H,0);
+    vel_9->end =   Point<dim> (8*H, 2*H,0);
+    vel_10->begin = Point<dim> (9*H,-1*H,0);
+    vel_10->end =   Point<dim> (9*H, 2*H,0);
+    vel_11->begin = Point<dim> (10*H,-1*H,0);
+    vel_11->end =   Point<dim> (10*H, 2*H,0);
+    Cp_1->begin = Point<dim> (X1_COORDINATE_INFLOW,0,0);
+    Cp_1->end =   Point<dim> (0,0,0);
+    Cp_2->begin = Point<dim> (0,-H,0);
+    Cp_2->end =   Point<dim> (X1_COORDINATE_OUTFLOW,-H,0);
+    Cf->begin = Point<dim> (0,-H,0);
+    Cf->end =   Point<dim> (X1_COORDINATE_OUTFLOW,-H,0);
 
     // set the number of points along the lines
-    vel_0.n_points = N_POINTS_LINE;
-    vel_1.n_points = N_POINTS_LINE;
-    vel_2.n_points = N_POINTS_LINE;
-    vel_3.n_points = N_POINTS_LINE;
-    vel_4.n_points = N_POINTS_LINE;
-    vel_5.n_points = N_POINTS_LINE;
-    vel_6.n_points = N_POINTS_LINE;
-    vel_7.n_points = N_POINTS_LINE;
-    vel_8.n_points = N_POINTS_LINE;
-    vel_9.n_points = N_POINTS_LINE;
-    vel_10.n_points = N_POINTS_LINE;
-    vel_11.n_points = N_POINTS_LINE;
-    Cp_1.n_points = N_POINTS_LINE;
-    Cp_2.n_points = N_POINTS_LINE;
-    Cf.n_points = N_POINTS_LINE;
+    vel_0->n_points = N_POINTS_LINE;
+    vel_1->n_points = N_POINTS_LINE;
+    vel_2->n_points = N_POINTS_LINE;
+    vel_3->n_points = N_POINTS_LINE;
+    vel_4->n_points = N_POINTS_LINE;
+    vel_5->n_points = N_POINTS_LINE;
+    vel_6->n_points = N_POINTS_LINE;
+    vel_7->n_points = N_POINTS_LINE;
+    vel_8->n_points = N_POINTS_LINE;
+    vel_9->n_points = N_POINTS_LINE;
+    vel_10->n_points = N_POINTS_LINE;
+    vel_11->n_points = N_POINTS_LINE;
+    Cp_1->n_points = N_POINTS_LINE;
+    Cp_2->n_points = N_POINTS_LINE;
+    Cf->n_points = N_POINTS_LINE;
 
     // set the quantities that we want to compute along the lines
-    vel_0.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_0.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_1.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_1.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_2.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_2.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_3.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_3.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_4.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_4.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_5.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_5.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_6.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_6.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_7.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_7.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_8.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_8.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_9.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_9.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_10.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_10.quantities.push_back(&QUANTITY_REYNOLDS);
-    vel_11.quantities.push_back(&QUANTITY_VELOCITY);
-    vel_11.quantities.push_back(&QUANTITY_REYNOLDS);
-    Cp_1.quantities.push_back(&QUANTITY_PRESSURE);
-    Cp_1.quantities.push_back(&QUANTITY_PRESSURE_COEFF);
-    Cp_2.quantities.push_back(&QUANTITY_PRESSURE);
-    Cp_2.quantities.push_back(&QUANTITY_PRESSURE_COEFF);
-    Cf.quantities.push_back(&QUANTITY_SKIN_FRICTION);
+    vel_0->quantities.push_back(quantity_velocity);
+    vel_0->quantities.push_back(quantity_pressure);
+    vel_1->quantities.push_back(quantity_velocity);
+    vel_1->quantities.push_back(quantity_pressure);
+    vel_2->quantities.push_back(quantity_velocity);
+    vel_2->quantities.push_back(quantity_pressure);
+    vel_3->quantities.push_back(quantity_velocity);
+    vel_3->quantities.push_back(quantity_pressure);
+    vel_4->quantities.push_back(quantity_velocity);
+    vel_4->quantities.push_back(quantity_pressure);
+    vel_5->quantities.push_back(quantity_velocity);
+    vel_5->quantities.push_back(quantity_pressure);
+    vel_6->quantities.push_back(quantity_velocity);
+    vel_6->quantities.push_back(quantity_pressure);
+    vel_7->quantities.push_back(quantity_velocity);
+    vel_7->quantities.push_back(quantity_pressure);
+    vel_8->quantities.push_back(quantity_velocity);
+    vel_8->quantities.push_back(quantity_pressure);
+    vel_9->quantities.push_back(quantity_velocity);
+    vel_9->quantities.push_back(quantity_pressure);
+    vel_10->quantities.push_back(quantity_velocity);
+    vel_10->quantities.push_back(quantity_pressure);
+    vel_11->quantities.push_back(quantity_velocity);
+    vel_11->quantities.push_back(quantity_pressure);
+    Cp_1->quantities.push_back(quantity_pressure);
+    Cp_1->quantities.push_back(quantity_pressure_coeff);
+    Cp_2->quantities.push_back(quantity_pressure);
+    Cp_2->quantities.push_back(quantity_pressure_coeff);
+    Cf->quantities.push_back(quantity_skin_friction);
 
     // set line names
-    vel_0.name = "vel_0";
-    vel_1.name = "vel_1";
-    vel_2.name = "vel_2";
-    vel_3.name = "vel_3";
-    vel_4.name = "vel_4";
-    vel_5.name = "vel_5";
-    vel_6.name = "vel_6";
-    vel_7.name = "vel_7";
-    vel_8.name = "vel_8";
-    vel_9.name = "vel_9";
-    vel_10.name = "vel_10";
-    vel_11.name = "vel_11";
-    Cp_1.name = "Cp_1";
-    Cp_2.name = "Cp_2";
-    Cf.name = "Cf";
+    vel_0->name = "vel_0";
+    vel_1->name = "vel_1";
+    vel_2->name = "vel_2";
+    vel_3->name = "vel_3";
+    vel_4->name = "vel_4";
+    vel_5->name = "vel_5";
+    vel_6->name = "vel_6";
+    vel_7->name = "vel_7";
+    vel_8->name = "vel_8";
+    vel_9->name = "vel_9";
+    vel_10->name = "vel_10";
+    vel_11->name = "vel_11";
+    Cp_1->name = "Cp_1";
+    Cp_2->name = "Cp_2";
+    Cf->name = "Cf";
 
     // insert lines
     pp_data.line_plot_data.lines.push_back(vel_0);
@@ -1047,7 +1104,7 @@ initialize_postprocessor_data(PostProcessorDataBFS<dim> pp_data_bfs,
 // specialization for dim=2, which needs to be implemented explicitly since the
 // function above can not be compiled for dim=2.
 void
-initialize_postprocessor_data(PostProcessorDataBFS<2> pp_data,
+initialize_postprocessor_data(PostProcessorDataBFS<2> &pp_data,
                               InputParameters const   &param,
                               unsigned int const      domain_id)
 {
