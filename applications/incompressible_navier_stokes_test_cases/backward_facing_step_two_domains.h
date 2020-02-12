@@ -791,8 +791,7 @@ public:
         pde_operator.get_mapping(),
         this->mpi_comm));
 
-      line_plot_calculator_statistics->setup(pp_data_bfs.pp_data.line_plot_data);
-    }
+    line_plot_calculator_statistics->setup(pp_data_bfs.pp_data.line_plot_data);
   }
 
   void do_postprocessing(VectorType const &velocity,

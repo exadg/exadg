@@ -13,17 +13,13 @@ template<int dim>
 LinePlotCalculatorStatisticsHomogeneous<dim>::LinePlotCalculatorStatisticsHomogeneous(
   DoFHandler<dim> const & dof_handler_velocity_in,
   DoFHandler<dim> const & dof_handler_pressure_in,
-  Mapping<dim> const &    mapping_in)
+  Mapping<dim> const &    mapping_in,
+  MPI_Comm const &        mpi_comm_in)
   : clear_files(true),
     dof_handler_velocity(dof_handler_velocity_in),
     dof_handler_pressure(dof_handler_pressure_in),
     mapping(mapping_in),
-    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                   &dof_handler_velocity.get_triangulation()) ?
-                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                      &dof_handler_velocity.get_triangulation())
-                      ->get_communicator()) :
-                   MPI_COMM_SELF),
+    communicator(mpi_comm_in),
     number_of_samples(0),
     averaging_direction(2),
     write_final_output(false)
