@@ -192,6 +192,15 @@ private:
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
   std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
 
+  /*
+   * Matrix-free
+   */
+  std::vector<std::shared_ptr<MatrixFree<dim, Number>>>         scalar_matrix_free;
+  std::vector<typename MatrixFree<dim, Number>::AdditionalData> scalar_additional_data;
+  std::vector<std::vector<Quadrature<1>>>                       scalar_quadrature_vec;
+  std::vector<std::vector<AffineConstraints<double> const *>>   scalar_constraint_vec;
+  std::vector<std::vector<DoFHandler<dim> const *>>             scalar_dof_handler_vec;
+
   std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
 
   std::vector<std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>> scalar_postprocessor;
@@ -222,6 +231,12 @@ Problem<dim, Number>::Problem(MPI_Comm const & comm, unsigned int const n_scalar
   scalar_param.resize(n_scalars);
   scalar_field_functions.resize(n_scalars);
   scalar_boundary_descriptor.resize(n_scalars);
+
+  scalar_matrix_free.resize(n_scalars);
+  scalar_additional_data.resize(n_scalars);
+  scalar_quadrature_vec.resize(n_scalars);
+  scalar_constraint_vec.resize(n_scalars);
+  scalar_dof_handler_vec.resize(n_scalars);
 
   conv_diff_operator.resize(n_scalars);
   scalar_postprocessor.resize(n_scalars);
@@ -483,12 +498,41 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
       ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], mpi_comm, i);
 
     // initialize convection diffusion operation
-    conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(
-      *triangulation, scalar_param[i], scalar_postprocessor[i], mpi_comm));
+    conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
+                                                                      periodic_faces,
+                                                                      scalar_boundary_descriptor[i],
+                                                                      scalar_field_functions[i],
+                                                                      scalar_param[i],
+                                                                      scalar_postprocessor[i],
+                                                                      mpi_comm));
 
-    conv_diff_operator[i]->setup(periodic_faces,
-                                 scalar_boundary_descriptor[i],
-                                 scalar_field_functions[i]);
+    // initialize matrix_free
+    scalar_additional_data[i].tasks_parallel_scheme =
+      MatrixFree<dim, Number>::AdditionalData::partition_partition;
+
+    AssertThrow(conv_diff_operator[i].get() != 0, ExcMessage("Not initialized."));
+    conv_diff_operator[i]->append_data_structures(scalar_additional_data[i],
+                                                  scalar_quadrature_vec[i],
+                                                  scalar_constraint_vec[i],
+                                                  scalar_dof_handler_vec[i]);
+
+    // cell-based face loops
+    if(scalar_param[i].use_cell_based_face_loops)
+    {
+      auto tria =
+        std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+      Categorization::do_cell_based_loops(*tria, scalar_additional_data[i]);
+    }
+
+    scalar_matrix_free[i].reset(new MatrixFree<dim, Number>());
+    scalar_matrix_free[i]->reinit(
+      conv_diff_operator[i]->get_mapping(), /* TODO use mesh->get_mapping() */
+      scalar_dof_handler_vec[i],
+      scalar_constraint_vec[i],
+      scalar_quadrature_vec[i],
+      scalar_additional_data[i]);
+
+    conv_diff_operator[i]->setup(scalar_matrix_free[i]);
 
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)

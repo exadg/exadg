@@ -55,7 +55,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 
   initialize_boundary_descriptor_laplace();
 
-  initialize_dof_handler();
+  distribute_dofs();
 
   constraint_u.close();
   constraint_p.close();
@@ -230,7 +230,7 @@ DGNavierStokesBase<dim, Number>::initialize_boundary_descriptor_laplace()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_dof_handler()
+DGNavierStokesBase<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   dof_handler_u.distribute_dofs(*fe_u);

@@ -633,7 +633,7 @@ private:
   initialize_boundary_descriptor_laplace();
 
   void
-  initialize_dof_handler();
+  distribute_dofs();
 
   void
   initialize_operators();

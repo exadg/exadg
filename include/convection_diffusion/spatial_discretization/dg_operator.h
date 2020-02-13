@@ -59,9 +59,19 @@ public:
    * Constructor.
    */
   DGOperator(parallel::TriangulationBase<dim> const &        triangulation,
+             PeriodicFaces const                             periodic_face_pairs_in,
+             std::shared_ptr<BoundaryDescriptor<dim>> const  boundary_descriptor_in,
+             std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
              InputParameters const &                         param_in,
              std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
              MPI_Comm const &                                mpi_comm_in);
+
+
+  void
+  append_data_structures(typename MatrixFree<dim, Number>::AdditionalData & additional_data,
+                         std::vector<Quadrature<1>> &                       quadrature_vec,
+                         std::vector<AffineConstraints<double> const *> &   constraint_vec,
+                         std::vector<DoFHandler<dim> const *> &             dof_handler_vec);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -69,9 +79,7 @@ public:
    * of equations.
    */
   void
-  setup(PeriodicFaces const                            periodic_face_pairs_in,
-        std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
-        std::shared_ptr<FieldFunctions<dim>> const     field_functions_in);
+  setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -272,13 +280,7 @@ private:
    * Initializes DoFHandlers.
    */
   void
-  create_dofs();
-
-  /*
-   * Initializes MatrixFree-object.
-   */
-  void
-  initialize_matrix_free();
+  distribute_dofs();
 
   /*
    * Dof index for velocity (in case of numerical velocity field)
@@ -311,6 +313,18 @@ private:
   setup_postprocessor();
 
   /*
+   * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
+   */
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_face_pairs;
+
+  /*
+   * User interface: Boundary conditions and field functions.
+   */
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+
+  /*
    * List of input parameters.
    */
   InputParameters const & param;
@@ -337,19 +351,7 @@ private:
   /*
    * Matrix-free operator evaluation
    */
-  MatrixFree<dim, Number> matrix_free;
-
-  /*
-   * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
-   */
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
-
-  /*
-   * User interface: Boundary conditions and field functions.
-   */
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<MatrixFree<dim, Number>> matrix_free;
 
   /*
    * Basic operators.

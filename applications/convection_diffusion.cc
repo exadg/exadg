@@ -109,6 +109,15 @@ private:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
+  /*
+   * Matrix-free
+   */
+  std::shared_ptr<MatrixFree<dim, Number>>         matrix_free;
+  typename MatrixFree<dim, Number>::AdditionalData additional_data;
+  std::vector<Quadrature<1>>                       quadrature_vec;
+  std::vector<AffineConstraints<double> const *>   constraint_vec;
+  std::vector<DoFHandler<dim> const *>             dof_handler_vec;
+
   std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
@@ -193,9 +202,40 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize convection-diffusion operator
-  conv_diff_operator.reset(
-    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
-  conv_diff_operator->setup(periodic_faces, boundary_descriptor, field_functions);
+  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                       periodic_faces,
+                                                       boundary_descriptor,
+                                                       field_functions,
+                                                       param,
+                                                       postprocessor,
+                                                       mpi_comm));
+
+  // initialize matrix_free
+  additional_data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+
+  AssertThrow(conv_diff_operator.get() != 0, ExcMessage("Not initialized."));
+  conv_diff_operator->append_data_structures(additional_data,
+                                             quadrature_vec,
+                                             constraint_vec,
+                                             dof_handler_vec);
+
+  // cell-based face loops
+  if(param.use_cell_based_face_loops)
+  {
+    auto tria =
+      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+    Categorization::do_cell_based_loops(*tria, additional_data);
+  }
+
+  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free->reinit(conv_diff_operator->get_mapping(), /* TODO use mesh->get_mapping() */
+                      dof_handler_vec,
+                      constraint_vec,
+                      quadrature_vec,
+                      additional_data);
+
+  conv_diff_operator->setup(matrix_free);
 
   if(param.problem_type == ProblemType::Unsteady)
   {
