@@ -205,7 +205,8 @@ public:
                                                         periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+        std::shared_ptr<Mesh<dim>> const                mesh);
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

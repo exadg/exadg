@@ -155,9 +155,15 @@ private:
 
   ConditionalOStream pcout;
 
+  /*
+   * Mesh: triangulation, mapping
+   */
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
+
+  // mapping (static and moving meshes)
+  std::shared_ptr<Mesh<dim>> mesh;
 
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
@@ -263,10 +269,36 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
+  // mapping
+  unsigned int mapping_degree = 1;
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree_u;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  if(param.ale_formulation) // moving mesh
+  {
+    mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
+                                           *triangulation,
+                                           param.degree_u,
+                                           field_functions->mesh_movement,
+                                           param.start_time,
+                                           mpi_comm));
+  }
+  else // static mesh
+  {
+    mesh.reset(new Mesh<dim>(mapping_degree));
+  }
+
   // initialize postprocessor
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   AssertThrow(param.solver_type == SolverType::Unsteady,
@@ -303,7 +335,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   navier_stokes_operation->setup(periodic_faces,
                                  boundary_descriptor_velocity,
                                  boundary_descriptor_pressure,
-                                 field_functions);
+                                 field_functions,
+                                 mesh);
 
   navier_stokes_operation->initialize_vector_velocity(velocity);
   velocity = 1.0;

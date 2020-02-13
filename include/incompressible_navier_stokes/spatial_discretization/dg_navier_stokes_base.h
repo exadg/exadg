@@ -159,7 +159,8 @@ public:
                                                         periodic_face_pairs,
         std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
         std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+        std::shared_ptr<Mesh<dim>> const                mesh);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -441,9 +442,6 @@ public:
   update_after_mesh_movement();
 
   void
-  set_mapping_ale(std::shared_ptr<Mapping<dim>> mapping_in);
-
-  void
   set_grid_velocity(VectorType velocity);
 
   void
@@ -475,14 +473,6 @@ protected:
   bool
   unsteady_problem_has_to_be_solved() const;
 
-  unsigned int
-  get_mapping_degree() const;
-
-private:
-  // currently needed for initialization of moving_mesh
-  parallel::TriangulationBase<dim> const & triangulation;
-
-protected:
   /*
    * List of input parameters.
    */
@@ -495,10 +485,6 @@ private:
   std::shared_ptr<FESystem<dim>> fe_u;
   FE_DGQ<dim>                    fe_p;
   FE_DGQ<dim>                    fe_u_scalar;
-
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
-  std::shared_ptr<Mapping<dim>>         mapping_ale;
 
   DoFHandler<dim>         dof_handler_u;
   DoFHandler<dim>         dof_handler_p;
@@ -616,6 +602,10 @@ protected:
 
   ConditionalOStream pcout;
 
+  /*
+   * Mesh (mapping)
+   */
+  std::shared_ptr<Mesh<dim>> mesh;
   /*
    * ALE formulation
    */

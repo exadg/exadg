@@ -19,35 +19,19 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   std::shared_ptr<Postprocessor>           postprocessor_in,
   MPI_Comm const &                         mpi_comm_in)
   : dealii::Subscriptor(),
-    triangulation(triangulation_in),
     param(parameters_in),
     fe_u(new FESystem<dim>(FE_DGQ<dim>(param.degree_u), dim)),
     fe_p(param.get_degree_p()),
     fe_u_scalar(param.degree_u),
-    mapping_degree(1),
-    dof_handler_u(triangulation),
-    dof_handler_p(triangulation),
-    dof_handler_u_scalar(triangulation),
+    dof_handler_u(triangulation_in),
+    dof_handler_p(triangulation_in),
+    dof_handler_u_scalar(triangulation_in),
     dof_index_first_point(0),
     evaluation_time(0.0),
     postprocessor(postprocessor_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0)
 {
-  if(param.mapping == MappingType::Affine)
-  {
-    mapping_degree = 1;
-  }
-  else if(param.mapping == MappingType::Isoparametric)
-  {
-    mapping_degree = param.degree_u;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-  }
-
-  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
 }
 
 template<int dim, typename Number>
@@ -63,7 +47,8 @@ DGNavierStokesBase<dim, Number>::setup(
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  std::shared_ptr<Mesh<dim>> const                mesh_in)
 {
   pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
@@ -72,18 +57,14 @@ DGNavierStokesBase<dim, Number>::setup(
   boundary_descriptor_pressure = boundary_descriptor_pressure_in;
   field_functions              = field_functions_in;
 
-  // ALE formulation with moving mesh
+  mesh = mesh_in;
+
   if(param.ale_formulation)
   {
-    moving_mesh.reset(new MovingMesh<dim, Number>(
-      triangulation, param.degree_u, field_functions->mesh_movement, mpi_comm));
+    moving_mesh = std::dynamic_pointer_cast<MovingMesh<dim, Number>>(mesh_in);
 
-    AssertThrow(
-      moving_mesh.get() != 0,
-      ExcMessage(
-        "Variable moving_mesh needs to be initialized in case of ale_formulation == true."));
-
-    mapping_ale = moving_mesh->initialize_mapping_ale(param.start_time, *mapping);
+    AssertThrow(moving_mesh.get() != 0,
+                ExcMessage("moving_mesh is not correctly initialized for ALE formulation"));
   }
 
   initialize_boundary_descriptor_laplace();
@@ -686,17 +667,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGNavierStokesBase<dim, Number>::get_mapping() const
 {
-  if(param.ale_formulation == true)
-  {
-    if(mapping_ale.get() == 0)
-      return *mapping;
-    else
-      return *mapping_ale;
-  }
-  else
-  {
-    return *mapping;
-  }
+  return mesh->get_mapping();
 }
 
 template<int dim, typename Number>
@@ -806,7 +777,7 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
 {
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
-    moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
+    moving_mesh->move_mesh_analytical(time);
 
   field_functions->initial_solution_velocity->set_time(time);
   field_functions->initial_solution_pressure->set_time(time);
@@ -842,7 +813,7 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_velocity_dirichlet_bc
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
   {
-    moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
+    moving_mesh->move_mesh_analytical(time);
 
     // we also need to update matrix_free
     update_after_mesh_movement();
@@ -860,7 +831,7 @@ DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_pressure_dirichlet_bc
   // make sure that the mesh fits to the time at which we want to evaluate the solution
   if(param.ale_formulation)
   {
-    moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
+    moving_mesh->move_mesh_analytical(time);
 
     // we also need to update matrix_free
     update_after_mesh_movement();
@@ -1326,13 +1297,6 @@ DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::set_mapping_ale(std::shared_ptr<Mapping<dim>> mapping_in)
-{
-  mapping_ale = mapping_in;
-}
-
-template<int dim, typename Number>
-void
 DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 {
   convective_kernel->set_grid_velocity_ptr(u_grid_in);
@@ -1342,7 +1306,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::move_mesh(double const time)
 {
-  moving_mesh->move_mesh_analytical(time, *mapping, mapping_ale);
+  moving_mesh->move_mesh_analytical(time);
 }
 
 template<int dim, typename Number>
@@ -1350,9 +1314,9 @@ void
 DGNavierStokesBase<dim, Number>::move_mesh_and_fill_grid_coordinates_vector(VectorType & vector,
                                                                             double const time)
 {
-  move_mesh(time);
+  moving_mesh->move_mesh_analytical(time);
 
-  moving_mesh->fill_grid_coordinates_vector(vector, get_dof_handler_u(), *mapping_ale);
+  moving_mesh->fill_grid_coordinates_vector(vector, get_dof_handler_u());
 }
 
 template<int dim, typename Number>
@@ -1536,13 +1500,6 @@ bool
 DGNavierStokesBase<dim, Number>::unsteady_problem_has_to_be_solved() const
 {
   return (this->param.solver_type == SolverType::Unsteady);
-}
-
-template<int dim, typename Number>
-unsigned int
-DGNavierStokesBase<dim, Number>::get_mapping_degree() const
-{
-  return mapping_degree;
 }
 
 template<int dim, typename Number>

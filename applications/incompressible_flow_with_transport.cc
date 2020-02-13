@@ -138,9 +138,16 @@ private:
 
   ConditionalOStream pcout;
 
+  /*
+   * Mesh: triangulation, mapping
+   */
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
+
+  // mapping (static and moving meshes)
+  // TODO use the same for fluid and scalar transport
+  std::shared_ptr<Mesh<dim>> mesh_fluid;
 
   // number of scalar quantities
   unsigned int const n_scalars;
@@ -305,13 +312,42 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
   IncNS::set_field_functions(fluid_field_functions);
 
-  AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
-              ExcMessage("This is an unsteady solver. Check input parameters."));
+  // mapping
+  unsigned int mapping_degree = 1;
+  if(fluid_param.mapping == IncNS::MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(fluid_param.mapping == IncNS::MappingType::Isoparametric)
+  {
+    mapping_degree = fluid_param.degree_u;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  if(fluid_param.ale_formulation) // moving mesh
+  {
+    mesh_fluid.reset(new MovingMesh<dim, Number>(mapping_degree,
+                                                 *triangulation,
+                                                 fluid_param.degree_u,
+                                                 fluid_field_functions->mesh_movement,
+                                                 fluid_param.start_time,
+                                                 mpi_comm));
+  }
+  else // static mesh
+  {
+    mesh_fluid.reset(new Mesh<dim>(mapping_degree));
+  }
 
   // initialize postprocessor
   fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param, mpi_comm);
 
   // initialize navier_stokes_operator
+  AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
+              ExcMessage("This is an unsteady solver. Check input parameters."));
+
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
     std::shared_ptr<DGCoupled> navier_stokes_operator_coupled;
@@ -364,7 +400,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   navier_stokes_operator->setup(periodic_faces,
                                 fluid_boundary_descriptor_velocity,
                                 fluid_boundary_descriptor_pressure,
-                                fluid_field_functions);
+                                fluid_field_functions,
+                                mesh_fluid);
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers

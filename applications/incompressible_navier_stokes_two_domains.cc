@@ -94,9 +94,15 @@ private:
 
   ConditionalOStream pcout;
 
+  /*
+   * Mesh: triangulation, mapping
+   */
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation_1, triangulation_2;
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces_1, periodic_faces_2;
+
+  // mapping (static and moving meshes)
+  std::shared_ptr<Mesh<dim>> mesh_1, mesh_2;
 
   bool use_adaptive_time_stepping;
 
@@ -317,10 +323,64 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
                 param_2.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
+  // mapping
+  unsigned int mapping_degree_1 = 1;
+  if(param_1.mapping == MappingType::Affine)
+  {
+    mapping_degree_1 = 1;
+  }
+  else if(param_1.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree_1 = param_1.degree_u;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  if(param_1.ale_formulation) // moving mesh
+  {
+    mesh_1.reset(new MovingMesh<dim, Number>(mapping_degree_1,
+                                             *triangulation_1,
+                                             param_1.degree_u,
+                                             field_functions_1->mesh_movement,
+                                             param_1.start_time,
+                                             mpi_comm));
+  }
+  else // static mesh
+  {
+    mesh_1.reset(new Mesh<dim>(mapping_degree_1));
+  }
+
+  unsigned int mapping_degree_2 = 1;
+  if(param_2.mapping == MappingType::Affine)
+  {
+    mapping_degree_2 = 1;
+  }
+  else if(param_2.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree_2 = param_2.degree_u;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  if(param_2.ale_formulation) // moving mesh
+  {
+    mesh_2.reset(new MovingMesh<dim, Number>(mapping_degree_2,
+                                             *triangulation_2,
+                                             param_2.degree_u,
+                                             field_functions_2->mesh_movement,
+                                             param_2.start_time,
+                                             mpi_comm));
+  }
+  else // static mesh
+  {
+    mesh_2.reset(new Mesh<dim>(mapping_degree_2));
+  }
+
   // initialize postprocessor
-  // this function has to be defined in the header file
-  // that implements all problem specific things like
-  // parameters, geometry, boundary conditions, etc.
   postprocessor_1 = construct_postprocessor<dim, Number>(param_1, mpi_comm, 1);
   postprocessor_2 = construct_postprocessor<dim, Number>(param_2, mpi_comm, 2);
 
@@ -426,12 +486,14 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   navier_stokes_operation_1->setup(periodic_faces_1,
                                    boundary_descriptor_velocity_1,
                                    boundary_descriptor_pressure_1,
-                                   field_functions_1);
+                                   field_functions_1,
+                                   mesh_1);
 
   navier_stokes_operation_2->setup(periodic_faces_2,
                                    boundary_descriptor_velocity_2,
                                    boundary_descriptor_pressure_2,
-                                   field_functions_2);
+                                   field_functions_2,
+                                   mesh_2);
 
   // Setup time integrator
 

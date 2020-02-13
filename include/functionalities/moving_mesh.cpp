@@ -5,12 +5,15 @@
 #include <deal.II/numerics/vector_tools.h>
 
 template<int dim, typename Number>
-MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & triangulation_in,
+MovingMesh<dim, Number>::MovingMesh(unsigned int const                       mapping_degree_in,
+                                    parallel::TriangulationBase<dim> const & triangulation_in,
                                     unsigned int const                       polynomial_degree_in,
                                     std::shared_ptr<Function<dim>> const     function_in,
+                                    double const                             start_time,
                                     MPI_Comm const &                         mpi_comm_in)
-  : polynomial_degree(polynomial_degree_in),
+  : Mesh<dim>(mapping_degree_in),
     triangulation(triangulation_in),
+    polynomial_degree(polynomial_degree_in),
     mesh_movement_function(function_in),
     mpi_comm(mpi_comm_in),
     fe(new FESystem<dim>(FE_Q<dim>(polynomial_degree), dim)),
@@ -21,34 +24,42 @@ MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & tri
 {
   dof_handler.distribute_dofs(*fe);
   dof_handler.distribute_mg_dofs();
+
+  initialize_mapping_ale(start_time);
 }
 
 template<int dim, typename Number>
-std::shared_ptr<Mapping<dim>>
-MovingMesh<dim, Number>::initialize_mapping_ale(double const time, Mapping<dim> const & mapping)
+Mapping<dim> const &
+MovingMesh<dim, Number>::get_mapping() const
 {
-  std::shared_ptr<Mapping<dim>> mapping_ale;
+  if(mapping_ale.get() == 0)
+    return *this->mapping;
+  else
+    return *mapping_ale;
+}
 
+template<int dim, typename Number>
+void
+MovingMesh<dim, Number>::initialize_mapping_ale(double const time)
+{
 #ifdef MAPPING_Q_CACHE
   mapping_ale.reset(new MappingQCache<dim>(polynomial_degree));
 #else
   mapping_ale.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
 #endif
 
-  move_mesh_analytical(time, mapping, mapping_ale);
-
-  return mapping_ale;
+  move_mesh_analytical(time);
 }
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::move_mesh_analytical(double const                  time,
-                                              Mapping<dim> const &          mapping,
-                                              std::shared_ptr<Mapping<dim>> mapping_ale)
+MovingMesh<dim, Number>::move_mesh_analytical(double const time)
 {
   mesh_movement_function->set_time(time);
 
 #ifdef MAPPING_Q_CACHE
+  AssertThrow(mapping_ale.get() != 0, ExcMessage("mapping_ale is uninitialized."));
+
   std::shared_ptr<MappingQCache<dim>> mapping_q_cache =
     std::dynamic_pointer_cast<MappingQCache<dim>>(mapping_ale);
   AssertThrow(mapping_q_cache.get() != 0, ExcMessage("Could not cast to MappingQCache<dim>."));
@@ -58,7 +69,7 @@ MovingMesh<dim, Number>::move_mesh_analytical(double const                  time
     [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
       FiniteElement<dim> const & fe = dof_handler.get_fe();
 
-      FEValues<dim> fe_values(mapping,
+      FEValues<dim> fe_values(*this->mapping,
                               fe,
                               Quadrature<dim>(fe.base_element(0).get_unit_support_points()),
                               update_quadrature_points);
@@ -97,7 +108,7 @@ MovingMesh<dim, Number>::move_mesh_analytical(double const                  time
     initial_position.reinit(dof_handler.locally_owned_mg_dofs(level), relevant_dofs_grid, mpi_comm);
     displacement.reinit(dof_handler.locally_owned_mg_dofs(level), relevant_dofs_grid, mpi_comm);
 
-    FEValues<dim> fe_values(mapping,
+    FEValues<dim> fe_values(*this->mapping,
                             *fe,
                             Quadrature<dim>(fe->get_unit_support_points()),
                             update_quadrature_points);
@@ -131,9 +142,10 @@ MovingMesh<dim, Number>::move_mesh_analytical(double const                  time
 template<int dim, typename Number>
 void
 MovingMesh<dim, Number>::fill_grid_coordinates_vector(VectorType &            vector,
-                                                      DoFHandler<dim> const & dof_handler,
-                                                      Mapping<dim> const &    mapping)
+                                                      DoFHandler<dim> const & dof_handler)
 {
+  Mapping<dim> const & mapping = *mapping_ale;
+
   IndexSet relevant_dofs_grid;
   DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
 
