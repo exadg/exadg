@@ -13,11 +13,25 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesPressureCorrection<dim, Number>::DGNavierStokesPressureCorrection(
-  parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor,
-  MPI_Comm const &                         mpi_comm)
-  : ProjBase(triangulation, parameters, postprocessor, mpi_comm)
+  parallel::TriangulationBase<dim> const & triangulation_in,
+  std::shared_ptr<Mesh<dim>> const         mesh_in,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  InputParameters const &                         parameters_in,
+  std::shared_ptr<Postprocessor>                  postprocessor_in,
+  MPI_Comm const &                                mpi_comm_in)
+  : ProjBase(triangulation_in,
+             mesh_in,
+             periodic_face_pairs_in,
+             boundary_descriptor_velocity_in,
+             boundary_descriptor_pressure_in,
+             field_functions_in,
+             parameters_in,
+             postprocessor_in,
+             mpi_comm_in)
 {
 }
 
@@ -29,18 +43,14 @@ DGNavierStokesPressureCorrection<dim, Number>::~DGNavierStokesPressureCorrection
 template<int dim, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, Number>::setup(
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs_in,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  std::shared_ptr<Mesh<dim>> const                mesh_in)
+  std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
+  typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
+  std::vector<Quadrature<1>> &                             quadrature_vec,
+  std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
+  std::vector<DoFHandler<dim> const *> &                   dof_handler_vec)
 {
-  ProjBase::setup(periodic_face_pairs_in,
-                  boundary_descriptor_velocity_in,
-                  boundary_descriptor_pressure_in,
-                  field_functions_in,
-                  mesh_in);
+  ProjBase::setup(
+    matrix_free, additional_data, quadrature_vec, constraint_matrix_vec, dof_handler_vec);
 
   setup_inverse_mass_matrix_operator_pressure();
 }

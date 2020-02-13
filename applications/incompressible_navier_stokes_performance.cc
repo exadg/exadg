@@ -169,24 +169,39 @@ private:
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
 
+  /*
+   * Parameters
+   */
   InputParameters param;
 
-  typedef PostProcessorBase<dim, Number> Postprocessor;
+  /*
+   * MatrixFree
+   */
+  std::shared_ptr<MatrixFree<dim, Number>>         matrix_free;
+  typename MatrixFree<dim, Number>::AdditionalData additional_data;
+  std::vector<Quadrature<1>>                       quadrature_vec;
+  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec;
+  std::vector<const DoFHandler<dim> *>             dof_handler_vec;
 
-  std::shared_ptr<Postprocessor> postprocessor;
-
+  /*
+   * Spatial discretization
+   */
   typedef DGNavierStokesBase<dim, Number>               DGBase;
   typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
   typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
   typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
 
-  std::shared_ptr<DGBase> navier_stokes_operation;
+  std::shared_ptr<DGBase>               navier_stokes_operator;
+  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled;
+  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
+  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
 
-  std::shared_ptr<DGCoupled> navier_stokes_operation_coupled;
+  /*
+   * Postprocessor
+   */
+  typedef PostProcessorBase<dim, Number> Postprocessor;
 
-  std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting;
-
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction;
+  std::shared_ptr<Postprocessor> postprocessor;
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
@@ -304,43 +319,83 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   AssertThrow(param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
-  // initialize navier_stokes_operation
+  // initialize navier_stokes_operator
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    navier_stokes_operation_coupled.reset(
-      new DGCoupled(*triangulation, param, postprocessor, mpi_comm));
+    navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
+                                                       mesh,
+                                                       periodic_faces,
+                                                       boundary_descriptor_velocity,
+                                                       boundary_descriptor_pressure,
+                                                       field_functions,
+                                                       param,
+                                                       postprocessor,
+                                                       mpi_comm));
 
-    navier_stokes_operation = navier_stokes_operation_coupled;
+    navier_stokes_operator = navier_stokes_operator_coupled;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    navier_stokes_operation_dual_splitting.reset(
-      new DGDualSplitting(*triangulation, param, postprocessor, mpi_comm));
+    navier_stokes_operator_dual_splitting.reset(new DGDualSplitting(*triangulation,
+                                                                    mesh,
+                                                                    periodic_faces,
+                                                                    boundary_descriptor_velocity,
+                                                                    boundary_descriptor_pressure,
+                                                                    field_functions,
+                                                                    param,
+                                                                    postprocessor,
+                                                                    mpi_comm));
 
-    navier_stokes_operation = navier_stokes_operation_dual_splitting;
+    navier_stokes_operator = navier_stokes_operator_dual_splitting;
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    navier_stokes_operation_pressure_correction.reset(
-      new DGPressureCorrection(*triangulation, param, postprocessor, mpi_comm));
+    navier_stokes_operator_pressure_correction.reset(
+      new DGPressureCorrection(*triangulation,
+                               mesh,
+                               periodic_faces,
+                               boundary_descriptor_velocity,
+                               boundary_descriptor_pressure,
+                               field_functions,
+                               param,
+                               postprocessor,
+                               mpi_comm));
 
-    navier_stokes_operation = navier_stokes_operation_pressure_correction;
+    navier_stokes_operator = navier_stokes_operator_pressure_correction;
   }
   else
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  AssertThrow(navier_stokes_operation.get() != 0, ExcMessage("Not initialized."));
-  navier_stokes_operation->setup(periodic_faces,
-                                 boundary_descriptor_velocity,
-                                 boundary_descriptor_pressure,
-                                 field_functions,
-                                 mesh);
+  // initialize matrix_free
+  additional_data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
-  navier_stokes_operation->initialize_vector_velocity(velocity);
+  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
+  navier_stokes_operator->append_data_structures(additional_data,
+                                                 quadrature_vec,
+                                                 constraint_matrix_vec,
+                                                 dof_handler_vec);
+
+  // cell-based face loops
+  if(param.use_cell_based_face_loops)
+  {
+    auto tria =
+      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+    Categorization::do_cell_based_loops(*tria, additional_data);
+  }
+
+  matrix_free.reset(new MatrixFree<dim, Number>());
+  matrix_free->reinit(
+    mesh->get_mapping(), dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
+
+  navier_stokes_operator->setup(
+    matrix_free, additional_data, quadrature_vec, constraint_matrix_vec, dof_handler_vec);
+
+  navier_stokes_operator->initialize_vector_velocity(velocity);
   velocity = 1.0;
-  navier_stokes_operation->setup_solvers(1.0 /* dummy */, velocity);
+  navier_stokes_operator->setup_solvers(1.0 /* dummy */, velocity);
 
 
   // check that the operator type is consistent with the solution approach (coupled vs. splitting)
@@ -389,19 +444,19 @@ Problem<dim, Number>::apply_operator()
   LinearAlgebra::distributed::Vector<Number> dst2, src2;
 
   // set velocity required for evaluation of linearized operators
-  navier_stokes_operation->set_velocity_ptr(velocity);
+  navier_stokes_operator->set_velocity_ptr(velocity);
 
   // initialize vectors
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(dst1);
-    navier_stokes_operation_coupled->initialize_block_vector_velocity_pressure(src1);
+    navier_stokes_operator_coupled->initialize_block_vector_velocity_pressure(dst1);
+    navier_stokes_operator_coupled->initialize_block_vector_velocity_pressure(src1);
     src1 = 1.0;
 
     if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::InverseMassMatrix)
     {
-      navier_stokes_operation_coupled->initialize_vector_velocity(src2);
-      navier_stokes_operation_coupled->initialize_vector_velocity(dst2);
+      navier_stokes_operator_coupled->initialize_vector_velocity(src2);
+      navier_stokes_operator_coupled->initialize_vector_velocity(dst2);
     }
   }
   else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
@@ -409,13 +464,13 @@ Problem<dim, Number>::apply_operator()
     if(OPERATOR == Operator::ConvectiveOperator || OPERATOR == Operator::HelmholtzOperator ||
        OPERATOR == Operator::ProjectionOperator || OPERATOR == Operator::InverseMassMatrix)
     {
-      navier_stokes_operation_dual_splitting->initialize_vector_velocity(src2);
-      navier_stokes_operation_dual_splitting->initialize_vector_velocity(dst2);
+      navier_stokes_operator_dual_splitting->initialize_vector_velocity(src2);
+      navier_stokes_operator_dual_splitting->initialize_vector_velocity(dst2);
     }
     else if(OPERATOR == Operator::PressurePoissonOperator)
     {
-      navier_stokes_operation_dual_splitting->initialize_vector_pressure(src2);
-      navier_stokes_operation_dual_splitting->initialize_vector_pressure(dst2);
+      navier_stokes_operator_dual_splitting->initialize_vector_pressure(src2);
+      navier_stokes_operator_dual_splitting->initialize_vector_pressure(dst2);
     }
     else
     {
@@ -429,13 +484,13 @@ Problem<dim, Number>::apply_operator()
     if(OPERATOR == Operator::VelocityConvDiffOperator || OPERATOR == Operator::ProjectionOperator ||
        OPERATOR == Operator::InverseMassMatrix)
     {
-      navier_stokes_operation_pressure_correction->initialize_vector_velocity(src2);
-      navier_stokes_operation_pressure_correction->initialize_vector_velocity(dst2);
+      navier_stokes_operator_pressure_correction->initialize_vector_velocity(src2);
+      navier_stokes_operator_pressure_correction->initialize_vector_velocity(dst2);
     }
     else if(OPERATOR == Operator::PressurePoissonOperator)
     {
-      navier_stokes_operation_pressure_correction->initialize_vector_pressure(src2);
-      navier_stokes_operation_pressure_correction->initialize_vector_pressure(dst2);
+      navier_stokes_operator_pressure_correction->initialize_vector_pressure(src2);
+      navier_stokes_operator_pressure_correction->initialize_vector_pressure(dst2);
     }
     else
     {
@@ -466,41 +521,41 @@ Problem<dim, Number>::apply_operator()
       if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
       {
         if(OPERATOR == Operator::CoupledNonlinearResidual)
-          navier_stokes_operation_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
+          navier_stokes_operator_coupled->evaluate_nonlinear_residual(dst1,src1,&src1.block(0), 0.0, 1.0);
         else if(OPERATOR == Operator::CoupledLinearized)
-          navier_stokes_operation_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
+          navier_stokes_operator_coupled->apply_linearized_problem(dst1,src1, 0.0, 1.0);
         else if(OPERATOR == Operator::ConvectiveOperator)
-          navier_stokes_operation_coupled->evaluate_convective_term(dst2,src2,0.0);
+          navier_stokes_operator_coupled->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR == Operator::InverseMassMatrix)
-          navier_stokes_operation_coupled->apply_inverse_mass_matrix(dst2,src2);
+          navier_stokes_operator_coupled->apply_inverse_mass_matrix(dst2,src2);
         else
           AssertThrow(false,ExcMessage("Not implemented."));
       }
       else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
       {
         if(OPERATOR == Operator::HelmholtzOperator)
-          navier_stokes_operation_dual_splitting->apply_helmholtz_operator(dst2,src2);
+          navier_stokes_operator_dual_splitting->apply_helmholtz_operator(dst2,src2);
         else if(OPERATOR == Operator::ConvectiveOperator)
-          navier_stokes_operation_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
+          navier_stokes_operator_dual_splitting->evaluate_convective_term(dst2,src2,0.0);
         else if(OPERATOR == Operator::ProjectionOperator)
-          navier_stokes_operation_dual_splitting->apply_projection_operator(dst2,src2);
+          navier_stokes_operator_dual_splitting->apply_projection_operator(dst2,src2);
         else if(OPERATOR == Operator::PressurePoissonOperator)
-          navier_stokes_operation_dual_splitting->apply_laplace_operator(dst2,src2);
+          navier_stokes_operator_dual_splitting->apply_laplace_operator(dst2,src2);
         else if(OPERATOR == Operator::InverseMassMatrix)
-          navier_stokes_operation_dual_splitting->apply_inverse_mass_matrix(dst2,src2);
+          navier_stokes_operator_dual_splitting->apply_inverse_mass_matrix(dst2,src2);
         else
           AssertThrow(false,ExcMessage("Not implemented."));
       }
       else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
       {
         if(OPERATOR == Operator::VelocityConvDiffOperator)
-          navier_stokes_operation_pressure_correction->apply_momentum_operator(dst2,src2);
+          navier_stokes_operator_pressure_correction->apply_momentum_operator(dst2,src2);
         else if(OPERATOR == Operator::ProjectionOperator)
-          navier_stokes_operation_pressure_correction->apply_projection_operator(dst2,src2);
+          navier_stokes_operator_pressure_correction->apply_projection_operator(dst2,src2);
         else if(OPERATOR == Operator::PressurePoissonOperator)
-          navier_stokes_operation_pressure_correction->apply_laplace_operator(dst2,src2);
+          navier_stokes_operator_pressure_correction->apply_laplace_operator(dst2,src2);
         else if(OPERATOR == Operator::InverseMassMatrix)
-          navier_stokes_operation_pressure_correction->apply_inverse_mass_matrix(dst2,src2);
+          navier_stokes_operator_pressure_correction->apply_inverse_mass_matrix(dst2,src2);
         else
           AssertThrow(false,ExcMessage("Not implemented."));
       }
@@ -532,8 +587,8 @@ Problem<dim, Number>::apply_operator()
 
   if(OPERATOR == Operator::CoupledNonlinearResidual || OPERATOR == Operator::CoupledLinearized)
   {
-    dofs = navier_stokes_operation->get_dof_handler_u().n_dofs() +
-           navier_stokes_operation->get_dof_handler_p().n_dofs();
+    dofs = navier_stokes_operator->get_dof_handler_u().n_dofs() +
+           navier_stokes_operator->get_dof_handler_p().n_dofs();
 
     fe_degree = param.degree_u;
   }
@@ -542,13 +597,13 @@ Problem<dim, Number>::apply_operator()
           OPERATOR == Operator::HelmholtzOperator || OPERATOR == Operator::ProjectionOperator ||
           OPERATOR == Operator::InverseMassMatrix)
   {
-    dofs = navier_stokes_operation->get_dof_handler_u().n_dofs();
+    dofs = navier_stokes_operator->get_dof_handler_u().n_dofs();
 
     fe_degree = param.degree_u;
   }
   else if(OPERATOR == Operator::PressurePoissonOperator)
   {
-    dofs = navier_stokes_operation->get_dof_handler_p().n_dofs();
+    dofs = navier_stokes_operator->get_dof_handler_p().n_dofs();
 
     fe_degree = param.get_degree_p();
   }

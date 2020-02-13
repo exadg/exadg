@@ -11,11 +11,26 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
-  parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor,
-  MPI_Comm const &                         mpi_comm)
-  : Base(triangulation, parameters, postprocessor, mpi_comm), scaling_factor_continuity(1.0)
+  parallel::TriangulationBase<dim> const & triangulation_in,
+  std::shared_ptr<Mesh<dim>> const         mesh_in,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  InputParameters const &                         parameters_in,
+  std::shared_ptr<Postprocessor>                  postprocessor_in,
+  MPI_Comm const &                                mpi_comm_in)
+  : Base(triangulation_in,
+         mesh_in,
+         periodic_face_pairs_in,
+         boundary_descriptor_velocity_in,
+         boundary_descriptor_pressure_in,
+         field_functions_in,
+         parameters_in,
+         postprocessor_in,
+         mpi_comm_in),
+    scaling_factor_continuity(1.0)
 {
 }
 
@@ -27,18 +42,13 @@ DGNavierStokesCoupled<dim, Number>::~DGNavierStokesCoupled()
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup(
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-  std::shared_ptr<Mesh<dim>> const                mesh)
+  std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
+  typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
+  std::vector<Quadrature<1>> &                             quadrature_vec,
+  std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
+  std::vector<DoFHandler<dim> const *> &                   dof_handler_vec)
 {
-  Base::setup(periodic_face_pairs,
-              boundary_descriptor_velocity,
-              boundary_descriptor_pressure,
-              field_functions,
-              mesh);
+  Base::setup(matrix_free, additional_data, quadrature_vec, constraint_matrix_vec, dof_handler_vec);
 
   this->initialize_vector_velocity(temp_vector);
 }

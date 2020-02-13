@@ -104,10 +104,17 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesPressureCorrection(parallel::TriangulationBase<dim> const & triangulation,
-                                   InputParameters const &                  parameters,
-                                   std::shared_ptr<Postprocessor>           postprocessor,
-                                   MPI_Comm const &                         mpi_comm);
+  DGNavierStokesPressureCorrection(
+    parallel::TriangulationBase<dim> const & triangulation_in,
+    std::shared_ptr<Mesh<dim>> const         mesh_in,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                    periodic_face_pairs_in,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+    InputParameters const &                         parameters_in,
+    std::shared_ptr<Postprocessor>                  postprocessor_in,
+    MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Destructor.
@@ -121,12 +128,11 @@ public:
    * depending on the specific ALE formulation chosen).
    */
   virtual void
-  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                        periodic_face_pairs,
-        std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-        std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-        std::shared_ptr<Mesh<dim>> const                mesh);
+  setup(std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
+        typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
+        std::vector<Quadrature<1>> &                             quadrature_vec,
+        std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
+        std::vector<DoFHandler<dim> const *> &                   dof_handler_vec);
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

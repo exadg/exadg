@@ -41,10 +41,17 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesDualSplitting(parallel::TriangulationBase<dim> const & triangulation,
-                              InputParameters const &                  parameters,
-                              std::shared_ptr<Postprocessor>           postprocessor,
-                              MPI_Comm const &                         mpi_comm);
+  DGNavierStokesDualSplitting(
+    parallel::TriangulationBase<dim> const & triangulation_in,
+    std::shared_ptr<Mesh<dim>> const         mesh_in,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                    periodic_face_pairs_in,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+    InputParameters const &                         parameters_in,
+    std::shared_ptr<Postprocessor>                  postprocessor_in,
+    MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Destructor.

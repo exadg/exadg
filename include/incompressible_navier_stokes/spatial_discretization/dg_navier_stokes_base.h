@@ -139,15 +139,28 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesBase(parallel::TriangulationBase<dim> const & triangulation,
-                     InputParameters const &                  parameters,
-                     std::shared_ptr<Postprocessor>           postprocessor,
-                     MPI_Comm const &                         mpi_comm);
+  DGNavierStokesBase(
+    parallel::TriangulationBase<dim> const & triangulation_in,
+    std::shared_ptr<Mesh<dim>> const         mesh_in,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                    periodic_face_pairs_in,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+    InputParameters const &                         parameters_in,
+    std::shared_ptr<Postprocessor>                  postprocessor_in,
+    MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Destructor.
    */
   virtual ~DGNavierStokesBase();
+
+  void
+  append_data_structures(typename MatrixFree<dim, Number>::AdditionalData & additional_data,
+                         std::vector<Quadrature<1>> &                       quadrature_vec,
+                         std::vector<AffineConstraints<double> const *> &   constraint_matrix_vec,
+                         std::vector<DoFHandler<dim> const *> &             dof_handler_vec);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -155,12 +168,11 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                        periodic_face_pairs,
-        std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-        std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-        std::shared_ptr<Mesh<dim>> const                mesh);
+  setup(std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
+        typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
+        std::vector<Quadrature<1>> &                             quadrature_vec,
+        std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
+        std::vector<DoFHandler<dim> const *> &                   dof_handler_vec);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -474,31 +486,14 @@ protected:
   unsteady_problem_has_to_be_solved() const;
 
   /*
-   * List of input parameters.
+   * Mesh (mapping)
    */
-  InputParameters const & param;
-
+  std::shared_ptr<Mesh<dim>> mesh;
   /*
-   * Basic finite element ingredients.
+   * ALE formulation
    */
-private:
-  std::shared_ptr<FESystem<dim>> fe_u;
-  FE_DGQ<dim>                    fe_p;
-  FE_DGQ<dim>                    fe_u_scalar;
+  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
 
-  DoFHandler<dim>         dof_handler_u;
-  DoFHandler<dim>         dof_handler_p;
-  DoFHandler<dim>         dof_handler_u_scalar;
-  MatrixFree<dim, Number> matrix_free;
-
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-  /*
-   * Special case: pure Dirichlet boundary conditions.
-   */
-  Point<dim>              first_point;
-  types::global_dof_index dof_index_first_point;
-
-protected:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
@@ -508,6 +503,11 @@ protected:
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
+
+  /*
+   * List of input parameters.
+   */
+  InputParameters const & param;
 
   /*
    * In case of projection type incompressible Navier-Stokes solvers this variable is needed to
@@ -526,11 +526,34 @@ protected:
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
 
   /*
+   * Special case: pure Dirichlet boundary conditions.
+   */
+  Point<dim>              first_point;
+  types::global_dof_index dof_index_first_point;
+
+  /*
    * Element variable used to store the current physical time. This variable is needed for the
    * evaluation of certain integrals or weak forms.
    */
   double evaluation_time;
 
+private:
+  /*
+   * Basic finite element ingredients.
+   */
+  std::shared_ptr<FESystem<dim>> fe_u;
+  FE_DGQ<dim>                    fe_p;
+  FE_DGQ<dim>                    fe_u_scalar;
+
+  DoFHandler<dim> dof_handler_u;
+  DoFHandler<dim> dof_handler_p;
+  DoFHandler<dim> dof_handler_u_scalar;
+
+  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+
+  std::shared_ptr<MatrixFree<dim, Number>> matrix_free;
+
+protected:
   /*
    * Operator kernels.
    */
@@ -602,15 +625,6 @@ protected:
 
   ConditionalOStream pcout;
 
-  /*
-   * Mesh (mapping)
-   */
-  std::shared_ptr<Mesh<dim>> mesh;
-  /*
-   * ALE formulation
-   */
-  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
-
 private:
   /*
    * Initialization functions called during setup phase.
@@ -620,9 +634,6 @@ private:
 
   void
   initialize_dof_handler();
-
-  void
-  initialize_matrix_free();
 
   void
   initialize_operators();
@@ -677,12 +688,15 @@ private:
   TurbulenceModel<dim, Number> turbulence_model;
 
   /*
-   * MatrixFree Initialization Data
+   * MatrixFree initialization data: needed in case of ALE formulation for
+   * update of MatrixFree
+   *
+   * TODO: the goal should be to eliminate these items from this class
    */
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
-  std::vector<Quadrature<1>>                       quadratures;
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec;
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec;
+  typename MatrixFree<dim, Number>::AdditionalData additional_data_copy_update;
+  std::vector<Quadrature<1>>                       quadrature_vec_copy;
+  std::vector<AffineConstraints<double> const *>   constraint_matrix_vec_copy;
+  std::vector<DoFHandler<dim> const *>             dof_handler_vec_copy;
 };
 
 } // namespace IncNS

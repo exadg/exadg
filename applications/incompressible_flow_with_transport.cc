@@ -147,7 +147,7 @@ private:
 
   // mapping (static and moving meshes)
   // TODO use the same for fluid and scalar transport
-  std::shared_ptr<Mesh<dim>> mesh_fluid;
+  std::shared_ptr<Mesh<dim>> fluid_mesh;
 
   // number of scalar quantities
   unsigned int const n_scalars;
@@ -160,6 +160,13 @@ private:
   std::shared_ptr<IncNS::BoundaryDescriptorP<dim>> fluid_boundary_descriptor_pressure;
 
   IncNS::InputParameters fluid_param;
+
+  //  MatrixFree
+  std::shared_ptr<MatrixFree<dim, Number>>         fluid_matrix_free;
+  typename MatrixFree<dim, Number>::AdditionalData fluid_additional_data;
+  std::vector<Quadrature<1>>                       fluid_quadrature_vec;
+  std::vector<const AffineConstraints<double> *>   fluid_constraint_matrix_vec;
+  std::vector<const DoFHandler<dim> *>             fluid_dof_handler_vec;
 
   typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;
   typedef IncNS::DGNavierStokesCoupled<dim, Number>            DGCoupled;
@@ -329,7 +336,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
   if(fluid_param.ale_formulation) // moving mesh
   {
-    mesh_fluid.reset(new MovingMesh<dim, Number>(mapping_degree,
+    fluid_mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
                                                  *triangulation,
                                                  fluid_param.degree_u,
                                                  fluid_field_functions->mesh_movement,
@@ -338,7 +345,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   }
   else // static mesh
   {
-    mesh_fluid.reset(new Mesh<dim>(mapping_degree));
+    fluid_mesh.reset(new Mesh<dim>(mapping_degree));
   }
 
   // initialize postprocessor
@@ -352,8 +359,15 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   {
     std::shared_ptr<DGCoupled> navier_stokes_operator_coupled;
 
-    navier_stokes_operator_coupled.reset(
-      new DGCoupled(*triangulation, fluid_param, fluid_postprocessor, mpi_comm));
+    navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
+                                                       fluid_mesh,
+                                                       periodic_faces,
+                                                       fluid_boundary_descriptor_velocity,
+                                                       fluid_boundary_descriptor_pressure,
+                                                       fluid_field_functions,
+                                                       fluid_param,
+                                                       fluid_postprocessor,
+                                                       mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
 
@@ -366,7 +380,15 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     std::shared_ptr<DGDualSplitting> navier_stokes_operator_dual_splitting;
 
     navier_stokes_operator_dual_splitting.reset(
-      new DGDualSplitting(*triangulation, fluid_param, fluid_postprocessor, mpi_comm));
+      new DGDualSplitting(*triangulation,
+                          fluid_mesh,
+                          periodic_faces,
+                          fluid_boundary_descriptor_velocity,
+                          fluid_boundary_descriptor_pressure,
+                          fluid_field_functions,
+                          fluid_param,
+                          fluid_postprocessor,
+                          mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
 
@@ -381,7 +403,15 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
 
     navier_stokes_operator_pressure_correction.reset(
-      new DGPressureCorrection(*triangulation, fluid_param, fluid_postprocessor, mpi_comm));
+      new DGPressureCorrection(*triangulation,
+                               fluid_mesh,
+                               periodic_faces,
+                               fluid_boundary_descriptor_velocity,
+                               fluid_boundary_descriptor_pressure,
+                               fluid_field_functions,
+                               fluid_param,
+                               fluid_postprocessor,
+                               mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;
 
@@ -396,12 +426,36 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  // initialize matrix_free
+  fluid_additional_data.tasks_parallel_scheme =
+    MatrixFree<dim, Number>::AdditionalData::partition_partition;
+
   AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
-  navier_stokes_operator->setup(periodic_faces,
-                                fluid_boundary_descriptor_velocity,
-                                fluid_boundary_descriptor_pressure,
-                                fluid_field_functions,
-                                mesh_fluid);
+  navier_stokes_operator->append_data_structures(fluid_additional_data,
+                                                 fluid_quadrature_vec,
+                                                 fluid_constraint_matrix_vec,
+                                                 fluid_dof_handler_vec);
+
+  // cell-based face loops
+  if(fluid_param.use_cell_based_face_loops)
+  {
+    auto tria =
+      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+    Categorization::do_cell_based_loops(*tria, fluid_additional_data);
+  }
+
+  fluid_matrix_free.reset(new MatrixFree<dim, Number>());
+  fluid_matrix_free->reinit(fluid_mesh->get_mapping(),
+                            fluid_dof_handler_vec,
+                            fluid_constraint_matrix_vec,
+                            fluid_quadrature_vec,
+                            fluid_additional_data);
+
+  navier_stokes_operator->setup(fluid_matrix_free,
+                                fluid_additional_data,
+                                fluid_quadrature_vec,
+                                fluid_constraint_matrix_vec,
+                                fluid_dof_handler_vec);
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers
