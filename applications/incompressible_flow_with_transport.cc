@@ -187,6 +187,10 @@ private:
   std::shared_ptr<TimeInt> fluid_time_integrator;
 
   // SCALAR TRANSPORT
+
+  // mapping
+  std::vector<std::shared_ptr<Mesh<dim>>> scalar_mesh;
+
   std::vector<ConvDiff::InputParameters> scalar_param;
 
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
@@ -228,6 +232,7 @@ Problem<dim, Number>::Problem(MPI_Comm const & comm, unsigned int const n_scalar
     overall_time(0.0),
     setup_time(0.0)
 {
+  scalar_mesh.resize(n_scalars);
   scalar_param.resize(n_scalars);
   scalar_field_functions.resize(n_scalars);
   scalar_boundary_descriptor.resize(n_scalars);
@@ -493,12 +498,30 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());
     ConvDiff::set_field_functions(scalar_field_functions[i], i);
 
+    // mapping
+    unsigned int mapping_degree = 1;
+    if(scalar_param[i].mapping == ConvDiff::MappingType::Affine)
+    {
+      mapping_degree = 1;
+    }
+    else if(scalar_param[i].mapping == ConvDiff::MappingType::Isoparametric)
+    {
+      mapping_degree = scalar_param[i].degree;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented"));
+    }
+
+    scalar_mesh[i].reset(new Mesh<dim>(mapping_degree));
+
     // initialize postprocessor
     scalar_postprocessor[i] =
       ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], mpi_comm, i);
 
     // initialize convection diffusion operation
     conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
+                                                                      scalar_mesh[i],
                                                                       periodic_faces,
                                                                       scalar_boundary_descriptor[i],
                                                                       scalar_field_functions[i],

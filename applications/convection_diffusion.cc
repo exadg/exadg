@@ -99,7 +99,11 @@ private:
 
   ConditionalOStream pcout;
 
+  // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
+
+  // mapping
+  std::shared_ptr<Mesh<dim>> mesh;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
@@ -198,11 +202,29 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
+  // mapping
+  unsigned int mapping_degree = 1;
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  mesh.reset(new Mesh<dim>(mapping_degree));
+
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize convection-diffusion operator
   conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                       mesh,
                                                        periodic_faces,
                                                        boundary_descriptor,
                                                        field_functions,

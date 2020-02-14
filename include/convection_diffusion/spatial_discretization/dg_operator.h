@@ -35,6 +35,9 @@
 // time integration and interface
 #include "interface.h"
 
+// functionalities
+#include "../../functionalities/mesh.h"
+
 // postprocessor
 #include "../postprocessor/postprocessor_base.h"
 #include "operators/combined_operator.h"
@@ -59,12 +62,13 @@ public:
    * Constructor.
    */
   DGOperator(parallel::TriangulationBase<dim> const &        triangulation,
-             PeriodicFaces const                             periodic_face_pairs_in,
-             std::shared_ptr<BoundaryDescriptor<dim>> const  boundary_descriptor_in,
-             std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-             InputParameters const &                         param_in,
-             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-             MPI_Comm const &                                mpi_comm_in);
+             std::shared_ptr<Mesh<dim>> const                mesh,
+             PeriodicFaces const                             periodic_face_pairs,
+             std::shared_ptr<BoundaryDescriptor<dim>> const  boundary_descriptor,
+             std::shared_ptr<FieldFunctions<dim>> const      field_functions,
+             InputParameters const &                         param,
+             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor,
+             MPI_Comm const &                                mpi_comm);
 
 
   void
@@ -313,6 +317,11 @@ private:
   setup_postprocessor();
 
   /*
+   * Mesh (mapping)
+   */
+  std::shared_ptr<Mesh<dim>> mesh;
+
+  /*
    * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
    */
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
@@ -332,10 +341,8 @@ private:
   /*
    * Basic finite element ingredients.
    */
-  FE_DGQ<dim>                           fe;
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
-  DoFHandler<dim>                       dof_handler;
+  FE_DGQ<dim>     fe;
+  DoFHandler<dim> dof_handler;
 
   /*
    * Numerical velocity field.

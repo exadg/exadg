@@ -271,8 +271,13 @@ InputParameters::check_input_parameters()
     if(analytical_velocity_field == true && store_analytical_velocity_in_dof_vector == true)
     {
       AssertThrow(linear_system_including_convective_term_has_to_be_solved() == true,
-                  ExcMessage("Invalid parameter. Check parameters analytical_velocity_field and "
-                             "store_analytical_velocity_in_dof_vector."));
+                  ExcMessage(
+                    "Invalid parameter. Check parameters analytical_velocity_field and "
+                    "store_analytical_velocity_in_dof_vector. The option to store the "
+                    "analytically defined velocity field in a dof vector only makes sense "
+                    "from the point of view of computational costs in case a linear system "
+                    "of equations has to be solved, i.e., if the convective term has to be "
+                    "evaluated multiple times per time step at a fixed time t."));
     }
   }
 

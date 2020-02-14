@@ -14,7 +14,8 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
-  parallel::TriangulationBase<dim> const &        triangulation,
+  parallel::TriangulationBase<dim> const &        triangulation_in,
+  std::shared_ptr<Mesh<dim>> const                mesh_in,
   PeriodicFaces const                             periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const  boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
@@ -22,38 +23,23 @@ DGOperator<dim, Number>::DGOperator(
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
+    mesh(mesh_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
     fe(param.degree),
-    mapping_degree(1),
-    dof_handler(triangulation),
+    dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     postprocessor(postprocessor_in)
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
-  if(param.mapping == MappingType::Affine)
-  {
-    mapping_degree = 1;
-  }
-  else if(param.mapping == MappingType::Isoparametric)
-  {
-    mapping_degree = param.degree;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-  }
-
-  mapping.reset(new MappingQGeneric<dim>(mapping_degree));
-
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
     fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
-    dof_handler_velocity.reset(new DoFHandler<dim>(triangulation));
+    dof_handler_velocity.reset(new DoFHandler<dim>(triangulation_in));
   }
 
   distribute_dofs();
@@ -402,7 +388,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  *mapping,
+                                  mesh->get_mapping(),
                                   combined_operator,
                                   param.mg_operator_type,
                                   &data.bc->dirichlet_bc,
@@ -832,7 +818,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGOperator<dim, Number>::get_mapping() const
 {
-  return *mapping;
+  return mesh->get_mapping();
 }
 
 template<int dim, typename Number>
@@ -882,7 +868,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup_postprocessor()
 {
-  postprocessor->setup(dof_handler, *mapping);
+  postprocessor->setup(dof_handler, mesh->get_mapping());
 }
 
 template class DGOperator<2, float>;
