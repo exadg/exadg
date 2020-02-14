@@ -31,6 +31,8 @@
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
+// general functionalities
+#include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/mesh_resolution_generator_hypercube.h"
 #include "../include/functionalities/print_general_infos.h"
 #include "../include/functionalities/print_throughput.h"
@@ -38,7 +40,7 @@
 using namespace dealii;
 using namespace IncNS;
 
-// specify the flow problem to be used for throughput measurements
+// specify the application to be used for throughput measurements
 
 #include "incompressible_navier_stokes_test_cases/periodic_box.h"
 
@@ -177,11 +179,7 @@ private:
   /*
    * MatrixFree
    */
-  std::shared_ptr<MatrixFree<dim, Number>>         matrix_free;
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-  std::vector<Quadrature<1>>                       quadrature_vec;
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec;
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
   /*
    * Spatial discretization
@@ -369,29 +367,26 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   // initialize matrix_free
-  additional_data.tasks_parallel_scheme =
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
+
+  matrix_free_wrapper->data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
   AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
-  navier_stokes_operator->append_data_structures(additional_data,
-                                                 quadrature_vec,
-                                                 constraint_matrix_vec,
-                                                 dof_handler_vec);
+  navier_stokes_operator->append_data_structures(matrix_free_wrapper);
 
   // cell-based face loops
   if(param.use_cell_based_face_loops)
   {
     auto tria =
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, additional_data);
+    Categorization::do_cell_based_loops(*tria, matrix_free_wrapper->data);
   }
 
-  matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(
-    mesh->get_mapping(), dof_handler_vec, constraint_matrix_vec, quadrature_vec, additional_data);
+  matrix_free_wrapper->reinit();
 
-  navier_stokes_operator->setup(
-    matrix_free, additional_data, quadrature_vec, constraint_matrix_vec, dof_handler_vec);
+  // setup Navier-Stokes operator
+  navier_stokes_operator->setup(matrix_free_wrapper);
 
   navier_stokes_operator->initialize_vector_velocity(velocity);
   velocity = 1.0;

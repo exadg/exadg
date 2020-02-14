@@ -46,13 +46,9 @@ DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
 template<int dim, typename Number>
 void
 DGNavierStokesProjectionMethods<dim, Number>::setup(
-  std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
-  typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
-  std::vector<Quadrature<1>> &                             quadrature_vec,
-  std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
-  std::vector<DoFHandler<dim> const *> &                   dof_handler_vec)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
 {
-  Base::setup(matrix_free, additional_data, quadrature_vec, constraint_matrix_vec, dof_handler_vec);
+  Base::setup(matrix_free_wrapper);
 
   initialize_laplace_operator();
 }

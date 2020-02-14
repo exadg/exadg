@@ -128,11 +128,7 @@ public:
    * depending on the specific ALE formulation chosen).
    */
   virtual void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
-        typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
-        std::vector<Quadrature<1>> &                             quadrature_vec,
-        std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
-        std::vector<DoFHandler<dim> const *> &                   dof_handler_vec);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

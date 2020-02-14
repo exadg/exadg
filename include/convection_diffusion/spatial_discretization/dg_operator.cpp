@@ -815,13 +815,6 @@ DGOperator<dim, Number>::calculate_minimum_element_length() const
 }
 
 template<int dim, typename Number>
-Mapping<dim> const &
-DGOperator<dim, Number>::get_mapping() const
-{
-  return mesh->get_mapping();
-}
-
-template<int dim, typename Number>
 DoFHandler<dim> const &
 DGOperator<dim, Number>::get_dof_handler() const
 {

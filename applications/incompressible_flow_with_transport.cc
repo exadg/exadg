@@ -52,7 +52,8 @@
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
-
+// general functionalities
+#include "../include/functionalities/matrix_free_wrapper.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 
@@ -162,11 +163,7 @@ private:
   IncNS::InputParameters fluid_param;
 
   //  MatrixFree
-  std::shared_ptr<MatrixFree<dim, Number>>         fluid_matrix_free;
-  typename MatrixFree<dim, Number>::AdditionalData fluid_additional_data;
-  std::vector<Quadrature<1>>                       fluid_quadrature_vec;
-  std::vector<const AffineConstraints<double> *>   fluid_constraint_matrix_vec;
-  std::vector<const DoFHandler<dim> *>             fluid_dof_handler_vec;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> fluid_matrix_free_wrapper;
 
   typedef IncNS::DGNavierStokesBase<dim, Number>               DGBase;
   typedef IncNS::DGNavierStokesCoupled<dim, Number>            DGCoupled;
@@ -447,35 +444,26 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   }
 
   // initialize matrix_free
-  fluid_additional_data.tasks_parallel_scheme =
+  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh));
+
+  fluid_matrix_free_wrapper->data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
   AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
-  navier_stokes_operator->append_data_structures(fluid_additional_data,
-                                                 fluid_quadrature_vec,
-                                                 fluid_constraint_matrix_vec,
-                                                 fluid_dof_handler_vec);
+  navier_stokes_operator->append_data_structures(fluid_matrix_free_wrapper);
 
   // cell-based face loops
   if(fluid_param.use_cell_based_face_loops)
   {
     auto tria =
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, fluid_additional_data);
+    Categorization::do_cell_based_loops(*tria, fluid_matrix_free_wrapper->data);
   }
 
-  fluid_matrix_free.reset(new MatrixFree<dim, Number>());
-  fluid_matrix_free->reinit(fluid_mesh->get_mapping(),
-                            fluid_dof_handler_vec,
-                            fluid_constraint_matrix_vec,
-                            fluid_quadrature_vec,
-                            fluid_additional_data);
+  fluid_matrix_free_wrapper->reinit();
 
-  navier_stokes_operator->setup(fluid_matrix_free,
-                                fluid_additional_data,
-                                fluid_quadrature_vec,
-                                fluid_constraint_matrix_vec,
-                                fluid_dof_handler_vec);
+  // setup Navier-Stokes operator
+  navier_stokes_operator->setup(fluid_matrix_free_wrapper);
 
   // setup time integrator before calling setup_solvers
   // (this is necessary since the setup of the solvers
@@ -548,12 +536,11 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     }
 
     scalar_matrix_free[i].reset(new MatrixFree<dim, Number>());
-    scalar_matrix_free[i]->reinit(
-      conv_diff_operator[i]->get_mapping(), /* TODO use mesh->get_mapping() */
-      scalar_dof_handler_vec[i],
-      scalar_constraint_vec[i],
-      scalar_quadrature_vec[i],
-      scalar_additional_data[i]);
+    scalar_matrix_free[i]->reinit(scalar_mesh[i]->get_mapping(),
+                                  scalar_dof_handler_vec[i],
+                                  scalar_constraint_vec[i],
+                                  scalar_quadrature_vec[i],
+                                  scalar_additional_data[i]);
 
     conv_diff_operator[i]->setup(scalar_matrix_free[i]);
 

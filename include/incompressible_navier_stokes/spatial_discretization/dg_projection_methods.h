@@ -52,11 +52,7 @@ public:
    * needed for projection-type methods.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
-        typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
-        std::vector<Quadrature<1>> &                             quadrature_vec,
-        std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
-        std::vector<DoFHandler<dim> const *> &                   dof_handler_vec);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   virtual void
   update_after_mesh_movement() override;

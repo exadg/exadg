@@ -33,6 +33,8 @@
 #include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
+// general functionalities
+#include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;
@@ -117,12 +119,7 @@ private:
   /*
    * MatrixFree
    */
-  std::shared_ptr<MatrixFree<dim, Number>>         matrix_free_1, matrix_free_2;
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_1, additional_data_2;
-  std::vector<Quadrature<1>>                       quadrature_vec_1, quadrature_vec_2;
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec_1, constraint_matrix_vec_2;
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec_1, dof_handler_vec_2;
-
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_1, matrix_free_wrapper_2;
 
   typedef DGNavierStokesBase<dim, Number>               DGBase;
   typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
@@ -534,64 +531,48 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  // setup navier_stokes_operator
+  // initialize matrix_free 1
+  matrix_free_wrapper_1.reset(new MatrixFreeWrapper<dim, Number>(mesh_1));
 
-  // initialize matrix_free
-  additional_data_1.tasks_parallel_scheme =
+  matrix_free_wrapper_1->data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
   AssertThrow(navier_stokes_operator_1.get() != 0, ExcMessage("Not initialized."));
-  navier_stokes_operator_1->append_data_structures(additional_data_1,
-                                                   quadrature_vec_1,
-                                                   constraint_matrix_vec_1,
-                                                   dof_handler_vec_1);
+  navier_stokes_operator_1->append_data_structures(matrix_free_wrapper_1);
 
   // cell-based face loops
   if(param_1.use_cell_based_face_loops)
   {
     auto tria =
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation_1);
-    Categorization::do_cell_based_loops(*tria, additional_data_1);
+    Categorization::do_cell_based_loops(*tria, matrix_free_wrapper_1->data);
   }
 
-  matrix_free_1.reset(new MatrixFree<dim, Number>());
-  matrix_free_1->reinit(mesh_1->get_mapping(),
-                        dof_handler_vec_1,
-                        constraint_matrix_vec_1,
-                        quadrature_vec_1,
-                        additional_data_1);
+  matrix_free_wrapper_1->reinit();
 
-  navier_stokes_operator_1->setup(
-    matrix_free_1, additional_data_1, quadrature_vec_1, constraint_matrix_vec_1, dof_handler_vec_1);
+  // initialize matrix_free 2
+  matrix_free_wrapper_2.reset(new MatrixFreeWrapper<dim, Number>(mesh_2));
 
-  // initialize matrix_free
-  additional_data_2.tasks_parallel_scheme =
+  matrix_free_wrapper_2->data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
   AssertThrow(navier_stokes_operator_2.get() != 0, ExcMessage("Not initialized."));
-  navier_stokes_operator_2->append_data_structures(additional_data_2,
-                                                   quadrature_vec_2,
-                                                   constraint_matrix_vec_2,
-                                                   dof_handler_vec_2);
+  navier_stokes_operator_2->append_data_structures(matrix_free_wrapper_2);
 
   // cell-based face loops
   if(param_2.use_cell_based_face_loops)
   {
     auto tria =
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation_2);
-    Categorization::do_cell_based_loops(*tria, additional_data_2);
+    Categorization::do_cell_based_loops(*tria, matrix_free_wrapper_2->data);
   }
 
-  matrix_free_2.reset(new MatrixFree<dim, Number>());
-  matrix_free_2->reinit(mesh_2->get_mapping(),
-                        dof_handler_vec_2,
-                        constraint_matrix_vec_2,
-                        quadrature_vec_2,
-                        additional_data_2);
+  matrix_free_wrapper_2->reinit();
 
-  navier_stokes_operator_2->setup(
-    matrix_free_2, additional_data_2, quadrature_vec_2, constraint_matrix_vec_2, dof_handler_vec_2);
 
+  // setup Navier-Stokes operator
+  navier_stokes_operator_1->setup(matrix_free_wrapper_1);
+  navier_stokes_operator_2->setup(matrix_free_wrapper_2);
 
 
   // Setup time integrator

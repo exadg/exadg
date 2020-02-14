@@ -291,11 +291,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(conv_diff_operator->get_mapping(), /* TODO use mesh->get_mapping() */
-                      dof_handler_vec,
-                      constraint_vec,
-                      quadrature_vec,
-                      additional_data);
+  matrix_free->reinit(
+    mesh->get_mapping(), dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
 
   conv_diff_operator->setup(matrix_free);
 

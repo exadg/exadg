@@ -79,17 +79,14 @@ DGNavierStokesBase<dim, Number>::~DGNavierStokesBase()
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::append_data_structures(
-  typename MatrixFree<dim, Number>::AdditionalData & additional_data,
-  std::vector<Quadrature<1>> &                       quadrature_vec,
-  std::vector<AffineConstraints<double> const *> &   constraint_matrix_vec,
-  std::vector<DoFHandler<dim> const *> &             dof_handler_vec)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
 {
   MappingFlags flags;
 
   // get current state
-  flags.cells          = additional_data.mapping_update_flags;
-  flags.inner_faces    = additional_data.mapping_update_flags_inner_faces;
-  flags.boundary_faces = additional_data.mapping_update_flags_boundary_faces;
+  flags.cells          = matrix_free_wrapper->data.mapping_update_flags;
+  flags.inner_faces    = matrix_free_wrapper->data.mapping_update_flags_inner_faces;
+  flags.boundary_faces = matrix_free_wrapper->data.mapping_update_flags_boundary_faces;
 
   // append
   flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
@@ -112,68 +109,56 @@ DGNavierStokesBase<dim, Number>::append_data_structures(
     flags = flags || Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags();
 
   // write back into additional_data
-  additional_data.mapping_update_flags                = flags.cells;
-  additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-  additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+  matrix_free_wrapper->data.mapping_update_flags                = flags.cells;
+  matrix_free_wrapper->data.mapping_update_flags_inner_faces    = flags.inner_faces;
+  matrix_free_wrapper->data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
   // dof handler
-  dof_handler_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-    DofHandlerSelector::n_variants));
-  dof_handler_vec[dof_index_u]        = &dof_handler_u;
-  dof_handler_vec[dof_index_p]        = &dof_handler_p;
-  dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
+  matrix_free_wrapper->dof_handler_vec.resize(
+    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
+      DofHandlerSelector::n_variants));
+  matrix_free_wrapper->dof_handler_vec[dof_index_u]        = &dof_handler_u;
+  matrix_free_wrapper->dof_handler_vec[dof_index_p]        = &dof_handler_p;
+  matrix_free_wrapper->dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
   // constraint
-  constraint_matrix_vec.resize(static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-    DofHandlerSelector::n_variants));
+  matrix_free_wrapper->constraint_vec.resize(
+    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
+      DofHandlerSelector::n_variants));
 
-  constraint_matrix_vec[dof_index_u]        = &constraint_u;
-  constraint_matrix_vec[dof_index_p]        = &constraint_p;
-  constraint_matrix_vec[dof_index_u_scalar] = &constraint_u_scalar;
+  matrix_free_wrapper->constraint_vec[dof_index_u]        = &constraint_u;
+  matrix_free_wrapper->constraint_vec[dof_index_p]        = &constraint_p;
+  matrix_free_wrapper->constraint_vec[dof_index_u_scalar] = &constraint_u_scalar;
 
   // quadrature
-  quadrature_vec.resize(static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-    QuadratureSelector::n_variants));
+  matrix_free_wrapper->quadrature_vec.resize(
+    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+      QuadratureSelector::n_variants));
   // velocity
-  quadrature_vec[quad_index_u] = QGauss<1>(param.degree_u + 1);
+  matrix_free_wrapper->quadrature_vec[quad_index_u] = QGauss<1>(param.degree_u + 1);
   // pressure
-  quadrature_vec[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
+  matrix_free_wrapper->quadrature_vec[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
   // exact integration of nonlinear convective term
-  quadrature_vec[quad_index_u_nonlinear] = QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
+  matrix_free_wrapper->quadrature_vec[quad_index_u_nonlinear] =
+    QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
   // velocity: Gauss-Lobatto quadrature points
-  quadrature_vec[quad_index_u_gauss_lobatto] = QGaussLobatto<1>(param.degree_u + 1);
+  matrix_free_wrapper->quadrature_vec[quad_index_u_gauss_lobatto] =
+    QGaussLobatto<1>(param.degree_u + 1);
   // pressure: Gauss-Lobatto quadrature points
-  quadrature_vec[quad_index_p_gauss_lobatto] = QGaussLobatto<1>(param.get_degree_p() + 1);
+  matrix_free_wrapper->quadrature_vec[quad_index_p_gauss_lobatto] =
+    QGaussLobatto<1>(param.get_degree_p() + 1);
 }
 
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::setup(
-  std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free_in,
-  typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
-  std::vector<Quadrature<1>> &                             quadrature_vec,
-  std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
-  std::vector<DoFHandler<dim> const *> &                   dof_handler_vec)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
 {
   pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
   // MatrixFree
-  matrix_free = matrix_free_in;
-
-  // save a copy for ALE update and only update what is really necessary for efficiency
-  if(param.ale_formulation == true)
-  {
-    additional_data_copy_update = additional_data;
-    additional_data_copy_update.initialize_indices =
-      false; // connectivity of elements stays the same
-    additional_data_copy_update.initialize_mapping = true;
-  }
-
-  // save copies for ALE update
-  quadrature_vec_copy        = quadrature_vec;
-  constraint_matrix_vec_copy = constraint_matrix_vec;
-  dof_handler_vec_copy       = dof_handler_vec;
-
+  matrix_free_wrapper = matrix_free_wrapper_in;
+  matrix_free         = matrix_free_wrapper->get_matrix_free();
 
   // initialize data structures depending on MatrixFree
   initialize_operators();
@@ -1279,13 +1264,10 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 {
-  // TODO
-  matrix_free->reinit(get_mapping(),
-                      dof_handler_vec_copy,
-                      constraint_matrix_vec_copy,
-                      quadrature_vec_copy,
-                      additional_data_copy_update);
+  // TODO: problems occur if the mesh is not deformed (displacement = 0)
+  matrix_free_wrapper->update_geometry();
 
+  // TODO: this should not be necessary for a good design. MatrixFree has to care about that.
   inverse_mass_velocity.reinit();
   inverse_mass_velocity_scalar.reinit();
 

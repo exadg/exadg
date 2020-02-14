@@ -255,9 +255,6 @@ public:
   /*
    * Setters and getters.
    */
-  Mapping<dim> const &
-  get_mapping() const;
-
   DoFHandler<dim> const &
   get_dof_handler() const;
 

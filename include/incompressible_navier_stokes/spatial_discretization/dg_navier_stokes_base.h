@@ -19,6 +19,7 @@
 #include <deal.II/matrix_free/operators.h>
 
 // ALE
+#include "../../functionalities/matrix_free_wrapper.h"
 #include "../../functionalities/moving_mesh.h"
 
 // user interface
@@ -157,10 +158,7 @@ public:
   virtual ~DGNavierStokesBase();
 
   void
-  append_data_structures(typename MatrixFree<dim, Number>::AdditionalData & additional_data,
-                         std::vector<Quadrature<1>> &                       quadrature_vec,
-                         std::vector<AffineConstraints<double> const *> &   constraint_matrix_vec,
-                         std::vector<DoFHandler<dim> const *> &             dof_handler_vec);
+  append_data_structures(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -168,11 +166,7 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFree<dim, Number>>                 matrix_free,
-        typename MatrixFree<dim, Number>::AdditionalData const & additional_data,
-        std::vector<Quadrature<1>> &                             quadrature_vec,
-        std::vector<AffineConstraints<double> const *> &         constraint_matrix_vec,
-        std::vector<DoFHandler<dim> const *> &                   dof_handler_vec);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -551,7 +545,8 @@ private:
 
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
 
-  std::shared_ptr<MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
 
 protected:
   /*
@@ -686,17 +681,6 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
-
-  /*
-   * MatrixFree initialization data: needed in case of ALE formulation for
-   * update of MatrixFree
-   *
-   * TODO: the goal should be to eliminate these items from this class
-   */
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_copy_update;
-  std::vector<Quadrature<1>>                       quadrature_vec_copy;
-  std::vector<AffineConstraints<double> const *>   constraint_matrix_vec_copy;
-  std::vector<DoFHandler<dim> const *>             dof_handler_vec_copy;
 };
 
 } // namespace IncNS
