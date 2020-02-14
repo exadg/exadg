@@ -29,6 +29,8 @@
 #include "../include/compressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/compressible_navier_stokes/user_interface/input_parameters.h"
 
+// general functionalities
+#include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/print_general_infos.h"
 
 // specify the test case that has to be solved
@@ -93,7 +95,14 @@ private:
 
   ConditionalOStream pcout;
 
+  InputParameters param;
+
+  // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
+
+  // mapping
+  std::shared_ptr<Mesh<dim>> mesh;
+
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
@@ -103,7 +112,7 @@ private:
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
   std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
 
-  InputParameters param;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
   std::shared_ptr<DGOperator<dim, Number>> comp_navier_stokes_operator;
 
@@ -190,21 +199,50 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
+  // Mapping
+  unsigned int mapping_degree = 1;
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  mesh.reset(new Mesh<dim>(mapping_degree));
+
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(
-    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
+  comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                                mesh,
+                                                                boundary_descriptor_density,
+                                                                boundary_descriptor_velocity,
+                                                                boundary_descriptor_pressure,
+                                                                boundary_descriptor_energy,
+                                                                field_functions,
+                                                                param,
+                                                                postprocessor,
+                                                                mpi_comm));
+
+  // initialize matrix_free
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
+
+  comp_navier_stokes_operator->append_data_structures(matrix_free_wrapper);
+
+  matrix_free_wrapper->reinit(false /*param.use_cell_based_face_loops*/, triangulation);
+
+  // setup compressible Navier-Stokes operator
+  comp_navier_stokes_operator->setup(matrix_free_wrapper);
 
   // initialize time integrator
   time_integrator.reset(new TimeIntExplRK<Number>(comp_navier_stokes_operator, param, mpi_comm));
-
-  comp_navier_stokes_operator->setup(boundary_descriptor_density,
-                                     boundary_descriptor_velocity,
-                                     boundary_descriptor_pressure,
-                                     boundary_descriptor_energy,
-                                     field_functions);
 
   time_integrator->setup(param.restarted_simulation);
 

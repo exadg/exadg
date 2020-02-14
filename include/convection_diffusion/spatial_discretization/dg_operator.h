@@ -346,12 +346,12 @@ private:
   std::shared_ptr<DoFHandler<dim>> dof_handler_velocity;
 
   /*
-   * Constraints
+   * Constraints.
    */
   AffineConstraints<double> constraint_matrix;
 
   /*
-   * Matrix-free operator evaluation
+   * Matrix-free operator evaluation.
    */
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
@@ -366,7 +366,7 @@ private:
   RHSOperator<dim, Number>                  rhs_operator;
 
   /*
-   * Merged operators
+   * Merged operators.
    */
   Operator<dim, Number> combined_operator;
 
