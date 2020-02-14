@@ -36,6 +36,7 @@
 #include "interface.h"
 
 // functionalities
+#include "../../functionalities/matrix_free_wrapper.h"
 #include "../../functionalities/mesh.h"
 
 // postprocessor
@@ -72,10 +73,7 @@ public:
 
 
   void
-  append_data_structures(typename MatrixFree<dim, Number>::AdditionalData & additional_data,
-                         std::vector<Quadrature<1>> &                       quadrature_vec,
-                         std::vector<AffineConstraints<double> const *> &   constraint_vec,
-                         std::vector<DoFHandler<dim> const *> &             dof_handler_vec);
+  append_data_structures(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -83,7 +81,7 @@ public:
    * of equations.
    */
   void
-  setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -355,7 +353,8 @@ private:
   /*
    * Matrix-free operator evaluation
    */
-  std::shared_ptr<MatrixFree<dim, Number>> matrix_free;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
 
   /*
    * Basic operators.

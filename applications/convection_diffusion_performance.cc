@@ -14,8 +14,8 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // spatial discretization
-#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
-#include "../include/convection_diffusion/spatial_discretization/interface.h"
+#include "convection_diffusion/spatial_discretization/dg_operator.h"
+#include "convection_diffusion/spatial_discretization/interface.h"
 
 // postprocessor
 #include "convection_diffusion/postprocessor/postprocessor_base.h"
@@ -26,6 +26,8 @@
 #include "convection_diffusion/user_interface/field_functions.h"
 #include "convection_diffusion/user_interface/input_parameters.h"
 
+// general functionalities
+#include "functionalities/matrix_free_wrapper.h"
 #include "functionalities/mesh_resolution_generator_hypercube.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
@@ -151,14 +153,7 @@ private:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
-  /*
-   * Matrix-free
-   */
-  std::shared_ptr<MatrixFree<dim, Number>>         matrix_free;
-  typename MatrixFree<dim, Number>::AdditionalData additional_data;
-  std::vector<Quadrature<1>>                       quadrature_vec;
-  std::vector<AffineConstraints<double> const *>   constraint_vec;
-  std::vector<DoFHandler<dim> const *>             dof_handler_vec;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
   std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
@@ -273,28 +268,26 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                        mpi_comm));
 
   // initialize matrix_free
-  additional_data.tasks_parallel_scheme =
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
+
+  matrix_free_wrapper->data.tasks_parallel_scheme =
     MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
   AssertThrow(conv_diff_operator.get() != 0, ExcMessage("Not initialized."));
-  conv_diff_operator->append_data_structures(additional_data,
-                                             quadrature_vec,
-                                             constraint_vec,
-                                             dof_handler_vec);
+  conv_diff_operator->append_data_structures(matrix_free_wrapper);
 
   // cell-based face loops
   if(param.use_cell_based_face_loops)
   {
     auto tria =
       std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, additional_data);
+    Categorization::do_cell_based_loops(*tria, matrix_free_wrapper->data);
   }
 
-  matrix_free.reset(new MatrixFree<dim, Number>());
-  matrix_free->reinit(
-    mesh->get_mapping(), dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
+  matrix_free_wrapper->reinit();
 
-  conv_diff_operator->setup(matrix_free);
+  // setup convection-diffusion operator
+  conv_diff_operator->setup(matrix_free_wrapper);
 
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)

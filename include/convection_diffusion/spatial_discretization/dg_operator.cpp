@@ -53,17 +53,14 @@ DGOperator<dim, Number>::DGOperator(
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::append_data_structures(
-  typename MatrixFree<dim, Number>::AdditionalData & additional_data,
-  std::vector<Quadrature<1>> &                       quadrature_vec,
-  std::vector<AffineConstraints<double> const *> &   constraint_vec,
-  std::vector<DoFHandler<dim> const *> &             dof_handler_vec)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
 {
   MappingFlags mapping_flags;
 
   // get current state
-  mapping_flags.cells          = additional_data.mapping_update_flags;
-  mapping_flags.inner_faces    = additional_data.mapping_update_flags_inner_faces;
-  mapping_flags.boundary_faces = additional_data.mapping_update_flags_boundary_faces;
+  mapping_flags.cells          = matrix_free_wrapper->data.mapping_update_flags;
+  mapping_flags.inner_faces    = matrix_free_wrapper->data.mapping_update_flags_inner_faces;
+  mapping_flags.boundary_faces = matrix_free_wrapper->data.mapping_update_flags_boundary_faces;
 
   // append
   if(param.problem_type == ProblemType::Unsteady)
@@ -89,57 +86,59 @@ DGOperator<dim, Number>::append_data_structures(
   }
 
   // write back into additional_data
-  additional_data.mapping_update_flags                = mapping_flags.cells;
-  additional_data.mapping_update_flags_inner_faces    = mapping_flags.inner_faces;
-  additional_data.mapping_update_flags_boundary_faces = mapping_flags.boundary_faces;
+  matrix_free_wrapper->data.mapping_update_flags                = mapping_flags.cells;
+  matrix_free_wrapper->data.mapping_update_flags_inner_faces    = mapping_flags.inner_faces;
+  matrix_free_wrapper->data.mapping_update_flags_boundary_faces = mapping_flags.boundary_faces;
 
   // we need two dof-handlers in case the velocity field is stored in a DoF vector
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
-    dof_handler_vec.resize(2);
-    dof_handler_vec[0] = &dof_handler;
-    dof_handler_vec[1] = &(*dof_handler_velocity);
+    matrix_free_wrapper->dof_handler_vec.resize(2);
+    matrix_free_wrapper->dof_handler_vec[0] = &dof_handler;
+    matrix_free_wrapper->dof_handler_vec[1] = &(*dof_handler_velocity);
 
-    constraint_vec.resize(2);
-    constraint_vec[0] = &constraint_matrix;
-    constraint_vec[1] = &constraint_matrix;
+    matrix_free_wrapper->constraint_vec.resize(2);
+    matrix_free_wrapper->constraint_vec[0] = &constraint_matrix;
+    matrix_free_wrapper->constraint_vec[1] = &constraint_matrix;
 
     if(param.use_overintegration)
     {
-      quadrature_vec.resize(2);
-      quadrature_vec[0] = QGauss<1>(param.degree + 1);
-      quadrature_vec[1] = QGauss<1>(param.degree + (param.degree + 2) / 2);
+      matrix_free_wrapper->quadrature_vec.resize(2);
+      matrix_free_wrapper->quadrature_vec[0] = QGauss<1>(param.degree + 1);
+      matrix_free_wrapper->quadrature_vec[1] = QGauss<1>(param.degree + (param.degree + 2) / 2);
     }
     else
     {
-      quadrature_vec.resize(1);
-      quadrature_vec[0] = QGauss<1>(param.degree + 1);
+      matrix_free_wrapper->quadrature_vec.resize(1);
+      matrix_free_wrapper->quadrature_vec[0] = QGauss<1>(param.degree + 1);
     }
   }
   else
   {
     AssertThrow(param.analytical_velocity_field == true, ExcMessage("Invalid parameter."));
 
-    dof_handler_vec.resize(1);
-    dof_handler_vec[0] = &dof_handler;
+    matrix_free_wrapper->dof_handler_vec.resize(1);
+    matrix_free_wrapper->dof_handler_vec[0] = &dof_handler;
 
-    constraint_vec.resize(1);
-    constraint_vec[0] = &constraint_matrix;
+    matrix_free_wrapper->constraint_vec.resize(1);
+    matrix_free_wrapper->constraint_vec[0] = &constraint_matrix;
 
     // quadrature formula used to perform integrals
     QGauss<1> quadrature(param.degree + 1);
-    quadrature_vec.resize(1);
-    quadrature_vec[0] = quadrature;
+    matrix_free_wrapper->quadrature_vec.resize(1);
+    matrix_free_wrapper->quadrature_vec[0] = quadrature;
   }
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup(std::shared_ptr<MatrixFree<dim, Number>> matrix_free_in)
+DGOperator<dim, Number>::setup(
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
 {
   pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
 
-  matrix_free = matrix_free_in;
+  matrix_free_wrapper = matrix_free_wrapper_in;
+  matrix_free         = matrix_free_wrapper->get_matrix_free();
 
   setup_postprocessor();
 

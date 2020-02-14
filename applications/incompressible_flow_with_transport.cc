@@ -19,7 +19,7 @@
 #include "convection_diffusion/postprocessor/postprocessor_base.h"
 
 // spatial discretization
-#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
+#include "convection_diffusion/spatial_discretization/dg_operator.h"
 
 // time integration
 #include "convection_diffusion/time_integration/time_int_bdf.h"
@@ -33,27 +33,27 @@
 // NAVIER-STOKES
 
 // postprocessor
-#include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 // spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
+#include "incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
+#include "incompressible_navier_stokes/spatial_discretization/interface.h"
 
 // temporal discretization
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
+#include "incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
+#include "incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
+#include "incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
+#include "incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Parameters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
-#include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
-#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
+#include "incompressible_navier_stokes/user_interface/boundary_descriptor.h"
+#include "incompressible_navier_stokes/user_interface/field_functions.h"
+#include "incompressible_navier_stokes/user_interface/input_parameters.h"
 
 // general functionalities
-#include "../include/functionalities/matrix_free_wrapper.h"
+#include "functionalities/matrix_free_wrapper.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
 
@@ -193,14 +193,7 @@ private:
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
   std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
 
-  /*
-   * Matrix-free
-   */
-  std::vector<std::shared_ptr<MatrixFree<dim, Number>>>         scalar_matrix_free;
-  std::vector<typename MatrixFree<dim, Number>::AdditionalData> scalar_additional_data;
-  std::vector<std::vector<Quadrature<1>>>                       scalar_quadrature_vec;
-  std::vector<std::vector<AffineConstraints<double> const *>>   scalar_constraint_vec;
-  std::vector<std::vector<DoFHandler<dim> const *>>             scalar_dof_handler_vec;
+  std::vector<std::shared_ptr<MatrixFreeWrapper<dim, Number>>> scalar_matrix_free_wrapper;
 
   std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
 
@@ -234,11 +227,7 @@ Problem<dim, Number>::Problem(MPI_Comm const & comm, unsigned int const n_scalar
   scalar_field_functions.resize(n_scalars);
   scalar_boundary_descriptor.resize(n_scalars);
 
-  scalar_matrix_free.resize(n_scalars);
-  scalar_additional_data.resize(n_scalars);
-  scalar_quadrature_vec.resize(n_scalars);
-  scalar_constraint_vec.resize(n_scalars);
-  scalar_dof_handler_vec.resize(n_scalars);
+  scalar_matrix_free_wrapper.resize(n_scalars);
 
   conv_diff_operator.resize(n_scalars);
   scalar_postprocessor.resize(n_scalars);
@@ -518,31 +507,26 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                                                       mpi_comm));
 
     // initialize matrix_free
-    scalar_additional_data[i].tasks_parallel_scheme =
+    scalar_matrix_free_wrapper[i].reset(new MatrixFreeWrapper<dim, Number>(scalar_mesh[i]));
+
+    scalar_matrix_free_wrapper[i]->data.tasks_parallel_scheme =
       MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
     AssertThrow(conv_diff_operator[i].get() != 0, ExcMessage("Not initialized."));
-    conv_diff_operator[i]->append_data_structures(scalar_additional_data[i],
-                                                  scalar_quadrature_vec[i],
-                                                  scalar_constraint_vec[i],
-                                                  scalar_dof_handler_vec[i]);
+    conv_diff_operator[i]->append_data_structures(scalar_matrix_free_wrapper[i]);
 
     // cell-based face loops
     if(scalar_param[i].use_cell_based_face_loops)
     {
       auto tria =
         std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-      Categorization::do_cell_based_loops(*tria, scalar_additional_data[i]);
+      Categorization::do_cell_based_loops(*tria, scalar_matrix_free_wrapper[i]->data);
     }
 
-    scalar_matrix_free[i].reset(new MatrixFree<dim, Number>());
-    scalar_matrix_free[i]->reinit(scalar_mesh[i]->get_mapping(),
-                                  scalar_dof_handler_vec[i],
-                                  scalar_constraint_vec[i],
-                                  scalar_quadrature_vec[i],
-                                  scalar_additional_data[i]);
+    scalar_matrix_free_wrapper[i]->reinit();
 
-    conv_diff_operator[i]->setup(scalar_matrix_free[i]);
+    // setup convection-diffusion operator
+    conv_diff_operator[i]->setup(scalar_matrix_free_wrapper[i]);
 
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
