@@ -531,43 +531,22 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  AssertThrow(navier_stokes_operator_1.get() != 0, ExcMessage("Not initialized."));
+  AssertThrow(navier_stokes_operator_2.get() != 0, ExcMessage("Not initialized."));
+
   // initialize matrix_free 1
   matrix_free_wrapper_1.reset(new MatrixFreeWrapper<dim, Number>(mesh_1));
 
-  matrix_free_wrapper_1->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-
-  AssertThrow(navier_stokes_operator_1.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operator_1->append_data_structures(matrix_free_wrapper_1);
 
-  // cell-based face loops
-  if(param_1.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation_1);
-    Categorization::do_cell_based_loops(*tria, matrix_free_wrapper_1->data);
-  }
-
-  matrix_free_wrapper_1->reinit();
+  matrix_free_wrapper_1->reinit(param_1.use_cell_based_face_loops, triangulation_1);
 
   // initialize matrix_free 2
   matrix_free_wrapper_2.reset(new MatrixFreeWrapper<dim, Number>(mesh_2));
 
-  matrix_free_wrapper_2->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-
-  AssertThrow(navier_stokes_operator_2.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operator_2->append_data_structures(matrix_free_wrapper_2);
 
-  // cell-based face loops
-  if(param_2.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation_2);
-    Categorization::do_cell_based_loops(*tria, matrix_free_wrapper_2->data);
-  }
-
-  matrix_free_wrapper_2->reinit();
+  matrix_free_wrapper_2->reinit(param_2.use_cell_based_face_loops, triangulation_2);
 
 
   // setup Navier-Stokes operator

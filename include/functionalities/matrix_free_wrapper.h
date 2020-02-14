@@ -10,6 +10,7 @@
 
 #include <deal.II/matrix_free/matrix_free.h>
 
+#include "categorization.h"
 #include "mesh.h"
 
 using namespace dealii;
@@ -35,8 +36,19 @@ struct MatrixFreeWrapper
    * This function performs a "complete" reinit() of MatrixFree<dim, Number>.
    */
   void
-  reinit()
+  reinit(bool const                                        use_cell_based_face_loops,
+         std::shared_ptr<parallel::TriangulationBase<dim>> triangulation)
   {
+    // cell-based face loops
+    if(use_cell_based_face_loops)
+    {
+      auto tria =
+        std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
+      Categorization::do_cell_based_loops(*tria, data);
+    }
+
+    data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::partition_partition;
+
     matrix_free->reinit(mesh->get_mapping(), dof_handler_vec, constraint_vec, quadrature_vec, data);
   }
 
@@ -53,6 +65,15 @@ struct MatrixFreeWrapper
   void
   update_geometry()
   {
+    // use a separate additional_data object since we only want to update what is really necessary,
+    // so that the update is computationally efficient
+    typename MatrixFree<dim, Number>::AdditionalData data_update_geometry;
+
+    data_update_geometry = this->data;
+    // connectivity of elements stays the same
+    data_update_geometry.initialize_indices = false;
+    data_update_geometry.initialize_mapping = true;
+
     matrix_free->reinit(
       mesh->get_mapping(), dof_handler_vec, constraint_vec, quadrature_vec, data_update_geometry);
   }
@@ -67,9 +88,6 @@ struct MatrixFreeWrapper
 
   // additional data
   typename MatrixFree<dim, Number>::AdditionalData data;
-  // another data object since we only want to update what is really necessary, so that
-  // the update is computationally efficient
-  typename MatrixFree<dim, Number>::AdditionalData data_update_geometry;
 
   // DoFHandler, Constraint, Quadrature vectors
   std::vector<DoFHandler<dim> const *>           dof_handler_vec;

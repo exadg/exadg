@@ -366,24 +366,14 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
+
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
 
-  matrix_free_wrapper->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-
-  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operator->append_data_structures(matrix_free_wrapper);
 
-  // cell-based face loops
-  if(param.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, matrix_free_wrapper->data);
-  }
-
-  matrix_free_wrapper->reinit();
+  matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
 
   // setup Navier-Stokes operator
   navier_stokes_operator->setup(matrix_free_wrapper);

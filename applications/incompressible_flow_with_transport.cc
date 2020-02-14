@@ -432,24 +432,14 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
+  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
+
   // initialize matrix_free
   fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh));
 
-  fluid_matrix_free_wrapper->data.tasks_parallel_scheme =
-    MatrixFree<dim, Number>::AdditionalData::partition_partition;
-
-  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
   navier_stokes_operator->append_data_structures(fluid_matrix_free_wrapper);
 
-  // cell-based face loops
-  if(fluid_param.use_cell_based_face_loops)
-  {
-    auto tria =
-      std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-    Categorization::do_cell_based_loops(*tria, fluid_matrix_free_wrapper->data);
-  }
-
-  fluid_matrix_free_wrapper->reinit();
+  fluid_matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, triangulation);
 
   // setup Navier-Stokes operator
   navier_stokes_operator->setup(fluid_matrix_free_wrapper);
@@ -506,24 +496,14 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                                                       scalar_postprocessor[i],
                                                                       mpi_comm));
 
+    AssertThrow(conv_diff_operator[i].get() != 0, ExcMessage("Not initialized."));
+
     // initialize matrix_free
     scalar_matrix_free_wrapper[i].reset(new MatrixFreeWrapper<dim, Number>(scalar_mesh[i]));
 
-    scalar_matrix_free_wrapper[i]->data.tasks_parallel_scheme =
-      MatrixFree<dim, Number>::AdditionalData::partition_partition;
-
-    AssertThrow(conv_diff_operator[i].get() != 0, ExcMessage("Not initialized."));
     conv_diff_operator[i]->append_data_structures(scalar_matrix_free_wrapper[i]);
 
-    // cell-based face loops
-    if(scalar_param[i].use_cell_based_face_loops)
-    {
-      auto tria =
-        std::dynamic_pointer_cast<parallel::distributed::Triangulation<dim> const>(triangulation);
-      Categorization::do_cell_based_loops(*tria, scalar_matrix_free_wrapper[i]->data);
-    }
-
-    scalar_matrix_free_wrapper[i]->reinit();
+    scalar_matrix_free_wrapper[i]->reinit(scalar_param[i].use_cell_based_face_loops, triangulation);
 
     // setup convection-diffusion operator
     conv_diff_operator[i]->setup(scalar_matrix_free_wrapper[i]);
