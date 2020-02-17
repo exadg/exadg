@@ -27,6 +27,9 @@ class OperatorBase;
 template<typename Number>
 class OperatorOIF;
 
+template<typename Number>
+class PostProcessor;
+
 } // namespace Interface
 
 
@@ -39,9 +42,10 @@ public:
 
   typedef Interface::OperatorBase<Number> InterfaceBase;
 
-  TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
-             InputParameters const &,
-             MPI_Comm const & mpi_comm_in);
+  TimeIntBDF(std::shared_ptr<InterfaceBase>                    operator_in,
+             InputParameters const &                           param_in,
+             MPI_Comm const &                                  mpi_comm_in,
+             std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in);
 
   virtual ~TimeIntBDF()
   {
@@ -175,6 +179,8 @@ private:
   VectorType              grid_velocity;
   std::vector<VectorType> vec_grid_coordinates;
   VectorType              grid_coordinates_np;
+
+  std::shared_ptr<Interface::PostProcessor<Number>> postprocessor;
 };
 
 } // namespace IncNS

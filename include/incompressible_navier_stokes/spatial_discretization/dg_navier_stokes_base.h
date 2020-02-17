@@ -62,9 +62,6 @@
 // time integration
 #include "time_integration/time_step_calculation.h"
 
-// postprocessor
-#include "../postprocessor/postprocessor_base.h"
-
 using namespace dealii;
 
 namespace IncNS
@@ -74,8 +71,6 @@ class DGNavierStokesBase : public dealii::Subscriptor, public Interface::Operato
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  typedef PostProcessorBase<dim, Number> Postprocessor;
 
   typedef DGNavierStokesBase<dim, Number> This;
 
@@ -149,7 +144,6 @@ public:
     std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
     std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
     InputParameters const &                         parameters_in,
-    std::shared_ptr<Postprocessor>                  postprocessor_in,
     MPI_Comm const &                                mpi_comm_in);
 
   /*
@@ -456,19 +450,6 @@ public:
   void
   move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
 
-  /*
-   * Postprocessing.
-   */
-  void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const override;
-
-  void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const override;
-
 protected:
   /*
    * Projection step.
@@ -611,11 +592,6 @@ protected:
   VelocityMagnitudeCalculator<dim, Number> velocity_magnitude_calculator;
   QCriterionCalculator<dim, Number>        q_criterion_calculator;
 
-  /*
-   * Postprocessor.
-   */
-  std::shared_ptr<Postprocessor> postprocessor;
-
   MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
@@ -645,9 +621,6 @@ private:
 
   void
   initialization_pure_dirichlet_bc();
-
-  void
-  initialize_postprocessor();
 
   void
   cell_loop_empty(MatrixFree<dim, Number> const &,

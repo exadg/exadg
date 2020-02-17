@@ -88,7 +88,6 @@ private:
   typedef DGNavierStokesPressureCorrection<dim, Number> This;
 
   typedef typename Base::VectorType      VectorType;
-  typedef typename Base::Postprocessor   Postprocessor;
   typedef typename Base::MultigridNumber MultigridNumber;
 
   typedef typename Base::scalar scalar;
@@ -113,7 +112,6 @@ public:
     std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
     std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
     InputParameters const &                         parameters_in,
-    std::shared_ptr<Postprocessor>                  postprocessor_in,
     MPI_Comm const &                                mpi_comm_in);
 
   /*

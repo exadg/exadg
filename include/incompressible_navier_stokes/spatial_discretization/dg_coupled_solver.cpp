@@ -19,7 +19,6 @@ DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
-  std::shared_ptr<Postprocessor>                  postprocessor_in,
   MPI_Comm const &                                mpi_comm_in)
   : Base(triangulation_in,
          mesh_in,
@@ -28,7 +27,6 @@ DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
          boundary_descriptor_pressure_in,
          field_functions_in,
          parameters_in,
-         postprocessor_in,
          mpi_comm_in),
     scaling_factor_continuity(1.0)
 {

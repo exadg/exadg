@@ -327,7 +327,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                        boundary_descriptor_pressure,
                                                        field_functions,
                                                        param,
-                                                       postprocessor,
                                                        mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
@@ -341,7 +340,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                                     boundary_descriptor_pressure,
                                                                     field_functions,
                                                                     param,
-                                                                    postprocessor,
                                                                     mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
@@ -356,7 +354,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                boundary_descriptor_pressure,
                                field_functions,
                                param,
-                               postprocessor,
                                mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;

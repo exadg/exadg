@@ -26,6 +26,9 @@ class OperatorBase;
 template<typename Number>
 class OperatorCoupled;
 
+template<typename Number>
+class PostProcessor;
+
 } // namespace Interface
 
 template<typename Number>
@@ -38,10 +41,11 @@ public:
   typedef Interface::OperatorBase<Number>    OperatorBase;
   typedef Interface::OperatorCoupled<Number> OperatorPDE;
 
-  DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
-                       std::shared_ptr<OperatorPDE>  operator_in,
-                       InputParameters const &       param_in,
-                       MPI_Comm const &              mpi_comm_in);
+  DriverSteadyProblems(std::shared_ptr<OperatorBase>                     operator_base_in,
+                       std::shared_ptr<OperatorPDE>                      operator_in,
+                       InputParameters const &                           param_in,
+                       MPI_Comm const &                                  mpi_comm_in,
+                       std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in);
 
   void
   setup();
@@ -65,9 +69,6 @@ private:
   void
   solve();
 
-  void
-  postprocessing();
-
   std::shared_ptr<OperatorBase> operator_base;
   std::shared_ptr<OperatorPDE>  pde_operator;
 
@@ -81,6 +82,8 @@ private:
 
   BlockVectorType solution;
   BlockVectorType rhs_vector;
+
+  std::shared_ptr<Interface::PostProcessor<Number>> postprocessor;
 };
 
 } // namespace IncNS

@@ -372,13 +372,15 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                                        fluid_boundary_descriptor_pressure,
                                                        fluid_field_functions,
                                                        fluid_param,
-                                                       fluid_postprocessor,
                                                        mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
 
-    fluid_time_integrator.reset(new TimeIntCoupled(
-      navier_stokes_operator_coupled, navier_stokes_operator_coupled, fluid_param, mpi_comm));
+    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
+                                                   navier_stokes_operator_coupled,
+                                                   fluid_param,
+                                                   mpi_comm,
+                                                   fluid_postprocessor));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -393,7 +395,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                           fluid_boundary_descriptor_pressure,
                           fluid_field_functions,
                           fluid_param,
-                          fluid_postprocessor,
                           mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
@@ -401,7 +402,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
                                                          navier_stokes_operator_dual_splitting,
                                                          fluid_param,
-                                                         mpi_comm));
+                                                         mpi_comm,
+                                                         fluid_postprocessor));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -416,7 +418,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                fluid_boundary_descriptor_pressure,
                                fluid_field_functions,
                                fluid_param,
-                               fluid_postprocessor,
                                mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;
@@ -425,7 +426,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
       new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
                                     navier_stokes_operator_pressure_correction,
                                     fluid_param,
-                                    mpi_comm));
+                                    mpi_comm,
+                                    fluid_postprocessor));
   }
   else
   {
@@ -452,6 +454,9 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   navier_stokes_operator->setup_solvers(
     fluid_time_integrator->get_scaling_factor_time_derivative_term(),
     fluid_time_integrator->get_velocity());
+
+  // setup postprocessor
+  fluid_postprocessor->setup(*navier_stokes_operator);
 
   // SCALAR TRANSPORT
   for(unsigned int i = 0; i < n_scalars; ++i)

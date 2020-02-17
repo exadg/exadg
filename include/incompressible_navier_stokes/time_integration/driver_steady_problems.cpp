@@ -10,6 +10,7 @@
 
 #include "driver_steady_problems.h"
 
+#include "../postprocessor/postprocessor_interface.h"
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "functionalities/set_zero_mean_value.h"
@@ -17,16 +18,19 @@
 namespace IncNS
 {
 template<typename Number>
-DriverSteadyProblems<Number>::DriverSteadyProblems(std::shared_ptr<OperatorBase> operator_base_in,
-                                                   std::shared_ptr<OperatorPDE>  operator_in,
-                                                   InputParameters const &       param_in,
-                                                   MPI_Comm const &              mpi_comm_in)
+DriverSteadyProblems<Number>::DriverSteadyProblems(
+  std::shared_ptr<OperatorBase>                     operator_base_in,
+  std::shared_ptr<OperatorPDE>                      operator_in,
+  InputParameters const &                           param_in,
+  MPI_Comm const &                                  mpi_comm_in,
+  std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in)
   : operator_base(operator_base_in),
     pde_operator(operator_in),
     param(param_in),
     mpi_comm(mpi_comm_in),
     computing_times(1),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
+    postprocessor(postprocessor_in)
 {
 }
 
@@ -196,21 +200,12 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::solve_steady_problem()
 {
-  postprocessing();
+  postprocessor->do_postprocessing(solution.block(0), solution.block(1));
 
   solve();
 
-  postprocessing();
+  postprocessor->do_postprocessing(solution.block(0), solution.block(1));
 }
-
-template<typename Number>
-void
-DriverSteadyProblems<Number>::postprocessing()
-{
-  this->operator_base->do_postprocessing_steady_problem(solution.block(0), solution.block(1));
-}
-
-// instantiations
 
 template class DriverSteadyProblems<float>;
 template class DriverSteadyProblems<double>;

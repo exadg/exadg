@@ -300,13 +300,15 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                          boundary_descriptor_pressure,
                                                          field_functions,
                                                          param,
-                                                         postprocessor,
                                                          mpi_comm));
 
       navier_stokes_operator = navier_stokes_operator_coupled;
 
-      time_integrator.reset(new TimeIntCoupled(
-        navier_stokes_operator_coupled, navier_stokes_operator_coupled, param, mpi_comm));
+      time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
+                                               navier_stokes_operator_coupled,
+                                               param,
+                                               mpi_comm,
+                                               postprocessor));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -319,7 +321,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                                       boundary_descriptor_pressure,
                                                                       field_functions,
                                                                       param,
-                                                                      postprocessor,
                                                                       mpi_comm));
 
       navier_stokes_operator = navier_stokes_operator_dual_splitting;
@@ -327,7 +328,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
                                                      navier_stokes_operator_dual_splitting,
                                                      param,
-                                                     mpi_comm));
+                                                     mpi_comm,
+                                                     postprocessor));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
@@ -341,7 +343,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                  boundary_descriptor_pressure,
                                  field_functions,
                                  param,
-                                 postprocessor,
                                  mpi_comm));
 
       navier_stokes_operator = navier_stokes_operator_pressure_correction;
@@ -350,7 +351,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
         new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
                                       navier_stokes_operator_pressure_correction,
                                       param,
-                                      mpi_comm));
+                                      mpi_comm,
+                                      postprocessor));
     }
     else
     {
@@ -369,14 +371,16 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                        boundary_descriptor_pressure,
                                                        field_functions,
                                                        param,
-                                                       postprocessor,
                                                        mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
 
     // initialize driver for steady state problem that depends on navier_stokes_operator
-    driver_steady.reset(new DriverSteady(
-      navier_stokes_operator_coupled, navier_stokes_operator_coupled, param, mpi_comm));
+    driver_steady.reset(new DriverSteady(navier_stokes_operator_coupled,
+                                         navier_stokes_operator_coupled,
+                                         param,
+                                         mpi_comm,
+                                         postprocessor));
   }
   else
   {
@@ -415,6 +419,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
+
+  // setup postprocessor
+  postprocessor->setup(*navier_stokes_operator);
 
   setup_time = timer.wall_time();
 }

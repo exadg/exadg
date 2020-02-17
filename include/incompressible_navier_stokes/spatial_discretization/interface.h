@@ -146,16 +146,6 @@ public:
 
   virtual void
   set_grid_velocity(VectorType velocity) = 0;
-
-  virtual void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const = 0;
-
-  virtual void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const = 0;
 };
 
 /*

@@ -22,7 +22,6 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
   std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
   InputParameters const &                         parameters_in,
-  std::shared_ptr<Postprocessor>                  postprocessor_in,
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
     mesh(mesh_in),
@@ -39,7 +38,6 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     dof_handler_u(triangulation_in),
     dof_handler_p(triangulation_in),
     dof_handler_u_scalar(triangulation_in),
-    postprocessor(postprocessor_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0)
 {
@@ -164,8 +162,6 @@ DGNavierStokesBase<dim, Number>::setup(
   initialize_operators();
 
   initialize_calculators_for_derived_quantities();
-
-  initialize_postprocessor();
 
   // turbulence model depends on MatrixFree and ViscousOperator
   if(param.use_turbulence_model == true)
@@ -561,13 +557,6 @@ DGNavierStokesBase<dim, Number>::initialization_pure_dirichlet_bc()
   {
     first_point[d] = Utilities::MPI::sum(first_point[d], mpi_comm);
   }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::initialize_postprocessor()
-{
-  postprocessor->setup(*this);
 }
 
 template<int dim, typename Number>
@@ -1619,46 +1608,6 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
       integrator.set_dof_values(dst);
     }
   }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::do_postprocessing(VectorType const & velocity,
-                                                   VectorType const & pressure,
-                                                   double const       time,
-                                                   unsigned int const time_step_number) const
-{
-  bool const standard = true;
-  if(standard)
-  {
-    this->postprocessor->do_postprocessing(velocity, pressure, time, time_step_number);
-  }
-  else // consider velocity and pressure errors instead
-  {
-    VectorType velocity_error;
-    this->initialize_vector_velocity(velocity_error);
-
-    VectorType pressure_error;
-    this->initialize_vector_pressure(pressure_error);
-
-    this->prescribe_initial_conditions(velocity_error, pressure_error, time);
-
-    velocity_error.add(-1.0, velocity);
-    pressure_error.add(-1.0, pressure);
-
-    this->postprocessor->do_postprocessing(velocity_error, // error!
-                                           pressure_error, // error!
-                                           time,
-                                           time_step_number);
-  }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::do_postprocessing_steady_problem(VectorType const & velocity,
-                                                                  VectorType const & pressure) const
-{
-  this->postprocessor->do_postprocessing(velocity, pressure);
 }
 
 template class DGNavierStokesBase<2, float>;

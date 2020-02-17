@@ -16,11 +16,13 @@
 namespace IncNS
 {
 template<typename Number>
-TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
-                                             std::shared_ptr<InterfacePDE>  pde_operator_in,
-                                             InputParameters const &        param_in,
-                                             MPI_Comm const &               mpi_comm_in)
-  : TimeIntBDF<Number>(operator_base_in, param_in, mpi_comm_in),
+TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(
+  std::shared_ptr<InterfaceBase>                    operator_base_in,
+  std::shared_ptr<InterfacePDE>                     pde_operator_in,
+  InputParameters const &                           param_in,
+  MPI_Comm const &                                  mpi_comm_in,
+  std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in)
+  : TimeIntBDF<Number>(operator_base_in, param_in, mpi_comm_in, postprocessor_in),
     pde_operator(pde_operator_in),
     solution(this->order),
     computing_times(3),

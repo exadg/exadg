@@ -40,10 +40,11 @@ public:
   typedef Interface::OperatorBase<Number>    InterfaceBase;
   typedef Interface::OperatorCoupled<Number> InterfacePDE;
 
-  TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
-                    std::shared_ptr<InterfacePDE>  pde_operator_in,
-                    InputParameters const &        param_in,
-                    MPI_Comm const &               mpi_comm_in);
+  TimeIntBDFCoupled(std::shared_ptr<InterfaceBase>                    operator_base_in,
+                    std::shared_ptr<InterfacePDE>                     pde_operator_in,
+                    InputParameters const &                           param_in,
+                    MPI_Comm const &                                  mpi_comm_in,
+                    std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in);
 
   void
   postprocessing_stability_analysis();

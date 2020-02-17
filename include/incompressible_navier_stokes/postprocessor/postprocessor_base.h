@@ -11,6 +11,8 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
+#include "postprocessor_interface.h"
+
 using namespace dealii;
 
 namespace IncNS
@@ -19,21 +21,15 @@ template<int dim, typename Number>
 class DGNavierStokesBase;
 
 /*
- *  Interface class for postprocessor of the
- *  incompressible Navier-Stokes equation.
- *
+ *  Base class for postprocessor of the incompressible Navier-Stokes equation.
  */
 template<int dim, typename Number>
-class PostProcessorBase
+class PostProcessorBase : public Interface::PostProcessor<Number>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef DGNavierStokesBase<dim, Number> Operator;
-
-  PostProcessorBase()
-  {
-  }
 
   virtual ~PostProcessorBase()
   {

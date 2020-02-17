@@ -7,6 +7,7 @@
 
 #include "time_int_bdf_navier_stokes.h"
 
+#include "../postprocessor/postprocessor_interface.h"
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "time_integration/push_back_vectors.h"
@@ -15,9 +16,10 @@
 namespace IncNS
 {
 template<typename Number>
-TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
-                               InputParameters const &        param_in,
-                               MPI_Comm const &               mpi_comm_in)
+TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase>                    operator_in,
+                               InputParameters const &                           param_in,
+                               MPI_Comm const &                                  mpi_comm_in,
+                               std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -32,7 +34,8 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
     operator_base(operator_in),
     vec_convective_term(this->order),
     computation_time_ale_update(0.0),
-    vec_grid_coordinates(param_in.order_time_integrator)
+    vec_grid_coordinates(param_in.order_time_integrator),
+    postprocessor(postprocessor_in)
 {
 }
 
@@ -602,17 +605,41 @@ TimeIntBDF<Number>::postprocessing() const
     this->operator_base->update_after_mesh_movement();
   }
 
-  this->operator_base->do_postprocessing(get_velocity(0),
-                                         get_pressure(0),
-                                         this->get_time(),
-                                         this->get_time_step_number());
+  bool const standard = true;
+  if(standard)
+  {
+    postprocessor->do_postprocessing(get_velocity(0),
+                                     get_pressure(0),
+                                     this->get_time(),
+                                     this->get_time_step_number());
+  }
+  else // consider velocity and pressure errors instead
+  {
+    VectorType velocity_error;
+    this->operator_base->initialize_vector_velocity(velocity_error);
+
+    VectorType pressure_error;
+    this->operator_base->initialize_vector_pressure(pressure_error);
+
+    this->operator_base->prescribe_initial_conditions(velocity_error,
+                                                      pressure_error,
+                                                      this->get_time());
+
+    velocity_error.add(-1.0, get_velocity(0));
+    pressure_error.add(-1.0, get_pressure(0));
+
+    postprocessor->do_postprocessing(velocity_error, // error!
+                                     pressure_error, // error!
+                                     this->get_time(),
+                                     this->get_time_step_number());
+  }
 }
 
 template<typename Number>
 void
 TimeIntBDF<Number>::postprocessing_steady_problem() const
 {
-  this->operator_base->do_postprocessing_steady_problem(get_velocity(0), get_pressure(0));
+  postprocessor->do_postprocessing(get_velocity(0), get_pressure(0));
 }
 
 // instantiations
