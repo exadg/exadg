@@ -176,10 +176,10 @@ private:
 
   std::shared_ptr<Postprocessor> fluid_postprocessor;
 
-  typedef IncNS::TimeIntBDF<Number>                   TimeInt;
-  typedef IncNS::TimeIntBDFCoupled<Number>            TimeIntCoupled;
-  typedef IncNS::TimeIntBDFDualSplitting<Number>      TimeIntDualSplitting;
-  typedef IncNS::TimeIntBDFPressureCorrection<Number> TimeIntPressureCorrection;
+  typedef IncNS::TimeIntBDF<dim, Number>                   TimeInt;
+  typedef IncNS::TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
+  typedef IncNS::TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
+  typedef IncNS::TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> fluid_time_integrator;
 
@@ -354,6 +354,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     fluid_mesh.reset(new Mesh<dim>(mapping_degree));
   }
 
+  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh));
+
   // initialize postprocessor
   fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param, mpi_comm);
 
@@ -376,11 +378,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     navier_stokes_operator = navier_stokes_operator_coupled;
 
-    fluid_time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
-                                                   navier_stokes_operator_coupled,
-                                                   fluid_param,
-                                                   mpi_comm,
-                                                   fluid_postprocessor));
+    fluid_time_integrator.reset(new TimeIntCoupled(
+      navier_stokes_operator_coupled, fluid_param, mpi_comm, fluid_postprocessor));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
@@ -399,11 +398,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
 
-    fluid_time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
-                                                         navier_stokes_operator_dual_splitting,
-                                                         fluid_param,
-                                                         mpi_comm,
-                                                         fluid_postprocessor));
+    fluid_time_integrator.reset(new TimeIntDualSplitting(
+      navier_stokes_operator_dual_splitting, fluid_param, mpi_comm, fluid_postprocessor));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
@@ -422,12 +418,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;
 
-    fluid_time_integrator.reset(
-      new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
-                                    navier_stokes_operator_pressure_correction,
-                                    fluid_param,
-                                    mpi_comm,
-                                    fluid_postprocessor));
+    fluid_time_integrator.reset(new TimeIntPressureCorrection(
+      navier_stokes_operator_pressure_correction, fluid_param, mpi_comm, fluid_postprocessor));
   }
   else
   {
@@ -437,8 +429,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
 
   // initialize matrix_free
-  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh));
-
   navier_stokes_operator->append_data_structures(fluid_matrix_free_wrapper);
 
   fluid_matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, triangulation);

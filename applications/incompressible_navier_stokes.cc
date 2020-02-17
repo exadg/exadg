@@ -128,7 +128,8 @@ private:
     periodic_faces;
 
   // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>> mesh;
+  std::shared_ptr<Mesh<dim>>               mesh;
+  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
 
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
@@ -166,15 +167,15 @@ private:
    */
 
   // unsteady solvers
-  typedef TimeIntBDF<Number>                   TimeInt;
-  typedef TimeIntBDFCoupled<Number>            TimeIntCoupled;
-  typedef TimeIntBDFDualSplitting<Number>      TimeIntDualSplitting;
-  typedef TimeIntBDFPressureCorrection<Number> TimeIntPressureCorrection;
+  typedef TimeIntBDF<dim, Number>                   TimeInt;
+  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
+  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
+  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
 
   std::shared_ptr<TimeInt> time_integrator;
 
   // steady solver
-  typedef DriverSteadyProblems<Number> DriverSteady;
+  typedef DriverSteadyProblems<dim, Number> DriverSteady;
 
   std::shared_ptr<DriverSteady> driver_steady;
 
@@ -271,17 +272,21 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   if(param.ale_formulation) // moving mesh
   {
-    mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
-                                           *triangulation,
-                                           param.degree_u,
-                                           field_functions->mesh_movement,
-                                           param.start_time,
-                                           mpi_comm));
+    moving_mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
+                                                  *triangulation,
+                                                  param.degree_u,
+                                                  field_functions->mesh_movement,
+                                                  param.start_time,
+                                                  mpi_comm));
+
+    mesh = moving_mesh;
   }
   else // static mesh
   {
     mesh.reset(new Mesh<dim>(mapping_degree));
   }
+
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
 
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
@@ -305,10 +310,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       navier_stokes_operator = navier_stokes_operator_coupled;
 
       time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
-                                               navier_stokes_operator_coupled,
                                                param,
                                                mpi_comm,
-                                               postprocessor));
+                                               postprocessor,
+                                               moving_mesh,
+                                               matrix_free_wrapper));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
     {
@@ -326,10 +332,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       navier_stokes_operator = navier_stokes_operator_dual_splitting;
 
       time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
-                                                     navier_stokes_operator_dual_splitting,
                                                      param,
                                                      mpi_comm,
-                                                     postprocessor));
+                                                     postprocessor,
+                                                     moving_mesh,
+                                                     matrix_free_wrapper));
     }
     else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
     {
@@ -349,10 +356,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
       time_integrator.reset(
         new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
-                                      navier_stokes_operator_pressure_correction,
                                       param,
                                       mpi_comm,
-                                      postprocessor));
+                                      postprocessor,
+                                      moving_mesh,
+                                      matrix_free_wrapper));
     }
     else
     {
@@ -376,11 +384,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     navier_stokes_operator = navier_stokes_operator_coupled;
 
     // initialize driver for steady state problem that depends on navier_stokes_operator
-    driver_steady.reset(new DriverSteady(navier_stokes_operator_coupled,
-                                         navier_stokes_operator_coupled,
-                                         param,
-                                         mpi_comm,
-                                         postprocessor));
+    driver_steady.reset(
+      new DriverSteady(navier_stokes_operator_coupled, param, mpi_comm, postprocessor));
   }
   else
   {
@@ -390,8 +395,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
-
   navier_stokes_operator->append_data_structures(matrix_free_wrapper);
 
   matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);

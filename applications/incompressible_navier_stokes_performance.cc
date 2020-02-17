@@ -34,6 +34,7 @@
 // general functionalities
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/mesh_resolution_generator_hypercube.h"
+#include "../include/functionalities/moving_mesh.h"
 #include "../include/functionalities/print_general_infos.h"
 #include "../include/functionalities/print_throughput.h"
 
@@ -311,6 +312,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     mesh.reset(new Mesh<dim>(mapping_degree));
   }
 
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
+
   // initialize postprocessor
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
@@ -366,8 +369,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
-
   navier_stokes_operator->append_data_structures(matrix_free_wrapper);
 
   matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);

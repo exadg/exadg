@@ -79,8 +79,7 @@ private:
 };
 
 template<int dim, typename Number = double>
-class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, Number>,
-                                         public Interface::OperatorPressureCorrection<Number>
+class DGNavierStokesPressureCorrection : public DGNavierStokesProjectionMethods<dim, Number>
 {
 private:
   typedef DGNavierStokesBase<dim, Number>               Base;

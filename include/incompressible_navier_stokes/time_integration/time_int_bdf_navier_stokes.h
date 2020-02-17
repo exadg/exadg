@@ -10,6 +10,10 @@
 
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../../functionalities/matrix_free_wrapper.h"
+#include "../../functionalities/moving_mesh.h"
+#include "../postprocessor/postprocessor_base.h"
+#include "../spatial_discretization/dg_navier_stokes_base.h"
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
@@ -20,32 +24,21 @@ namespace IncNS
 // forward declarations
 class InputParameters;
 
-namespace Interface
-{
-template<typename Number>
-class OperatorBase;
-template<typename Number>
-class OperatorOIF;
-
-template<typename Number>
-class PostProcessor;
-
-} // namespace Interface
-
-
-template<typename Number>
+template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
 public:
   typedef typename TimeIntBDFBase<Number>::VectorType     VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef Interface::OperatorBase<Number> InterfaceBase;
+  typedef DGNavierStokesBase<dim, Number> OperatorBase;
 
-  TimeIntBDF(std::shared_ptr<InterfaceBase>                    operator_in,
-             InputParameters const &                           param_in,
-             MPI_Comm const &                                  mpi_comm_in,
-             std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in);
+  TimeIntBDF(std::shared_ptr<OperatorBase>                   operator_in,
+             InputParameters const &                         param_in,
+             MPI_Comm const &                                mpi_comm_in,
+             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+             std::shared_ptr<MovingMesh<dim, Number>>        moving_mesh_in         = nullptr,
+             std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
 
   virtual ~TimeIntBDF()
   {
@@ -93,6 +86,12 @@ protected:
                                           double const cfl,
                                           double const cfl_oif);
 
+  void
+  move_mesh(double const time) const;
+
+  void
+  move_mesh_and_update_dependent_data_structures(double const time) const;
+
   InputParameters const & param;
 
   // global cfl number
@@ -102,7 +101,7 @@ protected:
   double const cfl_oif;
 
   // spatial discretization operator
-  std::shared_ptr<InterfaceBase> operator_base;
+  std::shared_ptr<OperatorBase> operator_base;
 
   // convective term formulated explicitly
   std::vector<VectorType> vec_convective_term;
@@ -175,12 +174,16 @@ private:
   std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>>
     time_integrator_OIF;
 
+  // postprocessor
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+
   // ALE
   VectorType              grid_velocity;
   std::vector<VectorType> vec_grid_coordinates;
   VectorType              grid_coordinates_np;
 
-  std::shared_ptr<Interface::PostProcessor<Number>> postprocessor;
+  std::shared_ptr<MovingMesh<dim, Number>>        moving_mesh;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 };
 
 } // namespace IncNS

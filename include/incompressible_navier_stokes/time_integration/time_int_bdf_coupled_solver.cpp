@@ -15,15 +15,21 @@
 
 namespace IncNS
 {
-template<typename Number>
-TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(
-  std::shared_ptr<InterfaceBase>                    operator_base_in,
-  std::shared_ptr<InterfacePDE>                     pde_operator_in,
-  InputParameters const &                           param_in,
-  MPI_Comm const &                                  mpi_comm_in,
-  std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in)
-  : TimeIntBDF<Number>(operator_base_in, param_in, mpi_comm_in, postprocessor_in),
-    pde_operator(pde_operator_in),
+template<int dim, typename Number>
+TimeIntBDFCoupled<dim, Number>::TimeIntBDFCoupled(
+  std::shared_ptr<Operator>                       operator_in,
+  InputParameters const &                         param_in,
+  MPI_Comm const &                                mpi_comm_in,
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+  std::shared_ptr<MovingMesh<dim, Number>>        moving_mesh_in,
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  : Base(operator_in,
+         param_in,
+         mpi_comm_in,
+         postprocessor_in,
+         moving_mesh_in,
+         matrix_free_wrapper_in),
+    pde_operator(operator_in),
     solution(this->order),
     computing_times(3),
     computing_time_convective(0.0),
@@ -34,11 +40,11 @@ TimeIntBDFCoupled<Number>::TimeIntBDFCoupled(
 {
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::allocate_vectors()
+TimeIntBDFCoupled<dim, Number>::allocate_vectors()
 {
-  TimeIntBDF<Number>::allocate_vectors();
+  TimeIntBDF<dim, Number>::allocate_vectors();
 
   // solution
   for(unsigned int i = 0; i < solution.size(); ++i)
@@ -46,89 +52,95 @@ TimeIntBDFCoupled<Number>::allocate_vectors()
   pde_operator->initialize_block_vector_velocity_pressure(solution_np);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::initialize_current_solution()
+TimeIntBDFCoupled<dim, Number>::initialize_current_solution()
 {
-  this->operator_base->prescribe_initial_conditions(solution[0].block(0),
-                                                    solution[0].block(1),
-                                                    this->get_time());
+  if(this->param.ale_formulation)
+    this->move_mesh(this->get_time());
+
+  pde_operator->prescribe_initial_conditions(solution[0].block(0),
+                                             solution[0].block(1),
+                                             this->get_time());
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::initialize_former_solutions()
+TimeIntBDFCoupled<dim, Number>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < solution.size(); ++i)
   {
-    this->operator_base->prescribe_initial_conditions(solution[i].block(0),
-                                                      solution[i].block(1),
-                                                      this->get_previous_time(i));
+    if(this->param.ale_formulation)
+      this->move_mesh(this->get_previous_time(i));
+
+    pde_operator->prescribe_initial_conditions(solution[i].block(0),
+                                               solution[i].block(1),
+                                               this->get_previous_time(i));
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::setup_derived()
+TimeIntBDFCoupled<dim, Number>::setup_derived()
 {
-  TimeIntBDF<Number>::setup_derived();
+  Base::setup_derived();
 
   // scaling factor continuity equation:
   // Calculate characteristic element length h
-  double minimum_element_length = this->operator_base->calculate_minimum_element_length();
+  double minimum_element_length = pde_operator->calculate_minimum_element_length();
 
-  unsigned int const degree_u = this->operator_base->get_polynomial_degree();
+  unsigned int const degree_u = pde_operator->get_polynomial_degree();
 
   characteristic_element_length =
     calculate_characteristic_element_length(minimum_element_length, degree_u);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFCoupled<Number>::get_velocity() const
+TimeIntBDFCoupled<dim, Number>::get_velocity() const
 {
   return solution[0].block(0);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFCoupled<Number>::get_velocity(unsigned int i) const
+TimeIntBDFCoupled<dim, Number>::get_velocity(unsigned int i) const
 {
   return solution[i].block(0);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFCoupled<Number>::get_velocity_np() const
+TimeIntBDFCoupled<dim, Number>::get_velocity_np() const
 {
   return solution_np.block(0);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFCoupled<Number>::get_pressure(unsigned int i) const
+TimeIntBDFCoupled<dim, Number>::get_pressure(unsigned int i) const
 {
   return solution[i].block(1);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::set_velocity(VectorType const & velocity_in, unsigned int const i)
+TimeIntBDFCoupled<dim, Number>::set_velocity(VectorType const & velocity_in, unsigned int const i)
 {
   solution[i].block(0) = velocity_in;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::set_pressure(VectorType const & pressure_in, unsigned int const i)
+TimeIntBDFCoupled<dim, Number>::set_pressure(VectorType const & pressure_in, unsigned int const i)
 {
   solution[i].block(1) = pressure_in;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::solve_timestep()
+TimeIntBDFCoupled<dim, Number>::solve_timestep()
 {
   this->output_solver_info_header();
 
@@ -158,7 +170,7 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     Timer timer_turbulence;
     timer_turbulence.restart();
 
-    this->operator_base->update_turbulence_model(solution_np.block(0));
+    pde_operator->update_turbulence_model(solution_np.block(0));
 
     if(this->print_solver_info())
     {
@@ -222,9 +234,9 @@ TimeIntBDFCoupled<Number>::solve_timestep()
         for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
         {
           // in a general setting, we only know the boundary conditions at time t_{n+1}
-          this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
-                                                        solution[i].block(0),
-                                                        this->get_next_time());
+          pde_operator->evaluate_convective_term(this->vec_convective_term[i],
+                                                 solution[i].block(0),
+                                                 this->get_next_time());
         }
       }
 
@@ -253,7 +265,7 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     }
 
     // apply mass matrix to sum_alphai_ui and add to rhs vector
-    this->operator_base->apply_mass_matrix_add(rhs_vector.block(0), sum_alphai_ui);
+    pde_operator->apply_mass_matrix_add(rhs_vector.block(0), sum_alphai_ui);
 
     unsigned int linear_iterations =
       pde_operator->solve_linear_stokes_problem(solution_np,
@@ -285,9 +297,9 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     }
 
     VectorType rhs(sum_alphai_ui);
-    this->operator_base->apply_mass_matrix(rhs, sum_alphai_ui);
+    pde_operator->apply_mass_matrix(rhs, sum_alphai_ui);
     if(this->param.right_hand_side)
-      this->operator_base->evaluate_add_body_force_term(rhs, this->get_next_time());
+      pde_operator->evaluate_add_body_force_term(rhs, this->get_next_time());
 
     // Newton solver
     unsigned int newton_iterations = 0;
@@ -331,7 +343,7 @@ TimeIntBDFCoupled<Number>::solve_timestep()
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      this->operator_base->shift_pressure(solution_np.block(1), this->get_next_time());
+      pde_operator->shift_pressure(solution_np.block(1), this->get_next_time());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -339,7 +351,7 @@ TimeIntBDFCoupled<Number>::solve_timestep()
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
-      this->operator_base->shift_pressure_mean_value(solution_np.block(1), this->get_next_time());
+      pde_operator->shift_pressure_mean_value(solution_np.block(1), this->get_next_time());
     }
     else
     {
@@ -374,18 +386,18 @@ TimeIntBDFCoupled<Number>::solve_timestep()
   {
     if(this->param.ale_formulation == false) // Eulerian case
     {
-      this->operator_base->evaluate_convective_term(this->convective_term_np,
-                                                    solution_np.block(0),
-                                                    this->get_next_time());
+      pde_operator->evaluate_convective_term(this->convective_term_np,
+                                             solution_np.block(0),
+                                             this->get_next_time());
     }
   }
 
   computing_time_convective = timer.wall_time();
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::projection_step()
+TimeIntBDFCoupled<dim, Number>::projection_step()
 {
   Timer timer;
   timer.restart();
@@ -398,17 +410,16 @@ TimeIntBDFCoupled<Number>::projection_step()
     velocity_extrapolated.add(this->extra.get_beta(i), solution[i].block(0));
 
   // update projection operator
-  this->operator_base->update_projection_operator(velocity_extrapolated,
-                                                  this->get_time_step_size());
+  pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
 
   // right-hand side term: apply mass matrix
   VectorType rhs(solution_np.block(0));
-  this->operator_base->apply_mass_matrix(rhs, solution_np.block(0));
+  pde_operator->apply_mass_matrix(rhs, solution_np.block(0));
 
   // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
   // rhs-vector if desired
   if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
-    this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
+    pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
 
   bool const update_preconditioner =
     this->param.update_preconditioner_projection &&
@@ -417,7 +428,7 @@ TimeIntBDFCoupled<Number>::projection_step()
 
   // solve projection (and update preconditioner if desired)
   unsigned int iterations_postprocessing =
-    this->operator_base->solve_projection(solution_np.block(0), rhs, update_preconditioner);
+    pde_operator->solve_projection(solution_np.block(0), rhs, update_preconditioner);
 
   iterations[1] += iterations_postprocessing;
 
@@ -431,9 +442,9 @@ TimeIntBDFCoupled<Number>::projection_step()
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
+TimeIntBDFCoupled<dim, Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis"));
@@ -494,19 +505,19 @@ TimeIntBDFCoupled<Number>::postprocessing_stability_analysis()
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::prepare_vectors_for_next_timestep()
+TimeIntBDFCoupled<dim, Number>::prepare_vectors_for_next_timestep()
 {
-  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+  Base::prepare_vectors_for_next_timestep();
 
   push_back(solution);
   solution[0].swap(solution_np);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::solve_steady_problem()
+TimeIntBDFCoupled<dim, Number>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -604,9 +615,9 @@ TimeIntBDFCoupled<Number>::solve_steady_problem()
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 double
-TimeIntBDFCoupled<Number>::evaluate_residual()
+TimeIntBDFCoupled<dim, Number>::evaluate_residual()
 {
   this->pde_operator->evaluate_nonlinear_residual_steady(this->solution_np,
                                                          this->solution[0],
@@ -626,10 +637,10 @@ TimeIntBDFCoupled<Number>::evaluate_residual()
   return residual;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
-                                          std::vector<double> &      iteration) const
+TimeIntBDFCoupled<dim, Number>::get_iterations(std::vector<std::string> & name,
+                                               std::vector<double> &      iteration) const
 {
   unsigned int N_time_steps = this->get_time_step_number() - 1;
 
@@ -686,10 +697,10 @@ TimeIntBDFCoupled<Number>::get_iterations(std::vector<std::string> & name,
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
-                                          std::vector<double> &      wall_time) const
+TimeIntBDFCoupled<dim, Number>::get_wall_times(std::vector<std::string> & name,
+                                               std::vector<double> &      wall_time) const
 {
   unsigned int             size  = 1;
   std::vector<std::string> names = {"Coupled system"};
@@ -719,6 +730,9 @@ TimeIntBDFCoupled<Number>::get_wall_times(std::vector<std::string> & name,
 
 // instantiations
 
-template class TimeIntBDFCoupled<float>;
-template class TimeIntBDFCoupled<double>;
+template class TimeIntBDFCoupled<2, float>;
+template class TimeIntBDFCoupled<2, double>;
+
+template class TimeIntBDFCoupled<3, float>;
+template class TimeIntBDFCoupled<3, double>;
 } // namespace IncNS

@@ -18,9 +18,8 @@
 
 #include <deal.II/matrix_free/operators.h>
 
-// ALE
+// matrix-free wrapper
 #include "../../functionalities/matrix_free_wrapper.h"
-#include "../../functionalities/moving_mesh.h"
 
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
@@ -149,7 +148,7 @@ public:
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesBase();
+  virtual ~DGNavierStokesBase(){};
 
   void
   append_data_structures(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
@@ -276,13 +275,6 @@ public:
 
   void
   interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
-
-  // In case of ALE, it might be necessary to also move the mesh
-  void
-  move_mesh_and_interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
-
-  void
-  move_mesh_and_interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
 
   /*
    * Time step calculation.
@@ -444,12 +436,6 @@ public:
   void
   set_grid_velocity(VectorType velocity);
 
-  void
-  move_mesh(double const time);
-
-  void
-  move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
-
 protected:
   /*
    * Projection step.
@@ -464,10 +450,6 @@ protected:
    * Mesh (mapping)
    */
   std::shared_ptr<Mesh<dim>> mesh;
-  /*
-   * ALE formulation
-   */
-  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;

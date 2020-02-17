@@ -43,14 +43,6 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 {
   pcout << std::endl << "Construct Navier-Stokes operator ..." << std::endl << std::flush;
 
-  if(param.ale_formulation)
-  {
-    moving_mesh = std::dynamic_pointer_cast<MovingMesh<dim, Number>>(mesh_in);
-
-    AssertThrow(moving_mesh.get() != 0,
-                ExcMessage("moving_mesh is not correctly initialized for ALE formulation"));
-  }
-
   initialize_boundary_descriptor_laplace();
 
   distribute_dofs();
@@ -66,12 +58,6 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   }
 
   pcout << std::endl << "... done!" << std::endl << std::flush;
-}
-
-template<int dim, typename Number>
-DGNavierStokesBase<dim, Number>::~DGNavierStokesBase()
-{
-  matrix_free->clear();
 }
 
 template<int dim, typename Number>
@@ -756,10 +742,6 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
                                                               VectorType & pressure,
                                                               double const time) const
 {
-  // make sure that the mesh fits to the time at which we want to evaluate the solution
-  if(param.ale_formulation)
-    moving_mesh->move_mesh_analytical(time);
-
   field_functions->initial_solution_velocity->set_time(time);
   field_functions->initial_solution_pressure->set_time(time);
 
@@ -783,42 +765,6 @@ DGNavierStokesBase<dim, Number>::prescribe_initial_conditions(VectorType & veloc
 
   velocity = velocity_double;
   pressure = pressure_double;
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_velocity_dirichlet_bc(
-  VectorType &   dst,
-  double const & time)
-{
-  // make sure that the mesh fits to the time at which we want to evaluate the solution
-  if(param.ale_formulation)
-  {
-    moving_mesh->move_mesh_analytical(time);
-
-    // we also need to update matrix_free
-    update_after_mesh_movement();
-  }
-
-  interpolate_velocity_dirichlet_bc(dst, time);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::move_mesh_and_interpolate_pressure_dirichlet_bc(
-  VectorType &   dst,
-  double const & time)
-{
-  // make sure that the mesh fits to the time at which we want to evaluate the solution
-  if(param.ale_formulation)
-  {
-    moving_mesh->move_mesh_analytical(time);
-
-    // we also need to update matrix_free
-    update_after_mesh_movement();
-  }
-
-  interpolate_pressure_dirichlet_bc(dst, time);
 }
 
 template<int dim, typename Number>
@@ -1253,9 +1199,6 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 {
-  // TODO: problems occur if the mesh is not deformed (displacement = 0)
-  matrix_free_wrapper->update_geometry();
-
   // TODO: this should not be necessary for a good design. MatrixFree has to care about that.
   inverse_mass_velocity.reinit();
   inverse_mass_velocity_scalar.reinit();
@@ -1281,23 +1224,6 @@ void
 DGNavierStokesBase<dim, Number>::set_grid_velocity(VectorType u_grid_in)
 {
   convective_kernel->set_grid_velocity_ptr(u_grid_in);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::move_mesh(double const time)
-{
-  moving_mesh->move_mesh_analytical(time);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesBase<dim, Number>::move_mesh_and_fill_grid_coordinates_vector(VectorType & vector,
-                                                                            double const time)
-{
-  moving_mesh->move_mesh_analytical(time);
-
-  moving_mesh->fill_grid_coordinates_vector(vector, get_dof_handler_u());
 }
 
 template<int dim, typename Number>

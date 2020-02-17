@@ -25,22 +25,26 @@ public:
              double const                             start_time,
              MPI_Comm const &                         mpi_comm);
 
+  /*
+   * This function implements the interface of base class Mesh<dim>
+   */
   Mapping<dim> const &
   get_mapping() const override;
 
   /*
-   * This function initialized the MappingFEField object that is used to describe
-   * a moving mesh.
-   */
-  void
-  initialize_mapping_ale(double const time);
-
-  /*
+   * This function implements interface of base class Interface::MovingMesh.
+   *
    * This function is formulated w.r.t. reference coordinates, i.e., the mapping describing
    * the initial mesh position has to be used for this function.
    */
   void
-  move_mesh_analytical(double const time);
+  move_mesh(double const time);
+
+  /*
+   * This function initialized the mapping that is used to describe a moving mesh.
+   */
+  void
+  initialize_mapping_ale(double const time);
 
   /*
    * This function extracts the grid coordinates of the current mesh configuration, i.e.,

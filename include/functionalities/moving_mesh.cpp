@@ -48,12 +48,12 @@ MovingMesh<dim, Number>::initialize_mapping_ale(double const time)
   mapping_ale.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
 #endif
 
-  move_mesh_analytical(time);
+  move_mesh(time);
 }
 
 template<int dim, typename Number>
 void
-MovingMesh<dim, Number>::move_mesh_analytical(double const time)
+MovingMesh<dim, Number>::move_mesh(double const time)
 {
   mesh_movement_function->set_time(time);
 

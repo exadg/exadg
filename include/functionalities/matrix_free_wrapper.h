@@ -74,6 +74,7 @@ struct MatrixFreeWrapper
     data_update_geometry.initialize_indices = false;
     data_update_geometry.initialize_mapping = true;
 
+    // TODO: problems occur if the mesh is not deformed (displacement = 0)
     matrix_free->reinit(
       mesh->get_mapping(), dof_handler_vec, constraint_vec, quadrature_vec, data_update_geometry);
   }

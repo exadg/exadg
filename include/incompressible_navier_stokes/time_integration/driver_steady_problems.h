@@ -12,6 +12,9 @@
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../postprocessor/postprocessor_base.h"
+#include "../spatial_discretization/dg_coupled_solver.h"
+
 using namespace dealii;
 
 namespace IncNS
@@ -19,33 +22,19 @@ namespace IncNS
 // forward declarations
 class InputParameters;
 
-namespace Interface
-{
-template<typename Number>
-class OperatorBase;
-template<typename Number>
-class OperatorCoupled;
-
-template<typename Number>
-class PostProcessor;
-
-} // namespace Interface
-
-template<typename Number>
+template<int dim, typename Number>
 class DriverSteadyProblems
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number>      VectorType;
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef Interface::OperatorBase<Number>    OperatorBase;
-  typedef Interface::OperatorCoupled<Number> OperatorPDE;
+  typedef DGNavierStokesCoupled<dim, Number> Operator;
 
-  DriverSteadyProblems(std::shared_ptr<OperatorBase>                     operator_base_in,
-                       std::shared_ptr<OperatorPDE>                      operator_in,
-                       InputParameters const &                           param_in,
-                       MPI_Comm const &                                  mpi_comm_in,
-                       std::shared_ptr<Interface::PostProcessor<Number>> postprocessor_in);
+  DriverSteadyProblems(std::shared_ptr<Operator>                       operator_in,
+                       InputParameters const &                         param_in,
+                       MPI_Comm const &                                mpi_comm_in,
+                       std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in);
 
   void
   setup();
@@ -69,8 +58,7 @@ private:
   void
   solve();
 
-  std::shared_ptr<OperatorBase> operator_base;
-  std::shared_ptr<OperatorPDE>  pde_operator;
+  std::shared_ptr<Operator> pde_operator;
 
   InputParameters const & param;
 
@@ -83,7 +71,7 @@ private:
   BlockVectorType solution;
   BlockVectorType rhs_vector;
 
-  std::shared_ptr<Interface::PostProcessor<Number>> postprocessor;
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 };
 
 } // namespace IncNS

@@ -173,8 +173,7 @@ public:
 };
 
 template<int dim, typename Number = double>
-class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>,
-                              public Interface::OperatorCoupled<Number>
+class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>
 {
 private:
   typedef DGNavierStokesBase<dim, Number>    Base;

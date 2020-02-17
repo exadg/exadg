@@ -16,8 +16,7 @@
 namespace IncNS
 {
 template<int dim, typename Number = double>
-class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, Number>,
-                                    public Interface::OperatorDualSplitting<Number>
+class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, Number>
 {
 private:
   typedef DGNavierStokesBase<dim, Number>              Base;
