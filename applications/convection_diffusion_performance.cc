@@ -157,8 +157,6 @@ private:
 
   std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
-
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
 
@@ -253,10 +251,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   mesh.reset(new Mesh<dim>(mapping_degree));
 
-
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
-
   // initialize convection diffusion operation
   conv_diff_operator.reset(new DGOperator<dim, Number>(
     *triangulation, mesh, periodic_faces, boundary_descriptor, field_functions, param, mpi_comm));
@@ -265,9 +259,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
-
   conv_diff_operator->append_data_structures(matrix_free_wrapper);
-
   matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
 
   // setup convection-diffusion operator

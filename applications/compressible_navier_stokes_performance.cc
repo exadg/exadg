@@ -136,10 +136,6 @@ class Problem : public ProblemBase
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGOperator<dim, Number> DG_OPERATOR;
-
-  typedef PostProcessorBase<dim, Number> POSTPROCESSOR;
-
   Problem(MPI_Comm const & comm);
 
   void
@@ -175,9 +171,7 @@ private:
 
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
-  std::shared_ptr<DG_OPERATOR> comp_navier_stokes_operator;
-
-  std::shared_ptr<POSTPROCESSOR> postprocessor;
+  std::shared_ptr<DGOperator<dim, Number>> comp_navier_stokes_operator;
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
@@ -277,9 +271,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   mesh.reset(new Mesh<dim>(mapping_degree));
 
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
-
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
                                                                 mesh,
@@ -289,14 +280,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                                 boundary_descriptor_energy,
                                                                 field_functions,
                                                                 param,
-                                                                postprocessor,
                                                                 mpi_comm));
 
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
-
   comp_navier_stokes_operator->append_data_structures(matrix_free_wrapper);
-
   matrix_free_wrapper->reinit(false /*param.use_cell_based_face_loops*/, triangulation);
 
   // setup compressible Navier-Stokes operator

@@ -19,7 +19,6 @@ DGOperator<dim, Number>::DGOperator(
   std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
   std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
   InputParameters const &                        param_in,
-  std::shared_ptr<Postprocessor>                 postprocessor_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     mesh(mesh_in),
@@ -32,12 +31,11 @@ DGOperator<dim, Number>::DGOperator(
     fe(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim + 2)),
     fe_vector(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim)),
     fe_scalar(param_in.degree),
-    n_q_points_conv(param.degree + 1),
-    n_q_points_visc(param.degree + 1),
+    n_q_points_conv(param_in.degree + 1),
+    n_q_points_visc(param_in.degree + 1),
     dof_handler(triangulation_in),
     dof_handler_vector(triangulation_in),
     dof_handler_scalar(triangulation_in),
-    postprocessor(postprocessor_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
     wall_time_operator_evaluation(0.0)
@@ -141,8 +139,6 @@ DGOperator<dim, Number>::setup(
 
   // perform setup of data structures that depend on matrix-free object
   setup_operators();
-
-  setup_postprocessor();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -394,15 +390,6 @@ DGOperator<dim, Number>::get_wall_time_operator_evaluation() const
 }
 
 template<int dim, typename Number>
-void
-DGOperator<dim, Number>::do_postprocessing(VectorType const & solution,
-                                           double const       time,
-                                           int const          time_step_number) const
-{
-  postprocessor->do_postprocessing(solution, time, time_step_number);
-}
-
-template<int dim, typename Number>
 double
 DGOperator<dim, Number>::calculate_minimum_element_length() const
 {
@@ -525,13 +512,6 @@ DGOperator<dim, Number>::setup_operators()
                                    dof_index_vector,
                                    dof_index_scalar,
                                    quad_index_standard);
-}
-
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::setup_postprocessor()
-{
-  postprocessor->setup(*this);
 }
 
 template class DGOperator<2, float>;

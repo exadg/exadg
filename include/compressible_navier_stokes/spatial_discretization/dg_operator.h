@@ -101,7 +101,6 @@ public:
              std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
              std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
              InputParameters const &                        param_in,
-             std::shared_ptr<Postprocessor>                 postprocessor_in,
              MPI_Comm const &                               mpi_comm_in);
 
   void
@@ -202,11 +201,6 @@ public:
   double
   get_wall_time_operator_evaluation() const;
 
-  void
-  do_postprocessing(VectorType const & solution,
-                    double const       time,
-                    int const          time_step_number) const;
-
   double
   calculate_minimum_element_length() const;
 
@@ -219,9 +213,6 @@ private:
 
   void
   setup_operators();
-
-  void
-  setup_postprocessor();
 
   /*
    * Mesh (mapping)
@@ -291,11 +282,6 @@ private:
   p_u_T_Calculator<dim, Number>     p_u_T_calculator;
   VorticityCalculator<dim, Number>  vorticity_calculator;
   DivergenceCalculator<dim, Number> divergence_calculator;
-
-  /*
-   * Postprocessor.
-   */
-  std::shared_ptr<Postprocessor> postprocessor;
 
   /*
    * MPI

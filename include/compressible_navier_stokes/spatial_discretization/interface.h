@@ -50,12 +50,6 @@ public:
   virtual void
   evaluate(VectorType & dst, VectorType const & src, Number const evaluation_time) const = 0;
 
-  // postprocessing
-  virtual void
-  do_postprocessing(VectorType const & solution,
-                    double const       time,
-                    int const          time_step_number) const = 0;
-
   // analysis of computational costs
   virtual double
   get_wall_time_operator_evaluation() const = 0;

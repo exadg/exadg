@@ -216,9 +216,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   mesh.reset(new Mesh<dim>(mapping_degree));
 
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
-
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
                                                                 mesh,
@@ -228,22 +225,23 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                                 boundary_descriptor_energy,
                                                                 field_functions,
                                                                 param,
-                                                                postprocessor,
                                                                 mpi_comm));
 
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
-
   comp_navier_stokes_operator->append_data_structures(matrix_free_wrapper);
-
   matrix_free_wrapper->reinit(false /*param.use_cell_based_face_loops*/, triangulation);
 
   // setup compressible Navier-Stokes operator
   comp_navier_stokes_operator->setup(matrix_free_wrapper);
 
-  // initialize time integrator
-  time_integrator.reset(new TimeIntExplRK<Number>(comp_navier_stokes_operator, param, mpi_comm));
+  // initialize postprocessor
+  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
+  postprocessor->setup(*comp_navier_stokes_operator);
 
+  // initialize time integrator
+  time_integrator.reset(
+    new TimeIntExplRK<Number>(comp_navier_stokes_operator, param, mpi_comm, postprocessor));
   time_integrator->setup(param.restarted_simulation);
 
   setup_time = timer.wall_time();
