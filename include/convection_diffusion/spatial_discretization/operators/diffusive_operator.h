@@ -198,6 +198,9 @@ public:
          AffineConstraints<double> const &  constraint_matrix,
          DiffusiveOperatorData<dim> const & data);
 
+  void
+  update();
+
 private:
   void
   reinit_face(unsigned int const face) const;

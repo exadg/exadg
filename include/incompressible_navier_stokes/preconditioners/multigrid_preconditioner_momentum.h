@@ -109,7 +109,7 @@ public:
       this->update_matrix_free();
     }
 
-    update_operators(pde_operator);
+    update_operators();
 
     this->update_smoothers();
 
@@ -220,7 +220,7 @@ private:
    * This function updates the multigrid operators for all levels
    */
   void
-  update_operators(PDEOperatorNumber const * pde_operator)
+  update_operators()
   {
     if(mesh_is_moving)
     {

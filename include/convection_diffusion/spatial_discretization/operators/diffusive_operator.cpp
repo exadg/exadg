@@ -20,6 +20,13 @@ DiffusiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &    matrix
 
 template<int dim, typename Number>
 void
+DiffusiveOperator<dim, Number>::update()
+{
+  kernel.calculate_penalty_parameter(*this->matrix_free, this->data.dof_index);
+}
+
+template<int dim, typename Number>
+void
 DiffusiveOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);

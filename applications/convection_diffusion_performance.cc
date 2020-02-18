@@ -14,24 +14,25 @@
 #include <deal.II/grid/manifold_lib.h>
 
 // spatial discretization
-#include "convection_diffusion/spatial_discretization/dg_operator.h"
-#include "convection_diffusion/spatial_discretization/interface.h"
+#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
+#include "../include/convection_diffusion/spatial_discretization/interface.h"
 
 // postprocessor
-#include "convection_diffusion/postprocessor/postprocessor_base.h"
+#include "../include/convection_diffusion/postprocessor/postprocessor_base.h"
 
 // user interface, etc.
-#include "convection_diffusion/user_interface/analytical_solution.h"
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
+#include "../include/convection_diffusion/user_interface/analytical_solution.h"
+#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../include/convection_diffusion/user_interface/field_functions.h"
+#include "../include/convection_diffusion/user_interface/input_parameters.h"
 
 // general functionalities
-#include "functionalities/matrix_free_wrapper.h"
-#include "functionalities/mesh_resolution_generator_hypercube.h"
-#include "functionalities/print_functions.h"
-#include "functionalities/print_general_infos.h"
-#include "functionalities/print_throughput.h"
+#include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/mesh_resolution_generator_hypercube.h"
+#include "../include/functionalities/print_functions.h"
+#include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/print_throughput.h"
+
 
 // specify the test case that has to be solved
 #include "convection_diffusion_test_cases/periodic_box.h"
@@ -255,8 +256,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   conv_diff_operator.reset(new DGOperator<dim, Number>(
     *triangulation, mesh, periodic_faces, boundary_descriptor, field_functions, param, mpi_comm));
 
-  AssertThrow(conv_diff_operator.get() != 0, ExcMessage("Not initialized."));
-
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
   conv_diff_operator->append_data_structures(matrix_free_wrapper);
@@ -275,7 +274,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     }
   }
 
-  conv_diff_operator->setup_operators_and_solver(1.0 /* use a default value of 1.0 */, &velocity);
+  conv_diff_operator->setup_solver(1.0 /* use a default value of 1.0 */, &velocity);
 }
 
 template<int dim, typename Number>

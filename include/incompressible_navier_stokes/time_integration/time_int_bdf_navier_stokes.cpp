@@ -70,7 +70,10 @@ TimeIntBDF<dim, Number>::allocate_vectors()
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
 
-    this->operator_base->initialize_vector_velocity(convective_term_np);
+    if(param.ale_formulation == false)
+    {
+      this->operator_base->initialize_vector_velocity(convective_term_np);
+    }
   }
 
   if(param.ale_formulation == true)
@@ -138,8 +141,11 @@ TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
     }
   }
 
-  push_back(vec_grid_coordinates);
-  vec_grid_coordinates[0].swap(grid_coordinates_np);
+  if(param.ale_formulation)
+  {
+    push_back(vec_grid_coordinates);
+    vec_grid_coordinates[0].swap(grid_coordinates_np);
+  }
 }
 
 template<int dim, typename Number>

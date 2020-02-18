@@ -87,8 +87,8 @@ public:
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_operators_and_solver(double const       scaling_factor_mass_matrix = -1.0,
-                             VectorType const * velocity                   = nullptr);
+  setup_solver(double const       scaling_factor_mass_matrix = -1.0,
+               VectorType const * velocity                   = nullptr);
 
   /*
    * Initialization of dof-vector.
@@ -255,11 +255,17 @@ public:
   DoFHandler<dim> const &
   get_dof_handler() const;
 
+  DoFHandler<dim> const &
+  get_dof_handler_velocity() const;
+
   unsigned int
   get_polynomial_degree() const;
 
   types::global_dof_index
   get_number_of_dofs() const;
+
+  void
+  update_after_mesh_movement();
 
   // TODO: implement filtering as a separate module
   void
@@ -277,12 +283,6 @@ private:
    */
   int
   get_dof_index_velocity() const;
-
-  /*
-   * Initializes individual operators (mass, convective, viscous terms, rhs).
-   */
-  void
-  setup_operators(double const scaling_factor_mass_matrix);
 
   /*
    * Initializes the preconditioner.

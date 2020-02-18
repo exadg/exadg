@@ -83,8 +83,14 @@ public:
   // Use true if an analytical function is used to prescribe the velocity field
   bool analytical_velocity_field;
 
+  // Use Arbitrary Lagrangian-Eulerian (ALE) formulation
+  bool ale_formulation;
+
   // set right_hand_side = true if the right-hand side f is unequal zero
   bool right_hand_side;
+
+  // type of formulation of convective term
+  FormulationConvectiveTerm formulation_convective_term;
 
   /**************************************************************************************/
   /*                                                                                    */
@@ -213,8 +219,6 @@ public:
 
   // Number of mesh refinement steps
   unsigned int h_refinements;
-
-  // convective term: the convective term is written in divergence formulation
 
   // description: see enum declaration
   NumericalFluxConvectiveOperator numerical_flux_convective_operator;

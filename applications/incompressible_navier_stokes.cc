@@ -36,6 +36,7 @@
 
 // general functionalities
 #include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/moving_mesh.h"
 #include "../include/functionalities/print_general_infos.h"
 
 using namespace dealii;

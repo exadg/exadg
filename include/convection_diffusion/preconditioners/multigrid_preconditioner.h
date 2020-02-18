@@ -21,7 +21,7 @@ namespace ConvDiff
 template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
-public:
+private:
   typedef Operator<dim, Number>          PDEOperatorNumber;
   typedef Operator<dim, MultigridNumber> PDEOperator;
 
@@ -35,8 +35,14 @@ public:
   typedef typename Base::VectorType        VectorType;
   typedef typename Base::VectorTypeMG      VectorTypeMG;
 
+  typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
+
+public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm)
-    : Base(mpi_comm), pde_operator(nullptr), mg_operator_type(MultigridOperatorType::Undefined)
+    : Base(mpi_comm),
+      pde_operator(nullptr),
+      mg_operator_type(MultigridOperatorType::Undefined),
+      mesh_is_moving(false)
   {
   }
 
@@ -49,11 +55,14 @@ public:
              Mapping<dim> const &                     mapping,
              PDEOperatorNumber const &                pde_operator,
              MultigridOperatorType const &            mg_operator_type,
+             bool const                               mesh_is_moving,
              Map const *                              dirichlet_bc        = nullptr,
              PeriodicFacePairs *                      periodic_face_pairs = nullptr)
   {
     this->pde_operator     = &pde_operator;
     this->mg_operator_type = mg_operator_type;
+
+    this->mesh_is_moving = mesh_is_moving;
 
     data            = this->pde_operator->get_data();
     data.dof_index  = 0;
@@ -94,26 +103,76 @@ public:
       mg_data, tria, fe, mapping, data.operator_is_singular, dirichlet_bc, periodic_face_pairs);
   }
 
-  std::shared_ptr<MGOperatorBase>
-  initialize_operator(unsigned int const level)
+  /*
+   *  This function updates the multigrid preconditioner.
+   */
+  void
+  update() override
   {
-    // initialize pde_operator in a first step
-    std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
+    if(mesh_is_moving)
+    {
+      this->update_matrix_free();
+    }
 
-    pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+    update_operators();
 
-    // initialize MGOperator which is a wrapper around the PDEOperator
-    std::shared_ptr<MGOperator> mg_operator_level(new MGOperator(pde_operator_level));
+    update_smoothers();
 
-    return mg_operator_level;
+    this->update_coarse_solver(data.operator_is_singular);
+  }
+
+  // TODO multigrid preconditioner is used as filtering operation here
+  void
+  project_and_prolongate(VectorType & solution_fine) const
+  {
+    unsigned int smoothing_levels = std::min((unsigned int)1, this->n_levels - 1);
+
+    solution.resize(0, this->n_levels - 1);
+
+    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
+    VectorTypeMG         vector_fine;
+    VectorTypeMG const * vector_fine_ptr;
+    if(std::is_same<MultigridNumber, Number>::value)
+    {
+      vector_fine_ptr = reinterpret_cast<VectorTypeMG const *>(&solution_fine);
+    }
+    else
+    {
+      vector_fine     = solution_fine;
+      vector_fine_ptr = &vector_fine;
+    }
+
+    for(unsigned int level = this->fine_level - smoothing_levels; level <= this->fine_level;
+        ++level)
+    {
+      AssertThrow(this->get_operator(level).get() != 0, ExcMessage("invalid pointer"));
+      this->get_operator(level)->initialize_dof_vector(solution[level]);
+      if(level == this->fine_level)
+        solution[level] = *vector_fine_ptr;
+    }
+
+    do_project_and_prolongate(this->operators.max_level(), smoothing_levels);
+
+    solution_fine = solution[this->operators.max_level()];
+  }
+
+private:
+  void
+  initialize_matrix_free() override
+  {
+    if(mesh_is_moving)
+    {
+      matrix_free_data_update.resize(0, this->n_levels - 1);
+    }
+
+    quadrature.resize(0, this->n_levels - 1);
+
+    Base::initialize_matrix_free();
   }
 
   std::shared_ptr<MatrixFree<dim, MultigridNumber>>
   do_initialize_matrix_free(unsigned int const level) override
   {
-    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
-    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
-
     typename MatrixFree<dim, MultigridNumber>::AdditionalData additional_data;
 
     additional_data.mg_level              = this->level_info[level].h_level();
@@ -143,13 +202,24 @@ public:
                                           this->level_info[level].h_level());
     }
 
+    if(mesh_is_moving)
+    {
+      matrix_free_data_update[level] = additional_data;
+      matrix_free_data_update[level].initialize_indices =
+        false; // connectivity of elements stays the same
+      matrix_free_data_update[level].initialize_mapping = true;
+    }
+
+    quadrature[level] = QGauss<1>(this->level_info[level].degree() + 1);
+
+    std::shared_ptr<MatrixFree<dim, MultigridNumber>> matrix_free;
+    matrix_free.reset(new MatrixFree<dim, MultigridNumber>);
     if(data.convective_kernel_data.velocity_type == TypeVelocityField::Function)
     {
-      QGauss<1> quadrature(this->level_info[level].degree() + 1);
       matrix_free->reinit(*this->mapping,
                           *this->dof_handlers[level],
                           *this->constraints[level],
-                          quadrature,
+                          quadrature[level],
                           additional_data);
     }
     // we need two dof-handlers in case the velocity field comes from the fluid solver.
@@ -170,7 +240,7 @@ public:
 
       std::vector<Quadrature<1>> quadrature_vec;
       quadrature_vec.resize(1);
-      quadrature_vec[0] = QGauss<1>(this->level_info[level].degree() + 1);
+      quadrature_vec[0] = quadrature[level];
 
       matrix_free->reinit(
         *this->mapping, dof_handler_vec, constraint_vec, quadrature_vec, additional_data);
@@ -181,6 +251,63 @@ public:
     }
 
     return matrix_free;
+  }
+
+  void
+  do_update_matrix_free(unsigned int const level) override
+  {
+    if(data.convective_kernel_data.velocity_type == TypeVelocityField::Function)
+    {
+      this->matrix_free_objects[level]->reinit(*this->mapping,
+                                               *this->dof_handlers[level],
+                                               *this->constraints[level],
+                                               quadrature[level],
+                                               matrix_free_data_update[level]);
+    }
+    // we need two dof-handlers in case the velocity field comes from the fluid solver.
+    else if(data.convective_kernel_data.velocity_type == TypeVelocityField::DoFVector)
+    {
+      // collect dof-handlers
+      std::vector<const DoFHandler<dim> *> dof_handler_vec;
+      dof_handler_vec.resize(2);
+      dof_handler_vec[0] = &*this->dof_handlers[level];
+      dof_handler_vec[1] = &*this->dof_handlers_velocity[level];
+
+      // collect affine matrices
+      std::vector<const AffineConstraints<double> *> constraint_vec;
+      constraint_vec.resize(2);
+      constraint_vec[0] = &*this->constraints[level];
+      constraint_vec[1] = &*this->constraints_velocity[level];
+
+
+      std::vector<Quadrature<1>> quadrature_vec;
+      quadrature_vec.resize(1);
+      quadrature_vec[0] = quadrature[level];
+
+      this->matrix_free_objects[level]->reinit(*this->mapping,
+                                               dof_handler_vec,
+                                               constraint_vec,
+                                               quadrature_vec,
+                                               matrix_free_data_update[level]);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+  }
+
+  std::shared_ptr<MGOperatorBase>
+  initialize_operator(unsigned int const level)
+  {
+    // initialize pde_operator in a first step
+    std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
+
+    pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
+
+    // initialize MGOperator which is a wrapper around the PDEOperator
+    std::shared_ptr<MGOperator> mg_operator_level(new MGOperator(pde_operator_level));
+
+    return mg_operator_level;
   }
 
   void
@@ -222,11 +349,32 @@ public:
                                                                 1);
   }
 
+  void
+  do_project_and_prolongate(unsigned int const level, unsigned int const smoothing_levels) const
+  {
+    // call coarse grid solver
+    if(level == this->fine_level - smoothing_levels)
+    {
+      // do nothing
+
+      return;
+    }
+
+    // restriction
+    this->transfers.interpolate(level, solution[level - 1], solution[level]);
+
+    // coarse grid correction
+    do_project_and_prolongate(level - 1, smoothing_levels);
+
+    // prolongation
+    this->transfers.prolongate(level, solution[level], solution[level - 1]);
+  }
+
   /*
-   *  This function updates the multigrid preconditioner.
+   *  This function updates the operators on all levels
    */
-  virtual void
-  update()
+  void
+  update_operators()
   {
     TypeVelocityField velocity_type = pde_operator->get_data().convective_kernel_data.velocity_type;
 
@@ -257,80 +405,18 @@ public:
     {
       update_operators(pde_operator->get_time(), pde_operator->get_scaling_factor_mass_matrix());
     }
-
-    update_smoothers();
-
-    this->update_coarse_solver(data.operator_is_singular);
   }
 
-  // TODO
-  void
-  project_and_prolongate(VectorType & solution_fine) const
-  {
-    unsigned int smoothing_levels = std::min((unsigned int)1, this->n_levels - 1);
-
-    solution.resize(0, this->n_levels - 1);
-
-    // convert Number --> MultigridNumber, e.g., double --> float, but only if necessary
-    VectorTypeMG         vector_fine;
-    VectorTypeMG const * vector_fine_ptr;
-    if(std::is_same<MultigridNumber, Number>::value)
-    {
-      vector_fine_ptr = reinterpret_cast<VectorTypeMG const *>(&solution_fine);
-    }
-    else
-    {
-      vector_fine     = solution_fine;
-      vector_fine_ptr = &vector_fine;
-    }
-
-    for(unsigned int level = this->fine_level - smoothing_levels; level <= this->fine_level;
-        ++level)
-    {
-      AssertThrow(this->get_operator(level).get() != 0, ExcMessage("invalid pointer"));
-      this->get_operator(level)->initialize_dof_vector(solution[level]);
-      if(level == this->fine_level)
-        solution[level] = *vector_fine_ptr;
-    }
-
-    do_project_and_prolongate(this->operators.max_level(), smoothing_levels);
-
-    solution_fine = solution[this->operators.max_level()];
-  }
-
-  void
-  do_project_and_prolongate(unsigned int const level, unsigned int const smoothing_levels) const
-  {
-    // call coarse grid solver
-    if(level == this->fine_level - smoothing_levels)
-    {
-      // do nothing
-
-      return;
-    }
-
-    // restriction
-    this->transfers.interpolate(level, solution[level - 1], solution[level]);
-
-    // coarse grid correction
-    do_project_and_prolongate(level - 1, smoothing_levels);
-
-    // prolongation
-    this->transfers.prolongate(level, solution[level], solution[level - 1]);
-  }
-
-private:
-  /*
-   *  This function updates mg_matrices
-   *  To do this, three functions are called:
-   *   - set_evaluation_time
-   *   - set_scaling_factor_time_derivative_term
-   */
   void
   update_operators(double const &       time,
                    double const &       scaling_factor_time_derivative_term,
                    VectorTypeMG const * velocity = nullptr)
   {
+    if(mesh_is_moving)
+    {
+      update_operators_after_mesh_movement();
+    }
+
     set_time(time);
     set_scaling_factor_mass_matrix(scaling_factor_time_derivative_term);
 
@@ -355,6 +441,19 @@ private:
       auto   vector_coarse_level = this->get_operator(level - 1)->get_velocity();
       transfers_velocity.interpolate(level, vector_coarse_level, vector_fine_level);
       this->get_operator(level - 1)->set_velocity_copy(vector_coarse_level);
+    }
+  }
+
+  /*
+   * This function performs the updates that are necessary after the mesh has been moved
+   * and after matrix_free has been updated.
+   */
+  void
+  update_operators_after_mesh_movement()
+  {
+    for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
+    {
+      this->get_operator(level)->update_after_mesh_movement();
     }
   }
 
@@ -419,8 +518,15 @@ private:
 
   MultigridOperatorType mg_operator_type;
 
-  // TODO
+  // TODO multigrid preconditioner is used as filtering operation here
   mutable MGLevelObject<VectorTypeMG> solution;
+
+  // moving mesh
+  MGLevelObject<MatrixFreeData> matrix_free_data_update;
+
+  MGLevelObject<Quadrature<1>> quadrature;
+
+  bool mesh_is_moving;
 };
 
 } // namespace ConvDiff

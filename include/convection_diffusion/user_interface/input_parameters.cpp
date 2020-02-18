@@ -17,7 +17,9 @@ InputParameters::InputParameters()
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
     analytical_velocity_field(true),
+    ale_formulation(false),
     right_hand_side(false),
+    formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation),
 
     // PHYSICAL QUANTITIES
     start_time(0.),
@@ -90,13 +92,36 @@ InputParameters::check_input_parameters()
 
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
+  // moving mesh
+  if(ale_formulation)
+  {
+    AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
+                ExcMessage("ALE formulation is only implemented for BDF time integration."));
+
+    AssertThrow(equation_type == EquationType::Convection ||
+                  equation_type == EquationType::ConvectionDiffusion,
+                ExcMessage("ALE formulation can only be used if the problem involves convection."));
+
+    if(analytical_velocity_field)
+    {
+      AssertThrow(
+        store_analytical_velocity_in_dof_vector == true,
+        ExcMessage(
+          "When using the ALE formulation, the velocity has to be stored in a DoF vector."));
+    }
+
+    AssertThrow(
+      formulation_convective_term == FormulationConvectiveTerm::ConvectiveFormulation,
+      ExcMessage(
+        "ALE formulation can only be used in combination with convective formulation of convective term."));
+  }
+
   // PHYSICAL QUANTITIES
   AssertThrow(end_time > start_time, ExcMessage("parameter must be defined"));
 
   // Set the diffusivity whenever the diffusive term is involved.
   if(equation_type == EquationType::Diffusion || equation_type == EquationType::ConvectionDiffusion)
     AssertThrow(diffusivity > (0.0 + 1.0e-12), ExcMessage("parameter must be defined"));
-
 
   // TEMPORAL DISCRETIZATION
   if(problem_type == ProblemType::Unsteady)
@@ -362,7 +387,11 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
   print_parameter(pcout, "Analytical velocity field", analytical_velocity_field);
+  print_parameter(pcout, "ALE formulation", ale_formulation);
   print_parameter(pcout, "Right-hand side", right_hand_side);
+  print_parameter(pcout,
+                  "Formulation convective term",
+                  enum_to_string(formulation_convective_term));
 }
 
 void

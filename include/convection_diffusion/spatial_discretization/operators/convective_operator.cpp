@@ -83,9 +83,22 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
 {
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
-    scalar value = integrator.get_value(q);
-
-    integrator.submit_gradient(kernel.get_volume_flux(value, integrator, q, this->time), q);
+    if(this->data.kernel_data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      scalar value = integrator.get_value(q);
+      integrator.submit_gradient(
+        kernel.get_volume_flux_divergence_form(value, integrator, q, this->time), q);
+    }
+    else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      vector gradient = integrator.get_gradient(q);
+      integrator.submit_value(
+        kernel.get_volume_flux_convective_form(gradient, integrator, q, this->time), q);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
 }
 
@@ -99,10 +112,13 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
     scalar value_m = integrator_m.get_value(q);
     scalar value_p = integrator_p.get_value(q);
 
-    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->time, true);
+    vector normal_m = integrator_m.get_normal_vector(q);
 
-    integrator_m.submit_value(flux, q);
-    integrator_p.submit_value(-flux, q);
+    std::tuple<scalar, scalar> flux = kernel.calculate_flux_interior_and_neighbor(
+      q, integrator_m, value_m, value_p, normal_m, this->time, true);
+
+    integrator_m.submit_value(std::get<0>(flux), q);
+    integrator_p.submit_value(std::get<1>(flux), q);
   }
 }
 
@@ -119,7 +135,10 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
     scalar value_p = make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
-    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->time, true);
+    vector normal_m = integrator_m.get_normal_vector(q);
+
+    scalar flux =
+      kernel.calculate_flux_interior(q, integrator_m, value_m, value_p, normal_m, this->time, true);
 
     integrator_m.submit_value(flux, q);
   }
@@ -141,6 +160,8 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
     scalar value_p = make_vectorized_array<Number>(0.0);
     scalar value_m = integrator_m.get_value(q);
 
+    vector normal_m = integrator_m.get_normal_vector(q);
+
     // TODO
     // The matrix-free implementation in deal.II does currently not allow to access neighboring data
     // in case of cell-based face loops. We therefore have to use integrator_velocity_m twice to
@@ -148,8 +169,8 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
     // calculates the diagonal and block-diagonal only approximately. The theoretically correct
     // version using integrator_velocity_p is currently not implemented in deal.II.
     bool exterior_velocity_available = false; // TODO -> set to true once functionality is available
-    scalar flux                      = kernel.calculate_flux(
-      q, integrator_m, value_m, value_p, this->time, exterior_velocity_available);
+    scalar flux                      = kernel.calculate_flux_interior(
+      q, integrator_m, value_m, value_p, normal_m, this->time, exterior_velocity_available);
 
     integrator_m.submit_value(flux, q);
   }
@@ -168,7 +189,11 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
     scalar value_m = make_vectorized_array<Number>(0.0);
     scalar value_p = integrator_p.get_value(q);
 
-    scalar flux = kernel.calculate_flux(q, integrator_p, value_m, value_p, this->time, true);
+    // n⁺ = -n⁻
+    vector normal_p = -integrator_p.get_normal_vector(q);
+
+    scalar flux =
+      kernel.calculate_flux_interior(q, integrator_p, value_p, value_m, normal_p, this->time, true);
 
     // minus sign since n⁺ = -n⁻
     integrator_p.submit_value(-flux, q);
@@ -196,9 +221,12 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
                                               this->data.bc,
                                               this->time);
 
+    vector normal_m = integrator_m.get_normal_vector(q);
+
     // In case of numerical velocity field:
     // Simply use velocity_p = velocity_m on boundary faces -> exterior_velocity_available = false.
-    scalar flux = kernel.calculate_flux(q, integrator_m, value_m, value_p, this->time, false);
+    scalar flux = kernel.calculate_flux_interior(
+      q, integrator_m, value_m, value_p, normal_m, this->time, false);
 
     integrator_m.submit_value(flux, q);
   }

@@ -510,7 +510,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
-      scalar_time_integrator[i].reset(new ConvDiff::TimeIntBDF<Number>(
+      scalar_time_integrator[i].reset(new ConvDiff::TimeIntBDF<dim, Number>(
         conv_diff_operator[i], scalar_param[i], mpi_comm, scalar_postprocessor[i]));
     }
     else
@@ -555,15 +555,10 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     }
 
     // setup solvers in case of BDF time integration (solution of linear systems of equations)
-    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
+    if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
-      conv_diff_operator[i]->setup_operators_and_solver(
-        /* no parameter since they are only needed for BDF */);
-    }
-    else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
-    {
-      std::shared_ptr<ConvDiff::TimeIntBDF<Number>> scalar_time_integrator_BDF =
-        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+      std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> scalar_time_integrator_BDF =
+        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
       double const scaling_factor =
         scalar_time_integrator_BDF->get_scaling_factor_time_derivative_term();
 
@@ -571,15 +566,13 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
       navier_stokes_operator->initialize_vector_velocity(vector);
       LinearAlgebra::distributed::Vector<Number> const * velocity = &vector;
 
-      conv_diff_operator[i]->setup_operators_and_solver(scaling_factor, velocity);
+      conv_diff_operator[i]->setup_solver(scaling_factor, velocity);
     }
     else
     {
       AssertThrow(scalar_param[i].temporal_discretization ==
-                      ConvDiff::TemporalDiscretization::ExplRK ||
-                    scalar_param[i].temporal_discretization ==
-                      ConvDiff::TemporalDiscretization::BDF,
-                  ExcMessage("Specified time integration scheme is not implemented!"));
+                    ConvDiff::TemporalDiscretization::ExplRK,
+                  ExcMessage("Not implemented."));
     }
 
     // setup postprocessor
@@ -720,8 +713,8 @@ Problem<dim, Number>::run_timeloop() const
         }
         else if(scalar_param[0].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
         {
-          std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_int_scalar =
-            std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[0]);
+          std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_scalar =
+            std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[0]);
           time_int_scalar->extrapolate_solution(temperature);
         }
         else
@@ -752,8 +745,8 @@ Problem<dim, Number>::run_timeloop() const
         }
         else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
         {
-          std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_int_scalar =
-            std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+          std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_scalar =
+            std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
           time_int_scalar->set_velocities_and_times(velocities, times);
         }
         else
@@ -921,8 +914,8 @@ Problem<dim, Number>::analyze_iterations_transport() const
         std::vector<std::string> names;
         std::vector<double>      iterations;
 
-        std::shared_ptr<ConvDiff::TimeIntBDF<Number>> time_integrator_bdf =
-          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<Number>>(scalar_time_integrator[i]);
+        std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_integrator_bdf =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
         time_integrator_bdf->get_iterations(names, iterations);
 
         for(unsigned int i = 0; i < iterations.size(); ++i)

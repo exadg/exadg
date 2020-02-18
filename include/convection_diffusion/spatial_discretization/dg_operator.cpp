@@ -138,45 +138,6 @@ DGOperator<dim, Number>::setup(
   matrix_free_wrapper = matrix_free_wrapper_in;
   matrix_free         = matrix_free_wrapper->get_matrix_free();
 
-  pcout << std::endl << "... done!" << std::endl;
-}
-
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::distribute_dofs()
-{
-  // enumerate degrees of freedom
-  dof_handler.distribute_dofs(fe);
-  dof_handler.distribute_mg_dofs();
-
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-  {
-    dof_handler_velocity->distribute_dofs(*fe_velocity);
-    dof_handler_velocity->distribute_mg_dofs();
-  }
-
-  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
-
-  pcout << std::endl
-        << "Discontinuous Galerkin finite element discretization:" << std::endl
-        << std::endl;
-
-  print_parameter(pcout, "degree of 1D polynomials", param.degree);
-  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
-  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
-}
-
-template<int dim, typename Number>
-int
-DGOperator<dim, Number>::get_dof_index_velocity() const
-{
-  return 1;
-}
-
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::setup_operators(double const scaling_factor_mass_matrix)
-{
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index            = 0;
@@ -193,6 +154,7 @@ DGOperator<dim, Number>::setup_operators(double const scaling_factor_mass_matrix
 
   // convective operator
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
+  convective_kernel_data.formulation                = param.formulation_convective_term;
   convective_kernel_data.velocity_type              = param.get_type_velocity_field();
   convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
   convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
@@ -286,8 +248,6 @@ DGOperator<dim, Number>::setup_operators(double const scaling_factor_mass_matrix
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  combined_operator_data.scaling_factor_mass_matrix = scaling_factor_mass_matrix;
-
   combined_operator_data.convective_kernel_data = convective_kernel_data;
   combined_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
@@ -296,19 +256,53 @@ DGOperator<dim, Number>::setup_operators(double const scaling_factor_mass_matrix
     (param.use_overintegration && combined_operator_data.convective_problem) ? 1 : 0;
 
   combined_operator.reinit(*matrix_free, constraint_matrix, combined_operator_data);
+
+  pcout << std::endl << "... done!" << std::endl;
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_operators_and_solver(double const       scaling_factor_mass_matrix,
-                                                    VectorType const * velocity)
+DGOperator<dim, Number>::distribute_dofs()
 {
-  pcout << std::endl << "Setup operators and solver ..." << std::endl;
+  // enumerate degrees of freedom
+  dof_handler.distribute_dofs(fe);
+  dof_handler.distribute_mg_dofs();
 
-  setup_operators(scaling_factor_mass_matrix);
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+  {
+    dof_handler_velocity->distribute_dofs(*fe_velocity);
+    dof_handler_velocity->distribute_mg_dofs();
+  }
+
+  unsigned int const ndofs_per_cell = Utilities::pow(param.degree + 1, dim);
+
+  pcout << std::endl
+        << "Discontinuous Galerkin finite element discretization:" << std::endl
+        << std::endl;
+
+  print_parameter(pcout, "degree of 1D polynomials", param.degree);
+  print_parameter(pcout, "number of dofs per cell", ndofs_per_cell);
+  print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
+}
+
+template<int dim, typename Number>
+int
+DGOperator<dim, Number>::get_dof_index_velocity() const
+{
+  return 1;
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::setup_solver(double const       scaling_factor_mass_matrix,
+                                      VectorType const * velocity)
+{
+  pcout << std::endl << "Setup solver ..." << std::endl;
 
   if(param.linear_system_has_to_be_solved())
   {
+    combined_operator.set_scaling_factor_mass_matrix(scaling_factor_mass_matrix);
+
     // The velocity vector needs to be set in case the velocity field is stored in DoF vector.
     // Otherwise, certain preconditioners requiring the velocity field during initialization can not
     // be initialized.
@@ -386,6 +380,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
                                   mesh->get_mapping(),
                                   combined_operator,
                                   param.mg_operator_type,
+                                  param.ale_formulation,
                                   &data.bc->dirichlet_bc,
                                   &this->periodic_face_pairs);
   }
@@ -817,6 +812,16 @@ DGOperator<dim, Number>::get_dof_handler() const
 }
 
 template<int dim, typename Number>
+DoFHandler<dim> const &
+DGOperator<dim, Number>::get_dof_handler_velocity() const
+{
+  AssertThrow(dof_handler_velocity.get() != 0,
+              ExcMessage("dof_handler_velocity is not correctly initialized."));
+
+  return *dof_handler_velocity;
+}
+
+template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_polynomial_degree() const
 {
@@ -828,6 +833,26 @@ types::global_dof_index
 DGOperator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
+}
+
+template<int dim, typename Number>
+void
+DGOperator<dim, Number>::update_after_mesh_movement()
+{
+  // TODO: this should not be necessary for a good design. MatrixFree has to care about that.
+  inverse_mass_matrix_operator.reinit();
+
+  // update SIPG penalty parameter of diffusive operator which depends on the deformation
+  // of elements
+  if(param.equation_type == EquationType::Diffusion ||
+     param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    diffusive_operator.update();
+
+    // combined_operator contains a separate diffusive_kernel so we also have to update
+    // combined_operator -> TODO: use a single diffusive kernel for all operators
+    combined_operator.update_after_mesh_movement();
+  }
 }
 
 // TODO: implement filtering as a separate module

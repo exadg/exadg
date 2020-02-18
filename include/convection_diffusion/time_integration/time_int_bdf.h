@@ -13,7 +13,11 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
+#include "../../functionalities/matrix_free_wrapper.h"
+#include "../../functionalities/moving_mesh.h"
 #include "../postprocessor/postprocessor_base.h"
+
+#include "../spatial_discretization/dg_operator.h"
 
 using namespace dealii;
 
@@ -25,24 +29,24 @@ class InputParameters;
 namespace Interface
 {
 template<typename Number>
-class Operator;
-
-template<typename Number>
 class OperatorOIF;
 } // namespace Interface
 
-template<typename Number>
+template<int dim, typename Number>
 class TimeIntBDF : public TimeIntBDFBase<Number>
 {
 public:
   typedef typename TimeIntBDFBase<Number>::VectorType VectorType;
 
-  typedef Interface::Operator<Number> Operator;
+
+  typedef DGOperator<dim, Number> Operator;
 
   TimeIntBDF(std::shared_ptr<Operator>                       operator_in,
              InputParameters const &                         param_in,
              MPI_Comm const &                                mpi_comm_in,
-             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
+             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in,
+             std::shared_ptr<MovingMesh<dim, Number>>        moving_mesh_in         = nullptr,
+             std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
 
   void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
@@ -78,6 +82,18 @@ private:
 
   void
   prepare_vectors_for_next_timestep();
+
+  void
+  do_timestep_pre_solve() override;
+
+  void
+  ale_update();
+
+  void
+  move_mesh(double const time) const;
+
+  void
+  move_mesh_and_update_dependent_data_structures(double const time) const;
 
   void
   solve_timestep();
@@ -129,6 +145,7 @@ private:
   VectorType              solution_np;
   std::vector<VectorType> solution;
   std::vector<VectorType> vec_convective_term;
+  VectorType              convective_term_np;
 
   VectorType rhs_vector;
 
@@ -139,6 +156,9 @@ private:
   // iteration counts and solver time
   double iterations;
   double wall_time;
+
+  // measure time it takes to move the mesh and update relevant data structures
+  double computation_time_ale_update;
 
   // Operator-integration-factor (OIF) splitting
 
@@ -151,6 +171,14 @@ private:
     time_integrator_OIF;
 
   std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
+
+  // ALE
+  VectorType              grid_velocity;
+  std::vector<VectorType> vec_grid_coordinates;
+  VectorType              grid_coordinates_np;
+
+  std::shared_ptr<MovingMesh<dim, Number>>        moving_mesh;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 };
 
 } // namespace ConvDiff

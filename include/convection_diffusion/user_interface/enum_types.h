@@ -59,6 +59,18 @@ enum class TypeVelocityField
   DoFVector
 };
 
+/*
+ *  Formulation of convective term: divergence formulation or convective formulation
+ */
+enum class FormulationConvectiveTerm
+{
+  DivergenceFormulation,
+  ConvectiveFormulation
+};
+
+std::string
+enum_to_string(FormulationConvectiveTerm const enum_type);
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 PHYSICAL QUANTITIES                                */
@@ -175,10 +187,10 @@ enum class MappingType
 std::string
 enum_to_string(MappingType const enum_type);
 
+
 /*
  *  Numerical flux formulation of convective term
  */
-
 enum class NumericalFluxConvectiveOperator
 {
   Undefined,
