@@ -218,14 +218,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize convection-diffusion operator
-  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
-                                                       mesh,
-                                                       periodic_faces,
-                                                       boundary_descriptor,
-                                                       field_functions,
-                                                       param,
-                                                       postprocessor,
-                                                       mpi_comm));
+  conv_diff_operator.reset(new DGOperator<dim, Number>(
+    *triangulation, mesh, periodic_faces, boundary_descriptor, field_functions, param, mpi_comm));
 
   AssertThrow(conv_diff_operator.get() != 0, ExcMessage("Not initialized."));
 
@@ -244,11 +238,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     // initialize time integrator
     if(param.temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param, mpi_comm));
+      time_integrator.reset(
+        new TimeIntExplRK<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
     }
     else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param, mpi_comm));
+      time_integrator.reset(
+        new TimeIntBDF<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
     }
     else
     {
@@ -262,7 +258,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   else if(param.problem_type == ProblemType::Steady)
   {
     // initialize driver for steady convection-diffusion problems
-    driver_steady.reset(new DriverSteadyProblems<Number>(conv_diff_operator, param, mpi_comm));
+    driver_steady.reset(
+      new DriverSteadyProblems<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
     driver_steady->setup();
   }
   else
@@ -320,6 +317,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   {
     AssertThrow(false, ExcMessage("Not implemented"));
   }
+
+  // setup postprocessor
+  postprocessor->setup(conv_diff_operator->get_dof_handler(), mesh->get_mapping());
 
   setup_time = timer.wall_time();
 }

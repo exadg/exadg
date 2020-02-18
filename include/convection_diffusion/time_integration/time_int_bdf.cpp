@@ -16,9 +16,10 @@
 namespace ConvDiff
 {
 template<typename Number>
-TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator> operator_in,
-                               InputParameters const &   param_in,
-                               MPI_Comm const &          mpi_comm_in)
+TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator>                       operator_in,
+                               InputParameters const &                         param_in,
+                               MPI_Comm const &                                mpi_comm_in,
+                               std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -34,7 +35,8 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<Operator> operator_in,
     vec_convective_term(param_in.order_time_integrator),
     iterations(0.0),
     wall_time(0.0),
-    cfl_oif(param.cfl_oif / std::pow(2.0, param.dt_refinements))
+    cfl_oif(param.cfl_oif / std::pow(2.0, param.dt_refinements)),
+    postprocessor(postprocessor_in)
 {
 }
 
@@ -562,7 +564,7 @@ template<typename Number>
 void
 TimeIntBDF<Number>::postprocessing() const
 {
-  pde_operator->do_postprocessing(solution[0], this->get_time(), this->get_time_step_number());
+  postprocessor->do_postprocessing(solution[0], this->get_time(), this->get_time_step_number());
 }
 
 template<typename Number>

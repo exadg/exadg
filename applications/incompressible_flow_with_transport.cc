@@ -488,7 +488,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                                                       scalar_boundary_descriptor[i],
                                                                       scalar_field_functions[i],
                                                                       scalar_param[i],
-                                                                      scalar_postprocessor[i],
                                                                       mpi_comm));
 
     AssertThrow(conv_diff_operator[i].get() != 0, ExcMessage("Not initialized."));
@@ -506,13 +505,13 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
     {
-      scalar_time_integrator[i].reset(
-        new ConvDiff::TimeIntExplRK<Number>(conv_diff_operator[i], scalar_param[i], mpi_comm));
+      scalar_time_integrator[i].reset(new ConvDiff::TimeIntExplRK<Number>(
+        conv_diff_operator[i], scalar_param[i], mpi_comm, scalar_postprocessor[i]));
     }
     else if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::BDF)
     {
-      scalar_time_integrator[i].reset(
-        new ConvDiff::TimeIntBDF<Number>(conv_diff_operator[i], scalar_param[i], mpi_comm));
+      scalar_time_integrator[i].reset(new ConvDiff::TimeIntBDF<Number>(
+        conv_diff_operator[i], scalar_param[i], mpi_comm, scalar_postprocessor[i]));
     }
     else
     {
@@ -582,6 +581,10 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                       ConvDiff::TemporalDiscretization::BDF,
                   ExcMessage("Specified time integration scheme is not implemented!"));
     }
+
+    // setup postprocessor
+    scalar_postprocessor[i]->setup(conv_diff_operator[i]->get_dof_handler(),
+                                   scalar_mesh[i]->get_mapping());
   }
 
   // Boussinesq term

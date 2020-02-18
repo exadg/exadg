@@ -62,14 +62,13 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::TriangulationBase<dim> const &        triangulation,
-             std::shared_ptr<Mesh<dim>> const                mesh,
-             PeriodicFaces const                             periodic_face_pairs,
-             std::shared_ptr<BoundaryDescriptor<dim>> const  boundary_descriptor,
-             std::shared_ptr<FieldFunctions<dim>> const      field_functions,
-             InputParameters const &                         param,
-             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor,
-             MPI_Comm const &                                mpi_comm);
+  DGOperator(parallel::TriangulationBase<dim> const &       triangulation,
+             std::shared_ptr<Mesh<dim>> const               mesh,
+             PeriodicFaces const                            periodic_face_pairs,
+             std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
+             std::shared_ptr<FieldFunctions<dim>> const     field_functions,
+             InputParameters const &                        param,
+             MPI_Comm const &                               mpi_comm);
 
 
   void
@@ -262,14 +261,6 @@ public:
   types::global_dof_index
   get_number_of_dofs() const;
 
-  /*
-   * Perform postprocessing for a given solution vector.
-   */
-  void
-  do_postprocessing(VectorType const & solution,
-                    double const       time             = 0.0,
-                    int const          time_step_number = -1) const;
-
   // TODO: implement filtering as a separate module
   void
   filter_solution(VectorType & solution) const;
@@ -304,12 +295,6 @@ private:
    */
   void
   initialize_solver();
-
-  /*
-   * Initializes the postprocessor.
-   */
-  void
-  setup_postprocessor();
 
   /*
    * Mesh (mapping)
@@ -383,11 +368,6 @@ private:
    * Output to screen.
    */
   ConditionalOStream pcout;
-
-  /*
-   * Postprocessor.
-   */
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 };
 
 } // namespace ConvDiff

@@ -14,14 +14,13 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
-  parallel::TriangulationBase<dim> const &        triangulation_in,
-  std::shared_ptr<Mesh<dim>> const                mesh_in,
-  PeriodicFaces const                             periodic_face_pairs_in,
-  std::shared_ptr<BoundaryDescriptor<dim>> const  boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
-  InputParameters const &                         param_in,
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-  MPI_Comm const &                                mpi_comm_in)
+  parallel::TriangulationBase<dim> const &       triangulation_in,
+  std::shared_ptr<Mesh<dim>> const               mesh_in,
+  PeriodicFaces const                            periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
+  InputParameters const &                        param_in,
+  MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
     mesh(mesh_in),
     periodic_face_pairs(periodic_face_pairs_in),
@@ -31,8 +30,7 @@ DGOperator<dim, Number>::DGOperator(
     fe(param.degree),
     dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    postprocessor(postprocessor_in)
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
@@ -139,8 +137,6 @@ DGOperator<dim, Number>::setup(
 
   matrix_free_wrapper = matrix_free_wrapper_in;
   matrix_free         = matrix_free_wrapper->get_matrix_free();
-
-  setup_postprocessor();
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -834,15 +830,6 @@ DGOperator<dim, Number>::get_number_of_dofs() const
   return dof_handler.n_dofs();
 }
 
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::do_postprocessing(VectorType const & solution,
-                                           double const       time,
-                                           int const          time_step_number) const
-{
-  postprocessor->do_postprocessing(solution, time, time_step_number);
-}
-
 // TODO: implement filtering as a separate module
 template<int dim, typename Number>
 void
@@ -854,13 +841,6 @@ DGOperator<dim, Number>::filter_solution(VectorType & solution) const
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
   if(mg_preconditioner.get() != 0)
     mg_preconditioner->project_and_prolongate(solution);
-}
-
-template<int dim, typename Number>
-void
-DGOperator<dim, Number>::setup_postprocessor()
-{
-  postprocessor->setup(dof_handler, mesh->get_mapping());
 }
 
 template class DGOperator<2, float>;

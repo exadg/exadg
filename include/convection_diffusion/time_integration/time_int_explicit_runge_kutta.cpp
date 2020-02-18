@@ -15,9 +15,11 @@
 namespace ConvDiff
 {
 template<typename Number>
-TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                                     InputParameters const &   param_in,
-                                     MPI_Comm const &          mpi_comm_in)
+TimeIntExplRK<Number>::TimeIntExplRK(
+  std::shared_ptr<Operator>                       operator_in,
+  InputParameters const &                         param_in,
+  MPI_Comm const &                                mpi_comm_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,
@@ -29,7 +31,8 @@ TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
     time_step_diff(1.0),
     cfl(param.cfl / std::pow(2.0, param.dt_refinements)),
     diffusion_number(param.diffusion_number / std::pow(2.0, param.dt_refinements)),
-    wall_time(0.0)
+    wall_time(0.0),
+    postprocessor(postprocessor_in)
 {
 }
 
@@ -386,7 +389,7 @@ template<typename Number>
 void
 TimeIntExplRK<Number>::postprocessing() const
 {
-  pde_operator->do_postprocessing(this->solution_n, this->time, this->time_step_number);
+  postprocessor->do_postprocessing(this->solution_n, this->time, this->time_step_number);
 }
 
 // instantiations

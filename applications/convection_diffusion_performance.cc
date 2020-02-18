@@ -258,14 +258,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
-                                                       mesh,
-                                                       periodic_faces,
-                                                       boundary_descriptor,
-                                                       field_functions,
-                                                       param,
-                                                       postprocessor,
-                                                       mpi_comm));
+  conv_diff_operator.reset(new DGOperator<dim, Number>(
+    *triangulation, mesh, periodic_faces, boundary_descriptor, field_functions, param, mpi_comm));
 
   AssertThrow(conv_diff_operator.get() != 0, ExcMessage("Not initialized."));
 

@@ -13,14 +13,17 @@
 namespace ConvDiff
 {
 template<typename Number>
-DriverSteadyProblems<Number>::DriverSteadyProblems(std::shared_ptr<Operator> operator_in,
-                                                   InputParameters const &   param_in,
-                                                   MPI_Comm const &          mpi_comm_in)
+DriverSteadyProblems<Number>::DriverSteadyProblems(
+  std::shared_ptr<Operator>                       operator_in,
+  InputParameters const &                         param_in,
+  MPI_Comm const &                                mpi_comm_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : pde_operator(operator_in),
     param(param_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0),
-    computing_times(1)
+    computing_times(1),
+    postprocessor(postprocessor_in)
 {
 }
 
@@ -123,7 +126,7 @@ template<typename Number>
 void
 DriverSteadyProblems<Number>::postprocessing() const
 {
-  pde_operator->do_postprocessing(solution);
+  postprocessor->do_postprocessing(solution);
 }
 
 template<typename Number>

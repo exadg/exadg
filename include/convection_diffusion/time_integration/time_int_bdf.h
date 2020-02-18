@@ -13,6 +13,8 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/time_int_bdf_base.h"
 
+#include "../postprocessor/postprocessor_base.h"
+
 using namespace dealii;
 
 namespace ConvDiff
@@ -37,9 +39,10 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntBDF(std::shared_ptr<Operator> operator_in,
-             InputParameters const &   param_in,
-             MPI_Comm const &          mpi_comm_in);
+  TimeIntBDF(std::shared_ptr<Operator>                       operator_in,
+             InputParameters const &                         param_in,
+             MPI_Comm const &                                mpi_comm_in,
+             std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;
@@ -146,6 +149,8 @@ private:
 
   std::shared_ptr<ExplicitTimeIntegrator<Interface::OperatorOIF<Number>, VectorType>>
     time_integrator_OIF;
+
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 };
 
 } // namespace ConvDiff

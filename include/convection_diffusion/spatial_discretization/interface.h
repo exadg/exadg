@@ -114,12 +114,6 @@ public:
   // needed for time step calculation
   virtual unsigned int
   get_polynomial_degree() const = 0;
-
-  // postprocessing
-  virtual void
-  do_postprocessing(VectorType const & solution,
-                    double const       time             = 0.0,
-                    int const          time_step_number = -1) const = 0;
 };
 
 template<typename Number>
