@@ -576,27 +576,35 @@ TimeIntBDF<dim, Number>::solve_timestep()
   // transport velocity
   VectorType velocity;
 
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+  if(param.equation_type == EquationType::Convection ||
+     param.equation_type == EquationType::ConvectionDiffusion)
   {
-    pde_operator->initialize_dof_vector_velocity(velocity);
-
-    if(param.analytical_velocity_field)
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
-      pde_operator->project_velocity(velocity, this->get_next_time());
+      pde_operator->initialize_dof_vector_velocity(velocity);
+
+      if(param.analytical_velocity_field)
+      {
+        pde_operator->project_velocity(velocity, this->get_next_time());
+      }
+      else
+      {
+        AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12 * param.end_time,
+                    ExcMessage("Invalid assumption."));
+        AssertThrow(velocities[0] != nullptr,
+                    ExcMessage("Pointer velocities[0] is not correctly initialized."));
+
+        velocity = *velocities[0];
+      }
+
+      if(param.ale_formulation)
+      {
+        velocity -= grid_velocity;
+      }
     }
     else
     {
-      AssertThrow(std::abs(times[0] - this->get_next_time()) < 1.e-12 * param.end_time,
-                  ExcMessage("Invalid assumption."));
-      AssertThrow(velocities[0] != nullptr,
-                  ExcMessage("Pointer velocities[0] is not correctly initialized."));
-
-      velocity = *velocities[0];
-    }
-
-    if(param.ale_formulation)
-    {
-      velocity -= grid_velocity;
+      AssertThrow(param.ale_formulation == false, ExcMessage("not implemented."));
     }
   }
 

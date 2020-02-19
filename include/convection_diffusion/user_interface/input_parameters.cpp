@@ -92,11 +92,31 @@ InputParameters::check_input_parameters()
 
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
+  if(analytical_velocity_field)
+  {
+    if(equation_type == EquationType::Convection ||
+       equation_type == EquationType::ConvectionDiffusion)
+    {
+      if(temporal_discretization == TemporalDiscretization::ExplRK ||
+         (temporal_discretization == TemporalDiscretization::BDF &&
+          treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF))
+      {
+        AssertThrow(
+          store_analytical_velocity_in_dof_vector == false,
+          ExcMessage(
+            "This option is not implemented for explicit Runge-Kutta time stepping or BDF time stepping with OIF substepping."));
+      }
+    }
+  }
+
   // moving mesh
   if(ale_formulation)
   {
-    AssertThrow(temporal_discretization == TemporalDiscretization::BDF,
-                ExcMessage("ALE formulation is only implemented for BDF time integration."));
+    AssertThrow(
+      temporal_discretization == TemporalDiscretization::BDF &&
+        (treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit ||
+         treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit),
+      ExcMessage("ALE formulation is not implemented for the specified type of time integration."));
 
     AssertThrow(equation_type == EquationType::Convection ||
                   equation_type == EquationType::ConvectionDiffusion,
@@ -121,7 +141,9 @@ InputParameters::check_input_parameters()
 
   // Set the diffusivity whenever the diffusive term is involved.
   if(equation_type == EquationType::Diffusion || equation_type == EquationType::ConvectionDiffusion)
+  {
     AssertThrow(diffusivity > (0.0 + 1.0e-12), ExcMessage("parameter must be defined"));
+  }
 
   // TEMPORAL DISCRETIZATION
   if(problem_type == ProblemType::Unsteady)
@@ -289,22 +311,6 @@ InputParameters::check_input_parameters()
   }
 
   // NUMERICAL PARAMETERS
-
-  if(equation_type == EquationType::Convection ||
-     equation_type == EquationType::ConvectionDiffusion)
-  {
-    if(analytical_velocity_field == true && store_analytical_velocity_in_dof_vector == true)
-    {
-      AssertThrow(linear_system_including_convective_term_has_to_be_solved() == true,
-                  ExcMessage(
-                    "Invalid parameter. Check parameters analytical_velocity_field and "
-                    "store_analytical_velocity_in_dof_vector. The option to store the "
-                    "analytically defined velocity field in a dof vector only makes sense "
-                    "from the point of view of computational costs in case a linear system "
-                    "of equations has to be solved, i.e., if the convective term has to be "
-                    "evaluated multiple times per time step at a fixed time t."));
-    }
-  }
 
   // TODO: implement filtering as a separate module
   if(filter_solution)

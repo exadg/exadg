@@ -195,8 +195,7 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
     scalar flux =
       kernel.calculate_flux_interior(q, integrator_p, value_p, value_m, normal_p, this->time, true);
 
-    // minus sign since n⁺ = -n⁻
-    integrator_p.submit_value(-flux, q);
+    integrator_p.submit_value(flux, q);
   }
 }
 
@@ -211,7 +210,6 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     scalar value_m = calculate_interior_value(q, integrator_m, operator_type);
-
     scalar value_p = calculate_exterior_value(value_m,
                                               q,
                                               integrator_m,

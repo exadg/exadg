@@ -33,10 +33,13 @@ Operator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
   if(this->data.diffusive_problem)
     diffusive_kernel.reinit(matrix_free, data.diffusive_kernel_data, data.dof_index);
 
+  // integrator flags
   if(this->data.unsteady_problem)
     this->integrator_flags = this->integrator_flags || mass_kernel.get_integrator_flags();
+
   if(this->data.convective_problem)
     this->integrator_flags = this->integrator_flags || convective_kernel.get_integrator_flags();
+
   if(this->data.diffusive_problem)
     this->integrator_flags = this->integrator_flags || diffusive_kernel.get_integrator_flags();
 }
@@ -45,7 +48,8 @@ template<int dim, typename Number>
 void
 Operator<dim, Number>::update_after_mesh_movement()
 {
-  diffusive_kernel.calculate_penalty_parameter(*this->matrix_free, this->data.dof_index);
+  if(this->data.diffusive_problem)
+    diffusive_kernel.calculate_penalty_parameter(*this->matrix_free, this->data.dof_index);
 }
 
 template<int dim, typename Number>
@@ -377,7 +381,6 @@ Operator<dim, Number>::do_face_ext_integral(IntegratorFace & integrator_m,
 
     if(this->data.convective_problem)
     {
-      // minus sign for convective flux since n⁺ = -n⁻
       value_flux += convective_kernel.calculate_flux_interior(
         q, integrator_p, value_p, value_m, normal_p, this->time, true);
     }
