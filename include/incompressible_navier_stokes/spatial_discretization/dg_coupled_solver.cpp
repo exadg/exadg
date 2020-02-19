@@ -447,7 +447,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   {
     preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
       this->get_matrix_free(),
-      this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
   }
@@ -524,7 +523,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   {
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
   }
@@ -554,7 +552,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // using large time steps and large viscosities.
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
 
@@ -577,7 +574,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
       inv_mass_matrix_preconditioner_schur_complement.reset(
         new InverseMassMatrixPreconditioner<dim, dim, Number>(
           this->get_matrix_free(),
-          this->param.degree_u,
           this->get_dof_index_velocity(),
           this->get_quad_index_velocity_linear()));
     }
@@ -605,7 +601,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // III. inverse pressure mass matrix
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
 

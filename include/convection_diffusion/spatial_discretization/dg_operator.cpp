@@ -150,7 +150,7 @@ DGOperator<dim, Number>::setup(
 
   // inverse mass matrix operator
   // dof_index = 0, quad_index = 0
-  inverse_mass_matrix_operator.initialize(*matrix_free, param.degree, 0, 0);
+  inverse_mass_matrix_operator.initialize(*matrix_free, 0, 0);
 
   // convective operator
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
@@ -329,8 +329,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    preconditioner.reset(
-      new InverseMassMatrixPreconditioner<dim, 1, Number>(*matrix_free, param.degree, 0, 0));
+    preconditioner.reset(new InverseMassMatrixPreconditioner<dim, 1, Number>(*matrix_free, 0, 0));
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
@@ -494,13 +493,8 @@ DGOperator<dim, Number>::project_velocity(VectorType & velocity, double const ti
   VelocityProjection<dim, Number> l2_projection;
 
   unsigned int const quad_index = 0;
-  l2_projection.apply(*matrix_free,
-                      get_dof_index_velocity(),
-                      quad_index,
-                      param.degree,
-                      field_functions->velocity,
-                      time,
-                      velocity);
+  l2_projection.apply(
+    *matrix_free, get_dof_index_velocity(), quad_index, field_functions->velocity, time, velocity);
 }
 
 template<int dim, typename Number>
@@ -839,9 +833,6 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::update_after_mesh_movement()
 {
-  // TODO: this should not be necessary for a good design. MatrixFree has to care about that.
-  inverse_mass_matrix_operator.reinit();
-
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements
   if(param.equation_type == EquationType::Diffusion ||

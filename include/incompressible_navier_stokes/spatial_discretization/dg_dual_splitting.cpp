@@ -78,7 +78,6 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   {
     helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
       this->get_matrix_free(),
-      this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
   }

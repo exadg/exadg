@@ -66,9 +66,6 @@ public:
                    AffineConstraints<double> const &          constraint_matrix,
                    CompatibleLaplaceOperatorData<dim> const & operator_data);
 
-  void
-  update_after_mesh_movement();
-
   virtual void
   update_block_diagonal_preconditioner() const
   {

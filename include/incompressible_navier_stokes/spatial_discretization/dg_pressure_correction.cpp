@@ -69,16 +69,6 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_solvers(
 
 template<int dim, typename Number>
 void
-DGNavierStokesPressureCorrection<dim, Number>::update_after_mesh_movement()
-{
-  ProjBase::update_after_mesh_movement();
-
-  // inverse pressure mass matrix has to be updated
-  inverse_mass_pressure.reinit();
-}
-
-template<int dim, typename Number>
-void
 DGNavierStokesPressureCorrection<dim, Number>::setup_momentum_solver()
 {
   initialize_momentum_preconditioner();
@@ -94,7 +84,6 @@ DGNavierStokesPressureCorrection<dim, Number>::initialize_momentum_preconditione
   {
     momentum_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
       this->get_matrix_free(),
-      this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
   }
@@ -223,7 +212,6 @@ DGNavierStokesPressureCorrection<dim, Number>::setup_inverse_mass_matrix_operato
   // inverse mass matrix operator pressure (needed for pressure update in case of rotational
   // formulation)
   inverse_mass_pressure.initialize(this->get_matrix_free(),
-                                   this->param.get_degree_p(),
                                    this->get_dof_index_pressure(),
                                    this->get_quad_index_pressure());
 }

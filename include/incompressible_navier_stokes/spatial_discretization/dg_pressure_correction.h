@@ -131,13 +131,6 @@ public:
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);
 
   /*
-   * Calls function of base class and does additional updates relevant for the pressure-correction
-   * scheme.
-   */
-  virtual void
-  update_after_mesh_movement() override;
-
-  /*
    * Momentum step:
    */
 

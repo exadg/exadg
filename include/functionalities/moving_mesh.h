@@ -64,7 +64,7 @@ private:
   // An analytical function that describes the mesh movement
   std::shared_ptr<Function<dim>> mesh_movement_function;
 
-  // MPI communciator
+  // MPI communicator
   MPI_Comm const & mpi_comm;
 
   // Finite Element (use a continuous finite element space to describe the mesh movement)

@@ -280,13 +280,10 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   mass_matrix_operator.reinit(*matrix_free, constraint_dummy, mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_velocity.initialize(*matrix_free, param.degree_u, dof_index_u, quad_index_u);
+  inverse_mass_velocity.initialize(*matrix_free, dof_index_u, quad_index_u);
 
   // inverse mass matrix operator velocity scalar
-  inverse_mass_velocity_scalar.initialize(*matrix_free,
-                                          param.degree_u,
-                                          dof_index_u_scalar,
-                                          quad_index_u);
+  inverse_mass_velocity_scalar.initialize(*matrix_free, dof_index_u_scalar, quad_index_u);
 
   // body force operator
   RHSOperatorData<dim> rhs_data;
@@ -1199,10 +1196,6 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
 {
-  // TODO: this should not be necessary for a good design. MatrixFree has to care about that.
-  inverse_mass_velocity.reinit();
-  inverse_mass_velocity_scalar.reinit();
-
   if(this->param.use_turbulence_model)
   {
     // the mesh (and hence the filter width) changes in case of ALE formulation
@@ -1297,7 +1290,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     else if(param.preconditioner_projection == PreconditionerProjection::InverseMassMatrix)
     {
       preconditioner_projection.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
-        *matrix_free, param.degree_u, get_dof_index_velocity(), get_quad_index_velocity_linear()));
+        *matrix_free, get_dof_index_velocity(), get_quad_index_velocity_linear()));
     }
     else if(param.preconditioner_projection == PreconditionerProjection::PointJacobi)
     {

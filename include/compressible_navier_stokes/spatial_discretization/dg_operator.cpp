@@ -437,9 +437,9 @@ DGOperator<dim, Number>::setup_operators()
   mass_matrix_operator.initialize(*matrix_free, mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_all.initialize(*matrix_free, param.degree, dof_index_all, quad_index_standard);
-  inverse_mass_vector.initialize(*matrix_free, param.degree, dof_index_vector, quad_index_standard);
-  inverse_mass_scalar.initialize(*matrix_free, param.degree, dof_index_scalar, quad_index_standard);
+  inverse_mass_all.initialize(*matrix_free, dof_index_all, quad_index_standard);
+  inverse_mass_vector.initialize(*matrix_free, dof_index_vector, quad_index_standard);
+  inverse_mass_scalar.initialize(*matrix_free, dof_index_scalar, quad_index_standard);
 
   // body force operator
   BodyForceOperatorData<dim> body_force_operator_data;

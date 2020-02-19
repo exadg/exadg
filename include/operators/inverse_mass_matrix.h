@@ -18,7 +18,7 @@ using namespace dealii;
 template<int dim, int n_components, typename Number>
 class InverseMassMatrixOperator
 {
-public:
+private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef InverseMassMatrixOperator<dim, n_components, Number> This;
@@ -31,25 +31,19 @@ public:
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
+public:
   InverseMassMatrixOperator() : matrix_free(nullptr), dof_index(0), quad_index(0)
   {
   }
 
-  virtual ~InverseMassMatrixOperator(){};
-
   void
   initialize(MatrixFree<dim, Number> const & matrix_free_in,
-             unsigned int const              degree_in,
              unsigned int const              dof_index_in,
              unsigned int const              quad_index_in)
   {
     this->matrix_free = &matrix_free_in;
     dof_index         = dof_index_in;
     quad_index        = quad_index_in;
-
-    coefficients.resize(Utilities::pow(degree_in + 1, dim));
-
-    reinit();
   }
 
   void
@@ -58,44 +52,30 @@ public:
     matrix_free->cell_loop(&This::cell_loop, this, dst, src);
   }
 
-  void
-  reinit()
-  {
-    fe_eval.reset(new Integrator(*matrix_free, dof_index, quad_index));
-    inverse.reset(new CellwiseInverseMass(*fe_eval));
-  }
-
 private:
-  virtual void
+  void
   cell_loop(MatrixFree<dim, Number> const &,
             VectorType &       dst,
             VectorType const & src,
             Range const &      cell_range) const
   {
+    Integrator          integrator(*matrix_free, dof_index, quad_index);
+    CellwiseInverseMass inverse(integrator);
+
     for(unsigned int cell = cell_range.first; cell < cell_range.second; ++cell)
     {
-      fe_eval->reinit(cell);
-      fe_eval->read_dof_values(src, 0);
+      integrator.reinit(cell);
+      integrator.read_dof_values(src, 0);
 
-      inverse->fill_inverse_JxW_values(coefficients);
-      inverse->apply(coefficients,
-                     n_components,
-                     fe_eval->begin_dof_values(),
-                     fe_eval->begin_dof_values());
+      inverse.apply(integrator.begin_dof_values(), integrator.begin_dof_values());
 
-      fe_eval->set_dof_values(dst, 0);
+      integrator.set_dof_values(dst, 0);
     }
   }
 
   MatrixFree<dim, Number> const * matrix_free;
 
   unsigned int dof_index, quad_index;
-
-  std::shared_ptr<Integrator> fe_eval;
-
-  mutable AlignedVector<VectorizedArray<Number>> coefficients;
-
-  std::shared_ptr<CellwiseInverseMass> inverse;
 };
 
 
