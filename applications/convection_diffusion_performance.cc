@@ -28,6 +28,7 @@
 
 // general functionalities
 #include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/mesh.h"
 #include "../include/functionalities/mesh_resolution_generator_hypercube.h"
 #include "../include/functionalities/print_functions.h"
 #include "../include/functionalities/print_general_infos.h"
@@ -253,11 +254,16 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   mesh.reset(new Mesh<dim>(mapping_degree));
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(new DGOperator<dim, Number>(
-    *triangulation, mesh, periodic_faces, boundary_descriptor, field_functions, param, mpi_comm));
+  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                       mesh->get_mapping(),
+                                                       periodic_faces,
+                                                       boundary_descriptor,
+                                                       field_functions,
+                                                       param,
+                                                       mpi_comm));
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
   conv_diff_operator->append_data_structures(matrix_free_wrapper);
   matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
 

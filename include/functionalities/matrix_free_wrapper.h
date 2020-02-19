@@ -12,14 +12,13 @@
 #include <deal.II/matrix_free/matrix_free.h>
 
 #include "categorization.h"
-#include "mesh.h"
 
 using namespace dealii;
 
 template<int dim, typename Number>
 struct MatrixFreeWrapper
 {
-  MatrixFreeWrapper(std::shared_ptr<Mesh<dim>> mesh_in) : mesh(mesh_in)
+  MatrixFreeWrapper(Mapping<dim> const & mapping_in) : mapping(mapping_in)
   {
     matrix_free.reset(new MatrixFree<dim, Number>());
   }
@@ -50,7 +49,7 @@ struct MatrixFreeWrapper
 
     data.tasks_parallel_scheme = MatrixFree<dim, Number>::AdditionalData::partition_partition;
 
-    matrix_free->reinit(mesh->get_mapping(), dof_handler_vec, constraint_vec, quadrature_vec, data);
+    matrix_free->reinit(mapping, dof_handler_vec, constraint_vec, quadrature_vec, data);
   }
 
   /*
@@ -77,7 +76,14 @@ struct MatrixFreeWrapper
 
     // TODO: problems occur if the mesh is not deformed (displacement = 0)
     matrix_free->reinit(
-      mesh->get_mapping(), dof_handler_vec, constraint_vec, quadrature_vec, data_update_geometry);
+      mapping, dof_handler_vec, constraint_vec, quadrature_vec, data_update_geometry);
+  }
+
+  template<typename Operator>
+  void
+  append_data_structures(Operator const & pde_operator)
+  {
+    pde_operator->append_data_structures(*this);
   }
 
   // the actual MatrixFree object
@@ -86,7 +92,7 @@ struct MatrixFreeWrapper
   // collection of data structures required for initialization and update of matrix_free
 
   // mesh containing mapping information
-  std::shared_ptr<Mesh<dim>> mesh;
+  Mapping<dim> const & mapping;
 
   // additional data
   typename MatrixFree<dim, Number>::AdditionalData data;

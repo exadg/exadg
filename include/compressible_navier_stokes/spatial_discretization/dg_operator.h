@@ -39,7 +39,6 @@
 
 // general functionalities
 #include "../../functionalities/matrix_free_wrapper.h"
-#include "../../functionalities/mesh.h"
 
 namespace CompNS
 {
@@ -94,7 +93,7 @@ public:
   //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
 
   DGOperator(parallel::TriangulationBase<dim> const &       triangulation_in,
-             std::shared_ptr<Mesh<dim>>                     mesh_in,
+             Mapping<dim> const &                           mapping_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
@@ -215,9 +214,9 @@ private:
   setup_operators();
 
   /*
-   * Mesh (mapping)
+   * Mapping
    */
-  std::shared_ptr<Mesh<dim>> mesh;
+  Mapping<dim> const & mapping;
 
   /*
    * User interface: Boundary conditions and field functions.

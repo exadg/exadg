@@ -15,14 +15,14 @@ namespace ConvDiff
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
-  std::shared_ptr<Mesh<dim>> const               mesh_in,
+  Mapping<dim> const &                           mapping_in,
   PeriodicFaces const                            periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
   std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
   InputParameters const &                        param_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
-    mesh(mesh_in),
+    mapping(mapping_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
@@ -377,7 +377,7 @@ DGOperator<dim, Number>::initialize_preconditioner()
     mg_preconditioner->initialize(mg_data,
                                   tria,
                                   fe,
-                                  mesh->get_mapping(),
+                                  mapping,
                                   combined_operator,
                                   param.mg_operator_type,
                                   param.ale_formulation,

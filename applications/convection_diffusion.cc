@@ -232,12 +232,19 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   // initialize convection-diffusion operator
-  conv_diff_operator.reset(new DGOperator<dim, Number>(
-    *triangulation, mesh, periodic_faces, boundary_descriptor, field_functions, param, mpi_comm));
+  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                       mesh->get_mapping(),
+                                                       periodic_faces,
+                                                       boundary_descriptor,
+                                                       field_functions,
+                                                       param,
+                                                       mpi_comm));
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
   conv_diff_operator->append_data_structures(matrix_free_wrapper);
+  // TODO
+  //  matrix_free_wrapper->append_data_structures(conv_diff_operator);
   matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
 
   // setup convection-diffusion operator

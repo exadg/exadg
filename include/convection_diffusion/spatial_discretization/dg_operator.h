@@ -37,7 +37,6 @@
 
 // functionalities
 #include "../../functionalities/matrix_free_wrapper.h"
-#include "../../functionalities/mesh.h"
 
 // postprocessor
 #include "../postprocessor/postprocessor_base.h"
@@ -63,7 +62,7 @@ public:
    * Constructor.
    */
   DGOperator(parallel::TriangulationBase<dim> const &       triangulation,
-             std::shared_ptr<Mesh<dim>> const               mesh,
+             Mapping<dim> const &                           mapping,
              PeriodicFaces const                            periodic_face_pairs,
              std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
              std::shared_ptr<FieldFunctions<dim>> const     field_functions,
@@ -297,9 +296,9 @@ private:
   initialize_solver();
 
   /*
-   * Mesh (mapping)
+   * Mapping
    */
-  std::shared_ptr<Mesh<dim>> mesh;
+  Mapping<dim> const & mapping;
 
   /*
    * Periodic face pairs: This variable is only needed when using a multigrid preconditioner

@@ -14,7 +14,7 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   parallel::TriangulationBase<dim> const & triangulation_in,
-  std::shared_ptr<Mesh<dim>> const         mesh_in,
+  Mapping<dim> const &                     mapping_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -23,7 +23,7 @@ DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
   InputParameters const &                         parameters_in,
   MPI_Comm const &                                mpi_comm_in)
   : ProjBase(triangulation_in,
-             mesh_in,
+             mapping_in,
              periodic_face_pairs_in,
              boundary_descriptor_velocity_in,
              boundary_descriptor_pressure_in,

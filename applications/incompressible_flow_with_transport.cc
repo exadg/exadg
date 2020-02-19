@@ -354,7 +354,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     fluid_mesh.reset(new Mesh<dim>(mapping_degree));
   }
 
-  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh));
+  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh->get_mapping()));
 
   // initialize postprocessor
   fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param, mpi_comm);
@@ -368,7 +368,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     std::shared_ptr<DGCoupled> navier_stokes_operator_coupled;
 
     navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
-                                                       fluid_mesh,
+                                                       fluid_mesh->get_mapping(),
                                                        periodic_faces,
                                                        fluid_boundary_descriptor_velocity,
                                                        fluid_boundary_descriptor_pressure,
@@ -388,7 +388,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     navier_stokes_operator_dual_splitting.reset(
       new DGDualSplitting(*triangulation,
-                          fluid_mesh,
+                          fluid_mesh->get_mapping(),
                           periodic_faces,
                           fluid_boundary_descriptor_velocity,
                           fluid_boundary_descriptor_pressure,
@@ -408,7 +408,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     navier_stokes_operator_pressure_correction.reset(
       new DGPressureCorrection(*triangulation,
-                               fluid_mesh,
+                               fluid_mesh->get_mapping(),
                                periodic_faces,
                                fluid_boundary_descriptor_velocity,
                                fluid_boundary_descriptor_pressure,
@@ -483,7 +483,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     // initialize convection diffusion operation
     conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
-                                                                      scalar_mesh[i],
+                                                                      scalar_mesh[i]->get_mapping(),
                                                                       periodic_faces,
                                                                       scalar_boundary_descriptor[i],
                                                                       scalar_field_functions[i],
@@ -493,7 +493,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     AssertThrow(conv_diff_operator[i].get() != 0, ExcMessage("Not initialized."));
 
     // initialize matrix_free
-    scalar_matrix_free_wrapper[i].reset(new MatrixFreeWrapper<dim, Number>(scalar_mesh[i]));
+    scalar_matrix_free_wrapper[i].reset(
+      new MatrixFreeWrapper<dim, Number>(scalar_mesh[i]->get_mapping()));
 
     conv_diff_operator[i]->append_data_structures(scalar_matrix_free_wrapper[i]);
 

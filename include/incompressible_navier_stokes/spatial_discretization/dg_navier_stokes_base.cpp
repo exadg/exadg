@@ -15,7 +15,7 @@ namespace IncNS
 template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::TriangulationBase<dim> const & triangulation_in,
-  std::shared_ptr<Mesh<dim>> const         mesh_in,
+  Mapping<dim> const &                     mapping_in,
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                   periodic_face_pairs_in,
   std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -24,7 +24,7 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   InputParameters const &                         parameters_in,
   MPI_Comm const &                                mpi_comm_in)
   : dealii::Subscriptor(),
-    mesh(mesh_in),
+    mapping(mapping_in),
     periodic_face_pairs(periodic_face_pairs_in),
     boundary_descriptor_velocity(boundary_descriptor_velocity_in),
     boundary_descriptor_pressure(boundary_descriptor_pressure_in),
@@ -634,7 +634,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGNavierStokesBase<dim, Number>::get_mapping() const
 {
-  return mesh->get_mapping();
+  return mapping;
 }
 
 template<int dim, typename Number>

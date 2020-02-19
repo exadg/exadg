@@ -12,7 +12,7 @@ namespace CompNS
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
   parallel::TriangulationBase<dim> const &       triangulation_in,
-  std::shared_ptr<Mesh<dim>>                     mesh_in,
+  Mapping<dim> const &                           mapping_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
@@ -21,7 +21,7 @@ DGOperator<dim, Number>::DGOperator(
   InputParameters const &                        param_in,
   MPI_Comm const &                               mpi_comm_in)
   : dealii::Subscriptor(),
-    mesh(mesh_in),
+    mapping(mapping_in),
     boundary_descriptor_density(boundary_descriptor_density_in),
     boundary_descriptor_velocity(boundary_descriptor_velocity_in),
     boundary_descriptor_pressure(boundary_descriptor_pressure_in),
@@ -183,7 +183,7 @@ DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src, double c
   VectorTypeDouble src_double;
   src_double = src;
 
-  VectorTools::interpolate(mesh->get_mapping(),
+  VectorTools::interpolate(mapping,
                            dof_handler,
                            *(this->field_functions->initial_solution),
                            src_double);
@@ -290,7 +290,7 @@ template<int dim, typename Number>
 Mapping<dim> const &
 DGOperator<dim, Number>::get_mapping() const
 {
-  return mesh->get_mapping();
+  return mapping;
 }
 
 template<int dim, typename Number>

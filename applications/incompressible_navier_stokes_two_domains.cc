@@ -387,8 +387,8 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     mesh_2.reset(new Mesh<dim>(mapping_degree_2));
   }
 
-  matrix_free_wrapper_1.reset(new MatrixFreeWrapper<dim, Number>(mesh_1));
-  matrix_free_wrapper_2.reset(new MatrixFreeWrapper<dim, Number>(mesh_2));
+  matrix_free_wrapper_1.reset(new MatrixFreeWrapper<dim, Number>(mesh_1->get_mapping()));
+  matrix_free_wrapper_2.reset(new MatrixFreeWrapper<dim, Number>(mesh_2->get_mapping()));
 
   // initialize postprocessor
   postprocessor_1 = construct_postprocessor<dim, Number>(param_1, mpi_comm, 1);
@@ -400,7 +400,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     std::shared_ptr<DGCoupled> navier_stokes_operator_coupled_1;
 
     navier_stokes_operator_coupled_1.reset(new DGCoupled(*triangulation_1,
-                                                         mesh_1,
+                                                         mesh_1->get_mapping(),
                                                          periodic_faces_1,
                                                          boundary_descriptor_velocity_1,
                                                          boundary_descriptor_pressure_1,
@@ -419,7 +419,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
     navier_stokes_operator_dual_splitting_1.reset(
       new DGDualSplitting(*triangulation_1,
-                          mesh_1,
+                          mesh_1->get_mapping(),
                           periodic_faces_1,
                           boundary_descriptor_velocity_1,
                           boundary_descriptor_pressure_1,
@@ -438,7 +438,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
     navier_stokes_operator_pressure_correction_1.reset(
       new DGPressureCorrection(*triangulation_1,
-                               mesh_1,
+                               mesh_1->get_mapping(),
                                periodic_faces_1,
                                boundary_descriptor_velocity_1,
                                boundary_descriptor_pressure_1,
@@ -462,7 +462,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     std::shared_ptr<DGCoupled> navier_stokes_operator_coupled_2;
 
     navier_stokes_operator_coupled_2.reset(new DGCoupled(*triangulation_2,
-                                                         mesh_2,
+                                                         mesh_2->get_mapping(),
                                                          periodic_faces_2,
                                                          boundary_descriptor_velocity_2,
                                                          boundary_descriptor_pressure_2,
@@ -481,7 +481,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
     navier_stokes_operator_dual_splitting_2.reset(
       new DGDualSplitting(*triangulation_2,
-                          mesh_2,
+                          mesh_2->get_mapping(),
                           periodic_faces_2,
                           boundary_descriptor_velocity_2,
                           boundary_descriptor_pressure_2,
@@ -500,7 +500,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
     navier_stokes_operator_pressure_correction_2.reset(
       new DGPressureCorrection(*triangulation_2,
-                               mesh_2,
+                               mesh_2->get_mapping(),
                                periodic_faces_2,
                                boundary_descriptor_velocity_2,
                                boundary_descriptor_pressure_2,

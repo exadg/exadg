@@ -31,6 +31,7 @@
 
 // general functionalities
 #include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/mesh.h"
 #include "../include/functionalities/print_general_infos.h"
 
 // specify the test case that has to be solved
@@ -218,7 +219,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   // initialize compressible Navier-Stokes operator
   comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
-                                                                mesh,
+                                                                mesh->get_mapping(),
                                                                 boundary_descriptor_density,
                                                                 boundary_descriptor_velocity,
                                                                 boundary_descriptor_pressure,
@@ -228,7 +229,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
                                                                 mpi_comm));
 
   // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh));
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
   comp_navier_stokes_operator->append_data_structures(matrix_free_wrapper);
   matrix_free_wrapper->reinit(false /*param.use_cell_based_face_loops*/, triangulation);
 

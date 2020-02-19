@@ -41,7 +41,7 @@ public:
    */
   DGNavierStokesDualSplitting(
     parallel::TriangulationBase<dim> const & triangulation_in,
-    std::shared_ptr<Mesh<dim>> const         mesh_in,
+    Mapping<dim> const &                     mapping_in,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs_in,
     std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,

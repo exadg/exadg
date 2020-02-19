@@ -18,7 +18,7 @@
 
 #include <deal.II/matrix_free/operators.h>
 
-// matrix-free wrapper
+// functionalities
 #include "../../functionalities/matrix_free_wrapper.h"
 
 // user interface
@@ -136,7 +136,7 @@ public:
    */
   DGNavierStokesBase(
     parallel::TriangulationBase<dim> const & triangulation_in,
-    std::shared_ptr<Mesh<dim>> const         mesh_in,
+    Mapping<dim> const &                     mapping_in,
     std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
                                                     periodic_face_pairs_in,
     std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
@@ -447,9 +447,9 @@ protected:
   unsteady_problem_has_to_be_solved() const;
 
   /*
-   * Mesh (mapping)
+   * Mapping
    */
-  std::shared_ptr<Mesh<dim>> mesh;
+  Mapping<dim> const & mapping;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
