@@ -151,7 +151,7 @@ public:
   virtual ~DGNavierStokesBase(){};
 
   void
-  append_data_structures(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -508,6 +508,8 @@ private:
 
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
 
+  // TODO maybe remove matrix_free_wrapper from this class and only pass pointer to matrix_free
+  // itself
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
 

@@ -63,14 +63,14 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::append_data_structures(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
+  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const
 {
   MappingFlags flags;
 
   // get current state
-  flags.cells          = matrix_free_wrapper->data.mapping_update_flags;
-  flags.inner_faces    = matrix_free_wrapper->data.mapping_update_flags_inner_faces;
-  flags.boundary_faces = matrix_free_wrapper->data.mapping_update_flags_boundary_faces;
+  flags.cells          = matrix_free_wrapper.data.mapping_update_flags;
+  flags.inner_faces    = matrix_free_wrapper.data.mapping_update_flags_inner_faces;
+  flags.boundary_faces = matrix_free_wrapper.data.mapping_update_flags_boundary_faces;
 
   // append
   flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
@@ -93,43 +93,43 @@ DGNavierStokesBase<dim, Number>::append_data_structures(
     flags = flags || Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags();
 
   // write back into additional_data
-  matrix_free_wrapper->data.mapping_update_flags                = flags.cells;
-  matrix_free_wrapper->data.mapping_update_flags_inner_faces    = flags.inner_faces;
-  matrix_free_wrapper->data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+  matrix_free_wrapper.data.mapping_update_flags                = flags.cells;
+  matrix_free_wrapper.data.mapping_update_flags_inner_faces    = flags.inner_faces;
+  matrix_free_wrapper.data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
   // dof handler
-  matrix_free_wrapper->dof_handler_vec.resize(
+  matrix_free_wrapper.dof_handler_vec.resize(
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
       DofHandlerSelector::n_variants));
-  matrix_free_wrapper->dof_handler_vec[dof_index_u]        = &dof_handler_u;
-  matrix_free_wrapper->dof_handler_vec[dof_index_p]        = &dof_handler_p;
-  matrix_free_wrapper->dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
+  matrix_free_wrapper.dof_handler_vec[dof_index_u]        = &dof_handler_u;
+  matrix_free_wrapper.dof_handler_vec[dof_index_p]        = &dof_handler_p;
+  matrix_free_wrapper.dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
 
   // constraint
-  matrix_free_wrapper->constraint_vec.resize(
+  matrix_free_wrapper.constraint_vec.resize(
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
       DofHandlerSelector::n_variants));
 
-  matrix_free_wrapper->constraint_vec[dof_index_u]        = &constraint_u;
-  matrix_free_wrapper->constraint_vec[dof_index_p]        = &constraint_p;
-  matrix_free_wrapper->constraint_vec[dof_index_u_scalar] = &constraint_u_scalar;
+  matrix_free_wrapper.constraint_vec[dof_index_u]        = &constraint_u;
+  matrix_free_wrapper.constraint_vec[dof_index_p]        = &constraint_p;
+  matrix_free_wrapper.constraint_vec[dof_index_u_scalar] = &constraint_u_scalar;
 
   // quadrature
-  matrix_free_wrapper->quadrature_vec.resize(
+  matrix_free_wrapper.quadrature_vec.resize(
     static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::n_variants));
   // velocity
-  matrix_free_wrapper->quadrature_vec[quad_index_u] = QGauss<1>(param.degree_u + 1);
+  matrix_free_wrapper.quadrature_vec[quad_index_u] = QGauss<1>(param.degree_u + 1);
   // pressure
-  matrix_free_wrapper->quadrature_vec[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
+  matrix_free_wrapper.quadrature_vec[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
   // exact integration of nonlinear convective term
-  matrix_free_wrapper->quadrature_vec[quad_index_u_nonlinear] =
+  matrix_free_wrapper.quadrature_vec[quad_index_u_nonlinear] =
     QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
   // velocity: Gauss-Lobatto quadrature points
-  matrix_free_wrapper->quadrature_vec[quad_index_u_gauss_lobatto] =
+  matrix_free_wrapper.quadrature_vec[quad_index_u_gauss_lobatto] =
     QGaussLobatto<1>(param.degree_u + 1);
   // pressure: Gauss-Lobatto quadrature points
-  matrix_free_wrapper->quadrature_vec[quad_index_p_gauss_lobatto] =
+  matrix_free_wrapper.quadrature_vec[quad_index_p_gauss_lobatto] =
     QGaussLobatto<1>(param.get_degree_p() + 1);
 }
 
@@ -142,7 +142,7 @@ DGNavierStokesBase<dim, Number>::setup(
 
   // MatrixFree
   matrix_free_wrapper = matrix_free_wrapper_in;
-  matrix_free         = matrix_free_wrapper->get_matrix_free();
+  matrix_free         = matrix_free_wrapper_in->get_matrix_free();
 
   // initialize data structures depending on MatrixFree
   initialize_operators();

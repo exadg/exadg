@@ -170,7 +170,10 @@ private:
   typedef IncNS::DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
   typedef IncNS::DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
 
-  std::shared_ptr<DGBase> navier_stokes_operator;
+  std::shared_ptr<DGBase>               navier_stokes_operator;
+  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled;
+  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
+  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
 
   typedef IncNS::PostProcessorBase<dim, Number> Postprocessor;
 
@@ -354,19 +357,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     fluid_mesh.reset(new Mesh<dim>(mapping_degree));
   }
 
-  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh->get_mapping()));
-
-  // initialize postprocessor
-  fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param, mpi_comm);
-
   // initialize navier_stokes_operator
   AssertThrow(fluid_param.solver_type == IncNS::SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
-    std::shared_ptr<DGCoupled> navier_stokes_operator_coupled;
-
     navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
                                                        fluid_mesh->get_mapping(),
                                                        periodic_faces,
@@ -377,15 +373,10 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                                        mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_coupled;
-
-    fluid_time_integrator.reset(new TimeIntCoupled(
-      navier_stokes_operator_coupled, fluid_param, mpi_comm, fluid_postprocessor));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFDualSplittingScheme)
   {
-    std::shared_ptr<DGDualSplitting> navier_stokes_operator_dual_splitting;
-
     navier_stokes_operator_dual_splitting.reset(
       new DGDualSplitting(*triangulation,
                           fluid_mesh->get_mapping(),
@@ -397,15 +388,10 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                           mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_dual_splitting;
-
-    fluid_time_integrator.reset(new TimeIntDualSplitting(
-      navier_stokes_operator_dual_splitting, fluid_param, mpi_comm, fluid_postprocessor));
   }
   else if(this->fluid_param.temporal_discretization ==
           IncNS::TemporalDiscretization::BDFPressureCorrection)
   {
-    std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
-
     navier_stokes_operator_pressure_correction.reset(
       new DGPressureCorrection(*triangulation,
                                fluid_mesh->get_mapping(),
@@ -417,7 +403,41 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                                mpi_comm));
 
     navier_stokes_operator = navier_stokes_operator_pressure_correction;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 
+  // initialize matrix_free
+  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh->get_mapping()));
+  fluid_matrix_free_wrapper->append_data_structures(*navier_stokes_operator);
+  fluid_matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, triangulation);
+
+  // setup Navier-Stokes operator
+  navier_stokes_operator->setup(fluid_matrix_free_wrapper);
+
+  // setup postprocessor
+  fluid_postprocessor = IncNS::construct_postprocessor<dim, Number>(fluid_param, mpi_comm);
+  fluid_postprocessor->setup(*navier_stokes_operator);
+
+  // setup time integrator before calling setup_solvers
+  // (this is necessary since the setup of the solvers
+  // depends on quantities such as the time_step_size or gamma0!!!)
+  if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
+  {
+    fluid_time_integrator.reset(new TimeIntCoupled(
+      navier_stokes_operator_coupled, fluid_param, mpi_comm, fluid_postprocessor));
+  }
+  else if(this->fluid_param.temporal_discretization ==
+          IncNS::TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    fluid_time_integrator.reset(new TimeIntDualSplitting(
+      navier_stokes_operator_dual_splitting, fluid_param, mpi_comm, fluid_postprocessor));
+  }
+  else if(this->fluid_param.temporal_discretization ==
+          IncNS::TemporalDiscretization::BDFPressureCorrection)
+  {
     fluid_time_integrator.reset(new TimeIntPressureCorrection(
       navier_stokes_operator_pressure_correction, fluid_param, mpi_comm, fluid_postprocessor));
   }
@@ -426,27 +446,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
-
-  // initialize matrix_free
-  navier_stokes_operator->append_data_structures(fluid_matrix_free_wrapper);
-
-  fluid_matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, triangulation);
-
-  // setup Navier-Stokes operator
-  navier_stokes_operator->setup(fluid_matrix_free_wrapper);
-
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
   fluid_time_integrator->setup(fluid_param.restarted_simulation);
 
+  // setup solvers once time integrator has been initialized
   navier_stokes_operator->setup_solvers(
     fluid_time_integrator->get_scaling_factor_time_derivative_term(),
     fluid_time_integrator->get_velocity());
-
-  // setup postprocessor
-  fluid_postprocessor->setup(*navier_stokes_operator);
 
   // SCALAR TRANSPORT
   for(unsigned int i = 0; i < n_scalars; ++i)
@@ -477,10 +482,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
     scalar_mesh[i].reset(new Mesh<dim>(mapping_degree));
 
-    // initialize postprocessor
-    scalar_postprocessor[i] =
-      ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], mpi_comm, i);
-
     // initialize convection diffusion operation
     conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
                                                                       scalar_mesh[i]->get_mapping(),
@@ -495,13 +496,17 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     // initialize matrix_free
     scalar_matrix_free_wrapper[i].reset(
       new MatrixFreeWrapper<dim, Number>(scalar_mesh[i]->get_mapping()));
-
-    conv_diff_operator[i]->append_data_structures(scalar_matrix_free_wrapper[i]);
-
+    scalar_matrix_free_wrapper[i]->append_data_structures(*conv_diff_operator[i]);
     scalar_matrix_free_wrapper[i]->reinit(scalar_param[i].use_cell_based_face_loops, triangulation);
 
     // setup convection-diffusion operator
     conv_diff_operator[i]->setup(scalar_matrix_free_wrapper[i]);
+
+    // setup postprocessor
+    scalar_postprocessor[i] =
+      ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], mpi_comm, i);
+    scalar_postprocessor[i]->setup(conv_diff_operator[i]->get_dof_handler(),
+                                   scalar_mesh[i]->get_mapping());
 
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
@@ -575,10 +580,6 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
                     ConvDiff::TemporalDiscretization::ExplRK,
                   ExcMessage("Not implemented."));
     }
-
-    // setup postprocessor
-    scalar_postprocessor[i]->setup(conv_diff_operator[i]->get_dof_handler(),
-                                   scalar_mesh[i]->get_mapping());
   }
 
   // Boussinesq term

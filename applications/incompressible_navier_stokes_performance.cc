@@ -195,13 +195,6 @@ private:
   std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
   std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
 
-  /*
-   * Postprocessor
-   */
-  typedef PostProcessorBase<dim, Number> Postprocessor;
-
-  std::shared_ptr<Postprocessor> postprocessor;
-
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
 
@@ -312,11 +305,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     mesh.reset(new Mesh<dim>(mapping_degree));
   }
 
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
-
   AssertThrow(param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
@@ -366,11 +354,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  AssertThrow(navier_stokes_operator.get() != 0, ExcMessage("Not initialized."));
-
   // initialize matrix_free
-  navier_stokes_operator->append_data_structures(matrix_free_wrapper);
-
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
+  matrix_free_wrapper->append_data_structures(*navier_stokes_operator);
   matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
 
   // setup Navier-Stokes operator
@@ -379,7 +365,6 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   navier_stokes_operator->initialize_vector_velocity(velocity);
   velocity = 1.0;
   navier_stokes_operator->setup_solvers(1.0 /* dummy */, velocity);
-
 
   // check that the operator type is consistent with the solution approach (coupled vs. splitting)
   if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)

@@ -126,7 +126,15 @@ private:
   typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
   typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
 
-  std::shared_ptr<DGBase> navier_stokes_operator_1, navier_stokes_operator_2;
+  std::shared_ptr<DGBase>               navier_stokes_operator_1;
+  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled_1;
+  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting_1;
+  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction_1;
+
+  std::shared_ptr<DGBase>               navier_stokes_operator_2;
+  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled_2;
+  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting_2;
+  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction_2;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
@@ -387,18 +395,9 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     mesh_2.reset(new Mesh<dim>(mapping_degree_2));
   }
 
-  matrix_free_wrapper_1.reset(new MatrixFreeWrapper<dim, Number>(mesh_1->get_mapping()));
-  matrix_free_wrapper_2.reset(new MatrixFreeWrapper<dim, Number>(mesh_2->get_mapping()));
-
-  // initialize postprocessor
-  postprocessor_1 = construct_postprocessor<dim, Number>(param_1, mpi_comm, 1);
-  postprocessor_2 = construct_postprocessor<dim, Number>(param_2, mpi_comm, 2);
-
   // initialize navier_stokes_operator_1 (DOMAIN 1)
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    std::shared_ptr<DGCoupled> navier_stokes_operator_coupled_1;
-
     navier_stokes_operator_coupled_1.reset(new DGCoupled(*triangulation_1,
                                                          mesh_1->get_mapping(),
                                                          periodic_faces_1,
@@ -409,14 +408,9 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
                                                          mpi_comm));
 
     navier_stokes_operator_1 = navier_stokes_operator_coupled_1;
-
-    time_integrator_1.reset(
-      new TimeIntCoupled(navier_stokes_operator_coupled_1, param_1, mpi_comm, postprocessor_1));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    std::shared_ptr<DGDualSplitting> navier_stokes_operator_dual_splitting_1;
-
     navier_stokes_operator_dual_splitting_1.reset(
       new DGDualSplitting(*triangulation_1,
                           mesh_1->get_mapping(),
@@ -428,14 +422,9 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
                           mpi_comm));
 
     navier_stokes_operator_1 = navier_stokes_operator_dual_splitting_1;
-
-    time_integrator_1.reset(new TimeIntDualSplitting(
-      navier_stokes_operator_dual_splitting_1, param_1, mpi_comm, postprocessor_1));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction_1;
-
     navier_stokes_operator_pressure_correction_1.reset(
       new DGPressureCorrection(*triangulation_1,
                                mesh_1->get_mapping(),
@@ -447,9 +436,6 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
                                mpi_comm));
 
     navier_stokes_operator_1 = navier_stokes_operator_pressure_correction_1;
-
-    time_integrator_1.reset(new TimeIntPressureCorrection(
-      navier_stokes_operator_pressure_correction_1, param_1, mpi_comm, postprocessor_1));
   }
   else
   {
@@ -459,8 +445,6 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   // initialize navier_stokes_operator_2 (DOMAIN 2)
   if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
   {
-    std::shared_ptr<DGCoupled> navier_stokes_operator_coupled_2;
-
     navier_stokes_operator_coupled_2.reset(new DGCoupled(*triangulation_2,
                                                          mesh_2->get_mapping(),
                                                          periodic_faces_2,
@@ -471,14 +455,9 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
                                                          mpi_comm));
 
     navier_stokes_operator_2 = navier_stokes_operator_coupled_2;
-
-    time_integrator_2.reset(
-      new TimeIntCoupled(navier_stokes_operator_coupled_2, param_2, mpi_comm, postprocessor_2));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
-    std::shared_ptr<DGDualSplitting> navier_stokes_operator_dual_splitting_2;
-
     navier_stokes_operator_dual_splitting_2.reset(
       new DGDualSplitting(*triangulation_2,
                           mesh_2->get_mapping(),
@@ -490,14 +469,9 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
                           mpi_comm));
 
     navier_stokes_operator_2 = navier_stokes_operator_dual_splitting_2;
-
-    time_integrator_2.reset(new TimeIntDualSplitting(
-      navier_stokes_operator_dual_splitting_2, param_2, mpi_comm, postprocessor_2));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
-    std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction_2;
-
     navier_stokes_operator_pressure_correction_2.reset(
       new DGPressureCorrection(*triangulation_2,
                                mesh_2->get_mapping(),
@@ -509,7 +483,69 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
                                mpi_comm));
 
     navier_stokes_operator_2 = navier_stokes_operator_pressure_correction_2;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
 
+  // initialize matrix_free 1
+  matrix_free_wrapper_1.reset(new MatrixFreeWrapper<dim, Number>(mesh_1->get_mapping()));
+  matrix_free_wrapper_1->append_data_structures(*navier_stokes_operator_1);
+  matrix_free_wrapper_1->reinit(param_1.use_cell_based_face_loops, triangulation_1);
+
+  // initialize matrix_free 2
+  matrix_free_wrapper_2.reset(new MatrixFreeWrapper<dim, Number>(mesh_2->get_mapping()));
+  matrix_free_wrapper_2->append_data_structures(*navier_stokes_operator_2);
+  matrix_free_wrapper_2->reinit(param_2.use_cell_based_face_loops, triangulation_2);
+
+
+  // setup Navier-Stokes operator
+  navier_stokes_operator_1->setup(matrix_free_wrapper_1);
+  navier_stokes_operator_2->setup(matrix_free_wrapper_2);
+
+  // setup postprocessor
+  postprocessor_1 = construct_postprocessor<dim, Number>(param_1, mpi_comm, 1);
+  postprocessor_1->setup(*navier_stokes_operator_1);
+
+  postprocessor_2 = construct_postprocessor<dim, Number>(param_2, mpi_comm, 2);
+  postprocessor_2->setup(*navier_stokes_operator_2);
+
+
+  // Setup time integrator
+
+  if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    time_integrator_1.reset(
+      new TimeIntCoupled(navier_stokes_operator_coupled_1, param_1, mpi_comm, postprocessor_1));
+  }
+  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    time_integrator_1.reset(new TimeIntDualSplitting(
+      navier_stokes_operator_dual_splitting_1, param_1, mpi_comm, postprocessor_1));
+  }
+  else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
+    time_integrator_1.reset(new TimeIntPressureCorrection(
+      navier_stokes_operator_pressure_correction_1, param_1, mpi_comm, postprocessor_1));
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented."));
+  }
+
+  if(this->param_2.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
+  {
+    time_integrator_2.reset(
+      new TimeIntCoupled(navier_stokes_operator_coupled_2, param_2, mpi_comm, postprocessor_2));
+  }
+  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
+  {
+    time_integrator_2.reset(new TimeIntDualSplitting(
+      navier_stokes_operator_dual_splitting_2, param_2, mpi_comm, postprocessor_2));
+  }
+  else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
+  {
     time_integrator_2.reset(new TimeIntPressureCorrection(
       navier_stokes_operator_pressure_correction_2, param_2, mpi_comm, postprocessor_2));
   }
@@ -518,26 +554,6 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  AssertThrow(navier_stokes_operator_1.get() != 0, ExcMessage("Not initialized."));
-  AssertThrow(navier_stokes_operator_2.get() != 0, ExcMessage("Not initialized."));
-
-  // initialize matrix_free 1
-  navier_stokes_operator_1->append_data_structures(matrix_free_wrapper_1);
-
-  matrix_free_wrapper_1->reinit(param_1.use_cell_based_face_loops, triangulation_1);
-
-  // initialize matrix_free 2
-  navier_stokes_operator_2->append_data_structures(matrix_free_wrapper_2);
-
-  matrix_free_wrapper_2->reinit(param_2.use_cell_based_face_loops, triangulation_2);
-
-
-  // setup Navier-Stokes operator
-  navier_stokes_operator_1->setup(matrix_free_wrapper_1);
-  navier_stokes_operator_2->setup(matrix_free_wrapper_2);
-
-
-  // Setup time integrator
 
   // For the two-domain solver the parameter start_with_low_order has to be true.
   // This is due to the fact that the setup function of the time integrator initializes
@@ -563,10 +579,6 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   navier_stokes_operator_2->setup_solvers(
     time_integrator_2->get_scaling_factor_time_derivative_term(),
     time_integrator_2->get_velocity());
-
-  // setup postprocessor
-  postprocessor_1->setup(*navier_stokes_operator_1);
-  postprocessor_2->setup(*navier_stokes_operator_2);
 
   setup_time = timer.wall_time();
 }

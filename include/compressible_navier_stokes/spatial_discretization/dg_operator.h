@@ -103,7 +103,7 @@ public:
              MPI_Comm const &                               mpi_comm_in);
 
   void
-  append_data_structures(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const;
 
   void
   setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);

@@ -230,7 +230,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  comp_navier_stokes_operator->append_data_structures(matrix_free_wrapper);
+  matrix_free_wrapper->append_data_structures(*comp_navier_stokes_operator);
   matrix_free_wrapper->reinit(false /*param.use_cell_based_face_loops*/, triangulation);
 
   // setup compressible Navier-Stokes operator

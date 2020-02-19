@@ -71,7 +71,7 @@ public:
 
 
   void
-  append_data_structures(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic

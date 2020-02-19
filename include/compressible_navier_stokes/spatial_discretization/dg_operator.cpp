@@ -71,14 +71,14 @@ DGOperator<dim, Number>::DGOperator(
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::append_data_structures(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
+  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const
 {
   MappingFlags mapping_flags;
 
   // get current state
-  mapping_flags.cells          = matrix_free_wrapper->data.mapping_update_flags;
-  mapping_flags.inner_faces    = matrix_free_wrapper->data.mapping_update_flags_inner_faces;
-  mapping_flags.boundary_faces = matrix_free_wrapper->data.mapping_update_flags_boundary_faces;
+  mapping_flags.cells          = matrix_free_wrapper.data.mapping_update_flags;
+  mapping_flags.inner_faces    = matrix_free_wrapper.data.mapping_update_flags_inner_faces;
+  mapping_flags.boundary_faces = matrix_free_wrapper.data.mapping_update_flags_boundary_faces;
 
   // append mapping flags of compressible solver
   MappingFlags mapping_flags_compressible;
@@ -91,40 +91,40 @@ DGOperator<dim, Number>::append_data_structures(
   mapping_flags = mapping_flags || mapping_flags_compressible;
 
   // write back into additional_data
-  matrix_free_wrapper->data.mapping_update_flags                = mapping_flags.cells;
-  matrix_free_wrapper->data.mapping_update_flags_inner_faces    = mapping_flags.inner_faces;
-  matrix_free_wrapper->data.mapping_update_flags_boundary_faces = mapping_flags.boundary_faces;
+  matrix_free_wrapper.data.mapping_update_flags                = mapping_flags.cells;
+  matrix_free_wrapper.data.mapping_update_flags_inner_faces    = mapping_flags.inner_faces;
+  matrix_free_wrapper.data.mapping_update_flags_boundary_faces = mapping_flags.boundary_faces;
 
 
   // quadratures used to perform integrals
-  matrix_free_wrapper->quadrature_vec.resize(
+  matrix_free_wrapper.quadrature_vec.resize(
     static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::n_variants));
   matrix_free_wrapper
-    ->quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+    .quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::standard)] = QGauss<1>(param.degree + 1);
   matrix_free_wrapper
-    ->quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+    .quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::overintegration_conv)] = QGauss<1>(n_q_points_conv);
   matrix_free_wrapper
-    ->quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
+    .quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
       QuadratureSelector::overintegration_vis)] = QGauss<1>(n_q_points_visc);
 
   // dof handler
-  matrix_free_wrapper->dof_handler_vec.resize(
+  matrix_free_wrapper.dof_handler_vec.resize(
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
       DofHandlerSelector::n_variants));
-  matrix_free_wrapper->dof_handler_vec[dof_index_all]    = &dof_handler;
-  matrix_free_wrapper->dof_handler_vec[dof_index_vector] = &dof_handler_vector;
-  matrix_free_wrapper->dof_handler_vec[dof_index_scalar] = &dof_handler_scalar;
+  matrix_free_wrapper.dof_handler_vec[dof_index_all]    = &dof_handler;
+  matrix_free_wrapper.dof_handler_vec[dof_index_vector] = &dof_handler_vector;
+  matrix_free_wrapper.dof_handler_vec[dof_index_scalar] = &dof_handler_scalar;
 
   // constraints
-  matrix_free_wrapper->constraint_vec.resize(
+  matrix_free_wrapper.constraint_vec.resize(
     static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
       DofHandlerSelector::n_variants));
-  matrix_free_wrapper->constraint_vec[dof_index_all]    = &constraint;
-  matrix_free_wrapper->constraint_vec[dof_index_vector] = &constraint;
-  matrix_free_wrapper->constraint_vec[dof_index_scalar] = &constraint;
+  matrix_free_wrapper.constraint_vec[dof_index_all]    = &constraint;
+  matrix_free_wrapper.constraint_vec[dof_index_vector] = &constraint;
+  matrix_free_wrapper.constraint_vec[dof_index_scalar] = &constraint;
 }
 
 template<int dim, typename Number>

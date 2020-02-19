@@ -83,7 +83,7 @@ struct MatrixFreeWrapper
   void
   append_data_structures(Operator const & pde_operator)
   {
-    pde_operator->append_data_structures(*this);
+    pde_operator.append_data_structures(*this);
   }
 
   // the actual MatrixFree object
