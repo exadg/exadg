@@ -69,15 +69,19 @@ public:
     h.init(tria);
     timer.stop("Init-Map");
 
-    // ... fftw
-    timer.start("Init-FFTW");
-    fftw.init();
-    timer.stop("Init-FFTW");
-
     // ... interpolation
     timer.start("Init-Ipol");
     ipol.init(h);
     timer.stop("Init-Ipol");
+    
+    // FFTW will be called externally
+    if(!inplace)
+      return;
+
+    // ... fftw
+    timer.start("Init-FFTW");
+    fftw.init();
+    timer.stop("Init-FFTW");
 
     // ... permutation
     timer.start("Init-Perm");
