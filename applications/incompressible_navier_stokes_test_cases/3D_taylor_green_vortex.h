@@ -497,6 +497,8 @@ construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 
   // kinetic energy spectrum
   pp_data.kinetic_energy_spectrum_data.calculate = true;
+  pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = false,
+  pp_data.kinetic_energy_spectrum_data.do_fftw = true;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.1;
   pp_data.kinetic_energy_spectrum_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;

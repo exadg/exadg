@@ -21,6 +21,8 @@ struct KineticEnergySpectrumData
 {
   KineticEnergySpectrumData()
     : calculate(false),
+      write_raw_data_to_files(false),
+      do_fftw(true),
       start_time(0.0),
       calculate_every_time_steps(-1),
       calculate_every_time_interval(-1.0),
@@ -43,6 +45,8 @@ struct KineticEnergySpectrumData
     if(calculate == true)
     {
       pcout << std::endl << "  Calculate kinetic energy spectrum:" << std::endl;
+      print_parameter(pcout, "Write raw data to files", write_raw_data_to_files);
+      print_parameter(pcout, "Do FFTW", do_fftw);
       print_parameter(pcout, "Start time", start_time);
       if(calculate_every_time_steps >= 0)
         print_parameter(pcout, "Calculate every timesteps", calculate_every_time_steps);
@@ -64,13 +68,18 @@ struct KineticEnergySpectrumData
     }
   }
 
-  bool         calculate;
-  double       start_time;
-  int          calculate_every_time_steps;
-  double       calculate_every_time_interval;
-  std::string  filename;
-  bool         clear_file;
-  double       output_tolerance;
+  bool   calculate;
+  bool   write_raw_data_to_files;
+  bool   do_fftw;
+  double start_time;
+  int    calculate_every_time_steps;
+  double calculate_every_time_interval;
+
+  // these parameters are only relevant if do_fftw = true
+  std::string filename;
+  bool        clear_file;
+  double      output_tolerance;
+
   unsigned int degree;
   unsigned int evaluation_points_per_cell;
 
