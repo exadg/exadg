@@ -147,8 +147,7 @@ private:
     periodic_faces;
 
   // mapping (static and moving meshes)
-  // TODO use the same for fluid and scalar transport
-  std::shared_ptr<Mesh<dim>> fluid_mesh;
+  std::shared_ptr<Mesh<dim>> mesh;
 
   // number of scalar quantities
   unsigned int const n_scalars;
@@ -188,9 +187,6 @@ private:
 
   // SCALAR TRANSPORT
 
-  // mapping
-  std::vector<std::shared_ptr<Mesh<dim>>> scalar_mesh;
-
   std::vector<ConvDiff::InputParameters> scalar_param;
 
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
@@ -225,7 +221,6 @@ Problem<dim, Number>::Problem(MPI_Comm const & comm, unsigned int const n_scalar
     overall_time(0.0),
     setup_time(0.0)
 {
-  scalar_mesh.resize(n_scalars);
   scalar_param.resize(n_scalars);
   scalar_field_functions.resize(n_scalars);
   scalar_boundary_descriptor.resize(n_scalars);
@@ -345,16 +340,16 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
   if(fluid_param.ale_formulation) // moving mesh
   {
-    fluid_mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
-                                                 *triangulation,
-                                                 fluid_param.degree_u,
-                                                 fluid_field_functions->mesh_movement,
-                                                 fluid_param.start_time,
-                                                 mpi_comm));
+    mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
+                                           *triangulation,
+                                           fluid_param.degree_u,
+                                           fluid_field_functions->mesh_movement,
+                                           fluid_param.start_time,
+                                           mpi_comm));
   }
   else // static mesh
   {
-    fluid_mesh.reset(new Mesh<dim>(mapping_degree));
+    mesh.reset(new Mesh<dim>(mapping_degree));
   }
 
   // initialize navier_stokes_operator
@@ -364,7 +359,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   if(this->fluid_param.temporal_discretization == IncNS::TemporalDiscretization::BDFCoupledSolution)
   {
     navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
-                                                       fluid_mesh->get_mapping(),
+                                                       mesh->get_mapping(),
                                                        periodic_faces,
                                                        fluid_boundary_descriptor_velocity,
                                                        fluid_boundary_descriptor_pressure,
@@ -379,7 +374,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   {
     navier_stokes_operator_dual_splitting.reset(
       new DGDualSplitting(*triangulation,
-                          fluid_mesh->get_mapping(),
+                          mesh->get_mapping(),
                           periodic_faces,
                           fluid_boundary_descriptor_velocity,
                           fluid_boundary_descriptor_pressure,
@@ -394,7 +389,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   {
     navier_stokes_operator_pressure_correction.reset(
       new DGPressureCorrection(*triangulation,
-                               fluid_mesh->get_mapping(),
+                               mesh->get_mapping(),
                                periodic_faces,
                                fluid_boundary_descriptor_velocity,
                                fluid_boundary_descriptor_pressure,
@@ -410,7 +405,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   }
 
   // initialize matrix_free
-  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(fluid_mesh->get_mapping()));
+  fluid_matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
   fluid_matrix_free_wrapper->append_data_structures(*navier_stokes_operator);
   fluid_matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, triangulation);
 
@@ -465,26 +460,9 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());
     ConvDiff::set_field_functions(scalar_field_functions[i], i);
 
-    // mapping
-    unsigned int mapping_degree = 1;
-    if(scalar_param[i].mapping == ConvDiff::MappingType::Affine)
-    {
-      mapping_degree = 1;
-    }
-    else if(scalar_param[i].mapping == ConvDiff::MappingType::Isoparametric)
-    {
-      mapping_degree = scalar_param[i].degree;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented"));
-    }
-
-    scalar_mesh[i].reset(new Mesh<dim>(mapping_degree));
-
     // initialize convection diffusion operation
     conv_diff_operator[i].reset(new ConvDiff::DGOperator<dim, Number>(*triangulation,
-                                                                      scalar_mesh[i]->get_mapping(),
+                                                                      mesh->get_mapping(),
                                                                       periodic_faces,
                                                                       scalar_boundary_descriptor[i],
                                                                       scalar_field_functions[i],
@@ -494,8 +472,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     AssertThrow(conv_diff_operator[i].get() != 0, ExcMessage("Not initialized."));
 
     // initialize matrix_free
-    scalar_matrix_free_wrapper[i].reset(
-      new MatrixFreeWrapper<dim, Number>(scalar_mesh[i]->get_mapping()));
+    scalar_matrix_free_wrapper[i].reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
     scalar_matrix_free_wrapper[i]->append_data_structures(*conv_diff_operator[i]);
     scalar_matrix_free_wrapper[i]->reinit(scalar_param[i].use_cell_based_face_loops, triangulation);
 
@@ -505,8 +482,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
     // setup postprocessor
     scalar_postprocessor[i] =
       ConvDiff::construct_postprocessor<dim, Number>(scalar_param[i], mpi_comm, i);
-    scalar_postprocessor[i]->setup(conv_diff_operator[i]->get_dof_handler(),
-                                   scalar_mesh[i]->get_mapping());
+    scalar_postprocessor[i]->setup(conv_diff_operator[i]->get_dof_handler(), mesh->get_mapping());
 
     // initialize time integrator
     if(scalar_param[i].temporal_discretization == ConvDiff::TemporalDiscretization::ExplRK)
