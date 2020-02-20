@@ -9,7 +9,7 @@ int
 main(int argc, char ** argv)
 {
   using namespace dealspectrum;
-
+  
   // init MPI...
   MPI_Init(&argc, &argv);
   fftw_mpi_init();
