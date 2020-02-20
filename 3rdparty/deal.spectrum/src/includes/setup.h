@@ -106,12 +106,9 @@ public:
     int    crit[1+HEADER_LENGTH];
     crit[0] = 0;
     
-    std::cout << "A0" << std::endl;
-
     if(this->rank == 0)
     {
       // read header only by rank 0 ...
-      std::cout << "A1" << std::endl;
       if((fp = fopen(filename, "r")) != NULL)
       {
         // ... read header in one go
@@ -124,11 +121,8 @@ public:
         // ... reading the file failed
         crit[0] = 0;
       }
-      std::cout << "A2" << std::endl;
     }
     
-    std::cout << "A3" << std::endl;
-
     // broadcast header to all processes
     MPI_Bcast(&crit, 5, MPI_INT, 0, comm);
 
@@ -152,8 +146,6 @@ public:
         this->points_dst = this->points_src; // equal if nothing specified
     }
     
-    std::cout << "A2" << std::endl;
-
     // success or failure?
     return crit[0];
   }
