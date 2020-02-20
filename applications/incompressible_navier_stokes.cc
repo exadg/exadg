@@ -42,7 +42,7 @@ using namespace IncNS;
 // specify the flow problem that has to be solved
 
 // template
-#include "incompressible_navier_stokes_test_cases/template.h"
+//#include "incompressible_navier_stokes_test_cases/template.h"
 
 // 2D Stokes flow
 //#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
@@ -70,7 +70,7 @@ using namespace IncNS;
 //#include "incompressible_navier_stokes_test_cases/beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
 //#include "incompressible_navier_stokes_test_cases/cavity_3D.h"
-//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
 //#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/periodic_hill.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"

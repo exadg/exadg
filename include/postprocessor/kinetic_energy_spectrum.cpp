@@ -55,7 +55,7 @@ KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator(MP
   : mpi_comm(comm), clear_files(true), counter(0), reset_counter(true)
 {
   if(deal_spectrum_wrapper == nullptr)
-    deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(mpi_comm, false, true));
+    deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(mpi_comm, true /*write*/, false /*fftw*/));
 }
 
 template<int dim, typename Number>
@@ -215,6 +215,11 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
   // extract beginning of vector...
   const Number * temp = velocity.begin();
   deal_spectrum_wrapper->execute((double *)temp);
+  
+  const bool do_fftw = false;
+  
+  if(do_fftw == false)
+    return;
 
   // write output file
   if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)

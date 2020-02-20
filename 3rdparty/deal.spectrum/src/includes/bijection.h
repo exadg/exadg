@@ -81,17 +81,17 @@ public:
   init()
   {
     int n = s.cells;
-
+    
     if(s.dim == 2)
     {
       dealii::parallel::distributed::Triangulation<2> triangulation(comm);
-      dealii::GridGenerator::subdivided_hyper_cube(triangulation, n, 0, 2 * dealii::numbers::PI);
+      dealii::GridGenerator::subdivided_hyper_cube(triangulation, n, -dealii::numbers::PI, dealii::numbers::PI);
       init(triangulation);
     }
     else if(s.dim == 3)
     {
       dealii::parallel::distributed::Triangulation<3> triangulation(comm);
-      dealii::GridGenerator::subdivided_hyper_cube(triangulation, n, 0, 2 * dealii::numbers::PI);
+      dealii::GridGenerator::subdivided_hyper_cube(triangulation, n, -dealii::numbers::PI, dealii::numbers::PI);
       init(triangulation);
     }
   }
