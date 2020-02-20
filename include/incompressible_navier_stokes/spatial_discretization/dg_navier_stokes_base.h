@@ -84,52 +84,6 @@ protected:
 
   typedef float MultigridNumber;
 
-  enum class DofHandlerSelector
-  {
-    velocity        = 0,
-    pressure        = 1,
-    velocity_scalar = 2,
-    n_variants      = velocity_scalar + 1
-  };
-
-  enum class QuadratureSelector
-  {
-    velocity               = 0,
-    pressure               = 1,
-    velocity_nonlinear     = 2,
-    velocity_gauss_lobatto = 3,
-    pressure_gauss_lobatto = 4,
-    n_variants             = pressure_gauss_lobatto + 1
-  };
-
-  static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
-
-  static const unsigned int dof_index_u =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::velocity);
-  static const unsigned int dof_index_p =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::pressure);
-  static const unsigned int dof_index_u_scalar =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::velocity_scalar);
-
-  static const unsigned int quad_index_u =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::velocity);
-  static const unsigned int quad_index_p =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::pressure);
-  static const unsigned int quad_index_u_nonlinear =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::velocity_nonlinear);
-  static const unsigned int quad_index_u_gauss_lobatto =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::velocity_gauss_lobatto);
-  static const unsigned int quad_index_p_gauss_lobatto =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::pressure_gauss_lobatto);
-
 public:
   /*
    * Constructor.
@@ -179,10 +133,16 @@ public:
   get_dof_index_velocity() const;
 
   unsigned int
+  get_dof_index_pressure() const;
+
+  unsigned int
   get_dof_index_velocity_scalar() const;
 
   unsigned int
   get_quad_index_velocity_linear() const;
+
+  unsigned int
+  get_quad_index_pressure() const;
 
   unsigned int
   get_quad_index_velocity_nonlinear() const;
@@ -195,12 +155,6 @@ public:
 
   unsigned int
   get_quad_index_velocity_linearized() const;
-
-  unsigned int
-  get_dof_index_pressure() const;
-
-  unsigned int
-  get_quad_index_pressure() const;
 
   unsigned int
   get_degree_p() const;
@@ -508,8 +462,16 @@ private:
 
   AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
 
-  // TODO maybe remove matrix_free_wrapper from this class and only pass pointer to matrix_free
-  // itself
+  std::string const dof_index_u        = "velocity";
+  std::string const dof_index_p        = "pressure";
+  std::string const dof_index_u_scalar = "velocity_scalar";
+
+  std::string const quad_index_u               = "velocity";
+  std::string const quad_index_p               = "pressure";
+  std::string const quad_index_u_nonlinear     = "velocity_nonlinear";
+  std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
+  std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
+
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
 

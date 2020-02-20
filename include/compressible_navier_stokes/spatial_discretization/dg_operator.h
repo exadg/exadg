@@ -45,53 +45,12 @@ namespace CompNS
 template<int dim, typename Number>
 class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
-public:
-  enum class DofHandlerSelector
-  {
-    all_components = 0,
-    vector         = 1,
-    scalar         = 2,
-    n_variants     = scalar + 1
-  };
-
-  enum class QuadratureSelector
-  {
-    overintegration_conv = 0,
-    overintegration_vis  = 1,
-    standard             = 2,
-    n_variants           = standard + 1
-  };
-
+private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
-  static const unsigned int dof_index_all =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::all_components);
-  static const unsigned int dof_index_vector =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::vector);
-  static const unsigned int dof_index_scalar =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::scalar);
-
-  static const unsigned int quad_index_standard =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::standard);
-  static const unsigned int quad_index_overintegration_conv =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_conv);
-  static const unsigned int quad_index_overintegration_vis =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_vis);
-
-  // specify quadrature rule for calculation of derived quantities (p, u, T)
-  static const unsigned int quad_index_l2_projections = quad_index_standard;
-
-  // alternative: use more accurate over-integration strategy
-  //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
-
+public:
   DGOperator(parallel::TriangulationBase<dim> const &       triangulation_in,
              Mapping<dim> const &                           mapping_in,
              std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
@@ -213,6 +172,18 @@ private:
   void
   setup_operators();
 
+  unsigned int
+  get_dof_index_all() const;
+
+  unsigned int
+  get_quad_index_overintegration_conv() const;
+
+  unsigned int
+  get_quad_index_overintegration_vis() const;
+
+  unsigned int
+  get_quad_index_l2_projections() const;
+
   /*
    * Mapping
    */
@@ -253,6 +224,19 @@ private:
    * Constraints.
    */
   AffineConstraints<double> constraint;
+
+
+  std::string const dof_index_all    = "compressible_all_fields";
+  std::string const dof_index_vector = "compressible_vector";
+  std::string const dof_index_scalar = "compressible_scalar";
+
+  std::string const quad_index_standard             = "compressible_standard";
+  std::string const quad_index_overintegration_conv = "compressible_overintegration_conv";
+  std::string const quad_index_overintegration_vis  = "compressible_overintegration_vis";
+
+  std::string const quad_index_l2_projections = quad_index_standard;
+  // alternative: use more accurate over-integration strategy
+  //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;
 
   /*
    * Matrix-free operator evaluation.

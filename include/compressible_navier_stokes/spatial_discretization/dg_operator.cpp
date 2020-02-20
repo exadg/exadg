@@ -73,13 +73,6 @@ void
 DGOperator<dim, Number>::append_data_structures(
   MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const
 {
-  MappingFlags mapping_flags;
-
-  // get current state
-  mapping_flags.cells          = matrix_free_wrapper.data.mapping_update_flags;
-  mapping_flags.inner_faces    = matrix_free_wrapper.data.mapping_update_flags_inner_faces;
-  mapping_flags.boundary_faces = matrix_free_wrapper.data.mapping_update_flags_boundary_faces;
-
   // append mapping flags of compressible solver
   MappingFlags mapping_flags_compressible;
   mapping_flags_compressible.cells =
@@ -88,43 +81,23 @@ DGOperator<dim, Number>::append_data_structures(
   mapping_flags_compressible.inner_faces |= update_quadrature_points;
   mapping_flags_compressible.boundary_faces |= update_quadrature_points;
 
-  mapping_flags = mapping_flags || mapping_flags_compressible;
-
-  // write back into additional_data
-  matrix_free_wrapper.data.mapping_update_flags                = mapping_flags.cells;
-  matrix_free_wrapper.data.mapping_update_flags_inner_faces    = mapping_flags.inner_faces;
-  matrix_free_wrapper.data.mapping_update_flags_boundary_faces = mapping_flags.boundary_faces;
-
-
-  // quadratures used to perform integrals
-  matrix_free_wrapper.quadrature_vec.resize(
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::n_variants));
-  matrix_free_wrapper
-    .quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::standard)] = QGauss<1>(param.degree + 1);
-  matrix_free_wrapper
-    .quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_conv)] = QGauss<1>(n_q_points_conv);
-  matrix_free_wrapper
-    .quadrature_vec[static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_vis)] = QGauss<1>(n_q_points_visc);
+  matrix_free_wrapper.append_mapping_flags(mapping_flags_compressible);
 
   // dof handler
-  matrix_free_wrapper.dof_handler_vec.resize(
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::n_variants));
-  matrix_free_wrapper.dof_handler_vec[dof_index_all]    = &dof_handler;
-  matrix_free_wrapper.dof_handler_vec[dof_index_vector] = &dof_handler_vector;
-  matrix_free_wrapper.dof_handler_vec[dof_index_scalar] = &dof_handler_scalar;
+  matrix_free_wrapper.insert_dof_handler(&dof_handler, dof_index_all);
+  matrix_free_wrapper.insert_dof_handler(&dof_handler_vector, dof_index_vector);
+  matrix_free_wrapper.insert_dof_handler(&dof_handler_scalar, dof_index_scalar);
 
   // constraints
-  matrix_free_wrapper.constraint_vec.resize(
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::n_variants));
-  matrix_free_wrapper.constraint_vec[dof_index_all]    = &constraint;
-  matrix_free_wrapper.constraint_vec[dof_index_vector] = &constraint;
-  matrix_free_wrapper.constraint_vec[dof_index_scalar] = &constraint;
+  matrix_free_wrapper.insert_constraint(&constraint, dof_index_all);
+  matrix_free_wrapper.insert_constraint(&constraint, dof_index_vector);
+  matrix_free_wrapper.insert_constraint(&constraint, dof_index_scalar);
+
+  // quadrature
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), quad_index_standard);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(n_q_points_conv),
+                                        quad_index_overintegration_conv);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(n_q_points_visc), quad_index_overintegration_vis);
 }
 
 template<int dim, typename Number>
@@ -154,21 +127,21 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
-  matrix_free->initialize_dof_vector(src, dof_index_all);
+  matrix_free->initialize_dof_vector(src, get_dof_index_all());
 }
 
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_dof_vector_scalar(VectorType & src) const
 {
-  matrix_free->initialize_dof_vector(src, dof_index_scalar);
+  matrix_free->initialize_dof_vector(src, get_dof_index_scalar());
 }
 
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_dof_vector_dim_components(VectorType & src) const
 {
-  matrix_free->initialize_dof_vector(src, dof_index_vector);
+  matrix_free->initialize_dof_vector(src, get_dof_index_vector());
 }
 
 template<int dim, typename Number>
@@ -325,21 +298,49 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index_vector() const
 {
-  return dof_index_vector;
+  return matrix_free_wrapper->get_dof_index(dof_index_vector);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index_scalar() const
 {
-  return dof_index_scalar;
+  return matrix_free_wrapper->get_dof_index(dof_index_scalar);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGOperator<dim, Number>::get_dof_index_all() const
+{
+  return matrix_free_wrapper->get_dof_index(dof_index_all);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index_standard() const
 {
-  return quad_index_standard;
+  return matrix_free_wrapper->get_quad_index(quad_index_standard);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGOperator<dim, Number>::get_quad_index_overintegration_conv() const
+{
+  return matrix_free_wrapper->get_quad_index(quad_index_overintegration_conv);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGOperator<dim, Number>::get_quad_index_overintegration_vis() const
+{
+  return matrix_free_wrapper->get_quad_index(quad_index_overintegration_vis);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGOperator<dim, Number>::get_quad_index_l2_projections() const
+{
+  return matrix_free_wrapper->get_quad_index(quad_index_l2_projections);
 }
 
 template<int dim, typename Number>
@@ -432,19 +433,19 @@ DGOperator<dim, Number>::setup_operators()
 {
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index  = dof_index_all;
-  mass_matrix_operator_data.quad_index = quad_index_standard;
+  mass_matrix_operator_data.dof_index  = get_dof_index_all();
+  mass_matrix_operator_data.quad_index = get_quad_index_standard();
   mass_matrix_operator.initialize(*matrix_free, mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_all.initialize(*matrix_free, dof_index_all, quad_index_standard);
-  inverse_mass_vector.initialize(*matrix_free, dof_index_vector, quad_index_standard);
-  inverse_mass_scalar.initialize(*matrix_free, dof_index_scalar, quad_index_standard);
+  inverse_mass_all.initialize(*matrix_free, get_dof_index_all(), get_quad_index_standard());
+  inverse_mass_vector.initialize(*matrix_free, get_dof_index_vector(), get_quad_index_standard());
+  inverse_mass_scalar.initialize(*matrix_free, get_dof_index_scalar(), get_quad_index_standard());
 
   // body force operator
   BodyForceOperatorData<dim> body_force_operator_data;
-  body_force_operator_data.dof_index  = dof_index_all;
-  body_force_operator_data.quad_index = quad_index_standard;
+  body_force_operator_data.dof_index  = get_dof_index_all();
+  body_force_operator_data.quad_index = get_quad_index_standard();
   body_force_operator_data.rhs_rho    = field_functions->right_hand_side_density;
   body_force_operator_data.rhs_u      = field_functions->right_hand_side_velocity;
   body_force_operator_data.rhs_E      = field_functions->right_hand_side_energy;
@@ -452,8 +453,8 @@ DGOperator<dim, Number>::setup_operators()
 
   // convective operator
   ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.dof_index             = dof_index_all;
-  convective_operator_data.quad_index            = quad_index_overintegration_conv;
+  convective_operator_data.dof_index             = get_dof_index_all();
+  convective_operator_data.quad_index            = get_quad_index_overintegration_conv();
   convective_operator_data.bc_rho                = boundary_descriptor_density;
   convective_operator_data.bc_u                  = boundary_descriptor_velocity;
   convective_operator_data.bc_p                  = boundary_descriptor_pressure;
@@ -464,8 +465,8 @@ DGOperator<dim, Number>::setup_operators()
 
   // viscous operator
   ViscousOperatorData<dim> viscous_operator_data;
-  viscous_operator_data.dof_index             = dof_index_all;
-  viscous_operator_data.quad_index            = quad_index_overintegration_vis;
+  viscous_operator_data.dof_index             = get_dof_index_all();
+  viscous_operator_data.quad_index            = get_quad_index_overintegration_vis();
   viscous_operator_data.IP_factor             = param.IP_factor;
   viscous_operator_data.dynamic_viscosity     = param.dynamic_viscosity;
   viscous_operator_data.reference_density     = param.reference_density;
@@ -484,8 +485,8 @@ DGOperator<dim, Number>::setup_operators()
                            "and viscous term in case of combined operator."));
 
     CombinedOperatorData<dim> combined_operator_data;
-    combined_operator_data.dof_index  = dof_index_all;
-    combined_operator_data.quad_index = quad_index_overintegration_vis;
+    combined_operator_data.dof_index  = get_dof_index_all();
+    combined_operator_data.quad_index = get_quad_index_overintegration_vis();
     combined_operator_data.bc_rho     = boundary_descriptor_density;
     combined_operator_data.bc_u       = boundary_descriptor_velocity;
     combined_operator_data.bc_p       = boundary_descriptor_pressure;
@@ -499,19 +500,19 @@ DGOperator<dim, Number>::setup_operators()
 
   // calculators
   p_u_T_calculator.initialize(*matrix_free,
-                              dof_index_all,
-                              dof_index_vector,
-                              dof_index_scalar,
-                              quad_index_l2_projections,
+                              get_dof_index_all(),
+                              get_dof_index_vector(),
+                              get_dof_index_scalar(),
+                              get_quad_index_l2_projections(),
                               param.heat_capacity_ratio,
                               param.specific_gas_constant);
 
-  vorticity_calculator.initialize(*matrix_free, dof_index_vector, quad_index_standard);
+  vorticity_calculator.initialize(*matrix_free, get_dof_index_vector(), get_quad_index_standard());
 
   divergence_calculator.initialize(*matrix_free,
-                                   dof_index_vector,
-                                   dof_index_scalar,
-                                   quad_index_standard);
+                                   get_dof_index_vector(),
+                                   get_dof_index_scalar(),
+                                   get_quad_index_standard());
 }
 
 template class DGOperator<2, float>;

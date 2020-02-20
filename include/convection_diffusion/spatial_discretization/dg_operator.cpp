@@ -53,78 +53,49 @@ void
 DGOperator<dim, Number>::append_data_structures(
   MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const
 {
-  MappingFlags mapping_flags;
-
-  // get current state
-  mapping_flags.cells          = matrix_free_wrapper.data.mapping_update_flags;
-  mapping_flags.inner_faces    = matrix_free_wrapper.data.mapping_update_flags_inner_faces;
-  mapping_flags.boundary_faces = matrix_free_wrapper.data.mapping_update_flags_boundary_faces;
-
-  // append
+  // append mapping flags
   if(param.problem_type == ProblemType::Unsteady)
   {
-    mapping_flags = mapping_flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.right_hand_side)
   {
-    mapping_flags = mapping_flags || Operators::RHSKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::RHSKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.equation_type == EquationType::Convection ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    mapping_flags = mapping_flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
   }
 
   if(param.equation_type == EquationType::Diffusion ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    mapping_flags = mapping_flags || Operators::DiffusiveKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::DiffusiveKernel<dim, Number>::get_mapping_flags());
   }
 
-  // write back into additional_data
-  matrix_free_wrapper.data.mapping_update_flags                = mapping_flags.cells;
-  matrix_free_wrapper.data.mapping_update_flags_inner_faces    = mapping_flags.inner_faces;
-  matrix_free_wrapper.data.mapping_update_flags_boundary_faces = mapping_flags.boundary_faces;
+  // DoFHandler, AffineConstraints
+  matrix_free_wrapper.insert_dof_handler(&dof_handler, "scalar_transport");
+  matrix_free_wrapper.insert_constraint(&constraint_matrix, "scalar_transport");
 
-  // we need two dof-handlers in case the velocity field is stored in a DoF vector
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
-    matrix_free_wrapper.dof_handler_vec.resize(2);
-    matrix_free_wrapper.dof_handler_vec[0] = &dof_handler;
-    matrix_free_wrapper.dof_handler_vec[1] = &(*dof_handler_velocity);
-
-    matrix_free_wrapper.constraint_vec.resize(2);
-    matrix_free_wrapper.constraint_vec[0] = &constraint_matrix;
-    matrix_free_wrapper.constraint_vec[1] = &constraint_matrix;
-
-    if(param.use_overintegration)
-    {
-      matrix_free_wrapper.quadrature_vec.resize(2);
-      matrix_free_wrapper.quadrature_vec[0] = QGauss<1>(param.degree + 1);
-      matrix_free_wrapper.quadrature_vec[1] = QGauss<1>(param.degree + (param.degree + 2) / 2);
-    }
-    else
-    {
-      matrix_free_wrapper.quadrature_vec.resize(1);
-      matrix_free_wrapper.quadrature_vec[0] = QGauss<1>(param.degree + 1);
-    }
+    matrix_free_wrapper.insert_dof_handler(&(*dof_handler_velocity), "scalar_transport_velocity");
+    matrix_free_wrapper.insert_constraint(&constraint_matrix, "scalar_transport_velocity");
   }
-  else
+
+  // Quadrature
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), "scalar_transport");
+
+  if(param.use_overintegration)
   {
-    AssertThrow(param.analytical_velocity_field == true, ExcMessage("Invalid parameter."));
-
-    matrix_free_wrapper.dof_handler_vec.resize(1);
-    matrix_free_wrapper.dof_handler_vec[0] = &dof_handler;
-
-    matrix_free_wrapper.constraint_vec.resize(1);
-    matrix_free_wrapper.constraint_vec[0] = &constraint_matrix;
-
-    // quadrature formula used to perform integrals
-    QGauss<1> quadrature(param.degree + 1);
-    matrix_free_wrapper.quadrature_vec.resize(1);
-    matrix_free_wrapper.quadrature_vec[0] = quadrature;
+    matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + (param.degree + 2) / 2),
+                                          "scalar_transport_overintegration");
   }
 }
 
@@ -140,8 +111,8 @@ DGOperator<dim, Number>::setup(
 
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index            = 0;
-  mass_matrix_operator_data.quad_index           = 0;
+  mass_matrix_operator_data.dof_index            = get_dof_index();
+  mass_matrix_operator_data.quad_index           = get_quad_index();
   mass_matrix_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   mass_matrix_operator_data.implement_block_diagonal_preconditioner_matrix_free =
     param.implement_block_diagonal_preconditioner_matrix_free;
@@ -149,8 +120,7 @@ DGOperator<dim, Number>::setup(
   mass_matrix_operator.reinit(*matrix_free, constraint_matrix, mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  // dof_index = 0, quad_index = 0
-  inverse_mass_matrix_operator.initialize(*matrix_free, 0, 0);
+  inverse_mass_matrix_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
 
   // convective operator
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
@@ -161,8 +131,9 @@ DGOperator<dim, Number>::setup(
   convective_kernel_data.velocity                   = field_functions->velocity;
 
   ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.dof_index            = 0;
-  convective_operator_data.quad_index           = param.use_overintegration ? 1 : 0;
+  convective_operator_data.dof_index = get_dof_index();
+  convective_operator_data.quad_index =
+    param.use_overintegration ? get_quad_index_overintegration() : get_quad_index();
   convective_operator_data.bc                   = boundary_descriptor;
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -181,8 +152,8 @@ DGOperator<dim, Number>::setup(
   diffusive_kernel_data.diffusivity = param.diffusivity;
 
   DiffusiveOperatorData<dim> diffusive_operator_data;
-  diffusive_operator_data.dof_index            = 0;
-  diffusive_operator_data.quad_index           = 0;
+  diffusive_operator_data.dof_index            = get_dof_index();
+  diffusive_operator_data.quad_index           = get_quad_index();
   diffusive_operator_data.bc                   = boundary_descriptor;
   diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
@@ -197,8 +168,8 @@ DGOperator<dim, Number>::setup(
 
   // rhs operator
   RHSOperatorData<dim> rhs_operator_data;
-  rhs_operator_data.dof_index     = 0;
-  rhs_operator_data.quad_index    = 0;
+  rhs_operator_data.dof_index     = get_dof_index();
+  rhs_operator_data.quad_index    = get_quad_index();
   rhs_operator_data.kernel_data.f = field_functions->right_hand_side;
   rhs_operator.reinit(*matrix_free, rhs_operator_data);
 
@@ -251,9 +222,11 @@ DGOperator<dim, Number>::setup(
   combined_operator_data.convective_kernel_data = convective_kernel_data;
   combined_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
 
-  combined_operator_data.dof_index = 0;
+  combined_operator_data.dof_index = get_dof_index();
   combined_operator_data.quad_index =
-    (param.use_overintegration && combined_operator_data.convective_problem) ? 1 : 0;
+    (param.use_overintegration && combined_operator_data.convective_problem) ?
+      get_quad_index_overintegration() :
+      get_quad_index();
 
   combined_operator.reinit(*matrix_free, constraint_matrix, combined_operator_data);
 
@@ -287,9 +260,30 @@ DGOperator<dim, Number>::distribute_dofs()
 
 template<int dim, typename Number>
 int
+DGOperator<dim, Number>::get_dof_index() const
+{
+  return matrix_free_wrapper->get_dof_index(dof_index_std);
+}
+
+template<int dim, typename Number>
+int
 DGOperator<dim, Number>::get_dof_index_velocity() const
 {
-  return 1;
+  return matrix_free_wrapper->get_dof_index(dof_index_velocity);
+}
+
+template<int dim, typename Number>
+int
+DGOperator<dim, Number>::get_quad_index() const
+{
+  return matrix_free_wrapper->get_quad_index(quad_index_std);
+}
+
+template<int dim, typename Number>
+int
+DGOperator<dim, Number>::get_quad_index_overintegration() const
+{
+  return matrix_free_wrapper->get_quad_index(quad_index_overintegration);
 }
 
 template<int dim, typename Number>
@@ -329,7 +323,9 @@ DGOperator<dim, Number>::initialize_preconditioner()
 {
   if(param.preconditioner == Preconditioner::InverseMassMatrix)
   {
-    preconditioner.reset(new InverseMassMatrixPreconditioner<dim, 1, Number>(*matrix_free, 0, 0));
+    preconditioner.reset(new InverseMassMatrixPreconditioner<dim, 1, Number>(*matrix_free,
+                                                                             get_dof_index(),
+                                                                             get_quad_index()));
   }
   else if(param.preconditioner == Preconditioner::PointJacobi)
   {
@@ -492,9 +488,12 @@ DGOperator<dim, Number>::project_velocity(VectorType & velocity, double const ti
 {
   VelocityProjection<dim, Number> l2_projection;
 
-  unsigned int const quad_index = 0;
-  l2_projection.apply(
-    *matrix_free, get_dof_index_velocity(), quad_index, field_functions->velocity, time, velocity);
+  l2_projection.apply(*matrix_free,
+                      get_dof_index_velocity(),
+                      get_quad_index(),
+                      field_functions->velocity,
+                      time,
+                      velocity);
 }
 
 template<int dim, typename Number>
@@ -752,8 +751,8 @@ DGOperator<dim, Number>::calculate_time_step_cfl_numerical_velocity(
   double const       exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
-                                                    /*dof_index_velocity = */ 1,
-                                                    /*quad_index = */ 0,
+                                                    get_dof_index_velocity(),
+                                                    get_quad_index(),
                                                     velocity,
                                                     cfl,
                                                     param.degree,
@@ -770,8 +769,8 @@ DGOperator<dim, Number>::calculate_time_step_cfl_analytical_velocity(
   double const exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
-                                                    0 /*dof_index*/,
-                                                    0 /*quad_index*/,
+                                                    get_dof_index(),
+                                                    get_quad_index(),
                                                     field_functions->velocity,
                                                     time,
                                                     cfl,

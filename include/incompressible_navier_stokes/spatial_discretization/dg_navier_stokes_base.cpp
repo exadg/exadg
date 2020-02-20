@@ -65,72 +65,55 @@ void
 DGNavierStokesBase<dim, Number>::append_data_structures(
   MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const
 {
-  MappingFlags flags;
-
-  // get current state
-  flags.cells          = matrix_free_wrapper.data.mapping_update_flags;
-  flags.inner_faces    = matrix_free_wrapper.data.mapping_update_flags_inner_faces;
-  flags.boundary_faces = matrix_free_wrapper.data.mapping_update_flags_boundary_faces;
-
-  // append
-  flags = flags || MassMatrixKernel<dim, Number>::get_mapping_flags();
-  flags = flags || Operators::DivergenceKernel<dim, Number>::get_mapping_flags();
-  flags = flags || Operators::GradientKernel<dim, Number>::get_mapping_flags();
+  // append mapping flags
+  matrix_free_wrapper.append_mapping_flags(MassMatrixKernel<dim, Number>::get_mapping_flags());
+  matrix_free_wrapper.append_mapping_flags(
+    Operators::DivergenceKernel<dim, Number>::get_mapping_flags());
+  matrix_free_wrapper.append_mapping_flags(
+    Operators::GradientKernel<dim, Number>::get_mapping_flags());
 
   if(param.convective_problem())
-    flags = flags || Operators::ConvectiveKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
 
   if(param.viscous_problem())
-    flags = flags || Operators::ViscousKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::ViscousKernel<dim, Number>::get_mapping_flags());
 
   if(param.right_hand_side)
-    flags = flags || Operators::RHSKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::RHSKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_divergence_penalty)
-    flags = flags || Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags();
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::DivergencePenaltyKernel<dim, Number>::get_mapping_flags());
 
   if(param.use_continuity_penalty)
-    flags = flags || Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags();
-
-  // write back into additional_data
-  matrix_free_wrapper.data.mapping_update_flags                = flags.cells;
-  matrix_free_wrapper.data.mapping_update_flags_inner_faces    = flags.inner_faces;
-  matrix_free_wrapper.data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+    matrix_free_wrapper.append_mapping_flags(
+      Operators::ContinuityPenaltyKernel<dim, Number>::get_mapping_flags());
 
   // dof handler
-  matrix_free_wrapper.dof_handler_vec.resize(
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::n_variants));
-  matrix_free_wrapper.dof_handler_vec[dof_index_u]        = &dof_handler_u;
-  matrix_free_wrapper.dof_handler_vec[dof_index_p]        = &dof_handler_p;
-  matrix_free_wrapper.dof_handler_vec[dof_index_u_scalar] = &dof_handler_u_scalar;
+  matrix_free_wrapper.insert_dof_handler(&dof_handler_u, dof_index_u);
+  matrix_free_wrapper.insert_dof_handler(&dof_handler_p, dof_index_p);
+  matrix_free_wrapper.insert_dof_handler(&dof_handler_u_scalar, dof_index_u_scalar);
 
   // constraint
-  matrix_free_wrapper.constraint_vec.resize(
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::n_variants));
-
-  matrix_free_wrapper.constraint_vec[dof_index_u]        = &constraint_u;
-  matrix_free_wrapper.constraint_vec[dof_index_p]        = &constraint_p;
-  matrix_free_wrapper.constraint_vec[dof_index_u_scalar] = &constraint_u_scalar;
+  matrix_free_wrapper.insert_constraint(&constraint_u, dof_index_u);
+  matrix_free_wrapper.insert_constraint(&constraint_p, dof_index_p);
+  matrix_free_wrapper.insert_constraint(&constraint_u_scalar, dof_index_u_scalar);
 
   // quadrature
-  matrix_free_wrapper.quadrature_vec.resize(
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::n_variants));
-  // velocity
-  matrix_free_wrapper.quadrature_vec[quad_index_u] = QGauss<1>(param.degree_u + 1);
-  // pressure
-  matrix_free_wrapper.quadrature_vec[quad_index_p] = QGauss<1>(param.get_degree_p() + 1);
-  // exact integration of nonlinear convective term
-  matrix_free_wrapper.quadrature_vec[quad_index_u_nonlinear] =
-    QGauss<1>(param.degree_u + (param.degree_u + 2) / 2);
-  // velocity: Gauss-Lobatto quadrature points
-  matrix_free_wrapper.quadrature_vec[quad_index_u_gauss_lobatto] =
-    QGaussLobatto<1>(param.degree_u + 1);
-  // pressure: Gauss-Lobatto quadrature points
-  matrix_free_wrapper.quadrature_vec[quad_index_p_gauss_lobatto] =
-    QGaussLobatto<1>(param.get_degree_p() + 1);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree_u + 1), quad_index_u);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.get_degree_p() + 1), quad_index_p);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree_u + (param.degree_u + 2) / 2),
+                                        quad_index_u_nonlinear);
+  if(param.store_previous_boundary_values)
+  {
+    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.degree_u + 1),
+                                          quad_index_u_gauss_lobatto);
+    matrix_free_wrapper.insert_quadrature(QGaussLobatto<1>(param.get_degree_p() + 1),
+                                          quad_index_p_gauss_lobatto);
+  }
 }
 
 template<int dim, typename Number>
@@ -255,7 +238,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
   convective_kernel->reinit(*matrix_free,
                             convective_kernel_data,
-                            dof_index_u,
+                            get_dof_index_velocity(),
                             get_quad_index_velocity_linearized(),
                             false /* is_mg */);
 
@@ -268,28 +251,32 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   viscous_kernel_data.viscosity_is_variable        = param.use_turbulence_model;
   viscous_kernel_data.variable_normal_vector       = param.neumann_with_variable_normal_vector;
   viscous_kernel.reset(new Operators::ViscousKernel<dim, Number>());
-  viscous_kernel->reinit(*matrix_free, viscous_kernel_data, dof_index_u);
+  viscous_kernel->reinit(*matrix_free, viscous_kernel_data, get_dof_index_velocity());
 
   AffineConstraints<double> constraint_dummy;
   constraint_dummy.close();
 
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
-  mass_matrix_operator_data.dof_index  = dof_index_u;
-  mass_matrix_operator_data.quad_index = quad_index_u;
+  mass_matrix_operator_data.dof_index  = get_dof_index_velocity();
+  mass_matrix_operator_data.quad_index = get_quad_index_velocity_linear();
   mass_matrix_operator.reinit(*matrix_free, constraint_dummy, mass_matrix_operator_data);
 
   // inverse mass matrix operator
-  inverse_mass_velocity.initialize(*matrix_free, dof_index_u, quad_index_u);
+  inverse_mass_velocity.initialize(*matrix_free,
+                                   get_dof_index_velocity(),
+                                   get_quad_index_velocity_linear());
 
   // inverse mass matrix operator velocity scalar
-  inverse_mass_velocity_scalar.initialize(*matrix_free, dof_index_u_scalar, quad_index_u);
+  inverse_mass_velocity_scalar.initialize(*matrix_free,
+                                          get_dof_index_velocity_scalar(),
+                                          get_quad_index_velocity_linear());
 
   // body force operator
   RHSOperatorData<dim> rhs_data;
-  rhs_data.dof_index                                 = dof_index_u;
-  rhs_data.dof_index_scalar                          = dof_index_u_scalar;
-  rhs_data.quad_index                                = quad_index_u;
+  rhs_data.dof_index                                 = get_dof_index_velocity();
+  rhs_data.dof_index_scalar                          = get_dof_index_velocity_scalar();
+  rhs_data.quad_index                                = get_quad_index_velocity_linear();
   rhs_data.kernel_data.f                             = field_functions->right_hand_side;
   rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
   rhs_data.kernel_data.thermal_expansion_coefficient = param.thermal_expansion_coefficient;
@@ -300,9 +287,9 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
   // gradient operator
   GradientOperatorData<dim> gradient_operator_data;
-  gradient_operator_data.dof_index_velocity   = dof_index_u;
-  gradient_operator_data.dof_index_pressure   = dof_index_p;
-  gradient_operator_data.quad_index           = quad_index_u;
+  gradient_operator_data.dof_index_velocity   = get_dof_index_velocity();
+  gradient_operator_data.dof_index_pressure   = get_dof_index_pressure();
+  gradient_operator_data.quad_index           = get_quad_index_velocity_linear();
   gradient_operator_data.integration_by_parts = param.gradp_integrated_by_parts;
   gradient_operator_data.formulation          = param.gradp_formulation;
   gradient_operator_data.use_boundary_data    = param.gradp_use_boundary_data;
@@ -311,9 +298,9 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
   // divergence operator
   DivergenceOperatorData<dim> divergence_operator_data;
-  divergence_operator_data.dof_index_velocity   = dof_index_u;
-  divergence_operator_data.dof_index_pressure   = dof_index_p;
-  divergence_operator_data.quad_index           = quad_index_u;
+  divergence_operator_data.dof_index_velocity   = get_dof_index_velocity();
+  divergence_operator_data.dof_index_pressure   = get_dof_index_pressure();
+  divergence_operator_data.quad_index           = get_quad_index_velocity_linear();
   divergence_operator_data.integration_by_parts = param.divu_integrated_by_parts;
   divergence_operator_data.formulation          = param.divu_formulation;
   divergence_operator_data.use_boundary_data    = param.divu_use_boundary_data;
@@ -323,10 +310,10 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   // convective operator
   ConvectiveOperatorData<dim> convective_operator_data;
   convective_operator_data.kernel_data          = convective_kernel_data;
-  convective_operator_data.dof_index            = dof_index_u;
+  convective_operator_data.dof_index            = get_dof_index_velocity();
   convective_operator_data.quad_index           = this->get_quad_index_velocity_linearized();
   convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  convective_operator_data.quad_index_nonlinear = quad_index_u_nonlinear;
+  convective_operator_data.quad_index_nonlinear = get_quad_index_velocity_nonlinear();
   convective_operator_data.bc                   = boundary_descriptor_velocity;
   convective_operator.reinit(*matrix_free,
                              constraint_dummy,
@@ -337,8 +324,8 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
   ViscousOperatorData<dim> viscous_operator_data;
   viscous_operator_data.kernel_data          = viscous_kernel_data;
   viscous_operator_data.bc                   = boundary_descriptor_velocity;
-  viscous_operator_data.dof_index            = dof_index_u;
-  viscous_operator_data.quad_index           = quad_index_u;
+  viscous_operator_data.dof_index            = get_dof_index_velocity();
+  viscous_operator_data.quad_index           = get_quad_index_velocity_linear();
   viscous_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
   viscous_operator.reinit(*matrix_free, constraint_dummy, viscous_operator_data, viscous_kernel);
 
@@ -476,8 +463,8 @@ DGNavierStokesBase<dim, Number>::initialize_turbulence_model()
   model_data.turbulence_model    = param.turbulence_model;
   model_data.constant            = param.turbulence_model_constant;
   model_data.kinematic_viscosity = param.viscosity;
-  model_data.dof_index           = dof_index_u;
-  model_data.quad_index          = quad_index_u;
+  model_data.dof_index           = get_dof_index_velocity();
+  model_data.quad_index          = get_quad_index_velocity_linear();
   model_data.degree              = param.degree_u;
   turbulence_model.initialize(*matrix_free, get_mapping(), viscous_kernel, model_data);
 }
@@ -486,13 +473,21 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_calculators_for_derived_quantities()
 {
-  vorticity_calculator.initialize(*matrix_free, dof_index_u, quad_index_u);
-  divergence_calculator.initialize(*matrix_free, dof_index_u, dof_index_u_scalar, quad_index_u);
+  vorticity_calculator.initialize(*matrix_free,
+                                  get_dof_index_velocity(),
+                                  get_quad_index_velocity_linear());
+  divergence_calculator.initialize(*matrix_free,
+                                   get_dof_index_velocity(),
+                                   get_dof_index_velocity_scalar(),
+                                   get_quad_index_velocity_linear());
   velocity_magnitude_calculator.initialize(*matrix_free,
-                                           dof_index_u,
-                                           dof_index_u_scalar,
-                                           quad_index_u);
-  q_criterion_calculator.initialize(*matrix_free, dof_index_u, dof_index_u_scalar, quad_index_u);
+                                           get_dof_index_velocity(),
+                                           get_dof_index_velocity_scalar(),
+                                           get_quad_index_velocity_linear());
+  q_criterion_calculator.initialize(*matrix_free,
+                                    get_dof_index_velocity(),
+                                    get_dof_index_velocity_scalar(),
+                                    get_quad_index_velocity_linear());
 }
 
 template<int dim, typename Number>
@@ -553,42 +548,56 @@ template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_velocity() const
 {
-  return dof_index_u;
+  return matrix_free_wrapper->get_dof_index(dof_index_u);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGNavierStokesBase<dim, Number>::get_dof_index_pressure() const
+{
+  return matrix_free_wrapper->get_dof_index(dof_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_velocity_scalar() const
 {
-  return dof_index_u_scalar;
+  return matrix_free_wrapper->get_dof_index(dof_index_u_scalar);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linear() const
 {
-  return quad_index_u;
+  return matrix_free_wrapper->get_quad_index(quad_index_u);
+}
+
+template<int dim, typename Number>
+unsigned int
+DGNavierStokesBase<dim, Number>::get_quad_index_pressure() const
+{
+  return matrix_free_wrapper->get_quad_index(quad_index_p);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_nonlinear() const
 {
-  return quad_index_u_nonlinear;
+  return matrix_free_wrapper->get_quad_index(quad_index_u_nonlinear);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_velocity_gauss_lobatto() const
 {
-  return quad_index_u_gauss_lobatto;
+  return matrix_free_wrapper->get_quad_index(quad_index_u_gauss_lobatto);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_quad_index_pressure_gauss_lobatto() const
 {
-  return quad_index_p_gauss_lobatto;
+  return matrix_free_wrapper->get_quad_index(quad_index_p_gauss_lobatto);
 }
 
 template<int dim, typename Number>
@@ -597,34 +606,20 @@ DGNavierStokesBase<dim, Number>::get_quad_index_velocity_linearized() const
 {
   if(param.quad_rule_linearization == QuadratureRuleLinearization::Standard)
   {
-    return quad_index_u;
+    return get_quad_index_velocity_linear();
   }
   else if(param.quad_rule_linearization == QuadratureRuleLinearization::Overintegration32k)
   {
     if(param.nonlinear_problem_has_to_be_solved())
-      return quad_index_u_nonlinear;
+      return get_quad_index_velocity_nonlinear();
     else
-      return quad_index_u;
+      return get_quad_index_velocity_linear();
   }
   else
   {
     AssertThrow(false, ExcMessage("Not implemented"));
-    return quad_index_u_nonlinear;
+    return get_quad_index_velocity_nonlinear();
   }
-}
-
-template<int dim, typename Number>
-unsigned int
-DGNavierStokesBase<dim, Number>::get_dof_index_pressure() const
-{
-  return dof_index_p;
-}
-
-template<int dim, typename Number>
-unsigned int
-DGNavierStokesBase<dim, Number>::get_quad_index_pressure() const
-{
-  return quad_index_p;
 }
 
 template<int dim, typename Number>
@@ -716,21 +711,21 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_vector_velocity(VectorType & src) const
 {
-  matrix_free->initialize_dof_vector(src, dof_index_u);
+  matrix_free->initialize_dof_vector(src, get_dof_index_velocity());
 }
 
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_vector_velocity_scalar(VectorType & src) const
 {
-  matrix_free->initialize_dof_vector(src, dof_index_u_scalar);
+  matrix_free->initialize_dof_vector(src, get_dof_index_velocity_scalar());
 }
 
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_vector_pressure(VectorType & src) const
 {
-  matrix_free->initialize_dof_vector(src, dof_index_p);
+  matrix_free->initialize_dof_vector(src, get_dof_index_pressure());
 }
 
 template<int dim, typename Number>
@@ -814,8 +809,8 @@ DGNavierStokesBase<dim, Number>::calculate_time_step_cfl(VectorType const & velo
                                                          double const       exponent_degree) const
 {
   return calculate_time_step_cfl_local<dim, Number>(*matrix_free,
-                                                    dof_index_u,
-                                                    quad_index_u,
+                                                    get_dof_index_velocity(),
+                                                    get_quad_index_velocity_linear(),
                                                     velocity,
                                                     cfl,
                                                     param.degree_u,
@@ -953,7 +948,10 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   // compute rhs vector
   StreamfunctionCalculatorRHSOperator<dim, Number> rhs_operator;
-  rhs_operator.initialize(*matrix_free, dof_index_u, dof_index_u_scalar, quad_index_u);
+  rhs_operator.initialize(*matrix_free,
+                          get_dof_index_velocity(),
+                          get_dof_index_velocity_scalar(),
+                          get_quad_index_velocity_linear());
   VectorType rhs;
   initialize_vector_velocity_scalar(rhs);
   rhs_operator.apply(rhs, src);

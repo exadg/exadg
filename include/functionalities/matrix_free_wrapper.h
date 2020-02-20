@@ -11,6 +11,7 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/matrix_free/matrix_free.h>
 
+#include "../operators/mapping_flags.h"
 #include "categorization.h"
 
 using namespace dealii;
@@ -18,6 +19,7 @@ using namespace dealii;
 template<int dim, typename Number>
 struct MatrixFreeWrapper
 {
+public:
   MatrixFreeWrapper(Mapping<dim> const & mapping_in) : mapping(mapping_in)
   {
     matrix_free.reset(new MatrixFree<dim, Number>());
@@ -86,8 +88,110 @@ struct MatrixFreeWrapper
     pde_operator.append_data_structures(*this);
   }
 
+  void
+  append_mapping_flags(MappingFlags const & flags_other)
+  {
+    MappingFlags flags;
+
+    flags.cells          = this->data.mapping_update_flags;
+    flags.inner_faces    = this->data.mapping_update_flags_inner_faces;
+    flags.boundary_faces = this->data.mapping_update_flags_boundary_faces;
+
+    // append
+    flags = flags || flags_other;
+
+    this->data.mapping_update_flags                = flags.cells;
+    this->data.mapping_update_flags_inner_faces    = flags.inner_faces;
+    this->data.mapping_update_flags_boundary_faces = flags.boundary_faces;
+  }
+
+  void
+  insert_dof_handler(DoFHandler<dim> const * dof_handler, std::string const & name)
+  {
+    insert_element(dof_handler_vec, dof_index_map, dof_handler, name);
+  }
+
+  void
+  insert_constraint(AffineConstraints<double> const * constraint, std::string const & name)
+  {
+    insert_element(constraint_vec, constraint_index_map, constraint, name);
+  }
+
+  void insert_quadrature(Quadrature<1> const & quadrature, std::string const & name)
+  {
+    insert_element(quadrature_vec, quad_index_map, quadrature, name);
+  }
+
+  unsigned int
+  get_dof_index(std::string const & name)
+  {
+    return get_index(dof_index_map, name);
+  }
+
+  unsigned int
+  get_constraint_index(std::string const & name)
+  {
+    return get_index(constraint_index_map, name);
+  }
+
+  unsigned int
+  get_quad_index(std::string const & name)
+  {
+    return get_index(quad_index_map, name);
+  }
+
+private:
+  template<typename T>
+  void
+  insert_element(std::vector<T> &                      vector,
+                 std::map<std::string, unsigned int> & map,
+                 T const &                             element,
+                 std::string const &                   name)
+  {
+    unsigned int index = vector.size();
+
+    auto it = map.find(name);
+
+    // make sure that this element does not already exist
+    if(it == map.end())
+    {
+      map.insert(std::pair<std::string, unsigned int>(name, index));
+    }
+    else
+    {
+      AssertThrow(it == map.end(), ExcMessage("Element already exists. Aborting."));
+    }
+
+    vector.resize(index + 1);
+    vector.at(index) = element;
+  }
+
+  unsigned int
+  get_index(std::map<std::string, unsigned int> const & map, std::string const & name)
+  {
+    auto it = map.find(name);
+
+    unsigned int index = numbers::invalid_unsigned_int;
+
+    if(it != map.end())
+    {
+      index = it->second;
+    }
+    else
+    {
+      AssertThrow(it != map.end(), ExcMessage("Could not find element. Aborting."));
+    }
+
+    return index;
+  }
+
   // the actual MatrixFree object
   std::shared_ptr<MatrixFree<dim, Number>> matrix_free;
+
+  // maps between names and indices for DoFHandler, Constraint, Quadrature
+  std::map<std::string, unsigned int> dof_index_map;
+  std::map<std::string, unsigned int> constraint_index_map;
+  std::map<std::string, unsigned int> quad_index_map;
 
   // collection of data structures required for initialization and update of matrix_free
 

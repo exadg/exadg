@@ -277,11 +277,20 @@ private:
   void
   distribute_dofs();
 
+  int
+  get_dof_index() const;
+
   /*
    * Dof index for velocity (in case of numerical velocity field)
    */
   int
   get_dof_index_velocity() const;
+
+  int
+  get_quad_index() const;
+
+  int
+  get_quad_index_overintegration() const;
 
   /*
    * Initializes the preconditioner.
@@ -333,6 +342,12 @@ private:
    * Constraints.
    */
   AffineConstraints<double> constraint_matrix;
+
+  std::string const dof_index_std      = "scalar_transport";
+  std::string const dof_index_velocity = "scalar_transport_velocity";
+
+  std::string const quad_index_std             = "scalar_transport";
+  std::string const quad_index_overintegration = "scalar_transport_overintegration";
 
   /*
    * Matrix-free operator evaluation.
