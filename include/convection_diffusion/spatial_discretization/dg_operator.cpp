@@ -455,7 +455,7 @@ template<int dim, typename Number>
 void
 DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
-  matrix_free->initialize_dof_vector(src);
+  matrix_free->initialize_dof_vector(src, get_dof_index());
 }
 
 template<int dim, typename Number>
