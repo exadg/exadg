@@ -258,13 +258,10 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
       // ... and print it line by line:
       for(int i = 0; i < len; i++)
       {
-        if(E[i] > data.output_tolerance)
-        {
-          f << std::scientific << std::setprecision(0)
-            << std::setw(2 + ceil(std::max(3.0, log(len) / log(10)))) << i << std::scientific
-            << std::setprecision(precision) << std::setw(precision + 8) << kappa[i] << "   " << E[i]
-            << std::endl;
-        }
+        f << std::scientific << std::setprecision(0)
+          << std::setw(2 + ceil(std::max(3.0, log(len) / log(10)))) << i << std::scientific
+          << std::setprecision(precision) << std::setw(precision + 8) << kappa[i] << "   " << E[i]
+          << std::endl;
       }
     }
   }

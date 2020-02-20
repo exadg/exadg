@@ -28,7 +28,6 @@ struct KineticEnergySpectrumData
       calculate_every_time_interval(-1.0),
       filename("energy_spectrum"),
       clear_file(true),
-      output_tolerance(std::numeric_limits<double>::min()),
       degree(0),
       evaluation_points_per_cell(0),
       exploit_symmetry(false),
@@ -55,7 +54,6 @@ struct KineticEnergySpectrumData
       print_parameter(pcout, "Filename", filename);
       print_parameter(pcout, "Clear file", clear_file);
 
-      print_parameter(pcout, "Output precision", output_tolerance);
       print_parameter(pcout, "Evaluation points per cell", evaluation_points_per_cell);
 
       print_parameter(pcout, "Exploit symmetry", exploit_symmetry);
@@ -78,7 +76,6 @@ struct KineticEnergySpectrumData
   // these parameters are only relevant if do_fftw = true
   std::string filename;
   bool        clear_file;
-  double      output_tolerance;
 
   unsigned int degree;
   unsigned int evaluation_points_per_cell;
