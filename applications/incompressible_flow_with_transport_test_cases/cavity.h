@@ -207,6 +207,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.equation_type = EquationType::ConvectionDiffusion;
   param.analytical_velocity_field = false;
   param.right_hand_side = false;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
 
   // PHYSICAL QUANTITIES
   param.start_time = START_TIME;
@@ -325,6 +326,22 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
   }
 }
 
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
 namespace IncNS
 {
 
@@ -353,9 +370,10 @@ public:
     if(component == 0)
     {
       // Variation of boundary condition: avoid velocity jumps in corners (reduces Newton iterations considerably for convection-dominated problems)
-//      result = 4./(L*L) * (-(p[0]-L/2.0)*(p[0]-L/2.0) + L*L/4.0);
+      result = 4./(L*L) * (-(p[0]-L/2.0)*(p[0]-L/2.0) + L*L/4.0);
 
-      result = 1.0;
+      // might not converge
+//      result = 1.0;
     }
 
     return result;

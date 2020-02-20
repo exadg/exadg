@@ -355,10 +355,12 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
   if(param_1.ale_formulation) // moving mesh
   {
+    std::shared_ptr<Function<dim>> mesh_motion_1;
+    mesh_motion_1 = set_mesh_movement_function_1<dim>();
     mesh_1.reset(new MovingMesh<dim, Number>(mapping_degree_1,
                                              *triangulation_1,
                                              param_1.degree_u,
-                                             field_functions_1->mesh_movement,
+                                             mesh_motion_1,
                                              param_1.start_time,
                                              mpi_comm));
   }
@@ -383,10 +385,12 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
   if(param_2.ale_formulation) // moving mesh
   {
+    std::shared_ptr<Function<dim>> mesh_motion_2;
+    mesh_motion_2 = set_mesh_movement_function_2<dim>();
     mesh_2.reset(new MovingMesh<dim, Number>(mapping_degree_2,
                                              *triangulation_2,
                                              param_2.degree_u,
-                                             field_functions_2->mesh_movement,
+                                             mesh_motion_2,
                                              param_2.start_time,
                                              mpi_comm));
   }

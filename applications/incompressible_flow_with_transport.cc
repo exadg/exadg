@@ -340,10 +340,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
   if(fluid_param.ale_formulation) // moving mesh
   {
+    std::shared_ptr<Function<dim>> mesh_motion;
+    mesh_motion = set_mesh_movement_function<dim>();
     mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
                                            *triangulation,
                                            fluid_param.degree_u,
-                                           fluid_field_functions->mesh_movement,
+                                           mesh_motion,
                                            fluid_param.start_time,
                                            mpi_comm));
   }

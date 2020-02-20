@@ -224,6 +224,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.dim = DIM;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::ConvectionDiffusion;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.analytical_velocity_field = false;
   param.right_hand_side = false;
 
@@ -294,7 +295,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   // NUMERICAL PARAMETERS
   param.use_combined_operator = true;
   param.filter_solution = false;
-  param.use_overintegration = true;
+  param.use_overintegration = false;
 }
 }
 
@@ -329,6 +330,22 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
       }
     }
   }
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
 }
 
 namespace IncNS

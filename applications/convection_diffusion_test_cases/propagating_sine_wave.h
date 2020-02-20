@@ -9,6 +9,7 @@
 #define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_PROPAGATING_SINE_WAVE_H_
 
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -33,6 +34,11 @@ unsigned int const REFINE_TIME_MAX = 0;
 double const START_TIME = 0.0;
 double const END_TIME = 8.0;
 
+double const LEFT  = -1.0;
+double const RIGHT = +1.0;
+
+bool const ALE = true;
+
 namespace ConvDiff
 {
 void
@@ -44,6 +50,8 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.equation_type = EquationType::Convection;
   param.analytical_velocity_field = true;
   param.right_hand_side = false;
+  param.ale_formulation = ALE;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
 
   // PHYSICAL QUANTITIES
   param.start_time = START_TIME;
@@ -51,10 +59,11 @@ set_input_parameters(ConvDiff::InputParameters &param)
   param.diffusivity = 0.0;
 
   // TEMPORAL DISCRETIZATION
-  param.temporal_discretization = TemporalDiscretization::ExplRK; //BDF; //ExplRK;
+  param.temporal_discretization = TemporalDiscretization::BDF; //ExplRK;
   param.time_integrator_rk = TimeIntegratorRK::ExplRK3Stage7Reg2;
-  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit; //ExplicitOIF; //Explicit;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; //ExplicitOIF; //Explicit;
   param.time_integrator_oif = TimeIntegratorRK::ExplRK3Stage7Reg2;
+  param.adaptive_time_stepping = true;
   param.order_time_integrator = 2;
   param.start_with_low_order = false;
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
@@ -94,7 +103,7 @@ set_input_parameters(ConvDiff::InputParameters &param)
 
   // NUMERICAL PARAMETERS
   param.use_combined_operator = true;
-  param.store_analytical_velocity_in_dof_vector = false;
+  param.store_analytical_velocity_in_dof_vector = true;
 }
 }
 
@@ -115,8 +124,7 @@ void create_grid_and_set_boundary_ids(
   (void)periodic_faces;
 
   // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-  const double left = -1.0, right = 1.0;
-  GridGenerator::hyper_cube(*triangulation,left,right);
+  GridGenerator::hyper_cube(*triangulation,LEFT,RIGHT);
 
   // set boundary indicator
   typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
@@ -125,12 +133,44 @@ void create_grid_and_set_boundary_ids(
     for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
     {
       //use outflow boundary at right boundary
-      if ((std::fabs(cell->face(face_number)->center()(0) - right) < 1e-12))
+      if ((std::fabs(cell->face(face_number)->center()(0) - RIGHT) < 1e-12))
        cell->face(face_number)->set_boundary_id(1);
     }
   }
   triangulation->refine_global(n_refine_space);
 }
+
+
+/**************************************************************************************/
+/*                                                                                    */
+/*                                     MESH MOTION                                    */
+/*                                                                                    */
+/**************************************************************************************/
+
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+
+  MeshMovementData<dim> data;
+  data.temporal = MeshMovementAdvanceInTime::Sin;
+  data.shape = MeshMovementShape::SineZeroAtBoundary; //SineAligned;
+  data.dimensions[0] = std::abs(RIGHT-LEFT);
+  data.dimensions[1] = std::abs(RIGHT-LEFT);
+  data.amplitude = 0.08 * (RIGHT-LEFT); // A_max = (RIGHT-LEFT)/(2*pi)
+  data.period = END_TIME;
+  data.t_start = 0.0;
+  data.t_end = END_TIME;
+  data.spatial_number_of_oscillations = 1.0;
+  mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
+
+  return mesh_motion;
+}
+
+namespace ConvDiff
+{
 
 /**************************************************************************************/
 /*                                                                                    */
@@ -188,9 +228,6 @@ public:
   }
 };
 
-namespace ConvDiff
-{
-
 template<int dim>
 void set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim> > boundary_descriptor)
 {
@@ -214,11 +251,11 @@ std::shared_ptr<PostProcessorBase<dim, Number> >
 construct_postprocessor(ConvDiff::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   PostProcessorData<dim> pp_data;
-  pp_data.output_data.write_output = false;
+  pp_data.output_data.write_output = true;
   pp_data.output_data.output_folder = "output_conv_diff/propagating_sine_wave/";
   pp_data.output_data.output_name = "propagating_sine_wave";
   pp_data.output_data.output_start_time = param.start_time;
-  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/100;
   pp_data.output_data.degree = param.degree;
 
   pp_data.error_data.analytical_solution_available = true;

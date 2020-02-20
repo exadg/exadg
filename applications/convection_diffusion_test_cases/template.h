@@ -55,6 +55,24 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
   (void)periodic_faces;
 }
 
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
+namespace ConvDiff
+{
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -81,9 +99,6 @@ public:
     return 0.0;
   }
 };
-
-namespace ConvDiff
-{
 
 template<int dim>
 void

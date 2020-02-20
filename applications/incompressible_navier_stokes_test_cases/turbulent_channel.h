@@ -10,7 +10,6 @@
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/postprocessor/statistics_manager.h"
-#include "../grid_tools/grid_functions_turbulent_channel.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -209,6 +208,8 @@ void set_input_parameters(InputParameters &param)
 /*                                                                                                          */
 /************************************************************************************************************/
 
+#include "../grid_tools/grid_functions_turbulent_channel.h"
+
 template<int dim>
 void
 create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
@@ -305,12 +306,29 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 
 /************************************************************************************************************/
 /*                                                                                                          */
-/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                               MESH MOTION                                                */
 /*                                                                                                          */
 /************************************************************************************************************/
 
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
+
 namespace IncNS
 {
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>

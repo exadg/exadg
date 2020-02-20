@@ -217,12 +217,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   if(param.ale_formulation) // moving mesh
   {
-    moving_mesh.reset(new MovingMesh<dim, Number>(mapping_degree,
-                                                  *triangulation,
-                                                  param.degree,
-                                                  field_functions->mesh_movement,
-                                                  param.start_time,
-                                                  mpi_comm));
+    std::shared_ptr<Function<dim>> mesh_motion = set_mesh_movement_function<dim>();
+    moving_mesh.reset(new MovingMesh<dim, Number>(
+      mapping_degree, *triangulation, param.degree, mesh_motion, param.start_time, mpi_comm));
 
     mesh = moving_mesh;
   }
