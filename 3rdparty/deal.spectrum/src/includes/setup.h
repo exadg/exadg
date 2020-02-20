@@ -32,7 +32,7 @@ class Setup
 {
 public:
   // length of header (8 ints)
-  const int HEADER_LENGTH = 8;
+  static const int HEADER_LENGTH = 8;
   
   MPI_Comm const & comm;
   
@@ -103,9 +103,9 @@ public:
   readHeader(char *& filename)
   {
     FILE * fp;
-    int    crit[5];
+    int    crit[1+HEADER_LENGTH];
     crit[0] = 0;
-
+    
     if(this->rank == 0)
     {
       // read header only by rank 0 ...
@@ -122,7 +122,7 @@ public:
         crit[0] = 0;
       }
     }
-
+    
     // broadcast header to all processes
     MPI_Bcast(&crit, 5, MPI_INT, 0, comm);
 
@@ -145,7 +145,7 @@ public:
       if(this->points_dst == 0)
         this->points_dst = this->points_src; // equal if nothing specified
     }
-
+    
     // success or failure?
     return crit[0];
   }
