@@ -114,21 +114,25 @@ template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::update_after_mesh_movement()
 {
-  viscous_kernel->calculate_penalty_parameter(this->get_matrix_free(), this->get_data().dof_index);
+  if(this->data.viscous_problem)
+    viscous_kernel->calculate_penalty_parameter(this->get_matrix_free(),
+                                                this->get_data().dof_index);
 }
 
 template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::set_velocity_copy(VectorType const & velocity) const
 {
-  convective_kernel->set_velocity_copy(velocity);
+  if(this->data.convective_problem)
+    convective_kernel->set_velocity_copy(velocity);
 }
 
 template<int dim, typename Number>
 void
 MomentumOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity) const
 {
-  convective_kernel->set_velocity_ptr(velocity);
+  if(this->data.convective_problem)
+    convective_kernel->set_velocity_ptr(velocity);
 }
 
 template<int dim, typename Number>
