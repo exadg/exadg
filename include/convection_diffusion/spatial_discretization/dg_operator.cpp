@@ -908,11 +908,7 @@ DGOperator<dim, Number>::update_after_mesh_movement()
   if(param.equation_type == EquationType::Diffusion ||
      param.equation_type == EquationType::ConvectionDiffusion)
   {
-    diffusive_operator.update();
-
-    // combined_operator contains a separate diffusive_kernel so we also have to update
-    // combined_operator -> TODO: use a single diffusive kernel for all operators
-    combined_operator.update_after_mesh_movement();
+    diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
   }
 }
 
