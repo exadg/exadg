@@ -64,9 +64,10 @@ public:
 
     this->mesh_is_moving = mesh_is_moving;
 
-    data            = this->pde_operator->get_data();
-    data.dof_index  = 0;
-    data.quad_index = 0;
+    data                                           = this->pde_operator->get_data();
+    data.dof_index                                 = 0;
+    data.convective_kernel_data.dof_index_velocity = 1;
+    data.quad_index                                = 0;
 
     // When solving the reaction-convection-diffusion equations, it might be possible
     // that one wants to apply the multigrid preconditioner only to the reaction-diffusion
