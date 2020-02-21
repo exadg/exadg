@@ -201,7 +201,7 @@ private:
 
   // collection of data structures required for initialization and update of matrix_free
 
-  // mesh containing mapping information
+  // mapping
   Mapping<dim> const & mapping;
 
   // additional data
