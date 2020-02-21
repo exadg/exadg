@@ -62,7 +62,8 @@ public:
              MPI_Comm const &                               mpi_comm_in);
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const;
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field = "") const;
 
   void
   setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
@@ -226,17 +227,19 @@ private:
   AffineConstraints<double> constraint;
 
 
-  std::string const dof_index_all    = "compressible_all_fields";
-  std::string const dof_index_vector = "compressible_vector";
-  std::string const dof_index_scalar = "compressible_scalar";
+  std::string const dof_index_all    = "all_fields";
+  std::string const dof_index_vector = "vector";
+  std::string const dof_index_scalar = "scalar";
 
-  std::string const quad_index_standard             = "compressible_standard";
-  std::string const quad_index_overintegration_conv = "compressible_overintegration_conv";
-  std::string const quad_index_overintegration_vis  = "compressible_overintegration_vis";
+  std::string const quad_index_standard             = "standard";
+  std::string const quad_index_overintegration_conv = "overintegration_conv";
+  std::string const quad_index_overintegration_vis  = "overintegration_vis";
 
   std::string const quad_index_l2_projections = quad_index_standard;
   // alternative: use more accurate over-integration strategy
   //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;
+
+  mutable std::string field;
 
   /*
    * Matrix-free operator evaluation.

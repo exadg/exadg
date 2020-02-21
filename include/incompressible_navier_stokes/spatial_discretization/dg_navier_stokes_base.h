@@ -105,7 +105,8 @@ public:
   virtual ~DGNavierStokesBase(){};
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const;
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field = "") const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -471,6 +472,8 @@ private:
   std::string const quad_index_u_nonlinear     = "velocity_nonlinear";
   std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
   std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
+
+  mutable std::string field;
 
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;

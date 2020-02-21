@@ -83,9 +83,9 @@ public:
 
   template<typename Operator>
   void
-  append_data_structures(Operator const & pde_operator)
+  append_data_structures(Operator const & pde_operator, std::string const & field = "")
   {
-    pde_operator.append_data_structures(*this);
+    pde_operator.append_data_structures(*this, field);
   }
 
   void

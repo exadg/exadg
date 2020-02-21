@@ -71,8 +71,11 @@ DGOperator<dim, Number>::DGOperator(
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const
+  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+  std::string const &              field) const
 {
+  this->field = field;
+
   // append mapping flags of compressible solver
   MappingFlags mapping_flags_compressible;
   mapping_flags_compressible.cells =
@@ -84,20 +87,21 @@ DGOperator<dim, Number>::append_data_structures(
   matrix_free_wrapper.append_mapping_flags(mapping_flags_compressible);
 
   // dof handler
-  matrix_free_wrapper.insert_dof_handler(&dof_handler, dof_index_all);
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_vector, dof_index_vector);
-  matrix_free_wrapper.insert_dof_handler(&dof_handler_scalar, dof_index_scalar);
+  matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index_all);
+  matrix_free_wrapper.insert_dof_handler(&dof_handler_vector, field + dof_index_vector);
+  matrix_free_wrapper.insert_dof_handler(&dof_handler_scalar, field + dof_index_scalar);
 
   // constraints
-  matrix_free_wrapper.insert_constraint(&constraint, dof_index_all);
-  matrix_free_wrapper.insert_constraint(&constraint, dof_index_vector);
-  matrix_free_wrapper.insert_constraint(&constraint, dof_index_scalar);
+  matrix_free_wrapper.insert_constraint(&constraint, field + dof_index_all);
+  matrix_free_wrapper.insert_constraint(&constraint, field + dof_index_vector);
+  matrix_free_wrapper.insert_constraint(&constraint, field + dof_index_scalar);
 
   // quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), quad_index_standard);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index_standard);
   matrix_free_wrapper.insert_quadrature(QGauss<1>(n_q_points_conv),
-                                        quad_index_overintegration_conv);
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(n_q_points_visc), quad_index_overintegration_vis);
+                                        field + quad_index_overintegration_conv);
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(n_q_points_visc),
+                                        field + quad_index_overintegration_vis);
 }
 
 template<int dim, typename Number>
@@ -298,49 +302,49 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index_vector() const
 {
-  return matrix_free_wrapper->get_dof_index(dof_index_vector);
+  return matrix_free_wrapper->get_dof_index(field + dof_index_vector);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index_scalar() const
 {
-  return matrix_free_wrapper->get_dof_index(dof_index_scalar);
+  return matrix_free_wrapper->get_dof_index(field + dof_index_scalar);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index_all() const
 {
-  return matrix_free_wrapper->get_dof_index(dof_index_all);
+  return matrix_free_wrapper->get_dof_index(field + dof_index_all);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index_standard() const
 {
-  return matrix_free_wrapper->get_quad_index(quad_index_standard);
+  return matrix_free_wrapper->get_quad_index(field + quad_index_standard);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index_overintegration_conv() const
 {
-  return matrix_free_wrapper->get_quad_index(quad_index_overintegration_conv);
+  return matrix_free_wrapper->get_quad_index(field + quad_index_overintegration_conv);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index_overintegration_vis() const
 {
-  return matrix_free_wrapper->get_quad_index(quad_index_overintegration_vis);
+  return matrix_free_wrapper->get_quad_index(field + quad_index_overintegration_vis);
 }
 
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_quad_index_l2_projections() const
 {
-  return matrix_free_wrapper->get_quad_index(quad_index_l2_projections);
+  return matrix_free_wrapper->get_quad_index(field + quad_index_l2_projections);
 }
 
 template<int dim, typename Number>

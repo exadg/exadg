@@ -51,8 +51,11 @@ DGOperator<dim, Number>::DGOperator(
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const
+  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+  std::string const &              field) const
 {
+  this->field = field;
+
   // append mapping flags
   if(param.problem_type == ProblemType::Unsteady)
   {
@@ -80,22 +83,22 @@ DGOperator<dim, Number>::append_data_structures(
   }
 
   // DoFHandler, AffineConstraints
-  matrix_free_wrapper.insert_dof_handler(&dof_handler, "scalar_transport");
-  matrix_free_wrapper.insert_constraint(&constraint_matrix, "scalar_transport");
+  matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index_std);
+  matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_std);
 
   if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
   {
-    matrix_free_wrapper.insert_dof_handler(&(*dof_handler_velocity), "scalar_transport_velocity");
-    matrix_free_wrapper.insert_constraint(&constraint_matrix, "scalar_transport_velocity");
+    matrix_free_wrapper.insert_dof_handler(&(*dof_handler_velocity), field + dof_index_velocity);
+    matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_velocity);
   }
 
   // Quadrature
-  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), "scalar_transport");
+  matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index_std);
 
   if(param.use_overintegration)
   {
     matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + (param.degree + 2) / 2),
-                                          "scalar_transport_overintegration");
+                                          field + quad_index_overintegration);
   }
 }
 
@@ -262,28 +265,28 @@ template<int dim, typename Number>
 int
 DGOperator<dim, Number>::get_dof_index() const
 {
-  return matrix_free_wrapper->get_dof_index(dof_index_std);
+  return matrix_free_wrapper->get_dof_index(field + dof_index_std);
 }
 
 template<int dim, typename Number>
 int
 DGOperator<dim, Number>::get_dof_index_velocity() const
 {
-  return matrix_free_wrapper->get_dof_index(dof_index_velocity);
+  return matrix_free_wrapper->get_dof_index(field + dof_index_velocity);
 }
 
 template<int dim, typename Number>
 int
 DGOperator<dim, Number>::get_quad_index() const
 {
-  return matrix_free_wrapper->get_quad_index(quad_index_std);
+  return matrix_free_wrapper->get_quad_index(field + quad_index_std);
 }
 
 template<int dim, typename Number>
 int
 DGOperator<dim, Number>::get_quad_index_overintegration() const
 {
-  return matrix_free_wrapper->get_quad_index(quad_index_overintegration);
+  return matrix_free_wrapper->get_quad_index(field + quad_index_overintegration);
 }
 
 template<int dim, typename Number>

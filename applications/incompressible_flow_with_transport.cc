@@ -434,9 +434,10 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  matrix_free_wrapper->append_data_structures(*navier_stokes_operator);
+  matrix_free_wrapper->append_data_structures(*navier_stokes_operator, "fluid");
   for(unsigned int i = 0; i < n_scalars; ++i)
-    matrix_free_wrapper->append_data_structures(*conv_diff_operator[i]);
+    matrix_free_wrapper->append_data_structures(*conv_diff_operator[i],
+                                                "scalar" + std::to_string(i));
   matrix_free_wrapper->reinit(fluid_param.use_cell_based_face_loops, triangulation);
 
   for(unsigned int i = 0; i < n_scalars; ++i)

@@ -71,7 +71,8 @@ public:
 
 
   void
-  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper) const;
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field = "") const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -343,11 +344,13 @@ private:
    */
   AffineConstraints<double> constraint_matrix;
 
-  std::string const dof_index_std      = "scalar_transport";
-  std::string const dof_index_velocity = "scalar_transport_velocity";
+  std::string const dof_index_std      = "conv_diff";
+  std::string const dof_index_velocity = "conv_diff_velocity";
 
-  std::string const quad_index_std             = "scalar_transport";
-  std::string const quad_index_overintegration = "scalar_transport_overintegration";
+  std::string const quad_index_std             = "conv_diff";
+  std::string const quad_index_overintegration = "conv_diff_overintegration";
+
+  mutable std::string field;
 
   /*
    * Matrix-free operator evaluation.
