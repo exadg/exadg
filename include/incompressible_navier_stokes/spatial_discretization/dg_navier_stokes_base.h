@@ -114,7 +114,8 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_temperature = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -129,6 +130,9 @@ public:
    */
   MatrixFree<dim, Number> const &
   get_matrix_free() const;
+
+  std::string
+  get_dof_name_velocity() const;
 
   unsigned int
   get_dof_index_velocity() const;
@@ -556,7 +560,7 @@ private:
   distribute_dofs();
 
   void
-  initialize_operators();
+  initialize_operators(std::string const & dof_index_temperature);
 
   void
   initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,

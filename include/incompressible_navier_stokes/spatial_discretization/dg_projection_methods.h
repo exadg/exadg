@@ -50,7 +50,8 @@ public:
    * needed for projection-type methods.
    */
   virtual void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_temperature = "");
 
   virtual void
   update_after_mesh_movement() override;

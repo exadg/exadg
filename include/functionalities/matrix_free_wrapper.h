@@ -34,6 +34,12 @@ public:
     return matrix_free;
   }
 
+  DoFHandler<dim> const &
+  get_dof_handler(std::string const & name)
+  {
+    return *dof_handler_vec.at(get_dof_index(name));
+  }
+
   /*
    * This function performs a "complete" reinit() of MatrixFree<dim, Number>.
    */

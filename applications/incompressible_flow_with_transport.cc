@@ -449,12 +449,22 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   }
 
   // setup Navier-Stokes operator
-  navier_stokes_operator->setup(matrix_free_wrapper);
+  if(fluid_param.boussinesq_term)
+  {
+    // assume that the first scalar field with index 0 is the active scalar that
+    // couples to the incompressible Navier-Stokes equations
+    navier_stokes_operator->setup(matrix_free_wrapper, conv_diff_operator[0]->get_dof_name());
+  }
+  else
+  {
+    navier_stokes_operator->setup(matrix_free_wrapper);
+  }
 
   // setup convection-diffusion operator
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
-    conv_diff_operator[i]->setup(matrix_free_wrapper);
+    conv_diff_operator[i]->setup(matrix_free_wrapper,
+                                 navier_stokes_operator->get_dof_name_velocity());
   }
 
   // setup postprocessor

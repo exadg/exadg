@@ -125,7 +125,8 @@ public:
    * depending on the specific ALE formulation chosen).
    */
   virtual void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_temperature = "");
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

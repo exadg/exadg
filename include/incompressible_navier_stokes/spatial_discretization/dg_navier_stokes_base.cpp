@@ -122,7 +122,8 @@ DGNavierStokesBase<dim, Number>::append_data_structures(
 template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in,
+  std::string const &                             dof_index_temperature)
 {
   pcout << std::endl << "Setup Navier-Stokes operator ..." << std::endl << std::flush;
 
@@ -131,7 +132,7 @@ DGNavierStokesBase<dim, Number>::setup(
   matrix_free         = matrix_free_wrapper_in->get_matrix_free();
 
   // initialize data structures depending on MatrixFree
-  initialize_operators();
+  initialize_operators(dof_index_temperature);
 
   initialize_calculators_for_derived_quantities();
 
@@ -229,7 +230,7 @@ DGNavierStokesBase<dim, Number>::get_number_of_dofs() const
 
 template<int dim, typename Number>
 void
-DGNavierStokesBase<dim, Number>::initialize_operators()
+DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_index_temperature)
 {
   // operator kernels
   Operators::ConvectiveKernelData convective_kernel_data;
@@ -277,8 +278,9 @@ DGNavierStokesBase<dim, Number>::initialize_operators()
 
   // body force operator
   RHSOperatorData<dim> rhs_data;
-  rhs_data.dof_index                                 = get_dof_index_velocity();
-  rhs_data.dof_index_scalar                          = get_dof_index_velocity_scalar();
+  rhs_data.dof_index = get_dof_index_velocity();
+  if(param.boussinesq_term)
+    rhs_data.dof_index_scalar = matrix_free_wrapper->get_dof_index(dof_index_temperature);
   rhs_data.quad_index                                = get_quad_index_velocity_linear();
   rhs_data.kernel_data.f                             = field_functions->right_hand_side;
   rhs_data.kernel_data.boussinesq_term               = param.boussinesq_term;
@@ -548,10 +550,17 @@ DGNavierStokesBase<dim, Number>::get_matrix_free() const
 }
 
 template<int dim, typename Number>
+std::string
+DGNavierStokesBase<dim, Number>::get_dof_name_velocity() const
+{
+  return field + dof_index_u;
+}
+
+template<int dim, typename Number>
 unsigned int
 DGNavierStokesBase<dim, Number>::get_dof_index_velocity() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index_u);
+  return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>

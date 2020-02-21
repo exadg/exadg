@@ -34,7 +34,7 @@ DGOperator<dim, Number>::DGOperator(
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
   {
     fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
     dof_handler_velocity.reset(new DoFHandler<dim>(triangulation_in));
@@ -86,7 +86,7 @@ DGOperator<dim, Number>::append_data_structures(
   matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index_std);
   matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_std);
 
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
   {
     matrix_free_wrapper.insert_dof_handler(&(*dof_handler_velocity), field + dof_index_velocity);
     matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_velocity);
@@ -105,12 +105,15 @@ DGOperator<dim, Number>::append_data_structures(
 template<int dim, typename Number>
 void
 DGOperator<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in,
+  std::string const &                             dof_index_velocity_external_in)
 {
   pcout << std::endl << "Setup convection-diffusion operator ..." << std::endl;
 
   matrix_free_wrapper = matrix_free_wrapper_in;
   matrix_free         = matrix_free_wrapper->get_matrix_free();
+
+  dof_index_velocity_external = dof_index_velocity_external_in;
 
   // mass matrix operator
   MassMatrixOperatorData mass_matrix_operator_data;
@@ -127,9 +130,10 @@ DGOperator<dim, Number>::setup(
 
   // convective operator
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
-  convective_kernel_data.formulation                = param.formulation_convective_term;
-  convective_kernel_data.velocity_type              = param.get_type_velocity_field();
-  convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
+  convective_kernel_data.formulation   = param.formulation_convective_term;
+  convective_kernel_data.velocity_type = param.get_type_velocity_field();
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    convective_kernel_data.dof_index_velocity = get_dof_index_velocity();
   convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
   convective_kernel_data.velocity                   = field_functions->velocity;
 
@@ -244,7 +248,7 @@ DGOperator<dim, Number>::distribute_dofs()
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
 
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
   {
     dof_handler_velocity->distribute_dofs(*fe_velocity);
     dof_handler_velocity->distribute_mg_dofs();
@@ -262,28 +266,49 @@ DGOperator<dim, Number>::distribute_dofs()
 }
 
 template<int dim, typename Number>
-int
+std::string
+DGOperator<dim, Number>::get_dof_name() const
+{
+  return field + dof_index_std;
+}
+
+template<int dim, typename Number>
+unsigned int
 DGOperator<dim, Number>::get_dof_index() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index_std);
+  return matrix_free_wrapper->get_dof_index(get_dof_name());
 }
 
 template<int dim, typename Number>
-int
+std::string
+DGOperator<dim, Number>::get_dof_name_velocity() const
+{
+  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
+  {
+    return field + dof_index_velocity;
+  }
+  else // external velocity field not hosted by the convection-diffusion operator
+  {
+    return dof_index_velocity_external;
+  }
+}
+
+template<int dim, typename Number>
+unsigned int
 DGOperator<dim, Number>::get_dof_index_velocity() const
 {
-  return matrix_free_wrapper->get_dof_index(field + dof_index_velocity);
+  return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>
-int
+unsigned int
 DGOperator<dim, Number>::get_quad_index() const
 {
   return matrix_free_wrapper->get_quad_index(field + quad_index_std);
 }
 
 template<int dim, typename Number>
-int
+unsigned int
 DGOperator<dim, Number>::get_quad_index_overintegration() const
 {
   return matrix_free_wrapper->get_quad_index(field + quad_index_overintegration);
@@ -350,12 +375,6 @@ DGOperator<dim, Number>::initialize_preconditioner()
                     "Invalid solver parameters. The convective term is treated explicitly."));
     }
 
-    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    {
-      AssertThrow(dof_handler_velocity.get() != 0,
-                  ExcMessage("dof_handler_velocity is not initialized."));
-    }
-
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
@@ -369,6 +388,19 @@ DGOperator<dim, Number>::initialize_preconditioner()
       dynamic_cast<const parallel::TriangulationBase<dim> *>(&dof_handler.get_triangulation());
 
     const FiniteElement<dim> & fe = dof_handler.get_fe();
+
+    if(param.mg_operator_type == MultigridOperatorType::ReactionConvection ||
+       param.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
+    {
+      unsigned int const degree_scalar = fe.degree;
+      unsigned int const degree_velocity =
+        matrix_free_wrapper->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
+      AssertThrow(
+        degree_scalar == degree_velocity,
+        ExcMessage(
+          "When using a multigrid preconditioner for the scalar convection-diffusion equation, "
+          "the scalar field and the velocity field must have the same polynomial degree."));
+    }
 
     OperatorData<dim> const & data = combined_operator.get_data();
 
@@ -480,7 +512,7 @@ DGOperator<dim, Number>::interpolate_velocity(VectorType & velocity, double cons
   VectorTypeDouble vector_double;
   vector_double = velocity;
 
-  VectorTools::interpolate(*dof_handler_velocity, *(field_functions->velocity), vector_double);
+  VectorTools::interpolate(get_dof_handler_velocity(), *(field_functions->velocity), vector_double);
 
   velocity = vector_double;
 }
@@ -811,10 +843,7 @@ template<int dim, typename Number>
 DoFHandler<dim> const &
 DGOperator<dim, Number>::get_dof_handler_velocity() const
 {
-  AssertThrow(dof_handler_velocity.get() != 0,
-              ExcMessage("dof_handler_velocity is not correctly initialized."));
-
-  return *dof_handler_velocity;
+  return matrix_free_wrapper->get_dof_handler(get_dof_name_velocity());
 }
 
 template<int dim, typename Number>

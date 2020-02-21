@@ -41,9 +41,10 @@ DGNavierStokesPressureCorrection<dim, Number>::~DGNavierStokesPressureCorrection
 template<int dim, typename Number>
 void
 DGNavierStokesPressureCorrection<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+  std::string const &                             dof_index_temperature)
 {
-  ProjBase::setup(matrix_free_wrapper);
+  ProjBase::setup(matrix_free_wrapper, dof_index_temperature);
 
   setup_inverse_mass_matrix_operator_pressure();
 }

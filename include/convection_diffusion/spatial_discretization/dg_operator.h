@@ -80,7 +80,8 @@ public:
    * of equations.
    */
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_velocity_external_in = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -264,6 +265,9 @@ public:
   types::global_dof_index
   get_number_of_dofs() const;
 
+  std::string
+  get_dof_name() const;
+
   void
   update_after_mesh_movement();
 
@@ -278,19 +282,22 @@ private:
   void
   distribute_dofs();
 
-  int
+  unsigned int
   get_dof_index() const;
 
   /*
    * Dof index for velocity (in case of numerical velocity field)
    */
-  int
+  std::string
+  get_dof_name_velocity() const;
+
+  unsigned int
   get_dof_index_velocity() const;
 
-  int
+  unsigned int
   get_quad_index() const;
 
-  int
+  unsigned int
   get_quad_index_overintegration() const;
 
   /*
@@ -351,6 +358,8 @@ private:
   std::string const quad_index_overintegration = "conv_diff_overintegration";
 
   mutable std::string field;
+
+  std::string dof_index_velocity_external;
 
   /*
    * Matrix-free operator evaluation.

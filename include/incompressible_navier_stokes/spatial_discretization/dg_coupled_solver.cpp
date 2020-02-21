@@ -40,9 +40,10 @@ DGNavierStokesCoupled<dim, Number>::~DGNavierStokesCoupled()
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+  std::string const &                             dof_index_temperature)
 {
-  Base::setup(matrix_free_wrapper);
+  Base::setup(matrix_free_wrapper, dof_index_temperature);
 
   this->initialize_vector_velocity(temp_vector);
 }

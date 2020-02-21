@@ -44,9 +44,10 @@ DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
 template<int dim, typename Number>
 void
 DGNavierStokesProjectionMethods<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+  std::string const &                             dof_index_temperature)
 {
-  Base::setup(matrix_free_wrapper);
+  Base::setup(matrix_free_wrapper, dof_index_temperature);
 
   initialize_laplace_operator();
 }
