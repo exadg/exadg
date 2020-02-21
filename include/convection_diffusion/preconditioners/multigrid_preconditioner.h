@@ -22,11 +22,11 @@ template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 private:
-  typedef Operator<dim, Number>          PDEOperatorNumber;
-  typedef Operator<dim, MultigridNumber> PDEOperator;
+  typedef Operator<dim, Number>          PDEOperator;
+  typedef Operator<dim, MultigridNumber> PDEOperatorMG;
 
-  typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
-  typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
+  typedef MultigridOperatorBase<dim, MultigridNumber>            MGOperatorBase;
+  typedef MultigridOperator<dim, MultigridNumber, PDEOperatorMG> MGOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> Base;
 
@@ -53,7 +53,7 @@ public:
              parallel::TriangulationBase<dim> const * tria,
              FiniteElement<dim> const &               fe,
              Mapping<dim> const &                     mapping,
-             PDEOperatorNumber const &                pde_operator,
+             PDEOperator const &                      pde_operator,
              MultigridOperatorType const &            mg_operator_type,
              bool const                               mesh_is_moving,
              Map const *                              dirichlet_bc        = nullptr,
@@ -301,11 +301,16 @@ private:
   initialize_operator(unsigned int const level)
   {
     // initialize pde_operator in a first step
-    std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
+    std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
 
     pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
-    // initialize MGOperator which is a wrapper around the PDEOperator
+    // make sure that scaling factor of time derivative term has been set before the smoothers are
+    // initialized
+    pde_operator_level->set_scaling_factor_mass_matrix(
+      pde_operator->get_scaling_factor_mass_matrix());
+
+    // initialize MGOperator which is a wrapper around the PDEOperatorMG
     std::shared_ptr<MGOperator> mg_operator_level(new MGOperator(pde_operator_level));
 
     return mg_operator_level;
@@ -498,7 +503,7 @@ private:
       this->update_smoother(level);
   }
 
-  std::shared_ptr<PDEOperator>
+  std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level) const
   {
     std::shared_ptr<MGOperator> mg_operator =
@@ -515,7 +520,7 @@ private:
 
   OperatorData<dim> data;
 
-  PDEOperatorNumber const * pde_operator;
+  PDEOperator const * pde_operator;
 
   MultigridOperatorType mg_operator_type;
 

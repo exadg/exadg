@@ -23,9 +23,7 @@ struct MomentumOperatorData : public OperatorBaseData
     : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
       unsteady_problem(false),
       convective_problem(false),
-      viscous_problem(false),
-      scaling_factor_mass_matrix(1.0),
-      formulation_convective_term(FormulationConvectiveTerm::DivergenceFormulation)
+      viscous_problem(false)
   {
   }
 
@@ -33,13 +31,8 @@ struct MomentumOperatorData : public OperatorBaseData
   bool convective_problem;
   bool viscous_problem;
 
-  // This variable is only needed for initialization, e.g., so that the
-  // multigrid smoothers can be initialized correctly during initialization
-  // (e.g., diagonal in case of Chebyshev smoother) without the need to
-  // update the whole multigrid preconditioner in the first time step.
-  double scaling_factor_mass_matrix;
-
-  FormulationConvectiveTerm formulation_convective_term;
+  Operators::ConvectiveKernelData convective_kernel_data;
+  Operators::ViscousKernelData    viscous_kernel_data;
 
   std::shared_ptr<BoundaryDescriptorU<dim>> bc;
 };
@@ -68,13 +61,6 @@ public:
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          MomentumOperatorData<dim> const & data);
-
-  void
-  reinit(MatrixFree<dim, Number> const &         matrix_free,
-         AffineConstraints<double> const &       constraint_matrix,
-         MomentumOperatorData<dim> const &       data,
-         Operators::ConvectiveKernelData const & convective_kernel_data,
-         Operators::ViscousKernelData const &    viscous_kernel_data);
 
   void
   reinit(MatrixFree<dim, Number> const &                           matrix_free,

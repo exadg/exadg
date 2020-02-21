@@ -486,6 +486,9 @@ protected:
   /*
    * Operator kernels.
    */
+  Operators::ConvectiveKernelData convective_kernel_data;
+  Operators::ViscousKernelData    viscous_kernel_data;
+
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 
@@ -561,10 +564,6 @@ private:
 
   void
   initialize_operators(std::string const & dof_index_temperature);
-
-  void
-  initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
-                               VectorType const & velocity);
 
   void
   initialize_turbulence_model();
