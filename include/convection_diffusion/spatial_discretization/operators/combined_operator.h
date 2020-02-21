@@ -61,6 +61,13 @@ public:
          OperatorData<dim> const &         data);
 
   void
+  reinit(MatrixFree<dim, Number> const &                           matrix_free,
+         AffineConstraints<double> const &                         constraint_matrix,
+         OperatorData<dim> const &                                 data,
+         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel,
+         std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel);
+
+  void
   update_after_mesh_movement();
 
   LinearAlgebra::distributed::Vector<Number> const &
@@ -121,9 +128,9 @@ private:
                                 OperatorData<dim> const &            data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  MassMatrixKernel<dim, Number>            mass_kernel;
-  Operators::ConvectiveKernel<dim, Number> convective_kernel;
-  Operators::DiffusiveKernel<dim, Number>  diffusive_kernel;
+  std::shared_ptr<MassMatrixKernel<dim, Number>>            mass_kernel;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 
   double scaling_factor_mass_matrix;
 };

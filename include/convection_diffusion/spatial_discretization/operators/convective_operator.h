@@ -535,6 +535,12 @@ public:
          AffineConstraints<double> const &   constraint_matrix,
          ConvectiveOperatorData<dim> const & data);
 
+  void
+  reinit(MatrixFree<dim, Number> const &                           matrix_free,
+         AffineConstraints<double> const &                         constraint_matrix,
+         ConvectiveOperatorData<dim> const &                       data,
+         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
+
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
 
@@ -587,7 +593,7 @@ private:
                                 ConvectiveOperatorData<dim> const &  data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  Operators::ConvectiveKernel<dim, Number> kernel;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };
 } // namespace ConvDiff
 

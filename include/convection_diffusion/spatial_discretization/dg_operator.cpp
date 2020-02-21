@@ -34,7 +34,7 @@ DGOperator<dim, Number>::DGOperator(
 {
   pcout << std::endl << "Construct convection-diffusion operator ..." << std::endl;
 
-  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
+  if(needs_own_dof_handler_velocity())
   {
     fe_velocity.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
     dof_handler_velocity.reset(new DoFHandler<dim>(triangulation_in));
@@ -86,7 +86,7 @@ DGOperator<dim, Number>::append_data_structures(
   matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index_std);
   matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_std);
 
-  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
+  if(needs_own_dof_handler_velocity())
   {
     matrix_free_wrapper.insert_dof_handler(&(*dof_handler_velocity), field + dof_index_velocity);
     matrix_free_wrapper.insert_constraint(&constraint_matrix, field + dof_index_velocity);
@@ -129,28 +129,42 @@ DGOperator<dim, Number>::setup(
   inverse_mass_matrix_operator.initialize(*matrix_free, get_dof_index(), get_quad_index());
 
   // convective operator
+  unsigned int const quad_index_convective =
+    param.use_overintegration ? get_quad_index_overintegration() : get_quad_index();
+
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
-  convective_kernel_data.formulation   = param.formulation_convective_term;
-  convective_kernel_data.velocity_type = param.get_type_velocity_field();
-  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
-    convective_kernel_data.dof_index_velocity = get_dof_index_velocity();
+  convective_kernel_data.formulation                = param.formulation_convective_term;
+  convective_kernel_data.velocity_type              = param.get_type_velocity_field();
+  convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
   convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
   convective_kernel_data.velocity                   = field_functions->velocity;
-
-  ConvectiveOperatorData<dim> convective_operator_data;
-  convective_operator_data.dof_index = get_dof_index();
-  convective_operator_data.quad_index =
-    param.use_overintegration ? get_quad_index_overintegration() : get_quad_index();
-  convective_operator_data.bc                   = boundary_descriptor;
-  convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-    param.implement_block_diagonal_preconditioner_matrix_free;
-  convective_operator_data.kernel_data = convective_kernel_data;
 
   if(this->param.equation_type == EquationType::Convection ||
      this->param.equation_type == EquationType::ConvectionDiffusion)
   {
-    convective_operator.reinit(*matrix_free, constraint_matrix, convective_operator_data);
+    convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
+    convective_kernel->reinit(*matrix_free,
+                              convective_kernel_data,
+                              quad_index_convective,
+                              false /* is_mg */);
+  }
+
+  if(this->param.equation_type == EquationType::Convection ||
+     this->param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    ConvectiveOperatorData<dim> convective_operator_data;
+    convective_operator_data.dof_index            = get_dof_index();
+    convective_operator_data.quad_index           = quad_index_convective;
+    convective_operator_data.bc                   = boundary_descriptor;
+    convective_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+    convective_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    convective_operator_data.kernel_data = convective_kernel_data;
+
+    convective_operator.reinit(*matrix_free,
+                               constraint_matrix,
+                               convective_operator_data,
+                               convective_kernel);
   }
 
   // diffusive operator
@@ -158,19 +172,29 @@ DGOperator<dim, Number>::setup(
   diffusive_kernel_data.IP_factor   = param.IP_factor;
   diffusive_kernel_data.diffusivity = param.diffusivity;
 
-  DiffusiveOperatorData<dim> diffusive_operator_data;
-  diffusive_operator_data.dof_index            = get_dof_index();
-  diffusive_operator_data.quad_index           = get_quad_index();
-  diffusive_operator_data.bc                   = boundary_descriptor;
-  diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-    param.implement_block_diagonal_preconditioner_matrix_free;
-  diffusive_operator_data.kernel_data = diffusive_kernel_data;
+  if(this->param.equation_type == EquationType::Diffusion ||
+     this->param.equation_type == EquationType::ConvectionDiffusion)
+  {
+    diffusive_kernel.reset(new Operators::DiffusiveKernel<dim, Number>());
+    diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index());
+  }
 
   if(this->param.equation_type == EquationType::Diffusion ||
      this->param.equation_type == EquationType::ConvectionDiffusion)
   {
-    diffusive_operator.reinit(*matrix_free, constraint_matrix, diffusive_operator_data);
+    DiffusiveOperatorData<dim> diffusive_operator_data;
+    diffusive_operator_data.dof_index            = get_dof_index();
+    diffusive_operator_data.quad_index           = get_quad_index();
+    diffusive_operator_data.bc                   = boundary_descriptor;
+    diffusive_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+    diffusive_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    diffusive_operator_data.kernel_data = diffusive_kernel_data;
+
+    diffusive_operator.reinit(*matrix_free,
+                              constraint_matrix,
+                              diffusive_operator_data,
+                              diffusive_kernel);
   }
 
   // rhs operator
@@ -181,61 +205,67 @@ DGOperator<dim, Number>::setup(
   rhs_operator.reinit(*matrix_free, rhs_operator_data);
 
   // merged operator
-  OperatorData<dim> combined_operator_data;
-  combined_operator_data.bc                   = boundary_descriptor;
-  combined_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
-  combined_operator_data.implement_block_diagonal_preconditioner_matrix_free =
-    param.implement_block_diagonal_preconditioner_matrix_free;
-  combined_operator_data.solver_block_diagonal         = param.solver_block_diagonal;
-  combined_operator_data.preconditioner_block_diagonal = param.preconditioner_block_diagonal;
-  combined_operator_data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
-
-  // linear system of equations has to be solved: the problem is either steady or
-  // an unsteady problem is solved with BDF time integration (semi-implicit or fully implicit
-  // formulation of convective and diffusive terms)
-  if(this->param.problem_type == ProblemType::Steady ||
-     this->param.temporal_discretization == TemporalDiscretization::BDF)
+  if(param.temporal_discretization == TemporalDiscretization::BDF ||
+     (param.temporal_discretization == TemporalDiscretization::ExplRK &&
+      param.use_combined_operator == true))
   {
-    if(this->param.problem_type == ProblemType::Unsteady)
-      combined_operator_data.unsteady_problem = true;
+    OperatorData<dim> combined_operator_data;
+    combined_operator_data.bc                   = boundary_descriptor;
+    combined_operator_data.use_cell_based_loops = param.use_cell_based_face_loops;
+    combined_operator_data.implement_block_diagonal_preconditioner_matrix_free =
+      param.implement_block_diagonal_preconditioner_matrix_free;
+    combined_operator_data.solver_block_diagonal         = param.solver_block_diagonal;
+    combined_operator_data.preconditioner_block_diagonal = param.preconditioner_block_diagonal;
+    combined_operator_data.solver_data_block_diagonal    = param.solver_data_block_diagonal;
 
-    if((this->param.equation_type == EquationType::Convection ||
-        this->param.equation_type == EquationType::ConvectionDiffusion) &&
-       this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
-      combined_operator_data.convective_problem = true;
+    // linear system of equations has to be solved: the problem is either steady or
+    // an unsteady problem is solved with BDF time integration (semi-implicit or fully implicit
+    // formulation of convective and diffusive terms)
+    if(this->param.problem_type == ProblemType::Steady ||
+       this->param.temporal_discretization == TemporalDiscretization::BDF)
+    {
+      if(this->param.problem_type == ProblemType::Unsteady)
+        combined_operator_data.unsteady_problem = true;
 
-    if(this->param.equation_type == EquationType::Diffusion ||
-       this->param.equation_type == EquationType::ConvectionDiffusion)
-      combined_operator_data.diffusive_problem = true;
+      if((this->param.equation_type == EquationType::Convection ||
+          this->param.equation_type == EquationType::ConvectionDiffusion) &&
+         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+        combined_operator_data.convective_problem = true;
+
+      if(this->param.equation_type == EquationType::Diffusion ||
+         this->param.equation_type == EquationType::ConvectionDiffusion)
+        combined_operator_data.diffusive_problem = true;
+    }
+    else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK)
+    {
+      // always false
+      combined_operator_data.unsteady_problem = false;
+
+      if(this->param.equation_type == EquationType::Convection ||
+         this->param.equation_type == EquationType::ConvectionDiffusion)
+        combined_operator_data.convective_problem = true;
+
+      if(this->param.equation_type == EquationType::Diffusion ||
+         this->param.equation_type == EquationType::ConvectionDiffusion)
+        combined_operator_data.diffusive_problem = true;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    combined_operator_data.convective_kernel_data = convective_kernel_data;
+    combined_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
+
+    combined_operator_data.dof_index = get_dof_index();
+    combined_operator_data.quad_index =
+      (param.use_overintegration && combined_operator_data.convective_problem) ?
+        get_quad_index_overintegration() :
+        get_quad_index();
+
+    combined_operator.reinit(
+      *matrix_free, constraint_matrix, combined_operator_data, convective_kernel, diffusive_kernel);
   }
-  else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK)
-  {
-    // always false
-    combined_operator_data.unsteady_problem = false;
-
-    if(this->param.equation_type == EquationType::Convection ||
-       this->param.equation_type == EquationType::ConvectionDiffusion)
-      combined_operator_data.convective_problem = true;
-
-    if(this->param.equation_type == EquationType::Diffusion ||
-       this->param.equation_type == EquationType::ConvectionDiffusion)
-      combined_operator_data.diffusive_problem = true;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  combined_operator_data.convective_kernel_data = convective_kernel_data;
-  combined_operator_data.diffusive_kernel_data  = diffusive_kernel_data;
-
-  combined_operator_data.dof_index = get_dof_index();
-  combined_operator_data.quad_index =
-    (param.use_overintegration && combined_operator_data.convective_problem) ?
-      get_quad_index_overintegration() :
-      get_quad_index();
-
-  combined_operator.reinit(*matrix_free, constraint_matrix, combined_operator_data);
 
   pcout << std::endl << "... done!" << std::endl;
 }
@@ -248,7 +278,7 @@ DGOperator<dim, Number>::distribute_dofs()
   dof_handler.distribute_dofs(fe);
   dof_handler.distribute_mg_dofs();
 
-  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
+  if(needs_own_dof_handler_velocity())
   {
     dof_handler_velocity->distribute_dofs(*fe_velocity);
     dof_handler_velocity->distribute_mg_dofs();
@@ -273,6 +303,12 @@ DGOperator<dim, Number>::get_dof_name() const
 }
 
 template<int dim, typename Number>
+bool
+DGOperator<dim, Number>::needs_own_dof_handler_velocity() const
+{
+  return param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector;
+}
+template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index() const
 {
@@ -283,7 +319,7 @@ template<int dim, typename Number>
 std::string
 DGOperator<dim, Number>::get_dof_name_velocity() const
 {
-  if(param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector)
+  if(needs_own_dof_handler_velocity())
   {
     return field + dof_index_velocity;
   }
@@ -297,7 +333,10 @@ template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index_velocity() const
 {
-  return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
+  if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    return matrix_free_wrapper->get_dof_index(get_dof_name_velocity());
+  else
+    return numbers::invalid_unsigned_int;
 }
 
 template<int dim, typename Number>

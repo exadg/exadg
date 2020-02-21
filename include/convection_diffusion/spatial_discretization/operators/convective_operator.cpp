@@ -11,32 +11,49 @@ ConvectiveOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matr
                                         AffineConstraints<double> const &   constraint_matrix,
                                         ConvectiveOperatorData<dim> const & data)
 {
+  (void)matrix_free;
+  (void)constraint_matrix;
+  (void)data;
+
+  AssertThrow(false,
+              ExcMessage(
+                "This reinit() function can not be used to initialize the convective operator."));
+}
+
+template<int dim, typename Number>
+void
+ConvectiveOperator<dim, Number>::reinit(
+  MatrixFree<dim, Number> const &                           matrix_free,
+  AffineConstraints<double> const &                         constraint_matrix,
+  ConvectiveOperatorData<dim> const &                       data,
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel_in)
+{
+  kernel = kernel_in;
+
   Base::reinit(matrix_free, constraint_matrix, data);
 
-  kernel.reinit(matrix_free, data.kernel_data, data.quad_index, this->is_mg);
-
-  this->integrator_flags = kernel.get_integrator_flags();
+  this->integrator_flags = kernel->get_integrator_flags();
 }
 
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::set_velocity_copy(VectorType const & velocity_in) const
 {
-  kernel.set_velocity_copy(velocity_in);
+  kernel->set_velocity_copy(velocity_in);
 }
 
 template<int dim, typename Number>
 void
 ConvectiveOperator<dim, Number>::set_velocity_ptr(VectorType const & velocity_in) const
 {
-  kernel.set_velocity_ptr(velocity_in);
+  kernel->set_velocity_ptr(velocity_in);
 }
 
 template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
 ConvectiveOperator<dim, Number>::get_velocity() const
 {
-  return kernel.get_velocity();
+  return kernel->get_velocity();
 }
 
 template<int dim, typename Number>
@@ -45,7 +62,7 @@ ConvectiveOperator<dim, Number>::reinit_cell(unsigned int const cell) const
 {
   Base::reinit_cell(cell);
 
-  kernel.reinit_cell(cell);
+  kernel->reinit_cell(cell);
 }
 
 template<int dim, typename Number>
@@ -54,7 +71,7 @@ ConvectiveOperator<dim, Number>::reinit_face(unsigned int const face) const
 {
   Base::reinit_face(face);
 
-  kernel.reinit_face(face);
+  kernel->reinit_face(face);
 }
 
 template<int dim, typename Number>
@@ -63,7 +80,7 @@ ConvectiveOperator<dim, Number>::reinit_boundary_face(unsigned int const face) c
 {
   Base::reinit_boundary_face(face);
 
-  kernel.reinit_boundary_face(face);
+  kernel->reinit_boundary_face(face);
 }
 
 template<int dim, typename Number>
@@ -74,7 +91,7 @@ ConvectiveOperator<dim, Number>::reinit_face_cell_based(unsigned int const      
 {
   Base::reinit_face_cell_based(cell, face, boundary_id);
 
-  kernel.reinit_face_cell_based(cell, face, boundary_id);
+  kernel->reinit_face_cell_based(cell, face, boundary_id);
 }
 
 template<int dim, typename Number>
@@ -87,13 +104,13 @@ ConvectiveOperator<dim, Number>::do_cell_integral(IntegratorCell & integrator) c
     {
       scalar value = integrator.get_value(q);
       integrator.submit_gradient(
-        kernel.get_volume_flux_divergence_form(value, integrator, q, this->time), q);
+        kernel->get_volume_flux_divergence_form(value, integrator, q, this->time), q);
     }
     else if(this->data.kernel_data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
     {
       vector gradient = integrator.get_gradient(q);
       integrator.submit_value(
-        kernel.get_volume_flux_convective_form(gradient, integrator, q, this->time), q);
+        kernel->get_volume_flux_convective_form(gradient, integrator, q, this->time), q);
     }
     else
     {
@@ -114,7 +131,7 @@ ConvectiveOperator<dim, Number>::do_face_integral(IntegratorFace & integrator_m,
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    std::tuple<scalar, scalar> flux = kernel.calculate_flux_interior_and_neighbor(
+    std::tuple<scalar, scalar> flux = kernel->calculate_flux_interior_and_neighbor(
       q, integrator_m, value_m, value_p, normal_m, this->time, true);
 
     integrator_m.submit_value(std::get<0>(flux), q);
@@ -137,8 +154,8 @@ ConvectiveOperator<dim, Number>::do_face_int_integral(IntegratorFace & integrato
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
-    scalar flux =
-      kernel.calculate_flux_interior(q, integrator_m, value_m, value_p, normal_m, this->time, true);
+    scalar flux = kernel->calculate_flux_interior(
+      q, integrator_m, value_m, value_p, normal_m, this->time, true);
 
     integrator_m.submit_value(flux, q);
   }
@@ -169,7 +186,7 @@ ConvectiveOperator<dim, Number>::do_face_int_integral_cell_based(
     // calculates the diagonal and block-diagonal only approximately. The theoretically correct
     // version using integrator_velocity_p is currently not implemented in deal.II.
     bool exterior_velocity_available = false; // TODO -> set to true once functionality is available
-    scalar flux                      = kernel.calculate_flux_interior(
+    scalar flux                      = kernel->calculate_flux_interior(
       q, integrator_m, value_m, value_p, normal_m, this->time, exterior_velocity_available);
 
     integrator_m.submit_value(flux, q);
@@ -192,8 +209,8 @@ ConvectiveOperator<dim, Number>::do_face_ext_integral(IntegratorFace & integrato
     // n⁺ = -n⁻
     vector normal_p = -integrator_p.get_normal_vector(q);
 
-    scalar flux =
-      kernel.calculate_flux_interior(q, integrator_p, value_p, value_m, normal_p, this->time, true);
+    scalar flux = kernel->calculate_flux_interior(
+      q, integrator_p, value_p, value_m, normal_p, this->time, true);
 
     integrator_p.submit_value(flux, q);
   }
@@ -223,7 +240,7 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
 
     // In case of numerical velocity field:
     // Simply use velocity_p = velocity_m on boundary faces -> exterior_velocity_available = false.
-    scalar flux = kernel.calculate_flux_interior(
+    scalar flux = kernel->calculate_flux_interior(
       q, integrator_m, value_m, value_p, normal_m, this->time, false);
 
     integrator_m.submit_value(flux, q);
