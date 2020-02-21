@@ -339,6 +339,21 @@ InputParameters::linear_system_including_convective_term_has_to_be_solved() cons
 }
 
 bool
+InputParameters::convective_problem() const
+{
+  return (equation_type == EquationType::Convection ||
+          equation_type == EquationType::ConvectionDiffusion);
+}
+
+bool
+InputParameters::diffusive_problem() const
+{
+  return (equation_type == EquationType::Diffusion ||
+          equation_type == EquationType::ConvectionDiffusion);
+}
+
+
+bool
 InputParameters::linear_system_has_to_be_solved() const
 {
   bool linear_solver_needed =

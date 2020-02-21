@@ -278,8 +278,7 @@ TimeIntExplRK<Number>::initialize_time_integrator()
 {
   bool numerical_velocity_field = false;
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     numerical_velocity_field = (param.get_type_velocity_field() == TypeVelocityField::DoFVector);
   }
@@ -360,8 +359,7 @@ TimeIntExplRK<Number>::solve_timestep()
   Timer timer;
   timer.restart();
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {

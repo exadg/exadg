@@ -68,15 +68,13 @@ DGOperator<dim, Number>::append_data_structures(
       Operators::RHSKernel<dim, Number>::get_mapping_flags());
   }
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     matrix_free_wrapper.append_mapping_flags(
       Operators::ConvectiveKernel<dim, Number>::get_mapping_flags());
   }
 
-  if(param.equation_type == EquationType::Diffusion ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.diffusive_problem())
   {
     matrix_free_wrapper.append_mapping_flags(
       Operators::DiffusiveKernel<dim, Number>::get_mapping_flags());
@@ -133,25 +131,21 @@ DGOperator<dim, Number>::setup(
     param.use_overintegration ? get_quad_index_overintegration() : get_quad_index();
 
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
-  convective_kernel_data.formulation                = param.formulation_convective_term;
-  convective_kernel_data.velocity_type              = param.get_type_velocity_field();
-  convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
-  convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
-  convective_kernel_data.velocity                   = field_functions->velocity;
 
-  if(this->param.equation_type == EquationType::Convection ||
-     this->param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
+    convective_kernel_data.formulation                = param.formulation_convective_term;
+    convective_kernel_data.velocity_type              = param.get_type_velocity_field();
+    convective_kernel_data.dof_index_velocity         = get_dof_index_velocity();
+    convective_kernel_data.numerical_flux_formulation = param.numerical_flux_convective_operator;
+    convective_kernel_data.velocity                   = field_functions->velocity;
+
     convective_kernel.reset(new Operators::ConvectiveKernel<dim, Number>());
     convective_kernel->reinit(*matrix_free,
                               convective_kernel_data,
                               quad_index_convective,
                               false /* is_mg */);
-  }
 
-  if(this->param.equation_type == EquationType::Convection ||
-     this->param.equation_type == EquationType::ConvectionDiffusion)
-  {
     ConvectiveOperatorData<dim> convective_operator_data;
     convective_operator_data.dof_index            = get_dof_index();
     convective_operator_data.quad_index           = quad_index_convective;
@@ -169,19 +163,15 @@ DGOperator<dim, Number>::setup(
 
   // diffusive operator
   Operators::DiffusiveKernelData diffusive_kernel_data;
-  diffusive_kernel_data.IP_factor   = param.IP_factor;
-  diffusive_kernel_data.diffusivity = param.diffusivity;
 
-  if(this->param.equation_type == EquationType::Diffusion ||
-     this->param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.diffusive_problem())
   {
+    diffusive_kernel_data.IP_factor   = param.IP_factor;
+    diffusive_kernel_data.diffusivity = param.diffusivity;
+
     diffusive_kernel.reset(new Operators::DiffusiveKernel<dim, Number>());
     diffusive_kernel->reinit(*matrix_free, diffusive_kernel_data, get_dof_index());
-  }
 
-  if(this->param.equation_type == EquationType::Diffusion ||
-     this->param.equation_type == EquationType::ConvectionDiffusion)
-  {
     DiffusiveOperatorData<dim> diffusive_operator_data;
     diffusive_operator_data.dof_index            = get_dof_index();
     diffusive_operator_data.quad_index           = get_quad_index();
@@ -221,22 +211,20 @@ DGOperator<dim, Number>::setup(
     // linear system of equations has to be solved: the problem is either steady or
     // an unsteady problem is solved with BDF time integration (semi-implicit or fully implicit
     // formulation of convective and diffusive terms)
-    if(this->param.problem_type == ProblemType::Steady ||
-       this->param.temporal_discretization == TemporalDiscretization::BDF)
+    if(param.problem_type == ProblemType::Steady ||
+       param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      if(this->param.problem_type == ProblemType::Unsteady)
+      if(param.problem_type == ProblemType::Unsteady)
         combined_operator_data.unsteady_problem = true;
 
-      if((this->param.equation_type == EquationType::Convection ||
-          this->param.equation_type == EquationType::ConvectionDiffusion) &&
-         this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
+      if(param.convective_problem() &&
+         param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Implicit)
         combined_operator_data.convective_problem = true;
 
-      if(this->param.equation_type == EquationType::Diffusion ||
-         this->param.equation_type == EquationType::ConvectionDiffusion)
+      if(param.diffusive_problem())
         combined_operator_data.diffusive_problem = true;
     }
-    else if(this->param.temporal_discretization == TemporalDiscretization::ExplRK)
+    else if(param.temporal_discretization == TemporalDiscretization::ExplRK)
     {
       // always false
       combined_operator_data.unsteady_problem = false;
@@ -601,16 +589,14 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     dst = 0.0;
 
     // diffusive operator
-    if(param.equation_type == EquationType::Diffusion ||
-       param.equation_type == EquationType::ConvectionDiffusion)
+    if(param.diffusive_problem())
     {
       diffusive_operator.set_time(time);
       diffusive_operator.evaluate_add(dst, src);
     }
 
     // convective operator
-    if(param.equation_type == EquationType::Convection ||
-       param.equation_type == EquationType::ConvectionDiffusion)
+    if(param.convective_problem())
     {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
@@ -635,8 +621,7 @@ DGOperator<dim, Number>::evaluate_explicit_time_int(VectorType &       dst,
     // no need to set scaling_factor_mass_matrix because the mass matrix is not evaluated
     // in case of explicit time integration
 
-    if(param.equation_type == EquationType::Convection ||
-       param.equation_type == EquationType::ConvectionDiffusion)
+    if(param.convective_problem())
     {
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
@@ -905,8 +890,7 @@ DGOperator<dim, Number>::update_after_mesh_movement()
 {
   // update SIPG penalty parameter of diffusive operator which depends on the deformation
   // of elements
-  if(param.equation_type == EquationType::Diffusion ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.diffusive_problem())
   {
     diffusive_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index());
   }

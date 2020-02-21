@@ -82,15 +82,14 @@ TimeIntBDF<dim, Number>::setup_derived()
 
   // Initialize vec_convective_term: Note that this function has to be called
   // after the solution has been initialized because the solution is evaluated in this function.
-  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
-     (param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion))
+  if(param.convective_problem() &&
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // vec_convective_term does not have to be initialized in ALE case (the convective
     // term is recomputed in each time step for all previous times on the new mesh).
     // vec_convective_term does not have to be initialized in case of a restart, where
     // the vectors are read from memory.
-    if(this->param.ale_formulation == false && this->param.restarted_simulation == false)
+    if(param.ale_formulation == false && param.restarted_simulation == false)
     {
       initialize_vec_convective_term();
     }
@@ -104,9 +103,7 @@ TimeIntBDF<dim, Number>::initialize_oif()
   // Operator-integration-factor splitting
   if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
-    AssertThrow(param.equation_type == EquationType::Convection ||
-                  param.equation_type == EquationType::ConvectionDiffusion,
-                ExcMessage("Invalid parameters"));
+    AssertThrow(param.convective_problem(), ExcMessage("Invalid parameters"));
 
     bool numerical_velocity_field =
       (param.get_type_velocity_field() == TypeVelocityField::DoFVector);
@@ -190,8 +187,7 @@ TimeIntBDF<dim, Number>::allocate_vectors()
 
   pde_operator->initialize_dof_vector(rhs_vector);
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
     {
@@ -275,8 +271,7 @@ TimeIntBDF<dim, Number>::calculate_time_step_size()
   }
   else if(param.calculation_of_time_step_size == TimeStepCalculation::CFL)
   {
-    AssertThrow(param.equation_type == EquationType::Convection ||
-                  param.equation_type == EquationType::ConvectionDiffusion,
+    AssertThrow(param.convective_problem(),
                 ExcMessage("Specified type of time step calculation does not make sense!"));
 
     double const h_min = pde_operator->calculate_minimum_element_length();
@@ -425,9 +420,8 @@ TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
 
   solution[0].swap(solution_np);
 
-  if(param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit &&
-     (param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion))
+  if(param.convective_problem() &&
+     param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(param.ale_formulation == false)
     {
@@ -511,8 +505,7 @@ TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & 
     ia >> solution[i];
   }
 
-  if((param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion) &&
+  if(param.convective_problem() &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false)
@@ -542,8 +535,7 @@ TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive &
     oa << solution[i];
   }
 
-  if((param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion) &&
+  if(param.convective_problem() &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(this->param.ale_formulation == false)
@@ -576,8 +568,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
   // transport velocity
   VectorType velocity;
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
@@ -614,8 +605,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
   // if the convective term is involved in the equations:
   // add the convective term to the right-hand side of the equations
   // if this term is treated explicitly (additive decomposition)
-  if((param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion) &&
+  if(param.convective_problem() &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     // recompute convective term on new mesh for all previous time instants in case of
@@ -639,8 +629,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
 
   // calculate sum (alpha_i/dt * u_tilde_i) if operator-integration-factor splitting
   // is used to integrate the convective term
-  if((param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion) &&
+  if(param.convective_problem() &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::ExplicitOIF)
   {
     calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, cfl, cfl_oif);
@@ -685,8 +674,7 @@ TimeIntBDF<dim, Number>::solve_timestep()
 
   // evaluate convective term at end time t_{n+1} at which we know the boundary condition
   // g_u(t_{n+1})
-  if((param.equation_type == EquationType::Convection ||
-      param.equation_type == EquationType::ConvectionDiffusion) &&
+  if(param.convective_problem() &&
      param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
   {
     if(param.ale_formulation == false)

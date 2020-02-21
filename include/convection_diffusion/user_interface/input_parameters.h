@@ -36,6 +36,12 @@ public:
   linear_system_including_convective_term_has_to_be_solved() const;
 
   bool
+  convective_problem() const;
+
+  bool
+  diffusive_problem() const;
+
+  bool
   linear_system_has_to_be_solved() const;
 
   TypeVelocityField

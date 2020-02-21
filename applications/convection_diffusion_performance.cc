@@ -270,8 +270,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   // setup convection-diffusion operator
   conv_diff_operator->setup(matrix_free_wrapper);
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
@@ -297,8 +296,7 @@ Problem<dim, Number>::apply_operator()
 
   LinearAlgebra::distributed::Vector<Number> const * velocity_ptr = nullptr;
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
