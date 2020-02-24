@@ -214,8 +214,11 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
 {
   // extract beginning of vector...
   const Number * temp = velocity.begin();
-  deal_spectrum_wrapper->execute((double *)temp);
-
+  
+  const std::string file_name = "temp/file_" + std::to_string(counter); // TODO
+  
+  deal_spectrum_wrapper->execute((double *)temp, file_name, time);
+  
   if(data.do_fftw)
   {
     // write output file

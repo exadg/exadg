@@ -60,6 +60,8 @@ public:
   int size;
   // nr. of bins for postprocessing
   int bins;
+  // time stemp
+  double time = 0.0;
 
   /**
    * Constructor
@@ -103,7 +105,7 @@ public:
   readHeader(char *& filename)
   {
     FILE * fp;
-    int    crit[1+HEADER_LENGTH];
+    int    crit[1+4];
     crit[0] = 0;
     
     if(this->rank == 0)
@@ -112,7 +114,11 @@ public:
       if((fp = fopen(filename, "r")) != NULL)
       {
         // ... read header in one go
-        fread(crit + 1, sizeof(int), HEADER_LENGTH, fp);
+        fread(crit + 1, sizeof(int), 4, fp);
+        
+        // read time
+        fread(&this->time, sizeof(double), 1, fp);
+
         // ... close file
         fclose(fp);
       }
@@ -125,6 +131,7 @@ public:
     
     // broadcast header to all processes
     MPI_Bcast(&crit, 5, MPI_INT, 0, comm);
+    MPI_Bcast(&this->time, 1, MPI_DOUBLE, 0, comm);
 
     if(this->initialized)
     {
@@ -184,6 +191,10 @@ public:
           fwrite(&temp1, sizeof(int), temp1, fp);
           fwrite(&temp2, sizeof(int), temp2, fp);
         }
+
+        // write time
+        fwrite(&this->time, sizeof(double), 1, fp);
+
         // ... close file
         fclose(fp);
       }
