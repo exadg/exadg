@@ -1201,9 +1201,7 @@ DGNavierStokesBase<dim, Number>::update_after_mesh_movement()
   {
     // update SIPG penalty parameter of viscous operator which depends on the deformation
     // of elements
-    // viscous operator has a pointer to viscous_kernel and updates penalty parameter of
-    // viscous_kernel
-    viscous_operator.update();
+    viscous_kernel->calculate_penalty_parameter(*matrix_free, get_dof_index_velocity());
   }
 
   // note that the update of div-div and continuity penalty terms is done separately
