@@ -593,32 +593,28 @@ Problem<dim, Number>::solve() const
 {
   // run time loop
 
-  bool finished_1 = false, finished_2 = false;
-
   set_start_time();
 
   synchronize_time_step_size();
 
-  while(!finished_1 || !finished_2)
+  do
   {
     // advance one time step for DOMAIN 1
-    finished_1 = time_integrator_1->advance_one_timestep(!finished_1);
+    time_integrator_1->advance_one_timestep();
 
     // Note that the coupling of both solvers via the inflow boundary conditions is performed in the
     // postprocessing step of the solver for DOMAIN 1, overwriting the data global structures which
     // are subsequently used by the solver for DOMAIN 2 to evaluate the boundary conditions.
 
     // advance one time step for DOMAIN 2
-    finished_2 = time_integrator_2->advance_one_timestep(!finished_2);
+    time_integrator_2->advance_one_timestep();
 
+    // Both domains have already calculated the new, adaptive time step size individually in
+    // function advance_one_timestep(). Here, we have to synchronize the time step size for
+    // both domains.
     if(use_adaptive_time_stepping == true)
-    {
-      // Both domains have already calculated the new, adaptive time step size individually in
-      // function advance_one_timestep(). Here, we only have to synchronize the time step size for
-      // both domains.
       synchronize_time_step_size();
-    }
-  }
+  } while(!time_integrator_1->finished() || !time_integrator_2->finished());
 
   overall_time += this->timer.wall_time();
 }

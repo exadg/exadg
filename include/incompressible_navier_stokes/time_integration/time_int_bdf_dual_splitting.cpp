@@ -1127,14 +1127,6 @@ TimeIntBDFDualSplitting<dim, Number>::get_wall_times(std::vector<std::string> & 
     size++;
   }
 
-  if(this->param.ale_formulation)
-  {
-    names.push_back("ALE update");
-    size++;
-
-    this->computing_times[size - 1] = this->computation_time_ale_update;
-  }
-
   name.resize(size);
   wall_time.resize(size);
   for(unsigned int i = 0; i < size; ++i)

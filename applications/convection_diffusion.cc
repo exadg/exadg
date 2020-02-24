@@ -335,7 +335,29 @@ Problem<dim, Number>::solve()
 {
   if(param.problem_type == ProblemType::Unsteady)
   {
-    time_integrator->timeloop();
+    if(this->param.ale_formulation == true)
+    {
+      do
+      {
+        time_integrator->advance_one_timestep_pre_solve();
+
+        // move the mesh and update dependent data structures
+        std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
+          std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+        moving_mesh->move_mesh(time_int_bdf->get_next_time());
+        matrix_free_wrapper->update_geometry();
+        conv_diff_operator->update_after_mesh_movement();
+        time_int_bdf->ale_update();
+
+        time_integrator->advance_one_timestep_solve();
+
+        time_integrator->advance_one_timestep_post_solve();
+      } while(!time_integrator->finished());
+    }
+    else
+    {
+      time_integrator->timeloop();
+    }
   }
   else if(param.problem_type == ProblemType::Steady)
   {

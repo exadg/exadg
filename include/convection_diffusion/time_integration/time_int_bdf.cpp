@@ -38,7 +38,6 @@ TimeIntBDF<dim, Number>::TimeIntBDF(
     vec_convective_term(param_in.order_time_integrator),
     iterations(0.0),
     wall_time(0.0),
-    computation_time_ale_update(0.0),
     cfl_oif(param.cfl_oif / std::pow(2.0, param.dt_refinements)),
     postprocessor(postprocessor_in),
     vec_grid_coordinates(param_in.order_time_integrator),
@@ -439,24 +438,8 @@ TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
 
 template<int dim, typename Number>
 void
-TimeIntBDF<dim, Number>::do_timestep_pre_solve()
-{
-  TimeIntBDFBase<Number>::do_timestep_pre_solve();
-
-  if(param.ale_formulation)
-    ale_update();
-}
-
-template<int dim, typename Number>
-void
 TimeIntBDF<dim, Number>::ale_update()
 {
-  Timer timer;
-  timer.restart();
-
-  // move the mesh, update data structures ...
-  move_mesh_and_update_dependent_data_structures(this->get_next_time());
-
   // and compute grid coordinates at the end of the current time step t_{n+1}
   moving_mesh->fill_grid_coordinates_vector(grid_coordinates_np,
                                             pde_operator->get_dof_handler_velocity());
@@ -467,8 +450,6 @@ TimeIntBDF<dim, Number>::ale_update()
                               vec_grid_coordinates,
                               this->bdf,
                               this->get_time_step_size());
-
-  computation_time_ale_update += timer.wall_time();
 }
 
 template<int dim, typename Number>

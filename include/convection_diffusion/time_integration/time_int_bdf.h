@@ -61,6 +61,9 @@ public:
   void
   extrapolate_solution(VectorType & vector);
 
+  void
+  ale_update();
+
 private:
   void
   allocate_vectors();
@@ -82,12 +85,6 @@ private:
 
   void
   prepare_vectors_for_next_timestep();
-
-  void
-  do_timestep_pre_solve() override;
-
-  void
-  ale_update();
 
   void
   move_mesh(double const time) const;
@@ -156,9 +153,6 @@ private:
   // iteration counts and solver time
   double iterations;
   double wall_time;
-
-  // measure time it takes to move the mesh and update relevant data structures
-  double computation_time_ale_update;
 
   // Operator-integration-factor (OIF) splitting
 

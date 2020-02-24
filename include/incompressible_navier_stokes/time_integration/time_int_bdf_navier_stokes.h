@@ -55,8 +55,8 @@ public:
   get_velocities_and_times_np(std::vector<VectorType const *> & velocities,
                               std::vector<double> &             times) const;
 
-  virtual void
-  update_time_integrator_constants();
+  void
+  ale_update();
 
 protected:
   virtual void
@@ -107,16 +107,7 @@ protected:
   std::vector<VectorType> vec_convective_term;
   VectorType              convective_term_np;
 
-  // measure time it takes to move the mesh and update relevant data structures
-  double computation_time_ale_update;
-
 private:
-  void
-  do_timestep_pre_solve() override;
-
-  void
-  ale_update();
-
   void
   initialize_vec_convective_term();
 

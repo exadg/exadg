@@ -189,6 +189,7 @@ private:
   Timer          timer;
   mutable double overall_time;
   double         setup_time;
+  mutable double ale_update_time;
 };
 
 template<int dim, typename Number>
@@ -196,7 +197,8 @@ Problem<dim, Number>::Problem(MPI_Comm const & comm)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
     overall_time(0.0),
-    setup_time(0.0)
+    setup_time(0.0),
+    ale_update_time(0.0)
 {
 }
 
@@ -440,23 +442,53 @@ template<int dim, typename Number>
 void
 Problem<dim, Number>::solve() const
 {
-  if(param.solver_type == SolverType::Unsteady)
+  if(this->param.problem_type == ProblemType::Unsteady)
   {
     // stability analysis (uncomment if desired)
     // time_integrator->postprocessing_stability_analysis();
 
-    // run time loop
-    if(this->param.problem_type == ProblemType::Steady)
-      time_integrator->timeloop_steady_problem();
-    else if(this->param.problem_type == ProblemType::Unsteady)
-      time_integrator->timeloop();
+    if(this->param.ale_formulation == true)
+    {
+      do
+      {
+        time_integrator->advance_one_timestep_pre_solve();
+
+        // move the mesh and update dependent data structures
+        Timer timer;
+        timer.restart();
+
+        moving_mesh->move_mesh(time_integrator->get_next_time());
+        matrix_free_wrapper->update_geometry();
+        navier_stokes_operator->update_after_mesh_movement();
+        time_integrator->ale_update();
+
+        ale_update_time += timer.wall_time();
+
+        time_integrator->advance_one_timestep_solve();
+
+        time_integrator->advance_one_timestep_post_solve();
+      } while(!time_integrator->finished());
+    }
     else
-      AssertThrow(false, ExcMessage("Not implemented."));
+    {
+      time_integrator->timeloop();
+    }
   }
-  else if(param.solver_type == SolverType::Steady)
+  else if(this->param.problem_type == ProblemType::Steady)
   {
-    // solve steady problem
-    driver_steady->solve_steady_problem();
+    if(param.solver_type == SolverType::Unsteady)
+    {
+      time_integrator->timeloop_steady_problem();
+    }
+    else if(param.solver_type == SolverType::Steady)
+    {
+      // solve steady problem
+      driver_steady->solve_steady_problem();
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
   }
   else
   {
@@ -545,7 +577,20 @@ Problem<dim, Number>::analyze_computing_times() const
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
               << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
+  Utilities::MPI::MinMaxAvg ale_time_data = Utilities::MPI::min_max_avg(ale_update_time, mpi_comm);
+  double const              ale_time_avg  = ale_time_data.avg;
+  if(this->param.ale_formulation)
+  {
+    this->pcout << "  " << std::setw(length + 2) << std::left << "ALE update"
+                << std::setprecision(2) << std::scientific << std::setw(10) << std::right
+                << ale_time_avg << " s  " << std::setprecision(2) << std::fixed << std::setw(6)
+                << std::right << ale_time_avg / overall_time_avg * 100 << " %" << std::endl;
+  }
+
+  double other = overall_time_avg - sum_of_substeps - setup_time_avg;
+  if(this->param.ale_formulation)
+    other -= ale_time_avg;
+
   this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
               << std::scientific << std::setw(10) << std::right << other << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
