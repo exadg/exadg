@@ -20,7 +20,6 @@
 
 // sub communicator for FFTW
 #define USE_SUB_COMMUNICATOR_FOR_FFTW
-unsigned int const N_CORES_PER_NODE = 48; // bruteforce = 24, SuperMUC-NG = 48
 
 // convergence studies in space or time
 unsigned int const DEGREE_MIN = 3;
@@ -55,8 +54,11 @@ std::string const OUTPUT_NAME = std::to_string(int((EXPLOIT_SYMMETRY ? 2 : 1)*(D
                                 + "_l" + std::to_string(REFINE_SPACE_MIN)
                                 + "_k" + std::to_string(DEGREE_MIN)
                                 + "_bdf2_adaptive_cfl0-25";
-bool WRITE_RESTART = false;
-bool RESTARTED_SIMULATION = false;
+
+bool const WRITE_RESTART = false;
+bool const RESTARTED_SIMULATION = false;
+
+bool const DO_FFTW = false;
 
 // mesh type
 enum class MeshType{ Cartesian, Curvilinear };
@@ -497,8 +499,8 @@ construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 
   // kinetic energy spectrum
   pp_data.kinetic_energy_spectrum_data.calculate = true;
-  pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = false,
-  pp_data.kinetic_energy_spectrum_data.do_fftw = true;
+  pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = !DO_FFTW;
+  pp_data.kinetic_energy_spectrum_data.do_fftw = DO_FFTW;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.1;
   pp_data.kinetic_energy_spectrum_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;

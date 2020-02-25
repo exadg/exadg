@@ -68,8 +68,17 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
 
   clear_files = data.clear_file;
 
-  if(data.calculate == true)
+  if(data.calculate)
   {
+    if(data.write_raw_data_to_files)
+    {
+      AssertThrow(data.n_cells_1d_coarse_grid == 1,
+                  ExcMessage(
+                    "Choosing write_raw_data_to_files = true requires n_cells_1d_coarse_grid == 1. "
+                    "If you want to use n_cells_1d_coarse_grid != 1 (subdivided hypercube), set "
+                    "do_fftw = true and write_raw_data_to_files = false."));
+    }
+
     if(deal_spectrum_wrapper == nullptr)
     {
       deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(
@@ -214,7 +223,10 @@ KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & vel
 {
   // extract beginning of vector...
   const Number * temp = velocity.begin();
-  deal_spectrum_wrapper->execute((double *)temp);
+
+  const std::string file_name = data.filename + "_" + Utilities::int_to_string(counter, 4);
+
+  deal_spectrum_wrapper->execute((double *)temp, file_name, time);
 
   if(data.do_fftw)
   {

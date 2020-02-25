@@ -533,7 +533,8 @@ main(int argc, char ** argv)
           MPI_Comm sub_comm;
 
 #ifdef USE_SUB_COMMUNICATOR_FOR_FFTW
-          const int n = N_CORES_PER_NODE;
+          // use stride of n cores
+          const int n = 48; // 24;
 
           const int rank     = Utilities::MPI::this_mpi_process(mpi_comm);
           const int size     = Utilities::MPI::n_mpi_processes(mpi_comm);
@@ -544,9 +545,7 @@ main(int argc, char ** argv)
           MPI_Comm_split(mpi_comm, flag, new_rank, &sub_comm);
 
           if(rank == 0)
-            std::cout << std::endl
-                      << "Created sub communicator with stride of " << N_CORES_PER_NODE
-                      << std::endl;
+            std::cout << std::endl << "Created sub communicator with stride of " << n << std::endl;
 #else
           sub_comm = mpi_comm;
 #endif

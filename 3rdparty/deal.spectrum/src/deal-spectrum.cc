@@ -74,8 +74,6 @@ main(int argc, char ** argv)
   for(int i = 1; i < argc; i++)
   {
     char * filename = argv[i];
-    if(rank == 0)
-      std::cout << "Process: " << filename << std::endl;
 
     // read file header and check it...
     if(s.readHeader(filename))
@@ -148,12 +146,17 @@ main(int argc, char ** argv)
       double   e_d;
       double   e_s;
       int      len = fftw.get_results(kappa, E, C, e_d, e_s);
-      printf("  Energy (domain):   %20.12f\n", e_d);
-      printf("  Energy (spectral): %20.12f\n\n", e_s);
-      printf("  Bin   Wave length          Count   Energy\n");
+      
+      printf("\nCalculate kinetic energy spectrum at time t = %f:\n\n", s.time);
+      printf("  Energy physical space e_phy = %18.12e\n", e_d);
+      printf("  Energy spectral space e_spe = %18.12e\n", e_s);
+      printf("  Difference  |e_phy - e_spe| = %18.12e\n\n", std::abs(e_s-e_d));
+      printf("    k  k (avg)              E(k)\n");
       for(int i = 0; i < len; i++)
         if(E[i] > lower_limit /*|| lower_limit == std::numeric_limits<double>::min()*/)
-          printf("%5d %20.12e %7d %20.12e\n", i, kappa[i], (int)C[i], E[i]);
+          printf("%5d %19.12e %20.12e\n", i, kappa[i], E[i]);
     }
   }
+
+  MPI_Finalize();
 }
