@@ -49,3 +49,8 @@ FOREACH ( sourcefile ${SOURCE_FILES} )
         TARGET_LINK_LIBRARIES(${testname} exadg)
 	target_link_libraries(${testname} ${FFTW3})
 ENDFOREACH ( sourcefile ${APP_SOURCES} )
+
+ADD_EXECUTABLE( "deal-spectrum" ../3rdparty/deal.spectrum/src/deal-spectrum.cc)
+DEAL_II_SETUP_TARGET("deal-spectrum")
+TARGET_LINK_LIBRARIES("deal-spectrum" exadg)
+

@@ -292,7 +292,6 @@ construct_postprocessor(CompNS::InputParameters const &param, MPI_Comm const &mp
   pp_data.kinetic_energy_spectrum_data.filename = OUTPUT_FOLDER + "spectrum_" + FILENAME;
   pp_data.kinetic_energy_spectrum_data.degree = param.degree;
   pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree+1)*1;
-  pp_data.kinetic_energy_spectrum_data.output_tolerance = 1.e-12;
 
   std::shared_ptr<CompNS::PostProcessorBase<dim, Number> > pp;
   pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));

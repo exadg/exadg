@@ -316,9 +316,9 @@ public:
   io(int type, const char * filename, VEC & src)
   {
     // dofs to read/write per field
-    int dofs = cells * dofs_source;
+    unsigned long int dofs = cells * dofs_source;
     // local displacement in file (in bytes)
-    MPI_Offset disp = 8 * sizeof(int) + start * dofs_source * sizeof(double) * DIM;
+    MPI_Offset disp = 8 * sizeof(int) + static_cast<unsigned long int>(start) * dofs_source * sizeof(double) * DIM;
 
     // create view
     MPI_Datatype stype;

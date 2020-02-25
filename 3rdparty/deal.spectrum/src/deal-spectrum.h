@@ -69,15 +69,19 @@ public:
     h.init(tria);
     timer.stop("Init-Map");
 
-    // ... fftw
-    timer.start("Init-FFTW");
-    fftw.init();
-    timer.stop("Init-FFTW");
-
     // ... interpolation
     timer.start("Init-Ipol");
     ipol.init(h);
     timer.stop("Init-Ipol");
+    
+    // FFTW will be called externally
+    if(!inplace)
+      return;
+
+    // ... fftw
+    timer.start("Init-FFTW");
+    fftw.init();
+    timer.stop("Init-FFTW");
 
     // ... permutation
     timer.start("Init-Perm");
@@ -94,13 +98,15 @@ public:
    *
    */
   void
-  execute(const double * src)
+  execute(const double * src, const std::string & file_name = "", const double time = 0.0)
   {
     if(write)
     {
       // flush flow field to hard drive
-      s.writeHeader("TODO");
-      ipol.serialize("TODO", src);
+      AssertThrow(file_name != "", ExcMessage("No file name has been provided!"));
+      s.time = time;
+      s.writeHeader(file_name.c_str());
+      ipol.serialize(file_name.c_str(), src);
     }
 
     if(inplace)

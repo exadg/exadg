@@ -19,7 +19,7 @@ namespace dealspectrum
 class DealSpectrumWrapper
 {
 public:
-  DealSpectrumWrapper(MPI_Comm const & , bool, bool)
+  DealSpectrumWrapper(MPI_Comm const &, bool, bool)
   {
   }
 
@@ -54,8 +54,6 @@ template<int dim, typename Number>
 KineticEnergySpectrumCalculator<dim, Number>::KineticEnergySpectrumCalculator(MPI_Comm const & comm)
   : mpi_comm(comm), clear_files(true), counter(0), reset_counter(true)
 {
-  if(deal_spectrum_wrapper == nullptr)
-    deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(mpi_comm, false, true));
 }
 
 template<int dim, typename Number>
@@ -70,8 +68,23 @@ KineticEnergySpectrumCalculator<dim, Number>::setup(
 
   clear_files = data.clear_file;
 
-  if(data.calculate == true)
+  if(data.calculate)
   {
+    if(data.write_raw_data_to_files)
+    {
+      AssertThrow(data.n_cells_1d_coarse_grid == 1,
+                  ExcMessage(
+                    "Choosing write_raw_data_to_files = true requires n_cells_1d_coarse_grid == 1. "
+                    "If you want to use n_cells_1d_coarse_grid != 1 (subdivided hypercube), set "
+                    "do_fftw = true and write_raw_data_to_files = false."));
+    }
+
+    if(deal_spectrum_wrapper == nullptr)
+    {
+      deal_spectrum_wrapper.reset(new dealspectrum::DealSpectrumWrapper(
+        mpi_comm, data.write_raw_data_to_files, data.do_fftw));
+    }
+
     unsigned int evaluation_points = std::max(data.degree + 1, data.evaluation_points_per_cell);
 
     // create data structures for full system
@@ -208,52 +221,54 @@ void
 KineticEnergySpectrumCalculator<dim, Number>::do_evaluate(VectorType const & velocity,
                                                           double const       time)
 {
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-    std::cout << std::endl
-              << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl;
-
   // extract beginning of vector...
   const Number * temp = velocity.begin();
-  deal_spectrum_wrapper->execute((double *)temp);
 
-  // write output file
-  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+  const std::string file_name = data.filename + "_" + Utilities::int_to_string(counter, 4);
+
+  deal_spectrum_wrapper->execute((double *)temp, file_name, time);
+
+  if(data.do_fftw)
   {
-    std::ostringstream filename;
-    filename << data.filename;
-
-    std::ofstream f;
-    if(clear_files == true)
+    // write output file
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      f.open(filename.str().c_str(), std::ios::trunc);
-      clear_files = false;
-    }
-    else
-    {
-      f.open(filename.str().c_str(), std::ios::app);
-    }
+      std::cout << std::endl
+                << "Write kinetic energy spectrum at time t = " << time << ":" << std::endl;
 
-    // get tabularized results ...
-    double * kappa;
-    double * E;
-    double * C;
-    double   e_physical = 0.0;
-    double   e_spectral = 0.0;
-    int len = deal_spectrum_wrapper->get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
+      // get tabularized results ...
+      double * kappa;
+      double * E;
+      double * C;
+      double   e_physical = 0.0;
+      double   e_spectral = 0.0;
+      int len = deal_spectrum_wrapper->get_results(kappa, E, C /*unused*/, e_physical, e_spectral);
 
-    f << std::endl
-      << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl
-      << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << std::endl
-      << "  Energy physical space e_phy = " << e_physical << std::endl
-      << "  Energy spectral space e_spe = " << e_spectral << std::endl
-      << "  Difference  |e_phy - e_spe| = " << std::abs(e_physical - e_spectral) << std::endl
-      << std::endl
-      << "    k  k (avg)              E(k)" << std::endl;
+      std::ostringstream filename;
+      filename << data.filename;
 
-    // ... and print it line by line:
-    for(int i = 0; i < len; i++)
-    {
-      if(E[i] > data.output_tolerance)
+      std::ofstream f;
+      if(clear_files == true)
+      {
+        f.open(filename.str().c_str(), std::ios::trunc);
+        clear_files = false;
+      }
+      else
+      {
+        f.open(filename.str().c_str(), std::ios::app);
+      }
+
+      f << std::endl
+        << "Calculate kinetic energy spectrum at time t = " << time << ":" << std::endl
+        << std::scientific << std::setprecision(precision) << std::setw(precision + 8) << std::endl
+        << "  Energy physical space e_phy = " << e_physical << std::endl
+        << "  Energy spectral space e_spe = " << e_spectral << std::endl
+        << "  Difference  |e_phy - e_spe| = " << std::abs(e_physical - e_spectral) << std::endl
+        << std::endl
+        << "    k  k (avg)              E(k)" << std::endl;
+
+      // ... and print it line by line:
+      for(int i = 0; i < len; i++)
       {
         f << std::scientific << std::setprecision(0)
           << std::setw(2 + ceil(std::max(3.0, log(len) / log(10)))) << i << std::scientific
