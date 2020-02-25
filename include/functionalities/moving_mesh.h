@@ -3,60 +3,68 @@
 
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/mapping_fe_field.h>
-#include <deal.II/fe/mapping_q.h>
 
 #include <deal.II/lac/la_parallel_block_vector.h>
+
+#include "mesh.h"
 
 using namespace dealii;
 
 #define MAPPING_Q_CACHE
 
 template<int dim, typename Number>
-class MovingMesh
+class MovingMesh : public Mesh<dim>
 {
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  MovingMesh(parallel::TriangulationBase<dim> const & triangulation,
+  MovingMesh(unsigned int const                       mapping_degree_in,
+             parallel::TriangulationBase<dim> const & triangulation,
              unsigned int const                       polynomial_degree,
              std::shared_ptr<Function<dim>> const     mesh_movement_function,
+             double const                             start_time,
              MPI_Comm const &                         mpi_comm);
 
   /*
-   * This function initialized the MappingFEField object that is used to describe
-   * a moving mesh.
+   * This function implements the interface of base class Mesh<dim>
    */
-  std::shared_ptr<Mapping<dim>>
-  initialize_mapping_ale(double const time, Mapping<dim> const & mapping);
+  Mapping<dim> const &
+  get_mapping() const override;
 
   /*
+   * This function implements interface of base class Interface::MovingMesh.
+   *
    * This function is formulated w.r.t. reference coordinates, i.e., the mapping describing
    * the initial mesh position has to be used for this function.
    */
   void
-  move_mesh_analytical(double const                  time,
-                       Mapping<dim> const &          mapping,
-                       std::shared_ptr<Mapping<dim>> mapping_ale);
+  move_mesh(double const time);
+
+  /*
+   * This function initialized the mapping that is used to describe a moving mesh.
+   */
+  void
+  initialize_mapping_ale(double const time);
 
   /*
    * This function extracts the grid coordinates of the current mesh configuration, i.e.,
    * a mapping describing the mesh displacement has to be used here.
    */
   void
-  fill_grid_coordinates_vector(VectorType &            vector,
-                               DoFHandler<dim> const & dof_handler,
-                               Mapping<dim> const &    mapping);
+  fill_grid_coordinates_vector(VectorType & vector, DoFHandler<dim> const & dof_handler);
 
 private:
-  unsigned int polynomial_degree;
+  std::shared_ptr<Mapping<dim>> mapping_ale;
 
   // needed for re-initialization of MappingQCache
   parallel::TriangulationBase<dim> const & triangulation;
 
+  unsigned int polynomial_degree;
+
   // An analytical function that describes the mesh movement
   std::shared_ptr<Function<dim>> mesh_movement_function;
 
-  // MPI communciator
+  // MPI communicator
   MPI_Comm const & mpi_comm;
 
   // Finite Element (use a continuous finite element space to describe the mesh movement)

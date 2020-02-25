@@ -18,21 +18,24 @@
 #include "../include/convection_diffusion/spatial_discretization/interface.h"
 
 // temporal discretization
-#include "convection_diffusion/time_integration/driver_steady_problems.h"
-#include "convection_diffusion/time_integration/time_int_bdf.h"
-#include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
+#include "../include/convection_diffusion/time_integration/driver_steady_problems.h"
+#include "../include/convection_diffusion/time_integration/time_int_bdf.h"
+#include "../include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
 
 // postprocessor
-#include "convection_diffusion/postprocessor/postprocessor_base.h"
+#include "../include/convection_diffusion/postprocessor/postprocessor_base.h"
 
 // user interface, etc.
-#include "convection_diffusion/user_interface/analytical_solution.h"
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
-#include "functionalities/print_functions.h"
-#include "functionalities/print_general_infos.h"
+#include "../include/convection_diffusion/user_interface/analytical_solution.h"
+#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../include/convection_diffusion/user_interface/field_functions.h"
+#include "../include/convection_diffusion/user_interface/input_parameters.h"
 
+// general functionalities
+#include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/moving_mesh.h"
+#include "../include/functionalities/print_functions.h"
+#include "../include/functionalities/print_general_infos.h"
 
 // specify the test case that has to be solved
 
@@ -99,7 +102,13 @@ private:
 
   ConditionalOStream pcout;
 
+  // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
+
+  // mapping (static and moving meshes)
+  std::shared_ptr<Mesh<dim>>               mesh;
+  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
+
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
@@ -108,6 +117,8 @@ private:
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
   std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
@@ -189,24 +200,67 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
+  // mapping
+  unsigned int mapping_degree = 1;
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  if(param.ale_formulation) // moving mesh
+  {
+    std::shared_ptr<Function<dim>> mesh_motion = set_mesh_movement_function<dim>();
+    moving_mesh.reset(new MovingMesh<dim, Number>(
+      mapping_degree, *triangulation, param.degree, mesh_motion, param.start_time, mpi_comm));
+
+    mesh = moving_mesh;
+  }
+  else // static mesh
+  {
+    mesh.reset(new Mesh<dim>(mapping_degree));
+  }
 
   // initialize convection-diffusion operator
-  conv_diff_operator.reset(
-    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
-  conv_diff_operator->setup(periodic_faces, boundary_descriptor, field_functions);
+  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                       mesh->get_mapping(),
+                                                       periodic_faces,
+                                                       boundary_descriptor,
+                                                       field_functions,
+                                                       param,
+                                                       mpi_comm));
 
+  // initialize matrix_free
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
+  matrix_free_wrapper->append_data_structures(*conv_diff_operator);
+  matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
+
+  // setup convection-diffusion operator
+  conv_diff_operator->setup(matrix_free_wrapper);
+
+  // initialize postprocessor
+  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
+  postprocessor->setup(conv_diff_operator->get_dof_handler(), mesh->get_mapping());
+
+  // initialize time integrator or driver for steady problems
   if(param.problem_type == ProblemType::Unsteady)
   {
-    // initialize time integrator
     if(param.temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param, mpi_comm));
+      time_integrator.reset(
+        new TimeIntExplRK<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
     }
     else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param, mpi_comm));
+      time_integrator.reset(new TimeIntBDF<dim, Number>(
+        conv_diff_operator, param, mpi_comm, postprocessor, moving_mesh, matrix_free_wrapper));
     }
     else
     {
@@ -219,8 +273,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
   else if(param.problem_type == ProblemType::Steady)
   {
-    // initialize driver for steady convection-diffusion problems
-    driver_steady.reset(new DriverSteadyProblems<Number>(conv_diff_operator, param, mpi_comm));
+    driver_steady.reset(
+      new DriverSteadyProblems<Number>(conv_diff_operator, param, mpi_comm, postprocessor));
     driver_steady->setup();
   }
   else
@@ -228,22 +282,17 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     AssertThrow(false, ExcMessage("Not implemented"));
   }
 
+  // setup solvers in case of BDF time integration or steady problems
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
   VectorType const *                                 velocity_ptr = nullptr;
   VectorType                                         velocity;
 
-  // setup solvers in case of BDF time integration or steady problems
   if(param.problem_type == ProblemType::Unsteady)
   {
-    if(param.temporal_discretization == TemporalDiscretization::ExplRK)
+    if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      conv_diff_operator->setup_operators_and_solver(
-        /* no parameter since it is not used for ExplRK */);
-    }
-    else if(param.temporal_discretization == TemporalDiscretization::BDF)
-    {
-      std::shared_ptr<TimeIntBDF<Number>> time_integrator_bdf =
-        std::dynamic_pointer_cast<TimeIntBDF<Number>>(time_integrator);
+      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
 
       if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
       {
@@ -252,14 +301,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
         velocity_ptr = &velocity;
       }
 
-      conv_diff_operator->setup_operators_and_solver(
+      conv_diff_operator->setup_solver(
         time_integrator_bdf->get_scaling_factor_time_derivative_term(), velocity_ptr);
     }
     else
     {
-      AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK ||
-                    param.temporal_discretization == TemporalDiscretization::BDF,
-                  ExcMessage("Specified time integration scheme is not implemented!"));
+      AssertThrow(param.temporal_discretization == TemporalDiscretization::ExplRK,
+                  ExcMessage("Not implemented."));
     }
   }
   else if(param.problem_type == ProblemType::Steady)
@@ -271,8 +319,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       velocity_ptr = &velocity;
     }
 
-    conv_diff_operator->setup_operators_and_solver(1.0 /* scaling_factor_time_derivative_term */,
-                                                   velocity_ptr);
+    conv_diff_operator->setup_solver(1.0 /* scaling_factor_time_derivative_term */, velocity_ptr);
   }
   else
   {
@@ -288,7 +335,29 @@ Problem<dim, Number>::solve()
 {
   if(param.problem_type == ProblemType::Unsteady)
   {
-    time_integrator->timeloop();
+    if(this->param.ale_formulation == true)
+    {
+      do
+      {
+        time_integrator->advance_one_timestep_pre_solve();
+
+        // move the mesh and update dependent data structures
+        std::shared_ptr<TimeIntBDF<dim, Number>> time_int_bdf =
+          std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
+        moving_mesh->move_mesh(time_int_bdf->get_next_time());
+        matrix_free_wrapper->update_geometry();
+        conv_diff_operator->update_after_mesh_movement();
+        time_int_bdf->ale_update();
+
+        time_integrator->advance_one_timestep_solve();
+
+        time_integrator->advance_one_timestep_post_solve();
+      } while(!time_integrator->finished());
+    }
+    else
+    {
+      time_integrator->timeloop();
+    }
   }
   else if(param.problem_type == ProblemType::Steady)
   {
@@ -324,8 +393,8 @@ Problem<dim, Number>::analyze_computing_times() const
       std::vector<std::string> names;
       std::vector<double>      iterations;
 
-      std::shared_ptr<TimeIntBDF<Number>> time_integrator_bdf =
-        std::dynamic_pointer_cast<TimeIntBDF<Number>>(time_integrator);
+      std::shared_ptr<TimeIntBDF<dim, Number>> time_integrator_bdf =
+        std::dynamic_pointer_cast<TimeIntBDF<dim, Number>>(time_integrator);
       time_integrator_bdf->get_iterations(names, iterations);
 
       unsigned int length = 1;

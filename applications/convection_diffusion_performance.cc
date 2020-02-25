@@ -18,18 +18,22 @@
 #include "../include/convection_diffusion/spatial_discretization/interface.h"
 
 // postprocessor
-#include "convection_diffusion/postprocessor/postprocessor_base.h"
+#include "../include/convection_diffusion/postprocessor/postprocessor_base.h"
 
 // user interface, etc.
-#include "convection_diffusion/user_interface/analytical_solution.h"
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
+#include "../include/convection_diffusion/user_interface/analytical_solution.h"
+#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../include/convection_diffusion/user_interface/field_functions.h"
+#include "../include/convection_diffusion/user_interface/input_parameters.h"
 
-#include "functionalities/mesh_resolution_generator_hypercube.h"
-#include "functionalities/print_functions.h"
-#include "functionalities/print_general_infos.h"
-#include "functionalities/print_throughput.h"
+// general functionalities
+#include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/mesh.h"
+#include "../include/functionalities/mesh_resolution_generator_hypercube.h"
+#include "../include/functionalities/print_functions.h"
+#include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/print_throughput.h"
+
 
 // specify the test case that has to be solved
 #include "convection_diffusion_test_cases/periodic_box.h"
@@ -137,7 +141,11 @@ private:
 
   ConditionalOStream pcout;
 
+  // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
+
+  // mapping
+  std::shared_ptr<Mesh<dim>> mesh;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
@@ -147,9 +155,9 @@ private:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
   std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
 
-  std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
+  std::shared_ptr<DGOperator<dim, Number>> conv_diff_operator;
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
@@ -228,16 +236,41 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
+  // mapping
+  unsigned int mapping_degree = 1;
+  if(param.mapping == MappingType::Affine)
+  {
+    mapping_degree = 1;
+  }
+  else if(param.mapping == MappingType::Isoparametric)
+  {
+    mapping_degree = param.degree;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Not implemented"));
+  }
+
+  mesh.reset(new Mesh<dim>(mapping_degree));
 
   // initialize convection diffusion operation
-  conv_diff_operator.reset(
-    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
-  conv_diff_operator->setup(periodic_faces, boundary_descriptor, field_functions);
+  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                       mesh->get_mapping(),
+                                                       periodic_faces,
+                                                       boundary_descriptor,
+                                                       field_functions,
+                                                       param,
+                                                       mpi_comm));
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  // initialize matrix_free
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
+  matrix_free_wrapper->append_data_structures(*conv_diff_operator);
+  matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
+
+  // setup convection-diffusion operator
+  conv_diff_operator->setup(matrix_free_wrapper);
+
+  if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {
@@ -246,7 +279,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     }
   }
 
-  conv_diff_operator->setup_operators_and_solver(1.0 /* use a default value of 1.0 */, &velocity);
+  conv_diff_operator->setup_solver(1.0 /* use a default value of 1.0 */, &velocity);
 }
 
 template<int dim, typename Number>
@@ -263,8 +296,7 @@ Problem<dim, Number>::apply_operator()
 
   LinearAlgebra::distributed::Vector<Number> const * velocity_ptr = nullptr;
 
-  if(param.equation_type == EquationType::Convection ||
-     param.equation_type == EquationType::ConvectionDiffusion)
+  if(param.convective_problem())
   {
     if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
     {

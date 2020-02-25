@@ -21,20 +21,13 @@ struct OperatorData : public OperatorBaseData
     : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */),
       unsteady_problem(false),
       convective_problem(false),
-      diffusive_problem(false),
-      scaling_factor_mass_matrix(1.0)
+      diffusive_problem(false)
   {
   }
 
   bool unsteady_problem;
   bool convective_problem;
   bool diffusive_problem;
-
-  // This variable is only needed for initialization, e.g., so that the
-  // multigrid smoothers can be initialized correctly during initialization
-  // (e.g., diagonal in case of Chebyshev smoother) without the need to
-  // update the whole multigrid preconditioner in the first time step.
-  double scaling_factor_mass_matrix;
 
   Operators::ConvectiveKernelData<dim> convective_kernel_data;
   Operators::DiffusiveKernelData       diffusive_kernel_data;
@@ -66,6 +59,16 @@ public:
   reinit(MatrixFree<dim, Number> const &   matrix_free,
          AffineConstraints<double> const & constraint_matrix,
          OperatorData<dim> const &         data);
+
+  void
+  reinit(MatrixFree<dim, Number> const &                           matrix_free,
+         AffineConstraints<double> const &                         constraint_matrix,
+         OperatorData<dim> const &                                 data,
+         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel,
+         std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel);
+
+  void
+  update_after_mesh_movement();
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -125,9 +128,9 @@ private:
                                 OperatorData<dim> const &            data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  MassMatrixKernel<dim, Number>            mass_kernel;
-  Operators::ConvectiveKernel<dim, Number> convective_kernel;
-  Operators::DiffusiveKernel<dim, Number>  diffusive_kernel;
+  std::shared_ptr<MassMatrixKernel<dim, Number>>            mass_kernel;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 
   double scaling_factor_mass_matrix;
 };

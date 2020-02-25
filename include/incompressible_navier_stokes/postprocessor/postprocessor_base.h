@@ -19,9 +19,7 @@ template<int dim, typename Number>
 class DGNavierStokesBase;
 
 /*
- *  Interface class for postprocessor of the
- *  incompressible Navier-Stokes equation.
- *
+ *  Base class for postprocessor of the incompressible Navier-Stokes equation.
  */
 template<int dim, typename Number>
 class PostProcessorBase
@@ -30,10 +28,6 @@ public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef DGNavierStokesBase<dim, Number> Operator;
-
-  PostProcessorBase()
-  {
-  }
 
   virtual ~PostProcessorBase()
   {

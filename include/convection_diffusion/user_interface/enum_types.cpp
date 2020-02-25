@@ -71,6 +71,27 @@ enum_to_string(EquationType const enum_type)
   return string_type;
 }
 
+std::string
+enum_to_string(FormulationConvectiveTerm const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    case FormulationConvectiveTerm::DivergenceFormulation:
+      string_type = "DivergenceFormulation";
+      break;
+    case FormulationConvectiveTerm::ConvectiveFormulation:
+      string_type = "ConvectiveFormulation";
+      break;
+    default:
+      AssertThrow(false, ExcMessage("Not implemented."));
+      break;
+  }
+
+  return string_type;
+}
+
 /**************************************************************************************/
 /*                                                                                    */
 /*                                 PHYSICAL QUANTITIES                                */

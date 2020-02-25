@@ -23,17 +23,22 @@ protected:
   typedef DGNavierStokesBase<dim, Number> Base;
 
   typedef typename Base::VectorType      VectorType;
-  typedef typename Base::Postprocessor   Postprocessor;
   typedef typename Base::MultigridNumber MultigridNumber;
 
 public:
   /*
    * Constructor.
    */
-  DGNavierStokesProjectionMethods(parallel::TriangulationBase<dim> const & triangulation,
-                                  InputParameters const &                  parameters,
-                                  std::shared_ptr<Postprocessor>           postprocessor,
-                                  MPI_Comm const &                         mpi_comm);
+  DGNavierStokesProjectionMethods(
+    parallel::TriangulationBase<dim> const & triangulation_in,
+    Mapping<dim> const &                     mapping_in,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                    periodic_face_pairs_in,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+    InputParameters const &                         parameters_in,
+    MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Destructor.
@@ -45,11 +50,8 @@ public:
    * needed for projection-type methods.
    */
   virtual void
-  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                        periodic_face_pairs,
-        std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-        std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_temperature = "");
 
   virtual void
   update_after_mesh_movement() override;

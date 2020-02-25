@@ -10,6 +10,7 @@
 
 #include "../../include/convection_diffusion/postprocessor/postprocessor.h"
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/mesh_movement_functions.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -35,8 +36,8 @@ unsigned int const N_SCALARS = 1;
 
 // set problem specific parameters like physical dimensions, etc.
 double const L = 1.0; // Length of cavity
-double const LEFT = 0.0;
-double const RIGHT = 1.0;
+double const LEFT = -L/2.0;
+double const RIGHT = L/2.0;
 
 double const START_TIME = 0.0;
 double const END_TIME = 10.0;
@@ -67,6 +68,8 @@ double const OUTPUT_INTERVAL_TIME = (END_TIME-START_TIME)/100.0;
 bool const WRITE_RESTART = false;
 double const RESTART_INTERVAL_TIME = 10.0;
 
+bool const ALE = false;
+
 namespace IncNS
 {
 void set_input_parameters(InputParameters &param)
@@ -77,6 +80,7 @@ void set_input_parameters(InputParameters &param)
   param.equation_type = EquationType::NavierStokes;
   param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
   param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  param.ale_formulation = ALE;
   param.right_hand_side = true;
   param.boussinesq_term = true;
 
@@ -224,8 +228,10 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.dim = DIM;
   param.problem_type = ProblemType::Unsteady;
   param.equation_type = EquationType::ConvectionDiffusion;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.analytical_velocity_field = false;
   param.right_hand_side = false;
+  param.ale_formulation = ALE;
 
   // PHYSICAL QUANTITIES
   param.start_time = START_TIME;
@@ -294,7 +300,7 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   // NUMERICAL PARAMETERS
   param.use_combined_operator = true;
   param.filter_solution = false;
-  param.use_overintegration = true;
+  param.use_overintegration = false;
 }
 }
 
@@ -313,8 +319,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 {
   (void)periodic_faces;
 
-  const double left = 0.0, right = L;
-  GridGenerator::hyper_cube(*triangulation,left,right);
+  GridGenerator::hyper_cube(*triangulation,LEFT,RIGHT);
   triangulation->refine_global(n_refine_space);
 
   // set boundary IDs: 0 by default, set left boundary to 1
@@ -323,12 +328,39 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
   {
     for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
     {
-      if ((std::fabs(cell->face(face_number)->center()(0) - left)< 1e-12))
+      if ((std::fabs(cell->face(face_number)->center()(0) - LEFT)< 1e-12))
       {
          cell->face(face_number)->set_boundary_id(1);
       }
     }
   }
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+
+  MeshMovementData<dim> data;
+  data.temporal = MeshMovementAdvanceInTime::Sin;
+  data.shape = MeshMovementShape::SineAligned; //SineZeroAtBoundary; //SineAligned;
+  data.dimensions[0] = std::abs(RIGHT-LEFT);
+  data.dimensions[1] = std::abs(RIGHT-LEFT);
+  data.amplitude = 0.08 * (RIGHT-LEFT); // A_max = (RIGHT-LEFT)/(2*pi)
+  data.period = END_TIME;
+  data.t_start = 0.0;
+  data.t_end = END_TIME;
+  data.spatial_number_of_oscillations = 1.0;
+  mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
+
+  return mesh_motion;
 }
 
 namespace IncNS

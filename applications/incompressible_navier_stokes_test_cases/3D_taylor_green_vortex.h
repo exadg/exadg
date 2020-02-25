@@ -58,7 +58,7 @@ std::string const OUTPUT_NAME = std::to_string(int((EXPLOIT_SYMMETRY ? 2 : 1)*(D
 bool const WRITE_RESTART = false;
 bool const RESTARTED_SIMULATION = false;
 
-bool const DO_FFTW = false;
+bool const DO_FFTW = true;
 
 // mesh type
 enum class MeshType{ Cartesian, Curvilinear };
@@ -353,12 +353,40 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 
 /************************************************************************************************************/
 /*                                                                                                          */
-/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                               MESH MOTION                                                */
 /*                                                                                                          */
 /************************************************************************************************************/
 
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+
+  MeshMovementData<dim> data;
+  data.temporal = MeshMovementAdvanceInTime::Sin;
+  data.shape = MeshMovementShape::Sin;
+  data.dimensions[0] = std::abs(RIGHT-LEFT);
+  data.dimensions[1] = std::abs(RIGHT-LEFT);
+  data.dimensions[2] = std::abs(RIGHT-LEFT);
+  data.amplitude = RIGHT/6.0; // use a value <= RIGHT/4.0
+  data.period = CHARACTERISTIC_TIME;
+  data.t_start = 0.0;
+  data.t_end = END_TIME;
+  data.spatial_number_of_oscillations = 1.0;
+  mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
+
+  return mesh_motion;
+}
+
 namespace IncNS
 {
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 /*
  *  This function is used to prescribe initial conditions for the velocity field
@@ -437,22 +465,6 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new InitialSolutionPressure<dim>());
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
-  if(ALE)
-  {
-    MeshMovementData<dim> data;
-    data.temporal = MeshMovementAdvanceInTime::Sin;
-    data.shape = MeshMovementShape::Sin;
-    data.dimensions[0] = std::abs(RIGHT-LEFT);
-    data.dimensions[1] = std::abs(RIGHT-LEFT);
-    data.dimensions[2] = std::abs(RIGHT-LEFT);
-    data.amplitude = RIGHT/6.0; // use a value <= RIGHT/4.0
-    data.period = CHARACTERISTIC_TIME;
-    data.t_start = 0.0;
-    data.t_end = END_TIME;
-    data.spatial_number_of_oscillations = 1.0;
-    field_functions->mesh_movement.reset(new CubeMeshMovementFunctions<dim>(data));
-  }
 }
 
 /************************************************************************************************************/

@@ -16,11 +16,15 @@ template<int dim>
 struct ConvectiveKernelData
 {
   ConvectiveKernelData()
-    : velocity_type(TypeVelocityField::Function),
+    : formulation(FormulationConvectiveTerm::DivergenceFormulation),
+      velocity_type(TypeVelocityField::Function),
       dof_index_velocity(1),
       numerical_flux_formulation(NumericalFluxConvectiveOperator::Undefined)
   {
   }
+
+  // formulation
+  FormulationConvectiveTerm formulation;
 
   // analytical vs. numerical velocity field
   TypeVelocityField velocity_type;
@@ -84,8 +88,20 @@ public:
   {
     IntegratorFlags flags;
 
-    flags.cell_evaluate  = CellFlags(true, false, false);
-    flags.cell_integrate = CellFlags(false, true, false);
+    if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
+    {
+      flags.cell_evaluate  = CellFlags(true, false, false);
+      flags.cell_integrate = CellFlags(false, true, false);
+    }
+    else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      flags.cell_evaluate  = CellFlags(false, true, false);
+      flags.cell_integrate = CellFlags(true, false, false);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
 
     flags.face_evaluate  = FaceFlags(true, false);
     flags.face_integrate = FaceFlags(true, false);
@@ -258,11 +274,11 @@ public:
                    IntegratorFace &   integrator,
                    scalar const &     value_m,
                    scalar const &     value_p,
+                   vector const &     normal_m,
                    Number const &     time,
                    bool const         exterior_velocity_available) const
   {
-    vector normal = integrator.get_normal_vector(q);
-    scalar flux   = make_vectorized_array<Number>(0.0);
+    scalar flux = make_vectorized_array<Number>(0.0);
 
     if(data.velocity_type == TypeVelocityField::Function)
     {
@@ -270,7 +286,9 @@ public:
 
       vector velocity = evaluate_vectorial_function(data.velocity, q_points, time);
 
-      scalar normal_velocity = velocity * normal;
+      scalar normal_velocity = velocity * normal_m;
+
+      // flux functions are the same for DivergenceFormulation and ConvectiveFormulation
 
       if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
       {
@@ -287,17 +305,39 @@ public:
       vector velocity_p =
         exterior_velocity_available ? integrator_velocity_p->get_value(q) : velocity_m;
 
-      scalar normal_velocity_m = velocity_m * normal;
-      scalar normal_velocity_p = velocity_p * normal;
+      scalar normal_velocity_m = velocity_m * normal_m;
+      scalar normal_velocity_p = velocity_p * normal_m;
 
-      if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+      if(data.formulation == FormulationConvectiveTerm::DivergenceFormulation)
       {
-        flux = calculate_central_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+        if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+        {
+          flux = calculate_central_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+        }
+        else if(data.numerical_flux_formulation ==
+                NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+        {
+          flux =
+            calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+        }
       }
-      else if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+      else if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
       {
-        flux =
-          calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity_m, normal_velocity_p);
+        scalar normal_velocity = 0.5 * (normal_velocity_m + normal_velocity_p);
+
+        if(data.numerical_flux_formulation == NumericalFluxConvectiveOperator::CentralFlux)
+        {
+          flux = calculate_central_flux(value_m, value_p, normal_velocity);
+        }
+        else if(data.numerical_flux_formulation ==
+                NumericalFluxConvectiveOperator::LaxFriedrichsFlux)
+        {
+          flux = calculate_lax_friedrichs_flux(value_m, value_p, normal_velocity);
+        }
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
       }
     }
     else
@@ -308,15 +348,104 @@ public:
     return flux;
   }
 
+  inline DEAL_II_ALWAYS_INLINE //
+    vector
+    calculate_average_velocity(unsigned int const q,
+                               IntegratorFace &   integrator,
+                               Number const &     time,
+                               bool const         exterior_velocity_available) const
+  {
+    vector velocity;
+
+    if(data.velocity_type == TypeVelocityField::Function)
+    {
+      Point<dim, scalar> q_points = integrator.quadrature_point(q);
+
+      velocity = evaluate_vectorial_function(data.velocity, q_points, time);
+    }
+    else if(data.velocity_type == TypeVelocityField::DoFVector)
+    {
+      vector velocity_m = integrator_velocity_m->get_value(q);
+      vector velocity_p =
+        exterior_velocity_available ? integrator_velocity_p->get_value(q) : velocity_m;
+
+      velocity = 0.5 * (velocity_m + velocity_p);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    return velocity;
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    std::tuple<scalar, scalar>
+    calculate_flux_interior_and_neighbor(unsigned int const q,
+                                         IntegratorFace &   integrator,
+                                         scalar const &     value_m,
+                                         scalar const &     value_p,
+                                         vector const &     normal_m,
+                                         Number const &     time,
+                                         bool const         exterior_velocity_available) const
+  {
+    scalar fluxM =
+      calculate_flux(q, integrator, value_m, value_p, normal_m, time, exterior_velocity_available);
+    scalar fluxP = -fluxM;
+
+    if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      vector velocity =
+        calculate_average_velocity(q, integrator, time, exterior_velocity_available);
+      scalar normal_velocity = velocity * normal_m;
+
+      // second term appears since the strong formulation is implemented (integration by parts
+      // is performed twice)
+      fluxM = fluxM - normal_velocity * value_m;
+      // opposite signs since n⁺ = - n⁻
+      fluxP = fluxP + normal_velocity * value_p;
+    }
+
+    return std::make_tuple(fluxM, fluxP);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    calculate_flux_interior(unsigned int const q,
+                            IntegratorFace &   integrator,
+                            scalar const &     value_m,
+                            scalar const &     value_p,
+                            vector const &     normal_m,
+                            Number const &     time,
+                            bool const         exterior_velocity_available) const
+  {
+    scalar flux =
+      calculate_flux(q, integrator, value_m, value_p, normal_m, time, exterior_velocity_available);
+
+    if(data.formulation == FormulationConvectiveTerm::ConvectiveFormulation)
+    {
+      vector velocity =
+        calculate_average_velocity(q, integrator, time, exterior_velocity_available);
+      scalar normal_velocity = velocity * normal_m;
+
+      // second term appears since the strong formulation is implemented (integration by parts
+      // is performed twice)
+      flux = flux - normal_velocity * value_m;
+    }
+
+    return flux;
+  }
+
+
   /*
    * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
     vector
-    get_volume_flux(scalar const &     value,
-                    IntegratorCell &   integrator,
-                    unsigned int const q,
-                    Number const &     time) const
+    get_volume_flux_divergence_form(scalar const &     value,
+                                    IntegratorCell &   integrator,
+                                    unsigned int const q,
+                                    Number const &     time) const
   {
     vector velocity;
 
@@ -334,6 +463,31 @@ public:
     }
 
     return (-value * velocity);
+  }
+
+  inline DEAL_II_ALWAYS_INLINE //
+    scalar
+    get_volume_flux_convective_form(vector const &     gradient,
+                                    IntegratorCell &   integrator,
+                                    unsigned int const q,
+                                    Number const &     time) const
+  {
+    vector velocity;
+
+    if(data.velocity_type == TypeVelocityField::Function)
+    {
+      velocity = evaluate_vectorial_function(data.velocity, integrator.quadrature_point(q), time);
+    }
+    else if(data.velocity_type == TypeVelocityField::DoFVector)
+    {
+      velocity = integrator_velocity->get_value(q);
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("Not implemented."));
+    }
+
+    return (velocity * gradient);
   }
 
 private:
@@ -380,6 +534,12 @@ public:
   reinit(MatrixFree<dim, Number> const &     matrix_free,
          AffineConstraints<double> const &   constraint_matrix,
          ConvectiveOperatorData<dim> const & data);
+
+  void
+  reinit(MatrixFree<dim, Number> const &                           matrix_free,
+         AffineConstraints<double> const &                         constraint_matrix,
+         ConvectiveOperatorData<dim> const &                       data,
+         std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel);
 
   LinearAlgebra::distributed::Vector<Number> const &
   get_velocity() const;
@@ -433,7 +593,7 @@ private:
                                 ConvectiveOperatorData<dim> const &  data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  Operators::ConvectiveKernel<dim, Number> kernel;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> kernel;
 };
 } // namespace ConvDiff
 

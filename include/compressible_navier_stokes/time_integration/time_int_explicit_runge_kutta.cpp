@@ -14,9 +14,11 @@
 namespace CompNS
 {
 template<typename Number>
-TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                                     InputParameters const &   param_in,
-                                     MPI_Comm const &          mpi_comm_in)
+TimeIntExplRK<Number>::TimeIntExplRK(
+  std::shared_ptr<Operator>                       operator_in,
+  InputParameters const &                         param_in,
+  MPI_Comm const &                                mpi_comm_in,
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,
@@ -25,6 +27,7 @@ TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
                               mpi_comm_in), // currently no adaptive time stepping implemented
     pde_operator(operator_in),
     param(param_in),
+    postprocessor(postprocessor_in),
     time_postprocessing(0.0),
     l2_norm(0.0),
     cfl_number(param.cfl_number / std::pow(2.0, param.dt_refinements)),
@@ -241,7 +244,7 @@ TimeIntExplRK<Number>::postprocessing() const
 
   detect_instabilities();
 
-  pde_operator->do_postprocessing(this->solution_n, this->time, this->time_step_number);
+  postprocessor->do_postprocessing(this->solution_n, this->time, this->time_step_number);
 
   time_postprocessing += timer_postprocessing.wall_time();
 }

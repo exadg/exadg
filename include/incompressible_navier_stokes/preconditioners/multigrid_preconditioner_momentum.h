@@ -22,10 +22,10 @@ template<int dim, typename Number, typename MultigridNumber>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 private:
-  typedef MomentumOperator<dim, Number>                        PDEOperatorNumber;
-  typedef MomentumOperator<dim, MultigridNumber>               PDEOperator;
-  typedef MultigridOperatorBase<dim, MultigridNumber>          MGOperatorBase;
-  typedef MultigridOperator<dim, MultigridNumber, PDEOperator> MGOperator;
+  typedef MomentumOperator<dim, Number>                          PDEOperator;
+  typedef MomentumOperator<dim, MultigridNumber>                 PDEOperatorMG;
+  typedef MultigridOperatorBase<dim, MultigridNumber>            MGOperatorBase;
+  typedef MultigridOperator<dim, MultigridNumber, PDEOperatorMG> MGOperator;
 
   typedef MultigridPreconditionerBase<dim, Number, MultigridNumber> Base;
 
@@ -50,7 +50,7 @@ public:
              parallel::TriangulationBase<dim> const * tria,
              FiniteElement<dim> const &               fe,
              Mapping<dim> const &                     mapping,
-             PDEOperatorNumber const &                pde_operator,
+             PDEOperator const &                      pde_operator,
              MultigridOperatorType const &            mg_operator_type,
              bool const                               mesh_is_moving,
              Map const *                              dirichlet_bc        = nullptr,
@@ -109,7 +109,7 @@ public:
       this->update_matrix_free();
     }
 
-    update_operators(pde_operator);
+    update_operators();
 
     this->update_smoothers();
 
@@ -187,20 +187,16 @@ private:
   initialize_operator(unsigned int const level)
   {
     // initialize pde_operator in a first step
-    std::shared_ptr<PDEOperator> pde_operator_level(new PDEOperator());
+    std::shared_ptr<PDEOperatorMG> pde_operator_level(new PDEOperatorMG());
 
-    Operators::ConvectiveKernelData convective_kernel_data =
-      this->pde_operator->get_convective_kernel_data();
-    Operators::ViscousKernelData viscous_kernel_data =
-      this->pde_operator->get_viscous_kernel_data();
+    pde_operator_level->reinit(*this->matrix_free_objects[level], *this->constraints[level], data);
 
-    pde_operator_level->reinit(*this->matrix_free_objects[level],
-                               *this->constraints[level],
-                               data,
-                               convective_kernel_data,
-                               viscous_kernel_data);
+    // make sure that scaling factor of time derivative term has been set before the smoothers are
+    // initialized
+    pde_operator_level->set_scaling_factor_mass_matrix(
+      pde_operator->get_scaling_factor_mass_matrix());
 
-    // initialize MGOperator which is a wrapper around the PDEOperator
+    // initialize MGOperator which is a wrapper around the PDEOperatorMG
     std::shared_ptr<MGOperator> mg_operator(new MGOperator(pde_operator_level));
 
     return mg_operator;
@@ -220,7 +216,7 @@ private:
    * This function updates the multigrid operators for all levels
    */
   void
-  update_operators(PDEOperatorNumber const * pde_operator)
+  update_operators()
   {
     if(mesh_is_moving)
     {
@@ -316,7 +312,7 @@ private:
     }
   }
 
-  std::shared_ptr<PDEOperator>
+  std::shared_ptr<PDEOperatorMG>
   get_operator(unsigned int level)
   {
     std::shared_ptr<MGOperator> mg_operator =
@@ -327,7 +323,7 @@ private:
 
   MomentumOperatorData<dim> data;
 
-  PDEOperatorNumber const * pde_operator;
+  PDEOperator const * pde_operator;
 
   MultigridOperatorType mg_operator_type;
 

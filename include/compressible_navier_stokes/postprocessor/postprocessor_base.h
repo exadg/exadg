@@ -18,15 +18,29 @@ using namespace dealii;
 
 namespace CompNS
 {
+template<typename Number>
+class PostProcessorInterface
+{
+public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  virtual ~PostProcessorInterface()
+  {
+  }
+
+  virtual void
+  do_postprocessing(VectorType const & solution, double const time, int const time_step_number) = 0;
+};
+
 // forward declaration
 template<int dim, typename Number>
 class DGOperator;
 
 template<int dim, typename Number>
-class PostProcessorBase
+class PostProcessorBase : public PostProcessorInterface<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef typename PostProcessorInterface<Number>::VectorType VectorType;
 
 public:
   virtual ~PostProcessorBase()
@@ -35,9 +49,6 @@ public:
 
   virtual void
   setup(DGOperator<dim, Number> const & pde_operator) = 0;
-
-  virtual void
-  do_postprocessing(VectorType const & solution, double const time, int const time_step_number) = 0;
 };
 
 } // namespace CompNS

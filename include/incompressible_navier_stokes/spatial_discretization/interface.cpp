@@ -16,18 +16,7 @@ namespace Interface
 
 // instantiations
 
-// float
-template class OperatorBase<float>;
-template class OperatorCoupled<float>;
-template class OperatorDualSplitting<float>;
-template class OperatorPressureCorrection<float>;
 template class OperatorOIF<float>;
-
-// double
-template class OperatorBase<double>;
-template class OperatorCoupled<double>;
-template class OperatorDualSplitting<double>;
-template class OperatorPressureCorrection<double>;
 template class OperatorOIF<double>;
 
 } // namespace Interface
