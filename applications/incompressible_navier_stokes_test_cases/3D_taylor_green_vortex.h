@@ -58,7 +58,7 @@ std::string const OUTPUT_NAME = std::to_string(int((EXPLOIT_SYMMETRY ? 2 : 1)*(D
 bool const WRITE_RESTART = false;
 bool const RESTARTED_SIMULATION = false;
 
-bool const DO_FFTW = false;
+bool const DO_FFTW = true;
 
 // mesh type
 enum class MeshType{ Cartesian, Curvilinear };
