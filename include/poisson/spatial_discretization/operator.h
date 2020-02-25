@@ -39,7 +39,7 @@
 namespace Poisson
 {
 template<int dim, typename Number>
-class DGOperator : public dealii::Subscriptor
+class Operator : public dealii::Subscriptor
 {
 public:
   typedef float MultigridNumber;
@@ -54,13 +54,13 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  DGOperator(parallel::TriangulationBase<dim> const &                triangulation,
-             Mapping<dim> const &                                    mapping,
-             PeriodicFaces const                                     periodic_face_pairs,
-             std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor,
-             std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions,
-             Poisson::InputParameters const &                        param,
-             MPI_Comm const &                                        mpi_comm);
+  Operator(parallel::TriangulationBase<dim> const &                triangulation,
+           Mapping<dim> const &                                    mapping,
+           PeriodicFaces const                                     periodic_face_pairs,
+           std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor,
+           std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions,
+           Poisson::InputParameters const &                        param,
+           MPI_Comm const &                                        mpi_comm);
 
   void
   append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,

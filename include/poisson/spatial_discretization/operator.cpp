@@ -6,7 +6,7 @@
 namespace Poisson
 {
 template<int dim, typename Number>
-DGOperator<dim, Number>::DGOperator(
+Operator<dim, Number>::Operator(
   parallel::TriangulationBase<dim> const &                triangulation_in,
   Mapping<dim> const &                                    mapping_in,
   PeriodicFaces const                                     periodic_face_pairs_in,
@@ -35,9 +35,8 @@ DGOperator<dim, Number>::DGOperator(
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::append_data_structures(
-  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-  std::string const &              field) const
+Operator<dim, Number>::append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                                              std::string const &              field) const
 {
   this->field = field;
 
@@ -81,8 +80,7 @@ DGOperator<dim, Number>::append_data_structures(
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup(
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+Operator<dim, Number>::setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
 {
   pcout << std::endl << "Setup Poisson operator ..." << std::endl;
 
@@ -96,7 +94,7 @@ DGOperator<dim, Number>::setup(
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_solver()
+Operator<dim, Number>::setup_solver()
 {
   pcout << std::endl << "Setup solver ..." << std::endl;
 
@@ -192,14 +190,14 @@ DGOperator<dim, Number>::setup_solver()
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::initialize_dof_vector(VectorType & src) const
+Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index());
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src) const
+Operator<dim, Number>::prescribe_initial_conditions(VectorType & src) const
 {
   field_functions->initial_solution->set_time(0.0);
 
@@ -216,7 +214,7 @@ DGOperator<dim, Number>::prescribe_initial_conditions(VectorType & src) const
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::rhs(VectorType & dst, double const time) const
+Operator<dim, Number>::rhs(VectorType & dst, double const time) const
 {
   dst = 0;
 
@@ -229,14 +227,14 @@ DGOperator<dim, Number>::rhs(VectorType & dst, double const time) const
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
+Operator<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
 {
   laplace_operator.vmult(dst, src);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
+Operator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
 {
   // only activate if desired
   if(false)
@@ -259,21 +257,21 @@ DGOperator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
 
 template<int dim, typename Number>
 DoFHandler<dim> const &
-DGOperator<dim, Number>::get_dof_handler() const
+Operator<dim, Number>::get_dof_handler() const
 {
   return dof_handler;
 }
 
 template<int dim, typename Number>
 types::global_dof_index
-DGOperator<dim, Number>::get_number_of_dofs() const
+Operator<dim, Number>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::get_n10() const
+Operator<dim, Number>::get_n10() const
 {
   AssertThrow(iterative_solver->n10 != 0,
               ExcMessage("Make sure to activate param.compute_performance_metrics!"));
@@ -283,7 +281,7 @@ DGOperator<dim, Number>::get_n10() const
 
 template<int dim, typename Number>
 double
-DGOperator<dim, Number>::get_average_convergence_rate() const
+Operator<dim, Number>::get_average_convergence_rate() const
 {
   return iterative_solver->rho;
 }
@@ -291,24 +289,23 @@ DGOperator<dim, Number>::get_average_convergence_rate() const
 #ifdef DEAL_II_WITH_TRILINOS
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+Operator<dim, Number>::init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   laplace_operator.init_system_matrix(system_matrix);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::calculate_system_matrix(
-  TrilinosWrappers::SparseMatrix & system_matrix) const
+Operator<dim, Number>::calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   laplace_operator.calculate_system_matrix(system_matrix);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::vmult_matrix_based(VectorTypeDouble &                     dst,
-                                            TrilinosWrappers::SparseMatrix const & system_matrix,
-                                            VectorTypeDouble const &               src) const
+Operator<dim, Number>::vmult_matrix_based(VectorTypeDouble &                     dst,
+                                          TrilinosWrappers::SparseMatrix const & system_matrix,
+                                          VectorTypeDouble const &               src) const
 {
   system_matrix.vmult(dst, src);
 }
@@ -316,21 +313,21 @@ DGOperator<dim, Number>::vmult_matrix_based(VectorTypeDouble &                  
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_dof_index() const
+Operator<dim, Number>::get_dof_index() const
 {
   return matrix_free_wrapper->get_dof_index(field + dof_index);
 }
 
 template<int dim, typename Number>
 unsigned int
-DGOperator<dim, Number>::get_quad_index() const
+Operator<dim, Number>::get_quad_index() const
 {
   return matrix_free_wrapper->get_quad_index(field + quad_index);
 }
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::distribute_dofs()
+Operator<dim, Number>::distribute_dofs()
 {
   // enumerate degrees of freedom
   if(param.spatial_discretization == SpatialDiscretization::DG)
@@ -355,7 +352,7 @@ DGOperator<dim, Number>::distribute_dofs()
 
 template<int dim, typename Number>
 void
-DGOperator<dim, Number>::setup_operators()
+Operator<dim, Number>::setup_operators()
 {
   // Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
@@ -377,10 +374,10 @@ DGOperator<dim, Number>::setup_operators()
   }
 }
 
-template class DGOperator<2, float>;
-template class DGOperator<2, double>;
+template class Operator<2, float>;
+template class Operator<2, double>;
 
-template class DGOperator<3, float>;
-template class DGOperator<3, double>;
+template class Operator<3, float>;
+template class Operator<3, double>;
 
 } // namespace Poisson

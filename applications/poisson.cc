@@ -188,7 +188,7 @@ private:
    */
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
-  std::shared_ptr<DGOperator<dim, Number>> poisson_operator;
+  std::shared_ptr<Operator<dim, Number>> poisson_operator;
 
   /*
    * Postprocessor
@@ -303,7 +303,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   // initialize Poisson operator
   poisson_operator.reset(
-    new DGOperator<dim, Number>(*triangulation,
+    new Operator<dim, Number>(*triangulation,
                                 mesh->get_mapping(),
                                 periodic_faces,
                                 boundary_descriptor,
