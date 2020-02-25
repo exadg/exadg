@@ -30,6 +30,7 @@
 #include "../include/compressible_navier_stokes/user_interface/input_parameters.h"
 
 // general functionalities
+#include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/mesh.h"
 #include "../include/functionalities/print_general_infos.h"
@@ -201,20 +202,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // Mapping
-  unsigned int mapping_degree = 1;
-  if(param.mapping == MappingType::Affine)
-  {
-    mapping_degree = 1;
-  }
-  else if(param.mapping == MappingType::Isoparametric)
-  {
-    mapping_degree = param.degree;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-  }
-
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree);
   mesh.reset(new Mesh<dim>(mapping_degree));
 
   // initialize compressible Navier-Stokes operator
