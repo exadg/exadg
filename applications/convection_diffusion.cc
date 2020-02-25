@@ -80,7 +80,7 @@ template<int dim, typename Number = double>
 class Problem : public ProblemBase<Number>
 {
 public:
-  Problem();
+  Problem(MPI_Comm const & mpi_comm);
 
   void
   setup(InputParameters const & param);
@@ -94,6 +94,8 @@ public:
 private:
   void
   print_header();
+
+  MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
 
@@ -124,8 +126,9 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem()
-  : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+Problem<dim, Number>::Problem(MPI_Comm const & comm)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     overall_time(0.0),
     setup_time(0.0)
 {
@@ -154,7 +157,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   print_header();
   print_dealii_info<Number>(pcout);
-  print_MPI_info(pcout);
+  print_MPI_info(pcout, mpi_comm);
 
   param = param_in;
   param.check_input_parameters();
@@ -164,13 +167,13 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   if(param.triangulation_type == TriangulationType::Distributed)
   {
     triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
+      mpi_comm,
       dealii::Triangulation<dim>::none,
       parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
   else if(param.triangulation_type == TriangulationType::FullyDistributed)
   {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
   }
   else
   {
@@ -187,10 +190,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   set_field_functions(field_functions);
 
   // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param);
+  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
 
   // initialize convection-diffusion operator
-  conv_diff_operator.reset(new DGOperator<dim, Number>(*triangulation, param, postprocessor));
+  conv_diff_operator.reset(
+    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
   conv_diff_operator->setup(periodic_faces, boundary_descriptor, field_functions);
 
   if(param.problem_type == ProblemType::Unsteady)
@@ -198,11 +202,11 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     // initialize time integrator
     if(param.temporal_discretization == TemporalDiscretization::ExplRK)
     {
-      time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param));
+      time_integrator.reset(new TimeIntExplRK<Number>(conv_diff_operator, param, mpi_comm));
     }
     else if(param.temporal_discretization == TemporalDiscretization::BDF)
     {
-      time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param));
+      time_integrator.reset(new TimeIntBDF<Number>(conv_diff_operator, param, mpi_comm));
     }
     else
     {
@@ -216,7 +220,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   else if(param.problem_type == ProblemType::Steady)
   {
     // initialize driver for steady convection-diffusion problems
-    driver_steady.reset(new DriverSteadyProblems<Number>(conv_diff_operator, param));
+    driver_steady.reset(new DriverSteadyProblems<Number>(conv_diff_operator, param, mpi_comm));
     driver_steady->setup();
   }
   else
@@ -225,8 +229,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   }
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-  VectorType const * velocity_ptr = nullptr;
-  VectorType velocity;
+  VectorType const *                                 velocity_ptr = nullptr;
+  VectorType                                         velocity;
 
   // setup solvers in case of BDF time integration or steady problems
   if(param.problem_type == ProblemType::Unsteady)
@@ -249,8 +253,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       }
 
       conv_diff_operator->setup_operators_and_solver(
-        time_integrator_bdf->get_scaling_factor_time_derivative_term(),
-        velocity_ptr);
+        time_integrator_bdf->get_scaling_factor_time_derivative_term(), velocity_ptr);
     }
     else
     {
@@ -268,9 +271,8 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
       velocity_ptr = &velocity;
     }
 
-    conv_diff_operator->setup_operators_and_solver(
-      1.0 /* scaling_factor_time_derivative_term */,
-      velocity_ptr);
+    conv_diff_operator->setup_operators_and_solver(1.0 /* scaling_factor_time_derivative_term */,
+                                                   velocity_ptr);
   }
   else
   {
@@ -342,9 +344,8 @@ Problem<dim, Number>::analyze_computing_times() const
   }
 
   // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data =
-    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
-  double const overall_time_avg = overall_time_data.avg;
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
 
   // wall times
   this->pcout << std::endl << "Wall times:" << std::endl;
@@ -370,8 +371,7 @@ Problem<dim, Number>::analyze_computing_times() const
   double sum_of_substeps = 0.0;
   for(unsigned int i = 0; i < computing_times.size(); ++i)
   {
-    Utilities::MPI::MinMaxAvg data =
-      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
     this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
                 << std::scientific << std::setw(10) << std::right << data.avg << " s  "
                 << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -380,9 +380,8 @@ Problem<dim, Number>::analyze_computing_times() const
     sum_of_substeps += data.avg;
   }
 
-  Utilities::MPI::MinMaxAvg setup_time_data =
-    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
-  double const setup_time_avg = setup_time_data.avg;
+  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
+  double const              setup_time_avg  = setup_time_data.avg;
   this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
               << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -400,7 +399,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
   // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   this->pcout << std::endl
               << "Computational costs (including setup + postprocessing):" << std::endl
@@ -452,6 +451,8 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+
     // set parameters
     ConvDiff::InputParameters param;
     set_input_parameters(param);
@@ -491,9 +492,9 @@ main(int argc, char ** argv)
           std::shared_ptr<ProblemBase<Number>> problem;
 
           if(param.dim == 2)
-            problem.reset(new Problem<2, Number>());
+            problem.reset(new Problem<2, Number>(mpi_comm));
           else if(param.dim == 3)
-            problem.reset(new Problem<3, Number>());
+            problem.reset(new Problem<3, Number>(mpi_comm));
           else
             AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 

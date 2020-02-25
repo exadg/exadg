@@ -27,8 +27,11 @@ public:
   typedef LinearAlgebra::distributed::Vector<MultigridNumber> VectorTypeMG;
 
   CheckMultigrid(Operator const &                underlying_operator_in,
-                 std::shared_ptr<Preconditioner> preconditioner_in)
-    : underlying_operator(underlying_operator_in), preconditioner(preconditioner_in)
+                 std::shared_ptr<Preconditioner> preconditioner_in,
+                 MPI_Comm const &                mpi_comm_in)
+    : underlying_operator(underlying_operator_in),
+      preconditioner(preconditioner_in),
+      mpi_comm(mpi_comm_in)
   {
   }
 
@@ -158,15 +161,15 @@ public:
 
     std::ostringstream filename;
     std::string        name = "smoothing";
-    filename << name << "_Proc" << Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) << ".vtu";
+    filename << name << "_Proc" << Utilities::MPI::this_mpi_process(mpi_comm) << ".vtu";
 
     std::ofstream output(filename.str().c_str());
     data_out.write_vtu(output);
 
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::vector<std::string> filenames;
-      for(unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD); ++i)
+      for(unsigned int i = 0; i < Utilities::MPI::n_mpi_processes(mpi_comm); ++i)
       {
         std::ostringstream filename;
         filename << name << "_Proc" << i << ".vtu";
@@ -183,6 +186,8 @@ private:
   Operator const & underlying_operator;
 
   std::shared_ptr<Preconditioner> preconditioner;
+
+  MPI_Comm mpi_comm;
 };
 
 

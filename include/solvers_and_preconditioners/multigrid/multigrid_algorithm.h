@@ -69,38 +69,41 @@ public:
   }
 
   void
-  print() const
+  print(MPI_Comm const & mpi_comm) const
   {
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-    if(rank)
-      return;
-
-    std::cout << "Wall times [sec] ('overall' includes current level and all coarser levels):"
-              << std::endl
-              << std::endl;
-
-    unsigned int level = max_level;
-    for(std::vector<std::map<std::string, double>>::reverse_iterator it = vec.rbegin();
-        it != vec.rend();
-        ++it)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
-      std::cout << std::setw(6) << "level";
+      int rank;
+      MPI_Comm_rank(mpi_comm, &rank);
 
-      std::map<std::string, double> & map = *it;
-      for(auto iter_map : map)
-        std::cout << std::setw(12) << iter_map.first;
+      if(rank)
+        return;
 
-      std::cout << std::endl;
+      std::cout << "Wall times [sec] ('overall' includes current level and all coarser levels):"
+                << std::endl
+                << std::endl;
 
-      std::cout << std::setw(6) << level;
-      --level;
+      unsigned int level = max_level;
+      for(std::vector<std::map<std::string, double>>::reverse_iterator it = vec.rbegin();
+          it != vec.rend();
+          ++it)
+      {
+        std::cout << std::setw(6) << "level";
 
-      for(auto iter_map : map)
-        std::cout << std::setw(12) << std::scientific << std::setprecision(2) << iter_map.second;
+        std::map<std::string, double> & map = *it;
+        for(auto iter_map : map)
+          std::cout << std::setw(12) << iter_map.first;
 
-      std::cout << std::endl << std::endl;
+        std::cout << std::endl;
+
+        std::cout << std::setw(6) << level;
+        --level;
+
+        for(auto iter_map : map)
+          std::cout << std::setw(12) << std::scientific << std::setprecision(2) << iter_map.second;
+
+        std::cout << std::endl << std::endl;
+      }
     }
   }
 
@@ -122,6 +125,7 @@ public:
                           const MGCoarseGridBase<VectorType> &                 coarse,
                           const MGTransferMF<VectorType> &                     transfer,
                           const MGLevelObject<std::shared_ptr<SmootherType>> & smoother,
+                          const MPI_Comm &                                     comm,
                           const unsigned int                                   n_cycles = 1)
     : minlevel(matrix.min_level()),
       maxlevel(matrix.max_level()),
@@ -133,6 +137,7 @@ public:
       coarse(&coarse, typeid(*this).name()),
       transfer(transfer),
       smoother(&smoother, typeid(*this).name()),
+      mpi_comm(comm),
       n_cycles(n_cycles)
   {
     AssertThrow(n_cycles == 1, ExcNotImplemented());
@@ -157,8 +162,7 @@ public:
   virtual ~MultigridPreconditioner()
   {
 #if ENABLE_TIMING
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
-      timings.print();
+    timings.print(mpi_comm);
 #endif
   }
 
@@ -370,6 +374,8 @@ private:
    * The smoothing object.
    */
   SmartPointer<const MGLevelObject<std::shared_ptr<SmootherType>>> smoother;
+
+  MPI_Comm const & mpi_comm;
 
   const unsigned int n_cycles;
 

@@ -48,7 +48,8 @@ calculate_maximum_vertex_distance(typename Triangulation<dim>::active_cell_itera
  */
 template<int dim>
 inline double
-calculate_aspect_ratio_vertex_distance(Triangulation<dim> const & triangulation)
+calculate_aspect_ratio_vertex_distance(Triangulation<dim> const & triangulation,
+                                       MPI_Comm const &           mpi_comm)
 {
   typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
                                                     endc = triangulation.end();
@@ -69,7 +70,7 @@ calculate_aspect_ratio_vertex_distance(Triangulation<dim> const & triangulation)
     }
   }
 
-  double const global_max_aspect_ratio = Utilities::MPI::max(max_aspect_ratio, MPI_COMM_WORLD);
+  double const global_max_aspect_ratio = Utilities::MPI::max(max_aspect_ratio, mpi_comm);
 
   return global_max_aspect_ratio;
 }

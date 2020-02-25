@@ -130,7 +130,7 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number> >
-construct_postprocessor(Poisson::InputParameters const &param)
+construct_postprocessor(Poisson::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   ConvDiff::PostProcessorData<dim> pp_data;
   pp_data.output_data.write_output = true;
@@ -139,7 +139,7 @@ construct_postprocessor(Poisson::InputParameters const &param)
   pp_data.output_data.degree = param.degree;
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;
-  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data));
+  pp.reset(new ConvDiff::PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

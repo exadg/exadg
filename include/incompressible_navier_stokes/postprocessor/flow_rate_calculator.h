@@ -72,10 +72,10 @@ public:
   typedef VectorizedArray<Number> scalar;
 
   FlowRateCalculator(MatrixFree<dim, Number> const &     matrix_free_in,
-                     const DoFHandler<dim> &             dof_handler_velocity_in,
                      unsigned int const                  dof_index_in,
                      unsigned int const                  quad_index_in,
-                     FlowRateCalculatorData<dim> const & data_in);
+                     FlowRateCalculatorData<dim> const & data_in,
+                     MPI_Comm const &                    mpi_comm_in);
 
   Number
   calculate_flow_rates(VectorType const &                     velocity,
@@ -96,7 +96,7 @@ private:
   unsigned int                        dof_index, quad_index;
   bool                                clear_files;
 
-  MPI_Comm communicator;
+  MPI_Comm const & mpi_comm;
 };
 
 

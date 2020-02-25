@@ -37,8 +37,8 @@ public:
    * @param inplace   create energy spectrum at run time
    *
    */
-  DealSpectrumWrapper(bool write, bool inplace)
-    : write(write), inplace(inplace), s(), h(s), ipol(s), fftc(s), fftw(s)
+  DealSpectrumWrapper(MPI_Comm const & comm, bool write, bool inplace)
+    : comm(comm), write(write), inplace(inplace), s(comm), h(comm,s), ipol(comm, s), fftc(comm, s), fftw(comm, s)
   {
   }
 
@@ -69,15 +69,19 @@ public:
     h.init(tria);
     timer.stop("Init-Map");
 
-    // ... fftw
-    timer.start("Init-FFTW");
-    fftw.init();
-    timer.stop("Init-FFTW");
-
     // ... interpolation
     timer.start("Init-Ipol");
     ipol.init(h);
     timer.stop("Init-Ipol");
+    
+    // FFTW will be called externally
+    if(!inplace)
+      return;
+
+    // ... fftw
+    timer.start("Init-FFTW");
+    fftw.init();
+    timer.stop("Init-FFTW");
 
     // ... permutation
     timer.start("Init-Perm");
@@ -152,6 +156,8 @@ public:
   }
 
 private:
+  MPI_Comm const & comm; 
+    
   // flush flow field to hard drive?
   const bool write;
 

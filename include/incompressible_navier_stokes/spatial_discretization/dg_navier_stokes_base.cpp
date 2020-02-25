@@ -16,7 +16,8 @@ template<int dim, typename Number>
 DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
   parallel::TriangulationBase<dim> const & triangulation_in,
   InputParameters const &                  parameters_in,
-  std::shared_ptr<Postprocessor>           postprocessor_in)
+  std::shared_ptr<Postprocessor>           postprocessor_in,
+  MPI_Comm const &                         mpi_comm_in)
   : dealii::Subscriptor(),
     triangulation(triangulation_in),
     param(parameters_in),
@@ -30,7 +31,8 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     dof_index_first_point(0),
     evaluation_time(0.0),
     postprocessor(postprocessor_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    mpi_comm(mpi_comm_in),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0)
 {
   if(param.mapping == MappingType::Affine)
   {
@@ -73,8 +75,8 @@ DGNavierStokesBase<dim, Number>::setup(
   // ALE formulation with moving mesh
   if(param.ale_formulation)
   {
-    moving_mesh.reset(
-      new MovingMesh<dim, Number>(triangulation, param.degree_u, field_functions->mesh_movement));
+    moving_mesh.reset(new MovingMesh<dim, Number>(
+      triangulation, param.degree_u, field_functions->mesh_movement, mpi_comm));
 
     AssertThrow(
       moving_mesh.get() != 0,
@@ -549,7 +551,7 @@ DGNavierStokesBase<dim, Number>::initialization_pure_dirichlet_bc()
   for(unsigned int d = 0; d < dim; ++d)
     first_point[d] = 0.0;
 
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     typename DoFHandler<dim>::active_cell_iterator first_cell;
     typename DoFHandler<dim>::active_cell_iterator cell = dof_handler_p.begin_active(),
@@ -581,10 +583,10 @@ DGNavierStokesBase<dim, Number>::initialization_pure_dirichlet_bc()
     first_cell->get_dof_indices(dof_indices);
     dof_index_first_point = dof_indices[0];
   }
-  dof_index_first_point = Utilities::MPI::sum(dof_index_first_point, MPI_COMM_WORLD);
+  dof_index_first_point = Utilities::MPI::sum(dof_index_first_point, mpi_comm);
   for(unsigned int d = 0; d < dim; ++d)
   {
-    first_point[d] = Utilities::MPI::sum(first_point[d], MPI_COMM_WORLD);
+    first_point[d] = Utilities::MPI::sum(first_point[d], mpi_comm);
   }
 }
 
@@ -907,7 +909,7 @@ template<int dim, typename Number>
 double
 DGNavierStokesBase<dim, Number>::calculate_minimum_element_length() const
 {
-  return calculate_minimum_vertex_distance(dof_handler_u.get_triangulation());
+  return calculate_minimum_vertex_distance(dof_handler_u.get_triangulation(), mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -923,7 +925,8 @@ DGNavierStokesBase<dim, Number>::calculate_time_step_cfl(VectorType const & velo
                                                     cfl,
                                                     param.degree_u,
                                                     exponent_degree,
-                                                    param.adaptive_time_stepping_cfl_type);
+                                                    param.adaptive_time_stepping_cfl_type,
+                                                    mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -953,7 +956,7 @@ DGNavierStokesBase<dim, Number>::shift_pressure(VectorType & pressure, double co
   double       current = 0.;
   if(pressure.locally_owned_elements().is_element(dof_index_first_point))
     current = pressure(dof_index_first_point);
-  current = Utilities::MPI::sum(current, MPI_COMM_WORLD);
+  current = Utilities::MPI::sum(current, mpi_comm);
   pressure.add(exact - current, vec1);
 }
 
@@ -1095,7 +1098,7 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
 
   typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
 
-  preconditioner.reset(new MULTIGRID());
+  preconditioner.reset(new MULTIGRID(this->mpi_comm));
 
   std::shared_ptr<MULTIGRID> mg_preconditioner =
     std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
@@ -1445,7 +1448,7 @@ DGNavierStokesBase<dim, Number>::setup_projection_solver()
     {
       typedef MultigridPreconditionerProjection<dim, Number, MultigridNumber> MULTIGRID;
 
-      preconditioner_projection.reset(new MULTIGRID());
+      preconditioner_projection.reset(new MULTIGRID(this->mpi_comm));
 
       std::shared_ptr<MULTIGRID> mg_preconditioner =
         std::dynamic_pointer_cast<MULTIGRID>(preconditioner_projection);

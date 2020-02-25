@@ -393,9 +393,9 @@ public:
 
   typedef LinearAlgebra::distributed::Vector<double> VectorType;
 
-  PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel)
+  PostProcessorTurbulentChannel(PostProcessorDataTurbulentChannel<dim> const & pp_data_turb_channel, MPI_Comm const &mpi_comm)
     :
-    Base(pp_data_turb_channel.pp_data),
+    Base(pp_data_turb_channel.pp_data, mpi_comm),
     turb_ch_data(pp_data_turb_channel.turb_ch_data)
   {}
 
@@ -429,7 +429,7 @@ public:
 
 template<int dim, typename Number>
 std::shared_ptr<CompNS::PostProcessorBase<dim, Number> >
-construct_postprocessor(CompNS::InputParameters const &param)
+construct_postprocessor(CompNS::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   CompNS::PostProcessorData<dim> pp_data;
 
@@ -462,7 +462,7 @@ construct_postprocessor(CompNS::InputParameters const &param)
   pp_data_turb_ch.turb_ch_data.filename_prefix = OUTPUT_FOLDER + FILENAME;
 
   std::shared_ptr<CompNS::PostProcessorBase<dim, Number> > pp;
-  pp.reset(new PostProcessorTurbulentChannel<dim, Number>(pp_data_turb_ch));
+  pp.reset(new PostProcessorTurbulentChannel<dim, Number>(pp_data_turb_ch, mpi_comm));
 
   return pp;
 }

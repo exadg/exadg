@@ -30,7 +30,7 @@ public:
   InputParameters();
 
   void
-  check_input_parameters();
+  check_input_parameters(ConditionalOStream & pcout);
 
   bool
   convective_problem() const;

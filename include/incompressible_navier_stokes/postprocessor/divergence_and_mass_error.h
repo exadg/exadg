@@ -62,7 +62,7 @@ public:
 
   typedef DivergenceAndMassErrorCalculator<dim, Number> This;
 
-  DivergenceAndMassErrorCalculator();
+  DivergenceAndMassErrorCalculator(MPI_Comm const & comm);
 
   void
   setup(MatrixFree<dim, Number> const & matrix_free_data_in,
@@ -120,6 +120,8 @@ private:
 
   void
   analyze_div_and_mass_error_steady(VectorType const & velocity);
+
+  MPI_Comm const & mpi_comm;
 
   bool   clear_files_mass_error;
   int    number_of_samples;

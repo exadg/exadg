@@ -33,7 +33,7 @@ public:
 
   typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
 
-  MultigridPreconditioner() : mesh_is_moving(false)
+  MultigridPreconditioner(MPI_Comm const & mpi_comm) : Base(mpi_comm), mesh_is_moving(false)
   {
   }
 

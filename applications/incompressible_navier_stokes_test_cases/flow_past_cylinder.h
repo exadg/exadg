@@ -8,9 +8,6 @@
 #ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 #define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_FLOW_PAST_CYLINDER_H_
 
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/fully_distributed_tria_util.h>
-
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/functionalities/linear_interpolation.h"
 
@@ -326,8 +323,7 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
   if(auto tria_fully_dist = dynamic_cast<parallel::fullydistributed::Triangulation<dim> *>(&*triangulation))
   {
     const auto construction_data =
-        parallel::fullydistributed::Utilities::create_construction_data_from_triangulation_in_groups<dim,
-                                                                                                     dim>(
+        TriangulationDescription::Utilities::create_description_from_triangulation_in_groups<dim, dim>(
           [&](dealii::Triangulation<dim, dim> & tria) mutable {
             do_create_grid_and_set_boundary_ids(tria, n_refine_space, periodic_faces);
           },
@@ -561,7 +557,7 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   PostProcessorData<dim> pp_data;
 
@@ -611,7 +607,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.pressure_difference_data.filename = OUTPUT_FOLDER + OUTPUT_NAME_DELTA_P;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

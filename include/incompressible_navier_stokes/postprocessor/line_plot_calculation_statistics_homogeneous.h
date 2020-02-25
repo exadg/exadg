@@ -43,7 +43,8 @@ public:
 
   LinePlotCalculatorStatisticsHomogeneous(DoFHandler<dim> const & dof_handler_velocity_in,
                                           DoFHandler<dim> const & dof_handler_pressure_in,
-                                          Mapping<dim> const &    mapping_in);
+                                          Mapping<dim> const &    mapping_in,
+                                          MPI_Comm const &        mpi_comm_in);
 
   void
   setup(LinePlotData<dim> const & data_in);

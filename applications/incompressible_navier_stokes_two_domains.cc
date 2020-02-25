@@ -69,7 +69,7 @@ template<int dim, typename Number>
 class Problem : public ProblemBase<Number>
 {
 public:
-  Problem();
+  Problem(MPI_Comm const & mpi_comm);
 
   void
   setup(InputParameters const & param_1_in, InputParameters const & param_2_in);
@@ -89,6 +89,8 @@ private:
 
   void
   synchronize_time_step_size() const;
+
+  MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
 
@@ -143,8 +145,9 @@ private:
 };
 
 template<int dim, typename Number>
-Problem<dim, Number>::Problem()
-  : pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0),
+Problem<dim, Number>::Problem(MPI_Comm const & comm)
+  : mpi_comm(comm),
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
     use_adaptive_time_stepping(false),
     overall_time(0.0),
     setup_time(0.0)
@@ -233,14 +236,14 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
   print_header();
   print_dealii_info<Number>(pcout);
-  print_MPI_info(pcout);
+  print_MPI_info(pcout, mpi_comm);
 
   param_1 = param_1_in;
-  param_1.check_input_parameters();
+  param_1.check_input_parameters(pcout);
   param_1.print(pcout, "List of input parameters for DOMAIN 1:");
 
   param_2 = param_2_in;
-  param_2.check_input_parameters();
+  param_2.check_input_parameters(pcout);
   param_2.print(pcout, "List of input parameters for DOMAIN 2:");
 
   AssertThrow(param_1.dim == param_2.dim, ExcMessage("Invalid parameters."));
@@ -249,13 +252,13 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   if(param_1.triangulation_type == TriangulationType::Distributed)
   {
     triangulation_1.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
+      mpi_comm,
       dealii::Triangulation<dim>::none,
       parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
   else if(param_1.triangulation_type == TriangulationType::FullyDistributed)
   {
-    triangulation_1.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+    triangulation_1.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
   }
   else
   {
@@ -265,13 +268,13 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   if(param_2.triangulation_type == TriangulationType::Distributed)
   {
     triangulation_2.reset(new parallel::distributed::Triangulation<dim>(
-      MPI_COMM_WORLD,
+      mpi_comm,
       dealii::Triangulation<dim>::none,
       parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
   else if(param_2.triangulation_type == TriangulationType::FullyDistributed)
   {
-    triangulation_2.reset(new parallel::fullydistributed::Triangulation<dim>(MPI_COMM_WORLD));
+    triangulation_2.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
   }
   else
   {
@@ -318,8 +321,8 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   // this function has to be defined in the header file
   // that implements all problem specific things like
   // parameters, geometry, boundary conditions, etc.
-  postprocessor_1 = construct_postprocessor<dim, Number>(param_1, 1);
-  postprocessor_2 = construct_postprocessor<dim, Number>(param_2, 2);
+  postprocessor_1 = construct_postprocessor<dim, Number>(param_1, mpi_comm, 1);
+  postprocessor_2 = construct_postprocessor<dim, Number>(param_2, mpi_comm, 2);
 
   // initialize navier_stokes_operation_1 (DOMAIN 1)
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
@@ -327,40 +330,41 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     std::shared_ptr<DGCoupled> navier_stokes_operation_coupled_1;
 
     navier_stokes_operation_coupled_1.reset(
-      new DGCoupled(*triangulation_1, param_1, postprocessor_1));
+      new DGCoupled(*triangulation_1, param_1, postprocessor_1, mpi_comm));
 
     navier_stokes_operation_1 = navier_stokes_operation_coupled_1;
 
-    time_integrator_1.reset(new TimeIntCoupled(navier_stokes_operation_coupled_1,
-                                               navier_stokes_operation_coupled_1,
-                                               param_1));
+    time_integrator_1.reset(new TimeIntCoupled(
+      navier_stokes_operation_coupled_1, navier_stokes_operation_coupled_1, param_1, mpi_comm));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting_1;
 
     navier_stokes_operation_dual_splitting_1.reset(
-      new DGDualSplitting(*triangulation_1, param_1, postprocessor_1));
+      new DGDualSplitting(*triangulation_1, param_1, postprocessor_1, mpi_comm));
 
     navier_stokes_operation_1 = navier_stokes_operation_dual_splitting_1;
 
     time_integrator_1.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_1,
                                                      navier_stokes_operation_dual_splitting_1,
-                                                     param_1));
+                                                     param_1,
+                                                     mpi_comm));
   }
   else if(this->param_1.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction_1;
 
     navier_stokes_operation_pressure_correction_1.reset(
-      new DGPressureCorrection(*triangulation_1, param_1, postprocessor_1));
+      new DGPressureCorrection(*triangulation_1, param_1, postprocessor_1, mpi_comm));
 
     navier_stokes_operation_1 = navier_stokes_operation_pressure_correction_1;
 
     time_integrator_1.reset(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_1,
                                     navier_stokes_operation_pressure_correction_1,
-                                    param_1));
+                                    param_1,
+                                    mpi_comm));
   }
   else
   {
@@ -373,40 +377,41 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     std::shared_ptr<DGCoupled> navier_stokes_operation_coupled_2;
 
     navier_stokes_operation_coupled_2.reset(
-      new DGCoupled(*triangulation_2, param_2, postprocessor_2));
+      new DGCoupled(*triangulation_2, param_2, postprocessor_2, mpi_comm));
 
     navier_stokes_operation_2 = navier_stokes_operation_coupled_2;
 
-    time_integrator_2.reset(new TimeIntCoupled(navier_stokes_operation_coupled_2,
-                                               navier_stokes_operation_coupled_2,
-                                               param_2));
+    time_integrator_2.reset(new TimeIntCoupled(
+      navier_stokes_operation_coupled_2, navier_stokes_operation_coupled_2, param_2, mpi_comm));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
   {
     std::shared_ptr<DGDualSplitting> navier_stokes_operation_dual_splitting_2;
 
     navier_stokes_operation_dual_splitting_2.reset(
-      new DGDualSplitting(*triangulation_2, param_2, postprocessor_2));
+      new DGDualSplitting(*triangulation_2, param_2, postprocessor_2, mpi_comm));
 
     navier_stokes_operation_2 = navier_stokes_operation_dual_splitting_2;
 
     time_integrator_2.reset(new TimeIntDualSplitting(navier_stokes_operation_dual_splitting_2,
                                                      navier_stokes_operation_dual_splitting_2,
-                                                     param_2));
+                                                     param_2,
+                                                     mpi_comm));
   }
   else if(this->param_2.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
   {
     std::shared_ptr<DGPressureCorrection> navier_stokes_operation_pressure_correction_2;
 
     navier_stokes_operation_pressure_correction_2.reset(
-      new DGPressureCorrection(*triangulation_2, param_2, postprocessor_2));
+      new DGPressureCorrection(*triangulation_2, param_2, postprocessor_2, mpi_comm));
 
     navier_stokes_operation_2 = navier_stokes_operation_pressure_correction_2;
 
     time_integrator_2.reset(
       new TimeIntPressureCorrection(navier_stokes_operation_pressure_correction_2,
                                     navier_stokes_operation_pressure_correction_2,
-                                    param_2));
+                                    param_2,
+                                    mpi_comm));
   }
   else
   {
@@ -521,9 +526,8 @@ Problem<dim, Number>::analyze_computing_times(InputParameters const &        par
                                               std::shared_ptr<TimeInt> const time_integrator) const
 {
   // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data =
-    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
-  double const overall_time_avg = overall_time_data.avg;
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
 
   std::vector<std::string> names;
   std::vector<double>      computing_times;
@@ -540,8 +544,7 @@ Problem<dim, Number>::analyze_computing_times(InputParameters const &        par
   double sum_of_substeps = 0.0;
   for(unsigned int i = 0; i < computing_times.size(); ++i)
   {
-    Utilities::MPI::MinMaxAvg data =
-      Utilities::MPI::min_max_avg(computing_times[i], MPI_COMM_WORLD);
+    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
     this->pcout << "  " << std::setw(length) << std::left << names[i] << std::setprecision(2)
                 << std::scientific << std::setw(10) << std::right << data.avg << " s  "
                 << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -575,9 +578,8 @@ Problem<dim, Number>::analyze_computing_times() const
   analyze_iterations(param_2, time_integrator_2);
 
   // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data =
-    Utilities::MPI::min_max_avg(overall_time, MPI_COMM_WORLD);
-  double const overall_time_avg = overall_time_data.avg;
+  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
+  double const              overall_time_avg  = overall_time_data.avg;
 
   this->pcout << std::endl << "Wall times for incompressible Navier-Stokes solver:" << std::endl;
 
@@ -593,9 +595,8 @@ Problem<dim, Number>::analyze_computing_times() const
 
   this->pcout << std::endl;
 
-  Utilities::MPI::MinMaxAvg setup_time_data =
-    Utilities::MPI::min_max_avg(setup_time, MPI_COMM_WORLD);
-  double const setup_time_avg = setup_time_data.avg;
+  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
+  double const              setup_time_avg  = setup_time_data.avg;
   this->pcout << "  " << std::setw(length) << std::left << "Setup" << std::setprecision(2)
               << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
               << std::setprecision(2) << std::fixed << std::setw(6) << std::right
@@ -613,7 +614,7 @@ Problem<dim, Number>::analyze_computing_times() const
               << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
 
   // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD);
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
 
   this->pcout << std::endl
               << "Computational costs (both domains, including setup + postprocessing):"
@@ -661,6 +662,8 @@ main(int argc, char ** argv)
   {
     Utilities::MPI::MPI_InitFinalize mpi(argc, argv, 1);
 
+    MPI_Comm mpi_comm(MPI_COMM_WORLD);
+
     InputParameters param_1, param_2;
     set_input_parameters(param_1, 1);
     set_input_parameters(param_2, 2);
@@ -674,9 +677,9 @@ main(int argc, char ** argv)
     std::shared_ptr<ProblemBase<Number>> problem;
 
     if(param_1.dim == 2)
-      problem.reset(new Problem<2, Number>());
+      problem.reset(new Problem<2, Number>(mpi_comm));
     else if(param_1.dim == 3)
-      problem.reset(new Problem<3, Number>());
+      problem.reset(new Problem<3, Number>(mpi_comm));
     else
       AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
 

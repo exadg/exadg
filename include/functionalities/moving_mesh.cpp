@@ -7,10 +7,12 @@
 template<int dim, typename Number>
 MovingMesh<dim, Number>::MovingMesh(parallel::TriangulationBase<dim> const & triangulation_in,
                                     unsigned int const                       polynomial_degree_in,
-                                    std::shared_ptr<Function<dim>> const     function)
+                                    std::shared_ptr<Function<dim>> const     function_in,
+                                    MPI_Comm const &                         mpi_comm_in)
   : polynomial_degree(polynomial_degree_in),
     triangulation(triangulation_in),
-    mesh_movement_function(function),
+    mesh_movement_function(function_in),
+    mpi_comm(mpi_comm_in),
     fe(new FESystem<dim>(FE_Q<dim>(polynomial_degree), dim)),
 #ifndef MAPPING_Q_CACHE
     grid_coordinates(triangulation_in.n_global_levels()),
@@ -92,12 +94,8 @@ MovingMesh<dim, Number>::move_mesh_analytical(double const                  time
     IndexSet relevant_dofs_grid;
     DoFTools::extract_locally_relevant_level_dofs(dof_handler, level, relevant_dofs_grid);
 
-    initial_position.reinit(dof_handler.locally_owned_mg_dofs(level),
-                            relevant_dofs_grid,
-                            MPI_COMM_WORLD);
-    displacement.reinit(dof_handler.locally_owned_mg_dofs(level),
-                        relevant_dofs_grid,
-                        MPI_COMM_WORLD);
+    initial_position.reinit(dof_handler.locally_owned_mg_dofs(level), relevant_dofs_grid, mpi_comm);
+    displacement.reinit(dof_handler.locally_owned_mg_dofs(level), relevant_dofs_grid, mpi_comm);
 
     FEValues<dim> fe_values(mapping,
                             *fe,
@@ -139,7 +137,7 @@ MovingMesh<dim, Number>::fill_grid_coordinates_vector(VectorType &            ve
   IndexSet relevant_dofs_grid;
   DoFTools::extract_locally_relevant_dofs(dof_handler, relevant_dofs_grid);
 
-  vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, MPI_COMM_WORLD);
+  vector.reinit(dof_handler.locally_owned_dofs(), relevant_dofs_grid, mpi_comm);
 
   FiniteElement<dim> const & fe = dof_handler.get_fe();
 

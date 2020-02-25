@@ -28,7 +28,8 @@ public:
   TimeIntBase(double const &      start_time_,
               double const &      end_time_,
               unsigned int const  max_number_of_time_steps_,
-              RestartData const & restart_data_);
+              RestartData const & restart_data_,
+              MPI_Comm const &    mpi_comm_);
 
   virtual ~TimeIntBase()
   {
@@ -198,6 +199,8 @@ protected:
    * Restart.
    */
   RestartData const restart_data;
+
+  MPI_Comm const & mpi_comm;
 
 private:
   /*

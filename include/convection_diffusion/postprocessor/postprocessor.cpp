@@ -10,8 +10,12 @@
 namespace ConvDiff
 {
 template<int dim, typename Number>
-PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in)
-  : pp_data(pp_data_in)
+PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & pp_data_in,
+                                          MPI_Comm const &               mpi_comm_in)
+  : pp_data(pp_data_in),
+    mpi_comm(mpi_comm_in),
+    output_generator(mpi_comm_in),
+    error_calculator(mpi_comm_in)
 {
 }
 

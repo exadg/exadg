@@ -39,7 +39,9 @@ public:
 
   typedef Interface::OperatorBase<Number> InterfaceBase;
 
-  TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in, InputParameters const & param_in);
+  TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
+             InputParameters const &,
+             MPI_Comm const & mpi_comm_in);
 
   virtual ~TimeIntBDF()
   {

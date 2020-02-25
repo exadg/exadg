@@ -19,12 +19,12 @@ using namespace dealii;
 
 template<int dim, typename Number>
 void
-my_point_value(Mapping<dim> const &                                   mapping,
+my_point_value(Vector<Number> &                                       value,
+               Mapping<dim> const &                                   mapping,
                DoFHandler<dim> const &                                dof_handler,
                LinearAlgebra::distributed::Vector<Number> const &     solution,
                typename DoFHandler<dim>::active_cell_iterator const & cell,
-               Point<dim> const &                                     point_in_ref_coord,
-               Vector<Number> &                                       value)
+               Point<dim> const &                                     point_in_ref_coord)
 {
   Assert(GeometryInfo<dim>::distance_to_unit_cell(point_in_ref_coord) < 1e-10, ExcInternalError());
 
@@ -44,11 +44,12 @@ my_point_value(Mapping<dim> const &                                   mapping,
 template<int dim, typename Number>
 void
 evaluate_scalar_quantity_in_point(
+  Number &                                           solution_value,
   DoFHandler<dim> const &                            dof_handler,
   Mapping<dim> const &                               mapping,
   LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
   Point<dim> const &                                 point,
-  Number &                                           solution_value)
+  MPI_Comm const &                                   mpi_comm)
 {
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
@@ -69,7 +70,7 @@ evaluate_scalar_quantity_in_point(
     if(cell->first->is_locally_owned())
     {
       Vector<Number> value(1);
-      my_point_value(mapping, dof_handler, numerical_solution, cell->first, cell->second, value);
+      my_point_value(value, mapping, dof_handler, numerical_solution, cell->first, cell->second);
 
       solution_value += value(0);
       ++counter;
@@ -77,21 +78,21 @@ evaluate_scalar_quantity_in_point(
   }
 
   // parallel computations: add results of all processors and calculate mean value
-  counter = Utilities::MPI::sum(counter, MPI_COMM_WORLD);
+  counter = Utilities::MPI::sum(counter, mpi_comm);
   AssertThrow(counter > 0, ExcMessage("No points found."));
 
-  solution_value = Utilities::MPI::sum(solution_value, MPI_COMM_WORLD);
+  solution_value = Utilities::MPI::sum(solution_value, mpi_comm);
   solution_value /= (double)counter;
 }
 
 template<int dim, typename Number>
-void
-evaluate_vectorial_quantity_in_point(
+void evaluate_vectorial_quantity_in_point(
+  Tensor<1, dim, Number> &                           solution_value,
   DoFHandler<dim> const &                            dof_handler,
   Mapping<dim> const &                               mapping,
   LinearAlgebra::distributed::Vector<Number> const & numerical_solution,
   Point<dim> const &                                 point,
-  Tensor<1, dim, Number> &                           solution_value)
+  MPI_Comm const &                                   mpi_comm)
 {
   // processor local variables: initialize with zeros since we add values to these variables
   unsigned int counter = 0;
@@ -112,7 +113,7 @@ evaluate_vectorial_quantity_in_point(
     if(cell->first->is_locally_owned())
     {
       Vector<Number> value(dim);
-      my_point_value(mapping, dof_handler, numerical_solution, cell->first, cell->second, value);
+      my_point_value(value, mapping, dof_handler, numerical_solution, cell->first, cell->second);
 
       for(unsigned int d = 0; d < dim; ++d)
         solution_value[d] += value(d);
@@ -122,11 +123,11 @@ evaluate_vectorial_quantity_in_point(
   }
 
   // parallel computations: add results of all processors and calculate mean value
-  counter = Utilities::MPI::sum(counter, MPI_COMM_WORLD);
+  counter = Utilities::MPI::sum(counter, mpi_comm);
   AssertThrow(counter > 0, ExcMessage("No points found."));
 
   for(unsigned int d = 0; d < dim; ++d)
-    solution_value[d] = Utilities::MPI::sum(solution_value[d], MPI_COMM_WORLD);
+    solution_value[d] = Utilities::MPI::sum(solution_value[d], mpi_comm);
   solution_value /= (double)counter;
 }
 

@@ -69,15 +69,6 @@ linear_interpolation_2d_cartesian(Point<dim> const &                          po
   // make sure that point does not exceed bounds
   Point<dim> p = point;
 
-  if(p[1] < y_values[0])
-    p[1] = y_values[0];
-  if(p[1] > y_values[n_points_y - 1])
-    p[1] = y_values[n_points_y - 1];
-  if(p[2] < z_values[0])
-    p[2] = z_values[0];
-  if(p[2] > z_values[n_points_z - 1])
-    p[2] = z_values[n_points_z - 1];
-
   AssertThrow((y_values[0] - tol < p[1]) && (p[1] < y_values[n_points_y - 1] + tol) &&
                 (z_values[0] - tol < p[2]) && (p[2] < z_values[n_points_z - 1] + tol),
               ExcMessage("invalid point found."));

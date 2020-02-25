@@ -21,7 +21,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::OperatorBase()
     is_dg(true),
     level(numbers::invalid_unsigned_int),
     block_diagonal_preconditioner_is_initialized(false),
-    n_mpi_processes(Utilities::MPI::n_mpi_processes(MPI_COMM_WORLD))
+    n_mpi_processes(0)
 {
 }
 
@@ -78,6 +78,24 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   // argument numbers::invalid_unsigned_int corresponds to the default
   // value is_mg = false
   this->is_mg = (this->level != numbers::invalid_unsigned_int);
+
+  // initialize n_mpi_proceses
+  DoFHandler<dim> const & dof_handler = this->matrix_free->get_dof_handler();
+
+  MPI_Comm comm;
+
+  // extract communicator
+  {
+    auto tria =
+      dynamic_cast<parallel::TriangulationBase<dim> const *>(&dof_handler.get_triangulation());
+
+    if(tria != NULL)
+      comm = tria->get_communicator();
+    else // not distributed triangulation
+      comm = MPI_COMM_SELF;
+  }
+
+  n_mpi_processes = Utilities::MPI::n_mpi_processes(comm);
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>

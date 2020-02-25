@@ -10,6 +10,8 @@ main(int argc, char ** argv)
 {
   using namespace dealspectrum;
 
+  MPI_Comm comm = MPI_COMM_WORLD;
+  
   // init MPI...
   MPI_Init(&argc, &argv);
   fftw_mpi_init();
@@ -58,15 +60,15 @@ main(int argc, char ** argv)
     lower_limit = stof(map["l"]);
 
   // setup...
-  Setup s;
+  Setup s(comm);
   // ... mapper
-  Bijection h(s);
+  Bijection h(comm, s);
   // ... interpolator
-  Interpolator ipol(s);
+  Interpolator ipol(comm, s);
   // ... permuter
-  Permutator fftc(s);
+  Permutator fftc(comm, s);
   // ... fft-wrapper
-  SpectralAnalysis fftw(s);
+  SpectralAnalysis fftw(comm, s);
 
   // loop over all provided files...
   for(int i = 1; i < argc; i++)

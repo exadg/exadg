@@ -32,7 +32,8 @@ public:
    */
   DGNavierStokesProjectionMethods(parallel::TriangulationBase<dim> const & triangulation,
                                   InputParameters const &                  parameters,
-                                  std::shared_ptr<Postprocessor>           postprocessor);
+                                  std::shared_ptr<Postprocessor>           postprocessor,
+                                  MPI_Comm const &                         mpi_comm);
 
   /*
    * Destructor.

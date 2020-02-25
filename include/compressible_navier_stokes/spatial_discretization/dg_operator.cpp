@@ -10,9 +10,10 @@
 namespace CompNS
 {
 template<int dim, typename Number>
-DGOperator<dim, Number>::DGOperator(parallel::TriangulationBase<dim> const & triangulation,
+DGOperator<dim, Number>::DGOperator(parallel::TriangulationBase<dim> const & triangulation_in,
                                     InputParameters const &                  param_in,
-                                    std::shared_ptr<Postprocessor>           postprocessor_in)
+                                    std::shared_ptr<Postprocessor>           postprocessor_in,
+                                    MPI_Comm const &                         mpi_comm_in)
   : dealii::Subscriptor(),
     param(param_in),
     fe(new FESystem<dim>(FE_DGQ<dim>(param_in.degree), dim + 2)),
@@ -21,10 +22,11 @@ DGOperator<dim, Number>::DGOperator(parallel::TriangulationBase<dim> const & tri
     mapping_degree(1),
     n_q_points_conv(param.degree + 1),
     n_q_points_visc(param.degree + 1),
-    dof_handler(triangulation),
-    dof_handler_vector(triangulation),
-    dof_handler_scalar(triangulation),
+    dof_handler(triangulation_in),
+    dof_handler_vector(triangulation_in),
+    dof_handler_scalar(triangulation_in),
     postprocessor(postprocessor_in),
+    mpi_comm(mpi_comm_in),
     wall_time_operator_evaluation(0.0)
 {
   // Mapping
@@ -72,7 +74,7 @@ DGOperator<dim, Number>::setup(
   std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
   std::shared_ptr<FieldFunctions<dim>>           field_functions_in)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
   pcout << std::endl << "Setup compressible Navier-Stokes DG operator ..." << std::endl;
 
   boundary_descriptor_density  = boundary_descriptor_density_in;
@@ -351,7 +353,7 @@ template<int dim, typename Number>
 double
 DGOperator<dim, Number>::calculate_minimum_element_length() const
 {
-  return calculate_minimum_vertex_distance(dof_handler.get_triangulation());
+  return calculate_minimum_vertex_distance(dof_handler.get_triangulation(), mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -372,7 +374,7 @@ DGOperator<dim, Number>::create_dofs()
 
   unsigned int ndofs_per_cell = Utilities::pow(param.degree + 1, dim) * (dim + 2);
 
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   pcout << std::endl
         << "Discontinuous Galerkin finite element discretization:" << std::endl

@@ -32,7 +32,10 @@ class Setup
 {
 public:
   // length of header (8 ints)
-  const int HEADER_LENGTH = 8;
+  static const int HEADER_LENGTH = 8;
+  
+  MPI_Comm const & comm;
+  
   // is initialized?
   bool initialized;
   // file type (0) sfc + cell-wise (1) row-wise
@@ -61,12 +64,12 @@ public:
   /**
    * Constructor
    */
-  Setup() : initialized(false), points_dst(0)
+  Setup(MPI_Comm const & comm) : comm(comm), initialized(false), points_dst(0)
   {
     // extract mpi-rank and ...
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_rank(comm, &rank);
     // ... mpi-size
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    MPI_Comm_size(comm, &size);
   }
 
   /**
@@ -100,9 +103,9 @@ public:
   readHeader(char *& filename)
   {
     FILE * fp;
-    int    crit[5];
+    int    crit[1+HEADER_LENGTH];
     crit[0] = 0;
-
+    
     if(this->rank == 0)
     {
       // read header only by rank 0 ...
@@ -119,9 +122,9 @@ public:
         crit[0] = 0;
       }
     }
-
+    
     // broadcast header to all processes
-    MPI_Bcast(&crit, 5, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&crit, 5, MPI_INT, 0, comm);
 
     if(this->initialized)
     {
@@ -142,7 +145,7 @@ public:
       if(this->points_dst == 0)
         this->points_dst = this->points_src; // equal if nothing specified
     }
-
+    
     // success or failure?
     return crit[0];
   }
@@ -187,7 +190,7 @@ public:
     }
 
     // synchronize all processes (not necessary)
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(comm);
   }
 };
 

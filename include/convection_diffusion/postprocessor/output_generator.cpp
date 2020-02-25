@@ -21,7 +21,8 @@ write_output(OutputDataBase const &  output_data,
              DoFHandler<dim> const & dof_handler,
              Mapping<dim> const &    mapping,
              VectorType const &      solution_vector,
-             unsigned int const      output_counter)
+             unsigned int const      output_counter,
+             MPI_Comm const &        mpi_comm)
 {
   std::string folder = output_data.output_folder, file = output_data.output_name;
 
@@ -35,7 +36,7 @@ write_output(OutputDataBase const &  output_data,
   data_out.add_data_vector(solution_vector, "solution");
   data_out.build_patches(mapping, output_data.degree, DataOut<dim>::curved_inner_cells);
 
-  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, 4);
+  data_out.write_vtu_with_pvtu_record(folder, file, output_counter, mpi_comm, 4);
 
   // write surface mesh
   if(output_data.write_surface_mesh)
@@ -45,12 +46,14 @@ write_output(OutputDataBase const &  output_data,
                        output_data.degree,
                        folder,
                        file + "_surface",
-                       output_counter);
+                       output_counter,
+                       mpi_comm);
   }
 }
 
 template<int dim, typename Number>
-OutputGenerator<dim, Number>::OutputGenerator() : output_counter(0), reset_counter(true)
+OutputGenerator<dim, Number>::OutputGenerator(MPI_Comm const & comm)
+  : mpi_comm(comm), output_counter(0), reset_counter(true)
 {
 }
 
@@ -74,7 +77,8 @@ OutputGenerator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_in,
   {
     write_boundary_IDs(dof_handler->get_triangulation(),
                        output_data.output_folder,
-                       output_data.output_name);
+                       output_data.output_name,
+                       mpi_comm);
   }
 }
 
@@ -84,7 +88,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
                                        double const &     time,
                                        int const &        time_step_number)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   if(output_data.write_output == true)
   {
@@ -113,7 +117,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
               << "OUTPUT << Write data at time t = " << std::scientific << std::setprecision(4)
               << time << std::endl;
 
-        write_output<dim>(output_data, *dof_handler, *mapping, solution, output_counter);
+        write_output<dim>(output_data, *dof_handler, *mapping, solution, output_counter, mpi_comm);
 
         ++output_counter;
       }
@@ -124,7 +128,7 @@ OutputGenerator<dim, Number>::evaluate(VectorType const & solution,
             << "OUTPUT << Write " << (output_counter == 0 ? "initial" : "solution") << " data"
             << std::endl;
 
-      write_output<dim>(output_data, *dof_handler, *mapping, solution, output_counter);
+      write_output<dim>(output_data, *dof_handler, *mapping, solution, output_counter, mpi_comm);
 
       ++output_counter;
     }

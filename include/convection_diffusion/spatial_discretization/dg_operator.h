@@ -60,7 +60,8 @@ public:
    */
   DGOperator(parallel::TriangulationBase<dim> const &        triangulation,
              InputParameters const &                         param_in,
-             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in);
+             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+             MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -367,6 +368,11 @@ private:
   std::shared_ptr<PreconditionerBase<Number>> preconditioner;
 
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
+
+  /*
+   * MPI
+   */
+  MPI_Comm const & mpi_comm;
 
   /*
    * Output to screen.

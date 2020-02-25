@@ -13,7 +13,8 @@
 
 template<int dim, typename VectorType>
 double
-calculate_error(bool const &                         relative_error,
+calculate_error(MPI_Comm const &                     mpi_comm,
+                bool const &                         relative_error,
                 DoFHandler<dim> const &              dof_handler,
                 Mapping<dim> const &                 mapping,
                 VectorType const &                   numerical_solution,
@@ -39,8 +40,7 @@ calculate_error(bool const &                         relative_error,
                                                 additional_quadrature_points),
                                     norm_type);
 
-  double error_norm =
-    std::sqrt(Utilities::MPI::sum(error_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
+  double error_norm = std::sqrt(Utilities::MPI::sum(error_norm_per_cell.norm_sqr(), mpi_comm));
 
   if(relative_error == true)
   {
@@ -58,7 +58,7 @@ calculate_error(bool const &                         relative_error,
                                       norm_type);
 
     double solution_norm =
-      std::sqrt(Utilities::MPI::sum(solution_norm_per_cell.norm_sqr(), MPI_COMM_WORLD));
+      std::sqrt(Utilities::MPI::sum(solution_norm_per_cell.norm_sqr(), mpi_comm));
 
     AssertThrow(solution_norm > 1.e-15,
                 ExcMessage("Cannot compute relative error since norm of solution tends to zero."));
@@ -74,8 +74,12 @@ calculate_error(bool const &                         relative_error,
 }
 
 template<int dim, typename Number>
-ErrorCalculator<dim, Number>::ErrorCalculator()
-  : error_counter(0), reset_counter(true), clear_files_L2(true), clear_files_H1_seminorm(true)
+ErrorCalculator<dim, Number>::ErrorCalculator(MPI_Comm const & comm)
+  : mpi_comm(comm),
+    error_counter(0),
+    reset_counter(true),
+    clear_files_L2(true),
+    clear_files_H1_seminorm(true)
 {
 }
 
@@ -96,7 +100,7 @@ ErrorCalculator<dim, Number>::evaluate(VectorType const & solution,
                                        double const &     time,
                                        int const &        time_step_number)
 {
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
 
   if(error_data.analytical_solution_available == true)
   {
@@ -146,7 +150,8 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
 {
   bool relative = error_data.calculate_relative_errors;
 
-  double const error = calculate_error<dim>(relative,
+  double const error = calculate_error<dim>(mpi_comm,
+                                            relative,
                                             *dof_handler,
                                             *mapping,
                                             solution_vector,
@@ -154,14 +159,14 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                             time,
                                             VectorTools::L2_norm);
 
-  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+  ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
   pcout << ((relative == true) ? "  Relative " : "  Absolute ")
         << "error (L2-norm): " << std::scientific << std::setprecision(5) << error << std::endl;
 
   if(error_data.write_errors_to_file)
   {
     // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::ostringstream filename;
       filename << error_data.folder + error_data.name + "_L2";
@@ -189,7 +194,8 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
   // H1-seminorm
   if(error_data.calculate_H1_seminorm_error)
   {
-    double const error = calculate_error<dim>(relative,
+    double const error = calculate_error<dim>(mpi_comm,
+                                              relative,
                                               *dof_handler,
                                               *mapping,
                                               solution_vector,
@@ -197,7 +203,7 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
                                               time,
                                               VectorTools::H1_seminorm);
 
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0);
+    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
     pcout << ((relative == true) ? "  Relative " : "  Absolute ")
           << "error (H1-seminorm): " << std::scientific << std::setprecision(5) << error
           << std::endl;
@@ -205,7 +211,7 @@ ErrorCalculator<dim, Number>::do_evaluate(VectorType const & solution_vector, do
     if(error_data.write_errors_to_file)
     {
       // write output file
-      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
         std::ostringstream filename;
         filename << error_data.folder + error_data.name + "_H1_seminorm";

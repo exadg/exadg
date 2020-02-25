@@ -12,8 +12,10 @@
 namespace IncNS
 {
 template<int dim, typename Number>
-DivergenceAndMassErrorCalculator<dim, Number>::DivergenceAndMassErrorCalculator()
-  : clear_files_mass_error(true),
+DivergenceAndMassErrorCalculator<dim, Number>::DivergenceAndMassErrorCalculator(
+  MPI_Comm const & comm)
+  : mpi_comm(comm),
+    clear_files_mass_error(true),
     number_of_samples(0),
     divergence_sample(0.0),
     mass_sample(0.0),
@@ -70,10 +72,10 @@ DivergenceAndMassErrorCalculator<dim, Number>::do_evaluate(
                         dst,
                         velocity);
 
-  div_error            = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
-  div_error_reference  = Utilities::MPI::sum(dst.at(1), MPI_COMM_WORLD);
-  mass_error           = Utilities::MPI::sum(dst.at(2), MPI_COMM_WORLD);
-  mass_error_reference = Utilities::MPI::sum(dst.at(3), MPI_COMM_WORLD);
+  div_error            = Utilities::MPI::sum(dst.at(0), mpi_comm);
+  div_error_reference  = Utilities::MPI::sum(dst.at(1), mpi_comm);
+  mass_error           = Utilities::MPI::sum(dst.at(2), mpi_comm);
+  mass_error_reference = Utilities::MPI::sum(dst.at(3), mpi_comm);
 }
 
 template<int dim, typename Number>
@@ -202,7 +204,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
       mass_error_normalized = mass_error;
 
     // write output file
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::ostringstream filename;
       filename << div_and_mass_data.filename_prefix << ".div_mass_error_timeseries";
@@ -240,7 +242,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_unstea
       mass_sample += mass_error_normalized;
 
       // write output file
-      if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+      if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
       {
         std::ostringstream filename;
         filename << div_and_mass_data.filename_prefix << ".div_mass_error_average";
@@ -279,7 +281,7 @@ DivergenceAndMassErrorCalculator<dim, Number>::analyze_div_and_mass_error_steady
     mass_error_normalized = mass_error;
 
   // write output file
-  if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::ostringstream filename;
     filename << div_and_mass_data.filename_prefix << ".div_mass_error";

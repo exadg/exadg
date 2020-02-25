@@ -726,7 +726,8 @@ MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_coarse_sol
       additional_data.preconditioner       = data.coarse_problem.preconditioner;
       additional_data.amg_data             = data.coarse_problem.amg_data;
 
-      coarse_grid_solver.reset(new MGCoarseKrylov<Operator>(coarse_operator, additional_data));
+      coarse_grid_solver.reset(
+        new MGCoarseKrylov<Operator>(coarse_operator, additional_data, mpi_comm));
       break;
     }
     case MultigridCoarseGridSolver::AMG:
@@ -756,8 +757,11 @@ void
 MultigridPreconditionerBase<dim, Number, MultigridNumber>::initialize_multigrid_preconditioner()
 {
   this->multigrid_preconditioner.reset(
-    new MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>(
-      this->operators, *this->coarse_grid_solver, this->transfers, this->smoothers));
+    new MultigridPreconditioner<VectorTypeMG, Operator, SMOOTHER>(this->operators,
+                                                                  *this->coarse_grid_solver,
+                                                                  this->transfers,
+                                                                  this->smoothers,
+                                                                  this->mpi_comm));
 }
 
 template<int dim, typename Number, typename MultigridNumber>

@@ -17,7 +17,8 @@ using namespace dealii;
  */
 template<int dim>
 inline double
-calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation)
+calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation,
+                                  MPI_Comm const &           mpi_comm)
 {
   typename Triangulation<dim>::active_cell_iterator cell = triangulation.begin_active(),
                                                     endc = triangulation.end();
@@ -34,7 +35,7 @@ calculate_minimum_vertex_distance(Triangulation<dim> const & triangulation)
     }
   }
 
-  const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, MPI_COMM_WORLD);
+  const double global_min_cell_diameter = -Utilities::MPI::max(-min_cell_diameter, mpi_comm);
 
   return global_min_cell_diameter;
 }

@@ -18,6 +18,10 @@
 /*                                                                                                          */
 /************************************************************************************************************/
 
+// sub communicator for FFTW
+#define USE_SUB_COMMUNICATOR_FOR_FFTW
+unsigned int const N_CORES_PER_NODE = 48; // bruteforce = 24, SuperMUC-NG = 48
+
 // convergence studies in space or time
 unsigned int const DEGREE_MIN = 3;
 unsigned int const DEGREE_MAX = DEGREE_MIN;
@@ -38,16 +42,19 @@ bool const ALE = false;
 bool const EXPLOIT_SYMMETRY = true;
 
 // inviscid limit
-bool const INVISCID = false;
+bool const INVISCID = true;
 
 // Reynolds number
 double const Re = 1600.0;
 
 // output folder and output name
-std::string const OUTPUT_FOLDER = "output/taylor_green_vortex/";
-std::string const  OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
-std::string const OUTPUT_NAME = "128_l4_k3_symm_adaptive_cfl0-25";
-
+bool const WRITE_OUTPUT = false;
+std::string const OUTPUT_FOLDER = "output/tgv/inviscid/";
+std::string const OUTPUT_FOLDER_VTU = OUTPUT_FOLDER + "vtu/";
+std::string const OUTPUT_NAME = std::to_string(int((EXPLOIT_SYMMETRY ? 2 : 1)*(DEGREE_MIN+1)*N_CELLS_1D_COARSE_GRID*std::pow(2,REFINE_SPACE_MIN)))
+                                + "_l" + std::to_string(REFINE_SPACE_MIN)
+                                + "_k" + std::to_string(DEGREE_MIN)
+                                + "_bdf2_adaptive_cfl0-25";
 bool WRITE_RESTART = false;
 bool RESTARTED_SIMULATION = false;
 
@@ -454,12 +461,12 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(InputParameters const &param)
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   PostProcessorData<dim> pp_data;
 
   // write output for visualization of results
-  pp_data.output_data.write_output = false;
+  pp_data.output_data.write_output = WRITE_OUTPUT;
   pp_data.output_data.output_folder = OUTPUT_FOLDER_VTU;
   pp_data.output_data.output_name = OUTPUT_NAME;
   pp_data.output_data.output_start_time = param.start_time;
@@ -490,7 +497,9 @@ construct_postprocessor(InputParameters const &param)
 
   // kinetic energy spectrum
   pp_data.kinetic_energy_spectrum_data.calculate = true;
-  pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.5;
+  pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = false,
+  pp_data.kinetic_energy_spectrum_data.do_fftw = true;
+  pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.1;
   pp_data.kinetic_energy_spectrum_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;
   pp_data.kinetic_energy_spectrum_data.evaluation_points_per_cell = (param.degree_u + 1);
@@ -501,7 +510,7 @@ construct_postprocessor(InputParameters const &param)
   pp_data.kinetic_energy_spectrum_data.clear_file = !param.restarted_simulation;
 
   std::shared_ptr<PostProcessorBase<dim,Number> > pp;
-  pp.reset(new PostProcessor<dim,Number>(pp_data));
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
 
   return pp;
 }

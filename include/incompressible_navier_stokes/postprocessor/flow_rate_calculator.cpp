@@ -13,21 +13,16 @@ namespace IncNS
 {
 template<int dim, typename Number>
 FlowRateCalculator<dim, Number>::FlowRateCalculator(MatrixFree<dim, Number> const & matrix_free_in,
-                                                    const DoFHandler<dim> & dof_handler_velocity_in,
-                                                    unsigned int const      dof_index_in,
-                                                    unsigned int const      quad_index_in,
-                                                    FlowRateCalculatorData<dim> const & data_in)
+                                                    unsigned int const              dof_index_in,
+                                                    unsigned int const              quad_index_in,
+                                                    FlowRateCalculatorData<dim> const & data_in,
+                                                    MPI_Comm const &                    comm)
   : data(data_in),
     matrix_free(matrix_free_in),
     dof_index(dof_index_in),
     quad_index(quad_index_in),
     clear_files(true),
-    communicator(dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                   &dof_handler_velocity_in.get_triangulation()) ?
-                   (dynamic_cast<const parallel::TriangulationBase<dim> *>(
-                      &dof_handler_velocity_in.get_triangulation())
-                      ->get_communicator()) :
-                   MPI_COMM_SELF)
+    mpi_comm(comm)
 {
 }
 
@@ -66,7 +61,7 @@ FlowRateCalculator<dim, Number>::write_output(Number const &      value,
                                               std::string const & name)
 {
   // write output file
-  if(data.write_to_file == true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(data.write_to_file == true && Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::ostringstream filename;
     filename << data.filename_prefix;
@@ -141,7 +136,7 @@ FlowRateCalculator<dim, Number>::do_calculate_flow_rates(
 
   Utilities::MPI::sum(ArrayView<const double>(&(*flow_rates_vector.begin()),
                                               flow_rates_vector.size()),
-                      communicator,
+                      mpi_comm,
                       ArrayView<double>(&(*flow_rates_vector.begin()), flow_rates_vector.size()));
 
   iterator = flow_rates.begin();

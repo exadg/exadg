@@ -47,7 +47,7 @@ class PressureDifferenceCalculator
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  PressureDifferenceCalculator();
+  PressureDifferenceCalculator(MPI_Comm const & comm);
 
   void
   setup(DoFHandler<dim> const &             dof_handler_pressure_in,
@@ -58,6 +58,8 @@ public:
   evaluate(VectorType const & pressure, double const & time) const;
 
 private:
+  MPI_Comm const & mpi_comm;
+
   mutable bool clear_files_pressure_difference;
 
   SmartPointer<DoFHandler<dim> const> dof_handler_pressure;

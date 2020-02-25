@@ -24,7 +24,7 @@ class KineticEnergyCalculatorDetailed : public KineticEnergyCalculator<dim, Numb
   typedef DGNavierStokesBase<dim, Number> NavierStokesOperator;
 
 public:
-  KineticEnergyCalculatorDetailed();
+  KineticEnergyCalculatorDetailed(MPI_Comm const & comm);
 
   void
   setup(NavierStokesOperator const &    navier_stokes_operator_in,

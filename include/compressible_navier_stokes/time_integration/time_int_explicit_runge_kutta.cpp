@@ -15,12 +15,14 @@ namespace CompNS
 {
 template<typename Number>
 TimeIntExplRK<Number>::TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                                     InputParameters const &   param_in)
+                                     InputParameters const &   param_in,
+                                     MPI_Comm const &          mpi_comm_in)
   : TimeIntExplRKBase<Number>(param_in.start_time,
                               param_in.end_time,
                               param_in.max_number_of_time_steps,
                               param_in.restart_data,
-                              false), // currently no adaptive time stepping implemented
+                              false,
+                              mpi_comm_in), // currently no adaptive time stepping implemented
     pde_operator(operator_in),
     param(param_in),
     time_postprocessing(0.0),

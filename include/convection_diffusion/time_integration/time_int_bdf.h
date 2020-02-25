@@ -37,7 +37,9 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntBDF(std::shared_ptr<Operator> operator_in, InputParameters const & param_in);
+  TimeIntBDF(std::shared_ptr<Operator> operator_in,
+             InputParameters const &   param_in,
+             MPI_Comm const &          mpi_comm_in);
 
   void
   get_iterations(std::vector<std::string> & name, std::vector<double> & iteration) const;

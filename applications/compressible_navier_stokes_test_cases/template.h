@@ -119,7 +119,7 @@ void set_field_functions(std::shared_ptr<CompNS::FieldFunctions<dim> > field_fun
 
 template<int dim, typename Number>
 std::shared_ptr<PostProcessorBase<dim, Number> >
-construct_postprocessor(CompNS::InputParameters const &param)
+construct_postprocessor(CompNS::InputParameters const &param, MPI_Comm const &mpi_comm)
 {
   (void)param;
 
@@ -128,7 +128,7 @@ construct_postprocessor(CompNS::InputParameters const &param)
   // Here, fill postprocessor data
 
   std::shared_ptr<CompNS::PostProcessorBase<dim, Number> > pp;
-  pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data));
+  pp.reset(new CompNS::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
   return pp;
 }

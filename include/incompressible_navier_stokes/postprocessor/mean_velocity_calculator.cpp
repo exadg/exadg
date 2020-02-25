@@ -17,7 +17,8 @@ MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
   MatrixFree<dim, Number> const &         matrix_free_in,
   unsigned int const                      dof_index_in,
   unsigned int const                      quad_index_in,
-  MeanVelocityCalculatorData<dim> const & data_in)
+  MeanVelocityCalculatorData<dim> const & data_in,
+  MPI_Comm const &                        comm_in)
   : data(data_in),
     matrix_free(matrix_free_in),
     dof_index(dof_index_in),
@@ -26,7 +27,8 @@ MeanVelocityCalculator<dim, Number>::MeanVelocityCalculator(
     volume_has_been_initialized(false),
     area(0.0),
     volume(0.0),
-    clear_files(true)
+    clear_files(true),
+    mpi_comm(comm_in)
 {
 }
 
@@ -132,7 +134,7 @@ MeanVelocityCalculator<dim, Number>::write_output(Number const &      value,
                                                   std::string const & name) const
 {
   // write output file
-  if(data.write_to_file == true && Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+  if(data.write_to_file == true && Utilities::MPI::this_mpi_process(mpi_comm) == 0)
   {
     std::ostringstream filename;
     filename << data.filename_prefix;
@@ -189,7 +191,7 @@ MeanVelocityCalculator<dim, Number>::calculate_area() const
     }
   }
 
-  area = Utilities::MPI::sum(area, MPI_COMM_WORLD);
+  area = Utilities::MPI::sum(area, mpi_comm);
 
   return area;
 }
@@ -205,7 +207,7 @@ MeanVelocityCalculator<dim, Number>::calculate_volume() const
 
   // sum over all MPI processes
   Number volume = 1.0;
-  volume        = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
+  volume        = Utilities::MPI::sum(dst.at(0), mpi_comm);
 
   return volume;
 }
@@ -281,7 +283,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_area(VectorType cons
     }
   }
 
-  flow_rate = Utilities::MPI::sum(flow_rate, MPI_COMM_WORLD);
+  flow_rate = Utilities::MPI::sum(flow_rate, mpi_comm);
 
   return flow_rate;
 }
@@ -295,7 +297,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_mean_velocity_volume(
   matrix_free.cell_loop(&This::local_calculate_flow_rate_volume, this, dst, velocity);
 
   // sum over all MPI processes
-  Number mean_velocity = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
+  Number mean_velocity = Utilities::MPI::sum(dst.at(0), mpi_comm);
 
   AssertThrow(volume_has_been_initialized == true, ExcMessage("Volume has not been initialized."));
   AssertThrow(this->volume != 0.0, ExcMessage("Volume has not been initialized."));
@@ -314,7 +316,7 @@ MeanVelocityCalculator<dim, Number>::do_calculate_flow_rate_volume(
   matrix_free.cell_loop(&This::local_calculate_flow_rate_volume, this, dst, velocity);
 
   // sum over all MPI processes
-  Number flow_rate_times_length = Utilities::MPI::sum(dst.at(0), MPI_COMM_WORLD);
+  Number flow_rate_times_length = Utilities::MPI::sum(dst.at(0), mpi_comm);
 
   return flow_rate_times_length;
 }

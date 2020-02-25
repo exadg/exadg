@@ -10,7 +10,8 @@
 #include <fstream>
 
 template<int dim, typename Number>
-LinePlotCalculator<dim, Number>::LinePlotCalculator() : clear_files(true)
+LinePlotCalculator<dim, Number>::LinePlotCalculator(MPI_Comm const & comm)
+  : mpi_comm(comm), clear_files(true)
 {
 }
 
@@ -69,12 +70,12 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
           {
             Tensor<1, dim, Number> u;
             evaluate_vectorial_quantity_in_point(
-              *dof_handler_velocity, *mapping, velocity, points[i], u);
+              u, *dof_handler_velocity, *mapping, velocity, points[i], mpi_comm);
             solution_vector[i] = u;
           }
 
           // write output to file
-          if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+          if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
           {
             std::string filename = filename_prefix + "_velocity" + ".txt";
 
@@ -120,12 +121,12 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
           {
             Number p;
             evaluate_scalar_quantity_in_point(
-              *dof_handler_pressure, *mapping, pressure, points[i], p);
+              p, *dof_handler_pressure, *mapping, pressure, points[i], mpi_comm);
             solution_vector[i] = p;
           }
 
           // write output to file
-          if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+          if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
           {
             std::string filename = filename_prefix + "_pressure" + ".txt";
 

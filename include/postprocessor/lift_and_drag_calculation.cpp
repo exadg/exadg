@@ -12,16 +12,16 @@
 #include <fstream>
 
 template<int dim, typename Number>
-void
-calculate_lift_and_drag_force(MatrixFree<dim, Number> const &      matrix_free,
-                              unsigned int const &                 dof_index_velocity,
-                              unsigned int const &                 quad_index_velocity,
-                              unsigned int const &                 dof_index_pressure,
-                              std::set<types::boundary_id> const & boundary_IDs,
-                              LinearAlgebra::distributed::Vector<Number> const & velocity,
-                              LinearAlgebra::distributed::Vector<Number> const & pressure,
-                              double const &                                     viscosity,
-                              Tensor<1, dim, Number> &                           Force)
+void calculate_lift_and_drag_force(Tensor<1, dim, Number> &             Force,
+                                   MatrixFree<dim, Number> const &      matrix_free,
+                                   unsigned int const &                 dof_index_velocity,
+                                   unsigned int const &                 quad_index_velocity,
+                                   unsigned int const &                 dof_index_pressure,
+                                   std::set<types::boundary_id> const & boundary_IDs,
+                                   LinearAlgebra::distributed::Vector<Number> const & velocity,
+                                   LinearAlgebra::distributed::Vector<Number> const & pressure,
+                                   double const &                                     viscosity,
+                                   MPI_Comm const &                                   mpi_comm)
 {
   FaceIntegrator<dim, dim, Number> integrator_velocity(matrix_free,
                                                        true,
@@ -77,12 +77,13 @@ calculate_lift_and_drag_force(MatrixFree<dim, Number> const &      matrix_free,
       }
     }
   }
-  Force = Utilities::MPI::sum(Force, MPI_COMM_WORLD);
+  Force = Utilities::MPI::sum(Force, mpi_comm);
 }
 
 template<int dim, typename Number>
-LiftAndDragCalculator<dim, Number>::LiftAndDragCalculator()
-  : clear_files_lift_and_drag(true),
+LiftAndDragCalculator<dim, Number>::LiftAndDragCalculator(MPI_Comm const & comm)
+  : mpi_comm(comm),
+    clear_files_lift_and_drag(true),
     matrix_free(nullptr),
     dof_index_velocity(0),
     dof_index_pressure(1),
@@ -121,7 +122,8 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
   {
     Tensor<1, dim, Number> Force;
 
-    calculate_lift_and_drag_force<dim, Number>(*matrix_free,
+    calculate_lift_and_drag_force<dim, Number>(Force,
+                                               *matrix_free,
                                                dof_index_velocity,
                                                quad_index,
                                                dof_index_pressure,
@@ -129,7 +131,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
                                                velocity,
                                                pressure,
                                                lift_and_drag_data.viscosity,
-                                               Force);
+                                               mpi_comm);
 
     // compute lift and drag coefficients (c = (F/rho)/(1/2 U² A)
     double const reference_value = lift_and_drag_data.reference_value;
@@ -141,7 +143,7 @@ LiftAndDragCalculator<dim, Number>::evaluate(VectorType const & velocity,
     c_L_min = std::min(c_L_min, lift);
     c_L_max = std::max(c_L_max, lift);
 
-    if(Utilities::MPI::this_mpi_process(MPI_COMM_WORLD) == 0)
+    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
     {
       std::string filename_drag, filename_lift;
       filename_drag = lift_and_drag_data.filename_drag;

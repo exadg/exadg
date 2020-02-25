@@ -88,9 +88,10 @@ public:
   // alternative: use more accurate over-integration strategy
   //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
 
-  DGOperator(parallel::TriangulationBase<dim> const & triangulation,
-             InputParameters const &              param_in,
-             std::shared_ptr<Postprocessor>       postprocessor_in);
+  DGOperator(parallel::TriangulationBase<dim> const & triangulation_in,
+             InputParameters const &                  param_in,
+             std::shared_ptr<Postprocessor>           postprocessor_in,
+             MPI_Comm const &                         mpi_comm_in);
 
   void
   setup(std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
@@ -263,6 +264,9 @@ private:
 
   // postprocessor
   std::shared_ptr<Postprocessor> postprocessor;
+
+  // MPI communicator
+  MPI_Comm const & mpi_comm;
 
   // wall time for operator evaluation
   mutable double wall_time_operator_evaluation;

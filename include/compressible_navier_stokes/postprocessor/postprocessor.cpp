@@ -11,8 +11,16 @@
 namespace CompNS
 {
 template<int dim, typename Number>
-PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postprocessor_data)
-  : pp_data(postprocessor_data)
+PostProcessor<dim, Number>::PostProcessor(PostProcessorData<dim> const & postprocessor_data,
+                                          MPI_Comm const &               comm)
+  : mpi_comm(comm),
+    pp_data(postprocessor_data),
+    output_generator(comm),
+    error_calculator(comm),
+    lift_and_drag_calculator(comm),
+    pressure_difference_calculator(comm),
+    kinetic_energy_calculator(comm),
+    kinetic_energy_spectrum_calculator(comm)
 {
 }
 
