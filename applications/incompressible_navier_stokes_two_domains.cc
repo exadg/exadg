@@ -36,6 +36,7 @@
 // general functionalities
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/mapping_degree.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -339,19 +340,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
               ExcMessage("This is an unsteady solver. Check input parameters."));
 
   // mapping
-  unsigned int mapping_degree_1 = 1;
-  if(param_1.mapping == MappingType::Affine)
-  {
-    mapping_degree_1 = 1;
-  }
-  else if(param_1.mapping == MappingType::Isoparametric)
-  {
-    mapping_degree_1 = param_1.degree_u;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-  }
+  unsigned int const mapping_degree_1 = get_mapping_degree(param_1.mapping, param_1.degree_u);
 
   if(param_1.ale_formulation) // moving mesh
   {
@@ -369,19 +358,7 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
     mesh_1.reset(new Mesh<dim>(mapping_degree_1));
   }
 
-  unsigned int mapping_degree_2 = 1;
-  if(param_2.mapping == MappingType::Affine)
-  {
-    mapping_degree_2 = 1;
-  }
-  else if(param_2.mapping == MappingType::Isoparametric)
-  {
-    mapping_degree_2 = param_2.degree_u;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-  }
+  unsigned int const mapping_degree_2 = get_mapping_degree(param_2.mapping, param_2.degree_u);
 
   if(param_2.ale_formulation) // moving mesh
   {

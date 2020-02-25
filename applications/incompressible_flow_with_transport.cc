@@ -56,6 +56,7 @@
 #include "functionalities/matrix_free_wrapper.h"
 #include "functionalities/print_functions.h"
 #include "functionalities/print_general_infos.h"
+#include "functionalities/mapping_degree.h"
 
 using namespace dealii;
 
@@ -277,11 +278,11 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   }
 
   // triangulation
-  if(fluid_param.triangulation_type == IncNS::TriangulationType::Distributed)
+  if(fluid_param.triangulation_type == TriangulationType::Distributed)
   {
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
-      AssertThrow(scalar_param[i].triangulation_type == ConvDiff::TriangulationType::Distributed,
+      AssertThrow(scalar_param[i].triangulation_type == TriangulationType::Distributed,
                   ExcMessage(
                     "Parameter triangulation_type is different for fluid field and scalar field"));
     }
@@ -291,12 +292,12 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
       dealii::Triangulation<dim>::none,
       parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
   }
-  else if(fluid_param.triangulation_type == IncNS::TriangulationType::FullyDistributed)
+  else if(fluid_param.triangulation_type == TriangulationType::FullyDistributed)
   {
     for(unsigned int i = 0; i < n_scalars; ++i)
     {
       AssertThrow(
-        scalar_param[i].triangulation_type == ConvDiff::TriangulationType::FullyDistributed,
+        scalar_param[i].triangulation_type == TriangulationType::FullyDistributed,
         ExcMessage("Parameter triangulation_type is different for fluid field and scalar field"));
     }
 
@@ -311,19 +312,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   print_grid_data(pcout, fluid_param.h_refinements, *triangulation);
 
   // mapping
-  unsigned int mapping_degree = 1;
-  if(fluid_param.mapping == IncNS::MappingType::Affine)
-  {
-    mapping_degree = 1;
-  }
-  else if(fluid_param.mapping == IncNS::MappingType::Isoparametric)
-  {
-    mapping_degree = fluid_param.degree_u;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented"));
-  }
+  unsigned int const mapping_degree = get_mapping_degree(fluid_param.mapping, fluid_param.degree_u);
 
   if(fluid_param.ale_formulation) // moving mesh
   {
