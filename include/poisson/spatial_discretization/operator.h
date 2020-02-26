@@ -176,7 +176,7 @@ private:
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
 
-  ConvDiff::RHSOperator<dim, Number> rhs_operator;
+  ConvDiff::RHSOperator<dim, Number, n_components> rhs_operator;
 
   Laplace laplace_operator;
 

@@ -18,13 +18,17 @@ struct RHSKernelData
   std::shared_ptr<Function<dim>> f;
 };
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components = 1>
 class RHSKernel
 {
 private:
-  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
+  typedef CellIntegrator<dim, n_components, Number> IntegratorCell;
 
-  typedef VectorizedArray<Number> scalar;
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+
+  typedef VectorizedArray<Number>   scalar;
+  typedef Tensor<rank, dim, scalar> value;
 
 public:
   void
@@ -49,14 +53,14 @@ public:
    * Volume flux, i.e., the term occurring in the volume integral
    */
   inline DEAL_II_ALWAYS_INLINE //
-    scalar
+    value
     get_volume_flux(IntegratorCell const & integrator,
                     unsigned int const     q,
                     Number const &         time) const
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    return evaluate_scalar_function(data.f, q_points, time);
+    return FunctionEvaluator<dim, Number, rank>::evaluate_function(data.f, q_points, time);
   }
 
 private:
@@ -79,15 +83,15 @@ struct RHSOperatorData
   Operators::RHSKernelData<dim> kernel_data;
 };
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components = 1>
 class RHSOperator
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef RHSOperator<dim, Number> This;
+  typedef RHSOperator<dim, Number, n_components> This;
 
-  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
+  typedef CellIntegrator<dim, n_components, Number> IntegratorCell;
 
   typedef std::pair<unsigned int, unsigned int> Range;
 
@@ -135,7 +139,7 @@ private:
 
   mutable double time;
 
-  Operators::RHSKernel<dim, Number> kernel;
+  Operators::RHSKernel<dim, Number, n_components> kernel;
 };
 
 } // namespace ConvDiff
