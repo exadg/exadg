@@ -7,7 +7,6 @@
 
 #include "dg_navier_stokes_base.h"
 
-#include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../preconditioners/multigrid_preconditioner_projection.h"
 
 namespace IncNS
@@ -986,12 +985,10 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   // use multigrid preconditioner with Chebyshev smoother
   MultigridData mg_data;
 
-  typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+  preconditioner.reset(new MultigridPoisson(this->mpi_comm));
 
-  preconditioner.reset(new MULTIGRID(this->mpi_comm));
-
-  std::shared_ptr<MULTIGRID> mg_preconditioner =
-    std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+  std::shared_ptr<MultigridPoisson> mg_preconditioner =
+    std::dynamic_pointer_cast<MultigridPoisson>(preconditioner);
 
   // explicit copy needed since function is called on const
   auto periodic_face_pairs = this->periodic_face_pairs;

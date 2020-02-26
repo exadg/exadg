@@ -1,12 +1,12 @@
 #include "operator.h"
+
 #include "../../functionalities/calculate_maximum_aspect_ratio.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
-#include "../preconditioner/multigrid_preconditioner.h"
 
 namespace Poisson
 {
-template<int dim, typename Number>
-Operator<dim, Number>::Operator(
+template<int dim, typename Number, int n_components>
+Operator<dim, Number, n_components>::Operator(
   parallel::TriangulationBase<dim> const &                triangulation_in,
   Mapping<dim> const &                                    mapping_in,
   PeriodicFaces const                                     periodic_face_pairs_in,
@@ -33,10 +33,11 @@ Operator<dim, Number>::Operator(
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
-                                              std::string const &              field) const
+Operator<dim, Number, n_components>::append_data_structures(
+  MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+  std::string const &              field) const
 {
   this->field = field;
 
@@ -78,9 +79,10 @@ Operator<dim, Number>::append_data_structures(MatrixFreeWrapper<dim, Number> & m
   matrix_free_wrapper.insert_quadrature(QGauss<1>(param.degree + 1), field + quad_index);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+Operator<dim, Number, n_components>::setup(
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
 {
   pcout << std::endl << "Setup Poisson operator ..." << std::endl;
 
@@ -92,34 +94,30 @@ Operator<dim, Number>::setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> mat
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::setup_solver()
+Operator<dim, Number, n_components>::setup_solver()
 {
   pcout << std::endl << "Setup solver ..." << std::endl;
 
   // initialize preconditioner
   if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
   {
-    preconditioner.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
+    preconditioner.reset(new JacobiPreconditioner<Laplace>(laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::BlockJacobi)
   {
-    preconditioner.reset(
-      new BlockJacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
+    preconditioner.reset(new BlockJacobiPreconditioner<Laplace>(laplace_operator));
   }
   else if(param.preconditioner == Poisson::Preconditioner::Multigrid)
   {
     MultigridData mg_data;
     mg_data = param.multigrid_data;
 
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    preconditioner.reset(new Multigrid(this->mpi_comm));
 
-    preconditioner.reset(new MULTIGRID(this->mpi_comm));
-
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
     parallel::TriangulationBase<dim> const * tria =
       dynamic_cast<const parallel::TriangulationBase<dim> *>(
@@ -157,9 +155,8 @@ Operator<dim, Number>::setup_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        laplace_operator, *preconditioner, solver_data));
+    iterative_solver.reset(new CGSolver<Laplace, PreconditionerBase<Number>, VectorType>(
+      laplace_operator, *preconditioner, solver_data));
   }
   else if(param.solver == Solver::FGMRES)
   {
@@ -175,10 +172,8 @@ Operator<dim, Number>::setup_solver()
       solver_data.use_preconditioner = true;
 
     // initialize solver
-    iterative_solver.reset(
-      new FGMRESSolver<Poisson::LaplaceOperator<dim, Number>,
-                       PreconditionerBase<Number>,
-                       VectorType>(laplace_operator, *preconditioner, solver_data));
+    iterative_solver.reset(new FGMRESSolver<Laplace, PreconditionerBase<Number>, VectorType>(
+      laplace_operator, *preconditioner, solver_data));
   }
   else
   {
@@ -188,16 +183,16 @@ Operator<dim, Number>::setup_solver()
   pcout << std::endl << "... done!" << std::endl;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::initialize_dof_vector(VectorType & src) const
+Operator<dim, Number, n_components>::initialize_dof_vector(VectorType & src) const
 {
   matrix_free->initialize_dof_vector(src, get_dof_index());
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::prescribe_initial_conditions(VectorType & src) const
+Operator<dim, Number, n_components>::prescribe_initial_conditions(VectorType & src) const
 {
   field_functions->initial_solution->set_time(0.0);
 
@@ -212,9 +207,9 @@ Operator<dim, Number>::prescribe_initial_conditions(VectorType & src) const
   src = src_double;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::rhs(VectorType & dst, double const time) const
+Operator<dim, Number, n_components>::rhs(VectorType & dst, double const time) const
 {
   dst = 0;
 
@@ -225,27 +220,25 @@ Operator<dim, Number>::rhs(VectorType & dst, double const time) const
     rhs_operator.evaluate_add(dst, time);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::vmult(VectorType & dst, VectorType const & src) const
+Operator<dim, Number, n_components>::vmult(VectorType & dst, VectorType const & src) const
 {
   laplace_operator.vmult(dst, src);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 unsigned int
-Operator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
+Operator<dim, Number, n_components>::solve(VectorType & sol, VectorType const & rhs) const
 {
   // only activate if desired
   if(false)
   {
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    std::shared_ptr<Multigrid> mg_preconditioner =
+      std::dynamic_pointer_cast<Multigrid>(preconditioner);
 
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(preconditioner);
-
-    CheckMultigrid<dim, Number, LaplaceOperator<dim, Number>, MULTIGRID, MultigridNumber>
-      check_multigrid(laplace_operator, mg_preconditioner, mpi_comm);
+    CheckMultigrid<dim, Number, Laplace, Multigrid, MultigridNumber> check_multigrid(
+      laplace_operator, mg_preconditioner, mpi_comm);
 
     check_multigrid.check();
   }
@@ -255,23 +248,23 @@ Operator<dim, Number>::solve(VectorType & sol, VectorType const & rhs) const
   return iterations;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 DoFHandler<dim> const &
-Operator<dim, Number>::get_dof_handler() const
+Operator<dim, Number, n_components>::get_dof_handler() const
 {
   return dof_handler;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 types::global_dof_index
-Operator<dim, Number>::get_number_of_dofs() const
+Operator<dim, Number, n_components>::get_number_of_dofs() const
 {
   return dof_handler.n_dofs();
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 double
-Operator<dim, Number>::get_n10() const
+Operator<dim, Number, n_components>::get_n10() const
 {
   AssertThrow(iterative_solver->n10 != 0,
               ExcMessage("Make sure to activate param.compute_performance_metrics!"));
@@ -279,55 +272,58 @@ Operator<dim, Number>::get_n10() const
   return iterative_solver->n10;
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 double
-Operator<dim, Number>::get_average_convergence_rate() const
+Operator<dim, Number, n_components>::get_average_convergence_rate() const
 {
   return iterative_solver->rho;
 }
 
 #ifdef DEAL_II_WITH_TRILINOS
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::init_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+Operator<dim, Number, n_components>::init_system_matrix(
+  TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   laplace_operator.init_system_matrix(system_matrix);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::calculate_system_matrix(TrilinosWrappers::SparseMatrix & system_matrix) const
+Operator<dim, Number, n_components>::calculate_system_matrix(
+  TrilinosWrappers::SparseMatrix & system_matrix) const
 {
   laplace_operator.calculate_system_matrix(system_matrix);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::vmult_matrix_based(VectorTypeDouble &                     dst,
-                                          TrilinosWrappers::SparseMatrix const & system_matrix,
-                                          VectorTypeDouble const &               src) const
+Operator<dim, Number, n_components>::vmult_matrix_based(
+  VectorTypeDouble &                     dst,
+  TrilinosWrappers::SparseMatrix const & system_matrix,
+  VectorTypeDouble const &               src) const
 {
   system_matrix.vmult(dst, src);
 }
 #endif
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 unsigned int
-Operator<dim, Number>::get_dof_index() const
+Operator<dim, Number, n_components>::get_dof_index() const
 {
   return matrix_free_wrapper->get_dof_index(field + dof_index);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 unsigned int
-Operator<dim, Number>::get_quad_index() const
+Operator<dim, Number, n_components>::get_quad_index() const
 {
   return matrix_free_wrapper->get_quad_index(field + quad_index);
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::distribute_dofs()
+Operator<dim, Number, n_components>::distribute_dofs()
 {
   // enumerate degrees of freedom
   if(param.spatial_discretization == SpatialDiscretization::DG)
@@ -350,9 +346,9 @@ Operator<dim, Number>::distribute_dofs()
   print_parameter(pcout, "number of dofs (total)", dof_handler.n_dofs());
 }
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components>
 void
-Operator<dim, Number>::setup_operators()
+Operator<dim, Number, n_components>::setup_operators()
 {
   // Laplace operator
   Poisson::LaplaceOperatorData<dim> laplace_operator_data;
@@ -374,10 +370,13 @@ Operator<dim, Number>::setup_operators()
   }
 }
 
-template class Operator<2, float>;
-template class Operator<2, double>;
+template class Operator<2, float, 1>;
+template class Operator<2, double, 1>;
+template class Operator<2, float, 2>;
+template class Operator<2, double, 2>;
 
-template class Operator<3, float>;
-template class Operator<3, double>;
-
+template class Operator<3, float, 1>;
+template class Operator<3, double, 1>;
+template class Operator<3, float, 3>;
+template class Operator<3, double, 3>;
 } // namespace Poisson

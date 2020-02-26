@@ -17,11 +17,11 @@ namespace Poisson
 /*
  *  Multigrid preconditioner for scalar Laplace operator.
  */
-template<int dim, typename Number, typename MultigridNumber>
+template<int dim, typename Number, typename MultigridNumber, int n_components>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
 public:
-  typedef LaplaceOperator<dim, MultigridNumber> Laplace;
+  typedef LaplaceOperator<dim, MultigridNumber, n_components> Laplace;
 
   typedef MultigridOperatorBase<dim, MultigridNumber>      MGOperatorBase;
   typedef MultigridOperator<dim, MultigridNumber, Laplace> MGOperator;

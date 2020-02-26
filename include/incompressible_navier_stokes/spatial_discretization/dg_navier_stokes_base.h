@@ -52,6 +52,7 @@
 #include "interface.h"
 
 // preconditioners and solvers
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
@@ -83,6 +84,9 @@ protected:
   typedef FaceIntegrator<dim, 1, Number>   FaceIntegratorP;
 
   typedef float MultigridNumber;
+
+  typedef typename Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1>
+    MultigridPoisson;
 
 public:
   /*
