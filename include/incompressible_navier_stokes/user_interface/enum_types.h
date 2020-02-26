@@ -212,31 +212,6 @@ enum_to_string(ConvergenceCriterionSteadyProblem const enum_type);
 /**************************************************************************************/
 
 /*
- * Triangulation type
- */
-enum class TriangulationType
-{
-  Undefined,
-  Distributed,
-  FullyDistributed
-};
-
-std::string
-enum_to_string(TriangulationType const enum_type);
-
-/*
- *  Mapping type (polynomial degree)
- */
-enum class MappingType
-{
-  Affine,
-  Isoparametric
-};
-
-std::string
-enum_to_string(MappingType const enum_type);
-
-/*
  *  Polynomial degree of pressure shape functions in relation to velocity degree
  */
 enum class DegreePressure
@@ -256,7 +231,9 @@ enum_to_string(DegreePressure const enum_type);
  *
  *  We normally use the option Mirror as default setup.
  *  A direct imposition might be advantageous with respect to the CFL condition
- *  possibly allowing to use significantly larger time step sizes.
+ *  possibly allowing to use significantly larger time step sizes depending on
+ *  other parameters of the spatial discretization (e.g., use of divergence and
+ *  continuity penalty terms).
  */
 enum class TypeDirichletBCs
 {

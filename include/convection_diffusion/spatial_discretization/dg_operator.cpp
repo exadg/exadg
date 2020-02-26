@@ -296,6 +296,7 @@ DGOperator<dim, Number>::needs_own_dof_handler_velocity() const
 {
   return param.analytical_velocity_field && param.store_analytical_velocity_in_dof_vector;
 }
+
 template<int dim, typename Number>
 unsigned int
 DGOperator<dim, Number>::get_dof_index() const

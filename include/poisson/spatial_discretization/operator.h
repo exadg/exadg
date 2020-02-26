@@ -30,13 +30,16 @@
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"
 
+// functionalities
+#include "../../functionalities/matrix_free_wrapper.h"
+
 // postprocessor
 #include "../../convection_diffusion/postprocessor/postprocessor_base.h"
 
 namespace Poisson
 {
 template<int dim, typename Number>
-class DGOperator : public dealii::Subscriptor
+class Operator : public dealii::Subscriptor
 {
 public:
   typedef float MultigridNumber;
@@ -51,15 +54,20 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  DGOperator(parallel::TriangulationBase<dim> const &                  triangulation,
-             Poisson::InputParameters const &                          param,
-             std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor,
-             MPI_Comm const &                                          mpi_comm);
+  Operator(parallel::TriangulationBase<dim> const &                triangulation,
+           Mapping<dim> const &                                    mapping,
+           PeriodicFaces const                                     periodic_face_pairs,
+           std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor,
+           std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions,
+           Poisson::InputParameters const &                        param,
+           MPI_Comm const &                                        mpi_comm);
 
   void
-  setup(PeriodicFaces const                                     periodic_face_pairs,
-        std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor,
-        std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions);
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field) const;
+
+  void
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   void
   setup_solver();
@@ -81,9 +89,6 @@ public:
 
   unsigned int
   solve(VectorType & sol, VectorType const & rhs) const;
-
-  Mapping<dim> const &
-  get_mapping() const;
 
   DoFHandler<dim> const &
   get_dof_handler() const;
@@ -110,25 +115,44 @@ public:
                      VectorTypeDouble const &               src) const;
 #endif
 
-  void
-  do_postprocessing(VectorType const & solution) const;
-
 private:
-  void
-  create_dofs();
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
 
   void
-  initialize_matrix_free();
+  distribute_dofs();
 
   void
   setup_operators();
 
-  void
-  setup_postprocessor();
+  /*
+   * Mapping
+   */
+  Mapping<dim> const & mapping;
 
-  MPI_Comm const & mpi_comm;
+  /*
+   * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
+   */
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
+    periodic_face_pairs;
 
+  /*
+   * User interface: Boundary conditions and field functions.
+   */
+  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+
+  /*
+   * List of input parameters.
+   */
   Poisson::InputParameters const & param;
+
+  /*
+   * Basic finite element ingredients.
+   */
 
   // DG
   FE_DGQ<dim> fe_dgq;
@@ -136,20 +160,17 @@ private:
   // FE (continuous elements)
   FE_Q<dim> fe_q;
 
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
-
   DoFHandler<dim> dof_handler;
 
-  AffineConstraints<double> constraint_matrix;
+  mutable AffineConstraints<double> constraint_matrix;
 
-  MatrixFree<dim, Number> matrix_free;
+  std::string const dof_index  = "laplace";
+  std::string const quad_index = "laplace";
 
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_face_pairs;
+  mutable std::string field;
 
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
 
   ConvDiff::RHSOperator<dim, Number> rhs_operator;
 
@@ -159,9 +180,14 @@ private:
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 
   /*
-   * Postprocessor.
+   * MPI
    */
-  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor;
+  MPI_Comm const & mpi_comm;
+
+  /*
+   * Output to screen.
+   */
+  ConditionalOStream pcout;
 };
 } // namespace Poisson
 
