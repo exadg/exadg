@@ -20,17 +20,15 @@ struct LaplaceKernelData
   double IP_factor;
 };
 
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components = 1>
 class LaplaceKernel
 {
 private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
+  typedef VectorizedArray<Number> scalar;
 
-  typedef CellIntegrator<dim, 1, Number> IntegratorCell;
-  typedef FaceIntegrator<dim, 1, Number> IntegratorFace;
+  typedef FaceIntegrator<dim, n_components, Number> IntegratorFace;
 
 public:
   LaplaceKernel() : degree(1), tau(make_vectorized_array<Number>(0.0))
@@ -117,31 +115,23 @@ public:
     }
   }
 
+  template<typename T>
   inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_gradient_flux(scalar const & value_m, scalar const & value_p) const
+    T
+    calculate_gradient_flux(T const & value_m, T const & value_p) const
   {
     return -0.5 * (value_m - value_p);
   }
 
+  template<typename T>
   inline DEAL_II_ALWAYS_INLINE //
-    scalar
-    calculate_value_flux(scalar const & normal_gradient_m,
-                         scalar const & normal_gradient_p,
-                         scalar const & value_m,
-                         scalar const & value_p) const
+    T
+    calculate_value_flux(T const & normal_gradient_m,
+                         T const & normal_gradient_p,
+                         T const & value_m,
+                         T const & value_p) const
   {
     return 0.5 * (normal_gradient_m + normal_gradient_p) - tau * (value_m - value_p);
-  }
-
-  /*
-   * Volume flux, i.e., the term occurring in the volume integral
-   */
-  inline DEAL_II_ALWAYS_INLINE //
-    vector
-    get_volume_flux(IntegratorCell & integrator, unsigned int const q) const
-  {
-    return integrator.get_gradient(q);
   }
 
 private:
@@ -168,20 +158,17 @@ struct LaplaceOperatorData : public OperatorBaseData
   std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
 };
 
-template<int dim, typename Number>
-class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim>>
+template<int dim, typename Number, int n_components = 1>
+class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components>
 {
 private:
-  typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>> Base;
-  typedef LaplaceOperator<dim, Number>                        This;
+  typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components> Base;
+  typedef LaplaceOperator<dim, Number, n_components>                        This;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
   typedef typename Base::Range Range;
-
-  typedef VectorizedArray<Number>                 scalar;
-  typedef Tensor<1, dim, VectorizedArray<Number>> vector;
 
 public:
   typedef Number                    value_type;
@@ -264,7 +251,7 @@ private:
                                 LaplaceOperatorData<dim> const &     data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  Operators::LaplaceKernel<dim, Number> kernel;
+  Operators::LaplaceKernel<dim, Number, n_components> kernel;
 };
 
 } // namespace Poisson
