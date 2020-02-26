@@ -1,5 +1,5 @@
 /*
- * poisson_operation.h
+ * operator.h
  *
  *  Created on: 2016
  *      Author: Fehn/Munch
