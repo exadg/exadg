@@ -42,21 +42,13 @@ Operator<dim, Number, n_components>::append_data_structures(
   this->field = field;
 
   // append mapping flags
-  MappingFlags mapping_flags;
-  mapping_flags.cells = (update_gradients | update_JxW_values | update_quadrature_points |
-                         update_normal_vectors | update_values);
+  matrix_free_wrapper.append_mapping_flags(
+    Operators::LaplaceKernel<dim, Number, n_components>::get_mapping_flags(
+      param.spatial_discretization == SpatialDiscretization::DG));
 
-  if(param.spatial_discretization == SpatialDiscretization::DG)
-  {
-    mapping_flags.inner_faces = (update_gradients | update_JxW_values | update_quadrature_points |
-                                 update_normal_vectors | update_values);
-
-    mapping_flags.boundary_faces =
-      (update_gradients | update_JxW_values | update_quadrature_points | update_normal_vectors |
-       update_values);
-  }
-
-  matrix_free_wrapper.append_mapping_flags(mapping_flags);
+  if(param.right_hand_side)
+    matrix_free_wrapper.append_mapping_flags(
+      ConvDiff::Operators::RHSKernel<dim, Number, n_components>::get_mapping_flags());
 
   // DoFHandler
   matrix_free_wrapper.insert_dof_handler(&dof_handler, field + dof_index);

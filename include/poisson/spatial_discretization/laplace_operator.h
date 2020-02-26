@@ -70,14 +70,18 @@ public:
   }
 
   static MappingFlags
-  get_mapping_flags()
+  get_mapping_flags(bool const compute_face_integrals)
   {
     MappingFlags flags;
 
-    flags.cells       = update_gradients | update_JxW_values;
-    flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
-    flags.boundary_faces =
-      update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+    flags.cells = update_gradients | update_JxW_values;
+
+    if(compute_face_integrals)
+    {
+      flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+      flags.boundary_faces =
+        update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
+    }
 
     return flags;
   }

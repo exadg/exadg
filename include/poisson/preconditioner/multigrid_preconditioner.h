@@ -98,14 +98,11 @@ private:
     MatrixFreeData additional_data;
     additional_data.mg_level = this->level_info[level].h_level();
 
-    MappingFlags flags = Operators::LaplaceKernel<dim, Number>::get_mapping_flags();
-    additional_data.mapping_update_flags = flags.cells;
-
-    if(this->level_info[level].is_dg())
-    {
-      additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
-      additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
-    }
+    MappingFlags flags =
+      Operators::LaplaceKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg());
+    additional_data.mapping_update_flags                = flags.cells;
+    additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
+    additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;
 
     if(data.use_cell_based_loops && this->level_info[level].is_dg())
     {
