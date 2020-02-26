@@ -170,6 +170,11 @@ private:
 
   typedef typename Base::Range Range;
 
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+
+  typedef Tensor<rank, dim, VectorizedArray<Number>> value;
+
 public:
   typedef Number                    value_type;
   typedef typename Base::VectorType VectorType;

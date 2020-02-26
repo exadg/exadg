@@ -102,15 +102,15 @@ LaplaceOperator<dim, Number, n_components>::do_face_integral(IntegratorFace & in
 {
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    auto value_m = integrator_m.get_value(q);
-    auto value_p = integrator_p.get_value(q);
+    value value_m = integrator_m.get_value(q);
+    value value_p = integrator_p.get_value(q);
 
-    auto gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
-    auto normal_gradient_m = integrator_m.get_normal_derivative(q);
-    auto normal_gradient_p = integrator_p.get_normal_derivative(q);
+    value normal_gradient_m = integrator_m.get_normal_derivative(q);
+    value normal_gradient_p = integrator_p.get_normal_derivative(q);
 
-    auto value_flux =
+    value value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
 
     integrator_m.submit_normal_derivative(gradient_flux, q);
@@ -132,16 +132,16 @@ LaplaceOperator<dim, Number, n_components>::do_face_int_integral(
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     // set exterior value to zero
-    auto value_m = integrator_m.get_value(q);
-    auto value_p = 0.0 * value_m;
+    value value_m = integrator_m.get_value(q);
+    value value_p = value();
 
-    auto gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
     // set exterior value to zero
-    auto normal_gradient_m = integrator_m.get_normal_derivative(q);
-    auto normal_gradient_p = 0.0 * normal_gradient_m;
+    value normal_gradient_m = integrator_m.get_normal_derivative(q);
+    value normal_gradient_p = value();
 
-    auto value_flux =
+    value value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
 
     integrator_m.submit_normal_derivative(gradient_flux, q);
@@ -160,16 +160,16 @@ LaplaceOperator<dim, Number, n_components>::do_face_ext_integral(
   for(unsigned int q = 0; q < integrator_p.n_q_points; ++q)
   {
     // set value_m to zero
-    auto value_p = integrator_p.get_value(q);
-    auto value_m = 0.0 * value_p;
+    value value_p = integrator_p.get_value(q);
+    value value_m = value();
 
-    auto gradient_flux = kernel.calculate_gradient_flux(value_p, value_m);
+    value gradient_flux = kernel.calculate_gradient_flux(value_p, value_m);
 
     // minus sign to get the correct normal vector n⁺ = -n⁻
-    auto normal_gradient_p = -integrator_p.get_normal_derivative(q);
-    auto normal_gradient_m = 0.0 * normal_gradient_p;
+    value normal_gradient_p = -integrator_p.get_normal_derivative(q);
+    value normal_gradient_m = value();
 
-    auto value_flux =
+    value value_flux =
       kernel.calculate_value_flux(normal_gradient_p, normal_gradient_m, value_p, value_m);
 
     integrator_p.submit_normal_derivative(-gradient_flux, q); // opposite sign since n⁺ = -n⁻
@@ -188,29 +188,34 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    auto value_m = calculate_interior_value(q, integrator_m, operator_type);
-    auto value_p = calculate_exterior_value(value_m,
-                                            q,
-                                            integrator_m,
-                                            operator_type,
-                                            boundary_type,
-                                            boundary_id,
-                                            this->data.bc,
-                                            this->time);
+    value value_m =
+      calculate_interior_value<dim, Number, n_components, rank>(q, integrator_m, operator_type);
+    value value_p = calculate_exterior_value<dim, Number, n_components, rank>(value_m,
+                                                                              q,
+                                                                              integrator_m,
+                                                                              operator_type,
+                                                                              boundary_type,
+                                                                              boundary_id,
+                                                                              this->data.bc,
+                                                                              this->time);
 
-    auto gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
-    auto normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
-    auto normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
-                                                                q,
-                                                                integrator_m,
-                                                                operator_type,
-                                                                boundary_type,
-                                                                boundary_id,
-                                                                this->data.bc,
-                                                                this->time);
+    value normal_gradient_m =
+      calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
+                                                                          integrator_m,
+                                                                          operator_type);
+    value normal_gradient_p =
+      calculate_exterior_normal_gradient<dim, Number, n_components, rank>(normal_gradient_m,
+                                                                          q,
+                                                                          integrator_m,
+                                                                          operator_type,
+                                                                          boundary_type,
+                                                                          boundary_id,
+                                                                          this->data.bc,
+                                                                          this->time);
 
-    auto value_flux =
+    value value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
 
     integrator_m.submit_normal_derivative(gradient_flux, q);
@@ -229,13 +234,15 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    auto value_m = calculate_interior_value(q, integrator_m, operator_type);
+    value value_m =
+      calculate_interior_value<dim, Number, n_components, rank>(q, integrator_m, operator_type);
 
     // deviating from the standard boundary_face_loop_inhom_operator() function,
     // because the boundary condition comes from the vector src
-    auto value_p = 0.0 * value_m;
     Assert(operator_type == OperatorType::inhomogeneous,
            ExcMessage("This function is only implemented for OperatorType::inhomogeneous."));
+
+    value value_p = value();
     if(boundary_type == BoundaryType::dirichlet)
     {
       value_p = 2.0 * integrator_m.get_value(q);
@@ -249,19 +256,23 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
       AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
     }
 
-    auto gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
+    value gradient_flux = kernel.calculate_gradient_flux(value_m, value_p);
 
-    auto normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
-    auto normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
-                                                                q,
-                                                                integrator_m,
-                                                                operator_type,
-                                                                boundary_type,
-                                                                boundary_id,
-                                                                this->data.bc,
-                                                                this->time);
+    value normal_gradient_m =
+      calculate_interior_normal_gradient<dim, Number, n_components, rank>(q,
+                                                                          integrator_m,
+                                                                          operator_type);
+    value normal_gradient_p =
+      calculate_exterior_normal_gradient<dim, Number, n_components, rank>(normal_gradient_m,
+                                                                          q,
+                                                                          integrator_m,
+                                                                          operator_type,
+                                                                          boundary_type,
+                                                                          boundary_id,
+                                                                          this->data.bc,
+                                                                          this->time);
 
-    auto value_flux =
+    value value_flux =
       kernel.calculate_value_flux(normal_gradient_m, normal_gradient_p, value_m, value_p);
 
     integrator_m.submit_normal_derivative(gradient_flux, q);

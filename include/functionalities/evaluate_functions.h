@@ -67,6 +67,101 @@ inline DEAL_II_ALWAYS_INLINE //
   return value;
 }
 
+template<int dim, typename value_type, int rank>
+inline DEAL_II_ALWAYS_INLINE //
+  Tensor<rank, dim, VectorizedArray<value_type>>
+  evaluate_function(std::shared_ptr<Function<dim>>                  function,
+                    Point<dim, VectorizedArray<value_type>> const & q_points,
+                    double const &                                  eval_time)
+{
+  (void)function;
+  (void)q_points;
+  (void)eval_time;
+
+  return Tensor<rank, dim, VectorizedArray<value_type>>();
+
+  if constexpr(rank == 0)
+    return evaluate_scalar_function<dim, value_type>(function, q_points, eval_time);
+  else
+    return evaluate_vectorial_function<dim, value_type>(function, q_points, eval_time);
+}
+
+template<int dim, typename value_type, int rank>
+struct FunctionEvaluator
+{
+  static inline DEAL_II_ALWAYS_INLINE //
+    Tensor<rank, dim, VectorizedArray<value_type>>
+    evaluate_function(std::shared_ptr<Function<dim>>                  function,
+                      Point<dim, VectorizedArray<value_type>> const & q_points,
+                      double const &                                  eval_time)
+  {
+    (void)function;
+    (void)q_points;
+    (void)eval_time;
+
+    AssertThrow(false, ExcMessage("should not arrive here."));
+
+    return Tensor<rank, dim, VectorizedArray<value_type>>();
+  }
+};
+
+template<int dim, typename value_type>
+struct FunctionEvaluator<dim, value_type, 0>
+{
+  static inline DEAL_II_ALWAYS_INLINE //
+    Tensor<0, dim, VectorizedArray<value_type>>
+    evaluate_function(std::shared_ptr<Function<dim>>                  function,
+                      Point<dim, VectorizedArray<value_type>> const & q_points,
+                      double const &                                  eval_time)
+  {
+    VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
+
+    value_type array[VectorizedArray<value_type>::n_array_elements];
+    for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+    {
+      Point<dim> q_point;
+      for(unsigned int d = 0; d < dim; ++d)
+        q_point[d] = q_points[d][n];
+
+      function->set_time(eval_time);
+      array[n] = function->value(q_point);
+    }
+    value.load(&array[0]);
+
+    return value;
+  }
+};
+
+template<int dim, typename value_type>
+struct FunctionEvaluator<dim, value_type, 1>
+{
+  static inline DEAL_II_ALWAYS_INLINE //
+    Tensor<1, dim, VectorizedArray<value_type>>
+    evaluate_function(std::shared_ptr<Function<dim>>                  function,
+                      Point<dim, VectorizedArray<value_type>> const & q_points,
+                      double const &                                  eval_time)
+  {
+    Tensor<1, dim, VectorizedArray<value_type>> value;
+
+    for(unsigned int d = 0; d < dim; ++d)
+    {
+      value_type array[VectorizedArray<value_type>::n_array_elements];
+      for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+      {
+        Point<dim> q_point;
+        for(unsigned int d = 0; d < dim; ++d)
+          q_point[d] = q_points[d][n];
+
+        function->set_time(eval_time);
+        array[n] = function->value(q_point, d);
+      }
+      value[d].load(&array[0]);
+    }
+
+    return value;
+  }
+};
+
 template<int dim, typename value_type>
 inline DEAL_II_ALWAYS_INLINE //
   Tensor<1, dim, VectorizedArray<value_type>>

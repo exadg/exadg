@@ -1,5 +1,5 @@
 /*
- * dg_convection_diffusion_operation.cpp
+ * dg_operator.cpp
  *
  *  Created on: Dec 4, 2018
  *      Author: fehn
