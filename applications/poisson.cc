@@ -29,12 +29,12 @@
 
 // functionalities
 #include "../include/functionalities/calculate_maximum_aspect_ratio.h"
+#include "../include/functionalities/mapping_degree.h"
+#include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/mesh.h"
 #include "../include/functionalities/mesh_resolution_generator_hypercube.h"
 #include "../include/functionalities/print_functions.h"
 #include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/mesh.h"
-#include "../include/functionalities/matrix_free_wrapper.h"
 
 
 // specify the test case that has to be solved
@@ -295,21 +295,18 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
     std::cout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(param.degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(*triangulation,
-                                                 mesh->get_mapping(),
-                                                 quadrature);
+    AR = GridTools::compute_maximum_aspect_ratio(*triangulation, mesh->get_mapping(), quadrature);
     std::cout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
   // initialize Poisson operator
-  poisson_operator.reset(
-    new Operator<dim, Number>(*triangulation,
-                                mesh->get_mapping(),
-                                periodic_faces,
-                                boundary_descriptor,
-                                field_functions,
-                                param,
-                                mpi_comm));
+  poisson_operator.reset(new Operator<dim, Number>(*triangulation,
+                                                   mesh->get_mapping(),
+                                                   periodic_faces,
+                                                   boundary_descriptor,
+                                                   field_functions,
+                                                   param,
+                                                   mpi_comm));
 
   // initialize matrix_free
   matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
@@ -506,21 +503,7 @@ do_run(InputParameters const & param, MPI_Comm const & mpi_comm)
 
   problem->setup(param);
 
-  try
-  {
-    problem->solve();
-  }
-  catch(...)
-  {
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-    {
-      std::cerr << std::endl
-                << std::endl
-                << "----------------------------------------------------" << std::endl;
-      std::cerr << "Solver failed to converge!" << std::endl
-                << "----------------------------------------------------" << std::endl;
-    }
-  }
+  problem->solve();
 
   problem->analyze_computing_times();
 }

@@ -43,7 +43,6 @@ SET( TARGET_SRC
      include/time_integration/time_int_explicit_runge_kutta_base.cpp
      include/time_integration/enum_types.cpp
      include/functionalities/enum_types.cpp
-     include/functionalities/moving_mesh.cpp
      include/matrix_free/resolve_templates_float_2d.cpp
      include/matrix_free/resolve_templates_float_3d.cpp
      include/matrix_free/resolve_templates_double_2d.cpp

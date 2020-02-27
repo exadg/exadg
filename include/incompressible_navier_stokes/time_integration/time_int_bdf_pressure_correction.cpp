@@ -20,7 +20,7 @@ TimeIntBDFPressureCorrection<dim, Number>::TimeIntBDFPressureCorrection(
   InputParameters const &                         param_in,
   MPI_Comm const &                                mpi_comm_in,
   std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-  std::shared_ptr<MovingMesh<dim, Number>>        moving_mesh_in,
+  std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
   : Base(operator_in,
          param_in,

@@ -88,7 +88,7 @@ template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::setup_solver()
 {
-  pcout << std::endl << "Setup solver ..." << std::endl;
+  pcout << std::endl << "Setup Poisson solver ..." << std::endl;
 
   // initialize preconditioner
   if(param.preconditioner == Poisson::Preconditioner::PointJacobi)
