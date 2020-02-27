@@ -41,12 +41,6 @@ public:
   move_mesh(double const time);
 
   /*
-   * This function initialized the mapping that is used to describe a moving mesh.
-   */
-  void
-  initialize_mapping_ale(double const time);
-
-  /*
    * This function extracts the grid coordinates of the current mesh configuration, i.e.,
    * a mapping describing the mesh displacement has to be used here.
    */

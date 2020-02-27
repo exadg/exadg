@@ -25,7 +25,13 @@ MovingMesh<dim, Number>::MovingMesh(unsigned int const                       map
   dof_handler.distribute_dofs(*fe);
   dof_handler.distribute_mg_dofs();
 
-  initialize_mapping_ale(start_time);
+#ifdef MAPPING_Q_CACHE
+  mapping_ale.reset(new MappingQCache<dim>(polynomial_degree));
+#else
+  mapping_ale.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
+#endif
+
+  move_mesh(start_time);
 }
 
 template<int dim, typename Number>
@@ -36,19 +42,6 @@ MovingMesh<dim, Number>::get_mapping() const
     return *this->mapping;
   else
     return *mapping_ale;
-}
-
-template<int dim, typename Number>
-void
-MovingMesh<dim, Number>::initialize_mapping_ale(double const time)
-{
-#ifdef MAPPING_Q_CACHE
-  mapping_ale.reset(new MappingQCache<dim>(polynomial_degree));
-#else
-  mapping_ale.reset(new MappingFEField<dim, dim, VectorType>(dof_handler, grid_coordinates));
-#endif
-
-  move_mesh(time);
 }
 
 template<int dim, typename Number>
