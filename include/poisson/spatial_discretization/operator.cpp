@@ -20,8 +20,6 @@ Operator<dim, Number, n_components>::Operator(
     boundary_descriptor(boundary_descriptor_in),
     field_functions(field_functions_in),
     param(param_in),
-    fe_dgq(param.degree),
-    fe_q(param.degree),
     dof_handler(triangulation_in),
     mpi_comm(mpi_comm_in),
     pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm_in) == 0)
@@ -317,13 +315,30 @@ template<int dim, typename Number, int n_components>
 void
 Operator<dim, Number, n_components>::distribute_dofs()
 {
-  // enumerate degrees of freedom
-  if(param.spatial_discretization == SpatialDiscretization::DG)
-    dof_handler.distribute_dofs(fe_dgq);
-  else if(param.spatial_discretization == SpatialDiscretization::CG)
-    dof_handler.distribute_dofs(fe_q);
+  if(n_components == 1)
+  {
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      fe.reset(new FE_DGQ<dim>(param.degree));
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      fe.reset(new FE_Q<dim>(param.degree));
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
+  }
+  else if(n_components == dim)
+  {
+    if(param.spatial_discretization == SpatialDiscretization::DG)
+      fe.reset(new FESystem<dim>(FE_DGQ<dim>(param.degree), dim));
+    else if(param.spatial_discretization == SpatialDiscretization::CG)
+      fe.reset(new FESystem<dim>(FE_Q<dim>(param.degree), dim));
+    else
+      AssertThrow(false, ExcMessage("not implemented."));
+  }
   else
+  {
     AssertThrow(false, ExcMessage("not implemented."));
+  }
+
+  dof_handler.distribute_dofs(*fe);
 
   dof_handler.distribute_mg_dofs();
 

@@ -10,6 +10,7 @@
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -157,12 +158,7 @@ private:
   /*
    * Basic finite element ingredients.
    */
-
-  // DG
-  FE_DGQ<dim> fe_dgq;
-
-  // FE (continuous elements)
-  FE_Q<dim> fe_q;
+  std::shared_ptr<FiniteElement<dim>> fe;
 
   DoFHandler<dim> dof_handler;
 
