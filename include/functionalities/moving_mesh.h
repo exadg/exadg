@@ -240,27 +240,30 @@ public:
 
         std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
 
-        if(cell->is_locally_owned())
+        if(cell->is_active())
         {
-          fe_values.reinit(cell);
-          std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
-          cell->get_dof_indices(dof_indices);
-
-          // extract displacement and add to original position
-          for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
+          if(cell->is_locally_owned())
           {
-            points_moved[i] = fe_values.quadrature_point(i);
-          }
+            fe_values.reinit(cell);
+            std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+            cell->get_dof_indices(dof_indices);
 
-          for(unsigned int i = 0; i < dof_indices.size(); ++i)
-          {
-            const std::pair<unsigned int, unsigned int> id = fe.system_to_component_index(i);
+            // extract displacement and add to original position
+            for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
+            {
+              points_moved[i] = fe_values.quadrature_point(i);
+            }
 
-            if(fe.dofs_per_vertex > 0) // FE_Q
-              points_moved[id.second][id.first] += displacement_vector(dof_indices[i]);
-            else // FE_DGQ
-              points_moved[lexicographic_to_hierarchic[id.second]][id.first] +=
-                displacement_vector(dof_indices[i]);
+            for(unsigned int i = 0; i < dof_indices.size(); ++i)
+            {
+              const std::pair<unsigned int, unsigned int> id = fe.system_to_component_index(i);
+
+              if(fe.dofs_per_vertex > 0) // FE_Q
+                points_moved[id.second][id.first] += displacement_vector(dof_indices[i]);
+              else // FE_DGQ
+                points_moved[lexicographic_to_hierarchic[id.second]][id.first] +=
+                  displacement_vector(dof_indices[i]);
+            }
           }
         }
 
