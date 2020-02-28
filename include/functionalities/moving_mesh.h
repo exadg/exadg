@@ -6,8 +6,8 @@
 #include <deal.II/fe/fe_tools.h>
 #include <deal.II/fe/mapping_fe_field.h>
 #include <deal.II/fe/mapping_q_cache.h>
-
 #include <deal.II/lac/la_parallel_block_vector.h>
+#include <deal.II/multigrid/mg_transfer_matrix_free.h>
 
 #include "mesh.h"
 
@@ -135,30 +135,44 @@ public:
   {
     mesh_movement_function->set_time(time);
 
+    initialize_mapping_q_cache(this->triangulation,
+                               *this->mapping,
+                               dof_handler,
+                               mesh_movement_function);
+  }
+
+private:
+  void
+  initialize_mapping_q_cache(parallel::TriangulationBase<dim> const & triangulation,
+                             Mapping<dim> const &                     mapping,
+                             DoFHandler<dim> const &                  dof_handler,
+                             std::shared_ptr<Function<dim>>           displacement_function)
+  {
     this->mapping_ale->initialize(
-      this->triangulation,
+      triangulation,
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
         FiniteElement<dim> const & fe = dof_handler.get_fe();
 
-        FEValues<dim> fe_values(*this->mapping,
+        FEValues<dim> fe_values(mapping,
                                 fe,
                                 Quadrature<dim>(fe.base_element(0).get_unit_support_points()),
                                 update_quadrature_points);
 
-        typename DoFHandler<dim>::cell_iterator cell(&this->triangulation,
+        typename DoFHandler<dim>::cell_iterator cell(&triangulation,
                                                      cell_tria->level(),
                                                      cell_tria->index(),
                                                      &dof_handler);
         fe_values.reinit(cell);
 
         // compute displacement and add to original position
-        std::vector<Point<dim>> points_moved(fe.base_element(0).dofs_per_cell);
-        for(unsigned int i = 0; i < fe.base_element(0).dofs_per_cell; ++i)
+        unsigned int const      scalar_dofs_per_cell = fe.base_element(0).dofs_per_cell;
+        std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
+        for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
         {
           Point<dim> const point = fe_values.quadrature_point(i);
           Point<dim>       displacement;
           for(unsigned int d = 0; d < dim; ++d)
-            displacement[d] = mesh_movement_function->value(point, d);
+            displacement[d] = displacement_function->value(point, d);
 
           points_moved[i] = point + displacement;
         }
@@ -167,7 +181,7 @@ public:
       });
   }
 
-private:
+
   // An analytical function that describes the mesh motion
   std::shared_ptr<Function<dim>> mesh_movement_function;
 
@@ -186,13 +200,12 @@ public:
 
   MovingMeshPoisson(parallel::TriangulationBase<dim> const &             triangulation,
                     unsigned int const                                   mapping_degree_static,
-                    unsigned int const                                   mapping_degree_moving,
                     MPI_Comm const &                                     mpi_comm,
                     std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson_operator,
                     double const &                                       start_time)
     : MovingMeshBase<dim, Number>(triangulation,
                                   mapping_degree_static,
-                                  mapping_degree_moving,
+                                  poisson_operator->get_dof_handler().get_fe().degree,
                                   mpi_comm),
       poisson(poisson_operator)
   {
@@ -203,31 +216,56 @@ public:
   void
   move_mesh(double const time)
   {
-    VectorType displacement_vector, rhs;
-    poisson->initialize_dof_vector(displacement_vector);
+    VectorType displacement_fine, rhs;
+    poisson->initialize_dof_vector(displacement_fine);
     poisson->initialize_dof_vector(rhs);
 
     // compute rhs and solve mesh deformation problem
     poisson->rhs(rhs, time);
-    poisson->solve(displacement_vector, rhs);
+    poisson->solve(displacement_fine, rhs);
+
+    initialize_mapping_q_cache(this->triangulation,
+                               *this->mapping,
+                               poisson->get_dof_handler(),
+                               displacement_fine);
+  }
+
+private:
+  void
+  initialize_mapping_q_cache(parallel::TriangulationBase<dim> const & triangulation,
+                             Mapping<dim> const &                     mapping,
+                             DoFHandler<dim> const &                  dof_handler,
+                             VectorType const &                       dof_vector)
+  {
+    // we have to project the solution onto all coarse levels of the triangulation
+    // (required for initialization of MappingQCache)
+    MGLevelObject<VectorType> dof_vector_all_levels;
+    unsigned int const        n_levels = triangulation.n_global_levels();
+    dof_vector_all_levels.resize(0, n_levels - 1);
+
+    MGTransferMatrixFree<dim, Number> transfer;
+    transfer.build(dof_handler);
+    transfer.interpolate_to_mg(dof_handler, dof_vector_all_levels, dof_vector);
+    for(unsigned int level = 0; level < n_levels; level++)
+      dof_vector_all_levels[level].update_ghost_values();
+
+    FiniteElement<dim> const & fe = dof_handler.get_fe();
+    AssertThrow(fe.element_multiplicity(0) == dim,
+                ExcMessage("Expected finite element with dim components."));
+
+    FE_Q<dim>     fe_scalar(fe.degree);
+    FEValues<dim> fe_values(mapping,
+                            fe,
+                            Quadrature<dim>(fe_scalar.get_unit_support_points()),
+                            update_quadrature_points);
 
     // update mapping according to mesh deformation computed above
     this->mapping_ale->initialize(
-      this->triangulation,
+      triangulation,
       [&](const typename Triangulation<dim>::cell_iterator & cell_tria) -> std::vector<Point<dim>> {
-        DoFHandler<dim> const &    dof_handler = poisson->get_dof_handler();
-        FiniteElement<dim> const & fe          = dof_handler.get_fe();
-        AssertThrow(fe.element_multiplicity(0) == dim,
-                    ExcMessage("Expected finite element with dim components."));
-
-        FE_Q<dim>     fe_scalar(fe.degree);
-        FEValues<dim> fe_values(*this->mapping,
-                                fe,
-                                Quadrature<dim>(fe_scalar.get_unit_support_points()),
-                                update_quadrature_points);
-
-        typename DoFHandler<dim>::cell_iterator cell(&this->triangulation,
-                                                     cell_tria->level(),
+        unsigned int const                      level = cell_tria->level();
+        typename DoFHandler<dim>::cell_iterator cell(&triangulation,
+                                                     level,
                                                      cell_tria->index(),
                                                      &dof_handler);
 
@@ -240,30 +278,27 @@ public:
 
         std::vector<Point<dim>> points_moved(scalar_dofs_per_cell);
 
-        if(cell->is_active())
+        if(cell->level_subdomain_id() != numbers::artificial_subdomain_id)
         {
-          if(cell->is_locally_owned())
+          fe_values.reinit(cell);
+          std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
+          cell->get_mg_dof_indices(dof_indices);
+
+          // extract displacement and add to original position
+          for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
           {
-            fe_values.reinit(cell);
-            std::vector<types::global_dof_index> dof_indices(fe.dofs_per_cell);
-            cell->get_dof_indices(dof_indices);
+            points_moved[i] = fe_values.quadrature_point(i);
+          }
 
-            // extract displacement and add to original position
-            for(unsigned int i = 0; i < scalar_dofs_per_cell; ++i)
-            {
-              points_moved[i] = fe_values.quadrature_point(i);
-            }
+          for(unsigned int i = 0; i < dof_indices.size(); ++i)
+          {
+            std::pair<unsigned int, unsigned int> const id = fe.system_to_component_index(i);
 
-            for(unsigned int i = 0; i < dof_indices.size(); ++i)
-            {
-              const std::pair<unsigned int, unsigned int> id = fe.system_to_component_index(i);
-
-              if(fe.dofs_per_vertex > 0) // FE_Q
-                points_moved[id.second][id.first] += displacement_vector(dof_indices[i]);
-              else // FE_DGQ
-                points_moved[lexicographic_to_hierarchic[id.second]][id.first] +=
-                  displacement_vector(dof_indices[i]);
-            }
+            if(fe.dofs_per_vertex > 0) // FE_Q
+              points_moved[id.second][id.first] += dof_vector_all_levels[level](dof_indices[i]);
+            else // FE_DGQ
+              points_moved[lexicographic_to_hierarchic[id.second]][id.first] +=
+                dof_vector_all_levels[level](dof_indices[i]);
           }
         }
 
@@ -271,7 +306,6 @@ public:
       });
   }
 
-private:
   std::shared_ptr<Poisson::Operator<dim, Number, dim>> poisson;
 };
 
