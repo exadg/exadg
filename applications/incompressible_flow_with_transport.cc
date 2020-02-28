@@ -1062,11 +1062,6 @@ main(int argc, char ** argv)
 
     MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
-    AssertThrow(DEGREE_MIN == DEGREE_MAX, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_SPACE_MIN == REFINE_SPACE_MAX, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_TIME_MIN == 0, ExcMessage("Invalid parameters!"));
-    AssertThrow(REFINE_TIME_MIN == REFINE_TIME_MAX, ExcMessage("Invalid parameters!"));
-
     IncNS::InputParameters fluid_param;
     set_input_parameters(fluid_param);
 

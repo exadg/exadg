@@ -15,16 +15,6 @@
 /*                                                                                                          */
 /************************************************************************************************************/
 
-// convergence studies in space or time
-unsigned int const DEGREE_MIN = 4;
-unsigned int const DEGREE_MAX = 4;
-
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
-
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
-
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
 

@@ -20,15 +20,9 @@
 // number of space dimensions
 unsigned int const DIM = 2;
 
-// convergence studies in space or time
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
-
-unsigned int const REFINE_SPACE_MIN = 4;
-unsigned int const REFINE_SPACE_MAX = 4;
-
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+// convergence studies in space
+unsigned int const DEGREE = 3;
+unsigned int const REFINE_SPACE = 4;
 
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
@@ -106,7 +100,6 @@ void set_input_parameters(InputParameters &param)
   param.time_step_size = 1.0e-1;
   param.order_time_integrator = 2;
   param.start_with_low_order = true;
-  param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
   param.solver_info_data.print_to_screen = true;
@@ -119,10 +112,10 @@ void set_input_parameters(InputParameters &param)
 
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
-  param.degree_u = DEGREE_MIN;
+  param.degree_u = DEGREE;
   param.degree_p = DegreePressure::MixedOrder;
   param.mapping = MappingType::Affine;
-  param.h_refinements = REFINE_SPACE_MIN;
+  param.h_refinements = REFINE_SPACE;
 
   // convective term
   if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -247,7 +240,6 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.exponent_fe_degree_convection = 1.5;
   param.exponent_fe_degree_diffusion = 3.0;
   param.diffusion_number = 0.01;
-  param.dt_refinements = 0;
 
   // restart
   param.restart_data.write_restart = WRITE_RESTART;
@@ -264,11 +256,11 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.triangulation_type = TriangulationType::Distributed;
 
   // polynomial degree
-  param.degree = DEGREE_MIN;
+  param.degree = DEGREE;
   param.mapping = MappingType::Affine;
 
   // h-refinements
-  param.h_refinements = REFINE_SPACE_MIN;
+  param.h_refinements = REFINE_SPACE;
 
   // convective term
   param.numerical_flux_convective_operator = NumericalFluxConvectiveOperator::LaxFriedrichsFlux;
