@@ -19,8 +19,8 @@ struct CellFlags
     CellFlags cell_flags_combined;
 
     cell_flags_combined.value    = this->value || other.value;
-    cell_flags_combined.gradient = this->value || other.gradient;
-    cell_flags_combined.hessian  = this->value || other.hessian;
+    cell_flags_combined.gradient = this->gradient || other.gradient;
+    cell_flags_combined.hessian  = this->hessian || other.hessian;
 
     return cell_flags_combined;
   }
@@ -41,7 +41,7 @@ struct FaceFlags
     FaceFlags face_flags_combined;
 
     face_flags_combined.value    = this->value || other.value;
-    face_flags_combined.gradient = this->value || other.gradient;
+    face_flags_combined.gradient = this->gradient || other.gradient;
 
     return face_flags_combined;
   }

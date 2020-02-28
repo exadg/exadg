@@ -34,7 +34,6 @@ CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
   // (i.e. on would use quad_index = 0 also if quad_index_velocity would be 1 !)
   unsigned int quad_index = 0;
   own_inv_mass_matrix_operator_storage.initialize(matrix_free,
-                                                  operator_data.degree_u,
                                                   operator_data.dof_index_velocity,
                                                   quad_index);
 
@@ -44,18 +43,6 @@ CompatibleLaplaceOperator<dim, Number>::reinit_multigrid(
              own_gradient_operator_storage,
              own_divergence_operator_storage,
              own_inv_mass_matrix_operator_storage);
-}
-
-template<int dim, typename Number>
-void
-CompatibleLaplaceOperator<dim, Number>::update_after_mesh_movement()
-{
-  // Make sure that this function is only called if the operator
-  // is a multigrid operator.
-  AssertThrow(inv_mass_matrix_operator == &own_inv_mass_matrix_operator_storage,
-              ExcMessage("Logical error detected."));
-
-  own_inv_mass_matrix_operator_storage.reinit();
 }
 
 template<int dim, typename Number>

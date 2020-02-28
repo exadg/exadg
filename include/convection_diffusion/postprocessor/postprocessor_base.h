@@ -20,11 +20,27 @@ using namespace dealii;
 
 namespace ConvDiff
 {
+template<typename Number>
+class PostProcessorInterface
+{
+public:
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+
+  virtual ~PostProcessorInterface()
+  {
+  }
+
+  virtual void
+  do_postprocessing(VectorType const & solution,
+                    double const       time             = 0.0,
+                    int const          time_step_number = -1) = 0;
+};
+
 template<int dim, typename Number>
-class PostProcessorBase
+class PostProcessorBase : public PostProcessorInterface<Number>
 {
 private:
-  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
+  typedef typename PostProcessorInterface<Number>::VectorType VectorType;
 
 public:
   virtual ~PostProcessorBase()
@@ -33,11 +49,6 @@ public:
 
   virtual void
   setup(DoFHandler<dim> const & dof_handler, Mapping<dim> const & mapping) = 0;
-
-  virtual void
-  do_postprocessing(VectorType const & solution,
-                    double const       time             = 0.0,
-                    int const          time_step_number = -1) = 0;
 };
 
 } // namespace ConvDiff

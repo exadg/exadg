@@ -20,10 +20,20 @@ TimeIntBase::TimeIntBase(double const &      start_time_,
     time_step_number(1),
     max_number_of_time_steps(max_number_of_time_steps_),
     restart_data(restart_data_),
-    mpi_comm(mpi_comm_),
-    started(false),
-    finished(false)
+    mpi_comm(mpi_comm_)
 {
+}
+
+bool
+TimeIntBase::started() const
+{
+  return time > (start_time - eps);
+}
+
+bool
+TimeIntBase::finished() const
+{
+  return !(time < (end_time - eps) && time_step_number <= max_number_of_time_steps);
 }
 
 void
@@ -45,75 +55,62 @@ TimeIntBase::timeloop()
   pcout << std::endl << "... finished time loop!" << std::endl;
 }
 
-bool
+void
 TimeIntBase::advance_one_timestep_pre_solve()
 {
-  started = time > (start_time - eps);
-
-  // If the time integrator has not yet started, simply increment physical time without solving the
-  // current time step.
-  if(!started)
+  if(started())
   {
+    if(time_step_number == 1)
+    {
+      pcout << std::endl << "Starting time loop ..." << std::endl;
+
+      global_timer.restart();
+
+      postprocessing();
+    }
+
+    // advance one time step and perform postprocessing
+    if(!finished())
+    {
+      do_timestep_pre_solve();
+    }
+  }
+  else
+  {
+    // If the time integrator has not yet started, simply increment physical time without solving
+    // the current time step.
     time += get_time_step_size();
   }
-
-  if(started && time_step_number == 1)
-  {
-    pcout << std::endl << "Starting time loop ..." << std::endl;
-
-    global_timer.restart();
-
-    postprocessing();
-  }
-
-  // check if we have reached the end of the time loop
-  finished = !(time < (end_time - eps) && time_step_number <= max_number_of_time_steps);
-
-  // advance one time step and perform postprocessing
-  if(started && !finished)
-  {
-    do_timestep_pre_solve();
-  }
-
-  return finished;
 }
 
 void
 TimeIntBase::advance_one_timestep_solve()
 {
-  if(started && !finished)
+  if(started() && !finished())
   {
     solve_timestep();
   }
 }
 
 void
-TimeIntBase::advance_one_timestep_post_solve(bool write_final_output)
+TimeIntBase::advance_one_timestep_post_solve()
 {
-  if(started && !finished)
+  if(started() && !finished())
   {
     do_timestep_post_solve();
 
     postprocessing();
   }
-
-  // for the statistics
-  if(finished && write_final_output)
-  {
-    pcout << std::endl << "... done!" << std::endl;
-  }
 }
 
-bool
-TimeIntBase::advance_one_timestep(bool write_final_output)
+void
+TimeIntBase::advance_one_timestep()
 {
   advance_one_timestep_pre_solve();
 
   advance_one_timestep_solve();
 
-  advance_one_timestep_post_solve(write_final_output);
-
-  return finished;
+  advance_one_timestep_post_solve();
 }
 
 double

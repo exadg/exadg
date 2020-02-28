@@ -80,8 +80,6 @@ public:
     {
       this->update_matrix_free();
 
-      update_operators_after_mesh_movement();
-
       this->update_smoothers();
 
       // singular operators do not occur for this operator
@@ -249,19 +247,6 @@ private:
                                              constraint_matrix_vec[level],
                                              quadrature_vec[level],
                                              matrix_free_data_update[level]);
-  }
-
-  /*
-   * This function performs the updates that are necessary after the mesh has been moved
-   * and after matrix_free has been updated.
-   */
-  void
-  update_operators_after_mesh_movement()
-  {
-    for(unsigned int level = this->coarse_level; level <= this->fine_level; ++level)
-    {
-      get_operator(level)->update_after_mesh_movement();
-    }
   }
 
   std::shared_ptr<PDEOperator>

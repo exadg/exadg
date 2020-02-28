@@ -173,15 +173,13 @@ public:
 };
 
 template<int dim, typename Number = double>
-class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>,
-                              public Interface::OperatorCoupled<Number>
+class DGNavierStokesCoupled : public DGNavierStokesBase<dim, Number>
 {
 private:
   typedef DGNavierStokesBase<dim, Number>    Base;
   typedef DGNavierStokesCoupled<dim, Number> This;
 
   typedef typename Base::MultigridNumber MultigridNumber;
-  typedef typename Base::Postprocessor   Postprocessor;
   typedef typename Base::VectorType      VectorType;
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
@@ -190,10 +188,16 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesCoupled(parallel::TriangulationBase<dim> const & triangulation,
-                        InputParameters const &                  parameters,
-                        std::shared_ptr<Postprocessor>           postprocessor,
-                        MPI_Comm const &                         mpi_comm);
+  DGNavierStokesCoupled(
+    parallel::TriangulationBase<dim> const & triangulation_in,
+    Mapping<dim> const &                     mapping_in,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                    periodic_face_pairs_in,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+    InputParameters const &                         parameters_in,
+    MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Destructor.
@@ -201,11 +205,8 @@ public:
   virtual ~DGNavierStokesCoupled();
 
   void
-  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                        periodic_face_pairs,
-        std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-        std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_temperature = "");
 
   void
   setup_solvers(double const & scaling_factor_time_derivative_term, VectorType const & velocity);

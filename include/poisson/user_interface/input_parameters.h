@@ -8,9 +8,11 @@
 #ifndef INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 #define INCLUDE_LAPLACE_INPUT_PARAMETERS_H_
 
+#include "../../functionalities/enum_types.h"
+#include "../../functionalities/print_functions.h"
+
 #include "../../solvers_and_preconditioners/multigrid/multigrid_input_parameters.h"
 #include "../../solvers_and_preconditioners/solvers/solver_data.h"
-#include "../include/functionalities/print_functions.h"
 
 #include "enum_types.h"
 

@@ -42,6 +42,18 @@ public:
   setup(bool const do_restart) = 0;
 
   /*
+   * Returns true if the start time has been reached.
+   */
+  bool
+  started() const;
+
+  /*
+   * returns true if the end of time loop has been reached or the maximum number of time steps
+   */
+  bool
+  finished() const;
+
+  /*
    * Performs the time loop from start_time to end_time.
    */
   void
@@ -50,17 +62,17 @@ public:
   /*
    * Perform only one time step (which is used when coupling different solvers, equations, etc.).
    */
-  bool
+  void
   advance_one_timestep_pre_solve();
 
   void
   advance_one_timestep_solve();
 
   void
-  advance_one_timestep_post_solve(bool write_final_output);
+  advance_one_timestep_post_solve();
 
-  bool
-  advance_one_timestep(bool write_final_output);
+  void
+  advance_one_timestep();
 
   /*
    * Reset the current time.
@@ -214,13 +226,6 @@ private:
    */
   virtual void
   do_read_restart(std::ifstream & in) = 0;
-
-  /*
-   * Variables that store the current status of the time integrator. These variables are needed
-   * when coupling solvers in a partitioned way or when simultaneously integrating in time on
-   * several domains with different start and end times for the different domains.
-   */
-  bool started, finished;
 };
 
 

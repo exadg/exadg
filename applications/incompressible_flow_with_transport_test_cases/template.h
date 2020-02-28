@@ -74,6 +74,24 @@ create_grid_and_set_boundary_ids(
   (void)periodic_faces;
 }
 
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
+namespace IncNS
+{
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -101,8 +119,6 @@ public:
   }
 };
 
-namespace IncNS
-{
 template<int dim>
 void
 set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
@@ -157,14 +173,14 @@ construct_postprocessor(InputParameters const & param, MPI_Comm const &mpi_comm)
 } // namespace IncNS
 
 
+namespace ConvDiff
+{
+
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
 /*                                                                                                          */
 /************************************************************************************************************/
-
-namespace ConvDiff
-{
 
 template<int dim>
 void

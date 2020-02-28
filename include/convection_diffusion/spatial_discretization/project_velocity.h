@@ -31,7 +31,6 @@ public:
   apply(MatrixFree<dim, Number> const &      matrix_free,
         unsigned int const                   dof_index,
         unsigned int const                   quad_index,
-        unsigned int const                   degree,
         std::shared_ptr<Function<dim>> const function,
         double const &                       time,
         VectorType &                         vector)
@@ -47,7 +46,7 @@ public:
 
     // apply M^{-1}
     InverseMassMatrixOperator<dim, dim, Number> inverse_mass;
-    inverse_mass.initialize(matrix_free, degree, dof_index, quad_index);
+    inverse_mass.initialize(matrix_free, dof_index, quad_index);
     inverse_mass.apply(vector, vector);
   }
 
