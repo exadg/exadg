@@ -106,13 +106,6 @@ public:
   void
   set_time(double const time) const;
 
-  /*
-   * TODO It would be better if matrix_free would provide a member function
-   * get_mapping() so that this interface can be removed.
-   */
-  void
-  set_mapping(Mapping<dim> const * mapping_in = nullptr) const;
-
   double
   get_time() const;
 
@@ -331,9 +324,6 @@ protected:
    * Matrix-free object.
    */
   mutable lazy_ptr<MatrixFree<dim, Number>> matrix_free;
-
-  // remove this variable and use matrix_free->get_mapping() instead (if available)
-  mutable Mapping<dim> const * mapping;
 
   /*
    * Physical time (required for time-dependent problems).

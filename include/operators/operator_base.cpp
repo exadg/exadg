@@ -114,14 +114,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::set_time(double const t
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::set_mapping(
-  Mapping<dim> const * mapping_in) const
-{
-  mapping = mapping_in;
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
 double
 OperatorBase<dim, Number, AdditionalData, n_components>::get_time() const
 {
@@ -328,14 +320,12 @@ OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & ds
   }
   else
   {
-    AssertThrow(mapping != nullptr, ExcMessage("Pointer to Mapping<dim> is uninitialized."));
-
     // compute values at Dirichlet boundaries
     std::map<types::global_dof_index, double> boundary_values;
     for(auto dbc : data.bc->dirichlet_bc)
     {
       dbc.second->set_time(time);
-      VectorTools::interpolate_boundary_values(*mapping,
+      VectorTools::interpolate_boundary_values(*matrix_free->get_mapping_info().mapping,
                                                matrix_free->get_dof_handler(data.dof_index),
                                                dbc.first,
                                                *dbc.second,
