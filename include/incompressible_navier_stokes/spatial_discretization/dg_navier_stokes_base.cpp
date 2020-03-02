@@ -260,7 +260,7 @@ DGNavierStokesBase<dim, Number>::initialize_operators(std::string const & dof_in
   constraint_dummy.close();
 
   // mass matrix operator
-  MassMatrixOperatorData mass_matrix_operator_data;
+  MassMatrixOperatorData<dim> mass_matrix_operator_data;
   mass_matrix_operator_data.dof_index  = get_dof_index_velocity();
   mass_matrix_operator_data.quad_index = get_quad_index_velocity_linear();
   mass_matrix_operator.reinit(*matrix_free, constraint_dummy, mass_matrix_operator_data);

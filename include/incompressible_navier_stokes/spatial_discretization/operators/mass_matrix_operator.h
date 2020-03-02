@@ -13,22 +13,29 @@
 #include "../../../operators/mass_matrix_kernel.h"
 #include "../../../operators/operator_base.h"
 
+#include "../../user_interface/boundary_descriptor.h"
+
 using namespace dealii;
 
 namespace IncNS
 {
+template<int dim>
 struct MassMatrixOperatorData : public OperatorBaseData
 {
   MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
   }
+
+  // required by OperatorBase interface
+  std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> bc;
 };
 
 template<int dim, int n_components, typename Number>
-class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData, n_components>
+class MassMatrixOperator
+  : public OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components>
 {
 public:
-  typedef OperatorBase<dim, Number, MassMatrixOperatorData, n_components> Base;
+  typedef OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components> Base;
 
   typedef typename Base::VectorType     VectorType;
   typedef typename Base::Range          Range;
@@ -37,9 +44,9 @@ public:
   MassMatrixOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         MassMatrixOperatorData const &    data);
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         AffineConstraints<double> const &   constraint_matrix,
+         MassMatrixOperatorData<dim> const & data);
 
   void
   set_scaling_factor(Number const & number);

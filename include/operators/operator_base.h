@@ -106,6 +106,13 @@ public:
   void
   set_time(double const time) const;
 
+  /*
+   * TODO It would be better if matrix_free would provide a member function
+   * get_mapping() so that this interface can be removed.
+   */
+  void
+  set_mapping(Mapping<dim> const * mapping_in = nullptr) const;
+
   double
   get_time() const;
 
@@ -325,6 +332,9 @@ protected:
    */
   mutable lazy_ptr<MatrixFree<dim, Number>> matrix_free;
 
+  // remove this variable and use matrix_free->get_mapping() instead (if available)
+  mutable Mapping<dim> const * mapping;
+
   /*
    * Physical time (required for time-dependent problems).
    */
@@ -380,6 +390,15 @@ private:
   create_standard_basis(unsigned int     j,
                         IntegratorFace & integrator_1,
                         IntegratorFace & integrator_2) const;
+
+  /*
+   * This function apply Dirichlet BCs for continuous Galerkin discretizations.
+   */
+  void
+  cell_loop_dbc(MatrixFree<dim, Number> const & matrix_free,
+                VectorType &                    dst,
+                VectorType const &              src,
+                Range const &                   range) const;
 
   /*
    * This function loops over all cells and calculates cell integrals.

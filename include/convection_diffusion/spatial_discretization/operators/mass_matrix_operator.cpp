@@ -9,9 +9,9 @@ MassMatrixOperator<dim, Number>::MassMatrixOperator() : scaling_factor(1.0)
 
 template<int dim, typename Number>
 void
-MassMatrixOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &   matrix_free,
-                                        AffineConstraints<double> const & constraint_matrix,
-                                        MassMatrixOperatorData const &    data)
+MassMatrixOperator<dim, Number>::reinit(MatrixFree<dim, Number> const &     matrix_free,
+                                        AffineConstraints<double> const &   constraint_matrix,
+                                        MassMatrixOperatorData<dim> const & data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 

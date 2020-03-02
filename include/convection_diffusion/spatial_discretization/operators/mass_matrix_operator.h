@@ -4,20 +4,26 @@
 #include "../../../operators/mass_matrix_kernel.h"
 #include "../../../operators/operator_base.h"
 
+#include "../../user_interface/boundary_descriptor.h"
+
 namespace ConvDiff
 {
+template<int dim>
 struct MassMatrixOperatorData : public OperatorBaseData
 {
   MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
   }
+
+  // required by OperatorBase interface
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, typename Number>
-class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData>
+class MassMatrixOperator : public OperatorBase<dim, Number, MassMatrixOperatorData<dim>>
 {
 private:
-  typedef OperatorBase<dim, Number, MassMatrixOperatorData> Base;
+  typedef OperatorBase<dim, Number, MassMatrixOperatorData<dim>> Base;
 
   typedef typename Base::IntegratorCell Integrator;
 
@@ -25,9 +31,9 @@ public:
   MassMatrixOperator();
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         MassMatrixOperatorData const &    data);
+  reinit(MatrixFree<dim, Number> const &     matrix_free,
+         AffineConstraints<double> const &   constraint_matrix,
+         MassMatrixOperatorData<dim> const & data);
 
   void
   set_scaling_factor(Number const & number);

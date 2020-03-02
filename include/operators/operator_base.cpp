@@ -1,6 +1,7 @@
 #include <deal.II/distributed/tria.h>
 #include <deal.II/dofs/dof_tools.h>
 #include <deal.II/multigrid/mg_tools.h>
+#include <deal.II/numerics/vector_tools.h>
 
 #include "../solvers_and_preconditioners/util/block_jacobi_matrices.h"
 #include "../solvers_and_preconditioners/util/invert_diagonal.h"
@@ -110,6 +111,14 @@ void
 OperatorBase<dim, Number, AdditionalData, n_components>::set_time(double const t) const
 {
   this->time = t;
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::set_mapping(
+  Mapping<dim> const * mapping_in) const
+{
+  mapping = mapping_in;
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -302,21 +311,57 @@ template<int dim, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & dst) const
 {
-  AssertThrow(is_dg == true,
-              ExcMessage("Inhomogeneous BCs are not implemented for continuous elements."));
-
   VectorType tmp;
   tmp.reinit(dst, false);
 
-  matrix_free->loop(&This::cell_loop_empty,
-                    &This::face_loop_empty,
-                    &This::boundary_face_loop_inhom_operator,
-                    this,
-                    tmp,
-                    tmp);
+  if(is_dg)
+  {
+    matrix_free->loop(&This::cell_loop_empty,
+                      &This::face_loop_empty,
+                      &This::boundary_face_loop_inhom_operator,
+                      this,
+                      tmp,
+                      tmp);
 
-  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
-  dst.add(-1.0, tmp);
+    // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+    dst.add(-1.0, tmp);
+  }
+  else
+  {
+    AssertThrow(mapping != nullptr, ExcMessage("Pointer to Mapping<dim> is uninitialized."));
+
+    // compute values at Dirichlet boundaries
+    std::map<types::global_dof_index, double> boundary_values;
+    for(auto dbc : data.bc->dirichlet_bc)
+    {
+      dbc.second->set_time(time);
+      VectorTools::interpolate_boundary_values(*mapping,
+                                               matrix_free->get_dof_handler(data.dof_index),
+                                               dbc.first,
+                                               *dbc.second,
+                                               boundary_values);
+    }
+
+    // create temporal vectors
+    VectorType temp1, temp2;
+    matrix_free->initialize_dof_vector(temp1, data.dof_index);
+    matrix_free->initialize_dof_vector(temp2, data.dof_index);
+
+    // fill dbc-values into a zero-vector
+    for(auto m : boundary_values)
+      if(dst.get_partitioner()->in_local_range(m.first))
+        temp1[m.first] = m.second;
+
+    // perform matrix-vector multiplication and ...
+    matrix_free->cell_loop(&This::cell_loop_dbc, this, temp2, temp1);
+    // ... shift vector to right-hand side
+    dst -= temp2;
+
+    // set dbc-values in rhs-vector directly
+    for(auto m : boundary_values)
+      if(dst.get_partitioner()->in_local_range(m.first))
+        dst[m.first] = m.second;
+  }
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -863,6 +908,34 @@ OperatorBase<dim, Number, AdditionalData, n_components>::create_standard_basis(
   // clear dof values of the second FEFaceEvalution
   for(unsigned int i = 0; i < integrator_2.dofs_per_cell; ++i)
     integrator_2.begin_dof_values()[i] = make_vectorized_array<Number>(0.);
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::cell_loop_dbc(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &              src,
+  Range const &                   range) const
+{
+  (void)matrix_free;
+
+  for(auto cell = range.first; cell < range.second; ++cell)
+  {
+    this->reinit_cell(cell);
+
+    integrator->read_dof_values_plain(src);
+
+    integrator->evaluate(integrator_flags.cell_evaluate.value,
+                         integrator_flags.cell_evaluate.gradient,
+                         integrator_flags.cell_evaluate.hessian);
+
+    this->do_cell_integral(*integrator);
+
+    integrator->integrate_scatter(integrator_flags.cell_integrate.value,
+                                  integrator_flags.cell_integrate.gradient,
+                                  dst);
+  }
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>

@@ -204,6 +204,10 @@ Operator<dim, Number, n_components>::rhs(VectorType & dst, double const time) co
   dst = 0;
 
   laplace_operator.set_time(time);
+  // TODO can be removed if mapping can be accessed in OperatorBase via MatrixFree
+  // currently required to apply inhomogeneous Dirichlet BCs in case of continuous
+  // Galerkin discretizations
+  laplace_operator.set_mapping(&mapping);
   laplace_operator.rhs_add(dst);
 
   if(param.right_hand_side)
