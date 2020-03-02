@@ -23,7 +23,7 @@
 
 // operators
 #include "../../operators/inverse_mass_matrix.h"
-#include "operators/mass_matrix_operator.h"
+#include "../../operators/mass_matrix_operator.h"
 #include "operators/rhs_operator.h"
 
 // solvers and preconditioners
@@ -376,7 +376,7 @@ private:
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
 
-  MassMatrixOperator<dim, Number>           mass_matrix_operator;
+  MassMatrixOperator<dim, 1, Number>        mass_matrix_operator;
   InverseMassMatrixOperator<dim, 1, Number> inverse_mass_matrix_operator;
   ConvectiveOperator<dim, Number>           convective_operator;
   DiffusiveOperator<dim, Number>            diffusive_operator;

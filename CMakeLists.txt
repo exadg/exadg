@@ -58,7 +58,8 @@ SET( TARGET_SRC
      include/postprocessor/pressure_difference_calculation.cpp
      include/postprocessor/kinetic_energy_spectrum.cpp
      include/postprocessor/kinetic_energy_calculation.cpp
-     include/postprocessor/statistics_manager.cpp 
+     include/postprocessor/statistics_manager.cpp
+     include/operators/mass_matrix_operator.cpp 
      include/poisson/user_interface/enum_types.cpp
      include/poisson/user_interface/input_parameters.cpp
      include/poisson/spatial_discretization/operator.cpp
@@ -67,7 +68,6 @@ SET( TARGET_SRC
      include/convection_diffusion/user_interface/input_parameters.cpp
      include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/diffusive_operator.cpp
-     include/convection_diffusion/spatial_discretization/operators/mass_matrix_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/rhs_operator.cpp
      include/convection_diffusion/spatial_discretization/operators/combined_operator.cpp
      include/convection_diffusion/spatial_discretization/dg_operator.cpp
@@ -79,7 +79,6 @@ SET( TARGET_SRC
      include/convection_diffusion/postprocessor/output_generator.cpp
      include/incompressible_navier_stokes/user_interface/input_parameters.cpp
      include/incompressible_navier_stokes/user_interface/enum_types.cpp
-     include/incompressible_navier_stokes/spatial_discretization/operators/mass_matrix_operator.cpp     
      include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/viscous_operator.cpp 
      include/incompressible_navier_stokes/spatial_discretization/operators/gradient_operator.cpp 

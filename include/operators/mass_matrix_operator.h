@@ -10,15 +10,19 @@
 
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 
-#include "../../../operators/mass_matrix_kernel.h"
-#include "../../../operators/operator_base.h"
-
-#include "../../user_interface/boundary_descriptor.h"
+#include "mass_matrix_kernel.h"
+#include "operator_base.h"
 
 using namespace dealii;
 
-namespace IncNS
+// required for OperatorBase interface but is never used for the mass matrix operator
+template<int dim>
+struct BoundaryDescriptorDummy
 {
+  // Dirichlet: prescribe all components of the velocity
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+};
+
 template<int dim>
 struct MassMatrixOperatorData : public OperatorBaseData
 {
@@ -27,7 +31,7 @@ struct MassMatrixOperatorData : public OperatorBaseData
   }
 
   // required by OperatorBase interface
-  std::shared_ptr<IncNS::BoundaryDescriptorU<dim>> bc;
+  std::shared_ptr<BoundaryDescriptorDummy<dim>> bc;
 };
 
 template<int dim, int n_components, typename Number>
@@ -38,7 +42,6 @@ public:
   typedef OperatorBase<dim, Number, MassMatrixOperatorData<dim>, n_components> Base;
 
   typedef typename Base::VectorType     VectorType;
-  typedef typename Base::Range          Range;
   typedef typename Base::IntegratorCell IntegratorCell;
 
   MassMatrixOperator();
@@ -65,8 +68,6 @@ private:
 
   mutable double scaling_factor;
 };
-
-} // namespace IncNS
 
 
 

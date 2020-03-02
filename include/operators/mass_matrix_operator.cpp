@@ -7,8 +7,6 @@
 
 #include "mass_matrix_operator.h"
 
-namespace IncNS
-{
 template<int dim, int n_components, typename Number>
 MassMatrixOperator<dim, n_components, Number>::MassMatrixOperator() : scaling_factor(1.0)
 {
@@ -82,5 +80,3 @@ template class MassMatrixOperator<2, 2, double>;
 
 template class MassMatrixOperator<3, 3, float>;
 template class MassMatrixOperator<3, 3, double>;
-
-} // namespace IncNS
