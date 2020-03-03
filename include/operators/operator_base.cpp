@@ -306,19 +306,17 @@ OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & ds
   VectorType tmp;
   tmp.reinit(dst, false);
 
-  if(is_dg)
-  {
-    matrix_free->loop(&This::cell_loop_empty,
-                      &This::face_loop_empty,
-                      &This::boundary_face_loop_inhom_operator,
-                      this,
-                      tmp,
-                      tmp);
+  matrix_free->loop(&This::cell_loop_empty,
+                    &This::face_loop_empty,
+                    &This::boundary_face_loop_inhom_operator,
+                    this,
+                    tmp,
+                    tmp);
 
-    // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
-    dst.add(-1.0, tmp);
-  }
-  else
+  // multiply by -1.0 since the boundary face integrals have to be shifted to the right hand side
+  dst.add(-1.0, tmp);
+
+  if(!is_dg)
   {
     // compute values at Dirichlet boundaries
     std::map<types::global_dof_index, double> boundary_values;
@@ -812,6 +810,21 @@ OperatorBase<dim, Number, AdditionalData, n_components>::do_boundary_integral(
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
 void
+OperatorBase<dim, Number, AdditionalData, n_components>::do_boundary_integral_continuous(
+  IntegratorFace &           integrator,
+  OperatorType const &       operator_type,
+  types::boundary_id const & boundary_id) const
+{
+  (void)integrator;
+  (void)operator_type;
+  (void)boundary_id;
+
+  AssertThrow(
+    false, ExcMessage("OperatorBase::do_boundary_integral_continuous() has not been implemented!"));
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
 OperatorBase<dim, Number, AdditionalData, n_components>::do_face_int_integral(
   IntegratorFace & integrator_m,
   IntegratorFace & integrator_p) const
@@ -1023,20 +1036,41 @@ OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_inho
 {
   (void)src;
 
-  for(unsigned int face = range.first; face < range.second; face++)
+  if(is_dg)
   {
-    this->reinit_boundary_face(face);
+    for(unsigned int face = range.first; face < range.second; face++)
+    {
+      this->reinit_boundary_face(face);
 
-    // note: no gathering/evaluation is necessary when calculating the
-    //       inhomogeneous part of boundary face integrals
+      // note: no gathering/evaluation is necessary when calculating the
+      //       inhomogeneous part of boundary face integrals
 
-    do_boundary_integral(*integrator_m,
-                         OperatorType::inhomogeneous,
-                         matrix_free.get_boundary_id(face));
+      do_boundary_integral(*integrator_m,
+                           OperatorType::inhomogeneous,
+                           matrix_free.get_boundary_id(face));
 
-    integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
-                                    integrator_flags.face_integrate.gradient,
-                                    dst);
+      integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
+                                      integrator_flags.face_integrate.gradient,
+                                      dst);
+    }
+  }
+  else // continuous FE discretization (e.g., apply Neumann BCs)
+  {
+    for(unsigned int face = range.first; face < range.second; face++)
+    {
+      this->reinit_boundary_face(face);
+
+      // note: no gathering/evaluation is necessary when calculating the
+      //       inhomogeneous part of boundary face integrals
+
+      do_boundary_integral_continuous(*integrator_m,
+                                      OperatorType::inhomogeneous,
+                                      matrix_free.get_boundary_id(face));
+
+      integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
+                                      integrator_flags.face_integrate.gradient,
+                                      dst);
+    }
   }
 }
 

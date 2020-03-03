@@ -205,6 +205,42 @@ inline DEAL_II_ALWAYS_INLINE //
   return normal_gradient_p;
 }
 
+/*
+ * This function calculates the Neumann boundary value and is required in case of continuous
+ * Galerkin discretizations.
+ */
+template<int dim, typename Number, int n_components, int rank>
+inline DEAL_II_ALWAYS_INLINE //
+  Tensor<rank, dim, VectorizedArray<Number>>
+  calculate_neumann_value(unsigned int const                                q,
+                          FaceIntegrator<dim, n_components, Number> const & fe_eval,
+                          OperatorType const &                              operator_type,
+                          BoundaryType const &                              boundary_type,
+                          types::boundary_id const                          boundary_id,
+                          std::shared_ptr<BoundaryDescriptor<dim>> const    boundary_descriptor,
+                          double const &                                    time)
+{
+  Tensor<rank, dim, VectorizedArray<Number>> normal_gradient;
+
+  if(boundary_type == BoundaryType::neumann)
+  {
+    AssertThrow(operator_type == OperatorType::inhomogeneous, ExcMessage("Not implemented."));
+
+    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
+      boundary_descriptor->neumann_bc.find(boundary_id);
+    Point<dim, VectorizedArray<Number>> q_points = fe_eval.quadrature_point(q);
+
+    normal_gradient =
+      FunctionEvaluator<dim, Number, rank>::evaluate_function(it->second, q_points, time);
+  }
+  else
+  {
+    // do nothing
+  }
+
+  return normal_gradient;
+}
+
 } // namespace Poisson
 
 

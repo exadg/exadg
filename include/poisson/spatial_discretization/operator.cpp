@@ -40,9 +40,12 @@ Operator<dim, Number, n_components>::append_data_structures(
   this->field = field;
 
   // append mapping flags
+
+  // for continuous FE discretizations, we need to evaluate inhomogeneous Neumann
+  // boundary conditions which is why the second argument is always true
   matrix_free_wrapper.append_mapping_flags(
     Operators::LaplaceKernel<dim, Number, n_components>::get_mapping_flags(
-      param.spatial_discretization == SpatialDiscretization::DG));
+      param.spatial_discretization == SpatialDiscretization::DG, true));
 
   if(param.right_hand_side)
     matrix_free_wrapper.append_mapping_flags(

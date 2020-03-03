@@ -29,20 +29,22 @@ enum class MeshType{
 
 MeshType const MESH_TYPE = MeshType::Curvilinear;
 
+bool const USE_NEUMANN_BOUNDARY = true;
+
 namespace Poisson
 {
 void
 set_input_parameters(Poisson::InputParameters &param)
 {
   // MATHEMATICAL MODEL
-  param.dim = 3;
+  param.dim = 2;
   param.right_hand_side = true;
 
   // SPATIAL DISCRETIZATION
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
   param.mapping = MappingType::Cubic; //Isoparametric;
-  param.spatial_discretization = SpatialDiscretization::DG;
+  param.spatial_discretization = SpatialDiscretization::CG;
   param.IP_factor = 1.0e0;
 
   // SOLVER
@@ -117,6 +119,21 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
     }
   }
 
+  if(USE_NEUMANN_BOUNDARY)
+  {
+    typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+    for(;cell!=endc;++cell)
+    {
+      for(unsigned int face_number=0;face_number < GeometryInfo<dim>::faces_per_cell;++face_number)
+      {
+         if (std::fabs(cell->face(face_number)->center()(0) - right)< 1e-12)
+         {
+           cell->face(face_number)->set_boundary_id (1);
+         }
+      }
+    }
+  }
+
   triangulation->refine_global(n_refine_space);
 }
 
@@ -142,6 +159,31 @@ public:
     double result = 1.0;
     for(unsigned int d=0; d<dim; ++d)
       result *= std::sin(FREQUENCY * p[d]);
+
+    return result;
+  }
+};
+
+template<int dim>
+class NeumannBoundary : public Function<dim>
+{
+public:
+  NeumannBoundary(const unsigned int n_components = 1, const double time = 0.)
+    : Function<dim>(n_components, time)
+  {
+  }
+
+  double
+  value(const Point<dim> & p, const unsigned int /*component*/) const
+  {
+    double result = 1.0;
+    for(unsigned int d=0; d<dim; ++d)
+    {
+      if(d==0)
+        result *= FREQUENCY * std::cos(FREQUENCY * p[d]);
+      else
+        result *= std::sin(FREQUENCY * p[d]);
+    }
 
     return result;
   }
@@ -181,6 +223,7 @@ set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descri
   typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
   boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
+  boundary_descriptor->neumann_bc.insert(pair(1, new NeumannBoundary<dim>()));
 }
 
 template<int dim>

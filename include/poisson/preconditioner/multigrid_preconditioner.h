@@ -99,7 +99,8 @@ private:
     additional_data.mg_level = this->level_info[level].h_level();
 
     MappingFlags flags =
-      Operators::LaplaceKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg());
+      Operators::LaplaceKernel<dim, Number>::get_mapping_flags(this->level_info[level].is_dg(),
+                                                               this->level_info[level].is_dg());
     additional_data.mapping_update_flags                = flags.cells;
     additional_data.mapping_update_flags_inner_faces    = flags.inner_faces;
     additional_data.mapping_update_flags_boundary_faces = flags.boundary_faces;

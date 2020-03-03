@@ -288,15 +288,15 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   mesh.reset(new Mesh<dim>(mapping_degree));
 
   // compute aspect ratio
-  if(true)
+  if(false)
   {
     // this variant is only for comparison
     double AR = calculate_aspect_ratio_vertex_distance(*triangulation, mpi_comm);
-    std::cout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
+    pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(param.degree + 1);
     AR = GridTools::compute_maximum_aspect_ratio(*triangulation, mesh->get_mapping(), quadrature);
-    std::cout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
+    pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
   // initialize Poisson operator

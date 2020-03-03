@@ -290,6 +290,11 @@ protected:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
+  virtual void
+  do_boundary_integral_continuous(IntegratorFace &           integrator,
+                                  OperatorType const &       operator_type,
+                                  types::boundary_id const & boundary_id) const;
+
   // The computation of the diagonal and block-diagonal requires face integrals of type
   // interior (int) and exterior (ext)
   virtual void
@@ -344,6 +349,11 @@ protected:
    * Is the operator used as a multigrid level operator?
    */
   bool is_mg;
+
+  /*
+   * Is the discretization based on discontinuous Galerkin method?
+   */
+  bool is_dg;
 
   std::shared_ptr<IntegratorCell> integrator;
   std::shared_ptr<IntegratorFace> integrator_m;
@@ -580,11 +590,6 @@ private:
    */
   bool
   evaluate_face_integrals() const;
-
-  /*
-   * Is the discretization based on discontinuous Galerkin method?
-   */
-  bool is_dg;
 
   /*
    * Multigrid level: 0 <= level <= max_level. If the operator is not used as a multigrid

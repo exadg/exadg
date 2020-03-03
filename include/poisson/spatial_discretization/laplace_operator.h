@@ -56,29 +56,43 @@ public:
   }
 
   IntegratorFlags
-  get_integrator_flags() const
+  get_integrator_flags(bool const is_dg) const
   {
     IntegratorFlags flags;
 
     flags.cell_evaluate  = CellFlags(false, true, false);
     flags.cell_integrate = CellFlags(false, true, false);
 
-    flags.face_evaluate  = FaceFlags(true, true);
-    flags.face_integrate = FaceFlags(true, true);
+    if(is_dg)
+    {
+      flags.face_evaluate  = FaceFlags(true, true);
+      flags.face_integrate = FaceFlags(true, true);
+    }
+    else
+    {
+      // evaluation of Neumann BCs for continuous elements
+      flags.face_evaluate  = FaceFlags(false, false);
+      flags.face_integrate = FaceFlags(true, false);
+    }
 
     return flags;
   }
 
   static MappingFlags
-  get_mapping_flags(bool const compute_face_integrals)
+  get_mapping_flags(bool const compute_interior_face_integrals,
+                    bool const compute_boundary_face_integrals)
   {
     MappingFlags flags;
 
     flags.cells = update_gradients | update_JxW_values;
 
-    if(compute_face_integrals)
+    if(compute_interior_face_integrals)
     {
       flags.inner_faces = update_gradients | update_JxW_values | update_normal_vectors;
+    }
+
+    if(compute_boundary_face_integrals)
+    {
       flags.boundary_faces =
         update_gradients | update_JxW_values | update_normal_vectors | update_quadrature_points;
     }
@@ -229,6 +243,11 @@ private:
   do_boundary_integral(IntegratorFace &           integrator_m,
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
+
+  void
+  do_boundary_integral_continuous(IntegratorFace &           integrator_m,
+                                  OperatorType const &       operator_type,
+                                  types::boundary_id const & boundary_id) const;
 
   // Some more functionality on top of what is provided by the base class.
   void

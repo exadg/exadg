@@ -15,7 +15,7 @@ LaplaceOperator<dim, Number, n_components>::reinit(
 
   kernel.reinit(matrix_free, data.kernel_data, data.dof_index);
 
-  this->integrator_flags = kernel.get_integrator_flags();
+  this->integrator_flags = kernel.get_integrator_flags(this->is_dg);
 }
 
 template<int dim, typename Number, int n_components>
@@ -220,6 +220,24 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral(
 
     integrator_m.submit_normal_derivative(gradient_flux, q);
     integrator_m.submit_value(-value_flux, q);
+  }
+}
+
+template<int dim, typename Number, int n_components>
+void
+LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
+  IntegratorFace &           integrator_m,
+  OperatorType const &       operator_type,
+  types::boundary_id const & boundary_id) const
+{
+  BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
+
+  for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
+  {
+    value neumann_value = calculate_neumann_value<dim, Number, n_components, rank>(
+      q, integrator_m, operator_type, boundary_type, boundary_id, this->data.bc, this->time);
+
+    integrator_m.submit_value(-neumann_value, q);
   }
 }
 
