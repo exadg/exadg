@@ -27,8 +27,8 @@
 #include "../preconditioner/multigrid_preconditioner.h"
 
 // user interface
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 #include "../user_interface/analytical_solution.h"
-#include "../user_interface/boundary_descriptor.h"
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"
 
@@ -59,13 +59,13 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  Operator(parallel::TriangulationBase<dim> const &       triangulation,
-           Mapping<dim> const &                           mapping,
-           PeriodicFaces const                            periodic_face_pairs,
-           std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim>> const     field_functions,
-           InputParameters const &                        param,
-           MPI_Comm const &                               mpi_comm);
+  Operator(parallel::TriangulationBase<dim> const &                 triangulation,
+           Mapping<dim> const &                                     mapping,
+           PeriodicFaces const                                      periodic_face_pairs,
+           std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> const boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim>> const               field_functions,
+           InputParameters const &                                  param,
+           MPI_Comm const &                                         mpi_comm);
 
   void
   append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
@@ -147,8 +147,8 @@ private:
   /*
    * User interface: Boundary conditions and field functions.
    */
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>               field_functions;
 
   /*
    * List of input parameters.

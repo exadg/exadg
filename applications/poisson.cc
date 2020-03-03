@@ -23,9 +23,10 @@
 
 // user interface, etc.
 #include "../include/poisson/user_interface/analytical_solution.h"
-#include "../include/poisson/user_interface/boundary_descriptor.h"
 #include "../include/poisson/user_interface/field_functions.h"
 #include "../include/poisson/user_interface/input_parameters.h"
+
+#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
 
 // functionalities
 #include "../include/functionalities/calculate_maximum_aspect_ratio.h"
@@ -180,8 +181,8 @@ private:
 
   InputParameters param;
 
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>               field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
 
   /*
    * MatrixFree
@@ -277,7 +278,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 #endif
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
-  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
   set_boundary_conditions(boundary_descriptor);
 
   field_functions.reset(new FieldFunctions<dim>());

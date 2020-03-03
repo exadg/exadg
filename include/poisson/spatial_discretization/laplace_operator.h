@@ -5,7 +5,7 @@
 #include "../../operators/operator_base.h"
 #include "../../operators/operator_type.h"
 
-#include "../user_interface/boundary_descriptor.h"
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 
 namespace Poisson
 {
@@ -173,7 +173,7 @@ struct LaplaceOperatorData : public OperatorBaseData
 
   Operators::LaplaceKernelData kernel_data;
 
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
 };
 
 template<int dim, typename Number, int n_components = 1>

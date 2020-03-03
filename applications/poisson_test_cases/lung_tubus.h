@@ -242,7 +242,7 @@ namespace Poisson
 
 template<int dim>
 void
-set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
+set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
 {
   typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
