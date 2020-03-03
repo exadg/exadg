@@ -32,10 +32,10 @@
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 // general functionalities
+#include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/mesh_resolution_generator_hypercube.h"
 #include "../include/functionalities/moving_mesh.h"
-#include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/print_general_infos.h"
 #include "../include/functionalities/print_throughput.h"
 
@@ -280,16 +280,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   // mapping
   unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree_u);
 
-  if(param.ale_formulation) // moving mesh
-  {
-    std::shared_ptr<Function<dim>> mesh_motion = set_mesh_movement_function<dim>();
-    mesh.reset(new MovingMesh<dim, Number>(
-      mapping_degree, *triangulation, param.degree_u, mesh_motion, param.start_time, mpi_comm));
-  }
-  else // static mesh
-  {
-    mesh.reset(new Mesh<dim>(mapping_degree));
-  }
+  mesh.reset(new Mesh<dim>(mapping_degree));
 
   AssertThrow(param.solver_type == SolverType::Unsteady,
               ExcMessage("This is an unsteady solver. Check input parameters."));

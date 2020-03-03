@@ -672,17 +672,14 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
     laplace_operator_data.quad_index            = this->get_quad_index_pressure();
     laplace_operator_data.operator_is_singular  = this->param.pure_dirichlet_bc;
     laplace_operator_data.kernel_data.IP_factor = 1.0;
-
-    laplace_operator_data.bc = this->boundary_descriptor_laplace;
+    laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
 
     MultigridData mg_data = this->param.multigrid_data_pressure_block;
 
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    multigrid_preconditioner_schur_complement.reset(new MultigridPoisson(this->mpi_comm));
 
-    multigrid_preconditioner_schur_complement.reset(new MULTIGRID(this->mpi_comm));
-
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
+    std::shared_ptr<MultigridPoisson> mg_preconditioner =
+      std::dynamic_pointer_cast<MultigridPoisson>(multigrid_preconditioner_schur_complement);
 
     auto & dof_handler = this->get_dof_handler_p();
 

@@ -26,15 +26,9 @@
 /*                                                                                                          */
 /************************************************************************************************************/
 
-// convergence studies in space or time
-unsigned int const DEGREE_MIN = 3;
-unsigned int const DEGREE_MAX = 3;
-
-unsigned int const REFINE_SPACE_MIN = 0;
-unsigned int const REFINE_SPACE_MAX = 0;
-
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
+// convergence studies in space
+unsigned int const DEGREE = 3;
+unsigned int const REFINE_SPACE = 0;
 
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
@@ -49,8 +43,7 @@ unsigned int const N_SCALARS = 1;
 unsigned int const N_GENERATIONS = 6;
 
 // triangulation type
-IncNS::TriangulationType const TRIANGULATION_TYPE_FLUID = IncNS::TriangulationType::Distributed;
-ConvDiff::TriangulationType const TRIANGULATION_TYPE_SCALAR = ConvDiff::TriangulationType::Distributed;
+TriangulationType const TRIANGULATION_TYPE = TriangulationType::Distributed;
 
 // set problem specific parameters
 double const VISCOSITY = 1.7e-5;  // m^2/s
@@ -231,7 +224,6 @@ void set_input_parameters(InputParameters &param)
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.order_time_integrator = 2;
   param.start_with_low_order = true;
-  param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
   param.solver_info_data.print_to_screen = true;
@@ -242,11 +234,11 @@ void set_input_parameters(InputParameters &param)
   param.use_cell_based_face_loops = false;
 
   // SPATIAL DISCRETIZATION
-  param.triangulation_type = TRIANGULATION_TYPE_FLUID;
-  param.degree_u = DEGREE_MIN;
+  param.triangulation_type = TRIANGULATION_TYPE;
+  param.degree_u = DEGREE;
   param.degree_p = DegreePressure::MixedOrder;
   param.mapping = MappingType::Affine; // TODO
-  param.h_refinements = REFINE_SPACE_MIN;
+  param.h_refinements = REFINE_SPACE;
 
   // convective term
   if(param.formulation_convective_term == FormulationConvectiveTerm::DivergenceFormulation)
@@ -373,7 +365,6 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   param.time_step_size_max = TIME_STEP_SIZE_MAX;
   param.exponent_fe_degree_convection = 1.5;
   param.diffusion_number = 0.01;
-  param.dt_refinements = 0;
 
   // restart
   param.restart_data.write_restart = WRITE_RESTART;
@@ -383,10 +374,10 @@ void set_input_parameters(InputParameters &param, unsigned int const scalar_inde
   // SPATIAL DISCRETIZATION
 
   // triangulation
-  param.triangulation_type = TRIANGULATION_TYPE_SCALAR;
+  param.triangulation_type = TRIANGULATION_TYPE;
 
   // polynomial degree
-  param.degree = DEGREE_MIN;
+  param.degree = DEGREE;
   param.mapping = MappingType::Affine; // TODO
 
   // convective term

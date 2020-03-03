@@ -7,8 +7,6 @@
 
 #include "mass_matrix_operator.h"
 
-namespace IncNS
-{
 template<int dim, int n_components, typename Number>
 MassMatrixOperator<dim, n_components, Number>::MassMatrixOperator() : scaling_factor(1.0)
 {
@@ -17,9 +15,9 @@ MassMatrixOperator<dim, n_components, Number>::MassMatrixOperator() : scaling_fa
 template<int dim, int n_components, typename Number>
 void
 MassMatrixOperator<dim, n_components, Number>::reinit(
-  MatrixFree<dim, Number> const &   matrix_free,
-  AffineConstraints<double> const & constraint_matrix,
-  MassMatrixOperatorData const &    data)
+  MatrixFree<dim, Number> const &     matrix_free,
+  AffineConstraints<double> const &   constraint_matrix,
+  MassMatrixOperatorData<dim> const & data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 
@@ -82,5 +80,3 @@ template class MassMatrixOperator<2, 2, double>;
 
 template class MassMatrixOperator<3, 3, float>;
 template class MassMatrixOperator<3, 3, double>;
-
-} // namespace IncNS

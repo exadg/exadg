@@ -1,5 +1,5 @@
 /*
- * poisson_operation.h
+ * operator.h
  *
  *  Created on: 2016
  *      Author: Fehn/Munch
@@ -10,6 +10,7 @@
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -23,6 +24,7 @@
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
+#include "../preconditioner/multigrid_preconditioner.h"
 
 // user interface
 #include "../user_interface/analytical_solution.h"
@@ -38,13 +40,16 @@
 
 namespace Poisson
 {
-template<int dim, typename Number>
+template<int dim, typename Number, int n_components = 1>
 class Operator : public dealii::Subscriptor
 {
 public:
   typedef float MultigridNumber;
   // use this line for double-precision multigrid
   //  typedef Number MultigridNumber;
+
+  typedef MultigridPreconditioner<dim, Number, MultigridNumber, n_components> Multigrid;
+  typedef LaplaceOperator<dim, Number, n_components>                          Laplace;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 #ifdef DEAL_II_WITH_TRILINOS
@@ -54,13 +59,13 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  Operator(parallel::TriangulationBase<dim> const &                triangulation,
-           Mapping<dim> const &                                    mapping,
-           PeriodicFaces const                                     periodic_face_pairs,
-           std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor,
-           std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions,
-           Poisson::InputParameters const &                        param,
-           MPI_Comm const &                                        mpi_comm);
+  Operator(parallel::TriangulationBase<dim> const &       triangulation,
+           Mapping<dim> const &                           mapping,
+           PeriodicFaces const                            periodic_face_pairs,
+           std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim>> const     field_functions,
+           InputParameters const &                        param,
+           MPI_Comm const &                               mpi_comm);
 
   void
   append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
@@ -148,17 +153,12 @@ private:
   /*
    * List of input parameters.
    */
-  Poisson::InputParameters const & param;
+  InputParameters const & param;
 
   /*
    * Basic finite element ingredients.
    */
-
-  // DG
-  FE_DGQ<dim> fe_dgq;
-
-  // FE (continuous elements)
-  FE_Q<dim> fe_q;
+  std::shared_ptr<FiniteElement<dim>> fe;
 
   DoFHandler<dim> dof_handler;
 
@@ -172,11 +172,11 @@ private:
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
   std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
 
-  ConvDiff::RHSOperator<dim, Number> rhs_operator;
+  ConvDiff::RHSOperator<dim, Number, n_components> rhs_operator;
 
-  LaplaceOperator<dim, Number>                laplace_operator;
-  std::shared_ptr<PreconditionerBase<Number>> preconditioner;
+  Laplace laplace_operator;
 
+  std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 
   /*

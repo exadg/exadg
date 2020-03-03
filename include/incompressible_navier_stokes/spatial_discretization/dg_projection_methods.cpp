@@ -150,7 +150,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
     MultigridData mg_data;
     mg_data = this->param.multigrid_data_pressure_poisson;
 
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1> MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID(this->mpi_comm));
 
@@ -254,22 +254,17 @@ DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(
   bool const         update_preconditioner) const
 {
   // Check multigrid algorithm
-
-  //  typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+  //  std::shared_ptr<MultigridPoisson> mg_preconditioner
+  //    = std::dynamic_pointer_cast<MultigridPoisson>(preconditioner_pressure_poisson);
   //
-  //  std::shared_ptr<MULTIGRID> mg_preconditioner
-  //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
-  //
-  //  CheckMultigrid<dim, Number, Poisson::LaplaceOperator<dim, Number>, MULTIGRID>
-  //    check_multigrid(this->laplace_operator, mg_preconditioner);
+  //  CheckMultigrid<dim, Number, Poisson::LaplaceOperator<dim, Number>, MultigridPoisson,
+  //  MultigridNumber>
+  //    check_multigrid(this->laplace_operator, mg_preconditioner, this->mpi_comm);
   //  check_multigrid.check();
 
   // Use multigrid as a solver (use double precision here)
-
-  //  typedef Poisson::MultigridPreconditioner<dim, Number, double> MULTIGRID;
-  //
-  //  std::shared_ptr<MULTIGRID> mg_preconditioner
-  //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+  //  std::shared_ptr<MultigridPoisson> mg_preconditioner
+  //    = std::dynamic_pointer_cast<MultigridPoisson>(preconditioner_pressure_poisson);
   //  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
   // call pressure Poisson solver

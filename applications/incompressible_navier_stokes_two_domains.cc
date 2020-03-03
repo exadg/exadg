@@ -34,9 +34,9 @@
 #include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 // general functionalities
+#include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/mapping_degree.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -341,40 +341,10 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
 
   // mapping
   unsigned int const mapping_degree_1 = get_mapping_degree(param_1.mapping, param_1.degree_u);
-
-  if(param_1.ale_formulation) // moving mesh
-  {
-    std::shared_ptr<Function<dim>> mesh_motion_1;
-    mesh_motion_1 = set_mesh_movement_function_1<dim>();
-    mesh_1.reset(new MovingMesh<dim, Number>(mapping_degree_1,
-                                             *triangulation_1,
-                                             param_1.degree_u,
-                                             mesh_motion_1,
-                                             param_1.start_time,
-                                             mpi_comm));
-  }
-  else // static mesh
-  {
-    mesh_1.reset(new Mesh<dim>(mapping_degree_1));
-  }
+  mesh_1.reset(new Mesh<dim>(mapping_degree_1));
 
   unsigned int const mapping_degree_2 = get_mapping_degree(param_2.mapping, param_2.degree_u);
-
-  if(param_2.ale_formulation) // moving mesh
-  {
-    std::shared_ptr<Function<dim>> mesh_motion_2;
-    mesh_motion_2 = set_mesh_movement_function_2<dim>();
-    mesh_2.reset(new MovingMesh<dim, Number>(mapping_degree_2,
-                                             *triangulation_2,
-                                             param_2.degree_u,
-                                             mesh_motion_2,
-                                             param_2.start_time,
-                                             mpi_comm));
-  }
-  else // static mesh
-  {
-    mesh_2.reset(new Mesh<dim>(mapping_degree_2));
-  }
+  mesh_2.reset(new Mesh<dim>(mapping_degree_2));
 
   // initialize navier_stokes_operator_1 (DOMAIN 1)
   if(this->param_1.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
