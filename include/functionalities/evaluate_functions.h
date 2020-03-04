@@ -21,7 +21,7 @@ using namespace dealii;
 //  VectorizedArray<value_type>
 //  evaluate_scalar_function(std::shared_ptr<Function<dim>>                  function,
 //                           Point<dim, VectorizedArray<value_type>> const & q_points,
-//                           double const &                                  eval_time)
+//                           double const &                                  time)
 //{
 //  VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
 //
@@ -32,7 +32,7 @@ using namespace dealii;
 //    for(unsigned int d = 0; d < dim; ++d)
 //      q_point[d] = q_points[d][n];
 //
-//    function->set_time(eval_time);
+//    function->set_time(time);
 //    array[n] = function->value(q_point);
 //  }
 //  value.load(&array[0]);
@@ -45,7 +45,7 @@ using namespace dealii;
 //  Tensor<1, dim, VectorizedArray<value_type>>
 //  evaluate_vectorial_function(std::shared_ptr<Function<dim>>                  function,
 //                              Point<dim, VectorizedArray<value_type>> const & q_points,
-//                              double const &                                  eval_time)
+//                              double const &                                  time)
 //{
 //  Tensor<1, dim, VectorizedArray<value_type>> value;
 //
@@ -58,7 +58,7 @@ using namespace dealii;
 //      for(unsigned int d = 0; d < dim; ++d)
 //        q_point[d] = q_points[d][n];
 //
-//      function->set_time(eval_time);
+//      function->set_time(time);
 //      array[n] = function->value(q_point, d);
 //    }
 //    value[d].load(&array[0]);
@@ -72,18 +72,18 @@ using namespace dealii;
 //  Tensor<rank, dim, VectorizedArray<value_type>>
 //  evaluate_function(std::shared_ptr<Function<dim>>                  function,
 //                    Point<dim, VectorizedArray<value_type>> const & q_points,
-//                    double const &                                  eval_time)
+//                    double const &                                  time)
 //{
 //  (void)function;
 //  (void)q_points;
-//  (void)eval_time;
+//  (void)time;
 //
 //  return Tensor<rank, dim, VectorizedArray<value_type>>();
 //
 //  if constexpr(rank == 0)
-//    return evaluate_scalar_function<dim, value_type>(function, q_points, eval_time);
+//    return evaluate_scalar_function<dim, value_type>(function, q_points, time);
 //  else
-//    return evaluate_vectorial_function<dim, value_type>(function, q_points, eval_time);
+//    return evaluate_vectorial_function<dim, value_type>(function, q_points, time);
 //}
 
 template<int dim, typename value_type, int rank>
@@ -130,7 +130,7 @@ struct FunctionEvaluator<dim, value_type, 0>
     Tensor<0, dim, VectorizedArray<value_type>>
     value(std::shared_ptr<Function<dim>>                  function,
           Point<dim, VectorizedArray<value_type>> const & q_points,
-          double const &                                  eval_time)
+          double const &                                  time)
   {
     VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
 
@@ -141,7 +141,7 @@ struct FunctionEvaluator<dim, value_type, 0>
       for(unsigned int d = 0; d < dim; ++d)
         q_point[d] = q_points[d][n];
 
-      function->set_time(eval_time);
+      function->set_time(time);
       array[n] = function->value(q_point);
     }
     value.load(&array[0]);
@@ -157,7 +157,7 @@ struct FunctionEvaluator<dim, value_type, 1>
     Tensor<1, dim, VectorizedArray<value_type>>
     value(std::shared_ptr<Function<dim>>                  function,
           Point<dim, VectorizedArray<value_type>> const & q_points,
-          double const &                                  eval_time)
+          double const &                                  time)
   {
     Tensor<1, dim, VectorizedArray<value_type>> value;
 
@@ -170,7 +170,7 @@ struct FunctionEvaluator<dim, value_type, 1>
         for(unsigned int d = 0; d < dim; ++d)
           q_point[d] = q_points[d][n];
 
-        function->set_time(eval_time);
+        function->set_time(time);
         array[n] = function->value(q_point, d);
       }
       value[d].load(&array[0]);
@@ -184,7 +184,7 @@ struct FunctionEvaluator<dim, value_type, 1>
     value(std::shared_ptr<Function<dim>>                      function,
           Point<dim, VectorizedArray<value_type>> const &     q_points,
           Tensor<1, dim, VectorizedArray<value_type>> const & normals,
-          double const &                                      eval_time)
+          double const &                                      time)
   {
     auto function_with_normal = std::dynamic_pointer_cast<FunctionWithNormal<dim>>(function);
 
@@ -202,7 +202,7 @@ struct FunctionEvaluator<dim, value_type, 1>
           q_point[d] = q_points[d][n];
           normal[d]  = normals[d][n];
         }
-        function_with_normal->set_time(eval_time);
+        function_with_normal->set_time(time);
         function_with_normal->set_normal_vector(normal);
         array[n] = function_with_normal->value(q_point, d);
       }
