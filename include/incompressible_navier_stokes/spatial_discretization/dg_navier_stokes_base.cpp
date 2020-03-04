@@ -159,7 +159,7 @@ template<int dim, typename Number>
 void
 DGNavierStokesBase<dim, Number>::initialize_boundary_descriptor_laplace()
 {
-  boundary_descriptor_laplace.reset(new Poisson::BoundaryDescriptor<dim>());
+  boundary_descriptor_laplace.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
   // Dirichlet BCs for pressure
   boundary_descriptor_laplace->dirichlet_bc = boundary_descriptor_pressure->dirichlet_bc;
@@ -957,8 +957,8 @@ DGNavierStokesBase<dim, Number>::compute_streamfunction(VectorType &       dst,
   laplace_operator_data.dof_index  = get_dof_index_velocity_scalar();
   laplace_operator_data.quad_index = get_quad_index_velocity_linear();
 
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_streamfunction;
-  boundary_descriptor_streamfunction.reset(new Poisson::BoundaryDescriptor<dim>());
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_streamfunction;
+  boundary_descriptor_streamfunction.reset(new ConvDiff::BoundaryDescriptor<dim>());
 
   // fill boundary descriptor: Assumption: only Dirichlet BC's
   boundary_descriptor_streamfunction->dirichlet_bc = boundary_descriptor_velocity->dirichlet_bc;
@@ -1466,7 +1466,8 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id);
 
-        vector g = evaluate_vectorial_function(it->second, q_points, this->evaluation_time);
+        vector g =
+          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 
@@ -1512,7 +1513,8 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
 
-        scalar g = evaluate_scalar_function(it->second, q_points, this->evaluation_time);
+        scalar g =
+          FunctionEvaluator<dim, Number, 0>::value(it->second, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 

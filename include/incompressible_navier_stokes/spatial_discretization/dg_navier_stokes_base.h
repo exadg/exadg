@@ -443,7 +443,7 @@ protected:
    * the operator has to be evaluated).
    *
    */
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
 
   /*
    * Special case: pure Dirichlet boundary conditions.

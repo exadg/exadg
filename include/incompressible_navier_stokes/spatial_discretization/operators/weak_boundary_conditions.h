@@ -80,14 +80,12 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        boundary_descriptor->dirichlet_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
+      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+      auto q_points = integrator.quadrature_point(q);
 
-      Tensor<1, dim, VectorizedArray<Number>> g =
-        evaluate_vectorial_function(it->second, q_points, time);
+      auto g = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
 
-      value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
+      value_p = -value_m + Tensor<1, dim, VectorizedArray<Number>>(2.0 * g);
     }
     else if(operator_type == OperatorType::homogeneous)
     {
@@ -227,11 +225,10 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        boundary_descriptor->dirichlet_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
+      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+      auto q_points = integrator.quadrature_point(q);
 
-      VectorizedArray<Number> g = evaluate_scalar_function(it->second, q_points, time);
+      VectorizedArray<Number> g = FunctionEvaluator<dim, Number, 0>::value(bc, q_points, time);
 
       value_p = -value_m + 2.0 * inverse_scaling_factor * g;
     }
@@ -352,19 +349,18 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        boundary_descriptor->neumann_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
+      auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
+      auto q_points = integrator.quadrature_point(q);
 
       Tensor<1, dim, VectorizedArray<Number>> h;
       if(variable_normal_vector == false)
       {
-        h = evaluate_vectorial_function(it->second, q_points, time);
+        h = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
       }
       else
       {
-        Tensor<1, dim, VectorizedArray<Number>> normals_m = integrator.get_normal_vector(q);
-        h = evaluate_vectorial_function_with_normal(it->second, q_points, normals_m, time);
+        auto normals_m = integrator.get_normal_vector(q);
+        h              = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, normals_m, time);
       }
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;
@@ -380,7 +376,7 @@ inline DEAL_II_ALWAYS_INLINE //
   }
   else if(boundary_type == BoundaryTypeU::Symmetry)
   {
-    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator.get_normal_vector(q);
+    auto normal_m     = integrator.get_normal_vector(q);
     normal_gradient_p = -normal_gradient_m + 2.0 * (normal_gradient_m * normal_m) * normal_m;
   }
   else

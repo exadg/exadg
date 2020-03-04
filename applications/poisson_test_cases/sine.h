@@ -44,7 +44,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.triangulation_type = TriangulationType::Distributed;
   param.degree = DEGREE_MIN;
   param.mapping = MappingType::Cubic; //Isoparametric;
-  param.spatial_discretization = SpatialDiscretization::CG;
+  param.spatial_discretization = SpatialDiscretization::DG;
   param.IP_factor = 1.0e0;
 
   // SOLVER
@@ -218,7 +218,7 @@ namespace Poisson
 
 template<int dim>
 void
-set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
+set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
 {
   typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 

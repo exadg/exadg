@@ -39,9 +39,10 @@
 
 // Poisson: user interface, etc.
 #include "../include/poisson/user_interface/analytical_solution.h"
-#include "../include/poisson/user_interface/boundary_descriptor.h"
 #include "../include/poisson/user_interface/field_functions.h"
 #include "../include/poisson/user_interface/input_parameters.h"
+
+#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
 
 // general functionalities
 #include "../include/functionalities/mapping_degree.h"
@@ -55,9 +56,9 @@ using namespace dealii;
 // specify the flow problem that has to be solved
 
 // template
-//#include "fluid_structure_interaction_test_cases/template.h"
+#include "fluid_structure_interaction_test_cases/template.h"
 
-#include "fluid_structure_interaction_test_cases/vortex.h"
+//#include "fluid_structure_interaction_test_cases/vortex.h"
 
 template<typename Number>
 class ProblemBase
@@ -107,8 +108,8 @@ private:
   // solve mesh deformation by a Poisson problem
   Poisson::InputParameters poisson_param;
 
-  std::shared_ptr<Poisson::FieldFunctions<dim>>     poisson_field_functions;
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> poisson_boundary_descriptor;
+  std::shared_ptr<Poisson::FieldFunctions<dim>>      poisson_field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> poisson_boundary_descriptor;
 
   // static mesh for Poisson problem
   std::shared_ptr<Mesh<dim>> poisson_mesh;
@@ -265,7 +266,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &   fluid_param_in,
   IncNS::set_field_functions(fluid_field_functions);
 
   // poisson
-  poisson_boundary_descriptor.reset(new Poisson::BoundaryDescriptor<dim>());
+  poisson_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
   Poisson::set_boundary_conditions(poisson_boundary_descriptor);
 
   poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());

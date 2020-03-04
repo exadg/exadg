@@ -77,12 +77,12 @@ public:
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    vector f = evaluate_vectorial_function(data.f, q_points, time);
+    vector f = FunctionEvaluator<dim, Number, 1>::value(data.f, q_points, time);
 
     if(data.boussinesq_term)
     {
-      vector g     = evaluate_vectorial_function(data.gravitational_force, q_points, time);
-      scalar T     = integrator_temperature.get_value(q);
+      vector g = FunctionEvaluator<dim, Number, 1>::value(data.gravitational_force, q_points, time);
+      scalar T = integrator_temperature.get_value(q);
       scalar T_ref = data.reference_temperature;
       f += g * (1.0 - data.thermal_expansion_coefficient * (T - T_ref));
       // TODO: for the dual splitting scheme we observed in one example that it might be

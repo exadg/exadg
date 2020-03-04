@@ -441,15 +441,15 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
 
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
-    scalar value_m = calculate_interior_value(q, integrator_m, operator_type);
-    scalar value_p = calculate_exterior_value(value_m,
-                                              q,
-                                              integrator_m,
-                                              operator_type,
-                                              boundary_type,
-                                              boundary_id,
-                                              this->data.bc,
-                                              this->time);
+    scalar value_m = calculate_interior_value<dim, Number, 1, 0>(q, integrator_m, operator_type);
+    scalar value_p = calculate_exterior_value<dim, Number, 1, 0>(value_m,
+                                                                 q,
+                                                                 integrator_m,
+                                                                 operator_type,
+                                                                 boundary_type,
+                                                                 boundary_id,
+                                                                 this->data.bc,
+                                                                 this->time);
 
     vector normal_m = integrator_m.get_normal_vector(q);
 
@@ -466,15 +466,17 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
 
     if(this->data.diffusive_problem)
     {
-      scalar normal_gradient_m = calculate_interior_normal_gradient(q, integrator_m, operator_type);
-      scalar normal_gradient_p = calculate_exterior_normal_gradient(normal_gradient_m,
-                                                                    q,
-                                                                    integrator_m,
-                                                                    operator_type,
-                                                                    boundary_type,
-                                                                    boundary_id,
-                                                                    this->data.bc,
-                                                                    this->time);
+      scalar normal_gradient_m =
+        calculate_interior_normal_gradient<dim, Number, 1, 0>(q, integrator_m, operator_type);
+      scalar normal_gradient_p =
+        calculate_exterior_normal_gradient<dim, Number, 1, 0>(normal_gradient_m,
+                                                              q,
+                                                              integrator_m,
+                                                              operator_type,
+                                                              boundary_type,
+                                                              boundary_id,
+                                                              this->data.bc,
+                                                              this->time);
 
       value_flux += -diffusive_kernel->calculate_value_flux(normal_gradient_m,
                                                             normal_gradient_p,
