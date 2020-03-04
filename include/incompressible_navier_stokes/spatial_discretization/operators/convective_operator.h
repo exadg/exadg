@@ -899,7 +899,7 @@ public:
     // element e⁺
     Tensor<1, dim, VectorizedArray<Number>> delta_uP;
 
-    if(boundary_type == BoundaryTypeU::Dirichlet)
+    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
     {
       if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
       {

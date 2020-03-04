@@ -170,13 +170,6 @@ private:
 
   // Neumann boundary condition term
 
-  // body force term
-  void
-  local_rhs_ppe_nbc_body_force_term_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
-                                                      VectorType &                    dst,
-                                                      VectorType const &              src,
-                                                      Range const & face_range) const;
-
   // dg_u/dt term with analytical derivative
   void
   local_rhs_ppe_nbc_analytical_time_derivative_add_boundary_face(
@@ -192,6 +185,13 @@ private:
     VectorType &                    dst,
     VectorType const &              src,
     Range const &                   face_range) const;
+
+  // body force term
+  void
+  local_rhs_ppe_nbc_body_force_term_add_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                                      VectorType &                    dst,
+                                                      VectorType const &              src,
+                                                      Range const & face_range) const;
 
   // convective term
   void

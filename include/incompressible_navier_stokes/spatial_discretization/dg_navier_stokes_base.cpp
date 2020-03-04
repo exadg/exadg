@@ -1449,7 +1449,7 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
     BoundaryTypeU const boundary_type =
       this->boundary_descriptor_velocity->get_boundary_type(boundary_id);
 
-    if(boundary_type == BoundaryTypeU::Dirichlet)
+    if(boundary_type == BoundaryTypeU::Dirichlet || boundary_type == BoundaryTypeU::DirichletMortar)
     {
       integrator.reinit(face);
       integrator.read_dof_values(dst);
@@ -1461,17 +1461,37 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
         unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
                                      .face_to_cell_index_nodal[local_face_number][q];
 
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
+        vector g = vector();
 
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-          this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id);
+        if(boundary_type == BoundaryTypeU::Dirichlet)
+        {
+          auto bc = this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id)->second;
+          auto q_points = integrator.quadrature_point(q);
 
-        vector g =
-          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
+          g = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, this->evaluation_time);
+        }
+        else if(boundary_type == BoundaryTypeU::DirichletMortar)
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+
+          // TODO
+          // g = ;
+        }
+        else
+        {
+          AssertThrow(false, ExcMessage("Not implemented."));
+        }
+
         integrator.submit_dof_value(g, index);
       }
 
       integrator.set_dof_values(dst);
+    }
+    else
+    {
+      AssertThrow(boundary_type == BoundaryTypeU::Neumann ||
+                    boundary_type == BoundaryTypeU::Symmetry,
+                  ExcMessage("BoundaryTypeU not implemented."));
     }
   }
 }
@@ -1508,17 +1528,19 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
         unsigned int const index = matrix_free.get_shape_info(dof_index, quad_index)
                                      .face_to_cell_index_nodal[local_face_number][q];
 
-        Point<dim, scalar> q_points = integrator.quadrature_point(q);
+        auto bc       = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id)->second;
+        auto q_points = integrator.quadrature_point(q);
 
-        typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-          this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
-
-        scalar g =
-          FunctionEvaluator<dim, Number, 0>::value(it->second, q_points, this->evaluation_time);
+        scalar g = FunctionEvaluator<dim, Number, 0>::value(bc, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 
       integrator.set_dof_values(dst);
+    }
+    else
+    {
+      AssertThrow(boundary_type == BoundaryTypeP::Neumann,
+                  ExcMessage("BoundaryTypeP not implemented."));
     }
   }
 }

@@ -23,7 +23,7 @@ namespace IncNS
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     example          |          velocity         |               pressure                         |
  *   +----------------------+---------------------------+------------------------------------------------+
- *   |     inflow, no-slip  |   Dirichlet:              |  Neumann:                                      |
+ *   |     inflow, no-slip  |   Dirichlet(Mortar):      |  Neumann:                                      |
  *   |                      | prescribe g_u             | prescribe dg_u/dt in case of dual-splitting    |
  *   +----------------------+---------------------------+------------------------------------------------+
  *   |     symmetry         |   Symmetry:               |  Neumann:                                      |
@@ -42,6 +42,7 @@ enum class BoundaryTypeU
 {
   Undefined,
   Dirichlet,
+  DirichletMortar,
   Neumann,
   Symmetry
 };
@@ -58,6 +59,12 @@ struct BoundaryDescriptorU
 {
   // Dirichlet: prescribe all components of the velocity
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+
+  // another type of Dirichlet boundary condition where the Dirichlet value comes
+  // from the solution on another domain that is in contact with the actual domain
+  // of interest at the given boundary (this type of Dirichlet boundary condition
+  // is required for fluid-structure interaction problems)
+  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_mortar_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
@@ -79,6 +86,8 @@ struct BoundaryDescriptorU
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
       return BoundaryTypeU::Dirichlet;
+    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+      return BoundaryTypeU::DirichletMortar;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
       return BoundaryTypeU::Neumann;
     else if(this->symmetry_bc.find(boundary_id) != this->symmetry_bc.end())

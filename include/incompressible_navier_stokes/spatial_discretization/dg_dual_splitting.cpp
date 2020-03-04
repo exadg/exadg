@@ -252,7 +252,8 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
 
     for(unsigned int q = 0; q < integrator.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet ||
+         boundary_type == BoundaryTypeU::DirichletMortar)
       {
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
@@ -269,14 +270,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
       }
       else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
       {
-        // Do nothing on Neumann and Symmetry boundaries.
-        // Remark: on symmetry boundaries we prescribe g_u * n = 0, and also g_{u_hat}*n = 0 in case
-        // of the dual splitting scheme. This is in contrast to Dirichlet boundaries where we
-        // prescribe a consistent boundary condition for g_{u_hat} derived from the convective step
-        // of the dual splitting scheme which differs from the DBC g_u. Applying this consistent DBC
-        // to symmetry boundaries and using g_u*n=0 as well as exploiting symmetry, we obtain
-        // g_{u_hat}*n=0 on symmetry boundaries. Hence, there are no inhomogeneous contributions for
-        // g_{u_hat}*n.
+        // Do nothing on Neumann and symmetry boundaries.
+        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+        // are no inhomogeneous contributions on symmetry boundaries.
         scalar zero = make_vectorized_array<Number>(0.0);
         integrator.submit_value(zero, q);
       }
@@ -348,7 +345,8 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term
 
     for(unsigned int q = 0; q < pressure.n_q_points; ++q)
     {
-      if(boundary_type == BoundaryTypeU::Dirichlet)
+      if(boundary_type == BoundaryTypeU::Dirichlet ||
+         boundary_type == BoundaryTypeU::DirichletMortar)
       {
         vector normal = pressure.get_normal_vector(q);
 
@@ -383,14 +381,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_convective_term
       }
       else if(boundary_type == BoundaryTypeU::Neumann || boundary_type == BoundaryTypeU::Symmetry)
       {
-        // Do nothing on Neumann and Symmetry boundaries.
-        // Remark: on symmetry boundaries we prescribe g_u * n = 0, and also g_{u_hat}*n = 0 in
-        // case of the dual splitting scheme. This is in contrast to Dirichlet boundaries where we
-        // prescribe a consistent boundary condition for g_{u_hat} derived from the convective
-        // step of the dual splitting scheme which differs from the DBC g_u. Applying this
-        // consistent DBC to symmetry boundaries and using g_u*n=0 as well as exploiting symmetry,
-        // we obtain g_{u_hat}*n=0 on symmetry boundaries. Hence, there are no inhomogeneous
-        // contributions for g_{u_hat}*n.
+        // Do nothing on Neumann and symmetry boundaries.
+        // Remark: On symmetry boundaries it follows from g_u * n = 0 that also g_{u_hat} * n = 0.
+        // Hence, a symmetry boundary for u is also a symmetry boundary for u_hat. Hence, there
+        // are no inhomogeneous contributions on symmetry boundaries.
         scalar zero = make_vectorized_array<Number>(0.0);
         pressure.submit_value(zero, q);
       }
@@ -478,6 +472,73 @@ DGNavierStokesDualSplitting<dim, Number>::
 
 template<int dim, typename Number>
 void
+DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_numerical_time_derivative_add(
+  VectorType &       dst,
+  VectorType const & acceleration)
+{
+  this->get_matrix_free().loop(&This::cell_loop_empty,
+                               &This::face_loop_empty,
+                               &This::local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face,
+                               this,
+                               dst,
+                               acceleration);
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesDualSplitting<dim, Number>::
+  local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
+    MatrixFree<dim, Number> const & data,
+    VectorType &                    dst,
+    VectorType const &              acceleration,
+    Range const &                   face_range) const
+{
+  unsigned int dof_index_velocity  = this->get_dof_index_velocity();
+  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
+  unsigned int quad_index_velocity = this->get_quad_index_velocity_linear();
+
+  FaceIntegratorU integrator_velocity(data, true, dof_index_velocity, quad_index_velocity);
+  FaceIntegratorP integrator_pressure(data, true, dof_index_pressure, quad_index_velocity);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    integrator_velocity.reinit(face);
+    integrator_velocity.gather_evaluate(acceleration, true, false);
+
+    integrator_pressure.reinit(face);
+
+    types::boundary_id boundary_id = data.get_boundary_id(face);
+    BoundaryTypeP      boundary_type =
+      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
+
+    for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
+    {
+      if(boundary_type == BoundaryTypeP::Neumann)
+      {
+        vector normal = integrator_velocity.get_normal_vector(q);
+        vector dudt   = integrator_velocity.get_value(q);
+        scalar h      = -normal * dudt;
+
+        integrator_pressure.submit_value(h, q);
+      }
+      else if(boundary_type == BoundaryTypeP::Dirichlet)
+      {
+        scalar zero = make_vectorized_array<Number>(0.0);
+        integrator_pressure.submit_value(zero, q);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+      }
+    }
+
+    integrator_pressure.integrate(true, false);
+    integrator_pressure.distribute_local_to_global(dst);
+  }
+}
+
+template<int dim, typename Number>
+void
 DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_body_force_term_add(VectorType &   dst,
                                                                           double const & time)
 {
@@ -543,73 +604,6 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_
     }
     integrator.integrate(true, false);
     integrator.distribute_local_to_global(dst);
-  }
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::rhs_ppe_nbc_numerical_time_derivative_add(
-  VectorType &       dst,
-  VectorType const & acceleration)
-{
-  this->get_matrix_free().loop(&This::cell_loop_empty,
-                               &This::face_loop_empty,
-                               &This::local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face,
-                               this,
-                               dst,
-                               acceleration);
-}
-
-template<int dim, typename Number>
-void
-DGNavierStokesDualSplitting<dim, Number>::
-  local_rhs_ppe_nbc_numerical_time_derivative_add_boundary_face(
-    MatrixFree<dim, Number> const & data,
-    VectorType &                    dst,
-    VectorType const &              acceleration,
-    Range const &                   face_range) const
-{
-  unsigned int dof_index_velocity  = this->get_dof_index_velocity();
-  unsigned int dof_index_pressure  = this->get_dof_index_pressure();
-  unsigned int quad_index_velocity = this->get_quad_index_velocity_linear();
-
-  FaceIntegratorU integrator_velocity(data, true, dof_index_velocity, quad_index_velocity);
-  FaceIntegratorP integrator_pressure(data, true, dof_index_pressure, quad_index_velocity);
-
-  for(unsigned int face = face_range.first; face < face_range.second; face++)
-  {
-    integrator_velocity.reinit(face);
-    integrator_velocity.gather_evaluate(acceleration, true, false);
-
-    integrator_pressure.reinit(face);
-
-    types::boundary_id boundary_id = data.get_boundary_id(face);
-    BoundaryTypeP      boundary_type =
-      this->boundary_descriptor_pressure->get_boundary_type(boundary_id);
-
-    for(unsigned int q = 0; q < integrator_pressure.n_q_points; ++q)
-    {
-      if(boundary_type == BoundaryTypeP::Neumann)
-      {
-        vector normal = integrator_velocity.get_normal_vector(q);
-        vector dudt   = integrator_velocity.get_value(q);
-        scalar h      = -normal * dudt;
-
-        integrator_pressure.submit_value(h, q);
-      }
-      else if(boundary_type == BoundaryTypeP::Dirichlet)
-      {
-        scalar zero = make_vectorized_array<Number>(0.0);
-        integrator_pressure.submit_value(zero, q);
-      }
-      else
-      {
-        AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
-      }
-    }
-
-    integrator_pressure.integrate(true, false);
-    integrator_pressure.distribute_local_to_global(dst);
   }
 }
 
