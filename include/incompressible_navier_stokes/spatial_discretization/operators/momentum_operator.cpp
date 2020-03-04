@@ -547,8 +547,15 @@ MomentumOperator<dim, Number>::do_boundary_integral(IntegratorFace &           i
                                                                        boundary_type);
 
       vector u_m = convective_kernel->get_velocity_m(q);
-      vector u_p = convective_kernel->calculate_exterior_value_nonlinear(
-        u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
+      vector u_p =
+        calculate_exterior_value_nonlinear(u_m,
+                                           q,
+                                           integrator,
+                                           boundary_type,
+                                           this->data.convective_kernel_data.type_dirichlet_bc,
+                                           boundary_id,
+                                           this->data.bc,
+                                           this->time);
 
       value_flux_m += convective_kernel->calculate_flux_linearized_boundary(
         u_m, u_p, value_m, value_p, normal_m, boundary_type, q);

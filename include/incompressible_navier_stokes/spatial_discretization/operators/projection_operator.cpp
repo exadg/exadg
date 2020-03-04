@@ -7,6 +7,8 @@
 
 #include "projection_operator.h"
 
+#include "weak_boundary_conditions.h"
+
 namespace IncNS
 {
 template<int dim, typename Number>

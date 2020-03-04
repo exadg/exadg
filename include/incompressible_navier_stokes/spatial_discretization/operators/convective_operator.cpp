@@ -385,8 +385,14 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_nonlinear_operator(
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector u_m = integrator.get_value(q);
-    vector u_p = kernel->calculate_exterior_value_nonlinear(
-      u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
+    vector u_p = calculate_exterior_value_nonlinear(u_m,
+                                                    q,
+                                                    integrator,
+                                                    boundary_type,
+                                                    this->data.kernel_data.type_dirichlet_bc,
+                                                    boundary_id,
+                                                    this->data.bc,
+                                                    this->time);
 
     vector normal_m = integrator.get_normal_vector(q);
 
@@ -640,8 +646,14 @@ ConvectiveOperator<dim, Number>::do_boundary_integral_linear_transport(
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector u_m = integrator.get_value(q);
-    vector u_p = kernel->calculate_exterior_value_nonlinear(
-      u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
+    vector u_p = calculate_exterior_value_nonlinear(u_m,
+                                                    q,
+                                                    integrator,
+                                                    boundary_type,
+                                                    this->data.kernel_data.type_dirichlet_bc,
+                                                    boundary_id,
+                                                    this->data.bc,
+                                                    this->time);
 
     // concerning the transport velocity w, use the same value for interior and
     // exterior states, i.e., do not prescribe boundary conditions
@@ -841,8 +853,14 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
   for(unsigned int q = 0; q < integrator.n_q_points; ++q)
   {
     vector u_m = kernel->get_velocity_m(q);
-    vector u_p = kernel->calculate_exterior_value_nonlinear(
-      u_m, q, integrator, boundary_type, boundary_id, this->data.bc, this->time);
+    vector u_p = calculate_exterior_value_nonlinear(u_m,
+                                                    q,
+                                                    integrator,
+                                                    boundary_type,
+                                                    this->data.kernel_data.type_dirichlet_bc,
+                                                    boundary_id,
+                                                    this->data.bc,
+                                                    this->time);
 
     vector delta_u_m = integrator.get_value(q);
     vector delta_u_p =
