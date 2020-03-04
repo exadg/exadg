@@ -114,6 +114,70 @@ inline DEAL_II_ALWAYS_INLINE //
   return value_p;
 }
 
+/*
+ *  This function calculates the exterior velocity on boundary faces
+ *  according to:
+ *
+ *  Dirichlet boundary: u⁺ = -u⁻ + 2g (mirror) or g (direct)
+ *  Neumann boundary:   u⁺ = u⁻
+ *  symmetry boundary:  u⁺ = u⁻ -(u⁻*n)n - (u⁻*n)n = u⁻ - 2 (u⁻*n)n
+ *
+ *  The name "nonlinear" indicates that this function is used when
+ *  evaluating the nonlinear convective operator.
+ */
+template<int dim, typename Number>
+inline DEAL_II_ALWAYS_INLINE //
+    Tensor<1, dim, VectorizedArray<Number>>
+    calculate_exterior_value_nonlinear(
+      Tensor<1, dim, VectorizedArray<Number>> const & u_m,
+      unsigned int const                              q,
+      FaceIntegrator<dim, dim, Number> &              integrator,
+      BoundaryTypeU const &                           boundary_type,
+      TypeDirichletBCs const &                        type_dirichlet_bc,
+      types::boundary_id const                        boundary_id,
+      std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor,
+      double const &                                  time)
+{
+  Tensor<1, dim, VectorizedArray<Number>> u_p;
+
+  if(boundary_type == BoundaryTypeU::Dirichlet)
+  {
+    auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+    auto q_points = integrator.quadrature_point(q);
+
+    auto g = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
+
+    if(type_dirichlet_bc == TypeDirichletBCs::Mirror)
+    {
+      u_p = -u_m + make_vectorized_array<Number>(2.0) * g;
+    }
+    else if(type_dirichlet_bc == TypeDirichletBCs::Direct)
+    {
+      u_p = g;
+    }
+    else
+    {
+      AssertThrow(false, ExcMessage("TypeDirichletBCs is not implemented."));
+    }
+  }
+  else if(boundary_type == BoundaryTypeU::Neumann)
+  {
+    u_p = u_m;
+  }
+  else if(boundary_type == BoundaryTypeU::Symmetry)
+  {
+    Tensor<1, dim, VectorizedArray<Number>> normal_m = integrator.get_normal_vector(q);
+
+    u_p = u_m - 2. * (u_m * normal_m) * normal_m;
+  }
+  else
+  {
+    AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
+  }
+
+  return u_p;
+}
+
 template<int dim, typename Number>
 inline DEAL_II_ALWAYS_INLINE //
     Tensor<1, dim, VectorizedArray<Number>>
