@@ -91,6 +91,7 @@ inline DEAL_II_ALWAYS_INLINE //
     for(unsigned int e = 0; e < dim; ++e)
       out[d][e] = rho_inverse * (grad_rho_u[d][e] - ud * grad_rho[e]);
   }
+
   return out;
 }
 
@@ -112,41 +113,42 @@ inline DEAL_II_ALWAYS_INLINE //
     calculate_stress_tensor(Tensor<2, dim, VectorizedArray<Number>> const & grad_u,
                             Number const &                                  viscosity)
 {
+  VectorizedArray<Number> const divu = (2. / 3.) * trace(grad_u);
+
   Tensor<2, dim, VectorizedArray<Number>> out;
-  const VectorizedArray<Number>           divu = (2. / 3.) * trace(grad_u);
   for(unsigned int d = 0; d < dim; ++d)
   {
     for(unsigned int e = 0; e < dim; ++e)
       out[d][e] = viscosity * (grad_u[d][e] + grad_u[e][d]);
     out[d][d] -= viscosity * divu;
   }
+
   return out;
 }
 
 /*
- * Calculate exterior state "+" for a scalar quantity depending on interior state "-" and boundary
- * conditions.
+ * Calculates exterior state "+" for a scalar/vectorial quantity depending on interior state "-" and
+ * boundary conditions.
  */
-template<int dim, typename Number>
+template<int dim, typename Number, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
+  Tensor<rank, dim, VectorizedArray<Number>>
   calculate_exterior_value(
-    VectorizedArray<Number> const &                          value_m,
-    BoundaryType const &                                     boundary_type,
+    Tensor<rank, dim, VectorizedArray<Number>> const &       value_m,
+    BoundaryType const                                       boundary_type,
     std::shared_ptr<CompNS::BoundaryDescriptor<dim>> const & boundary_descriptor,
     types::boundary_id const &                               boundary_id,
     Point<dim, VectorizedArray<Number>> const &              q_point,
     Number const &                                           time)
 {
-  VectorizedArray<Number> value_p = make_vectorized_array<Number>(0.);
+  Tensor<rank, dim, VectorizedArray<Number>> value_p;
 
   if(boundary_type == BoundaryType::Dirichlet)
   {
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-      boundary_descriptor->dirichlet_bc.find(boundary_id);
-    VectorizedArray<Number> g = evaluate_scalar_function(it->second, q_point, time);
+    auto bc = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+    auto g  = FunctionEvaluator<dim, Number, rank>::evaluate_function(bc, q_point, time);
 
-    value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
+    value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
   }
   else if(boundary_type == BoundaryType::Neumann)
   {
@@ -161,116 +163,40 @@ inline DEAL_II_ALWAYS_INLINE //
 }
 
 /*
- * Calculate exterior state "+" for a scalar quantity depending on interior state "-" and boundary
- * conditions.
+ * Calculates exterior state of normal gradient (Neumann type boundary conditions)
+ * depending on interior data and boundary conditions.
  */
-template<int dim, typename Number>
+template<int dim, typename Number, int rank>
 inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
-    calculate_exterior_value(
-      Tensor<1, dim, VectorizedArray<Number>> const &          value_m,
-      BoundaryType const                                       boundary_type,
-      std::shared_ptr<CompNS::BoundaryDescriptor<dim>> const & boundary_descriptor,
-      types::boundary_id const &                               boundary_id,
-      Point<dim, VectorizedArray<Number>> const &              q_point,
-      Number const &                                           time)
-{
-  Tensor<1, dim, VectorizedArray<Number>> value_p;
-
-  if(boundary_type == BoundaryType::Dirichlet)
-  {
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-      boundary_descriptor->dirichlet_bc.find(boundary_id);
-    Tensor<1, dim, VectorizedArray<Number>> g =
-      evaluate_vectorial_function(it->second, q_point, time);
-
-    value_p = -value_m + make_vectorized_array<Number>(2.0) * g;
-  }
-  else if(boundary_type == BoundaryType::Neumann)
-  {
-    value_p = value_m;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  return value_p;
-}
-
-/*
- * Calculate exterior state of normal stresses depending on interior data and boundary conditions.
- */
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-    Tensor<1, dim, VectorizedArray<Number>>
-    calculate_exterior_normal_grad(
-      Tensor<1, dim, VectorizedArray<Number>> const &          tau_M_normal,
-      BoundaryType const &                                     boundary_type,
-      std::shared_ptr<CompNS::BoundaryDescriptor<dim>> const & boundary_descriptor,
-      types::boundary_id const &                               boundary_id,
-      Point<dim, VectorizedArray<Number>> const &              q_point,
-      Number const &                                           time)
-{
-  Tensor<1, dim, VectorizedArray<Number>> tau_P_normal;
-
-  if(boundary_type == BoundaryType::Dirichlet)
-  {
-    // do nothing
-    tau_P_normal = tau_M_normal;
-  }
-  else if(boundary_type == BoundaryType::Neumann)
-  {
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-      boundary_descriptor->neumann_bc.find(boundary_id);
-    Tensor<1, dim, VectorizedArray<Number>> h =
-      evaluate_vectorial_function(it->second, q_point, time);
-
-    tau_P_normal = -tau_M_normal + make_vectorized_array<Number>(2.0) * h;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  return tau_P_normal;
-}
-
-/*
- * Calculate exterior temperature gradient depending on interior data and boundary conditions.
- */
-template<int dim, typename Number>
-inline DEAL_II_ALWAYS_INLINE //
-  VectorizedArray<Number>
+  Tensor<rank, dim, VectorizedArray<Number>>
   calculate_exterior_normal_grad(
-    VectorizedArray<Number> const &                          grad_T_M_normal,
+    Tensor<rank, dim, VectorizedArray<Number>> const &       grad_M_normal,
     BoundaryType const &                                     boundary_type,
     std::shared_ptr<CompNS::BoundaryDescriptor<dim>> const & boundary_descriptor,
     types::boundary_id const &                               boundary_id,
     Point<dim, VectorizedArray<Number>> const &              q_point,
     Number const &                                           time)
 {
-  VectorizedArray<Number> grad_T_P_normal = make_vectorized_array<Number>(0.0);
+  Tensor<rank, dim, VectorizedArray<Number>> grad_P_normal;
 
   if(boundary_type == BoundaryType::Dirichlet)
   {
     // do nothing
-    grad_T_P_normal = grad_T_M_normal;
+    grad_P_normal = grad_M_normal;
   }
   else if(boundary_type == BoundaryType::Neumann)
   {
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-      boundary_descriptor->neumann_bc.find(boundary_id);
-    VectorizedArray<Number> h = evaluate_scalar_function(it->second, q_point, time);
+    auto bc = boundary_descriptor->neumann_bc.find(boundary_id)->second;
+    auto h  = FunctionEvaluator<dim, Number, rank>::evaluate_function(bc, q_point, time);
 
-    grad_T_P_normal = -grad_T_M_normal + make_vectorized_array<Number>(2.0) * h;
+    grad_P_normal = -grad_M_normal + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * h);
   }
   else
   {
     AssertThrow(false, ExcMessage("Not implemented."));
   }
 
-  return grad_T_P_normal;
+  return grad_P_normal;
 }
 
 /*
@@ -294,6 +220,7 @@ inline DEAL_II_ALWAYS_INLINE //
       sum += (momentum_flux_M[d][e] + momentum_flux_P[d][e]) * normal[e];
     out[d] = 0.5 * (sum + lambda * (rho_u_M[d] - rho_u_P[d]));
   }
+
   return out;
 }
 
@@ -717,51 +644,51 @@ public:
     // element e⁺
 
     // calculate rho_P
-    scalar rho_P = calculate_exterior_value<dim, Number>(rho_M,
-                                                         boundary_type_density,
-                                                         data.bc_rho,
-                                                         boundary_id,
-                                                         density.quadrature_point(q),
-                                                         this->eval_time);
+    scalar rho_P = calculate_exterior_value<dim, Number, 0>(rho_M,
+                                                            boundary_type_density,
+                                                            data.bc_rho,
+                                                            boundary_id,
+                                                            density.quadrature_point(q),
+                                                            this->eval_time);
 
     // calculate u_P
-    vector u_P = calculate_exterior_value<dim, Number>(u_M,
-                                                       boundary_type_velocity,
-                                                       data.bc_u,
-                                                       boundary_id,
-                                                       momentum.quadrature_point(q),
-                                                       this->eval_time);
+    vector u_P = calculate_exterior_value<dim, Number, 1>(u_M,
+                                                          boundary_type_velocity,
+                                                          data.bc_u,
+                                                          boundary_id,
+                                                          momentum.quadrature_point(q),
+                                                          this->eval_time);
 
     vector rho_u_P = rho_P * u_P;
 
     // calculate p_P
-    scalar p_P = calculate_exterior_value<dim, Number>(p_M,
-                                                       boundary_type_pressure,
-                                                       data.bc_p,
-                                                       boundary_id,
-                                                       density.quadrature_point(q),
-                                                       this->eval_time);
+    scalar p_P = calculate_exterior_value<dim, Number, 0>(p_M,
+                                                          boundary_type_pressure,
+                                                          data.bc_p,
+                                                          boundary_id,
+                                                          density.quadrature_point(q),
+                                                          this->eval_time);
 
     // calculate E_P
     scalar E_P = make_vectorized_array<Number>(0.0);
     if(boundary_variable == EnergyBoundaryVariable::Energy)
     {
-      E_P = calculate_exterior_value<dim, Number>(E_M,
-                                                  boundary_type_energy,
-                                                  data.bc_E,
-                                                  boundary_id,
-                                                  energy.quadrature_point(q),
-                                                  this->eval_time);
+      E_P = calculate_exterior_value<dim, Number, 0>(E_M,
+                                                     boundary_type_energy,
+                                                     data.bc_E,
+                                                     boundary_id,
+                                                     energy.quadrature_point(q),
+                                                     this->eval_time);
     }
     else if(boundary_variable == EnergyBoundaryVariable::Temperature)
     {
       scalar T_M = calculate_temperature(p_M, rho_M, R);
-      scalar T_P = calculate_exterior_value<dim, Number>(T_M,
-                                                         boundary_type_energy,
-                                                         data.bc_E,
-                                                         boundary_id,
-                                                         energy.quadrature_point(q),
-                                                         this->eval_time);
+      scalar T_P = calculate_exterior_value<dim, Number, 0>(T_M,
+                                                            boundary_type_energy,
+                                                            data.bc_E,
+                                                            boundary_id,
+                                                            energy.quadrature_point(q),
+                                                            this->eval_time);
 
       E_P = calculate_energy(T_P, u_P, c_v);
     }
@@ -1203,12 +1130,12 @@ public:
     scalar rho_M      = density.get_value(q);
     vector grad_rho_M = density.get_gradient(q);
 
-    scalar rho_P = calculate_exterior_value<dim, Number>(rho_M,
-                                                         boundary_type_density,
-                                                         data.bc_rho,
-                                                         boundary_id,
-                                                         density.quadrature_point(q),
-                                                         this->eval_time);
+    scalar rho_P = calculate_exterior_value<dim, Number, 0>(rho_M,
+                                                            boundary_type_density,
+                                                            data.bc_rho,
+                                                            boundary_id,
+                                                            density.quadrature_point(q),
+                                                            this->eval_time);
 
     scalar jump_density          = rho_M - rho_P;
     scalar gradient_flux_density = -tau_IP * jump_density;
@@ -1220,24 +1147,25 @@ public:
     scalar rho_inv_M = 1.0 / rho_M;
     vector u_M       = rho_inv_M * rho_u_M;
 
-    vector u_P = calculate_exterior_value<dim, Number>(u_M,
-                                                       boundary_type_velocity,
-                                                       data.bc_u,
-                                                       boundary_id,
-                                                       momentum.quadrature_point(q),
-                                                       this->eval_time);
+    vector u_P = calculate_exterior_value<dim, Number, 1>(u_M,
+                                                          boundary_type_velocity,
+                                                          data.bc_u,
+                                                          boundary_id,
+                                                          momentum.quadrature_point(q),
+                                                          this->eval_time);
 
     vector rho_u_P = rho_P * u_P;
 
     tensor grad_u_M = calculate_grad_u(rho_inv_M, rho_u_M, grad_rho_M, grad_rho_u_M);
     tensor tau_M    = calculate_stress_tensor(grad_u_M, mu);
 
-    vector tau_P_normal = calculate_exterior_normal_grad(tau_M * normal,
-                                                         boundary_type_velocity,
-                                                         data.bc_u,
-                                                         boundary_id,
-                                                         momentum.quadrature_point(q),
-                                                         this->eval_time);
+    vector tau_P_normal =
+      calculate_exterior_normal_grad<dim, Number, 1>(tau_M * normal,
+                                                     boundary_type_velocity,
+                                                     data.bc_u,
+                                                     boundary_id,
+                                                     momentum.quadrature_point(q),
+                                                     this->eval_time);
 
     vector jump_momentum          = rho_u_M - rho_u_P;
     vector gradient_flux_momentum = 0.5 * (tau_M * normal + tau_P_normal) - tau_IP * jump_momentum;
@@ -1250,23 +1178,23 @@ public:
     scalar E_P = make_vectorized_array<Number>(0.0);
     if(boundary_variable == EnergyBoundaryVariable::Energy)
     {
-      E_P = calculate_exterior_value<dim, Number>(E_M,
-                                                  boundary_type_energy,
-                                                  data.bc_E,
-                                                  boundary_id,
-                                                  energy.quadrature_point(q),
-                                                  this->eval_time);
+      E_P = calculate_exterior_value<dim, Number, 0>(E_M,
+                                                     boundary_type_energy,
+                                                     data.bc_E,
+                                                     boundary_id,
+                                                     energy.quadrature_point(q),
+                                                     this->eval_time);
     }
     else if(boundary_variable == EnergyBoundaryVariable::Temperature)
     {
       scalar p_M = calculate_pressure(rho_M, u_M, E_M, gamma);
       scalar T_M = calculate_temperature(p_M, rho_M, R);
-      scalar T_P = calculate_exterior_value<dim, Number>(T_M,
-                                                         boundary_type_energy,
-                                                         data.bc_E,
-                                                         boundary_id,
-                                                         energy.quadrature_point(q),
-                                                         this->eval_time);
+      scalar T_P = calculate_exterior_value<dim, Number, 0>(T_M,
+                                                            boundary_type_energy,
+                                                            data.bc_E,
+                                                            boundary_id,
+                                                            energy.quadrature_point(q),
+                                                            this->eval_time);
 
       E_P = calculate_energy(T_P, u_P, c_v);
     }
@@ -1277,12 +1205,13 @@ public:
     vector grad_T_M = calculate_grad_T(grad_E_M, u_M, grad_u_M, gamma, R);
 
     scalar grad_T_M_normal = grad_T_M * normal;
-    scalar grad_T_P_normal = calculate_exterior_normal_grad<dim, Number>(grad_T_M_normal,
-                                                                         boundary_type_energy,
-                                                                         data.bc_E,
-                                                                         boundary_id,
-                                                                         energy.quadrature_point(q),
-                                                                         this->eval_time);
+    scalar grad_T_P_normal =
+      calculate_exterior_normal_grad<dim, Number, 0>(grad_T_M_normal,
+                                                     boundary_type_energy,
+                                                     data.bc_E,
+                                                     boundary_id,
+                                                     energy.quadrature_point(q),
+                                                     this->eval_time);
 
     scalar jump_energy          = rho_E_M - rho_E_P;
     scalar gradient_flux_energy = 0.5 * (u_M * tau_M * normal + u_P * tau_P_normal +
@@ -1391,12 +1320,12 @@ public:
 
     // density
     scalar rho_M = density.get_value(q);
-    scalar rho_P = calculate_exterior_value<dim, Number>(rho_M,
-                                                         boundary_type_density,
-                                                         data.bc_rho,
-                                                         boundary_id,
-                                                         density.quadrature_point(q),
-                                                         this->eval_time);
+    scalar rho_P = calculate_exterior_value<dim, Number, 0>(rho_M,
+                                                            boundary_type_density,
+                                                            data.bc_rho,
+                                                            boundary_id,
+                                                            density.quadrature_point(q),
+                                                            this->eval_time);
 
     scalar rho_inv_M = 1.0 / rho_M;
 
@@ -1404,12 +1333,12 @@ public:
     vector rho_u_M = momentum.get_value(q);
     vector u_M     = rho_inv_M * rho_u_M;
 
-    vector u_P = calculate_exterior_value<dim, Number>(u_M,
-                                                       boundary_type_velocity,
-                                                       data.bc_u,
-                                                       boundary_id,
-                                                       momentum.quadrature_point(q),
-                                                       this->eval_time);
+    vector u_P = calculate_exterior_value<dim, Number, 1>(u_M,
+                                                          boundary_type_velocity,
+                                                          data.bc_u,
+                                                          boundary_id,
+                                                          momentum.quadrature_point(q),
+                                                          this->eval_time);
 
     vector rho_u_P = rho_P * u_P;
 
@@ -1420,23 +1349,23 @@ public:
     scalar E_P = make_vectorized_array<Number>(0.0);
     if(boundary_variable == EnergyBoundaryVariable::Energy)
     {
-      E_P = calculate_exterior_value<dim, Number>(E_M,
-                                                  boundary_type_energy,
-                                                  data.bc_E,
-                                                  boundary_id,
-                                                  energy.quadrature_point(q),
-                                                  this->eval_time);
+      E_P = calculate_exterior_value<dim, Number, 0>(E_M,
+                                                     boundary_type_energy,
+                                                     data.bc_E,
+                                                     boundary_id,
+                                                     energy.quadrature_point(q),
+                                                     this->eval_time);
     }
     else if(boundary_variable == EnergyBoundaryVariable::Temperature)
     {
       scalar p_M = calculate_pressure(rho_M, u_M, E_M, gamma);
       scalar T_M = calculate_temperature(p_M, rho_M, R);
-      scalar T_P = calculate_exterior_value<dim, Number>(T_M,
-                                                         boundary_type_energy,
-                                                         data.bc_E,
-                                                         boundary_id,
-                                                         energy.quadrature_point(q),
-                                                         this->eval_time);
+      scalar T_P = calculate_exterior_value<dim, Number, 0>(T_M,
+                                                            boundary_type_energy,
+                                                            data.bc_E,
+                                                            boundary_id,
+                                                            energy.quadrature_point(q),
+                                                            this->eval_time);
 
       E_P = calculate_energy(T_P, u_P, c_v);
     }
