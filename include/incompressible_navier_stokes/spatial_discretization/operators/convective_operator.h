@@ -914,7 +914,7 @@ public:
       Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
 
       Tensor<1, dim, VectorizedArray<Number>> g =
-        evaluate_vectorial_function(it->second, q_points, time);
+        FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, time);
 
       if(data.type_dirichlet_bc == TypeDirichletBCs::Mirror)
       {

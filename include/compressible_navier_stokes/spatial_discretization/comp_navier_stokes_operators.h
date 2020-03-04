@@ -146,7 +146,7 @@ inline DEAL_II_ALWAYS_INLINE //
   if(boundary_type == BoundaryType::Dirichlet)
   {
     auto bc = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
-    auto g  = FunctionEvaluator<dim, Number, rank>::evaluate_function(bc, q_point, time);
+    auto g  = FunctionEvaluator<dim, Number, rank>::value(bc, q_point, time);
 
     value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
   }
@@ -187,7 +187,7 @@ inline DEAL_II_ALWAYS_INLINE //
   else if(boundary_type == BoundaryType::Neumann)
   {
     auto bc = boundary_descriptor->neumann_bc.find(boundary_id)->second;
-    auto h  = FunctionEvaluator<dim, Number, rank>::evaluate_function(bc, q_point, time);
+    auto h  = FunctionEvaluator<dim, Number, rank>::value(bc, q_point, time);
 
     grad_P_normal = -grad_M_normal + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * h);
   }
@@ -331,9 +331,10 @@ public:
     scalar rho      = density.get_value(q);
     vector u        = momentum.get_value(q) / rho;
 
-    scalar rhs_density  = evaluate_scalar_function(data.rhs_rho, q_points, eval_time);
-    vector rhs_momentum = evaluate_vectorial_function(data.rhs_u, q_points, eval_time);
-    scalar rhs_energy   = evaluate_scalar_function(data.rhs_E, q_points, eval_time);
+    scalar rhs_density =
+      FunctionEvaluator<dim, Number, 0>::value(data.rhs_rho, q_points, eval_time);
+    vector rhs_momentum = FunctionEvaluator<dim, Number, 1>::value(data.rhs_u, q_points, eval_time);
+    scalar rhs_energy   = FunctionEvaluator<dim, Number, 0>::value(data.rhs_E, q_points, eval_time);
 
     return std::make_tuple(rhs_density, rhs_momentum, rhs_momentum * u + rhs_energy);
   }

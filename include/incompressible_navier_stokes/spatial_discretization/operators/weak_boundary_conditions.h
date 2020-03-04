@@ -83,7 +83,7 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      auto g = FunctionEvaluator<dim, Number, 1>::evaluate_function(bc, q_points, time);
+      auto g = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
 
       value_p = -value_m + Tensor<1, dim, VectorizedArray<Number>>(2.0 * g);
     }
@@ -228,8 +228,7 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      VectorizedArray<Number> g =
-        FunctionEvaluator<dim, Number, 0>::evaluate_function(bc, q_points, time);
+      VectorizedArray<Number> g = FunctionEvaluator<dim, Number, 0>::value(bc, q_points, time);
 
       value_p = -value_m + 2.0 * inverse_scaling_factor * g;
     }
@@ -356,12 +355,12 @@ inline DEAL_II_ALWAYS_INLINE //
       Tensor<1, dim, VectorizedArray<Number>> h;
       if(variable_normal_vector == false)
       {
-        h = FunctionEvaluator<dim, Number, 1>::evaluate_function(bc, q_points, time);
+        h = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, time);
       }
       else
       {
         auto normals_m = integrator.get_normal_vector(q);
-        h              = evaluate_vectorial_function_with_normal(bc, q_points, normals_m, time);
+        h              = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, normals_m, time);
       }
 
       normal_gradient_p = -normal_gradient_m + 2.0 * h;

@@ -257,9 +257,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
-                                                 q_points,
-                                                 this->evaluation_time);
+        vector rhs =
+          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
+                                                   q_points,
+                                                   this->evaluation_time);
 
         scalar flux_times_normal = rhs * integrator.get_normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
@@ -451,7 +452,8 @@ DGNavierStokesDualSplitting<dim, Number>::
         // evaluate boundary condition
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
-        vector dudt = evaluate_vectorial_function(it->second, q_points, this->evaluation_time);
+        vector dudt =
+          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
 
         vector normal = integrator.get_normal_vector(q);
 
@@ -518,9 +520,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
-                                                 q_points,
-                                                 this->evaluation_time);
+        vector rhs =
+          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
+                                                   q_points,
+                                                   this->evaluation_time);
 
         vector normal = integrator.get_normal_vector(q);
 

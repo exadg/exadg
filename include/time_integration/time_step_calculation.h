@@ -12,6 +12,7 @@
 #include <deal.II/lac/la_parallel_vector.h>
 #include <deal.II/matrix_free/fe_evaluation_notemplate.h>
 #include "../functionalities/calculate_characteristic_element_length.h"
+#include "../functionalities/evaluate_functions.h"
 #include "enum_types.h"
 
 using namespace dealii;
@@ -191,7 +192,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
       Point<dim, VectorizedArray<value_type>> q_point = fe_eval.quadrature_point(q);
 
       Tensor<1, dim, VectorizedArray<value_type>> u_x =
-        evaluate_vectorial_function(velocity, q_point, time);
+        FunctionEvaluator<dim, value_type, 1>::value(velocity, q_point, time);
       Tensor<2, dim, VectorizedArray<value_type>> invJ  = fe_eval.inverse_jacobian(q);
       invJ                                              = transpose(invJ);
       Tensor<1, dim, VectorizedArray<value_type>> ut_xi = invJ * u_x;

@@ -1466,7 +1466,8 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id);
 
-        vector g = evaluate_vectorial_function(it->second, q_points, this->evaluation_time);
+        vector g =
+          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 
@@ -1512,7 +1513,8 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id);
 
-        scalar g = evaluate_scalar_function(it->second, q_points, this->evaluation_time);
+        scalar g =
+          FunctionEvaluator<dim, Number, 0>::value(it->second, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 
