@@ -74,13 +74,10 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        boundary_descriptor->dirichlet_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
+      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+      auto q_points = integrator.quadrature_point(q);
 
-      // VectorizedArray<Number> g = evaluate_scalar_function(it->second, q_points, time);
-      Tensor<rank, dim, VectorizedArray<Number>> g =
-        FunctionEvaluator<dim, Number, rank>::evaluate_function(it->second, q_points, time);
+      auto g = FunctionEvaluator<dim, Number, rank>::evaluate_function(bc, q_points, time);
 
       value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
     }
@@ -180,12 +177,10 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-        boundary_descriptor->neumann_bc.find(boundary_id);
-      Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
+      auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
+      auto q_points = integrator.quadrature_point(q);
 
-      Tensor<rank, dim, VectorizedArray<Number>> h =
-        FunctionEvaluator<dim, Number, rank>::evaluate_function(it->second, q_points, time);
+      auto h = FunctionEvaluator<dim, Number, rank>::evaluate_function(bc, q_points, time);
 
       normal_gradient_p = -normal_gradient_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * h);
     }
@@ -227,12 +222,10 @@ inline DEAL_II_ALWAYS_INLINE //
   {
     AssertThrow(operator_type == OperatorType::inhomogeneous, ExcMessage("Not implemented."));
 
-    typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
-      boundary_descriptor->neumann_bc.find(boundary_id);
-    Point<dim, VectorizedArray<Number>> q_points = integrator.quadrature_point(q);
+    auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
+    auto q_points = integrator.quadrature_point(q);
 
-    normal_gradient =
-      FunctionEvaluator<dim, Number, rank>::evaluate_function(it->second, q_points, time);
+    normal_gradient = FunctionEvaluator<dim, Number, rank>::evaluate_function(bc, q_points, time);
   }
   else
   {
