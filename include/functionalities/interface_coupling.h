@@ -72,31 +72,31 @@ public:
     for(auto boundary = bc.begin(); boundary != bc.end(); ++boundary)
     {
       std::map<unsigned int, ArrayBookmarks> & map_bookmarks =
-        global_map_bookmarks.find(boundary->first);
+        global_map_bookmarks.find(boundary->first)->second;
       std::map<unsigned int, ArraySolution> & map_solution =
-        global_map_solution.find(boundary->first);
+        global_map_solution.find(boundary->first)->second;
 
       for(auto quad = quadrature_rules_dst.begin(); quad != quadrature_rules_dst.end(); ++quad)
       {
         unsigned int quad_index = matrix_free_wrapper_dst->get_quad_index(*quad);
 
-        ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_index);
-        ArraySolution &  array_solution  = map_solution.find(quad_index);
+        ArrayBookmarks & array_bookmarks = map_bookmarks.find(quad_index)->second;
+        ArraySolution &  array_solution  = map_solution.find(quad_index)->second;
 
-        for(auto q_point = array_solution.begin(); q_point != array_solution.end(); q_point)
+        for(auto q_point = array_solution.begin(); q_point != array_solution.end(); ++q_point)
         {
           Id id = q_point->first;
 
           std::vector<Tensor<rank, dim, Number>> & solution = array_solution.find(id)->second;
           std::vector<DofIndexAndShapeValues> &    bookmark = array_bookmarks.find(id)->second;
 
-          for(auto i = 0; i < solution.size(); ++i)
+          for(unsigned int i = 0; i < solution.size(); ++i)
           {
             // interpolate solution from dof vector and overwrite data
-            solution[i] = Interpolator<dim, Number, rank>::value(dof_handler_src,
+            solution[i] = Interpolator<dim, Number, rank>::value(*dof_handler_src,
                                                                  dof_vector_src,
-                                                                 bookmark[i]->first,
-                                                                 bookmark[i]->second);
+                                                                 bookmark[i].first,
+                                                                 bookmark[i].second);
           }
         }
       }
