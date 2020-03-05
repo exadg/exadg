@@ -71,7 +71,7 @@ InflowDataCalculator<dim, Number>::calculate(
           get_global_dof_index_and_shape_values(
             *dof_handler_velocity, *mapping, velocity, point, global_dof_index_and_shape_values);
 
-          unsigned int array_index                      = iy * inflow_data.n_points_y + iz;
+          unsigned int array_index                      = iy * inflow_data.n_points_z + iz;
           array_dof_index_and_shape_values[array_index] = global_dof_index_and_shape_values;
         }
       }
@@ -85,7 +85,7 @@ InflowDataCalculator<dim, Number>::calculate(
       for(unsigned int iz = 0; iz < inflow_data.n_points_z; ++iz)
       {
         // determine the array index, will be needed several times below
-        unsigned int array_index = iy * inflow_data.n_points_y + iz;
+        unsigned int array_index = iy * inflow_data.n_points_z + iz;
 
         // initialize with zeros since we accumulate into these variables
         (*inflow_data.array)[array_index] = 0.0;
@@ -127,7 +127,7 @@ InflowDataCalculator<dim, Number>::calculate(
     {
       for(unsigned int iz = 0; iz < inflow_data.n_points_z; ++iz)
       {
-        unsigned int array_index = iy * inflow_data.n_points_y + iz;
+        unsigned int array_index = iy * inflow_data.n_points_z + iz;
         if(array_counter[array_index] >= 1)
           (*inflow_data.array)[array_index] /= Number(array_counter[array_index]);
       }

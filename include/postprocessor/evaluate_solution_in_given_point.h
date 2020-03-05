@@ -184,7 +184,7 @@ get_global_dof_index_and_shape_values(
 
 /*
  *  Interpolate solution in point by using precomputed shape functions values (for efficiency!)
- *  Noet that we assume that we are dealing with discontinuous finite elements.
+ *  Note that we assume that we are dealing with discontinuous finite elements.
  *
  *  The quantity to be evaluated is of type Tensor<1,dim,Number>.
  */
