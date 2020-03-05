@@ -13,6 +13,7 @@
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
 #include "../../include/functionalities/function_with_normal.h"
+#include "../../include/functionalities/interface_coupling.h"
 
 using namespace dealii;
 
@@ -26,14 +27,14 @@ using namespace dealii;
 //  VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
 //
 //  value_type array[VectorizedArray<value_type>::n_array_elements];
-//  for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+//  for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
 //  {
 //    Point<dim> q_point;
 //    for(unsigned int d = 0; d < dim; ++d)
-//      q_point[d] = q_points[d][n];
+//      q_point[d] = q_points[d][v];
 //
 //    function->set_time(time);
-//    array[n] = function->value(q_point);
+//    array[v] = function->value(q_point);
 //  }
 //  value.load(&array[0]);
 //
@@ -52,14 +53,14 @@ using namespace dealii;
 //  for(unsigned int d = 0; d < dim; ++d)
 //  {
 //    value_type array[VectorizedArray<value_type>::n_array_elements];
-//    for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+//    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
 //    {
 //      Point<dim> q_point;
 //      for(unsigned int d = 0; d < dim; ++d)
-//        q_point[d] = q_points[d][n];
+//        q_point[d] = q_points[d][v];
 //
 //      function->set_time(time);
-//      array[n] = function->value(q_point, d);
+//      array[v] = function->value(q_point, d);
 //    }
 //    value[d].load(&array[0]);
 //  }
@@ -104,6 +105,22 @@ struct FunctionEvaluator
     return Tensor<rank, dim, VectorizedArray<value_type>>();
   }
 
+  static inline DEAL_II_ALWAYS_INLINE //
+    Tensor<rank, dim, VectorizedArray<value_type>>
+    value(std::shared_ptr<FunctionInterpolation<dim, value_type, rank>> function,
+          unsigned int const                                            face,
+          unsigned int const                                            q,
+          unsigned int const                                            quad_index)
+  {
+    (void)function;
+    (void)face;
+    (void)q;
+    (void)quad_index;
+
+    AssertThrow(false, ExcMessage("should not arrive here."));
+
+    return Tensor<rank, dim, VectorizedArray<value_type>>();
+  }
 
   static inline DEAL_II_ALWAYS_INLINE //
     Tensor<rank, dim, VectorizedArray<value_type>>
@@ -135,14 +152,33 @@ struct FunctionEvaluator<dim, value_type, 0>
     VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
 
     value_type array[VectorizedArray<value_type>::n_array_elements];
-    for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
     {
       Point<dim> q_point;
       for(unsigned int d = 0; d < dim; ++d)
-        q_point[d] = q_points[d][n];
+        q_point[d] = q_points[d][v];
 
       function->set_time(time);
-      array[n] = function->value(q_point);
+      array[v] = function->value(q_point);
+    }
+    value.load(&array[0]);
+
+    return value;
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+      Tensor<0, dim, VectorizedArray<value_type>>
+      value(std::shared_ptr<FunctionInterpolation<dim, value_type, 0>> function,
+            unsigned int const                                         face,
+            unsigned int const                                         q,
+            unsigned int const                                         quad_index)
+  {
+    VectorizedArray<value_type> value = make_vectorized_array<value_type>(0.0);
+
+    value_type array[VectorizedArray<value_type>::n_array_elements];
+    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+    {
+      array[v] = function->value(face, q, v, quad_index);
     }
     value.load(&array[0]);
 
@@ -164,15 +200,42 @@ struct FunctionEvaluator<dim, value_type, 1>
     for(unsigned int d = 0; d < dim; ++d)
     {
       value_type array[VectorizedArray<value_type>::n_array_elements];
-      for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+      for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
       {
         Point<dim> q_point;
         for(unsigned int d = 0; d < dim; ++d)
-          q_point[d] = q_points[d][n];
+          q_point[d] = q_points[d][v];
 
         function->set_time(time);
-        array[n] = function->value(q_point, d);
+        array[v] = function->value(q_point, d);
       }
+      value[d].load(&array[0]);
+    }
+
+    return value;
+  }
+
+  static inline DEAL_II_ALWAYS_INLINE //
+      Tensor<1, dim, VectorizedArray<value_type>>
+      value(std::shared_ptr<FunctionInterpolation<dim, value_type, 1>> function,
+            unsigned int const                                         face,
+            unsigned int const                                         q,
+            unsigned int const                                         quad_index)
+  {
+    Tensor<1, dim, VectorizedArray<value_type>> value;
+
+    Tensor<1, dim, value_type> tensor_array[VectorizedArray<value_type>::n_array_elements];
+    for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+    {
+      tensor_array[v] = function->value(face, q, v, quad_index);
+    }
+
+    for(unsigned int d = 0; d < dim; ++d)
+    {
+      VectorizedArray<value_type> array;
+      for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
+        array[v] = tensor_array[v][d];
+
       value[d].load(&array[0]);
     }
 
@@ -193,18 +256,18 @@ struct FunctionEvaluator<dim, value_type, 1>
     for(unsigned int d = 0; d < dim; ++d)
     {
       value_type array[VectorizedArray<value_type>::n_array_elements];
-      for(unsigned int n = 0; n < VectorizedArray<value_type>::n_array_elements; ++n)
+      for(unsigned int v = 0; v < VectorizedArray<value_type>::n_array_elements; ++v)
       {
         Point<dim>     q_point;
         Tensor<1, dim> normal;
         for(unsigned int d = 0; d < dim; ++d)
         {
-          q_point[d] = q_points[d][n];
-          normal[d]  = normals[d][n];
+          q_point[d] = q_points[d][v];
+          normal[d]  = normals[d][v];
         }
         function_with_normal->set_time(time);
         function_with_normal->set_normal_vector(normal);
-        array[n] = function_with_normal->value(q_point, d);
+        array[v] = function_with_normal->value(q_point, d);
       }
       value[d].load(&array[0]);
     }
