@@ -239,6 +239,13 @@ public:
   void
   interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
 
+  // FSI: coupling fluid -> structure
+  // fills a DoF-vector (velocity) with values of traction on fluid-structure interface
+  void
+  interpolate_stress_bc(VectorType &       stress,
+                        VectorType const & velocity,
+                        VectorType const & pressure) const;
+
   /*
    * Time step calculation.
    */
@@ -605,6 +612,18 @@ private:
                                                         VectorType &                    dst,
                                                         VectorType const &              src,
                                                         Range const & face_range) const;
+
+  void
+  local_interpolate_stress_bc_boundary_face(MatrixFree<dim, Number> const & matrix_free,
+                                            VectorType &                    dst,
+                                            VectorType const &              src,
+                                            Range const &                   face_range) const;
+
+  // Interpolation of stress requires velocity and pressure, but the MatrixFree interface
+  // only provides one argument, so we store boundaries to have access to both velocity and
+  // pressure.
+  mutable VectorType const * velocity_ptr;
+  mutable VectorType const * pressure_ptr;
 
   /*
    * LES turbulence modeling.

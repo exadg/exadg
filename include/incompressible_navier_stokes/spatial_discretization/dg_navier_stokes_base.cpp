@@ -38,7 +38,9 @@ DGNavierStokesBase<dim, Number>::DGNavierStokesBase(
     dof_handler_p(triangulation_in),
     dof_handler_u_scalar(triangulation_in),
     mpi_comm(mpi_comm_in),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
+    velocity_ptr(nullptr),
+    pressure_ptr(nullptr)
 {
   pcout << std::endl << "Construct Navier-Stokes operator ..." << std::endl << std::flush;
 
@@ -792,6 +794,29 @@ DGNavierStokesBase<dim, Number>::interpolate_pressure_dirichlet_bc(VectorType & 
 }
 
 template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::interpolate_stress_bc(VectorType &       stress,
+                                                       VectorType const & velocity,
+                                                       VectorType const & pressure) const
+{
+  velocity_ptr = &velocity;
+  pressure_ptr = &pressure;
+
+  stress = 0.0;
+
+  VectorType src_dummy;
+  matrix_free->loop(&This::cell_loop_empty,
+                    &This::face_loop_empty,
+                    &This::local_interpolate_stress_bc_boundary_face,
+                    this,
+                    stress,
+                    src_dummy);
+
+  velocity_ptr = nullptr;
+  pressure_ptr = nullptr;
+}
+
+template<int dim, typename Number>
 double
 DGNavierStokesBase<dim, Number>::calculate_minimum_element_length() const
 {
@@ -1541,6 +1566,67 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
     {
       AssertThrow(boundary_type == BoundaryTypeP::Neumann,
                   ExcMessage("BoundaryTypeP not implemented."));
+    }
+  }
+}
+
+template<int dim, typename Number>
+void
+DGNavierStokesBase<dim, Number>::local_interpolate_stress_bc_boundary_face(
+  MatrixFree<dim, Number> const & matrix_free,
+  VectorType &                    dst,
+  VectorType const &,
+  Range const & face_range) const
+{
+  unsigned int const dof_index_u = this->get_dof_index_velocity();
+  unsigned int const dof_index_p = this->get_dof_index_pressure();
+  unsigned int const quad_index  = this->get_quad_index_velocity_gauss_lobatto();
+
+  FaceIntegratorU integrator_u(matrix_free, true, dof_index_u, quad_index);
+  FaceIntegratorP integrator_p(matrix_free, true, dof_index_p, quad_index);
+
+  for(unsigned int face = face_range.first; face < face_range.second; face++)
+  {
+    types::boundary_id const boundary_id = matrix_free.get_boundary_id(face);
+
+    BoundaryTypeU const boundary_type =
+      this->boundary_descriptor_velocity->get_boundary_type(boundary_id);
+
+    // a Dirichlet boundary for the fluid is a stress boundary for the structure
+    if(boundary_type == BoundaryTypeU::DirichletMortar)
+    {
+      integrator_u.reinit(face);
+      integrator_u.gather_evaluate(*velocity_ptr, false, true);
+
+      integrator_p.reinit(face);
+      integrator_p.gather_evaluate(*pressure_ptr, true, false);
+
+      for(unsigned int q = 0; q < integrator_u.n_q_points; ++q)
+      {
+        unsigned int const local_face_number = matrix_free.get_face_info(face).interior_face_no;
+
+        unsigned int const index = matrix_free.get_shape_info(dof_index_u, quad_index)
+                                     .face_to_cell_index_nodal[local_face_number][q];
+
+        // compute traction acting on structure with normal vector in opposite direction
+        // as compared to the fluid domain
+        vector normal = -integrator_u.get_normal_vector(q);
+        tensor grad_u = integrator_u.get_gradient(q);
+        scalar p      = integrator_p.get_value(q);
+
+        vector traction = param.viscosity * (grad_u + transpose(grad_u)) * normal - p * normal;
+
+        integrator_u.submit_dof_value(traction, index);
+      }
+
+      integrator_u.set_dof_values(dst);
+    }
+    else
+    {
+      AssertThrow(boundary_type == BoundaryTypeU::Dirichlet ||
+                    boundary_type == BoundaryTypeU::Neumann ||
+                    boundary_type == BoundaryTypeU::Symmetry,
+                  ExcMessage("BoundaryTypeU not implemented."));
     }
   }
 }
