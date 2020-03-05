@@ -7,8 +7,8 @@
 
 #include "inflow_data_calculator.h"
 
+#include "../../functionalities/evaluate_solution_in_given_point.h"
 #include "../../functionalities/linear_interpolation.h"
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
 
 template<int dim, typename Number>
 InflowDataCalculator<dim, Number>::InflowDataCalculator(InflowData<dim> const & inflow_data_in,
@@ -66,13 +66,13 @@ InflowDataCalculator<dim, Number>::calculate(
             AssertThrow(false, ExcMessage("Not implemented."));
           }
 
-          std::vector<std::pair<unsigned int, std::vector<Number>>>
-            global_dof_index_and_shape_values;
-          get_global_dof_index_and_shape_values(
-            *dof_handler_velocity, *mapping, velocity, point, global_dof_index_and_shape_values);
+          std::vector<std::pair<unsigned int, std::vector<Number>>> dof_index_and_shape_values;
+          get_dof_index_and_shape_values(
+            *dof_handler_velocity, *mapping, velocity, point, dof_index_and_shape_values);
 
-          unsigned int array_index                      = iy * inflow_data.n_points_z + iz;
-          array_dof_index_and_shape_values[array_index] = global_dof_index_and_shape_values;
+          unsigned int array_index = iy * inflow_data.n_points_z + iz;
+
+          array_dof_index_and_shape_values[array_index] = dof_index_and_shape_values;
         }
       }
 
@@ -95,18 +95,14 @@ InflowDataCalculator<dim, Number>::calculate(
           array_dof_index_and_shape_values[array_index]);
 
         // loop over all adjacent, locally owned cells for the current point
-        for(typename std::vector<std::pair<unsigned int, std::vector<Number>>>::iterator iter =
-              vector.begin();
-            iter != vector.end();
-            ++iter)
+        for(auto iter = vector.begin(); iter != vector.end(); ++iter)
         {
           // increment counter (because this is a locally owned cell)
           array_counter[array_index] += 1;
 
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, Number> velocity_value;
-          interpolate_value_vectorial_quantity(
-            *dof_handler_velocity, velocity, iter->first, iter->second, velocity_value);
+          Tensor<1, dim, Number> velocity_value = Interpolator<dim, Number, 1>::value(
+            *dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity inflow data
           (*inflow_data.array)[array_index] += velocity_value;

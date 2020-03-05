@@ -7,7 +7,7 @@
 
 #include "pressure_difference_calculation.h"
 
-#include "postprocessor/evaluate_solution_in_given_point.h"
+#include "../functionalities/evaluate_solution_in_given_point.h"
 
 #include <fstream>
 

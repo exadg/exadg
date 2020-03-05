@@ -7,7 +7,7 @@
 
 #include "line_plot_calculation_statistics.h"
 
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
+#include "../../functionalities/evaluate_solution_in_given_point.h"
 
 template<int dim>
 LinePlotCalculatorStatistics<dim>::LinePlotCalculatorStatistics(
@@ -211,17 +211,17 @@ LinePlotCalculatorStatistics<dim>::initialize_cell_data(VectorType const & veloc
         {
           // find adjacent cells and store data required later for evaluating the solution.
           std::vector<std::pair<unsigned int, std::vector<double>>>
-            dof_index_first_dof_and_shape_values_velocity;
+            dof_index_first_dof_and_shape_values;
 
-          get_global_dof_index_and_shape_values(dof_handler_velocity,
-                                                mapping,
-                                                velocity,
-                                                *point_it,
-                                                dof_index_first_dof_and_shape_values_velocity);
+          get_dof_index_and_shape_values(dof_handler_velocity,
+                                         mapping,
+                                         velocity,
+                                         *point_it,
+                                         dof_index_first_dof_and_shape_values);
 
           for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-                dof_index_first_dof_and_shape_values_velocity.begin();
-              iter != dof_index_first_dof_and_shape_values_velocity.end();
+                dof_index_first_dof_and_shape_values.begin();
+              iter != dof_index_first_dof_and_shape_values.end();
               ++iter)
           {
             cells_global_velocity[line_iterator][p].push_back(*iter);
@@ -232,17 +232,17 @@ LinePlotCalculatorStatistics<dim>::initialize_cell_data(VectorType const & veloc
         {
           // find adjacent cells and store data required later for evaluating the solution.
           std::vector<std::pair<unsigned int, std::vector<double>>>
-            dof_index_first_dof_and_shape_values_pressure;
+            dof_index_first_dof_and_shape_values;
 
-          get_global_dof_index_and_shape_values(dof_handler_pressure,
-                                                mapping,
-                                                pressure,
-                                                *point_it,
-                                                dof_index_first_dof_and_shape_values_pressure);
+          get_dof_index_and_shape_values(dof_handler_pressure,
+                                         mapping,
+                                         pressure,
+                                         *point_it,
+                                         dof_index_first_dof_and_shape_values);
 
           for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-                dof_index_first_dof_and_shape_values_pressure.begin();
-              iter != dof_index_first_dof_and_shape_values_pressure.end();
+                dof_index_first_dof_and_shape_values.begin();
+              iter != dof_index_first_dof_and_shape_values.end();
               ++iter)
           {
             cells_global_pressure[line_iterator][p].push_back(*iter);
@@ -333,10 +333,7 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
       cells_global_velocity[line_iterator][p]);
 
     // loop over all adjacent, locally owned cells for the current point
-    for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-          adjacent_cells.begin();
-        iter != adjacent_cells.end();
-        ++iter)
+    for(auto iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)
     {
       // increment counter (because this is a locally owned cell)
       counter_vector_local[p] += 1;
@@ -349,9 +346,8 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
         if((*quantity)->type == QuantityType::Velocity)
         {
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, double> velocity_value;
-          interpolate_value_vectorial_quantity(
-            dof_handler_velocity, velocity, iter->first, iter->second, velocity_value);
+          Tensor<1, dim, double> velocity_value = Interpolator<dim, double, 1>::value(
+            dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity values
           velocity_vector_local[p] += velocity_value;
@@ -423,10 +419,7 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & press
       cells_global_pressure[line_iterator][p]);
 
     // loop over all adjacent, locally owned cells for the current point
-    for(typename std::vector<std::pair<unsigned int, std::vector<double>>>::iterator iter =
-          adjacent_cells.begin();
-        iter != adjacent_cells.end();
-        ++iter)
+    for(auto iter = adjacent_cells.begin(); iter != adjacent_cells.end(); ++iter)
     {
       // increment counter (because this is a locally owned cell)
       counter_vector_local[p] += 1;
@@ -439,9 +432,10 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & press
         if((*quantity)->type == QuantityType::Pressure)
         {
           // interpolate solution using the precomputed shape values and the global dof index
-          double pressure_value = 0.0;
-          interpolate_value_scalar_quantity(
-            dof_handler_pressure, pressure, iter->first, iter->second, pressure_value);
+          double pressure_value = Interpolator<dim, double, 0>::value(dof_handler_pressure,
+                                                                      pressure,
+                                                                      iter->first,
+                                                                      iter->second);
 
           // add result to array with pressure values
           pressure_vector_local[p] += pressure_value;

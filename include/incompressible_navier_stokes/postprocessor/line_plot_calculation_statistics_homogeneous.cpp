@@ -7,7 +7,7 @@
 
 #include "line_plot_calculation_statistics_homogeneous.h"
 
-#include "../../postprocessor/evaluate_solution_in_given_point.h"
+#include "../../functionalities/evaluate_solution_in_given_point.h"
 
 template<int dim>
 LinePlotCalculatorStatisticsHomogeneous<dim>::LinePlotCalculatorStatisticsHomogeneous(
