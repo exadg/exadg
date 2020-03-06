@@ -14,14 +14,14 @@
 
 using namespace dealii;
 
-template<int dim, typename Number, int n_components>
+template<int dim, int n_components, typename Number>
 class InterfaceCoupling
 {
 private:
   static unsigned int const rank =
     (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
 
-  typedef InterfaceCoupling<dim, Number, n_components> This;
+  typedef InterfaceCoupling<dim, n_components, Number> This;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
   typedef FaceIntegrator<dim, n_components, Number>  Integrator;
