@@ -60,7 +60,7 @@ public:
   {
     Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
-    return FunctionEvaluator<dim, Number, rank>::value(data.f, q_points, time);
+    return FunctionEvaluator<rank, dim, Number>::value(data.f, q_points, time);
   }
 
 private:

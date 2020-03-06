@@ -259,7 +259,7 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
 
         // evaluate right-hand side
         vector rhs =
-          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
+          FunctionEvaluator<1, dim, Number>::value(this->field_functions->right_hand_side,
                                                    q_points,
                                                    this->evaluation_time);
 
@@ -447,7 +447,7 @@ DGNavierStokesDualSplitting<dim, Number>::
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
         vector dudt =
-          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
+          FunctionEvaluator<1, dim, Number>::value(it->second, q_points, this->evaluation_time);
 
         vector normal = integrator.get_normal_vector(q);
 
@@ -582,7 +582,7 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_
 
         // evaluate right-hand side
         vector rhs =
-          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
+          FunctionEvaluator<1, dim, Number>::value(this->field_functions->right_hand_side,
                                                    q_points,
                                                    this->evaluation_time);
 

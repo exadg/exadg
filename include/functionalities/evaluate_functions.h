@@ -89,7 +89,7 @@ using namespace dealii;
 //    return evaluate_vectorial_function<dim, Number>(function, q_points, time);
 //}
 
-template<int dim, typename Number, int rank>
+template<int rank, int dim, typename Number>
 struct FunctionEvaluator
 {
   static inline DEAL_II_ALWAYS_INLINE //
@@ -143,7 +143,7 @@ struct FunctionEvaluator
 };
 
 template<int dim, typename Number>
-struct FunctionEvaluator<dim, Number, 0>
+struct FunctionEvaluator<0, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     Tensor<0, dim, VectorizedArray<Number>>
@@ -189,7 +189,7 @@ struct FunctionEvaluator<dim, Number, 0>
 };
 
 template<int dim, typename Number>
-struct FunctionEvaluator<dim, Number, 1>
+struct FunctionEvaluator<1, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     Tensor<1, dim, VectorizedArray<Number>>

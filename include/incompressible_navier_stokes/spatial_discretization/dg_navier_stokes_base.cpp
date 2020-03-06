@@ -1493,7 +1493,7 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
           auto bc = this->boundary_descriptor_velocity->dirichlet_bc.find(boundary_id)->second;
           auto q_points = integrator.quadrature_point(q);
 
-          g = FunctionEvaluator<dim, Number, 1>::value(bc, q_points, this->evaluation_time);
+          g = FunctionEvaluator<1, dim, Number>::value(bc, q_points, this->evaluation_time);
         }
         else if(boundary_type == BoundaryTypeU::DirichletMortar)
         {
@@ -1556,7 +1556,7 @@ DGNavierStokesBase<dim, Number>::local_interpolate_pressure_dirichlet_bc_boundar
         auto bc       = this->boundary_descriptor_pressure->dirichlet_bc.find(boundary_id)->second;
         auto q_points = integrator.quadrature_point(q);
 
-        scalar g = FunctionEvaluator<dim, Number, 0>::value(bc, q_points, this->evaluation_time);
+        scalar g = FunctionEvaluator<0, dim, Number>::value(bc, q_points, this->evaluation_time);
         integrator.submit_dof_value(g, index);
       }
 

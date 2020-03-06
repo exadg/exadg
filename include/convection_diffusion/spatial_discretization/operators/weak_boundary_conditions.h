@@ -77,7 +77,7 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      auto g = FunctionEvaluator<dim, Number, rank>::value(bc, q_points, time);
+      auto g = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
 
       value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
     }
@@ -180,7 +180,7 @@ inline DEAL_II_ALWAYS_INLINE //
       auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
       auto q_points = integrator.quadrature_point(q);
 
-      auto h = FunctionEvaluator<dim, Number, rank>::value(bc, q_points, time);
+      auto h = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
 
       normal_gradient_p = -normal_gradient_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * h);
     }
@@ -225,7 +225,7 @@ inline DEAL_II_ALWAYS_INLINE //
     auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
     auto q_points = integrator.quadrature_point(q);
 
-    normal_gradient = FunctionEvaluator<dim, Number, rank>::value(bc, q_points, time);
+    normal_gradient = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
   }
   else
   {

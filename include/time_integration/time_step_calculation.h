@@ -192,7 +192,7 @@ calculate_time_step_cfl_local(MatrixFree<dim, value_type> const &  data,
       Point<dim, VectorizedArray<value_type>> q_point = fe_eval.quadrature_point(q);
 
       Tensor<1, dim, VectorizedArray<value_type>> u_x =
-        FunctionEvaluator<dim, value_type, 1>::value(velocity, q_point, time);
+        FunctionEvaluator<1, dim, value_type>::value(velocity, q_point, time);
       Tensor<2, dim, VectorizedArray<value_type>> invJ  = fe_eval.inverse_jacobian(q);
       invJ                                              = transpose(invJ);
       Tensor<1, dim, VectorizedArray<value_type>> ut_xi = invJ * u_x;
