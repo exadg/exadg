@@ -101,7 +101,7 @@ InflowDataCalculator<dim, Number>::calculate(
           array_counter[array_index] += 1;
 
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, Number> velocity_value = Interpolator<dim, Number, 1>::value(
+          Tensor<1, dim, Number> velocity_value = Interpolator<1, dim, Number>::value(
             *dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity inflow data

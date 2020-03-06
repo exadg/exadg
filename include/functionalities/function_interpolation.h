@@ -10,7 +10,7 @@
 
 using namespace dealii;
 
-template<int dim, typename Number, int rank>
+template<int rank, int dim, typename Number>
 class FunctionInterpolation : public Function<dim, Number>
 {
 private:
@@ -26,8 +26,10 @@ public:
   {
     Assert(map_solution != nullptr, ExcMessage("Pointer map_solution is not initialized."));
 
-    Id                                       id              = std::make_tuple(face, q, v);
-    ArraySolution &                          array_solution  = map_solution->find(quad_index);
+    Id id = std::make_tuple(face, q, v);
+
+    ArraySolution & array_solution = map_solution->find(quad_index);
+
     std::vector<Tensor<rank, dim, Number>> & vector_solution = array_solution.find(id);
 
     Tensor<rank, dim, Number> result;

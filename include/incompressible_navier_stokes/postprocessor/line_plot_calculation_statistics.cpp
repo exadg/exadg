@@ -346,7 +346,7 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_velocity(VectorType const & veloc
         if((*quantity)->type == QuantityType::Velocity)
         {
           // interpolate solution using the precomputed shape values and the global dof index
-          Tensor<1, dim, double> velocity_value = Interpolator<dim, double, 1>::value(
+          Tensor<1, dim, double> velocity_value = Interpolator<1, dim, double>::value(
             dof_handler_velocity, velocity, iter->first, iter->second);
 
           // add result to array with velocity values
@@ -432,7 +432,7 @@ LinePlotCalculatorStatistics<dim>::do_evaluate_pressure(VectorType const & press
         if((*quantity)->type == QuantityType::Pressure)
         {
           // interpolate solution using the precomputed shape values and the global dof index
-          double pressure_value = Interpolator<dim, double, 0>::value(dof_handler_pressure,
+          double pressure_value = Interpolator<0, dim, double>::value(dof_handler_pressure,
                                                                       pressure,
                                                                       iter->first,
                                                                       iter->second);

@@ -184,7 +184,7 @@ get_dof_index_and_shape_values(
  * Interpolate solution from dof vector by using precomputed shape functions values (for
  * efficiency!). Note that we assume that we are dealing with discontinuous finite elements.
  */
-template<int dim, typename Number, int rank>
+template<int rank, int dim, typename Number>
 struct Interpolator
 {
   static inline DEAL_II_ALWAYS_INLINE //
@@ -210,7 +210,7 @@ struct Interpolator
  * The quantity to be evaluated is of type Tensor<0,dim,Number>.
  */
 template<int dim, typename Number>
-struct Interpolator<dim, Number, 0>
+struct Interpolator<0, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     Tensor<0, dim, Number>
@@ -226,8 +226,9 @@ struct Interpolator<dim, Number, 0>
 
     Number result = Number(0.0);
 
-    FiniteElement<dim> const & fe      = dof_handler.get_fe();
-    Number const *             sol_ptr = solution.begin() + dof_index_begin;
+    FiniteElement<dim> const & fe = dof_handler.get_fe();
+
+    Number const * sol_ptr = solution.begin() + dof_index_begin;
 
     for(unsigned int i = 0; i < fe.dofs_per_cell; ++i)
       result += sol_ptr[i] * fe_shape_values[i];
@@ -242,7 +243,7 @@ struct Interpolator<dim, Number, 0>
  * The quantity to be evaluated is of type Tensor<1,dim,Number>.
  */
 template<int dim, typename Number>
-struct Interpolator<dim, Number, 1>
+struct Interpolator<1, dim, Number>
 {
   static inline DEAL_II_ALWAYS_INLINE //
     Tensor<1, dim, Number>

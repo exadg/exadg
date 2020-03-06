@@ -8,12 +8,14 @@
 #ifndef INCLUDE_EVALUATEFUNCTIONS_H_
 #define INCLUDE_EVALUATEFUNCTIONS_H_
 
+// deal.II
 #include <deal.II/base/function.h>
 #include <deal.II/base/point.h>
 #include <deal.II/base/tensor.h>
 #include <deal.II/base/vectorization.h>
+
+#include "../../include/functionalities/function_interpolation.h"
 #include "../../include/functionalities/function_with_normal.h"
-#include "../../include/functionalities/interface_coupling.h"
 
 using namespace dealii;
 
@@ -107,7 +109,7 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     Tensor<rank, dim, VectorizedArray<value_type>>
-    value(std::shared_ptr<FunctionInterpolation<dim, value_type, rank>> function,
+    value(std::shared_ptr<FunctionInterpolation<rank, dim, value_type>> function,
           unsigned int const                                            face,
           unsigned int const                                            q,
           unsigned int const                                            quad_index)
@@ -168,7 +170,7 @@ struct FunctionEvaluator<dim, value_type, 0>
 
   static inline DEAL_II_ALWAYS_INLINE //
       Tensor<0, dim, VectorizedArray<value_type>>
-      value(std::shared_ptr<FunctionInterpolation<dim, value_type, 0>> function,
+      value(std::shared_ptr<FunctionInterpolation<0, dim, value_type>> function,
             unsigned int const                                         face,
             unsigned int const                                         q,
             unsigned int const                                         quad_index)
@@ -217,7 +219,7 @@ struct FunctionEvaluator<dim, value_type, 1>
 
   static inline DEAL_II_ALWAYS_INLINE //
       Tensor<1, dim, VectorizedArray<value_type>>
-      value(std::shared_ptr<FunctionInterpolation<dim, value_type, 1>> function,
+      value(std::shared_ptr<FunctionInterpolation<1, dim, value_type>> function,
             unsigned int const                                         face,
             unsigned int const                                         q,
             unsigned int const                                         quad_index)

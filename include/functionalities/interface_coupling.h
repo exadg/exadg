@@ -93,7 +93,7 @@ public:
           for(unsigned int i = 0; i < solution.size(); ++i)
           {
             // interpolate solution from dof vector and overwrite data
-            solution[i] = Interpolator<dim, Number, rank>::value(*dof_handler_src,
+            solution[i] = Interpolator<rank, dim, Number>::value(*dof_handler_src,
                                                                  dof_vector_src,
                                                                  bookmark[i].first,
                                                                  bookmark[i].second);
@@ -173,10 +173,10 @@ private:
         map_solution.emplace(quad_index, array_solution);
       }
 
-      std::shared_ptr<FunctionInterpolation<dim, Number, rank>> f =
-        std::dynamic_pointer_cast<FunctionInterpolation<dim, Number, rank>>(boundary->second);
+      std::shared_ptr<FunctionInterpolation<rank, dim, Number>> f =
+        std::dynamic_pointer_cast<FunctionInterpolation<rank, dim, Number>>(boundary->second);
       AssertThrow(f.get() != 0,
-                  ExcMessage("Dynamic cast to FunctionInterpolation<dim, Number> failed."));
+                  ExcMessage("Dynamic cast to FunctionInterpolation<rank, dim, Number> failed."));
 
       f->set_data_pointer(map_solution);
 
