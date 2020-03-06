@@ -1,5 +1,5 @@
 /*
- * BoundaryDescriptorNavierStokes.h
+ * boundary_descriptor.h
  *
  *  Created on: Aug 10, 2016
  *      Author: fehn
@@ -12,6 +12,8 @@ using namespace dealii;
 
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
+
+#include "../../functionalities/function_interpolation.h"
 
 namespace IncNS
 {
@@ -64,7 +66,7 @@ struct BoundaryDescriptorU
   // from the solution on another domain that is in contact with the actual domain
   // of interest at the given boundary (this type of Dirichlet boundary condition
   // is required for fluid-structure interaction problems)
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_mortar_bc;
+  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<1, dim>>> dirichlet_mortar_bc;
 
   // Neumann: prescribe all components of the velocity gradient in normal direction
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;

@@ -91,10 +91,12 @@ inline DEAL_II_ALWAYS_INLINE //
       }
       else if(boundary_type == BoundaryTypeU::DirichletMortar)
       {
-        AssertThrow(false, ExcMessage("Not implemented."));
-
-        // TODO
-        // g = FunctionEvaluator<1, dim, Number>::value();
+        // TODO get face and quad_index from integrator
+        AssertThrow(false, ExcMessage("not implemented."));
+        auto               bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+        unsigned int const face       = 0;
+        unsigned int const quad_index = 0;
+        g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
       }
       else
       {
@@ -169,10 +171,12 @@ inline DEAL_II_ALWAYS_INLINE //
     }
     else if(boundary_type == BoundaryTypeU::DirichletMortar)
     {
-      AssertThrow(false, ExcMessage("Not implemented."));
-
-      // TODO
-      // g = FunctionEvaluator<dim, Number, 1>::value();
+      // TODO get face and quad_index from integrator
+      AssertThrow(false, ExcMessage("not implemented."));
+      auto               bc   = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+      unsigned int const face = 0;
+      unsigned int const quad_index = 0;
+      g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
     }
     else
     {

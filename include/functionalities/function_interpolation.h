@@ -10,8 +10,14 @@
 
 using namespace dealii;
 
-template<int rank, int dim, typename Number>
-class FunctionInterpolation : public Function<dim, Number>
+/*
+ * Note:
+ * The default argument "double" could be removed but this implies that all BoundaryDescriptor's
+ * that use FunctionInterpolation require another template parameter "Number", which requires
+ * changes of major parts of the code.
+ */
+template<int rank, int dim, typename Number = double>
+class FunctionInterpolation
 {
 private:
   typedef std::tuple<unsigned int /*face*/, unsigned int /*q*/, unsigned int /*v*/> Id;
@@ -19,18 +25,19 @@ private:
 
 public:
   Tensor<rank, dim, Number>
-  value(unsigned int const face,
-        unsigned int const q,
-        unsigned int const v,
-        unsigned int const quad_index) const
+  tensor_value(unsigned int const face,
+               unsigned int const q,
+               unsigned int const v,
+               unsigned int const quad_index) const
   {
     Assert(map_solution != nullptr, ExcMessage("Pointer map_solution is not initialized."));
 
     Id id = std::make_tuple(face, q, v);
 
-    ArraySolution & array_solution = map_solution->find(quad_index);
+    ArraySolution const & array_solution = map_solution->find(quad_index)->second;
 
-    std::vector<Tensor<rank, dim, Number>> & vector_solution = array_solution.find(id);
+    std::vector<Tensor<rank, dim, Number>> const & vector_solution =
+      array_solution.find(id)->second;
 
     Tensor<rank, dim, Number> result;
     for(auto solution = vector_solution.begin(); solution != vector_solution.end(); ++solution)
@@ -50,7 +57,7 @@ public:
   }
 
 private:
-  std::map<unsigned int, ArraySolution> * map_solution;
+  std::map<unsigned int, ArraySolution> const * map_solution;
 };
 
 #endif /* INCLUDE_FUNCTIONALITIES_FUNCTION_INTERPOLATION_H_ */

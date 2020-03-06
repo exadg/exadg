@@ -109,10 +109,10 @@ struct FunctionEvaluator
 
   static inline DEAL_II_ALWAYS_INLINE //
     Tensor<rank, dim, VectorizedArray<Number>>
-    value(std::shared_ptr<FunctionInterpolation<rank, dim, Number>> function,
-          unsigned int const                                        face,
-          unsigned int const                                        q,
-          unsigned int const                                        quad_index)
+    value(std::shared_ptr<FunctionInterpolation<rank, dim>> function,
+          unsigned int const                                face,
+          unsigned int const                                q,
+          unsigned int const                                quad_index)
   {
     (void)function;
     (void)face;
@@ -170,17 +170,17 @@ struct FunctionEvaluator<0, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
       Tensor<0, dim, VectorizedArray<Number>>
-      value(std::shared_ptr<FunctionInterpolation<0, dim, Number>> function,
-            unsigned int const                                     face,
-            unsigned int const                                     q,
-            unsigned int const                                     quad_index)
+      value(std::shared_ptr<FunctionInterpolation<0, dim>> function,
+            unsigned int const                             face,
+            unsigned int const                             q,
+            unsigned int const                             quad_index)
   {
     VectorizedArray<Number> value = make_vectorized_array<Number>(0.0);
 
     Number array[VectorizedArray<Number>::n_array_elements];
     for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
     {
-      array[v] = function->value(face, q, v, quad_index);
+      array[v] = function->tensor_value(face, q, v, quad_index);
     }
     value.load(&array[0]);
 
@@ -219,17 +219,17 @@ struct FunctionEvaluator<1, dim, Number>
 
   static inline DEAL_II_ALWAYS_INLINE //
       Tensor<1, dim, VectorizedArray<Number>>
-      value(std::shared_ptr<FunctionInterpolation<1, dim, Number>> function,
-            unsigned int const                                     face,
-            unsigned int const                                     q,
-            unsigned int const                                     quad_index)
+      value(std::shared_ptr<FunctionInterpolation<1, dim>> function,
+            unsigned int const                             face,
+            unsigned int const                             q,
+            unsigned int const                             quad_index)
   {
     Tensor<1, dim, VectorizedArray<Number>> value;
 
     Tensor<1, dim, Number> tensor_array[VectorizedArray<Number>::n_array_elements];
     for(unsigned int v = 0; v < VectorizedArray<Number>::n_array_elements; ++v)
     {
-      tensor_array[v] = function->value(face, q, v, quad_index);
+      tensor_array[v] = function->tensor_value(face, q, v, quad_index);
     }
 
     for(unsigned int d = 0; d < dim; ++d)

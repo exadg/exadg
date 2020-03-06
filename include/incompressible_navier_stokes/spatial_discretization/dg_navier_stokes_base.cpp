@@ -1497,10 +1497,10 @@ DGNavierStokesBase<dim, Number>::local_interpolate_velocity_dirichlet_bc_boundar
         }
         else if(boundary_type == BoundaryTypeU::DirichletMortar)
         {
-          AssertThrow(false, ExcMessage("Not implemented."));
+          auto bc =
+            this->boundary_descriptor_velocity->dirichlet_mortar_bc.find(boundary_id)->second;
 
-          // TODO
-          // g = ;
+          g = FunctionEvaluator<1, dim, Number>::value(bc, face, q, quad_index);
         }
         else
         {

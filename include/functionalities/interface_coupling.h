@@ -41,13 +41,14 @@ public:
   }
 
   void
-  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_dst_in,
-        std::vector<std::string> const &                quadrature_rules_dst_in,
-        unsigned int &                                  dof_index_dst_in,
-        std::map<types::boundary_id, std::shared_ptr<Function<dim>>> const & bc_in,
-        DoFHandler<dim> const &                                              dof_handler_src_in,
-        Mapping<dim> const &                                                 mapping_src_in,
-        VectorType const &                                                   dof_vector_src)
+  setup(
+    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_dst_in,
+    std::vector<std::string> const &                quadrature_rules_dst_in,
+    unsigned int &                                  dof_index_dst_in,
+    std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>> const & bc_in,
+    DoFHandler<dim> const & dof_handler_src_in,
+    Mapping<dim> const &    mapping_src_in,
+    VectorType const &      dof_vector_src)
   {
     matrix_free_wrapper_dst = matrix_free_wrapper_dst_in;
     quadrature_rules_dst    = quadrature_rules_dst_in;
@@ -173,12 +174,7 @@ private:
         map_solution.emplace(quad_index, array_solution);
       }
 
-      std::shared_ptr<FunctionInterpolation<rank, dim, Number>> f =
-        std::dynamic_pointer_cast<FunctionInterpolation<rank, dim, Number>>(boundary->second);
-      AssertThrow(f.get() != 0,
-                  ExcMessage("Dynamic cast to FunctionInterpolation<rank, dim, Number> failed."));
-
-      f->set_data_pointer(map_solution);
+      boundary->second->set_data_pointer(map_solution);
 
       global_map_bookmarks.emplace(boundary->first, map_bookmarks);
       global_map_solution.emplace(boundary->first, map_solution);
@@ -189,7 +185,7 @@ private:
   std::vector<std::string>                        quadrature_rules_dst;
   unsigned int                                    dof_index_dst;
 
-  mutable std::map<types::boundary_id, std::shared_ptr<Function<dim>>> bc;
+  mutable std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>> bc;
 
   DoFHandler<dim> const * dof_handler_src;
   Mapping<dim> const *    mapping_src;
