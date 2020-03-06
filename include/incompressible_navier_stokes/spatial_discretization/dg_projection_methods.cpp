@@ -77,7 +77,7 @@ void
 DGNavierStokesProjectionMethods<dim, Number>::initialize_laplace_operator()
 {
   // setup Laplace operator
-  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+  Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
   laplace_operator_data.dof_index  = this->get_dof_index_pressure();
   laplace_operator_data.quad_index = this->get_quad_index_pressure();
 
@@ -143,7 +143,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::PointJacobi)
   {
     preconditioner_pressure_poisson.reset(
-      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number>>(laplace_operator));
+      new JacobiPreconditioner<Poisson::LaplaceOperator<dim, Number, 1>>(laplace_operator));
   }
   else if(this->param.preconditioner_pressure_poisson == PreconditionerPressurePoisson::Multigrid)
   {
@@ -198,8 +198,9 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson
 
     // setup solver
     pressure_poisson_solver.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        laplace_operator, *preconditioner_pressure_poisson, solver_data));
+      new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>,
+                   PreconditionerBase<Number>,
+                   VectorType>(laplace_operator, *preconditioner_pressure_poisson, solver_data));
   }
   else if(this->param.solver_pressure_poisson == SolverPressurePoisson::FGMRES)
   {
@@ -215,7 +216,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_solver_pressure_poisson
       solver_data.use_preconditioner = true;
     }
 
-    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, Number>,
+    pressure_poisson_solver.reset(new FGMRESSolver<Poisson::LaplaceOperator<dim, Number, 1>,
                                                    PreconditionerBase<Number>,
                                                    VectorType>(laplace_operator,
                                                                *preconditioner_pressure_poisson,

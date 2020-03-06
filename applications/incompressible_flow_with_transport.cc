@@ -195,7 +195,7 @@ private:
   std::vector<ConvDiff::InputParameters> scalar_param;
 
   std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
-  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>>> scalar_boundary_descriptor;
+  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<0,dim>>> scalar_boundary_descriptor;
 
   std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
 
@@ -353,7 +353,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     // boundary conditions
-    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<dim>());
+    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<0,dim>());
 
     ConvDiff::set_boundary_conditions(scalar_boundary_descriptor[i], i);
 

@@ -7,9 +7,9 @@ namespace Poisson
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::reinit(
-  MatrixFree<dim, Number> const &   matrix_free,
-  AffineConstraints<double> const & constraint_matrix,
-  LaplaceOperatorData<dim> const &  data)
+  MatrixFree<dim, Number> const &        matrix_free,
+  AffineConstraints<double> const &      constraint_matrix,
+  LaplaceOperatorData<rank, dim> const & data)
 {
   Base::reinit(matrix_free, constraint_matrix, data);
 
@@ -267,11 +267,11 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_dirichlet_bc_fr
            ExcMessage("This function is only implemented for OperatorType::inhomogeneous."));
 
     value value_p = value();
-    if(boundary_type == ConvDiff::BoundaryType::dirichlet)
+    if(boundary_type == ConvDiff::BoundaryType::Dirichlet)
     {
       value_p = 2.0 * integrator_m.get_value(q);
     }
-    else if(boundary_type == ConvDiff::BoundaryType::neumann)
+    else if(boundary_type == ConvDiff::BoundaryType::Neumann)
     {
       // do nothing
     }
@@ -369,12 +369,15 @@ LaplaceOperator<dim, Number, n_components>::
 template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  LaplaceOperatorData<dim> const &     data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
+  types::boundary_id const               boundary_id,
+  LaplaceOperatorData<rank, dim> const & data,
+  std::set<types::boundary_id> const &   periodic_boundary_ids) const
 {
   unsigned int counter = 0;
   if(data.bc->dirichlet_bc.find(boundary_id) != data.bc->dirichlet_bc.end())
+    counter++;
+
+  if(data.bc->dirichlet_mortar_bc.find(boundary_id) != data.bc->dirichlet_mortar_bc.end())
     counter++;
 
   if(data.bc->neumann_bc.find(boundary_id) != data.bc->neumann_bc.end())

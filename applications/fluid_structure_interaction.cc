@@ -49,6 +49,7 @@
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/moving_mesh.h"
 #include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/interface_coupling.h"
 
 using namespace dealii;
 // using namespace IncNS;
@@ -109,7 +110,7 @@ private:
   Poisson::InputParameters poisson_param;
 
   std::shared_ptr<Poisson::FieldFunctions<dim>>      poisson_field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> poisson_boundary_descriptor;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<1,dim>> poisson_boundary_descriptor;
 
   // static mesh for Poisson problem
   std::shared_ptr<Mesh<dim>> poisson_mesh;
@@ -165,6 +166,9 @@ private:
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
   // TODO
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_fluid;
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> structure_to_moving_mesh;
+  std::shared_ptr<InterfaceCoupling<dim, dim, Number>> fluid_to_structure;
 
   /******************************* FLUID - STRUCTURE - INTERFACE ******************************/
 
@@ -266,7 +270,7 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &   fluid_param_in,
   IncNS::set_field_functions(fluid_field_functions);
 
   // poisson
-  poisson_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  poisson_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<1,dim>());
   Poisson::set_boundary_conditions(poisson_boundary_descriptor);
 
   poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
@@ -440,18 +444,41 @@ Problem<dim, Number>::solve() const
   {
     fluid_time_integrator->advance_one_timestep_pre_solve();
 
-    // move the mesh and update dependent data structures
-    Timer timer;
-    timer.restart();
+    // partitioned iteration
+    unsigned int const N_ITER_MAX = 1;
+    for(unsigned int iter = 0; iter < N_ITER_MAX; ++iter)
+    {
+      // TODO
+      LinearAlgebra::distributed::Vector<Number> vec_displacements, vec_velocity;
+      if(iter == 0)
+      {
+        // extrapolate structural displacements and fluid velocity at interface
+      }
+      else
+      {
+        // use structural displacements of last iteration and compute
+        // fluid velocity at interface using the new structural displacements
+      }
 
-    fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-    fluid_matrix_free_wrapper->update_geometry();
-    fluid_operator->update_after_mesh_movement();
-    fluid_time_integrator->ale_update();
+      // move the mesh and update dependent data structures
+      Timer timer;
+      timer.restart();
 
-    ale_update_time += timer.wall_time();
+      // structure_to_moving_mesh->update_data(vec_displacements);
+      fluid_moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
+      fluid_matrix_free_wrapper->update_geometry();
+      fluid_operator->update_after_mesh_movement();
+      fluid_time_integrator->ale_update();
 
-    fluid_time_integrator->advance_one_timestep_solve();
+      ale_update_time += timer.wall_time();
+
+      //structure_to_fluid->update_data(vec_velocity);
+      fluid_time_integrator->advance_one_timestep_solve();
+
+      // TODO update stress boundary condition for solid
+
+      // TODO solve structural problem
+    }
 
     fluid_time_integrator->advance_one_timestep_post_solve();
   } while(!fluid_time_integrator->finished());

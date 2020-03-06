@@ -667,7 +667,7 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
   else if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
     // multigrid V-cycle for negative Laplace operator
-    Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+    Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
     laplace_operator_data.dof_index             = this->get_dof_index_pressure();
     laplace_operator_data.quad_index            = this->get_quad_index_pressure();
     laplace_operator_data.operator_is_singular  = this->param.pure_dirichlet_bc;
@@ -725,20 +725,22 @@ DGNavierStokesCoupled<dim, Number>::setup_iterative_solver_schur_complement()
 
   if(type_laplacian == DiscretizationOfLaplacian::Classical)
   {
-    Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+    Poisson::LaplaceOperatorData<0, dim> laplace_operator_data;
     laplace_operator_data.dof_index             = this->get_dof_index_pressure();
     laplace_operator_data.quad_index            = this->get_quad_index_pressure();
     laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
     laplace_operator_data.kernel_data.IP_factor = 1.0;
 
-    laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number>());
+    laplace_operator_classical.reset(new Poisson::LaplaceOperator<dim, Number, 1>());
     laplace_operator_classical->reinit(this->get_matrix_free(),
                                        this->get_constraint_p(),
                                        laplace_operator_data);
 
-    solver_pressure_block.reset(
-      new CGSolver<Poisson::LaplaceOperator<dim, Number>, PreconditionerBase<Number>, VectorType>(
-        *laplace_operator_classical, *multigrid_preconditioner_schur_complement, solver_data));
+    solver_pressure_block.reset(new CGSolver<Poisson::LaplaceOperator<dim, Number, 1>,
+                                             PreconditionerBase<Number>,
+                                             VectorType>(*laplace_operator_classical,
+                                                         *multigrid_preconditioner_schur_complement,
+                                                         solver_data));
   }
   else if(type_laplacian == DiscretizationOfLaplacian::Compatible)
   {
@@ -774,8 +776,8 @@ DGNavierStokesCoupled<dim, Number>::setup_pressure_convection_diffusion_operator
   // pressure convection-diffusion operator
 
   // fill boundary descriptor
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor;
+  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<0, dim>());
 
   // For the pressure convection-diffusion operator the homogeneous operators are applied, so there
   // is no need to specify functions for boundary conditions since they will never be used.

@@ -102,7 +102,7 @@ protected:
   setup_pressure_poisson_solver();
 
   // Pressure Poisson equation (operator, preconditioner, solver).
-  Poisson::LaplaceOperator<dim, Number> laplace_operator;
+  Poisson::LaplaceOperator<dim, Number, 1> laplace_operator;
 
   std::shared_ptr<PreconditionerBase<Number>> preconditioner_pressure_poisson;
 

@@ -164,7 +164,7 @@ private:
 
 } // namespace Operators
 
-template<int dim>
+template<int rank, int dim>
 struct LaplaceOperatorData : public OperatorBaseData
 {
   LaplaceOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
@@ -173,23 +173,30 @@ struct LaplaceOperatorData : public OperatorBaseData
 
   Operators::LaplaceKernelData kernel_data;
 
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> bc;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<rank, dim>> bc;
 };
 
-template<int dim, typename Number, int n_components = 1>
-class LaplaceOperator : public OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components>
+template<int dim, typename Number, int n_components>
+class LaplaceOperator
+  : public OperatorBase<
+      dim,
+      Number,
+      LaplaceOperatorData<
+        ((n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int)),
+        dim>,
+      n_components>
 {
 private:
-  typedef OperatorBase<dim, Number, LaplaceOperatorData<dim>, n_components> Base;
-  typedef LaplaceOperator<dim, Number, n_components>                        This;
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+
+  typedef OperatorBase<dim, Number, LaplaceOperatorData<rank, dim>, n_components> Base;
+  typedef LaplaceOperator<dim, Number, n_components>                              This;
 
   typedef typename Base::IntegratorCell IntegratorCell;
   typedef typename Base::IntegratorFace IntegratorFace;
 
   typedef typename Base::Range Range;
-
-  static unsigned int const rank =
-    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
 
   typedef Tensor<rank, dim, VectorizedArray<Number>> value;
 
@@ -198,9 +205,9 @@ public:
   typedef typename Base::VectorType VectorType;
 
   void
-  reinit(MatrixFree<dim, Number> const &   matrix_free,
-         AffineConstraints<double> const & constraint_matrix,
-         LaplaceOperatorData<dim> const &  data);
+  reinit(MatrixFree<dim, Number> const &        matrix_free,
+         AffineConstraints<double> const &      constraint_matrix,
+         LaplaceOperatorData<rank, dim> const & data);
 
   void
   calculate_penalty_parameter(MatrixFree<dim, Number> const & matrix_free,
@@ -275,9 +282,9 @@ private:
                                                     types::boundary_id const & boundary_id) const;
 
   void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                LaplaceOperatorData<dim> const &     data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
+  do_verify_boundary_conditions(types::boundary_id const               boundary_id,
+                                LaplaceOperatorData<rank, dim> const & data,
+                                std::set<types::boundary_id> const &   periodic_boundary_ids) const;
 
   Operators::LaplaceKernel<dim, Number, n_components> kernel;
 };

@@ -14,13 +14,13 @@ namespace ConvDiff
 {
 template<int dim, typename Number>
 DGOperator<dim, Number>::DGOperator(
-  parallel::TriangulationBase<dim> const &       triangulation_in,
-  Mapping<dim> const &                           mapping_in,
-  PeriodicFaces const                            periodic_face_pairs_in,
-  std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim>> const     field_functions_in,
-  InputParameters const &                        param_in,
-  MPI_Comm const &                               mpi_comm_in)
+  parallel::TriangulationBase<dim> const &          triangulation_in,
+  Mapping<dim> const &                              mapping_in,
+  PeriodicFaces const                               periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptor<0, dim>> const boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const        field_functions_in,
+  InputParameters const &                           param_in,
+  MPI_Comm const &                                  mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
     periodic_face_pairs(periodic_face_pairs_in),

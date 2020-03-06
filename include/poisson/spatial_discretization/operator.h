@@ -43,7 +43,10 @@ namespace Poisson
 template<int dim, typename Number, int n_components = 1>
 class Operator : public dealii::Subscriptor
 {
-public:
+private:
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+
   typedef float MultigridNumber;
   // use this line for double-precision multigrid
   //  typedef Number MultigridNumber;
@@ -59,13 +62,14 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  Operator(parallel::TriangulationBase<dim> const &                 triangulation,
-           Mapping<dim> const &                                     mapping,
-           PeriodicFaces const                                      periodic_face_pairs,
-           std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> const boundary_descriptor,
-           std::shared_ptr<FieldFunctions<dim>> const               field_functions,
-           InputParameters const &                                  param,
-           MPI_Comm const &                                         mpi_comm);
+public:
+  Operator(parallel::TriangulationBase<dim> const &                       triangulation,
+           Mapping<dim> const &                                           mapping,
+           PeriodicFaces const                                            periodic_face_pairs,
+           std::shared_ptr<ConvDiff::BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim>> const                     field_functions,
+           InputParameters const &                                        param,
+           MPI_Comm const &                                               mpi_comm);
 
   void
   append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
@@ -147,8 +151,8 @@ private:
   /*
    * User interface: Boundary conditions and field functions.
    */
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>               field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<rank, dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>                     field_functions;
 
   /*
    * List of input parameters.

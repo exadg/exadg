@@ -7,13 +7,13 @@ namespace Poisson
 {
 template<int dim, typename Number, int n_components>
 Operator<dim, Number, n_components>::Operator(
-  parallel::TriangulationBase<dim> const &                 triangulation_in,
-  Mapping<dim> const &                                     mapping_in,
-  PeriodicFaces const                                      periodic_face_pairs_in,
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> const boundary_descriptor_in,
-  std::shared_ptr<FieldFunctions<dim>> const               field_functions_in,
-  Poisson::InputParameters const &                         param_in,
-  MPI_Comm const &                                         mpi_comm_in)
+  parallel::TriangulationBase<dim> const &                       triangulation_in,
+  Mapping<dim> const &                                           mapping_in,
+  PeriodicFaces const                                            periodic_face_pairs_in,
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<rank, dim>> const boundary_descriptor_in,
+  std::shared_ptr<FieldFunctions<dim>> const                     field_functions_in,
+  Poisson::InputParameters const &                               param_in,
+  MPI_Comm const &                                               mpi_comm_in)
   : dealii::Subscriptor(),
     mapping(mapping_in),
     periodic_face_pairs(periodic_face_pairs_in),
@@ -361,7 +361,7 @@ void
 Operator<dim, Number, n_components>::setup_operators()
 {
   // Laplace operator
-  Poisson::LaplaceOperatorData<dim> laplace_operator_data;
+  Poisson::LaplaceOperatorData<rank, dim> laplace_operator_data;
   laplace_operator_data.dof_index             = get_dof_index();
   laplace_operator_data.quad_index            = get_quad_index();
   laplace_operator_data.bc                    = boundary_descriptor;

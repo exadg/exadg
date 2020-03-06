@@ -154,7 +154,7 @@ private:
   InputParameters param;
 
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<BoundaryDescriptor<0,dim>> boundary_descriptor;
 
   std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
@@ -231,7 +231,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
-  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor.reset(new BoundaryDescriptor<0,dim>());
   set_boundary_conditions(boundary_descriptor);
 
   field_functions.reset(new FieldFunctions<dim>());

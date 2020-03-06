@@ -20,7 +20,10 @@ namespace Poisson
 template<int dim, typename Number, typename MultigridNumber, int n_components>
 class MultigridPreconditioner : public MultigridPreconditionerBase<dim, Number, MultigridNumber>
 {
-public:
+private:
+  static unsigned int const rank =
+    (n_components == 1) ? 0 : ((n_components == dim) ? 1 : numbers::invalid_unsigned_int);
+
   typedef LaplaceOperator<dim, MultigridNumber, n_components> Laplace;
 
   typedef MultigridOperatorBase<dim, MultigridNumber>      MGOperatorBase;
@@ -33,6 +36,7 @@ public:
 
   typedef typename MatrixFree<dim, MultigridNumber>::AdditionalData MatrixFreeData;
 
+public:
   MultigridPreconditioner(MPI_Comm const & mpi_comm) : Base(mpi_comm), mesh_is_moving(false)
   {
   }
@@ -42,7 +46,7 @@ public:
              const parallel::TriangulationBase<dim> * tria,
              const FiniteElement<dim> &               fe,
              Mapping<dim> const &                     mapping,
-             LaplaceOperatorData<dim> const &         data_in,
+             LaplaceOperatorData<rank, dim> const &   data_in,
              bool const                               mesh_is_moving,
              Map const *                              dirichlet_bc        = nullptr,
              PeriodicFacePairs *                      periodic_face_pairs = nullptr)
@@ -178,7 +182,7 @@ private:
     return mg_operator->get_pde_operator();
   }
 
-  LaplaceOperatorData<dim> data;
+  LaplaceOperatorData<rank, dim> data;
 
   MGLevelObject<MatrixFreeData> matrix_free_data_update;
 

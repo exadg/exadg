@@ -59,25 +59,43 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number, int n_components, int rank>
 inline DEAL_II_ALWAYS_INLINE //
   Tensor<rank, dim, VectorizedArray<Number>>
-  calculate_exterior_value(Tensor<rank, dim, VectorizedArray<Number>> const & value_m,
-                           unsigned int const                                 q,
-                           FaceIntegrator<dim, n_components, Number> const &  integrator,
-                           OperatorType const &                               operator_type,
-                           BoundaryType const &                               boundary_type,
-                           types::boundary_id const                           boundary_id,
-                           std::shared_ptr<BoundaryDescriptor<dim>> const     boundary_descriptor,
-                           double const &                                     time)
+  calculate_exterior_value(Tensor<rank, dim, VectorizedArray<Number>> const &   value_m,
+                           unsigned int const                                   q,
+                           FaceIntegrator<dim, n_components, Number> const &    integrator,
+                           OperatorType const &                                 operator_type,
+                           BoundaryType const &                                 boundary_type,
+                           types::boundary_id const                             boundary_id,
+                           std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+                           double const &                                       time)
 {
   Tensor<rank, dim, VectorizedArray<Number>> value_p;
 
-  if(boundary_type == BoundaryType::dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
-      auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
-      auto q_points = integrator.quadrature_point(q);
+      Tensor<rank, dim, VectorizedArray<Number>> g;
 
-      auto g = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
+      if(boundary_type == BoundaryType::Dirichlet)
+      {
+        auto bc       = boundary_descriptor->dirichlet_bc.find(boundary_id)->second;
+        auto q_points = integrator.quadrature_point(q);
+
+        g = FunctionEvaluator<rank, dim, Number>::value(bc, q_points, time);
+      }
+      else if(boundary_type == BoundaryType::DirichletMortar)
+      {
+        // TODO get face and quad_index from integrator
+        AssertThrow(false, ExcMessage("not implemented."));
+        auto               bc = boundary_descriptor->dirichlet_mortar_bc.find(boundary_id)->second;
+        unsigned int const face       = 0;
+        unsigned int const quad_index = 0;
+        g = FunctionEvaluator<rank, dim, Number>::value(bc, face, q, quad_index);
+      }
+      else
+      {
+        AssertThrow(false, ExcMessage("Not implemented."));
+      }
 
       value_p = -value_m + Tensor<rank, dim, VectorizedArray<Number>>(2.0 * g);
     }
@@ -90,7 +108,7 @@ inline DEAL_II_ALWAYS_INLINE //
       AssertThrow(false, ExcMessage("Specified OperatorType is not implemented!"));
     }
   }
-  else if(boundary_type == BoundaryType::neumann)
+  else if(boundary_type == BoundaryType::Neumann)
   {
     value_p = value_m;
   }
@@ -158,22 +176,22 @@ template<int dim, typename Number, int n_components, int rank>
 inline DEAL_II_ALWAYS_INLINE //
   Tensor<rank, dim, VectorizedArray<Number>>
   calculate_exterior_normal_gradient(
-    Tensor<rank, dim, VectorizedArray<Number>> const & normal_gradient_m,
-    unsigned int const                                 q,
-    FaceIntegrator<dim, n_components, Number> const &  integrator,
-    OperatorType const &                               operator_type,
-    BoundaryType const &                               boundary_type,
-    types::boundary_id const                           boundary_id,
-    std::shared_ptr<BoundaryDescriptor<dim>> const     boundary_descriptor,
-    double const &                                     time)
+    Tensor<rank, dim, VectorizedArray<Number>> const &   normal_gradient_m,
+    unsigned int const                                   q,
+    FaceIntegrator<dim, n_components, Number> const &    integrator,
+    OperatorType const &                                 operator_type,
+    BoundaryType const &                                 boundary_type,
+    types::boundary_id const                             boundary_id,
+    std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+    double const &                                       time)
 {
   Tensor<rank, dim, VectorizedArray<Number>> normal_gradient_p;
 
-  if(boundary_type == BoundaryType::dirichlet)
+  if(boundary_type == BoundaryType::Dirichlet || boundary_type == BoundaryType::DirichletMortar)
   {
     normal_gradient_p = normal_gradient_m;
   }
-  else if(boundary_type == BoundaryType::neumann)
+  else if(boundary_type == BoundaryType::Neumann)
   {
     if(operator_type == OperatorType::full || operator_type == OperatorType::inhomogeneous)
     {
@@ -208,17 +226,17 @@ inline DEAL_II_ALWAYS_INLINE //
 template<int dim, typename Number, int n_components, int rank>
 inline DEAL_II_ALWAYS_INLINE //
   Tensor<rank, dim, VectorizedArray<Number>>
-  calculate_neumann_value(unsigned int const                                q,
-                          FaceIntegrator<dim, n_components, Number> const & integrator,
-                          OperatorType const &                              operator_type,
-                          BoundaryType const &                              boundary_type,
-                          types::boundary_id const                          boundary_id,
-                          std::shared_ptr<BoundaryDescriptor<dim>> const    boundary_descriptor,
-                          double const &                                    time)
+  calculate_neumann_value(unsigned int const                                   q,
+                          FaceIntegrator<dim, n_components, Number> const &    integrator,
+                          OperatorType const &                                 operator_type,
+                          BoundaryType const &                                 boundary_type,
+                          types::boundary_id const                             boundary_id,
+                          std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
+                          double const &                                       time)
 {
   Tensor<rank, dim, VectorizedArray<Number>> normal_gradient;
 
-  if(boundary_type == BoundaryType::neumann)
+  if(boundary_type == BoundaryType::Neumann)
   {
     AssertThrow(operator_type == OperatorType::inhomogeneous, ExcMessage("Not implemented."));
 
@@ -230,6 +248,10 @@ inline DEAL_II_ALWAYS_INLINE //
   else
   {
     // do nothing
+
+    Assert(boundary_type == BoundaryType::Dirichlet ||
+             boundary_type == BoundaryType::DirichletMortar,
+           ExcMessage("Boundary type of face is invalid or not implemented."));
   }
 
   return normal_gradient;

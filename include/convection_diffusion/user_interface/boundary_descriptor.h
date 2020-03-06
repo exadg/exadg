@@ -11,21 +11,28 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/types.h>
 
+#include "../../functionalities/function_interpolation.h"
+
 using namespace dealii;
 
 namespace ConvDiff
 {
 enum class BoundaryType
 {
-  undefined,
-  dirichlet,
-  neumann
+  Undefined,
+  Dirichlet,
+  DirichletMortar,
+  Neumann
 };
 
-template<int dim>
+template<int rank, int dim>
 struct BoundaryDescriptor
 {
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
+
+  std::map<types::boundary_id, std::shared_ptr<FunctionInterpolation<rank, dim>>>
+    dirichlet_mortar_bc;
+
   std::map<types::boundary_id, std::shared_ptr<Function<dim>>> neumann_bc;
 
   // returns the boundary type
@@ -34,13 +41,15 @@ struct BoundaryDescriptor
     get_boundary_type(types::boundary_id const & boundary_id) const
   {
     if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
-      return BoundaryType::dirichlet;
+      return BoundaryType::Dirichlet;
+    else if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+      return BoundaryType::DirichletMortar;
     else if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
-      return BoundaryType::neumann;
+      return BoundaryType::Neumann;
 
     AssertThrow(false, ExcMessage("Boundary type of face is invalid or not implemented."));
 
-    return BoundaryType::undefined;
+    return BoundaryType::Undefined;
   }
 };
 

@@ -425,7 +425,7 @@ private:
 
   std::shared_ptr<ConvDiff::Operator<dim, Number>> pressure_conv_diff_operator;
 
-  std::shared_ptr<Poisson::LaplaceOperator<dim, Number>> laplace_operator_classical;
+  std::shared_ptr<Poisson::LaplaceOperator<dim, Number, 1>> laplace_operator_classical;
 
   std::shared_ptr<CompatibleLaplaceOperator<dim, Number>> laplace_operator_compatible;
 

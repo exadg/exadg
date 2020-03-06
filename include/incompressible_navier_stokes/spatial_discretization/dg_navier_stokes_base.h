@@ -446,11 +446,11 @@ protected:
    * While the functions specified in BoundaryDescriptorLaplace are relevant for projection-type
    * solvers (pressure Poisson equation has to be solved), the function specified in
    * BoundaryDescriptorLaplace are irrelevant for a coupled solution approach (since the pressure
-   * Laplace operator is only needed for preconditioning, and hence, only the homogeneous part of
-   * the operator has to be evaluated).
+   * Poisson operator is only needed for preconditioning, and hence, only the homogeneous part of
+   * the operator has to be evaluated so that the boundary conditions are never applied).
    *
    */
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor_laplace;
 
   /*
    * Special case: pure Dirichlet boundary conditions.

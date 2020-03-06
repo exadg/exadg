@@ -182,7 +182,7 @@ private:
   InputParameters param;
 
   std::shared_ptr<FieldFunctions<dim>>               field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<0,dim>> boundary_descriptor;
 
   /*
    * MatrixFree
@@ -278,7 +278,7 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 #endif
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
+  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<0,dim>());
   set_boundary_conditions(boundary_descriptor);
 
   field_functions.reset(new FieldFunctions<dim>());
