@@ -38,7 +38,7 @@ public:
       result += (*solution);
     }
 
-    result *= 1. / double(vector_solution.size());
+    result *= 1.0 / Number(vector_solution.size());
 
     return result;
   }
