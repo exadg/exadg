@@ -11,6 +11,7 @@
 #include <deal.II/lac/la_parallel_block_vector.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../spatial_discretization/dg_coupled_solver.h"
 #include "time_int_bdf_navier_stokes.h"
 
 namespace IncNS
@@ -18,32 +19,25 @@ namespace IncNS
 // forward declarations
 class InputParameters;
 
-namespace Interface
-{
-template<typename Number>
-class OperatorBase;
-template<typename Number>
-class OperatorCoupled;
-
-} // namespace Interface
-
-template<typename Number>
-class TimeIntBDFCoupled : public TimeIntBDF<Number>
+template<int dim, typename Number>
+class TimeIntBDFCoupled : public TimeIntBDF<dim, Number>
 {
 public:
-  typedef TimeIntBDF<Number> Base;
+  typedef TimeIntBDF<dim, Number> Base;
 
   typedef typename Base::VectorType VectorType;
 
   typedef LinearAlgebra::distributed::BlockVector<Number> BlockVectorType;
 
-  typedef Interface::OperatorBase<Number>    InterfaceBase;
-  typedef Interface::OperatorCoupled<Number> InterfacePDE;
+  typedef DGNavierStokesCoupled<dim, Number> Operator;
 
-  TimeIntBDFCoupled(std::shared_ptr<InterfaceBase> operator_base_in,
-                    std::shared_ptr<InterfacePDE>  pde_operator_in,
-                    InputParameters const &        param_in,
-                    MPI_Comm const &               mpi_comm_in);
+  TimeIntBDFCoupled(
+    std::shared_ptr<Operator>                       operator_in,
+    InputParameters const &                         param_in,
+    MPI_Comm const &                                mpi_comm_in,
+    std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
+    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
 
   void
   postprocessing_stability_analysis();
@@ -100,7 +94,7 @@ private:
   void
   set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
 
-  std::shared_ptr<InterfacePDE> pde_operator;
+  std::shared_ptr<Operator> pde_operator;
 
   std::vector<BlockVectorType> solution;
   BlockVectorType              solution_np;

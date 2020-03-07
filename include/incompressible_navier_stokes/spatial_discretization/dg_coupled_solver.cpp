@@ -11,11 +11,24 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesCoupled<dim, Number>::DGNavierStokesCoupled(
-  parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor,
-  MPI_Comm const &                         mpi_comm)
-  : Base(triangulation, parameters, postprocessor, mpi_comm), scaling_factor_continuity(1.0)
+  parallel::TriangulationBase<dim> const & triangulation_in,
+  Mapping<dim> const &                     mapping_in,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  InputParameters const &                         parameters_in,
+  MPI_Comm const &                                mpi_comm_in)
+  : Base(triangulation_in,
+         mapping_in,
+         periodic_face_pairs_in,
+         boundary_descriptor_velocity_in,
+         boundary_descriptor_pressure_in,
+         field_functions_in,
+         parameters_in,
+         mpi_comm_in),
+    scaling_factor_continuity(1.0)
 {
 }
 
@@ -27,16 +40,10 @@ DGNavierStokesCoupled<dim, Number>::~DGNavierStokesCoupled()
 template<int dim, typename Number>
 void
 DGNavierStokesCoupled<dim, Number>::setup(
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+  std::string const &                             dof_index_temperature)
 {
-  Base::setup(periodic_face_pairs,
-              boundary_descriptor_velocity,
-              boundary_descriptor_pressure,
-              field_functions);
+  Base::setup(matrix_free_wrapper, dof_index_temperature);
 
   this->initialize_vector_velocity(temp_vector);
 }
@@ -441,7 +448,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_velocity_block()
   {
     preconditioner_momentum.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
       this->get_matrix_free(),
-      this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
   }
@@ -518,7 +524,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
   {
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
   }
@@ -548,7 +553,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // using large time steps and large viscosities.
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
 
@@ -571,7 +575,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
       inv_mass_matrix_preconditioner_schur_complement.reset(
         new InverseMassMatrixPreconditioner<dim, dim, Number>(
           this->get_matrix_free(),
-          this->param.degree_u,
           this->get_dof_index_velocity(),
           this->get_quad_index_velocity_linear()));
     }
@@ -599,7 +602,6 @@ DGNavierStokesCoupled<dim, Number>::initialize_preconditioner_pressure_block()
     // III. inverse pressure mass matrix
     inv_mass_matrix_preconditioner_schur_complement.reset(
       new InverseMassMatrixPreconditioner<dim, 1, Number>(this->get_matrix_free(),
-                                                          this->param.get_degree_p(),
                                                           this->get_dof_index_pressure(),
                                                           this->get_quad_index_pressure()));
 
@@ -670,17 +672,14 @@ DGNavierStokesCoupled<dim, Number>::setup_multigrid_preconditioner_schur_complem
     laplace_operator_data.quad_index            = this->get_quad_index_pressure();
     laplace_operator_data.operator_is_singular  = this->param.pure_dirichlet_bc;
     laplace_operator_data.kernel_data.IP_factor = 1.0;
-
-    laplace_operator_data.bc = this->boundary_descriptor_laplace;
+    laplace_operator_data.bc                    = this->boundary_descriptor_laplace;
 
     MultigridData mg_data = this->param.multigrid_data_pressure_block;
 
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    multigrid_preconditioner_schur_complement.reset(new MultigridPoisson(this->mpi_comm));
 
-    multigrid_preconditioner_schur_complement.reset(new MULTIGRID(this->mpi_comm));
-
-    std::shared_ptr<MULTIGRID> mg_preconditioner =
-      std::dynamic_pointer_cast<MULTIGRID>(multigrid_preconditioner_schur_complement);
+    std::shared_ptr<MultigridPoisson> mg_preconditioner =
+      std::dynamic_pointer_cast<MultigridPoisson>(multigrid_preconditioner_schur_complement);
 
     auto & dof_handler = this->get_dof_handler_p();
 

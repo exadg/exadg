@@ -15,16 +15,6 @@
 /*                                                                                                          */
 /************************************************************************************************************/
 
-// convergence studies in space or time
-unsigned int const DEGREE_MIN = 4;
-unsigned int const DEGREE_MAX = 4;
-
-unsigned int const REFINE_SPACE_MIN = 3;
-unsigned int const REFINE_SPACE_MAX = 3;
-
-unsigned int const REFINE_TIME_MIN = 0;
-unsigned int const REFINE_TIME_MAX = 0;
-
 // number of scalar quantities
 unsigned int const N_SCALARS = 1;
 
@@ -74,6 +64,24 @@ create_grid_and_set_boundary_ids(
   (void)periodic_faces;
 }
 
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
+namespace IncNS
+{
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -101,8 +109,6 @@ public:
   }
 };
 
-namespace IncNS
-{
 template<int dim>
 void
 set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
@@ -157,14 +163,14 @@ construct_postprocessor(InputParameters const & param, MPI_Comm const &mpi_comm)
 } // namespace IncNS
 
 
+namespace ConvDiff
+{
+
 /************************************************************************************************************/
 /*                                                                                                          */
 /*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
 /*                                                                                                          */
 /************************************************************************************************************/
-
-namespace ConvDiff
-{
 
 template<int dim>
 void

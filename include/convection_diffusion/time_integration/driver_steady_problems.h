@@ -11,6 +11,8 @@
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/la_parallel_vector.h>
 
+#include "../postprocessor/postprocessor_base.h"
+
 using namespace dealii;
 
 namespace ConvDiff
@@ -32,9 +34,10 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  DriverSteadyProblems(std::shared_ptr<Operator> operator_in,
-                       InputParameters const &   param_in,
-                       MPI_Comm const &          mpi_comm_in);
+  DriverSteadyProblems(std::shared_ptr<Operator>                       operator_in,
+                       InputParameters const &                         param_in,
+                       MPI_Comm const &                                mpi_comm_in,
+                       std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void
   setup();
@@ -71,6 +74,8 @@ private:
   // vectors
   VectorType solution;
   VectorType rhs_vector;
+
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 };
 
 } // namespace ConvDiff

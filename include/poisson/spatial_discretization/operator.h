@@ -1,5 +1,5 @@
 /*
- * poisson_operation.h
+ * operator.h
  *
  *  Created on: 2016
  *      Author: Fehn/Munch
@@ -10,6 +10,7 @@
 
 // deal.II
 #include <deal.II/fe/fe_dgq.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 #include <deal.II/fe/mapping_q.h>
 #include <deal.II/numerics/vector_tools.h>
@@ -23,25 +24,32 @@
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
 #include "../../solvers_and_preconditioners/solvers/iterative_solvers_dealii_wrapper.h"
+#include "../preconditioner/multigrid_preconditioner.h"
 
 // user interface
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 #include "../user_interface/analytical_solution.h"
-#include "../user_interface/boundary_descriptor.h"
 #include "../user_interface/field_functions.h"
 #include "../user_interface/input_parameters.h"
+
+// functionalities
+#include "../../functionalities/matrix_free_wrapper.h"
 
 // postprocessor
 #include "../../convection_diffusion/postprocessor/postprocessor_base.h"
 
 namespace Poisson
 {
-template<int dim, typename Number>
-class DGOperator : public dealii::Subscriptor
+template<int dim, typename Number, int n_components = 1>
+class Operator : public dealii::Subscriptor
 {
 public:
   typedef float MultigridNumber;
   // use this line for double-precision multigrid
   //  typedef Number MultigridNumber;
+
+  typedef MultigridPreconditioner<dim, Number, MultigridNumber, n_components> Multigrid;
+  typedef LaplaceOperator<dim, Number, n_components>                          Laplace;
 
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 #ifdef DEAL_II_WITH_TRILINOS
@@ -51,15 +59,20 @@ public:
   typedef std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     PeriodicFaces;
 
-  DGOperator(parallel::TriangulationBase<dim> const &                  triangulation,
-             Poisson::InputParameters const &                          param,
-             std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor,
-             MPI_Comm const &                                          mpi_comm);
+  Operator(parallel::TriangulationBase<dim> const &                 triangulation,
+           Mapping<dim> const &                                     mapping,
+           PeriodicFaces const                                      periodic_face_pairs,
+           std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> const boundary_descriptor,
+           std::shared_ptr<FieldFunctions<dim>> const               field_functions,
+           InputParameters const &                                  param,
+           MPI_Comm const &                                         mpi_comm);
 
   void
-  setup(PeriodicFaces const                                     periodic_face_pairs,
-        std::shared_ptr<Poisson::BoundaryDescriptor<dim>> const boundary_descriptor,
-        std::shared_ptr<Poisson::FieldFunctions<dim>> const     field_functions);
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field) const;
+
+  void
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   void
   setup_solver();
@@ -81,9 +94,6 @@ public:
 
   unsigned int
   solve(VectorType & sol, VectorType const & rhs) const;
-
-  Mapping<dim> const &
-  get_mapping() const;
 
   DoFHandler<dim> const &
   get_dof_handler() const;
@@ -110,58 +120,74 @@ public:
                      VectorTypeDouble const &               src) const;
 #endif
 
-  void
-  do_postprocessing(VectorType const & solution) const;
-
 private:
-  void
-  create_dofs();
+  unsigned int
+  get_dof_index() const;
+
+  unsigned int
+  get_quad_index() const;
 
   void
-  initialize_matrix_free();
+  distribute_dofs();
 
   void
   setup_operators();
 
-  void
-  setup_postprocessor();
+  /*
+   * Mapping
+   */
+  Mapping<dim> const & mapping;
 
-  MPI_Comm const & mpi_comm;
-
-  Poisson::InputParameters const & param;
-
-  // DG
-  FE_DGQ<dim> fe_dgq;
-
-  // FE (continuous elements)
-  FE_Q<dim> fe_q;
-
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
-
-  DoFHandler<dim> dof_handler;
-
-  AffineConstraints<double> constraint_matrix;
-
-  MatrixFree<dim, Number> matrix_free;
-
+  /*
+   * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
+   */
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
+  /*
+   * User interface: Boundary conditions and field functions.
+   */
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>               field_functions;
 
-  ConvDiff::RHSOperator<dim, Number> rhs_operator;
+  /*
+   * List of input parameters.
+   */
+  InputParameters const & param;
 
-  LaplaceOperator<dim, Number>                laplace_operator;
-  std::shared_ptr<PreconditionerBase<Number>> preconditioner;
+  /*
+   * Basic finite element ingredients.
+   */
+  std::shared_ptr<FiniteElement<dim>> fe;
 
+  DoFHandler<dim> dof_handler;
+
+  mutable AffineConstraints<double> constraint_matrix;
+
+  std::string const dof_index  = "laplace";
+  std::string const quad_index = "laplace";
+
+  mutable std::string field;
+
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+
+  ConvDiff::RHSOperator<dim, Number, n_components> rhs_operator;
+
+  Laplace laplace_operator;
+
+  std::shared_ptr<PreconditionerBase<Number>>      preconditioner;
   std::shared_ptr<IterativeSolverBase<VectorType>> iterative_solver;
 
   /*
-   * Postprocessor.
+   * MPI
    */
-  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor;
+  MPI_Comm const & mpi_comm;
+
+  /*
+   * Output to screen.
+   */
+  ConditionalOStream pcout;
 };
 } // namespace Poisson
 

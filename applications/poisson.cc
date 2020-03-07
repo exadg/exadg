@@ -19,19 +19,23 @@
 #include "../include/poisson/spatial_discretization/operator.h"
 
 // postprocessor
-#include "convection_diffusion/postprocessor/postprocessor_base.h"
+#include "../include/convection_diffusion/postprocessor/postprocessor_base.h"
 
 // user interface, etc.
-#include "poisson/user_interface/analytical_solution.h"
-#include "poisson/user_interface/boundary_descriptor.h"
-#include "poisson/user_interface/field_functions.h"
-#include "poisson/user_interface/input_parameters.h"
+#include "../include/poisson/user_interface/analytical_solution.h"
+#include "../include/poisson/user_interface/field_functions.h"
+#include "../include/poisson/user_interface/input_parameters.h"
+
+#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
 
 // functionalities
-#include "functionalities/calculate_maximum_aspect_ratio.h"
-#include "functionalities/mesh_resolution_generator_hypercube.h"
-#include "functionalities/print_functions.h"
-#include "functionalities/print_general_infos.h"
+#include "../include/functionalities/calculate_maximum_aspect_ratio.h"
+#include "../include/functionalities/mapping_degree.h"
+#include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/mesh.h"
+#include "../include/functionalities/mesh_resolution_generator_hypercube.h"
+#include "../include/functionalities/print_functions.h"
+#include "../include/functionalities/print_general_infos.h"
 
 
 // specify the test case that has to be solved
@@ -170,16 +174,26 @@ private:
 
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
 
+  std::shared_ptr<Mesh<dim>> mesh;
+
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
 
   InputParameters param;
 
-  std::shared_ptr<FieldFunctions<dim>>     field_functions;
-  std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>               field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor;
 
-  std::shared_ptr<DGOperator<dim, Number>> poisson_operator;
+  /*
+   * MatrixFree
+   */
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
+  std::shared_ptr<Operator<dim, Number>> poisson_operator;
+
+  /*
+   * Postprocessor
+   */
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor;
 
   /*
@@ -264,35 +278,48 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 #endif
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
-  boundary_descriptor.reset(new BoundaryDescriptor<dim>());
+  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<dim>());
   set_boundary_conditions(boundary_descriptor);
 
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
+  // mapping
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree);
+  mesh.reset(new Mesh<dim>(mapping_degree));
 
-  // initialize Poisson operator
-  poisson_operator.reset(
-    new DGOperator<dim, Number>(*triangulation, param, postprocessor, mpi_comm));
-
-  poisson_operator->setup(periodic_faces, boundary_descriptor, field_functions);
-
-  if(true)
+  // compute aspect ratio
+  if(false)
   {
     // this variant is only for comparison
     double AR = calculate_aspect_ratio_vertex_distance(*triangulation, mpi_comm);
-    std::cout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
+    pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
 
     QGauss<dim> quadrature(param.degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(*triangulation,
-                                                 poisson_operator->get_mapping(),
-                                                 quadrature);
-    std::cout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
+    AR = GridTools::compute_maximum_aspect_ratio(*triangulation, mesh->get_mapping(), quadrature);
+    pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
   }
 
+  // initialize Poisson operator
+  poisson_operator.reset(new Operator<dim, Number>(*triangulation,
+                                                   mesh->get_mapping(),
+                                                   periodic_faces,
+                                                   boundary_descriptor,
+                                                   field_functions,
+                                                   param,
+                                                   mpi_comm));
+
+  // initialize matrix_free
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
+  matrix_free_wrapper->append_data_structures(*poisson_operator);
+  matrix_free_wrapper->reinit(param.enable_cell_based_face_loops, triangulation);
+
+  poisson_operator->setup(matrix_free_wrapper);
   poisson_operator->setup_solver();
+
+  // initialize postprocessor
+  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
+  postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
 
   setup_time = timer.wall_time();
 }
@@ -314,7 +341,7 @@ Problem<dim, Number>::solve()
 
   // postprocessing of results
   timer_local.restart();
-  poisson_operator->do_postprocessing(sol);
+  postprocessor->do_postprocessing(sol);
   wall_time_postprocessing = timer_local.wall_time();
 
   // calculate right-hand side
@@ -329,7 +356,7 @@ Problem<dim, Number>::solve()
 
   // postprocessing of results
   timer_local.restart();
-  poisson_operator->do_postprocessing(sol);
+  postprocessor->do_postprocessing(sol);
   wall_time_postprocessing += timer_local.wall_time();
 
   overall_time += this->timer.wall_time();
@@ -477,21 +504,7 @@ do_run(InputParameters const & param, MPI_Comm const & mpi_comm)
 
   problem->setup(param);
 
-  try
-  {
-    problem->solve();
-  }
-  catch(...)
-  {
-    if(Utilities::MPI::this_mpi_process(mpi_comm) == 0)
-    {
-      std::cerr << std::endl
-                << std::endl
-                << "----------------------------------------------------" << std::endl;
-      std::cerr << "Solver failed to converge!" << std::endl
-                << "----------------------------------------------------" << std::endl;
-    }
-  }
+  problem->solve();
 
   problem->analyze_computing_times();
 }

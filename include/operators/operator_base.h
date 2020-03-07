@@ -290,6 +290,11 @@ protected:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
+  virtual void
+  do_boundary_integral_continuous(IntegratorFace &           integrator,
+                                  OperatorType const &       operator_type,
+                                  types::boundary_id const & boundary_id) const;
+
   // The computation of the diagonal and block-diagonal requires face integrals of type
   // interior (int) and exterior (ext)
   virtual void
@@ -345,6 +350,11 @@ protected:
    */
   bool is_mg;
 
+  /*
+   * Is the discretization based on discontinuous Galerkin method?
+   */
+  bool is_dg;
+
   std::shared_ptr<IntegratorCell> integrator;
   std::shared_ptr<IntegratorFace> integrator_m;
   std::shared_ptr<IntegratorFace> integrator_p;
@@ -380,6 +390,15 @@ private:
   create_standard_basis(unsigned int     j,
                         IntegratorFace & integrator_1,
                         IntegratorFace & integrator_2) const;
+
+  /*
+   * This function apply Dirichlet BCs for continuous Galerkin discretizations.
+   */
+  void
+  cell_loop_dbc(MatrixFree<dim, Number> const & matrix_free,
+                VectorType &                    dst,
+                VectorType const &              src,
+                Range const &                   range) const;
 
   /*
    * This function loops over all cells and calculates cell integrals.
@@ -571,11 +590,6 @@ private:
    */
   bool
   evaluate_face_integrals() const;
-
-  /*
-   * Is the discretization based on discontinuous Galerkin method?
-   */
-  bool is_dg;
 
   /*
    * Multigrid level: 0 <= level <= max_level. If the operator is not used as a multigrid

@@ -28,6 +28,10 @@
 #include "../include/compressible_navier_stokes/user_interface/field_functions.h"
 #include "../include/compressible_navier_stokes/user_interface/input_parameters.h"
 
+// general functionalities
+#include "../include/functionalities/mapping_degree.h"
+#include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/mesh.h"
 #include "../include/functionalities/mesh_resolution_generator_hypercube.h"
 #include "../include/functionalities/print_general_infos.h"
 #include "../include/functionalities/print_throughput.h"
@@ -134,10 +138,6 @@ class Problem : public ProblemBase
 public:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
-  typedef DGOperator<dim, Number> DG_OPERATOR;
-
-  typedef PostProcessorBase<dim, Number> POSTPROCESSOR;
-
   Problem(MPI_Comm const & comm);
 
   void
@@ -154,7 +154,13 @@ private:
 
   ConditionalOStream pcout;
 
+  InputParameters param;
+
+  // triangulation
   std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
+
+  // mapping
+  std::shared_ptr<Mesh<dim>> mesh;
 
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_faces;
@@ -165,11 +171,9 @@ private:
   std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
   std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
 
-  InputParameters param;
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
 
-  std::shared_ptr<DG_OPERATOR> comp_navier_stokes_operator;
-
-  std::shared_ptr<POSTPROCESSOR> postprocessor;
+  std::shared_ptr<DGOperator<dim, Number>> comp_navier_stokes_operator;
 
   // number of matrix-vector products
   unsigned int const n_repetitions_inner, n_repetitions_outer;
@@ -252,18 +256,28 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);
 
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
+  // Mapping
+  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree);
+  mesh.reset(new Mesh<dim>(mapping_degree));
 
   // initialize compressible Navier-Stokes operator
-  comp_navier_stokes_operator.reset(
-    new DG_OPERATOR(*triangulation, param, postprocessor, mpi_comm));
+  comp_navier_stokes_operator.reset(new DGOperator<dim, Number>(*triangulation,
+                                                                mesh->get_mapping(),
+                                                                boundary_descriptor_density,
+                                                                boundary_descriptor_velocity,
+                                                                boundary_descriptor_pressure,
+                                                                boundary_descriptor_energy,
+                                                                field_functions,
+                                                                param,
+                                                                mpi_comm));
 
-  comp_navier_stokes_operator->setup(boundary_descriptor_density,
-                                     boundary_descriptor_velocity,
-                                     boundary_descriptor_pressure,
-                                     boundary_descriptor_energy,
-                                     field_functions);
+  // initialize matrix_free
+  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
+  matrix_free_wrapper->append_data_structures(*comp_navier_stokes_operator);
+  matrix_free_wrapper->reinit(false /*param.use_cell_based_face_loops*/, triangulation);
+
+  // setup compressible Navier-Stokes operator
+  comp_navier_stokes_operator->setup(matrix_free_wrapper);
 }
 
 template<int dim, typename Number>

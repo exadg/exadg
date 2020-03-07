@@ -18,8 +18,8 @@
 
 #include <deal.II/matrix_free/operators.h>
 
-// ALE
-#include "../../functionalities/moving_mesh.h"
+// functionalities
+#include "../../functionalities/matrix_free_wrapper.h"
 
 // user interface
 #include "../../incompressible_navier_stokes/user_interface/boundary_descriptor.h"
@@ -52,6 +52,7 @@
 #include "interface.h"
 
 // preconditioners and solvers
+#include "../../poisson/preconditioner/multigrid_preconditioner.h"
 #include "../../solvers_and_preconditioners/newton/newton_solver.h"
 #include "../../solvers_and_preconditioners/preconditioner/inverse_mass_matrix_preconditioner.h"
 #include "../../solvers_and_preconditioners/preconditioner/jacobi_preconditioner.h"
@@ -60,9 +61,6 @@
 
 // time integration
 #include "time_integration/time_step_calculation.h"
-
-// postprocessor
-#include "../postprocessor/postprocessor_base.h"
 
 using namespace dealii;
 
@@ -73,8 +71,6 @@ class DGNavierStokesBase : public dealii::Subscriptor, public Interface::Operato
 {
 protected:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
-
-  typedef PostProcessorBase<dim, Number> Postprocessor;
 
   typedef DGNavierStokesBase<dim, Number> This;
 
@@ -89,65 +85,32 @@ protected:
 
   typedef float MultigridNumber;
 
-  enum class DofHandlerSelector
-  {
-    velocity        = 0,
-    pressure        = 1,
-    velocity_scalar = 2,
-    n_variants      = velocity_scalar + 1
-  };
-
-  enum class QuadratureSelector
-  {
-    velocity               = 0,
-    pressure               = 1,
-    velocity_nonlinear     = 2,
-    velocity_gauss_lobatto = 3,
-    pressure_gauss_lobatto = 4,
-    n_variants             = pressure_gauss_lobatto + 1
-  };
-
-  static const unsigned int number_vorticity_components = (dim == 2) ? 1 : dim;
-
-  static const unsigned int dof_index_u =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::velocity);
-  static const unsigned int dof_index_p =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::pressure);
-  static const unsigned int dof_index_u_scalar =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::velocity_scalar);
-
-  static const unsigned int quad_index_u =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::velocity);
-  static const unsigned int quad_index_p =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::pressure);
-  static const unsigned int quad_index_u_nonlinear =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::velocity_nonlinear);
-  static const unsigned int quad_index_u_gauss_lobatto =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::velocity_gauss_lobatto);
-  static const unsigned int quad_index_p_gauss_lobatto =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::pressure_gauss_lobatto);
+  typedef typename Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1>
+    MultigridPoisson;
 
 public:
   /*
    * Constructor.
    */
-  DGNavierStokesBase(parallel::TriangulationBase<dim> const & triangulation,
-                     InputParameters const &                  parameters,
-                     std::shared_ptr<Postprocessor>           postprocessor,
-                     MPI_Comm const &                         mpi_comm);
+  DGNavierStokesBase(
+    parallel::TriangulationBase<dim> const & triangulation_in,
+    Mapping<dim> const &                     mapping_in,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                    periodic_face_pairs_in,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+    InputParameters const &                         parameters_in,
+    MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Destructor.
    */
-  virtual ~DGNavierStokesBase();
+  virtual ~DGNavierStokesBase(){};
+
+  void
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field = "") const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -155,11 +118,8 @@ public:
    * of equations.
    */
   virtual void
-  setup(std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                        periodic_face_pairs,
-        std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity,
-        std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure,
-        std::shared_ptr<FieldFunctions<dim>> const      field_functions);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_temperature = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
@@ -175,14 +135,23 @@ public:
   MatrixFree<dim, Number> const &
   get_matrix_free() const;
 
+  std::string
+  get_dof_name_velocity() const;
+
   unsigned int
   get_dof_index_velocity() const;
+
+  unsigned int
+  get_dof_index_pressure() const;
 
   unsigned int
   get_dof_index_velocity_scalar() const;
 
   unsigned int
   get_quad_index_velocity_linear() const;
+
+  unsigned int
+  get_quad_index_pressure() const;
 
   unsigned int
   get_quad_index_velocity_nonlinear() const;
@@ -195,12 +164,6 @@ public:
 
   unsigned int
   get_quad_index_velocity_linearized() const;
-
-  unsigned int
-  get_dof_index_pressure() const;
-
-  unsigned int
-  get_quad_index_pressure() const;
 
   unsigned int
   get_degree_p() const;
@@ -275,13 +238,6 @@ public:
 
   void
   interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
-
-  // In case of ALE, it might be necessary to also move the mesh
-  void
-  move_mesh_and_interpolate_velocity_dirichlet_bc(VectorType & dst, double const & time);
-
-  void
-  move_mesh_and_interpolate_pressure_dirichlet_bc(VectorType & dst, double const & time);
 
   /*
    * Time step calculation.
@@ -441,29 +397,7 @@ public:
   update_after_mesh_movement();
 
   void
-  set_mapping_ale(std::shared_ptr<Mapping<dim>> mapping_in);
-
-  void
   set_grid_velocity(VectorType velocity);
-
-  void
-  move_mesh(double const time);
-
-  void
-  move_mesh_and_fill_grid_coordinates_vector(VectorType & vector, double const time);
-
-  /*
-   * Postprocessing.
-   */
-  void
-  do_postprocessing(VectorType const & velocity,
-                    VectorType const & pressure,
-                    double const       time,
-                    unsigned int const time_step_number) const override;
-
-  void
-  do_postprocessing_steady_problem(VectorType const & velocity,
-                                   VectorType const & pressure) const override;
 
 protected:
   /*
@@ -475,44 +409,11 @@ protected:
   bool
   unsteady_problem_has_to_be_solved() const;
 
-  unsigned int
-  get_mapping_degree() const;
-
-private:
-  // currently needed for initialization of moving_mesh
-  parallel::TriangulationBase<dim> const & triangulation;
-
-protected:
   /*
-   * List of input parameters.
+   * Mapping
    */
-  InputParameters const & param;
+  Mapping<dim> const & mapping;
 
-  /*
-   * Basic finite element ingredients.
-   */
-private:
-  std::shared_ptr<FESystem<dim>> fe_u;
-  FE_DGQ<dim>                    fe_p;
-  FE_DGQ<dim>                    fe_u_scalar;
-
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
-  std::shared_ptr<Mapping<dim>>         mapping_ale;
-
-  DoFHandler<dim>         dof_handler_u;
-  DoFHandler<dim>         dof_handler_p;
-  DoFHandler<dim>         dof_handler_u_scalar;
-  MatrixFree<dim, Number> matrix_free;
-
-  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
-  /*
-   * Special case: pure Dirichlet boundary conditions.
-   */
-  Point<dim>              first_point;
-  types::global_dof_index dof_index_first_point;
-
-protected:
   std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
     periodic_face_pairs;
 
@@ -522,6 +423,11 @@ protected:
   std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
   std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
   std::shared_ptr<FieldFunctions<dim>>      field_functions;
+
+  /*
+   * List of input parameters.
+   */
+  InputParameters const & param;
 
   /*
    * In case of projection type incompressible Navier-Stokes solvers this variable is needed to
@@ -537,7 +443,13 @@ protected:
    * the operator has to be evaluated).
    *
    */
-  std::shared_ptr<Poisson::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor_laplace;
+
+  /*
+   * Special case: pure Dirichlet boundary conditions.
+   */
+  Point<dim>              first_point;
+  types::global_dof_index dof_index_first_point;
 
   /*
    * Element variable used to store the current physical time. This variable is needed for the
@@ -545,9 +457,42 @@ protected:
    */
   double evaluation_time;
 
+private:
+  /*
+   * Basic finite element ingredients.
+   */
+  std::shared_ptr<FESystem<dim>> fe_u;
+  FE_DGQ<dim>                    fe_p;
+  FE_DGQ<dim>                    fe_u_scalar;
+
+  DoFHandler<dim> dof_handler_u;
+  DoFHandler<dim> dof_handler_p;
+  DoFHandler<dim> dof_handler_u_scalar;
+
+  AffineConstraints<double> constraint_u, constraint_p, constraint_u_scalar;
+
+  std::string const dof_index_u        = "velocity";
+  std::string const dof_index_p        = "pressure";
+  std::string const dof_index_u_scalar = "velocity_scalar";
+
+  std::string const quad_index_u               = "velocity";
+  std::string const quad_index_p               = "pressure";
+  std::string const quad_index_u_nonlinear     = "velocity_nonlinear";
+  std::string const quad_index_u_gauss_lobatto = "velocity_gauss_lobatto";
+  std::string const quad_index_p_gauss_lobatto = "pressure_gauss_lobatto";
+
+  mutable std::string field;
+
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+
+protected:
   /*
    * Operator kernels.
    */
+  Operators::ConvectiveKernelData convective_kernel_data;
+  Operators::ViscousKernelData    viscous_kernel_data;
+
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::ViscousKernel<dim, Number>>    viscous_kernel;
 
@@ -607,19 +552,9 @@ protected:
   VelocityMagnitudeCalculator<dim, Number> velocity_magnitude_calculator;
   QCriterionCalculator<dim, Number>        q_criterion_calculator;
 
-  /*
-   * Postprocessor.
-   */
-  std::shared_ptr<Postprocessor> postprocessor;
-
   MPI_Comm const & mpi_comm;
 
   ConditionalOStream pcout;
-
-  /*
-   * ALE formulation
-   */
-  std::shared_ptr<MovingMesh<dim, Number>> moving_mesh;
 
 private:
   /*
@@ -629,17 +564,10 @@ private:
   initialize_boundary_descriptor_laplace();
 
   void
-  initialize_dof_handler();
+  distribute_dofs();
 
   void
-  initialize_matrix_free();
-
-  void
-  initialize_operators();
-
-  void
-  initialize_momentum_operator(double const &     scaling_factor_time_derivative_term,
-                               VectorType const & velocity);
+  initialize_operators(std::string const & dof_index_temperature);
 
   void
   initialize_turbulence_model();
@@ -649,9 +577,6 @@ private:
 
   void
   initialization_pure_dirichlet_bc();
-
-  void
-  initialize_postprocessor();
 
   void
   cell_loop_empty(MatrixFree<dim, Number> const &,
@@ -685,14 +610,6 @@ private:
    * LES turbulence modeling.
    */
   TurbulenceModel<dim, Number> turbulence_model;
-
-  /*
-   * MatrixFree Initialization Data
-   */
-  typename MatrixFree<dim, Number>::AdditionalData additional_data_ale;
-  std::vector<Quadrature<1>>                       quadratures;
-  std::vector<const AffineConstraints<double> *>   constraint_matrix_vec;
-  std::vector<const DoFHandler<dim> *>             dof_handler_vec;
 };
 
 } // namespace IncNS

@@ -13,11 +13,23 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesDualSplitting<dim, Number>::DGNavierStokesDualSplitting(
-  parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor,
-  MPI_Comm const &                         mpi_comm)
-  : ProjBase(triangulation, parameters, postprocessor, mpi_comm)
+  parallel::TriangulationBase<dim> const & triangulation_in,
+  Mapping<dim> const &                     mapping_in,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  InputParameters const &                         parameters_in,
+  MPI_Comm const &                                mpi_comm_in)
+  : ProjBase(triangulation_in,
+             mapping_in,
+             periodic_face_pairs_in,
+             boundary_descriptor_velocity_in,
+             boundary_descriptor_pressure_in,
+             field_functions_in,
+             parameters_in,
+             mpi_comm_in)
 {
 }
 
@@ -66,7 +78,6 @@ DGNavierStokesDualSplitting<dim, Number>::initialize_helmholtz_preconditioner()
   {
     helmholtz_preconditioner.reset(new InverseMassMatrixPreconditioner<dim, dim, Number>(
       this->get_matrix_free(),
-      this->param.degree_u,
       this->get_dof_index_velocity(),
       this->get_quad_index_velocity_linear()));
   }
@@ -246,9 +257,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_div_term_body_forces_bou
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
-                                                 q_points,
-                                                 this->evaluation_time);
+        vector rhs =
+          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
+                                                   q_points,
+                                                   this->evaluation_time);
 
         scalar flux_times_normal = rhs * integrator.get_normal_vector(q);
         // minus sign is introduced here which allows to call a function of type ...add()
@@ -440,7 +452,8 @@ DGNavierStokesDualSplitting<dim, Number>::
         // evaluate boundary condition
         typename std::map<types::boundary_id, std::shared_ptr<Function<dim>>>::iterator it =
           this->boundary_descriptor_pressure->neumann_bc.find(boundary_id);
-        vector dudt = evaluate_vectorial_function(it->second, q_points, this->evaluation_time);
+        vector dudt =
+          FunctionEvaluator<dim, Number, 1>::value(it->second, q_points, this->evaluation_time);
 
         vector normal = integrator.get_normal_vector(q);
 
@@ -507,9 +520,10 @@ DGNavierStokesDualSplitting<dim, Number>::local_rhs_ppe_nbc_body_force_term_add_
         Point<dim, scalar> q_points = integrator.quadrature_point(q);
 
         // evaluate right-hand side
-        vector rhs = evaluate_vectorial_function(this->field_functions->right_hand_side,
-                                                 q_points,
-                                                 this->evaluation_time);
+        vector rhs =
+          FunctionEvaluator<dim, Number, 1>::value(this->field_functions->right_hand_side,
+                                                   q_points,
+                                                   this->evaluation_time);
 
         vector normal = integrator.get_normal_vector(q);
 

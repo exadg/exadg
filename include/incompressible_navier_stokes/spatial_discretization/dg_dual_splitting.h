@@ -16,8 +16,7 @@
 namespace IncNS
 {
 template<int dim, typename Number = double>
-class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, Number>,
-                                    public Interface::OperatorDualSplitting<Number>
+class DGNavierStokesDualSplitting : public DGNavierStokesProjectionMethods<dim, Number>
 {
 private:
   typedef DGNavierStokesBase<dim, Number>              Base;
@@ -25,7 +24,6 @@ private:
   typedef DGNavierStokesDualSplitting<dim, Number>     This;
 
   typedef typename Base::VectorType      VectorType;
-  typedef typename Base::Postprocessor   Postprocessor;
   typedef typename Base::MultigridNumber MultigridNumber;
 
   typedef typename Base::scalar scalar;
@@ -41,10 +39,16 @@ public:
   /*
    * Constructor.
    */
-  DGNavierStokesDualSplitting(parallel::TriangulationBase<dim> const & triangulation,
-                              InputParameters const &                  parameters,
-                              std::shared_ptr<Postprocessor>           postprocessor,
-                              MPI_Comm const &                         mpi_comm);
+  DGNavierStokesDualSplitting(
+    parallel::TriangulationBase<dim> const & triangulation_in,
+    Mapping<dim> const &                     mapping_in,
+    std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                    periodic_face_pairs_in,
+    std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+    std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+    std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+    InputParameters const &                         parameters_in,
+    MPI_Comm const &                                mpi_comm_in);
 
   /*
    * Destructor.

@@ -14,14 +14,21 @@
 
 namespace IncNS
 {
-template<typename Number>
-TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
-  std::shared_ptr<InterfaceBase> operator_base_in,
-  std::shared_ptr<InterfacePDE>  pde_operator_in,
-  InputParameters const &        param_in,
-  MPI_Comm const &               mpi_comm_in)
-  : TimeIntBDF<Number>(operator_base_in, param_in, mpi_comm_in),
-    pde_operator(pde_operator_in),
+template<int dim, typename Number>
+TimeIntBDFDualSplitting<dim, Number>::TimeIntBDFDualSplitting(
+  std::shared_ptr<Operator>                       operator_in,
+  InputParameters const &                         param_in,
+  MPI_Comm const &                                mpi_comm_in,
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+  std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
+  : Base(operator_in,
+         param_in,
+         mpi_comm_in,
+         postprocessor_in,
+         moving_mesh_in,
+         matrix_free_wrapper_in),
+    pde_operator(operator_in),
     velocity(this->order),
     pressure(this->order),
 #ifdef EXTRAPOLATE_ACCELERATION
@@ -36,12 +43,12 @@ TimeIntBDFDualSplitting<Number>::TimeIntBDFDualSplitting(
 {
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::update_time_integrator_constants()
+TimeIntBDFDualSplitting<dim, Number>::update_time_integrator_constants()
 {
   // call function of base class to update the standard time integrator constants
-  TimeIntBDF<Number>::update_time_integrator_constants();
+  Base::update_time_integrator_constants();
 
   // update time integrator constants for extrapolation scheme of pressure Neumann bc
   if(this->adaptive_time_stepping == false)
@@ -58,11 +65,11 @@ TimeIntBDFDualSplitting<Number>::update_time_integrator_constants()
   //    extra_pressure_nbc.print(this->pcout);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::setup_derived()
+TimeIntBDFDualSplitting<dim, Number>::setup_derived()
 {
-  TimeIntBDF<Number>::setup_derived();
+  Base::setup_derived();
 
   // accelaration, velocity_dbc do not have to be initialized in case of a restart, where
   // the vectors are read from memory.
@@ -72,11 +79,11 @@ TimeIntBDFDualSplitting<Number>::setup_derived()
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDFDualSplitting<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
-  TimeIntBDF<Number>::read_restart_vectors(ia);
+  Base::read_restart_vectors(ia);
 
   if(this->param.store_previous_boundary_values)
   {
@@ -94,11 +101,12 @@ TimeIntBDFDualSplitting<Number>::read_restart_vectors(boost::archive::binary_iar
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDFDualSplitting<dim, Number>::write_restart_vectors(
+  boost::archive::binary_oarchive & oa) const
 {
-  TimeIntBDF<Number>::write_restart_vectors(oa);
+  Base::write_restart_vectors(oa);
 
   if(this->param.store_previous_boundary_values)
   {
@@ -116,63 +124,69 @@ TimeIntBDFDualSplitting<Number>::write_restart_vectors(boost::archive::binary_oa
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::allocate_vectors()
+TimeIntBDFDualSplitting<dim, Number>::allocate_vectors()
 {
-  TimeIntBDF<Number>::allocate_vectors();
+  Base::allocate_vectors();
 
   // velocity
   for(unsigned int i = 0; i < velocity.size(); ++i)
   {
-    this->operator_base->initialize_vector_velocity(velocity[i]);
+    pde_operator->initialize_vector_velocity(velocity[i]);
   }
-  this->operator_base->initialize_vector_velocity(velocity_np);
+  pde_operator->initialize_vector_velocity(velocity_np);
 
   // pressure
   for(unsigned int i = 0; i < pressure.size(); ++i)
-    this->operator_base->initialize_vector_pressure(pressure[i]);
-  this->operator_base->initialize_vector_pressure(pressure_np);
+    pde_operator->initialize_vector_pressure(pressure[i]);
+  pde_operator->initialize_vector_pressure(pressure_np);
 
   // acceleration
   if(this->param.store_previous_boundary_values)
   {
 #ifdef EXTRAPOLATE_ACCELERATION
     for(unsigned int i = 0; i < acceleration.size(); ++i)
-      this->operator_base->initialize_vector_velocity(acceleration[i]);
+      pde_operator->initialize_vector_velocity(acceleration[i]);
 #endif
 
     for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
-      this->operator_base->initialize_vector_velocity(velocity_dbc[i]);
+      pde_operator->initialize_vector_velocity(velocity_dbc[i]);
 
-    this->operator_base->initialize_vector_velocity(velocity_dbc_np);
+    pde_operator->initialize_vector_velocity(velocity_dbc_np);
   }
 }
 
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::initialize_current_solution()
+TimeIntBDFDualSplitting<dim, Number>::initialize_current_solution()
 {
-  this->operator_base->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
+  if(this->param.ale_formulation)
+    this->move_mesh(this->get_time());
+
+  pde_operator->prescribe_initial_conditions(velocity[0], pressure[0], this->get_time());
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::initialize_former_solutions()
+TimeIntBDFDualSplitting<dim, Number>::initialize_former_solutions()
 {
   // note that the loop begins with i=1! (we could also start with i=0 but this is not necessary)
   for(unsigned int i = 1; i < velocity.size(); ++i)
   {
-    this->operator_base->prescribe_initial_conditions(velocity[i],
-                                                      pressure[i],
-                                                      this->get_previous_time(i));
+    if(this->param.ale_formulation)
+      this->move_mesh(this->get_previous_time(i));
+
+    pde_operator->prescribe_initial_conditions(velocity[i],
+                                               pressure[i],
+                                               this->get_previous_time(i));
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundary()
+TimeIntBDFDualSplitting<dim, Number>::initialize_acceleration_and_velocity_on_boundary()
 {
 #ifdef EXTRAPOLATE_ACCELERATION
   // accelerations will only be accessed if the order of extrapolation in the pressure
@@ -182,7 +196,7 @@ TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundar
     // temporary vectors used to store the velocity at different instants of time and
     // used to calculate the acceleration via BDF time derivative
     VectorType vel_np;
-    this->operator_base->initialize_vector_velocity(vel_np);
+    pde_operator->initialize_vector_velocity(vel_np);
 
     // Note that for BDF1 it can not be guaranteed that the results are the same for
     // start_with_low_order = true and false if the time derivative of the velocity
@@ -194,13 +208,16 @@ TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundar
     if(this->start_with_low_order == false)
     {
       // compute acceleration at start_time
-      this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(vel_np,
-                                                                           this->get_time());
+      if(this->param.ale_formulation)
+        this->move_mesh_and_update_dependent_data_structures(this->get_time());
+      pde_operator->interpolate_velocity_dirichlet_bc(vel_np, this->get_time());
 
       for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
       {
-        this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
-          velocity_dbc[i], this->get_time() - double(i + 1) * this->get_time_step_size());
+        double const time = this->get_time() - double(i + 1) * this->get_time_step_size();
+        if(this->param.ale_formulation)
+          this->move_mesh_and_update_dependent_data_structures(time);
+        pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
       }
 
       compute_bdf_time_derivative(
@@ -212,13 +229,17 @@ TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundar
     {
       for(unsigned int j = 1; j < acceleration.size(); ++j)
       {
-        this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
-          vel_np, this->get_time() - double(j) * this->get_time_step_size());
+        double const time = this->get_time() - double(j) * this->get_time_step_size();
+        if(this->param.ale_formulation)
+          this->move_mesh_and_update_dependent_data_structures(time);
+        pde_operator->interpolate_velocity_dirichlet_bc(vel_np, time);
 
         for(unsigned int i = 0; i < velocity_dbc.size(); ++i)
         {
-          this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
-            velocity_dbc[i], this->get_time() - double(j + i + 1) * this->get_time_step_size());
+          double const time = this->get_time() - double(j + i + 1) * this->get_time_step_size();
+          if(this->param.ale_formulation)
+            this->move_mesh_and_update_dependent_data_structures(time);
+          pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
         }
 
         compute_bdf_time_derivative(
@@ -229,64 +250,69 @@ TimeIntBDFDualSplitting<Number>::initialize_acceleration_and_velocity_on_boundar
 #endif
 
   // fill vector velocity_dbc: The first entry [0] is already needed if start_with_low_order == true
-  this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(velocity_dbc[0],
-                                                                       this->get_time());
+  if(this->param.ale_formulation)
+    this->move_mesh_and_update_dependent_data_structures(this->get_time());
+  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[0], this->get_time());
   // ... and previous times if start_with_low_order == false
   if(this->start_with_low_order == false)
   {
     for(unsigned int i = 1; i < velocity_dbc.size(); ++i)
     {
-      this->operator_base->move_mesh_and_interpolate_velocity_dirichlet_bc(
-        velocity_dbc[i], this->get_time() - double(i) * this->get_time_step_size());
+      double const time = this->get_time() - double(i) * this->get_time_step_size();
+      if(this->param.ale_formulation)
+        this->move_mesh_and_update_dependent_data_structures(time);
+      pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc[i], time);
     }
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFDualSplitting<Number>::get_velocity() const
+TimeIntBDFDualSplitting<dim, Number>::get_velocity() const
 {
   return velocity[0];
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFDualSplitting<Number>::get_velocity_np() const
+TimeIntBDFDualSplitting<dim, Number>::get_velocity_np() const
 {
   return velocity_np;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFDualSplitting<Number>::get_velocity(unsigned int i) const
+TimeIntBDFDualSplitting<dim, Number>::get_velocity(unsigned int i) const
 {
   return velocity[i];
 }
 
-template<typename Number>
+template<int dim, typename Number>
 LinearAlgebra::distributed::Vector<Number> const &
-TimeIntBDFDualSplitting<Number>::get_pressure(unsigned int i) const
+TimeIntBDFDualSplitting<dim, Number>::get_pressure(unsigned int i) const
 {
   return pressure[i];
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::set_velocity(VectorType const & velocity_in, unsigned int const i)
+TimeIntBDFDualSplitting<dim, Number>::set_velocity(VectorType const & velocity_in,
+                                                   unsigned int const i)
 {
   velocity[i] = velocity_in;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::set_pressure(VectorType const & pressure_in, unsigned int const i)
+TimeIntBDFDualSplitting<dim, Number>::set_pressure(VectorType const & pressure_in,
+                                                   unsigned int const i)
 {
   pressure[i] = pressure_in;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
+TimeIntBDFDualSplitting<dim, Number>::postprocessing_stability_analysis()
 {
   AssertThrow(this->order == 1,
               ExcMessage("Order of BDF scheme has to be 1 for this stability analysis."));
@@ -347,9 +373,9 @@ TimeIntBDFDualSplitting<Number>::postprocessing_stability_analysis()
   std::cout << std::endl << std::endl << "Maximum eigenvalue = " << norm_max << std::endl;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::solve_timestep()
+TimeIntBDFDualSplitting<dim, Number>::solve_timestep()
 {
   this->output_solver_info_header();
 
@@ -376,16 +402,16 @@ TimeIntBDFDualSplitting<Number>::solve_timestep()
   evaluate_convective_term();
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::update_velocity_dbc()
+TimeIntBDFDualSplitting<dim, Number>::update_velocity_dbc()
 {
-  this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
+  pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::convective_step()
+TimeIntBDFDualSplitting<dim, Number>::convective_step()
 {
   Timer timer;
   timer.restart();
@@ -401,9 +427,9 @@ TimeIntBDFDualSplitting<Number>::convective_step()
       for(unsigned int i = 0; i < this->vec_convective_term.size(); ++i)
       {
         // in a general setting, we only know the boundary conditions at time t_{n+1}
-        this->operator_base->evaluate_convective_term(this->vec_convective_term[i],
-                                                      velocity[i],
-                                                      this->get_next_time());
+        pde_operator->evaluate_convective_term(this->vec_convective_term[i],
+                                               velocity[i],
+                                               this->get_next_time());
       }
     }
 
@@ -414,11 +440,11 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   // compute body force vector
   if(this->param.right_hand_side == true)
   {
-    this->operator_base->evaluate_add_body_force_term(velocity_np, this->get_next_time());
+    pde_operator->evaluate_add_body_force_term(velocity_np, this->get_next_time());
   }
 
   // apply inverse mass matrix
-  this->operator_base->apply_inverse_mass_matrix(velocity_np, velocity_np);
+  pde_operator->apply_inverse_mass_matrix(velocity_np, velocity_np);
 
 
   // calculate sum (alpha_i/dt * u_tilde_i) in case of explicit treatment of convective term
@@ -454,9 +480,9 @@ TimeIntBDFDualSplitting<Number>::convective_step()
   computing_times[0] += timer.wall_time() + computing_time_convective;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::evaluate_convective_term()
+TimeIntBDFDualSplitting<dim, Number>::evaluate_convective_term()
 {
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
@@ -466,18 +492,18 @@ TimeIntBDFDualSplitting<Number>::evaluate_convective_term()
       Timer timer;
       timer.restart();
 
-      this->operator_base->evaluate_convective_term(this->convective_term_np,
-                                                    velocity_np,
-                                                    this->get_next_time());
+      pde_operator->evaluate_convective_term(this->convective_term_np,
+                                             velocity_np,
+                                             this->get_next_time());
 
       computing_time_convective = timer.wall_time();
     }
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::pressure_step()
+TimeIntBDFDualSplitting<dim, Number>::pressure_step()
 {
   Timer timer;
   timer.restart();
@@ -512,7 +538,7 @@ TimeIntBDFDualSplitting<Number>::pressure_step()
   {
     if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalSolutionInPoint)
     {
-      this->operator_base->shift_pressure(pressure_np, this->get_next_time());
+      pde_operator->shift_pressure(pressure_np, this->get_next_time());
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyZeroMeanValue)
     {
@@ -520,7 +546,7 @@ TimeIntBDFDualSplitting<Number>::pressure_step()
     }
     else if(this->param.adjust_pressure_level == AdjustPressureLevel::ApplyAnalyticalMeanValue)
     {
-      this->operator_base->shift_pressure_mean_value(pressure_np, this->get_next_time());
+      pde_operator->shift_pressure_mean_value(pressure_np, this->get_next_time());
     }
     else
     {
@@ -542,9 +568,9 @@ TimeIntBDFDualSplitting<Number>::pressure_step()
   iterations[1] += iterations_pressure;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
+TimeIntBDFDualSplitting<dim, Number>::rhs_pressure(VectorType & rhs) const
 {
   /*
    *  I. calculate divergence term
@@ -641,7 +667,7 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
       }
 
       VectorType vorticity(velocity_extra);
-      this->operator_base->compute_vorticity(vorticity, velocity_extra);
+      pde_operator->compute_vorticity(vorticity, velocity_extra);
 
       pde_operator->rhs_ppe_viscous_add(rhs, vorticity);
     }
@@ -673,9 +699,9 @@ TimeIntBDFDualSplitting<Number>::rhs_pressure(VectorType & rhs) const
     set_zero_mean_value(rhs);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::projection_step()
+TimeIntBDFDualSplitting<dim, Number>::projection_step()
 {
   Timer timer;
   timer.restart();
@@ -691,8 +717,7 @@ TimeIntBDFDualSplitting<Number>::projection_step()
       for(unsigned int i = 0; i < velocity.size(); ++i)
         velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
 
-      this->operator_base->update_projection_operator(velocity_extrapolated,
-                                                      this->get_time_step_size());
+      pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
     }
   }
 
@@ -702,7 +727,7 @@ TimeIntBDFDualSplitting<Number>::projection_step()
 
   // apply inverse mass matrix: this is the solution if no penalty terms are applied
   // and serves as a good initial guess for the case with penalty terms
-  this->operator_base->apply_inverse_mass_matrix(velocity_np, rhs);
+  pde_operator->apply_inverse_mass_matrix(velocity_np, rhs);
 
   // penalty terms
   unsigned int iterations_projection = 0;
@@ -719,7 +744,7 @@ TimeIntBDFDualSplitting<Number>::projection_step()
          0);
 
       iterations_projection =
-        this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
+        pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
     }
   }
 
@@ -736,26 +761,26 @@ TimeIntBDFDualSplitting<Number>::projection_step()
   iterations[2] += iterations_projection;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::rhs_projection(VectorType & rhs) const
+TimeIntBDFDualSplitting<dim, Number>::rhs_projection(VectorType & rhs) const
 {
   /*
    *  I. calculate pressure gradient term
    */
-  this->operator_base->evaluate_pressure_gradient_term(rhs, pressure_np, this->get_next_time());
+  pde_operator->evaluate_pressure_gradient_term(rhs, pressure_np, this->get_next_time());
 
   rhs *= -this->get_time_step_size() / this->bdf.get_gamma0();
 
   /*
    *  II. add mass matrix term
    */
-  this->operator_base->apply_mass_matrix_add(rhs, velocity_np);
+  pde_operator->apply_mass_matrix_add(rhs, velocity_np);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::viscous_step()
+TimeIntBDFDualSplitting<dim, Number>::viscous_step()
 {
   Timer timer;
   timer.restart();
@@ -774,7 +799,7 @@ TimeIntBDFDualSplitting<Number>::viscous_step()
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
 
-    this->operator_base->update_turbulence_model(velocity_extrapolated);
+    pde_operator->update_turbulence_model(velocity_extrapolated);
 
     if(this->print_solver_info())
     {
@@ -825,14 +850,14 @@ TimeIntBDFDualSplitting<Number>::viscous_step()
   computing_times[3] += timer.wall_time();
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::rhs_viscous(VectorType & rhs) const
+TimeIntBDFDualSplitting<dim, Number>::rhs_viscous(VectorType & rhs) const
 {
   /*
    *  I. calculate mass matrix term
    */
-  this->operator_base->apply_mass_matrix(rhs, velocity_np);
+  pde_operator->apply_mass_matrix(rhs, velocity_np);
   rhs *= this->bdf.get_gamma0() / this->get_time_step_size();
 
   /*
@@ -841,9 +866,9 @@ TimeIntBDFDualSplitting<Number>::rhs_viscous(VectorType & rhs) const
   pde_operator->rhs_add_viscous_term(rhs, this->get_next_time());
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::penalty_step()
+TimeIntBDFDualSplitting<dim, Number>::penalty_step()
 {
   Timer timer;
   timer.restart();
@@ -857,17 +882,16 @@ TimeIntBDFDualSplitting<Number>::penalty_step()
     for(unsigned int i = 0; i < velocity.size(); ++i)
       velocity_extrapolated.add(this->extra.get_beta(i), velocity[i]);
 
-    this->operator_base->update_projection_operator(velocity_extrapolated,
-                                                    this->get_time_step_size());
+    pde_operator->update_projection_operator(velocity_extrapolated, this->get_time_step_size());
 
     // compute right-hand-side vector
     VectorType rhs(velocity_np);
-    this->operator_base->apply_mass_matrix(rhs, velocity_np);
+    pde_operator->apply_mass_matrix(rhs, velocity_np);
 
     // right-hand side term: add inhomogeneous contributions of continuity penalty operator to
     // rhs-vector if desired
     if(this->param.use_continuity_penalty && this->param.continuity_penalty_use_boundary_data)
-      this->operator_base->rhs_add_projection_operator(rhs, this->get_next_time());
+      pde_operator->rhs_add_projection_operator(rhs, this->get_next_time());
 
     // solve linear system of equations
     bool const update_preconditioner =
@@ -878,7 +902,7 @@ TimeIntBDFDualSplitting<Number>::penalty_step()
 
     // use solution of previous step as initial guess
     unsigned int iterations_projection =
-      this->operator_base->solve_projection(velocity_np, rhs, update_preconditioner);
+      pde_operator->solve_projection(velocity_np, rhs, update_preconditioner);
 
     // write output
     if(this->print_solver_info())
@@ -895,11 +919,11 @@ TimeIntBDFDualSplitting<Number>::penalty_step()
   computing_times[4] += timer.wall_time();
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
+TimeIntBDFDualSplitting<dim, Number>::prepare_vectors_for_next_timestep()
 {
-  TimeIntBDF<Number>::prepare_vectors_for_next_timestep();
+  Base::prepare_vectors_for_next_timestep();
 
   if(this->param.store_previous_boundary_values)
   {
@@ -908,7 +932,7 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
     // of the current time step before velocity_dbc is pushed back
     // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
 
-    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np, this->get_next_time());
 
     push_back(acceleration);
 
@@ -955,7 +979,7 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
 
     // use boundary condition g_u for velocity_dbc!
     // no need to move the mesh here since we still have the mesh Omega_{n+1} at this point!
-    this->operator_base->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
+    pde_operator->interpolate_velocity_dirichlet_bc(velocity_dbc_np,
     this->get_next_time());
 
     push_back(velocity_dbc);
@@ -976,9 +1000,9 @@ TimeIntBDFDualSplitting<Number>::prepare_vectors_for_next_timestep()
   pressure[0].swap(pressure_np);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::solve_steady_problem()
+TimeIntBDFDualSplitting<dim, Number>::solve_steady_problem()
 {
   this->pcout << std::endl << "Starting time loop ..." << std::endl;
 
@@ -1064,10 +1088,10 @@ TimeIntBDFDualSplitting<Number>::solve_steady_problem()
   this->pcout << std::endl << "... done!" << std::endl;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::get_iterations(std::vector<std::string> & name,
-                                                std::vector<double> &      iteration) const
+TimeIntBDFDualSplitting<dim, Number>::get_iterations(std::vector<std::string> & name,
+                                                     std::vector<double> &      iteration) const
 {
   unsigned int             size  = 4;
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
@@ -1089,10 +1113,10 @@ TimeIntBDFDualSplitting<Number>::get_iterations(std::vector<std::string> & name,
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
-                                                std::vector<double> &      wall_time) const
+TimeIntBDFDualSplitting<dim, Number>::get_wall_times(std::vector<std::string> & name,
+                                                     std::vector<double> &      wall_time) const
 {
   unsigned int             size  = 4;
   std::vector<std::string> names = {"Convection", "Pressure", "Projection", "Viscous"};
@@ -1101,14 +1125,6 @@ TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
   {
     names.push_back("Penalty terms");
     size++;
-  }
-
-  if(this->param.ale_formulation)
-  {
-    names.push_back("ALE update");
-    size++;
-
-    this->computing_times[size - 1] = this->computation_time_ale_update;
   }
 
   name.resize(size);
@@ -1122,7 +1138,10 @@ TimeIntBDFDualSplitting<Number>::get_wall_times(std::vector<std::string> & name,
 
 // instantiations
 
-template class TimeIntBDFDualSplitting<float>;
-template class TimeIntBDFDualSplitting<double>;
+template class TimeIntBDFDualSplitting<2, float>;
+template class TimeIntBDFDualSplitting<2, double>;
+
+template class TimeIntBDFDualSplitting<3, float>;
+template class TimeIntBDFDualSplitting<3, double>;
 
 } // namespace IncNS

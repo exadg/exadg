@@ -10,6 +10,7 @@
 
 #include <deal.II/lac/la_parallel_block_vector.h>
 
+#include "../spatial_discretization/dg_dual_splitting.h"
 #include "time_int_bdf_navier_stokes.h"
 
 using namespace dealii;
@@ -22,31 +23,24 @@ namespace IncNS
 // forward declarations
 class InputParameters;
 
-namespace Interface
-{
-template<typename Number>
-class OperatorBase;
-template<typename Number>
-class OperatorDualSplitting;
-
-} // namespace Interface
-
-template<typename Number>
-class TimeIntBDFDualSplitting : public TimeIntBDF<Number>
+template<int dim, typename Number>
+class TimeIntBDFDualSplitting : public TimeIntBDF<dim, Number>
 {
 public:
-  typedef TimeIntBDF<Number> Base;
+  typedef TimeIntBDF<dim, Number> Base;
 
   typedef typename Base::VectorType      VectorType;
   typedef typename Base::BlockVectorType BlockVectorType;
 
-  typedef Interface::OperatorBase<Number>          InterfaceBase;
-  typedef Interface::OperatorDualSplitting<Number> InterfacePDE;
+  typedef DGNavierStokesDualSplitting<dim, Number> Operator;
 
-  TimeIntBDFDualSplitting(std::shared_ptr<InterfaceBase> operator_base_in,
-                          std::shared_ptr<InterfacePDE>  pde_operator_in,
-                          InputParameters const &        param_in,
-                          MPI_Comm const &               mpi_comm_in);
+  TimeIntBDFDualSplitting(
+    std::shared_ptr<Operator>                       pde_operator_in,
+    InputParameters const &                         param_in,
+    MPI_Comm const &                                mpi_comm_in,
+    std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+    std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in         = nullptr,
+    std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in = nullptr);
 
   virtual ~TimeIntBDFDualSplitting()
   {
@@ -93,10 +87,10 @@ private:
   update_time_integrator_constants();
 
   void
-  initialize_current_solution();
+  initialize_current_solution() override;
 
   void
-  initialize_former_solutions();
+  initialize_former_solutions() override;
 
   void
   initialize_acceleration_and_velocity_on_boundary();
@@ -146,7 +140,7 @@ private:
   void
   set_pressure(VectorType const & pressure, unsigned int const i /* t_{n-i} */);
 
-  std::shared_ptr<InterfacePDE> pde_operator;
+  std::shared_ptr<Operator> pde_operator;
 
   std::vector<VectorType> velocity;
 

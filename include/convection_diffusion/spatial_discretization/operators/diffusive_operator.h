@@ -198,6 +198,15 @@ public:
          AffineConstraints<double> const &  constraint_matrix,
          DiffusiveOperatorData<dim> const & data);
 
+  void
+  reinit(MatrixFree<dim, Number> const &                          matrix_free,
+         AffineConstraints<double> const &                        constraint_matrix,
+         DiffusiveOperatorData<dim> const &                       data,
+         std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel);
+
+  void
+  update();
+
 private:
   void
   reinit_face(unsigned int const face) const;
@@ -232,7 +241,7 @@ private:
                                 DiffusiveOperatorData<dim> const &   operator_data,
                                 std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
-  Operators::DiffusiveKernel<dim, Number> kernel;
+  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel;
 };
 } // namespace ConvDiff
 

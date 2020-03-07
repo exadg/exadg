@@ -46,13 +46,6 @@ public:
                double const       evaluation_time,
                VectorType const * velocity = nullptr) const = 0;
 
-  // explicit time integration of convective term
-  virtual void
-  evaluate_convective_term(VectorType &       dst,
-                           VectorType const & src,
-                           double const       evaluation_time,
-                           VectorType const * velocity = nullptr) const = 0;
-
   // implicit time integration: calculate right-hand side of linear system of equations
   virtual void
   rhs(VectorType &       dst,
@@ -68,10 +61,6 @@ public:
         double const       evaluation_time = -1.0,
         VectorType const * velocity        = nullptr) = 0;
 
-  // add mass matrix term to rhs-vector
-  virtual void
-  apply_mass_matrix_add(VectorType & dst, VectorType const & src) const = 0;
-
   // time integration: initialize dof vector
   virtual void
   initialize_dof_vector(VectorType & src) const = 0;
@@ -81,10 +70,6 @@ public:
 
   virtual void
   project_velocity(VectorType & velocity, double const time) const = 0;
-
-  // TODO
-  virtual void
-  filter_solution(VectorType & solution) const = 0;
 
   // time integration: prescribe initial conditions
   virtual void
@@ -114,12 +99,6 @@ public:
   // needed for time step calculation
   virtual unsigned int
   get_polynomial_degree() const = 0;
-
-  // postprocessing
-  virtual void
-  do_postprocessing(VectorType const & solution,
-                    double const       time             = 0.0,
-                    int const          time_step_number = -1) const = 0;
 };
 
 template<typename Number>

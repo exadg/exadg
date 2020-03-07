@@ -23,9 +23,10 @@
 #include "../../compressible_navier_stokes/user_interface/input_parameters.h"
 
 // operators
-#include "../../compressible_navier_stokes/spatial_discretization/comp_navier_stokes_operators.h"
 #include "comp_navier_stokes_calculators.h"
+#include "comp_navier_stokes_operators.h"
 #include "operators/inverse_mass_matrix.h"
+#include "operators/mapping_flags.h"
 
 // interface
 #include "interface.h"
@@ -36,69 +37,36 @@
 // postprocessor
 #include "../postprocessor/postprocessor_base.h"
 
+// general functionalities
+#include "../../functionalities/matrix_free_wrapper.h"
+
 namespace CompNS
 {
 template<int dim, typename Number>
 class DGOperator : public dealii::Subscriptor, public Interface::Operator<Number>
 {
-public:
-  enum class DofHandlerSelector
-  {
-    all_components = 0,
-    vector         = 1,
-    scalar         = 2,
-    n_variants     = scalar + 1
-  };
-
-  enum class QuadratureSelector
-  {
-    overintegration_conv = 0,
-    overintegration_vis  = 1,
-    standard             = 2,
-    n_variants           = standard + 1
-  };
-
+private:
   typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   typedef PostProcessorBase<dim, Number> Postprocessor;
 
-  static const unsigned int dof_index_all =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::all_components);
-  static const unsigned int dof_index_vector =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::vector);
-  static const unsigned int dof_index_scalar =
-    static_cast<typename std::underlying_type<DofHandlerSelector>::type>(
-      DofHandlerSelector::scalar);
-
-  static const unsigned int quad_index_standard =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::standard);
-  static const unsigned int quad_index_overintegration_conv =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_conv);
-  static const unsigned int quad_index_overintegration_vis =
-    static_cast<typename std::underlying_type<QuadratureSelector>::type>(
-      QuadratureSelector::overintegration_vis);
-
-  // specify quadrature rule for calculation of derived quantities (p, u, T)
-  static const unsigned int quad_index_l2_projections = quad_index_standard;
-
-  // alternative: use more accurate over-integration strategy
-  //  static const unsigned int quad_index_l2_projections = quad_index_overintegration_conv;
-
-  DGOperator(parallel::TriangulationBase<dim> const & triangulation_in,
-             InputParameters const &                  param_in,
-             std::shared_ptr<Postprocessor>           postprocessor_in,
-             MPI_Comm const &                         mpi_comm_in);
+public:
+  DGOperator(parallel::TriangulationBase<dim> const &       triangulation_in,
+             Mapping<dim> const &                           mapping_in,
+             std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
+             std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
+             std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
+             std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
+             std::shared_ptr<FieldFunctions<dim>>           field_functions_in,
+             InputParameters const &                        param_in,
+             MPI_Comm const &                               mpi_comm_in);
 
   void
-  setup(std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density_in,
-        std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity_in,
-        std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure_in,
-        std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy_in,
-        std::shared_ptr<FieldFunctions<dim>>           field_functions_in);
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field = "") const;
+
+  void
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper);
 
   types::global_dof_index
   get_number_of_dofs() const;
@@ -192,11 +160,6 @@ public:
   double
   get_wall_time_operator_evaluation() const;
 
-  void
-  do_postprocessing(VectorType const & solution,
-                    double const       time,
-                    int const          time_step_number) const;
-
   double
   calculate_minimum_element_length() const;
 
@@ -205,28 +168,49 @@ public:
 
 private:
   void
-  create_dofs();
-
-  void
-  initialize_matrix_free();
+  distribute_dofs();
 
   void
   setup_operators();
 
-  void
-  setup_postprocessor();
+  unsigned int
+  get_dof_index_all() const;
 
-  // Input parameters
+  unsigned int
+  get_quad_index_overintegration_conv() const;
+
+  unsigned int
+  get_quad_index_overintegration_vis() const;
+
+  unsigned int
+  get_quad_index_l2_projections() const;
+
+  /*
+   * Mapping
+   */
+  Mapping<dim> const & mapping;
+
+  /*
+   * User interface: Boundary conditions and field functions.
+   */
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
+  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
+  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
+  std::shared_ptr<FieldFunctions<dim>>           field_functions;
+
+  /*
+   * List of input parameters.
+   */
   InputParameters const & param;
 
-  // finite element
+  /*
+   * Basic finite element ingredients.
+   */
+
   std::shared_ptr<FESystem<dim>> fe;        // all (dim+2) components: (rho, rho u, rho E)
   std::shared_ptr<FESystem<dim>> fe_vector; // e.g. velocity
   FE_DGQ<dim>                    fe_scalar; // scalar quantity, e.g, pressure
-
-  // mapping
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
 
   // Quadrature points
   unsigned int n_q_points_conv;
@@ -237,21 +221,44 @@ private:
   DoFHandler<dim> dof_handler_vector; // e.g. velocity
   DoFHandler<dim> dof_handler_scalar; // scalar quantity, e.g, pressure
 
-  MatrixFree<dim, Number> matrix_free;
+  /*
+   * Constraints.
+   */
+  AffineConstraints<double> constraint;
 
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_density;
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptor<dim>>       boundary_descriptor_pressure;
-  std::shared_ptr<BoundaryDescriptorEnergy<dim>> boundary_descriptor_energy;
-  std::shared_ptr<FieldFunctions<dim>>           field_functions;
 
-  // DG operators
+  std::string const dof_index_all    = "all_fields";
+  std::string const dof_index_vector = "vector";
+  std::string const dof_index_scalar = "scalar";
 
+  std::string const quad_index_standard             = "standard";
+  std::string const quad_index_overintegration_conv = "overintegration_conv";
+  std::string const quad_index_overintegration_vis  = "overintegration_vis";
+
+  std::string const quad_index_l2_projections = quad_index_standard;
+  // alternative: use more accurate over-integration strategy
+  //  std::string const quad_index_l2_projections = quad_index_overintegration_conv;
+
+  mutable std::string field;
+
+  /*
+   * Matrix-free operator evaluation.
+   */
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+
+  /*
+   * Basic operators.
+   */
   MassMatrixOperator<dim, Number> mass_matrix_operator;
   BodyForceOperator<dim, Number>  body_force_operator;
   ConvectiveOperator<dim, Number> convective_operator;
   ViscousOperator<dim, Number>    viscous_operator;
-  CombinedOperator<dim, Number>   combined_operator;
+
+  /*
+   * Merged operators.
+   */
+  CombinedOperator<dim, Number> combined_operator;
 
   InverseMassMatrixOperator<dim, dim + 2, Number> inverse_mass_all;
   InverseMassMatrixOperator<dim, dim, Number>     inverse_mass_vector;
@@ -262,11 +269,15 @@ private:
   VorticityCalculator<dim, Number>  vorticity_calculator;
   DivergenceCalculator<dim, Number> divergence_calculator;
 
-  // postprocessor
-  std::shared_ptr<Postprocessor> postprocessor;
-
-  // MPI communicator
+  /*
+   * MPI
+   */
   MPI_Comm const & mpi_comm;
+
+  /*
+   * Output to screen.
+   */
+  ConditionalOStream pcout;
 
   // wall time for operator evaluation
   mutable double wall_time_operator_evaluation;

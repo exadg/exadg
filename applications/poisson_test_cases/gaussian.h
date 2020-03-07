@@ -50,7 +50,7 @@ set_input_parameters(Poisson::InputParameters &param)
   param.solver_data.max_iter = 1e4;
   param.compute_performance_metrics = true;
   param.preconditioner = Preconditioner::Multigrid;
-  param.multigrid_data.type = MultigridType::chpMG;
+  param.multigrid_data.type = MultigridType::cphMG;
   param.multigrid_data.p_sequence = PSequenceType::Bisect;
   // MG smoother
   param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
@@ -260,7 +260,7 @@ namespace Poisson
 
 template<int dim>
 void
-set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<dim>> boundary_descriptor)
+set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<dim>> boundary_descriptor)
 {
   typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
@@ -294,7 +294,7 @@ construct_postprocessor(Poisson::InputParameters const &param, MPI_Comm const &m
   pp_data.output_data.write_higher_order = true;
   pp_data.output_data.degree = param.degree;
 
-  pp_data.error_data.analytical_solution_available = false; //true;
+  pp_data.error_data.analytical_solution_available = true;
   pp_data.error_data.analytical_solution.reset(new Solution<dim>());
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim,Number> > pp;

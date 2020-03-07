@@ -69,6 +69,36 @@ create_grid_and_set_boundary_ids_2(std::shared_ptr<parallel::TriangulationBase<d
 
 /************************************************************************************************************/
 /*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function_1()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function_2()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
+
+namespace IncNS
+{
+
+/************************************************************************************************************/
+/*                                                                                                          */
 /*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
 /*                                                                                                          */
 /************************************************************************************************************/
@@ -93,8 +123,6 @@ public:
   }
 };
 
-namespace IncNS
-{
 template<int dim>
 void
 set_boundary_conditions_1(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,

@@ -13,15 +13,27 @@ namespace IncNS
 {
 template<int dim, typename Number>
 DGNavierStokesProjectionMethods<dim, Number>::DGNavierStokesProjectionMethods(
-  parallel::TriangulationBase<dim> const & triangulation,
-  InputParameters const &                  parameters,
-  std::shared_ptr<Postprocessor>           postprocessor,
-  MPI_Comm const &                         mpi_comm)
-  : Base(triangulation, parameters, postprocessor, mpi_comm)
+  parallel::TriangulationBase<dim> const & triangulation_in,
+  Mapping<dim> const &                     mapping_in,
+  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
+                                                  periodic_face_pairs_in,
+  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
+  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
+  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in,
+  InputParameters const &                         parameters_in,
+  MPI_Comm const &                                mpi_comm_in)
+  : Base(triangulation_in,
+         mapping_in,
+         periodic_face_pairs_in,
+         boundary_descriptor_velocity_in,
+         boundary_descriptor_pressure_in,
+         field_functions_in,
+         parameters_in,
+         mpi_comm_in)
 {
   AssertThrow(this->param.get_degree_p() > 0,
               ExcMessage("Polynomial degree of pressure shape functions has to be larger than "
-                         "zero for dual splitting scheme and pressure-correction scheme."));
+                         "zero for projection methods."));
 }
 
 template<int dim, typename Number>
@@ -32,16 +44,10 @@ DGNavierStokesProjectionMethods<dim, Number>::~DGNavierStokesProjectionMethods()
 template<int dim, typename Number>
 void
 DGNavierStokesProjectionMethods<dim, Number>::setup(
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> const
-                                                  periodic_face_pairs_in,
-  std::shared_ptr<BoundaryDescriptorU<dim>> const boundary_descriptor_velocity_in,
-  std::shared_ptr<BoundaryDescriptorP<dim>> const boundary_descriptor_pressure_in,
-  std::shared_ptr<FieldFunctions<dim>> const      field_functions_in)
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+  std::string const &                             dof_index_temperature)
 {
-  Base::setup(periodic_face_pairs_in,
-              boundary_descriptor_velocity_in,
-              boundary_descriptor_pressure_in,
-              field_functions_in);
+  Base::setup(matrix_free_wrapper, dof_index_temperature);
 
   initialize_laplace_operator();
 }
@@ -144,7 +150,7 @@ DGNavierStokesProjectionMethods<dim, Number>::initialize_preconditioner_pressure
     MultigridData mg_data;
     mg_data = this->param.multigrid_data_pressure_poisson;
 
-    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+    typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber, 1> MULTIGRID;
 
     preconditioner_pressure_poisson.reset(new MULTIGRID(this->mpi_comm));
 
@@ -248,22 +254,17 @@ DGNavierStokesProjectionMethods<dim, Number>::do_solve_pressure(
   bool const         update_preconditioner) const
 {
   // Check multigrid algorithm
-
-  //  typedef Poisson::MultigridPreconditioner<dim, Number, MultigridNumber> MULTIGRID;
+  //  std::shared_ptr<MultigridPoisson> mg_preconditioner
+  //    = std::dynamic_pointer_cast<MultigridPoisson>(preconditioner_pressure_poisson);
   //
-  //  std::shared_ptr<MULTIGRID> mg_preconditioner
-  //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
-  //
-  //  CheckMultigrid<dim, Number, Poisson::LaplaceOperator<dim, Number>, MULTIGRID>
-  //    check_multigrid(this->laplace_operator, mg_preconditioner);
+  //  CheckMultigrid<dim, Number, Poisson::LaplaceOperator<dim, Number>, MultigridPoisson,
+  //  MultigridNumber>
+  //    check_multigrid(this->laplace_operator, mg_preconditioner, this->mpi_comm);
   //  check_multigrid.check();
 
   // Use multigrid as a solver (use double precision here)
-
-  //  typedef Poisson::MultigridPreconditioner<dim, Number, double> MULTIGRID;
-  //
-  //  std::shared_ptr<MULTIGRID> mg_preconditioner
-  //    = std::dynamic_pointer_cast<MULTIGRID>(preconditioner_pressure_poisson);
+  //  std::shared_ptr<MultigridPoisson> mg_preconditioner
+  //    = std::dynamic_pointer_cast<MultigridPoisson>(preconditioner_pressure_poisson);
   //  unsigned int n_iter = mg_preconditioner->solve(dst,src);
 
   // call pressure Poisson solver

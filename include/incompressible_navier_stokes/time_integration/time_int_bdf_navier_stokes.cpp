@@ -7,6 +7,7 @@
 
 #include "time_int_bdf_navier_stokes.h"
 
+#include "../../functionalities/moving_mesh.h"
 #include "../spatial_discretization/interface.h"
 #include "../user_interface/input_parameters.h"
 #include "time_integration/push_back_vectors.h"
@@ -14,10 +15,14 @@
 
 namespace IncNS
 {
-template<typename Number>
-TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
-                               InputParameters const &        param_in,
-                               MPI_Comm const &               mpi_comm_in)
+template<int dim, typename Number>
+TimeIntBDF<dim, Number>::TimeIntBDF(
+  std::shared_ptr<OperatorBase>                   operator_in,
+  InputParameters const &                         param_in,
+  MPI_Comm const &                                mpi_comm_in,
+  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
+  std::shared_ptr<MovingMeshBase<dim, Number>>    moving_mesh_in,
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper_in)
   : TimeIntBDFBase<Number>(param_in.start_time,
                            param_in.end_time,
                            param_in.max_number_of_time_steps,
@@ -31,22 +36,23 @@ TimeIntBDF<Number>::TimeIntBDF(std::shared_ptr<InterfaceBase> operator_in,
     cfl_oif(param_in.cfl_oif / std::pow(2.0, param.dt_refinements)),
     operator_base(operator_in),
     vec_convective_term(this->order),
-    computation_time_ale_update(0.0),
-    vec_grid_coordinates(param_in.order_time_integrator)
+    postprocessor(postprocessor_in),
+    vec_grid_coordinates(param_in.order_time_integrator),
+    moving_mesh(moving_mesh_in),
+    matrix_free_wrapper(matrix_free_wrapper_in)
 {
+  if(param.ale_formulation)
+  {
+    AssertThrow(moving_mesh != nullptr,
+                ExcMessage("Shared pointer moving_mesh is not correctly initialized."));
+    AssertThrow(matrix_free_wrapper != nullptr,
+                ExcMessage("Shared pointer matrix_free_wrapper is not correctly initialized."));
+  }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::update_time_integrator_constants()
-{
-  // call function of base class to update the standard time integrator constants
-  TimeIntBDFBase<Number>::update_time_integrator_constants();
-}
-
-template<typename Number>
-void
-TimeIntBDF<Number>::allocate_vectors()
+TimeIntBDF<dim, Number>::allocate_vectors()
 {
   // convective term
   if(this->param.convective_problem() &&
@@ -55,7 +61,10 @@ TimeIntBDF<Number>::allocate_vectors()
     for(unsigned int i = 0; i < vec_convective_term.size(); ++i)
       this->operator_base->initialize_vector_velocity(vec_convective_term[i]);
 
-    this->operator_base->initialize_vector_velocity(convective_term_np);
+    if(param.ale_formulation == false)
+    {
+      this->operator_base->initialize_vector_velocity(convective_term_np);
+    }
   }
 
   if(param.ale_formulation == true)
@@ -69,9 +78,9 @@ TimeIntBDF<Number>::allocate_vectors()
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::setup_derived()
+TimeIntBDF<dim, Number>::setup_derived()
 {
   // In the case of an arbitrary Lagrangian-Eulerian formulation:
   if(param.ale_formulation && param.restarted_simulation == false)
@@ -79,16 +88,18 @@ TimeIntBDF<Number>::setup_derived()
     // compute the grid coordinates at start time (and at previous times in case of
     // start_with_low_order == false)
 
-    operator_base->move_mesh_and_fill_grid_coordinates_vector(vec_grid_coordinates[0],
-                                                              this->get_time());
+    moving_mesh->move_mesh(this->get_time());
+    moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[0],
+                                              operator_base->get_dof_handler_u());
 
     if(this->start_with_low_order == false)
     {
       // compute grid coordinates at previous times (start with 1!)
       for(unsigned int i = 1; i < this->order; ++i)
       {
-        operator_base->move_mesh_and_fill_grid_coordinates_vector(vec_grid_coordinates[i],
-                                                                  this->get_previous_time(i));
+        moving_mesh->move_mesh(this->get_previous_time(i));
+        moving_mesh->fill_grid_coordinates_vector(vec_grid_coordinates[i],
+                                                  operator_base->get_dof_handler_u());
       }
     }
   }
@@ -107,9 +118,9 @@ TimeIntBDF<Number>::setup_derived()
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
+TimeIntBDF<dim, Number>::prepare_vectors_for_next_timestep()
 {
   if(this->param.convective_problem() &&
      this->param.treatment_of_convective_term == TreatmentOfConvectiveTerm::Explicit)
@@ -121,49 +132,35 @@ TimeIntBDF<Number>::prepare_vectors_for_next_timestep()
     }
   }
 
-  push_back(vec_grid_coordinates);
-  vec_grid_coordinates[0].swap(grid_coordinates_np);
-}
-
-template<typename Number>
-void
-TimeIntBDF<Number>::do_timestep_pre_solve()
-{
-  TimeIntBDFBase<Number>::do_timestep_pre_solve();
-
   if(param.ale_formulation)
-    ale_update();
+  {
+    push_back(vec_grid_coordinates);
+    vec_grid_coordinates[0].swap(grid_coordinates_np);
+  }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::ale_update()
+TimeIntBDF<dim, Number>::ale_update()
 {
-  Timer timer;
-  timer.restart();
+  // and compute grid coordinates at the end of the current time step t_{n+1}
+  moving_mesh->fill_grid_coordinates_vector(grid_coordinates_np,
+                                            operator_base->get_dof_handler_u());
 
-  // move the mesh and compute grid coordinates at the end of the current time step t_{n+1}
-  operator_base->move_mesh_and_fill_grid_coordinates_vector(grid_coordinates_np,
-                                                            this->get_next_time());
-
-  // update grid velocity using BDF time derivative
+  // and update grid velocity using BDF time derivative
   compute_bdf_time_derivative(grid_velocity,
                               grid_coordinates_np,
                               vec_grid_coordinates,
                               this->bdf,
                               this->get_time_step_size());
 
-  // update the spatial discretization operator so that it is prepared to solve the current time
-  // step
-  operator_base->update_after_mesh_movement();
+  // and hand grid velocity over to spatial discretization
   operator_base->set_grid_velocity(grid_velocity);
-
-  computation_time_ale_update += timer.wall_time();
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::initialize_vec_convective_term()
+TimeIntBDF<dim, Number>::initialize_vec_convective_term()
 {
   this->operator_base->evaluate_convective_term(vec_convective_term[0],
                                                 get_velocity(),
@@ -180,9 +177,9 @@ TimeIntBDF<Number>::initialize_vec_convective_term()
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::initialize_oif()
+TimeIntBDF<dim, Number>::initialize_oif()
 {
   // Operator-integration-factor splitting
   if(param.equation_type == EquationType::NavierStokes &&
@@ -259,9 +256,9 @@ TimeIntBDF<Number>::initialize_oif()
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
+TimeIntBDF<dim, Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
@@ -297,9 +294,9 @@ TimeIntBDF<Number>::read_restart_vectors(boost::archive::binary_iarchive & ia)
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
+TimeIntBDF<dim, Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) const
 {
   for(unsigned int i = 0; i < this->order; i++)
   {
@@ -331,9 +328,9 @@ TimeIntBDF<Number>::write_restart_vectors(boost::archive::binary_oarchive & oa) 
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 double
-TimeIntBDF<Number>::calculate_time_step_size()
+TimeIntBDF<dim, Number>::calculate_time_step_size()
 {
   double time_step = 1.0;
 
@@ -423,9 +420,9 @@ TimeIntBDF<Number>::calculate_time_step_size()
   return time_step;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 double
-TimeIntBDF<Number>::recalculate_time_step_size() const
+TimeIntBDF<dim, Number>::recalculate_time_step_size() const
 {
   AssertThrow(param.calculation_of_time_step_size == TimeStepCalculation::CFL,
               ExcMessage(
@@ -452,9 +449,9 @@ TimeIntBDF<Number>::recalculate_time_step_size() const
   return new_time_step_size;
 }
 
-template<typename Number>
+template<int dim, typename Number>
 bool
-TimeIntBDF<Number>::print_solver_info() const
+TimeIntBDF<dim, Number>::print_solver_info() const
 {
   //  return get_time_step_number() % param.output_solver_info_every_timesteps == 0;
 
@@ -463,19 +460,19 @@ TimeIntBDF<Number>::print_solver_info() const
                                       this->time_step_number);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::initialize_solution_oif_substepping(VectorType & solution_tilde_m,
-                                                        unsigned int i)
+TimeIntBDF<dim, Number>::initialize_solution_oif_substepping(VectorType & solution_tilde_m,
+                                                             unsigned int i)
 {
   // initialize solution: u_tilde(s=0) = u(t_{n-i})
   solution_tilde_m = get_velocity(i);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & velocities,
-                                             std::vector<double> &             times) const
+TimeIntBDF<dim, Number>::get_velocities_and_times(std::vector<VectorType const *> & velocities,
+                                                  std::vector<double> &             times) const
 {
   /*
    * the convective term is nonlinear, so we have to initialize the transport velocity
@@ -507,10 +504,10 @@ TimeIntBDF<Number>::get_velocities_and_times(std::vector<VectorType const *> & v
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::get_velocities_and_times_np(std::vector<VectorType const *> & velocities,
-                                                std::vector<double> &             times) const
+TimeIntBDF<dim, Number>::get_velocities_and_times_np(std::vector<VectorType const *> & velocities,
+                                                     std::vector<double> &             times) const
 {
   /*
    * the convective term is nonlinear, so we have to initialize the transport velocity
@@ -544,11 +541,11 @@ TimeIntBDF<Number>::get_velocities_and_times_np(std::vector<VectorType const *> 
   }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
-                                                            double const cfl,
-                                                            double const cfl_oif)
+TimeIntBDF<dim, Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alphai_ui,
+                                                                 double const cfl,
+                                                                 double const cfl_oif)
 {
   std::vector<VectorType const *> velocities;
   std::vector<double>             times;
@@ -563,11 +560,27 @@ TimeIntBDF<Number>::calculate_sum_alphai_ui_oif_substepping(VectorType & sum_alp
   TimeIntBDFBase<Number>::calculate_sum_alphai_ui_oif_substepping(sum_alphai_ui, cfl, cfl_oif);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
-                                                         VectorType const & u_tilde_i,
-                                                         unsigned int       i)
+TimeIntBDF<dim, Number>::move_mesh(double const time) const
+{
+  moving_mesh->move_mesh(time);
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::move_mesh_and_update_dependent_data_structures(double const time) const
+{
+  moving_mesh->move_mesh(time);
+  matrix_free_wrapper->update_geometry();
+  operator_base->update_after_mesh_movement();
+}
+
+template<int dim, typename Number>
+void
+TimeIntBDF<dim, Number>::update_sum_alphai_ui_oif_substepping(VectorType &       sum_alphai_ui,
+                                                              VectorType const & u_tilde_i,
+                                                              unsigned int       i)
 {
   // calculate sum (alpha_i/dt * u_tilde_i)
   if(i == 0)
@@ -576,12 +589,12 @@ TimeIntBDF<Number>::update_sum_alphai_ui_oif_substepping(VectorType &       sum_
     sum_alphai_ui.add(this->bdf.get_alpha(i) / this->get_time_step_size(), u_tilde_i);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::do_timestep_oif_substepping(VectorType & solution_tilde_mp,
-                                                VectorType & solution_tilde_m,
-                                                double const start_time,
-                                                double const time_step_size)
+TimeIntBDF<dim, Number>::do_timestep_oif_substepping(VectorType & solution_tilde_mp,
+                                                     VectorType & solution_tilde_m,
+                                                     double const start_time,
+                                                     double const time_step_size)
 {
   // solve sub-step
   time_integrator_OIF->solve_timestep(solution_tilde_mp,
@@ -590,34 +603,58 @@ TimeIntBDF<Number>::do_timestep_oif_substepping(VectorType & solution_tilde_mp,
                                       time_step_size);
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::postprocessing() const
+TimeIntBDF<dim, Number>::postprocessing() const
 {
   // the mesh has to be at the correct position to allow a computation of
   // errors at start_time
   if(this->param.ale_formulation && this->get_time_step_number() == 1)
   {
-    this->operator_base->move_mesh(this->get_time());
-    this->operator_base->update_after_mesh_movement();
+    move_mesh_and_update_dependent_data_structures(this->get_time());
   }
 
-  this->operator_base->do_postprocessing(get_velocity(0),
-                                         get_pressure(0),
-                                         this->get_time(),
-                                         this->get_time_step_number());
+  bool const standard = true;
+  if(standard)
+  {
+    postprocessor->do_postprocessing(get_velocity(0),
+                                     get_pressure(0),
+                                     this->get_time(),
+                                     this->get_time_step_number());
+  }
+  else // consider velocity and pressure errors instead
+  {
+    VectorType velocity_error;
+    operator_base->initialize_vector_velocity(velocity_error);
+
+    VectorType pressure_error;
+    operator_base->initialize_vector_pressure(pressure_error);
+
+    operator_base->prescribe_initial_conditions(velocity_error, pressure_error, this->get_time());
+
+    velocity_error.add(-1.0, get_velocity(0));
+    pressure_error.add(-1.0, get_pressure(0));
+
+    postprocessor->do_postprocessing(velocity_error, // error!
+                                     pressure_error, // error!
+                                     this->get_time(),
+                                     this->get_time_step_number());
+  }
 }
 
-template<typename Number>
+template<int dim, typename Number>
 void
-TimeIntBDF<Number>::postprocessing_steady_problem() const
+TimeIntBDF<dim, Number>::postprocessing_steady_problem() const
 {
-  this->operator_base->do_postprocessing_steady_problem(get_velocity(0), get_pressure(0));
+  postprocessor->do_postprocessing(get_velocity(0), get_pressure(0));
 }
 
 // instantiations
 
-template class TimeIntBDF<float>;
-template class TimeIntBDF<double>;
+template class TimeIntBDF<2, float>;
+template class TimeIntBDF<2, double>;
+
+template class TimeIntBDF<3, float>;
+template class TimeIntBDF<3, double>;
 
 } // namespace IncNS

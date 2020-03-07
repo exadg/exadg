@@ -10,6 +10,7 @@
 
 #include "deal.II/base/conditional_ostream.h"
 
+#include "../../functionalities/enum_types.h"
 #include "../../functionalities/restart_data.h"
 #include "../../functionalities/solver_info_data.h"
 

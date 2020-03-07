@@ -5,13 +5,15 @@
  *      Author: fehn
  */
 
-
 #include "continuity_penalty_operator.h"
+
+#include "weak_boundary_conditions.h"
 
 namespace IncNS
 {
 template<int dim, typename Number>
-ContinuityPenaltyOperator<dim, Number>::ContinuityPenaltyOperator() : matrix_free(nullptr)
+ContinuityPenaltyOperator<dim, Number>::ContinuityPenaltyOperator()
+  : matrix_free(nullptr), time(0.0)
 {
 }
 

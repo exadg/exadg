@@ -33,6 +33,9 @@ SET( SOURCE_FILES
      # incompressible flow with scalar transport
      incompressible_flow_with_transport.cc
 
+     # fluid-structure interaction
+     fluid_structure_interaction.cc
+
      # Compressible Navier-Stokes
      compressible_navier_stokes_performance.cc 
      compressible_navier_stokes.cc

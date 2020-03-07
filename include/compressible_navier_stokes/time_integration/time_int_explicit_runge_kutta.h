@@ -16,6 +16,8 @@
 #include "time_integration/explicit_runge_kutta.h"
 #include "time_integration/ssp_runge_kutta.h"
 
+#include "../postprocessor/postprocessor_base.h"
+
 using namespace dealii;
 
 namespace CompNS
@@ -37,9 +39,10 @@ public:
 
   typedef Interface::Operator<Number> Operator;
 
-  TimeIntExplRK(std::shared_ptr<Operator> operator_in,
-                InputParameters const &   param_in,
-                MPI_Comm const &          mpi_comm_in);
+  TimeIntExplRK(std::shared_ptr<Operator>                       operator_in,
+                InputParameters const &                         param_in,
+                MPI_Comm const &                                mpi_comm_in,
+                std::shared_ptr<PostProcessorInterface<Number>> postprocessor_in);
 
   void
   get_wall_times(std::vector<std::string> & name, std::vector<double> & wall_time) const;
@@ -92,6 +95,8 @@ private:
   std::shared_ptr<ExplicitTimeIntegrator<Operator, VectorType>> rk_time_integrator;
 
   InputParameters const & param;
+
+  std::shared_ptr<PostProcessorInterface<Number>> postprocessor;
 
   // timer
   mutable Timer  timer_postprocessing;

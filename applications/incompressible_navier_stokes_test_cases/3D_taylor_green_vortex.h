@@ -20,7 +20,6 @@
 
 // sub communicator for FFTW
 #define USE_SUB_COMMUNICATOR_FOR_FFTW
-unsigned int const N_CORES_PER_NODE = 48; // bruteforce = 24, SuperMUC-NG = 48
 
 // convergence studies in space or time
 unsigned int const DEGREE_MIN = 3;
@@ -55,8 +54,11 @@ std::string const OUTPUT_NAME = std::to_string(int((EXPLOIT_SYMMETRY ? 2 : 1)*(D
                                 + "_l" + std::to_string(REFINE_SPACE_MIN)
                                 + "_k" + std::to_string(DEGREE_MIN)
                                 + "_bdf2_adaptive_cfl0-25";
-bool WRITE_RESTART = false;
-bool RESTARTED_SIMULATION = false;
+
+bool const WRITE_RESTART = false;
+bool const RESTARTED_SIMULATION = false;
+
+bool const DO_FFTW = true;
 
 // mesh type
 enum class MeshType{ Cartesian, Curvilinear };
@@ -351,12 +353,40 @@ create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim
 
 /************************************************************************************************************/
 /*                                                                                                          */
-/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                               MESH MOTION                                                */
 /*                                                                                                          */
 /************************************************************************************************************/
 
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+
+  MeshMovementData<dim> data;
+  data.temporal = MeshMovementAdvanceInTime::Sin;
+  data.shape = MeshMovementShape::Sin;
+  data.dimensions[0] = std::abs(RIGHT-LEFT);
+  data.dimensions[1] = std::abs(RIGHT-LEFT);
+  data.dimensions[2] = std::abs(RIGHT-LEFT);
+  data.amplitude = RIGHT/6.0; // use a value <= RIGHT/4.0
+  data.period = CHARACTERISTIC_TIME;
+  data.t_start = 0.0;
+  data.t_end = END_TIME;
+  data.spatial_number_of_oscillations = 1.0;
+  mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
+
+  return mesh_motion;
+}
+
 namespace IncNS
 {
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
 
 /*
  *  This function is used to prescribe initial conditions for the velocity field
@@ -435,22 +465,6 @@ void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
   field_functions->initial_solution_pressure.reset(new InitialSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new InitialSolutionPressure<dim>());
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
-  if(ALE)
-  {
-    MeshMovementData<dim> data;
-    data.temporal = MeshMovementAdvanceInTime::Sin;
-    data.shape = MeshMovementShape::Sin;
-    data.dimensions[0] = std::abs(RIGHT-LEFT);
-    data.dimensions[1] = std::abs(RIGHT-LEFT);
-    data.dimensions[2] = std::abs(RIGHT-LEFT);
-    data.amplitude = RIGHT/6.0; // use a value <= RIGHT/4.0
-    data.period = CHARACTERISTIC_TIME;
-    data.t_start = 0.0;
-    data.t_end = END_TIME;
-    data.spatial_number_of_oscillations = 1.0;
-    field_functions->mesh_movement.reset(new CubeMeshMovementFunctions<dim>(data));
-  }
 }
 
 /************************************************************************************************************/
@@ -497,8 +511,8 @@ construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
 
   // kinetic energy spectrum
   pp_data.kinetic_energy_spectrum_data.calculate = true;
-  pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = false,
-  pp_data.kinetic_energy_spectrum_data.do_fftw = true;
+  pp_data.kinetic_energy_spectrum_data.write_raw_data_to_files = !DO_FFTW;
+  pp_data.kinetic_energy_spectrum_data.do_fftw = DO_FFTW;
   pp_data.kinetic_energy_spectrum_data.calculate_every_time_interval = 0.1;
   pp_data.kinetic_energy_spectrum_data.filename = OUTPUT_FOLDER + OUTPUT_NAME + "_energy_spectrum";
   pp_data.kinetic_energy_spectrum_data.degree = param.degree_u;

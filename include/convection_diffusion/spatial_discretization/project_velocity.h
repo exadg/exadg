@@ -31,7 +31,6 @@ public:
   apply(MatrixFree<dim, Number> const &      matrix_free,
         unsigned int const                   dof_index,
         unsigned int const                   quad_index,
-        unsigned int const                   degree,
         std::shared_ptr<Function<dim>> const function,
         double const &                       time,
         VectorType &                         vector)
@@ -47,7 +46,7 @@ public:
 
     // apply M^{-1}
     InverseMassMatrixOperator<dim, dim, Number> inverse_mass;
-    inverse_mass.initialize(matrix_free, degree, dof_index, quad_index);
+    inverse_mass.initialize(matrix_free, dof_index, quad_index);
     inverse_mass.apply(vector, vector);
   }
 
@@ -69,7 +68,8 @@ private:
       for(unsigned int q = 0; q < integrator.n_q_points; ++q)
       {
         integrator.submit_value(
-          evaluate_vectorial_function(function, integrator.quadrature_point(q), time), q);
+          FunctionEvaluator<dim, Number, 1>::value(function, integrator.quadrature_point(q), time),
+          q);
       }
 
       integrator.integrate(true, false);

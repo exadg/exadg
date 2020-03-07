@@ -222,13 +222,42 @@ create_grid_and_set_boundary_ids(
   triangulation->refine_global(n_refine_space);
 }
 
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+
+  MeshMovementData<dim> data;
+  data.temporal = MeshMovementAdvanceInTime::Sin;
+  data.shape = MeshMovementShape::Sin;
+  data.dimensions[0] = std::abs(RIGHT-LEFT);
+  data.dimensions[1] = std::abs(RIGHT-LEFT);
+  data.amplitude = 0.08 * (RIGHT-LEFT);
+  data.period = (END_TIME-START_TIME)/10.0;
+  data.t_start = START_TIME;
+  data.t_end = END_TIME;
+  data.spatial_number_of_oscillations = 1.0;
+  mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
+
+  return mesh_motion;
+}
+
+
+namespace IncNS
+{
+
 /**************************************************************************************/
 /*                                                                                    */
 /*          FUNCTIONS (ANALYTICAL/INITIAL SOLUTION, BOUNDARY CONDITIONS, etc.)        */
 /*                                                                                    */
 /**************************************************************************************/
-
-
 
 template<int dim>
 class AnalyticalSolutionVelocity : public Function<dim>
@@ -264,8 +293,6 @@ public:
 };
 
 
-namespace IncNS
-{
 template<int dim>
 void
 set_boundary_conditions(std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity,
@@ -288,21 +315,6 @@ set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   field_functions->initial_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->analytical_solution_pressure.reset(new AnalyticalSolutionPressure<dim>());
   field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
-
-  if(ALE)
-  {
-    MeshMovementData<dim> data;
-    data.temporal = MeshMovementAdvanceInTime::Sin;
-    data.shape = MeshMovementShape::Sin;
-    data.dimensions[0] = std::abs(RIGHT-LEFT);
-    data.dimensions[1] = std::abs(RIGHT-LEFT);
-    data.amplitude = 0.08 * (RIGHT-LEFT);
-    data.period = (END_TIME-START_TIME)/10.0;
-    data.t_start = START_TIME;
-    data.t_end = END_TIME;
-    data.spatial_number_of_oscillations = 1.0;
-    field_functions->mesh_movement.reset(new CubeMeshMovementFunctions<dim>(data));
-  }
 }
 
 /************************************************************************************************************/

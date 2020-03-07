@@ -1,5 +1,5 @@
 /*
- * dg_convection_diffusion_operation.h
+ * dg_operator.h
  *
  *  Created on: Aug 2, 2016
  *      Author: fehn
@@ -23,7 +23,7 @@
 
 // operators
 #include "../../operators/inverse_mass_matrix.h"
-#include "operators/mass_matrix_operator.h"
+#include "../../operators/mass_matrix_operator.h"
 #include "operators/rhs_operator.h"
 
 // solvers and preconditioners
@@ -34,6 +34,9 @@
 
 // time integration and interface
 #include "interface.h"
+
+// functionalities
+#include "../../functionalities/matrix_free_wrapper.h"
 
 // postprocessor
 #include "../postprocessor/postprocessor_base.h"
@@ -58,10 +61,18 @@ public:
   /*
    * Constructor.
    */
-  DGOperator(parallel::TriangulationBase<dim> const &        triangulation,
-             InputParameters const &                         param_in,
-             std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor_in,
-             MPI_Comm const &                                mpi_comm_in);
+  DGOperator(parallel::TriangulationBase<dim> const &       triangulation,
+             Mapping<dim> const &                           mapping,
+             PeriodicFaces const                            periodic_face_pairs,
+             std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor,
+             std::shared_ptr<FieldFunctions<dim>> const     field_functions,
+             InputParameters const &                        param,
+             MPI_Comm const &                               mpi_comm);
+
+
+  void
+  append_data_structures(MatrixFreeWrapper<dim, Number> & matrix_free_wrapper,
+                         std::string const &              field = "") const;
 
   /*
    * Setup function. Initializes basic finite element components, matrix-free object, and basic
@@ -69,17 +80,16 @@ public:
    * of equations.
    */
   void
-  setup(PeriodicFaces const                            periodic_face_pairs_in,
-        std::shared_ptr<BoundaryDescriptor<dim>> const boundary_descriptor_in,
-        std::shared_ptr<FieldFunctions<dim>> const     field_functions_in);
+  setup(std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper,
+        std::string const &                             dof_index_velocity_external_in = "");
 
   /*
    * This function initializes operators, preconditioners, and solvers related to the solution of
    * linear systems of equation required for implicit formulations.
    */
   void
-  setup_operators_and_solver(double const       scaling_factor_mass_matrix = -1.0,
-                             VectorType const * velocity                   = nullptr);
+  setup_solver(double const       scaling_factor_mass_matrix = -1.0,
+               VectorType const * velocity                   = nullptr);
 
   /*
    * Initialization of dof-vector.
@@ -243,11 +253,11 @@ public:
   /*
    * Setters and getters.
    */
-  Mapping<dim> const &
-  get_mapping() const;
-
   DoFHandler<dim> const &
   get_dof_handler() const;
+
+  DoFHandler<dim> const &
+  get_dof_handler_velocity() const;
 
   unsigned int
   get_polynomial_degree() const;
@@ -255,13 +265,11 @@ public:
   types::global_dof_index
   get_number_of_dofs() const;
 
-  /*
-   * Perform postprocessing for a given solution vector.
-   */
+  std::string
+  get_dof_name() const;
+
   void
-  do_postprocessing(VectorType const & solution,
-                    double const       time             = 0.0,
-                    int const          time_step_number = -1) const;
+  update_after_mesh_movement();
 
   // TODO: implement filtering as a separate module
   void
@@ -272,25 +280,28 @@ private:
    * Initializes DoFHandlers.
    */
   void
-  create_dofs();
+  distribute_dofs();
 
-  /*
-   * Initializes MatrixFree-object.
-   */
-  void
-  initialize_matrix_free();
+  bool
+  needs_own_dof_handler_velocity() const;
+
+  unsigned int
+  get_dof_index() const;
 
   /*
    * Dof index for velocity (in case of numerical velocity field)
    */
-  int
+  std::string
+  get_dof_name_velocity() const;
+
+  unsigned int
   get_dof_index_velocity() const;
 
-  /*
-   * Initializes individual operators (mass, convective, viscous terms, rhs).
-   */
-  void
-  setup_operators(double const scaling_factor_mass_matrix);
+  unsigned int
+  get_quad_index() const;
+
+  unsigned int
+  get_quad_index_overintegration() const;
 
   /*
    * Initializes the preconditioner.
@@ -305,39 +316,9 @@ private:
   initialize_solver();
 
   /*
-   * Initializes the postprocessor.
+   * Mapping
    */
-  void
-  setup_postprocessor();
-
-  /*
-   * List of input parameters.
-   */
-  InputParameters const & param;
-
-  /*
-   * Basic finite element ingredients.
-   */
-  FE_DGQ<dim>                           fe;
-  unsigned int                          mapping_degree;
-  std::shared_ptr<MappingQGeneric<dim>> mapping;
-  DoFHandler<dim>                       dof_handler;
-
-  /*
-   * Numerical velocity field.
-   */
-  std::shared_ptr<FESystem<dim>>   fe_velocity;
-  std::shared_ptr<DoFHandler<dim>> dof_handler_velocity;
-
-  /*
-   * Constraints
-   */
-  AffineConstraints<double> constraint_matrix;
-
-  /*
-   * Matrix-free operator evaluation
-   */
-  MatrixFree<dim, Number> matrix_free;
+  Mapping<dim> const & mapping;
 
   /*
    * Periodic face pairs: This variable is only needed when using a multigrid preconditioner
@@ -352,16 +333,57 @@ private:
   std::shared_ptr<FieldFunctions<dim>>     field_functions;
 
   /*
+   * List of input parameters.
+   */
+  InputParameters const & param;
+
+  /*
+   * Basic finite element ingredients.
+   */
+  FE_DGQ<dim>     fe;
+  DoFHandler<dim> dof_handler;
+
+  /*
+   * Numerical velocity field.
+   */
+  std::shared_ptr<FESystem<dim>>   fe_velocity;
+  std::shared_ptr<DoFHandler<dim>> dof_handler_velocity;
+
+  /*
+   * Constraints.
+   */
+  AffineConstraints<double> constraint_matrix;
+
+  std::string const dof_index_std      = "conv_diff";
+  std::string const dof_index_velocity = "conv_diff_velocity";
+
+  std::string const quad_index_std             = "conv_diff";
+  std::string const quad_index_overintegration = "conv_diff_overintegration";
+
+  mutable std::string field;
+
+  std::string dof_index_velocity_external;
+
+  /*
+   * Matrix-free operator evaluation.
+   */
+  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
+  std::shared_ptr<MatrixFree<dim, Number>>        matrix_free;
+
+  /*
    * Basic operators.
    */
-  MassMatrixOperator<dim, Number>           mass_matrix_operator;
+  std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
+  std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;
+
+  MassMatrixOperator<dim, 1, Number>        mass_matrix_operator;
   InverseMassMatrixOperator<dim, 1, Number> inverse_mass_matrix_operator;
   ConvectiveOperator<dim, Number>           convective_operator;
   DiffusiveOperator<dim, Number>            diffusive_operator;
   RHSOperator<dim, Number>                  rhs_operator;
 
   /*
-   * Merged operators
+   * Merged operators.
    */
   Operator<dim, Number> combined_operator;
 
@@ -378,11 +400,6 @@ private:
    * Output to screen.
    */
   ConditionalOStream pcout;
-
-  /*
-   * Postprocessor.
-   */
-  std::shared_ptr<PostProcessorBase<dim, Number>> postprocessor;
 };
 
 } // namespace ConvDiff
