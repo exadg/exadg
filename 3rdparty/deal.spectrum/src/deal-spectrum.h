@@ -47,8 +47,8 @@ public:
 
   virtual ~DealSpectrumWrapper()
   {
+    print_timings();
   }
-
 
   /**
    * Initialize data structures
@@ -72,16 +72,6 @@ public:
     s.init(dim, n_cells_1D, points_src, points_dst);
 
     std::vector<types::global_dof_index> local_cells;
-
-    auto norm_point_to_lex = [&](const auto c) {
-      // convert normalized point [0, 1] to lex
-      if(dim == 2)
-        return std::floor(c[0]) + n_cells_1D * std::floor(c[1]);
-      else
-        return std::floor(c[0]) + n_cells_1D * std::floor(c[1]) +
-               n_cells_1D * n_cells_1D * std::floor(c[2]);
-    };
-
     for(const auto & cell : tria.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
       {
@@ -89,7 +79,7 @@ public:
         for(types::global_dof_index i = 0; i < dim; i++)
           c[i] = (c[i] + dealii::numbers::PI) / (2 * dealii::numbers::PI / n_cells_1D);
 
-        local_cells.push_back(norm_point_to_lex(c));
+        local_cells.push_back(norm_point_to_lex(c, n_cells_1D));
       }
 
     types::global_dof_index n_local_cells = local_cells.size();
@@ -242,6 +232,21 @@ public:
   }
 
 private:
+  template<int dim>
+  double norm_point_to_lex(const Point<dim> &c, const unsigned int &n_cells_1D)
+  {
+    // convert normalized point [0, 1] to lex
+    if(dim == 2)
+      return std::floor(c[0]) + n_cells_1D * std::floor(c[1]);
+    else if(dim == 3)
+      return std::floor(c[0]) + n_cells_1D * std::floor(c[1]) +
+             n_cells_1D * n_cells_1D * std::floor(c[2]);
+    else
+      Assert(false, ExcMessage("not implemented"));
+ 
+    return 0.0;
+  }
+
   MPI_Comm const & comm;
 
   // flush flow field to hard drive?
