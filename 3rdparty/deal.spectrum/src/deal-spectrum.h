@@ -40,7 +40,7 @@ public:
    *
    */
   DealSpectrumWrapper(MPI_Comm const & comm, bool write, bool inplace)
-    : comm(comm), write(write), inplace(inplace), s(comm), h(comm,s), ipol(comm, s), fftc(comm, s), fftw(comm, s)
+    : comm(comm), write(write), inplace(inplace), s(comm), ipol(comm, s), fftw(comm, s)
   {
   }
 
@@ -65,11 +65,6 @@ public:
   {
     // init setup ...
     s.init(dim, n_cells_1D, points_src, points_dst);
-
-    // ... mapper
-    timer.start("Init-Map");
-    h.init(tria);
-    timer.stop("Init-Map");
     
     std::vector<types::global_dof_index> local_cells;
     
@@ -92,10 +87,6 @@ public:
           local_cells.push_back(norm_point_to_lex(c));
     
         }
-    
-    //for(auto i : local_cells)
-    //    std::cout << i << std::endl;
-    //std::cout << std::endl << std::endl;
     
     int n_local_cells = local_cells.size();
     int global_offset = 0;
@@ -143,11 +134,6 @@ public:
             indices_want.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + j * Utilities::pow(points_dst*n_cells_1D, dim-1) + i);
     
     nonconti = std::make_shared<Utilities::MPI::NoncontiguousPartitioner<double>>(indices_has, indices_want, comm);
-
-    // ... permutation
-    timer.start("Init-Perm");
-    fftc.init(h, fftw);
-    timer.stop("Init-Perm");
   }
 
   /**
@@ -190,34 +176,10 @@ public:
       int end;
       fftw.getLocalRange(start, end);
       
-      //for (int k = 0; k < (end - start)*s.dim ; k++)
-      //  for (int j = 0; j < N; j++)
-      //    for (int i = 0; i < N; i++)
-      //      std::cout << dst[N * N * k + N * j + i] << " ";
-      //  
-      //std::cout << std::endl << std::endl;
-      
       for (int k = (end - start)*s.dim - 1; k >= 0 ; k--)
         for (int j = N - 1; j >= 0; j--)
           for (int i = N-1; i >= 0; i--)
             dst[N * Nx * k + Nx * j + i] = dst[N * N * k + N * j + i];
-      
-      //for (int k = 0; k < (end - start)*s.dim ; k++)
-      //  for (int j = 0; j < N; j++)
-      //    for (int i = 0; i < N; i++)
-      //      std::cout << dst[N * Nx * k + Nx * j + i] << " ";
-      //  
-      //std::cout << std::endl << std::endl;
-      
-      //fftc.ipermute(ipol.dst, fftw.u_real);
-      //fftc.iwait();
-      
-      //for (int k = 0; k < (end - start)*s.dim ; k++)
-      //  for (int j = 0; j < N; j++)
-      //    for (int i = 0; i < N; i++)
-      //      std::cout << dst[N * Nx * k + Nx * j + i] << " ";
-      //  
-      //std::cout << std::endl << std::endl;
         
       timer.append("Permutation");
 
@@ -268,14 +230,8 @@ private:
   // struct containing the setup
   Setup s;
 
-  // class for translating: lexicographical and morton order cell numbering
-  Bijection h;
-
   // ... for interpolation
   Interpolator ipol;
-
-  // ... for permutation
-  Permutator fftc;
 
   // ... for spectral analysis
   SpectralAnalysis fftw;
