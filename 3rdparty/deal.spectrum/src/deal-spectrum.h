@@ -16,6 +16,7 @@
 #include "./includes/spectrum.h"
 #include "./util/timer.h"
 
+#include <deal.II/base/mpi.templates.h>
 #include <deal.II/base/mpi_noncontiguous_partitioner.h>
 
 namespace dealspectrum
@@ -61,7 +62,11 @@ public:
    */
   template<class Tria>
   void
-  init(int dim, int n_cells_1D, int points_src, int points_dst, Tria & tria)
+  init(types::global_dof_index dim,
+       types::global_dof_index n_cells_1D,
+       types::global_dof_index points_src,
+       types::global_dof_index points_dst,
+       Tria &                  tria)
   {
     // init setup ...
     s.init(dim, n_cells_1D, points_src, points_dst);
@@ -81,16 +86,21 @@ public:
       if(cell->is_active() && cell->is_locally_owned())
       {
         auto c = cell->center();
-        for(int i = 0; i < dim; i++)
+        for(types::global_dof_index i = 0; i < dim; i++)
           c[i] = (c[i] + dealii::numbers::PI) / (2 * dealii::numbers::PI / n_cells_1D);
 
         local_cells.push_back(norm_point_to_lex(c));
       }
 
-    int n_local_cells = local_cells.size();
-    int global_offset = 0;
+    types::global_dof_index n_local_cells = local_cells.size();
+    types::global_dof_index global_offset = 0;
 
-    MPI_Exscan(&n_local_cells, &global_offset, 1, MPI_INT, MPI_SUM, comm);
+    MPI_Exscan(&n_local_cells,
+               &global_offset,
+               1,
+               Utilities::MPI::internal::mpi_type_id(&global_offset),
+               MPI_SUM,
+               comm);
 
     // ... interpolation
     timer.start("Init-Ipol");
@@ -106,14 +116,16 @@ public:
     fftw.init();
     timer.stop("Init-FFTW");
 
-    int start;
-    int end;
-    fftw.getLocalRange(start, end);
+    int start_;
+    int end_;
+    fftw.getLocalRange(start_, end_);
+    const types::global_dof_index start = start_;
+    const types::global_dof_index end   = end_;
 
     std::vector<types::global_dof_index> indices_has, indices_want;
 
     for(const auto & I : local_cells)
-      for(unsigned int i = 0; i < Utilities::pow(points_dst, dim); i++)
+      for(types::global_dof_index i = 0; i < Utilities::pow(points_dst, dim); i++)
         for(types::global_dof_index d = 0; d < dim; d++)
         {
           types::global_dof_index index =
@@ -123,14 +135,13 @@ public:
               Utilities::pow(n_cells_1D * points_dst, 1) +
             (I % (n_cells_1D)*points_dst + i % (points_dst));
 
-
-          // std::cout << index << std::endl;
           indices_has.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + index);
         }
 
     for(types::global_dof_index d = 0; d < dim; d++)
-      for(int j = start; j < end; j++)
-        for(unsigned int i = 0; i < Utilities::pow(points_dst * n_cells_1D, dim - 1); i++)
+      for(types::global_dof_index j = start; j < end; j++)
+        for(types::global_dof_index i = 0; i < Utilities::pow(points_dst * n_cells_1D, dim - 1);
+            i++)
           indices_want.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) +
                                  j * Utilities::pow(points_dst * n_cells_1D, dim - 1) + i);
 
@@ -181,9 +192,12 @@ public:
       types::global_dof_index N  = s.cells * s.points_dst;
       types::global_dof_index Nx = (N / 2 + 1) * 2;
 
-      int start;
-      int end;
-      fftw.getLocalRange(start, end);
+      // ... introduce padding
+      int start_;
+      int end_;
+      fftw.getLocalRange(start_, end_);
+      types::global_dof_index start = start_;
+      types::global_dof_index end   = end_;
 
       for(int k = (end - start) * s.dim - 1; k >= 0; k--)
         for(int j = N - 1; j >= 0; j--)
