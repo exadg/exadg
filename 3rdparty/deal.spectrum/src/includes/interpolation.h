@@ -75,10 +75,18 @@ public:
     delete[] dst;
   }
 
-
   template<typename MAPPING>
   void
   init(MAPPING & MAP)
+  {
+    int start, end;
+    MAP.getLocalRange(start, end);
+    
+    init(start, end);
+  }
+
+  void
+  init(int start, int end)
   {
     // check if already initialized
     if(this->initialized)
@@ -86,7 +94,8 @@ public:
     this->initialized = true;
 
     // get cell range...
-    MAP.getLocalRange(start, end);
+    this->start = start;
+    this->end   = end;
     // ...number of local cells
     cells = end - start;
 
