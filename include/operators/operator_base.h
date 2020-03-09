@@ -78,9 +78,6 @@ public:
 
   typedef std::vector<LAPACKFullMatrix<Number>> BlockMatrix;
 
-  typedef typename GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>
-    PeriodicFacePairIterator;
-
 #ifdef DEAL_II_WITH_TRILINOS
   typedef FullMatrix<TrilinosScalar>     FullMatrix_;
   typedef TrilinosWrappers::SparseMatrix SparseMatrix;
@@ -566,23 +563,6 @@ private:
    */
   void
   set_constraint_diagonal(VectorType & diagonal) const;
-
-  /*
-   *  Verify that each boundary face is assigned exactly one boundary type.
-   */
-  void
-  verify_boundary_conditions(
-    DoFHandler<dim> const &                 dof_handler,
-    std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const;
-
-  /*
-   *  Since the type of boundary conditions depends on the operator, this function has
-   *  to be implemented by derived classes and can not be implemented in the abstract base class.
-   */
-  virtual void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                AdditionalData const &               operator_data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
 
   /*
    * Do we have to evaluate (boundary) face integrals for this operator? For example, operators

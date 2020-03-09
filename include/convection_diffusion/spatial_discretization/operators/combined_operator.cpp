@@ -6,7 +6,7 @@
  */
 
 #include "combined_operator.h"
-#include "verify_boundary_conditions.h"
+
 #include "weak_boundary_conditions.h"
 
 namespace ConvDiff
@@ -492,16 +492,6 @@ Operator<dim, Number>::do_boundary_integral(IntegratorFace &           integrato
       integrator_m.submit_normal_derivative(gradient_flux, q);
     }
   }
-}
-
-template<int dim, typename Number>
-void
-Operator<dim, Number>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  OperatorData<dim> const &            data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
-{
-  do_verify_boundary_conditions(boundary_id, data, periodic_boundary_ids);
 }
 
 template class Operator<2, float>;

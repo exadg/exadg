@@ -16,47 +16,48 @@
 // CONVECTION-DIFFUSION
 
 // postprocessor
-#include "convection_diffusion/postprocessor/postprocessor_base.h"
+#include "../include/convection_diffusion/postprocessor/postprocessor_base.h"
 
 // spatial discretization
-#include "convection_diffusion/spatial_discretization/dg_operator.h"
+#include "../include/convection_diffusion/spatial_discretization/dg_operator.h"
 
 // time integration
-#include "convection_diffusion/time_integration/time_int_bdf.h"
-#include "convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
+#include "../include/convection_diffusion/time_integration/time_int_bdf.h"
+#include "../include/convection_diffusion/time_integration/time_int_explicit_runge_kutta.h"
 
 // user interface, etc.
-#include "convection_diffusion/user_interface/boundary_descriptor.h"
-#include "convection_diffusion/user_interface/field_functions.h"
-#include "convection_diffusion/user_interface/input_parameters.h"
+#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
+#include "../include/convection_diffusion/user_interface/field_functions.h"
+#include "../include/convection_diffusion/user_interface/input_parameters.h"
 
 // NAVIER-STOKES
 
 // postprocessor
-#include "incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 
 // spatial discretization
-#include "incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
-#include "incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
-#include "incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
-#include "incompressible_navier_stokes/spatial_discretization/interface.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
+#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
 
 // temporal discretization
-#include "incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
-#include "incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
-#include "incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
-#include "incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
+#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
 
 // Parameters, BCs, etc.
-#include "incompressible_navier_stokes/user_interface/boundary_descriptor.h"
-#include "incompressible_navier_stokes/user_interface/field_functions.h"
-#include "incompressible_navier_stokes/user_interface/input_parameters.h"
+#include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
+#include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
+#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
 
 // general functionalities
-#include "functionalities/mapping_degree.h"
-#include "functionalities/matrix_free_wrapper.h"
-#include "functionalities/print_functions.h"
-#include "functionalities/print_general_infos.h"
+#include "../include/functionalities/mapping_degree.h"
+#include "../include/functionalities/matrix_free_wrapper.h"
+#include "../include/functionalities/print_functions.h"
+#include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/verify_boundary_conditions.h"
 
 using namespace dealii;
 
@@ -194,8 +195,8 @@ private:
 
   std::vector<ConvDiff::InputParameters> scalar_param;
 
-  std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>     scalar_field_functions;
-  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<0,dim>>> scalar_boundary_descriptor;
+  std::vector<std::shared_ptr<ConvDiff::FieldFunctions<dim>>>        scalar_field_functions;
+  std::vector<std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>>> scalar_boundary_descriptor;
 
   std::vector<std::shared_ptr<ConvDiff::DGOperator<dim, Number>>> conv_diff_operator;
 
@@ -345,6 +346,8 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
 
   IncNS::set_boundary_conditions(fluid_boundary_descriptor_velocity,
                                  fluid_boundary_descriptor_pressure);
+  verify_boundary_conditions(*fluid_boundary_descriptor_velocity, *triangulation, periodic_faces);
+  verify_boundary_conditions(*fluid_boundary_descriptor_pressure, *triangulation, periodic_faces);
 
   // field functions
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
@@ -353,9 +356,10 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &                 fluid
   for(unsigned int i = 0; i < n_scalars; ++i)
   {
     // boundary conditions
-    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<0,dim>());
+    scalar_boundary_descriptor[i].reset(new ConvDiff::BoundaryDescriptor<0, dim>());
 
     ConvDiff::set_boundary_conditions(scalar_boundary_descriptor[i], i);
+    verify_boundary_conditions(*scalar_boundary_descriptor[i], *triangulation, periodic_faces);
 
     // field functions
     scalar_field_functions[i].reset(new ConvDiff::FieldFunctions<dim>());

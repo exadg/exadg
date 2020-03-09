@@ -236,11 +236,6 @@ private:
                        OperatorType const &       operator_type,
                        types::boundary_id const & boundary_id) const;
 
-  void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                DiffusiveOperatorData<dim> const &   operator_data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
-
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>> kernel;
 };
 } // namespace ConvDiff

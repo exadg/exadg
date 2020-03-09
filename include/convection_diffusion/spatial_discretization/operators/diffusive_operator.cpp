@@ -1,6 +1,5 @@
 #include "diffusive_operator.h"
 
-#include "verify_boundary_conditions.h"
 #include "weak_boundary_conditions.h"
 
 namespace ConvDiff
@@ -204,16 +203,6 @@ DiffusiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &           
     integrator_m.submit_normal_derivative(gradient_flux, q);
     integrator_m.submit_value(-value_flux, q);
   }
-}
-
-template<int dim, typename Number>
-void
-DiffusiveOperator<dim, Number>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  DiffusiveOperatorData<dim> const &   data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
-{
-  do_verify_boundary_conditions(boundary_id, data, periodic_boundary_ids);
 }
 
 template class DiffusiveOperator<2, float>;

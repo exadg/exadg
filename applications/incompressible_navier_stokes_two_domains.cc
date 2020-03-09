@@ -37,6 +37,7 @@
 #include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/verify_boundary_conditions.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -313,13 +314,16 @@ Problem<dim, Number>::setup(InputParameters const & param_1_in, InputParameters 
   boundary_descriptor_velocity_1.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure_1.reset(new BoundaryDescriptorP<dim>());
 
-  IncNS::set_boundary_conditions_1(boundary_descriptor_velocity_1, boundary_descriptor_pressure_1);
+  set_boundary_conditions_1(boundary_descriptor_velocity_1, boundary_descriptor_pressure_1);
+  verify_boundary_conditions(*boundary_descriptor_velocity_1, *triangulation_1, periodic_faces_1);
+  verify_boundary_conditions(*boundary_descriptor_pressure_1, *triangulation_1, periodic_faces_1);
 
   boundary_descriptor_velocity_2.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure_2.reset(new BoundaryDescriptorP<dim>());
 
-  IncNS::set_boundary_conditions_2(boundary_descriptor_velocity_2, boundary_descriptor_pressure_2);
-
+  set_boundary_conditions_2(boundary_descriptor_velocity_2, boundary_descriptor_pressure_2);
+  verify_boundary_conditions(*boundary_descriptor_velocity_2, *triangulation_2, periodic_faces_2);
+  verify_boundary_conditions(*boundary_descriptor_pressure_2, *triangulation_2, periodic_faces_2);
 
   field_functions_1.reset(new FieldFunctions<dim>());
   field_functions_2.reset(new FieldFunctions<dim>());

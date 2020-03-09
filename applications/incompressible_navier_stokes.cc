@@ -39,6 +39,7 @@
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/moving_mesh.h"
 #include "../include/functionalities/print_general_infos.h"
+#include "../include/functionalities/verify_boundary_conditions.h"
 
 using namespace dealii;
 using namespace IncNS;
@@ -256,7 +257,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
   boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
 
-  IncNS::set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
+  set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
+  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
 
   // field functions and boundary conditions
   field_functions.reset(new FieldFunctions<dim>());

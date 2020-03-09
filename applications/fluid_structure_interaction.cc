@@ -45,11 +45,12 @@
 #include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
 
 // general functionalities
+#include "../include/functionalities/interface_coupling.h"
 #include "../include/functionalities/mapping_degree.h"
 #include "../include/functionalities/matrix_free_wrapper.h"
 #include "../include/functionalities/moving_mesh.h"
 #include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/interface_coupling.h"
+#include "../include/functionalities/verify_boundary_conditions.h"
 
 using namespace dealii;
 // using namespace IncNS;
@@ -109,8 +110,8 @@ private:
   // solve mesh deformation by a Poisson problem
   Poisson::InputParameters poisson_param;
 
-  std::shared_ptr<Poisson::FieldFunctions<dim>>      poisson_field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<1,dim>> poisson_boundary_descriptor;
+  std::shared_ptr<Poisson::FieldFunctions<dim>>         poisson_field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<1, dim>> poisson_boundary_descriptor;
 
   // static mesh for Poisson problem
   std::shared_ptr<Mesh<dim>> poisson_mesh;
@@ -265,13 +266,22 @@ Problem<dim, Number>::setup(IncNS::InputParameters const &   fluid_param_in,
   fluid_boundary_descriptor_pressure.reset(new IncNS::BoundaryDescriptorP<dim>());
   IncNS::set_boundary_conditions(fluid_boundary_descriptor_velocity,
                                  fluid_boundary_descriptor_pressure);
+  verify_boundary_conditions(*fluid_boundary_descriptor_velocity,
+                             *fluid_triangulation,
+                             fluid_periodic_faces);
+  verify_boundary_conditions(*fluid_boundary_descriptor_pressure,
+                             *fluid_triangulation,
+                             fluid_periodic_faces);
 
   fluid_field_functions.reset(new IncNS::FieldFunctions<dim>());
   IncNS::set_field_functions(fluid_field_functions);
 
   // poisson
-  poisson_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<1,dim>());
+  poisson_boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<1, dim>());
   Poisson::set_boundary_conditions(poisson_boundary_descriptor);
+  verify_boundary_conditions(*poisson_boundary_descriptor,
+                             *fluid_triangulation,
+                             fluid_periodic_faces);
 
   poisson_field_functions.reset(new Poisson::FieldFunctions<dim>());
   Poisson::set_field_functions(poisson_field_functions);
@@ -472,7 +482,7 @@ Problem<dim, Number>::solve() const
 
       ale_update_time += timer.wall_time();
 
-      //structure_to_fluid->update_data(vec_velocity);
+      // structure_to_fluid->update_data(vec_velocity);
       fluid_time_integrator->advance_one_timestep_solve();
 
       // TODO update stress boundary condition for solid

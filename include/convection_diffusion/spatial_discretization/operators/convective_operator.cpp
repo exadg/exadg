@@ -1,6 +1,5 @@
 #include "convective_operator.h"
 
-#include "verify_boundary_conditions.h"
 #include "weak_boundary_conditions.h"
 
 namespace ConvDiff
@@ -245,16 +244,6 @@ ConvectiveOperator<dim, Number>::do_boundary_integral(IntegratorFace &          
 
     integrator_m.submit_value(flux, q);
   }
-}
-
-template<int dim, typename Number>
-void
-ConvectiveOperator<dim, Number>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  ConvectiveOperatorData<dim> const &  data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
-{
-  do_verify_boundary_conditions(boundary_id, data, periodic_boundary_ids);
 }
 
 template class ConvectiveOperator<2, float>;

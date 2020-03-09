@@ -366,29 +366,6 @@ LaplaceOperator<dim, Number, n_components>::
   }
 }
 
-template<int dim, typename Number, int n_components>
-void
-LaplaceOperator<dim, Number, n_components>::do_verify_boundary_conditions(
-  types::boundary_id const               boundary_id,
-  LaplaceOperatorData<rank, dim> const & data,
-  std::set<types::boundary_id> const &   periodic_boundary_ids) const
-{
-  unsigned int counter = 0;
-  if(data.bc->dirichlet_bc.find(boundary_id) != data.bc->dirichlet_bc.end())
-    counter++;
-
-  if(data.bc->dirichlet_mortar_bc.find(boundary_id) != data.bc->dirichlet_mortar_bc.end())
-    counter++;
-
-  if(data.bc->neumann_bc.find(boundary_id) != data.bc->neumann_bc.end())
-    counter++;
-
-  if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())
-    counter++;
-
-  AssertThrow(counter == 1, ExcMessage("Boundary face with non-unique boundary type found."));
-}
-
 template class LaplaceOperator<2, float, 1>;
 template class LaplaceOperator<2, double, 1>;
 template class LaplaceOperator<2, float, 2>;

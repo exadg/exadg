@@ -1,6 +1,5 @@
 #include "operator.h"
 
-#include "../../functionalities/calculate_maximum_aspect_ratio.h"
 #include "../../solvers_and_preconditioners/util/check_multigrid.h"
 
 namespace Poisson

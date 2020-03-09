@@ -123,11 +123,6 @@ private:
   do_face_int_integral_cell_based(IntegratorFace & integrator_m,
                                   IntegratorFace & integrator_p) const;
 
-  void
-  do_verify_boundary_conditions(types::boundary_id const             boundary_id,
-                                OperatorData<dim> const &            data,
-                                std::set<types::boundary_id> const & periodic_boundary_ids) const;
-
   std::shared_ptr<MassMatrixKernel<dim, Number>>            mass_kernel;
   std::shared_ptr<Operators::ConvectiveKernel<dim, Number>> convective_kernel;
   std::shared_ptr<Operators::DiffusiveKernel<dim, Number>>  diffusive_kernel;

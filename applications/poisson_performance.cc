@@ -31,6 +31,7 @@
 #include "../include/functionalities/print_functions.h"
 #include "../include/functionalities/print_general_infos.h"
 #include "../include/functionalities/print_throughput.h"
+#include "../include/functionalities/verify_boundary_conditions.h"
 
 // specify the test case that has to be solved
 #include "poisson_test_cases/periodic_box.h"
@@ -121,8 +122,8 @@ private:
 
   InputParameters param;
 
-  std::shared_ptr<FieldFunctions<dim>>               field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<0,dim>> boundary_descriptor;
+  std::shared_ptr<FieldFunctions<dim>>                  field_functions;
+  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor;
 
   /*
    * MatrixFree
@@ -203,8 +204,9 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
 
   print_grid_data(pcout, param.h_refinements, *triangulation);
 
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<0,dim>());
+  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<0, dim>());
   set_boundary_conditions(boundary_descriptor);
+  verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
 
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);

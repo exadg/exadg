@@ -38,14 +38,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::reinit(
   this->constraint.reset(constraint_matrix);
   this->data = operator_data;
 
-  // TODO: do it somewhere else where we have access to periodic_face_pairs
-  //  // verify boundary conditions
-  //  if(this->data.evaluate_face_integrals)
-  //  {
-  //    this->verify_boundary_conditions(this->matrix_free->get_dof_handler(this->data.dof_index),
-  //                                     this->data);
-  //  }
-
   // check if DG or CG
   // An approximation can have degrees of freedom on vertices, edges, quads and
   // hexes. A vertex degree of freedom means that the degree of freedom is
@@ -1945,60 +1937,6 @@ OperatorBase<dim, Number, AdditionalData, n_components>::set_constraint_diagonal
   // set (diagonal) entries to 1.0 for constrained dofs
   for(auto i : matrix_free->get_constrained_dofs())
     diagonal.local_element(i) = 1.0;
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::verify_boundary_conditions(
-  DoFHandler<dim> const &                 dof_handler,
-  std::vector<PeriodicFacePairIterator> & periodic_face_pairs_level0) const
-{
-  // fill set with periodic boundary ids
-  std::set<types::boundary_id> periodic_boundary_ids;
-  for(unsigned int i = 0; i < data.periodic_face_pairs_level0.size(); ++i)
-  {
-    AssertThrow(data.periodic_face_pairs_level0[i].cell[0]->h_level() == 0,
-                ExcMessage("Received periodic cell pairs on non-zero level"));
-    periodic_boundary_ids.insert(data.periodic_face_pairs_level0[i]
-                                   .cell[0]
-                                   ->face(data.periodic_face_pairs_level0[i].face_idx[0])
-                                   ->boundary_id());
-    periodic_boundary_ids.insert(data.periodic_face_pairs_level0[i]
-                                   .cell[1]
-                                   ->face(data.periodic_face_pairs_level0[i].face_idx[1])
-                                   ->boundary_id());
-  }
-
-  // Make sure that each boundary face has exactly one boundary type
-  Triangulation<dim> const & tria = dof_handler.get_triangulation();
-  for(typename Triangulation<dim>::cell_iterator cell = tria.begin(); cell != tria.end(); ++cell)
-  {
-    for(unsigned int f = 0; f < GeometryInfo<dim>::faces_per_cell; ++f)
-    {
-      if(cell->at_boundary(f))
-      {
-        types::boundary_id bid = cell->face(f)->boundary_id();
-        do_verify_boundary_conditions(bid, data, periodic_boundary_ids);
-      }
-    }
-  }
-}
-
-template<int dim, typename Number, typename AdditionalData, int n_components>
-void
-OperatorBase<dim, Number, AdditionalData, n_components>::do_verify_boundary_conditions(
-  types::boundary_id const             boundary_id,
-  AdditionalData const &               data,
-  std::set<types::boundary_id> const & periodic_boundary_ids) const
-{
-  (void)boundary_id;
-  (void)data;
-  (void)periodic_boundary_ids;
-
-  AssertThrow(
-    false,
-    ExcMessage(
-      "OperatorBase::do_verify_boundary_conditions() has to be implemented by derived classes."));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>

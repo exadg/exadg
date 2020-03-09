@@ -35,6 +35,7 @@
 #include "../include/functionalities/mesh_resolution_generator_hypercube.h"
 #include "../include/functionalities/print_general_infos.h"
 #include "../include/functionalities/print_throughput.h"
+#include "../include/functionalities/verify_boundary_conditions.h"
 
 #ifdef LIKWID_PERFMON
 #  include <likwid.h>
@@ -248,10 +249,15 @@ Problem<dim, Number>::setup(InputParameters const & param_in)
   boundary_descriptor_pressure.reset(new BoundaryDescriptor<dim>());
   boundary_descriptor_energy.reset(new BoundaryDescriptorEnergy<dim>());
 
-  CompNS::set_boundary_conditions(boundary_descriptor_density,
-                                  boundary_descriptor_velocity,
-                                  boundary_descriptor_pressure,
-                                  boundary_descriptor_energy);
+  set_boundary_conditions(boundary_descriptor_density,
+                          boundary_descriptor_velocity,
+                          boundary_descriptor_pressure,
+                          boundary_descriptor_energy);
+
+  verify_boundary_conditions(*boundary_descriptor_density, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
+  verify_boundary_conditions(*boundary_descriptor_energy, *triangulation, periodic_faces);
 
   field_functions.reset(new FieldFunctions<dim>());
   set_field_functions(field_functions);

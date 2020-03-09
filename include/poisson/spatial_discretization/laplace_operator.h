@@ -281,11 +281,6 @@ private:
                                                     OperatorType const &       operator_type,
                                                     types::boundary_id const & boundary_id) const;
 
-  void
-  do_verify_boundary_conditions(types::boundary_id const               boundary_id,
-                                LaplaceOperatorData<rank, dim> const & data,
-                                std::set<types::boundary_id> const &   periodic_boundary_ids) const;
-
   Operators::LaplaceKernel<dim, Number, n_components> kernel;
 };
 
