@@ -772,19 +772,21 @@ Problem<dim, Number>::solve() const
     /*
      * ALE
      */
-
-    // move the mesh and update dependent data structures
-    moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
-    matrix_free_wrapper->update_geometry();
-    navier_stokes_operator->update_after_mesh_movement();
-    for(unsigned int i = 0; i < n_scalars; ++i)
-      conv_diff_operator[i]->update_after_mesh_movement();
-    fluid_time_integrator->ale_update();
-    for(unsigned int i = 0; i < n_scalars; ++i)
+    if(fluid_param.ale_formulation) // moving mesh
     {
-      std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_bdf =
-        std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
-      time_int_bdf->ale_update();
+      // move the mesh and update dependent data structures
+      moving_mesh->move_mesh(fluid_time_integrator->get_next_time());
+      matrix_free_wrapper->update_geometry();
+      navier_stokes_operator->update_after_mesh_movement();
+      for(unsigned int i = 0; i < n_scalars; ++i)
+        conv_diff_operator[i]->update_after_mesh_movement();
+      fluid_time_integrator->ale_update();
+      for(unsigned int i = 0; i < n_scalars; ++i)
+      {
+        std::shared_ptr<ConvDiff::TimeIntBDF<dim, Number>> time_int_bdf =
+          std::dynamic_pointer_cast<ConvDiff::TimeIntBDF<dim, Number>>(scalar_time_integrator[i]);
+        time_int_bdf->ale_update();
+      }
     }
 
     /*
