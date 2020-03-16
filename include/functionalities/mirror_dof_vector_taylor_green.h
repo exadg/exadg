@@ -107,10 +107,10 @@ apply_taylor_green_symmetry(const DoFHandler<dim> &                            d
     std::vector<unsigned int> owning_ranks_of_ghosts(range_want_lex.n_elements());
 
     // set up dictionary
-    Utilities::MPI::internal::ComputeIndexOwner::ConsensusAlgorithmPayload process(
+    Utilities::MPI::internal::ComputeIndexOwner::ConsensusAlgorithmsPayload process(
       range_has_lex, range_want_lex, comm, owning_ranks_of_ghosts, true);
 
-    Utilities::MPI::ConsensusAlgorithmSelector<
+    Utilities::MPI::ConsensusAlgorithms::Selector<
       std::pair<types::global_dof_index, types::global_dof_index>,
       unsigned int>
       consensus_algorithm(process, comm);
