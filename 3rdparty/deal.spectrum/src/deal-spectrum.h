@@ -70,7 +70,7 @@ public:
   {
     // init setup ...
     s.init(dim, n_cells_1D, points_src, points_dst);
-
+    
     std::vector<types::global_dof_index> local_cells;
 
     auto norm_point_to_lex = [&](const auto c) {
@@ -199,10 +199,28 @@ public:
       types::global_dof_index start = start_;
       types::global_dof_index end   = end_;
 
-      for(int k = (end - start) * s.dim - 1; k >= 0; k--)
-        for(int j = N - 1; j >= 0; j--)
-          for(int i = N - 1; i >= 0; i--)
-            dst[N * Nx * k + Nx * j + i] = dst[N * N * k + N * j + i];
+      // NEW *******************************************************************
+
+      for(int d = s.dim - 1; d >= 0; d--)
+        for(int k = (end - start) - 1; k >= 0; k--)
+          for(int j = N - 1; j >= 0; j--)
+             for(int i = N - 1; i >= 0; i--)
+               dst[fftw.bsize* d + N * Nx * k + Nx * j + i] = dst[N*N*(end - start)*d + N * N * k + N * j + i];
+      
+      for(types::global_dof_index d = 0; d < s.dim; d++)
+      {
+        types::global_dof_index c = 0;
+        for(types::global_dof_index k = 0; k < (end - start); k++)
+          for(types::global_dof_index j = 0; j < N; j++)
+            for(types::global_dof_index i = 0; i < Nx; i++, c++)
+              if(N <= i )
+                dst[c+ fftw.bsize * d] = 0;
+          
+        for(; c < fftw.bsize ; c++)
+            dst[c+ fftw.bsize * d] = 0;
+      }
+          
+      // NEW *******************************************************************
 
       timer.append("Permutation");
 
@@ -252,10 +270,10 @@ private:
 
   // struct containing the setup
   Setup s;
-
+  
   // ... for interpolation
   Interpolator ipol;
-
+  
   // ... for spectral analysis
   SpectralAnalysis fftw;
 
