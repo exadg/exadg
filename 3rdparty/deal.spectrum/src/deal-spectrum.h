@@ -70,7 +70,7 @@ public:
   {
     // init setup ...
     s.init(dim, n_cells_1D, points_src, points_dst);
-
+    
     std::vector<types::global_dof_index> local_cells;
     for(const auto & cell : tria.active_cell_iterators())
       if(cell->is_active() && cell->is_locally_owned())
@@ -128,12 +128,23 @@ public:
           indices_has.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + index);
         }
 
-    for(types::global_dof_index d = 0; d < dim; d++)
-      for(types::global_dof_index j = start; j < end; j++)
-        for(types::global_dof_index i = 0; i < Utilities::pow(points_dst * n_cells_1D, dim - 1);
-            i++)
-          indices_want.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) +
-                                 j * Utilities::pow(points_dst * n_cells_1D, dim - 1) + i);
+    types::global_dof_index N  = s.cells * s.points_dst;
+    types::global_dof_index Nx = (N / 2 + 1) * 2;
+    
+    for(types::global_dof_index d = 0; d < static_cast<types::global_dof_index>(s.dim); d++)
+    {
+      types::global_dof_index c = 0;
+      for(types::global_dof_index k = 0; k < (end - start); k++)
+        for(types::global_dof_index j = 0; j < N; j++)
+          for(types::global_dof_index i = 0; i < Nx; i++, c++)
+            if(i < N )
+              indices_want.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + (k+start) * Utilities::pow(points_dst * n_cells_1D, 2) + j * Utilities::pow(points_dst * n_cells_1D, 1) + i);
+            else
+              indices_want.push_back(numbers::invalid_dof_index); // x-padding
+        
+      for(; c < static_cast<types::global_dof_index>(fftw.bsize) ; c++)
+        indices_want.push_back(numbers::invalid_dof_index); // z-padding
+    }
 
     nonconti = std::make_shared<Utilities::MPI::NoncontiguousPartitioner<double>>(indices_has,
                                                                                   indices_want,
@@ -178,21 +189,6 @@ public:
                                                       s.cells * s.points_dst),
                                                     s.dim));
       nonconti->update_values(dst, src_);
-
-      types::global_dof_index N  = s.cells * s.points_dst;
-      types::global_dof_index Nx = (N / 2 + 1) * 2;
-
-      // ... introduce padding
-      int start_;
-      int end_;
-      fftw.getLocalRange(start_, end_);
-      types::global_dof_index start = start_;
-      types::global_dof_index end   = end_;
-
-      for(int k = (end - start) * s.dim - 1; k >= 0; k--)
-        for(int j = N - 1; j >= 0; j--)
-          for(int i = N - 1; i >= 0; i--)
-            dst[N * Nx * k + Nx * j + i] = dst[N * N * k + N * j + i];
 
       timer.append("Permutation");
 
@@ -257,10 +253,10 @@ private:
 
   // struct containing the setup
   Setup s;
-
+  
   // ... for interpolation
   Interpolator ipol;
-
+  
   // ... for spectral analysis
   SpectralAnalysis fftw;
 
