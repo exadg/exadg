@@ -1,0 +1,17 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "DegreeMin": "5",
+        "DegreeMax": "5",
+        "RefineSpaceMin": "4",
+        "RefineSpaceMax": "4",
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+       	"Name": "DecayingHill",
+	"OutputDirectory": "output_conv_diff/decaying_hill/vtu/",
+	"OutputName": "test"
+    }
+}

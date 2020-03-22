@@ -79,6 +79,7 @@ SET( TARGET_SRC
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
      include/convection_diffusion/postprocessor/postprocessor.cpp
      include/convection_diffusion/postprocessor/output_generator.cpp
+     include/convection_diffusion/driver.cpp
      # incompressible Navier-Stokes equations
      include/incompressible_navier_stokes/user_interface/input_parameters.cpp
      include/incompressible_navier_stokes/user_interface/enum_types.cpp
