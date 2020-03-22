@@ -10,7 +10,7 @@
 namespace Structure
 {
 template<int dim, typename Number>
-Driver<dim, Number>::Driver(MPI_Comm comm)
+Driver<dim, Number>::Driver(MPI_Comm const & comm)
   : mpi_comm(comm),
     pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
     overall_time(0.0),

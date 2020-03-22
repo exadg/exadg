@@ -119,7 +119,6 @@ void set_input_parameters(InputParameters & param)
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
-  param.solver_info_data.print_to_screen = true;
   param.solver_info_data.interval_time = (param.end_time-param.start_time)/20;
 
   // restart

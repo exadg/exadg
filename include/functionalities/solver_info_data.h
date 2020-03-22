@@ -17,8 +17,7 @@
 struct SolverInfoData
 {
   SolverInfoData()
-    : print_to_screen(true),
-      interval_time(std::numeric_limits<double>::max()),
+    : interval_time(std::numeric_limits<double>::max()),
       interval_wall_time(std::numeric_limits<double>::max()),
       interval_time_steps(std::numeric_limits<unsigned int>::max()),
       counter(0),
@@ -31,14 +30,9 @@ struct SolverInfoData
   print(ConditionalOStream & pcout)
   {
     pcout << "  Solver information:" << std::endl;
-    print_parameter(pcout, "Print to screen", print_to_screen);
-
-    if(print_to_screen)
-    {
-      print_parameter(pcout, "Interval physical time", interval_time);
-      print_parameter(pcout, "Interval wall time", interval_wall_time);
-      print_parameter(pcout, "Interval time steps", interval_time_steps);
-    }
+    print_parameter(pcout, "Interval physical time", interval_time);
+    print_parameter(pcout, "Interval wall time", interval_wall_time);
+    print_parameter(pcout, "Interval time steps", interval_time_steps);
   }
 
   bool
@@ -57,7 +51,7 @@ struct SolverInfoData
 
     do_output_in_this_time_step = wall_time > interval_wall_time * counter ||
                                   time > interval_time * counter ||
-                                  time_step_number%interval_time_steps == 0;
+                                  time_step_number % interval_time_steps == 0;
 
     if(do_output_in_this_time_step)
     {
@@ -80,9 +74,6 @@ struct SolverInfoData
       return do_output_in_this_time_step;
     }
   }
-
-  // print info to screen
-  bool print_to_screen;
 
   // physical time
   double interval_time;

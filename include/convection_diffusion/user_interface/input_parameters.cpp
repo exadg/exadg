@@ -407,12 +407,17 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
   print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
-  print_parameter(pcout, "Analytical velocity field", analytical_velocity_field);
-  print_parameter(pcout, "ALE formulation", ale_formulation);
   print_parameter(pcout, "Right-hand side", right_hand_side);
-  print_parameter(pcout,
-                  "Formulation convective term",
-                  enum_to_string(formulation_convective_term));
+
+  if(equation_type == EquationType::Convection ||
+     equation_type == EquationType::ConvectionDiffusion)
+  {
+    print_parameter(pcout, "Analytical velocity field", analytical_velocity_field);
+    print_parameter(pcout, "ALE formulation", ale_formulation);
+    print_parameter(pcout,
+                    "Formulation convective term",
+                    enum_to_string(formulation_convective_term));
+  }
 }
 
 void

@@ -2,7 +2,6 @@
 // deal.II
 #include <deal.II/base/exceptions.h>
 #include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/revision.h>
 
 // elasticity solver
 #include "../include/structure/driver.h"
@@ -15,7 +14,7 @@ class ApplicationSelector
 public:
   template<int dim, typename Number>
   void
-  add_parameters(ParameterHandler & prm, std::string name_of_application = "")
+  add_parameters(dealii::ParameterHandler & prm, std::string name_of_application = "")
   {
     // application is unknown -> only add name of application to parameters
     if(name_of_application.length() == 0)
@@ -45,7 +44,7 @@ public:
   std::shared_ptr<Structure::ApplicationBase<dim, Number>>
   get_application(std::string input_file)
   {
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_name_parameter(prm);
     parse_input(input_file, prm);
 
@@ -74,28 +73,6 @@ private:
   std::string name = "MyApp";
 };
 
-template<int dim, typename Number>
-void
-run(std::string const & input_file,
-    unsigned int const  degree,
-    unsigned int const  refine_space,
-    MPI_Comm const &    mpi_comm)
-{
-  std::shared_ptr<Structure::Driver<dim, Number>> solver;
-  solver.reset(new Structure::Driver<dim, Number>(mpi_comm));
-
-  ApplicationSelector selector;
-
-  std::shared_ptr<Structure::ApplicationBase<dim, Number>> application =
-    selector.get_application<dim, Number>(input_file);
-
-  solver->setup(application, degree, refine_space);
-
-  solver->solve();
-
-  solver->analyze_computing_times();
-}
-
 struct ConvergenceStudy
 {
   ConvergenceStudy()
@@ -104,7 +81,7 @@ struct ConvergenceStudy
 
   ConvergenceStudy(const std::string & input_file)
   {
-    ParameterHandler prm;
+    dealii::ParameterHandler prm;
     this->add_parameters(prm);
 
     parse_input(input_file, prm);
@@ -155,7 +132,27 @@ create_input_file(std::string const & name_of_application = "")
   prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::JSON, false);
 }
 
-using Number = double;
+template<int dim, typename Number>
+void
+run(std::string const & input_file,
+    unsigned int const  degree,
+    unsigned int const  refine_space,
+    MPI_Comm const &    mpi_comm)
+{
+  std::shared_ptr<Structure::Driver<dim, Number>> solver;
+  solver.reset(new Structure::Driver<dim, Number>(mpi_comm));
+
+  ApplicationSelector selector;
+
+  std::shared_ptr<Structure::ApplicationBase<dim, Number>> application =
+    selector.get_application<dim, Number>(input_file);
+
+  solver->setup(application, degree, refine_space);
+
+  solver->solve();
+
+  solver->analyze_computing_times();
+}
 
 int
 main(int argc, char ** argv)

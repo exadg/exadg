@@ -420,14 +420,17 @@ DGOperator<dim, Number>::initialize_preconditioner()
     if(param.mg_operator_type == MultigridOperatorType::ReactionConvection ||
        param.mg_operator_type == MultigridOperatorType::ReactionConvectionDiffusion)
     {
-      unsigned int const degree_scalar = fe.degree;
-      unsigned int const degree_velocity =
-        matrix_free_wrapper->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
-      AssertThrow(
-        degree_scalar == degree_velocity,
-        ExcMessage(
-          "When using a multigrid preconditioner for the scalar convection-diffusion equation, "
-          "the scalar field and the velocity field must have the same polynomial degree."));
+      if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+      {
+        unsigned int const degree_scalar = fe.degree;
+        unsigned int const degree_velocity =
+          matrix_free_wrapper->get_dof_handler(get_dof_name_velocity()).get_fe().degree;
+        AssertThrow(
+          degree_scalar == degree_velocity,
+          ExcMessage(
+            "When using a multigrid preconditioner for the scalar convection-diffusion equation, "
+            "the scalar field and the velocity field must have the same polynomial degree."));
+      }
     }
 
     OperatorData<dim> const & data = combined_operator.get_data();

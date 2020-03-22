@@ -35,7 +35,7 @@ template<int dim, typename Number>
 class Driver
 {
 public:
-  Driver(MPI_Comm comm);
+  Driver(MPI_Comm const & comm);
 
   void
   setup(std::shared_ptr<ApplicationBase<dim, Number>> application,
