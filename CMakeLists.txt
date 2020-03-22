@@ -59,11 +59,13 @@ SET( TARGET_SRC
      include/postprocessor/kinetic_energy_spectrum.cpp
      include/postprocessor/kinetic_energy_calculation.cpp
      include/postprocessor/statistics_manager.cpp
-     include/operators/mass_matrix_operator.cpp 
+     include/operators/mass_matrix_operator.cpp
+     # Poisson equation
      include/poisson/user_interface/enum_types.cpp
      include/poisson/user_interface/input_parameters.cpp
      include/poisson/spatial_discretization/operator.cpp
-     include/poisson/spatial_discretization/laplace_operator.cpp     
+     include/poisson/spatial_discretization/laplace_operator.cpp
+     # convection-diffusion equation
      include/convection_diffusion/user_interface/enum_types.cpp
      include/convection_diffusion/user_interface/input_parameters.cpp
      include/convection_diffusion/spatial_discretization/operators/convective_operator.cpp
@@ -77,6 +79,7 @@ SET( TARGET_SRC
      include/convection_diffusion/time_integration/driver_steady_problems.cpp
      include/convection_diffusion/postprocessor/postprocessor.cpp
      include/convection_diffusion/postprocessor/output_generator.cpp
+     # incompressible Navier-Stokes equations
      include/incompressible_navier_stokes/user_interface/input_parameters.cpp
      include/incompressible_navier_stokes/user_interface/enum_types.cpp
      include/incompressible_navier_stokes/spatial_discretization/operators/convective_operator.cpp 
@@ -117,6 +120,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.cpp 
      include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp 
      include/incompressible_navier_stokes/postprocessor/postprocessor.cpp 
+     # compressible Navier-Stokes equations
      include/compressible_navier_stokes/user_interface/enum_types.cpp
      include/compressible_navier_stokes/user_interface/input_parameters.cpp
      include/compressible_navier_stokes/time_integration/time_int_explicit_runge_kutta.cpp
@@ -124,6 +128,18 @@ SET( TARGET_SRC
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
      include/compressible_navier_stokes/postprocessor/write_output.cpp
      include/compressible_navier_stokes/postprocessor/postprocessor.cpp
+     # elasticity
+     include/structure/user_interface/enum_types.cpp
+     include/structure/material/library/st_venant_kirchhoff.cpp
+     include/structure/spatial_discretization/operators/nonlinear_operator.cpp
+     include/structure/spatial_discretization/operators/linear_operator.cpp
+     include/structure/spatial_discretization/operators/rhs_operator.cpp
+     include/structure/time_integration/driver_steady_problems.cpp
+     include/structure/time_integration/driver_quasi_static_problems.cpp
+     include/structure/spatial_discretization/operator.cpp
+     include/structure/postprocessor/output_generator.cpp
+     include/structure/postprocessor/postprocessor.cpp
+     include/structure/driver.cpp
   )
 
 # Set the include directory and the name of the project

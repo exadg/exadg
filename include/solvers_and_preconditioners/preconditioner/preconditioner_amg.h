@@ -9,7 +9,6 @@
 #include "../multigrid/multigrid_input_parameters.h"
 #include "../preconditioner/preconditioner_base.h"
 
-
 template<typename Operator, typename TrilinosNumber>
 class PreconditionerAMG : public PreconditionerBase<TrilinosNumber>
 {
@@ -48,6 +47,14 @@ public:
     AssertThrow(false, ExcMessage("deal.II is not compiled with Trilinos!"));
 #endif
   }
+
+#ifdef DEAL_II_WITH_TRILINOS
+  TrilinosWrappers::SparseMatrix const &
+  get_system_matrix()
+  {
+    return system_matrix;
+  }
+#endif
 
   void
   update()

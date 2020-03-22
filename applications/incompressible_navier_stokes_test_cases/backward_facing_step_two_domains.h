@@ -32,10 +32,10 @@ unsigned int const DEGREE_U = 2;
 // DOMAIN 2: backward facing step (using results of the turbulent channel flow as velocity inflow profile)
 
 // set the number of refine levels for DOMAIN 1
-unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 3;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN1 = 0;
 
 // set the number of refine levels for DOMAIN 2
-unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 3;
+unsigned int const REFINE_STEPS_SPACE_DOMAIN2 = 0;
 
 // set problem specific parameters like physical dimensions, etc.
 double const PI = numbers::PI;
@@ -146,6 +146,7 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.equation_type = EquationType::NavierStokes;
   param.use_outflow_bc_convective_term = true;
   param.formulation_viscous_term = FormulationViscousTerm::DivergenceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
   param.right_hand_side = true;
 
 
@@ -162,7 +163,7 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.calculation_of_time_step_size = TimeStepCalculation::CFL;
   param.adaptive_time_stepping = true;
   param.max_velocity = MAX_VELOCITY;
-  param.cfl = 0.3;
+  param.cfl = 0.6;
   param.cfl_exponent_fe_degree_velocity = 1.5;
   param.time_step_size = 1.0e-1;
   param.order_time_integrator = 2; // 1; // 2; // 3;
@@ -190,7 +191,7 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
 
   // variant Direct allows to use larger time step
   // sizes due to CFL condition at inflow boundary
-  param.type_dirichlet_bc_convective = TypeDirichletBCs::Mirror;
+  param.type_dirichlet_bc_convective = TypeDirichletBCs::Direct; //Mirror;
 
   // viscous term
   param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
@@ -200,6 +201,15 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
     param.pure_dirichlet_bc = true;
   else if(domain_id == 2)
     param.pure_dirichlet_bc = false;
+
+  // div-div and continuity penalty
+  param.use_divergence_penalty = true;
+  param.divergence_penalty_factor = 1.0e0;
+  param.use_continuity_penalty = true;
+  param.continuity_penalty_factor = param.divergence_penalty_factor;
+  param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  param.continuity_penalty_use_boundary_data = true;
+  param.apply_penalty_terms_in_postprocessing_step = true;
 
   // TURBULENCE
   param.use_turbulence_model = false;
@@ -216,6 +226,11 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.solver_pressure_poisson = SolverPressurePoisson::CG;
   param.solver_data_pressure_poisson = SolverData(1e4, 1.e-12, 1.e-6, 100);
   param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
+  param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
+  param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
+  param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::PointJacobi;
 
   // projection step
   param.solver_projection = SolverProjection::CG;

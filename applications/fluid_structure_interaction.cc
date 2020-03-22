@@ -61,6 +61,8 @@ using namespace dealii;
 #include "fluid_structure_interaction_test_cases/template.h"
 
 //#include "fluid_structure_interaction_test_cases/vortex.h"
+//#include "fluid_structure_interaction_test_cases/bending_wall.h"
+//#include "fluid_structure_interaction_test_cases/cylinder_with_flag.h"
 
 template<typename Number>
 class ProblemBase

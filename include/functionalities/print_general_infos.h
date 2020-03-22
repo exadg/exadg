@@ -8,9 +8,15 @@
 #ifndef INCLUDE_FUNCTIONALITIES_PRINT_GENERAL_INFOS_H_
 #define INCLUDE_FUNCTIONALITIES_PRINT_GENERAL_INFOS_H_
 
+#include <deal.II/base/conditional_ostream.h>
+#include <deal.II/base/revision.h>
+
+#include "print_functions.h"
+
+using namespace dealii;
 
 // print MPI info
-void
+inline void
 print_MPI_info(ConditionalOStream const & pcout, MPI_Comm const & mpi_comm)
 {
   pcout << std::endl << "MPI info:" << std::endl << std::endl;
@@ -18,18 +24,18 @@ print_MPI_info(ConditionalOStream const & pcout, MPI_Comm const & mpi_comm)
 }
 
 template<typename Number>
-std::string get_type(Number)
+inline std::string get_type(Number)
 {
   return "unknown type";
 }
 
-std::string
+inline std::string
 get_type(float)
 {
   return "float";
 }
 
-std::string
+inline std::string
 get_type(double)
 {
   return "double";
@@ -38,7 +44,7 @@ get_type(double)
 
 // print deal.II info
 template<typename Number>
-void
+inline void
 print_dealii_info(ConditionalOStream const & pcout)
 {
   unsigned int const n_vect_doubles = VectorizedArray<Number>::n_array_elements;
@@ -64,7 +70,7 @@ print_dealii_info(ConditionalOStream const & pcout)
 
 // print grid info
 template<int dim>
-void
+inline void
 print_grid_data(ConditionalOStream const &               pcout,
                 unsigned int const                       n_refine_space,
                 parallel::TriangulationBase<dim> const & triangulation)
@@ -78,7 +84,7 @@ print_grid_data(ConditionalOStream const &               pcout,
 }
 
 template<int dim>
-void
+inline void
 print_grid_data(ConditionalOStream const &               pcout,
                 unsigned int const                       n_refine_space_1,
                 parallel::TriangulationBase<dim> const & triangulation_1,

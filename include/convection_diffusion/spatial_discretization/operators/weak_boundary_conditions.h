@@ -228,7 +228,6 @@ inline DEAL_II_ALWAYS_INLINE //
   Tensor<rank, dim, VectorizedArray<Number>>
   calculate_neumann_value(unsigned int const                                   q,
                           FaceIntegrator<dim, n_components, Number> const &    integrator,
-                          OperatorType const &                                 operator_type,
                           BoundaryType const &                                 boundary_type,
                           types::boundary_id const                             boundary_id,
                           std::shared_ptr<BoundaryDescriptor<rank, dim>> const boundary_descriptor,
@@ -238,8 +237,6 @@ inline DEAL_II_ALWAYS_INLINE //
 
   if(boundary_type == BoundaryType::Neumann)
   {
-    AssertThrow(operator_type == OperatorType::inhomogeneous, ExcMessage("Not implemented."));
-
     auto bc       = boundary_descriptor->neumann_bc.find(boundary_id)->second;
     auto q_points = integrator.quadrature_point(q);
 

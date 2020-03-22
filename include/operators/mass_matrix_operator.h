@@ -15,23 +15,12 @@
 
 using namespace dealii;
 
-// required for OperatorBase interface but is never used for the mass matrix operator
-template<int dim>
-struct BoundaryDescriptorDummy
-{
-  // Dirichlet: prescribe all components of the velocity
-  std::map<types::boundary_id, std::shared_ptr<Function<dim>>> dirichlet_bc;
-};
-
 template<int dim>
 struct MassMatrixOperatorData : public OperatorBaseData
 {
   MassMatrixOperatorData() : OperatorBaseData(0 /* dof_index */, 0 /* quad_index */)
   {
   }
-
-  // required by OperatorBase interface
-  std::shared_ptr<BoundaryDescriptorDummy<dim>> bc;
 };
 
 template<int dim, int n_components, typename Number>

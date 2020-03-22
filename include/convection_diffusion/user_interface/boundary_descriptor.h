@@ -58,13 +58,13 @@ struct BoundaryDescriptor
                                std::set<types::boundary_id> const & periodic_boundary_ids) const
   {
     unsigned int counter = 0;
-    if(this->dirichlet_bc.find(boundary_id) != this->dirichlet_bc.end())
+    if(dirichlet_bc.find(boundary_id) != dirichlet_bc.end())
       counter++;
 
-    if(this->dirichlet_mortar_bc.find(boundary_id) != this->dirichlet_mortar_bc.end())
+    if(dirichlet_mortar_bc.find(boundary_id) != dirichlet_mortar_bc.end())
       counter++;
 
-    if(this->neumann_bc.find(boundary_id) != this->neumann_bc.end())
+    if(neumann_bc.find(boundary_id) != neumann_bc.end())
       counter++;
 
     if(periodic_boundary_ids.find(boundary_id) != periodic_boundary_ids.end())

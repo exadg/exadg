@@ -231,7 +231,6 @@ template<int dim, typename Number, int n_components>
 void
 LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   IntegratorFace &           integrator_m,
-  OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
   ConvDiff::BoundaryType boundary_type = this->data.bc->get_boundary_type(boundary_id);
@@ -239,10 +238,34 @@ LaplaceOperator<dim, Number, n_components>::do_boundary_integral_continuous(
   for(unsigned int q = 0; q < integrator_m.n_q_points; ++q)
   {
     value neumann_value = ConvDiff::calculate_neumann_value<dim, Number, n_components, rank>(
-      q, integrator_m, operator_type, boundary_type, boundary_id, this->data.bc, this->time);
+      q, integrator_m, boundary_type, boundary_id, this->data.bc, this->time);
 
     integrator_m.submit_value(-neumann_value, q);
   }
+}
+
+template<int dim, typename Number, int n_components>
+void
+LaplaceOperator<dim, Number, n_components>::fill_dirichlet_values_continuous(
+  std::map<types::global_dof_index, double> & boundary_values,
+  double const                                time) const
+{
+  for(auto dbc : this->data.bc->dirichlet_bc)
+  {
+    dbc.second->set_time(time);
+    VectorTools::interpolate_boundary_values(*this->matrix_free->get_mapping_info().mapping,
+                                             this->matrix_free->get_dof_handler(
+                                               this->data.dof_index),
+                                             dbc.first,
+                                             *dbc.second,
+                                             boundary_values);
+  }
+
+  // TODO extend to dirichlet_mortar_bc
+  AssertThrow(
+    this->data.bc->dirichlet_mortar_bc.empty(),
+    ExcMessage(
+      "Dirichlet boundary conditions of mortar type are currently not implemented for continuous elements."));
 }
 
 template<int dim, typename Number, int n_components>

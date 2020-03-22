@@ -30,10 +30,13 @@ SET( SOURCE_FILES
      incompressible_navier_stokes.cc
      incompressible_navier_stokes_two_domains.cc
 
-     # incompressible flow with scalar transport
+     # Incompressible flow with scalar transport
      incompressible_flow_with_transport.cc
 
-     # fluid-structure interaction
+     # Elasticity
+     elasticity.cc
+
+     # Fluid-structure interaction
      fluid_structure_interaction.cc
 
      # Compressible Navier-Stokes

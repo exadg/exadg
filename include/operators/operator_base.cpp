@@ -312,15 +312,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::rhs_add(VectorType & ds
   {
     // compute values at Dirichlet boundaries
     std::map<types::global_dof_index, double> boundary_values;
-    for(auto dbc : data.bc->dirichlet_bc)
-    {
-      dbc.second->set_time(time);
-      VectorTools::interpolate_boundary_values(*matrix_free->get_mapping_info().mapping,
-                                               matrix_free->get_dof_handler(data.dof_index),
-                                               dbc.first,
-                                               *dbc.second,
-                                               boundary_values);
-    }
+    fill_dirichlet_values_continuous(boundary_values, time);
 
     // create temporal vectors
     VectorType temp1, temp2;
@@ -804,15 +796,30 @@ template<int dim, typename Number, typename AdditionalData, int n_components>
 void
 OperatorBase<dim, Number, AdditionalData, n_components>::do_boundary_integral_continuous(
   IntegratorFace &           integrator,
-  OperatorType const &       operator_type,
   types::boundary_id const & boundary_id) const
 {
   (void)integrator;
-  (void)operator_type;
   (void)boundary_id;
 
   AssertThrow(
-    false, ExcMessage("OperatorBase::do_boundary_integral_continuous() has not been implemented!"));
+    false,
+    ExcMessage(
+      "OperatorBase::do_boundary_integral_continuous() has to be overwritten by derived class!"));
+}
+
+template<int dim, typename Number, typename AdditionalData, int n_components>
+void
+OperatorBase<dim, Number, AdditionalData, n_components>::fill_dirichlet_values_continuous(
+  std::map<types::global_dof_index, double> & boundary_values,
+  double const                                time) const
+{
+  (void)boundary_values;
+  (void)time;
+
+  AssertThrow(
+    false,
+    ExcMessage(
+      "OperatorBase::fill_dirichlet_values_continuous() has to be overwritten by derived class!"));
 }
 
 template<int dim, typename Number, typename AdditionalData, int n_components>
@@ -1055,9 +1062,7 @@ OperatorBase<dim, Number, AdditionalData, n_components>::boundary_face_loop_inho
       // note: no gathering/evaluation is necessary when calculating the
       //       inhomogeneous part of boundary face integrals
 
-      do_boundary_integral_continuous(*integrator_m,
-                                      OperatorType::inhomogeneous,
-                                      matrix_free.get_boundary_id(face));
+      do_boundary_integral_continuous(*integrator_m, matrix_free.get_boundary_id(face));
 
       integrator_m->integrate_scatter(integrator_flags.face_integrate.value,
                                       integrator_flags.face_integrate.gradient,

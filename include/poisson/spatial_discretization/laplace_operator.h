@@ -253,8 +253,11 @@ private:
 
   void
   do_boundary_integral_continuous(IntegratorFace &           integrator_m,
-                                  OperatorType const &       operator_type,
                                   types::boundary_id const & boundary_id) const;
+
+  void
+  fill_dirichlet_values_continuous(std::map<types::global_dof_index, double> & boundary_values,
+                                   double const                                time) const;
 
   // Some more functionality on top of what is provided by the base class.
   void

@@ -1,0 +1,683 @@
+/*
+ * vortex.h
+ *
+ *  Created on: Aug 18, 2016
+ *      Author: fehn
+ */
+
+#ifndef APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
+#define APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_
+
+#include "../../include/functionalities/one_sided_cylindrical_manifold.h"
+#include "../grid_tools/deformed_cube_manifold.h"
+#include "../grid_tools/dealii_extensions.h"
+#include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
+#include "../grid_tools/mesh_movement_functions.h"
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              INPUT PARAMETERS                                            */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+// convergence studies in space or time
+unsigned int const DEGREE = 3;
+
+unsigned int const REFINE_SPACE_MIN = 0;
+unsigned int const REFINE_SPACE_MAX = 0;
+
+unsigned int const REFINE_TIME_MIN = 0;
+unsigned int const REFINE_TIME_MAX = 0;
+
+
+// set problem specific parameters like physical dimensions, etc.
+double const U_X_MAX = 1.0;
+double const VISCOSITY = 0.01;
+
+double const L_F = 3.0;
+double const B_F = 1.0;
+double const H_F = 0.5;
+
+double const T_S = 0.05;
+double const B_S = 0.6;
+double const H_S = 0.4;
+
+double const L_IN = 0.6;
+
+double const END_TIME = 20.0;
+
+// moving mesh
+bool const ALE = true;
+
+namespace IncNS
+{
+void set_input_parameters(InputParameters &param)
+{
+  // MATHEMATICAL MODEL
+  param.dim = 3;
+  param.problem_type = ProblemType::Unsteady;
+  param.equation_type = EquationType::NavierStokes;
+  param.formulation_viscous_term = FormulationViscousTerm::LaplaceFormulation;
+  param.formulation_convective_term = FormulationConvectiveTerm::ConvectiveFormulation;
+  param.use_outflow_bc_convective_term = true;
+  param.right_hand_side = false;
+
+  // ALE
+  param.ale_formulation = ALE;
+  param.neumann_with_variable_normal_vector = false;
+
+  // PHYSICAL QUANTITIES
+  param.start_time = 0.0;
+  param.end_time = END_TIME;
+  param.viscosity = VISCOSITY;
+
+  // TEMPORAL DISCRETIZATION
+  param.solver_type = SolverType::Unsteady;
+  param.temporal_discretization = TemporalDiscretization::BDFDualSplittingScheme;
+  param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Explicit;
+  param.order_time_integrator = 2;
+  param.start_with_low_order = true;
+  param.adaptive_time_stepping = true;
+  param.calculation_of_time_step_size = TimeStepCalculation::CFL; //UserSpecified; //CFL;
+  param.time_step_size = END_TIME;
+  param.dt_refinements = REFINE_TIME_MIN;
+  param.max_velocity = U_X_MAX;
+  param.cfl = 0.4;
+  param.cfl_exponent_fe_degree_velocity = 1.5;
+
+  // output of solver information
+  param.solver_info_data.print_to_screen = true;
+  param.solver_info_data.interval_time_steps = 1;
+  param.solver_info_data.interval_time = 0.1 * (param.end_time - param.start_time);
+
+  // restart
+  param.restarted_simulation = false;
+  param.restart_data.write_restart = false;
+  param.restart_data.interval_time = 0.25;
+  param.restart_data.interval_wall_time = 1.e6;
+  param.restart_data.interval_time_steps = 1e8;
+  param.restart_data.filename = "output/vortex/vortex";
+
+
+  // SPATIAL DISCRETIZATION
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree_u = DEGREE;
+  param.degree_p = DegreePressure::MixedOrder;
+  param.mapping = MappingType::Isoparametric;
+  param.h_refinements = REFINE_SPACE_MIN;
+
+  // convective term
+  param.upwind_factor = 1.0;
+
+  // viscous term
+  param.IP_formulation_viscous = InteriorPenaltyFormulation::SIPG;
+
+  // velocity pressure coupling terms
+  param.gradp_formulation = FormulationPressureGradientTerm::Weak;
+  param.divu_formulation = FormulationVelocityDivergenceTerm::Weak;
+
+  // special case: pure DBC's
+  param.pure_dirichlet_bc = false;
+
+  // div-div and continuity penalty
+  param.use_divergence_penalty = true;
+  param.divergence_penalty_factor = 1.0e0;
+  param.use_continuity_penalty = true;
+  param.continuity_penalty_factor = param.divergence_penalty_factor;
+  param.continuity_penalty_components = ContinuityPenaltyComponents::Normal;
+  param.continuity_penalty_use_boundary_data = true;
+  param.apply_penalty_terms_in_postprocessing_step = true;
+
+  // NUMERICAL PARAMETERS
+  param.implement_block_diagonal_preconditioner_matrix_free = false;
+  param.use_cell_based_face_loops = false;
+  param.quad_rule_linearization = QuadratureRuleLinearization::Overintegration32k;
+
+  // PROJECTION METHODS
+
+  // formulation
+  param.store_previous_boundary_values = true;
+
+  // pressure Poisson equation
+  param.solver_pressure_poisson = SolverPressurePoisson::CG;
+  param.solver_data_pressure_poisson = SolverData(1000,1.e-12,1.e-6,100);
+  param.preconditioner_pressure_poisson = PreconditionerPressurePoisson::Multigrid;
+  param.multigrid_data_pressure_poisson.type = MultigridType::cphMG;
+  param.multigrid_data_pressure_poisson.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data_pressure_poisson.smoother_data.preconditioner = PreconditionerSmoother::PointJacobi;
+  param.multigrid_data_pressure_poisson.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data_pressure_poisson.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+  param.multigrid_data_pressure_poisson.coarse_problem.solver_data.rel_tol = 1.e-3;
+
+  // projection step
+  param.solver_projection = SolverProjection::CG;
+  param.solver_data_projection = SolverData(1000, 1.e-12, 1.e-6);
+  param.preconditioner_projection = PreconditionerProjection::InverseMassMatrix;
+  param.preconditioner_block_diagonal_projection = Elementwise::Preconditioner::InverseMassMatrix;
+  param.solver_data_block_diagonal_projection = SolverData(1000,1.e-12,1.e-2,1000);
+
+  // HIGH-ORDER DUAL SPLITTING SCHEME
+
+  // formulations
+  param.order_extrapolation_pressure_nbc = param.order_time_integrator<=2 ? param.order_time_integrator : 2;
+  param.formulation_convective_term_bc = FormulationConvectiveTerm::ConvectiveFormulation;
+
+  // viscous step
+  param.solver_viscous = SolverViscous::CG;
+  param.solver_data_viscous = SolverData(1000,1.e-12,1.e-6);
+  param.preconditioner_viscous = PreconditionerViscous::InverseMassMatrix;
+
+
+  // PRESSURE-CORRECTION SCHEME
+
+  // formulation
+  param.order_pressure_extrapolation = std::min(2, (int)param.order_time_integrator) - 1; // J_p = J-1, but not larger than 1
+  param.rotational_formulation = true;
+
+  // momentum step
+
+  // Newton solver
+  param.newton_solver_data_momentum = NewtonSolverData(100,1.e-12,1.e-6);
+
+  // linear solver
+  param.solver_momentum = SolverMomentum::FGMRES;
+  param.solver_data_momentum = SolverData(1e4, 1.e-12, 1.e-6, 100);
+  param.update_preconditioner_momentum = false;
+  param.preconditioner_momentum = MomentumPreconditioner::InverseMassMatrix; //Multigrid;
+  param.multigrid_operator_type_momentum = MultigridOperatorType::ReactionDiffusion;
+
+  // Jacobi smoother data
+//  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Jacobi;
+//  param.multigrid_data_momentum.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+//  param.multigrid_data_momentum.smoother_data.iterations = 5;
+//  param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::GMRES;
+
+  // Chebyshev smoother data
+  param.multigrid_data_momentum.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data_momentum.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev;
+
+
+  // COUPLED NAVIER-STOKES SOLVER
+  param.use_scaling_continuity = false;
+
+  // nonlinear solver (Newton solver)
+  param.newton_solver_data_coupled = NewtonSolverData(100,1.e-10,1.e-6);
+
+  // linear solver
+  param.solver_coupled = SolverCoupled::FGMRES;
+  param.solver_data_coupled = SolverData(1e4, 1.e-12, 1.e-6, 100);
+
+  // preconditioner linear solver
+  param.preconditioner_coupled = PreconditionerCoupled::BlockTriangular;
+  param.update_preconditioner_coupled = false;
+
+  // preconditioner momentum block
+  param.preconditioner_velocity_block = MomentumPreconditioner::Multigrid;
+  param.multigrid_operator_type_velocity_block = MultigridOperatorType::ReactionDiffusion;
+  param.multigrid_data_velocity_block.type = MultigridType::phMG;
+  param.multigrid_data_velocity_block.smoother_data.smoother = MultigridSmoother::Chebyshev; //GMRES;
+  param.multigrid_data_velocity_block.smoother_data.preconditioner = PreconditionerSmoother::BlockJacobi;
+  param.multigrid_data_velocity_block.smoother_data.iterations = 5;
+  param.multigrid_data_velocity_block.smoother_data.relaxation_factor = 0.7;
+  // coarse grid solver
+  param.multigrid_data_velocity_block.coarse_problem.solver = MultigridCoarseGridSolver::Chebyshev; //GMRES;
+
+  // preconditioner Schur-complement block
+  param.preconditioner_pressure_block = SchurComplementPreconditioner::PressureConvectionDiffusion;
+  param.discretization_of_laplacian =  DiscretizationOfLaplacian::Classical;
+}
+}
+
+namespace Poisson
+{
+void
+set_input_parameters(InputParameters &param)
+{
+  // MATHEMATICAL MODEL
+  param.dim = 3;
+  param.right_hand_side = false;
+
+  // SPATIAL DISCRETIZATION
+  param.triangulation_type = TriangulationType::Distributed;
+  param.degree = DEGREE;
+  param.mapping = MappingType::Isoparametric;
+  param.spatial_discretization = SpatialDiscretization::CG;
+  param.IP_factor = 1.0e0;
+
+  // SOLVER
+  param.solver = Solver::CG;
+  param.solver_data.abs_tol = 1.e-20;
+  param.solver_data.rel_tol = 1.e-10;
+  param.solver_data.max_iter = 1e4;
+  param.preconditioner = Preconditioner::Multigrid;
+  param.multigrid_data.type = MultigridType::cphMG;
+  param.multigrid_data.p_sequence = PSequenceType::Bisect;
+  // MG smoother
+  param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev;
+  param.multigrid_data.smoother_data.iterations = 5;
+  param.multigrid_data.smoother_data.smoothing_range = 20;
+  // MG coarse grid solver
+  param.multigrid_data.coarse_problem.solver = MultigridCoarseGridSolver::CG;
+  param.multigrid_data.coarse_problem.preconditioner = MultigridCoarseGridPreconditioner::AMG;
+  param.multigrid_data.coarse_problem.solver_data.rel_tol = 1.e-3;
+}
+}
+
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim, int spacedim>
+void
+merge_triangulations(const std::vector<Triangulation<dim, spacedim>> &tria_vec,
+                     Triangulation<dim, spacedim> &result,
+                     const double duplicated_vertex_tolerance = 1.0e-12,
+                     const bool copy_manifold_ids = false)
+{
+  std::vector<Triangulation<dim>> tria_tmp;
+  tria_tmp.resize(2);
+  unsigned int alternating = 0;
+  for(auto tria = tria_vec.begin(); tria != tria_vec.end()-1; ++tria, ++alternating)
+  {
+    if(tria_vec.size() == 2)
+    {
+      GridGenerator::merge_triangulations (*tria, *(tria+1), result, duplicated_vertex_tolerance,copy_manifold_ids);
+    }
+    else if(tria_vec.size() > 2)
+    {
+      if(tria == tria_vec.begin()) // begin
+      {
+        GridGenerator::merge_triangulations (*tria, *(tria+1), tria_tmp[alternating%2], duplicated_vertex_tolerance,copy_manifold_ids);
+      }
+      else if((tria+2) == tria_vec.end()) // end
+      {
+        GridGenerator::merge_triangulations (tria_tmp[(alternating-1)%2], *(tria+1), result, duplicated_vertex_tolerance,copy_manifold_ids);
+      }
+      else // intermediate
+      {
+        GridGenerator::merge_triangulations (tria_tmp[(alternating-1)%2], *(tria+1), tria_tmp[alternating%2], duplicated_vertex_tolerance,copy_manifold_ids);
+      }
+    }
+    else
+    {
+      AssertThrow(tria_vec.size() > 1, ExcMessage("A vector with at least two triangulations has to be provided."));
+    }
+  }
+}
+
+void create_triangulation(Triangulation<2> &tria)
+{
+  (void)tria;
+
+  AssertThrow(false, ExcMessage("not implemented."));
+}
+
+void create_triangulation(Triangulation<3> &tria)
+{
+  unsigned int const N_CELLS_X_INFLOW = 3;
+  unsigned int const N_CELLS_X_OUTFLOW = 10;
+  unsigned int const N_CELLS_Y_LOWER = 3;
+  unsigned int const N_CELLS_Z_MIDDLE = 3;
+
+  std::vector<Triangulation<3>> tria_vec;
+  tria_vec.resize(17);
+
+  // middle part (in terms of z-coordinates)
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[0],
+                                           std::vector<unsigned int>({N_CELLS_X_INFLOW,N_CELLS_Y_LOWER,N_CELLS_Z_MIDDLE}),
+                                           Point<3>(0.0, -H_F/2.0, -B_S/2.0),
+                                           Point<3>(L_IN, H_S-H_F/2.0, B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[1],
+                                           std::vector<unsigned int>({N_CELLS_X_INFLOW,1,N_CELLS_Z_MIDDLE}),
+                                           Point<3>(0.0, H_S-H_F/2.0, -B_S/2.0),
+                                           Point<3>(L_IN, H_F/2.0, B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[2],
+                                           std::vector<unsigned int>({1,1,N_CELLS_Z_MIDDLE}),
+                                           Point<3>(L_IN, H_S-H_F/2.0, -B_S/2.0),
+                                           Point<3>(L_IN+T_S, H_F/2.0, B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[3],
+                                           std::vector<unsigned int>({N_CELLS_X_OUTFLOW,1,N_CELLS_Z_MIDDLE}),
+                                           Point<3>(L_IN+T_S, H_S-H_F/2.0, -B_S/2.0),
+                                           Point<3>(L_F, H_F/2.0, B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[4],
+                                           std::vector<unsigned int>({N_CELLS_X_OUTFLOW,N_CELLS_Y_LOWER,N_CELLS_Z_MIDDLE}),
+                                           Point<3>(L_IN+T_S, -H_F/2.0, -B_S/2.0),
+                                           Point<3>(L_F, H_S-H_F/2.0, B_S/2.0));
+
+  // negative z-part
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[5],
+                                           std::vector<unsigned int>({N_CELLS_X_INFLOW,N_CELLS_Y_LOWER,1}),
+                                           Point<3>(0.0, -H_F/2.0, -B_F/2.0),
+                                           Point<3>(L_IN, H_S-H_F/2.0, -B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[6],
+                                           std::vector<unsigned int>({N_CELLS_X_INFLOW,1,1}),
+                                           Point<3>(0.0, H_S-H_F/2.0, -B_F/2.0),
+                                           Point<3>(L_IN, H_F/2.0, -B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[7],
+                                           std::vector<unsigned int>({1,1,1}),
+                                           Point<3>(L_IN, H_S-H_F/2.0, -B_F/2.0),
+                                           Point<3>(L_IN+T_S, H_F/2.0, -B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[8],
+                                           std::vector<unsigned int>({N_CELLS_X_OUTFLOW,1,1}),
+                                           Point<3>(L_IN+T_S, H_S-H_F/2.0, -B_F/2.0),
+                                           Point<3>(L_F, H_F/2.0, -B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[9],
+                                           std::vector<unsigned int>({N_CELLS_X_OUTFLOW,N_CELLS_Y_LOWER,1}),
+                                           Point<3>(L_IN+T_S, -H_F/2.0, -B_F/2.0),
+                                           Point<3>(L_F, H_S-H_F/2.0, -B_S/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[10],
+                                           std::vector<unsigned int>({1,N_CELLS_Y_LOWER,1}),
+                                           Point<3>(L_IN, -H_F/2.0, -B_F/2.0),
+                                           Point<3>(L_IN+T_S, H_S-H_F/2.0, -B_S/2.0));
+
+  // positive z-part
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[11],
+                                           std::vector<unsigned int>({N_CELLS_X_INFLOW,N_CELLS_Y_LOWER,1}),
+                                           Point<3>(0.0, -H_F/2.0, B_S/2.0),
+                                           Point<3>(L_IN, H_S-H_F/2.0, B_F/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[12],
+                                           std::vector<unsigned int>({N_CELLS_X_INFLOW,1,1}),
+                                           Point<3>(0.0, H_S-H_F/2.0, B_S/2.0),
+                                           Point<3>(L_IN, H_F/2.0, B_F/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[13],
+                                           std::vector<unsigned int>({1,1,1}),
+                                           Point<3>(L_IN, H_S-H_F/2.0, B_S/2.0),
+                                           Point<3>(L_IN+T_S, H_F/2.0, B_F/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[14],
+                                           std::vector<unsigned int>({N_CELLS_X_OUTFLOW,1,1}),
+                                           Point<3>(L_IN+T_S, H_S-H_F/2.0, B_S/2.0),
+                                           Point<3>(L_F, H_F/2.0, B_F/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[15],
+                                           std::vector<unsigned int>({N_CELLS_X_OUTFLOW,N_CELLS_Y_LOWER,1}),
+                                           Point<3>(L_IN+T_S, -H_F/2.0, B_S/2.0),
+                                           Point<3>(L_F, H_S-H_F/2.0, B_F/2.0));
+
+  GridGenerator::subdivided_hyper_rectangle(tria_vec[16],
+                                           std::vector<unsigned int>({1,N_CELLS_Y_LOWER,1}),
+                                           Point<3>(L_IN, -H_F/2.0, B_S/2.0),
+                                           Point<3>(L_IN+T_S, H_S-H_F/2.0, B_F/2.0));
+
+  merge_triangulations(tria_vec, tria);
+}
+
+template<int dim>
+void
+create_grid_and_set_boundary_ids(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
+                                 unsigned int const                            n_refine_space,
+                                 std::vector<GridTools::PeriodicFacePair<typename
+                                   Triangulation<dim>::cell_iterator> >        &periodic_faces)
+{
+  (void)periodic_faces;
+
+  create_triangulation(*triangulation);
+
+  typename Triangulation<dim>::cell_iterator cell = triangulation->begin(), endc = triangulation->end();
+  for(;cell!=endc;++cell)
+  {
+    for(unsigned int face_number=0; face_number < GeometryInfo<dim>::faces_per_cell; ++face_number)
+    {
+      double const x = cell->face(face_number)->center()(0);
+      double const y = cell->face(face_number)->center()(1);
+      double const z = cell->face(face_number)->center()(2);
+      double const TOL = 1.e-12;
+
+      // inflow: set boundary ID to 1
+      if (std::fabs(x - 0.0) < TOL)
+      {
+        cell->face(face_number)->set_boundary_id (1);
+      }
+
+      // outflow: set boundary ID to 2
+      if (std::fabs(x - L_F) < TOL)
+      {
+        cell->face(face_number)->set_boundary_id (2);
+      }
+
+      // fluid-structure interface: set boundary ID to 3
+      if ((std::fabs(x - L_IN) < TOL || std::fabs(x - (L_IN+T_S)) < TOL) &&
+          y < H_S-H_F/2.0 + TOL &&
+          std::fabs(z) < B_S/2.0 + TOL)
+      {
+        cell->face(face_number)->set_boundary_id (3);
+      }
+      if ((std::fabs(z - (-B_S/2.0)) < TOL || std::fabs(z - (+B_S/2.0)) < TOL) &&
+          y < H_S-H_F/2.0 + TOL &&
+          std::fabs(x - (L_IN + T_S/2.0)) < T_S/2.0 + TOL)
+      {
+        cell->face(face_number)->set_boundary_id (3);
+      }
+      if(std::fabs(y - (H_S-H_F/2.0)) < TOL &&
+              std::fabs(x - (L_IN + T_S/2.0)) < T_S/2.0 + TOL &&
+              std::fabs(z) < B_S/2.0 + TOL)
+      {
+        cell->face(face_number)->set_boundary_id (3);
+      }
+    }
+  }
+
+  triangulation->refine_global(n_refine_space);
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                               MESH MOTION                                                */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+double
+function(double const t)
+{
+  double const T = END_TIME;
+  return std::sin(2.0*numbers::PI*t/T);
+}
+
+double
+dfdt(double const t)
+{
+  double const T = END_TIME;
+  return 2.0*numbers::PI*std::cos(2.0*numbers::PI*t/T);
+}
+
+template<int dim>
+class MeshMotion : public Function<dim>
+{
+public:
+  MeshMotion (const unsigned int  n_components = dim,
+              const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {}
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
+
+    double const AMPLITUDE = 3*T_S;
+    if(component == 0)
+      result = AMPLITUDE * std::pow((p[1] - (-H_F/2.0))/H_S, 2.0) * function(t);
+
+    return result;
+  }
+};
+
+template<int dim>
+std::shared_ptr<Function<dim>>
+set_mesh_movement_function()
+{
+  std::shared_ptr<Function<dim>> mesh_motion;
+  mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
+
+  return mesh_motion;
+}
+
+// Poisson solver for mesh motion
+namespace Poisson
+{
+
+template<int dim>
+void
+set_boundary_conditions(std::shared_ptr<ConvDiff::BoundaryDescriptor<1,dim>> boundary_descriptor)
+{
+  typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+
+  // these lines show exemplarily how the boundary descriptors are filled
+  boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor->dirichlet_bc.insert(pair(3, new MeshMotion<dim>(dim)));
+}
+
+
+template<int dim>
+void
+set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
+{
+  // these lines show exemplarily how the field functions are filled
+  field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+}
+
+}
+
+namespace IncNS
+{
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                         FUNCTIONS (INITIAL/BOUNDARY CONDITIONS, RIGHT-HAND SIDE, etc.)                   */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim>
+class InflowBC : public Function<dim>
+{
+public:
+  InflowBC (const unsigned int  n_components = dim,
+              const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {}
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double result = 0.0;
+
+    if(component == 0)
+      result = U_X_MAX * (1. - 4. * p[1]*p[1]/(H_F*H_F)) * (1. - 4. * p[2]*p[2]/(B_F*B_F));
+
+    return result;
+  }
+};
+
+template<int dim>
+class VelocityBendingWall : public Function<dim>
+{
+public:
+  VelocityBendingWall (const unsigned int  n_components = dim,
+              const double        time = 0.)
+    :
+    Function<dim>(n_components, time)
+  {}
+
+  double value (const Point<dim>    &p,
+                const unsigned int  component = 0) const
+  {
+    double t = this->get_time();
+    double result = 0.0;
+
+    double const AMPLITUDE = 3*T_S;
+    if(component == 0)
+      result = AMPLITUDE * std::pow((p[1] - (-H_F/2.0))/H_S, 2.0) * dfdt(t);
+
+    return result;
+  }
+};
+
+template<int dim>
+void set_boundary_conditions(
+    std::shared_ptr<BoundaryDescriptorU<dim> > boundary_descriptor_velocity,
+    std::shared_ptr<BoundaryDescriptorP<dim> > boundary_descriptor_pressure)
+{
+  typedef typename std::pair<types::boundary_id,std::shared_ptr<Function<dim> > > pair;
+
+  // fill boundary descriptor velocity
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(1,new InflowBC<dim>(dim)));
+  boundary_descriptor_velocity->neumann_bc.insert(pair(2,new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor_velocity->dirichlet_bc.insert(pair(3,new VelocityBendingWall<dim>(dim)));
+
+  // fill boundary descriptor pressure
+  boundary_descriptor_pressure->neumann_bc.insert(pair(0,new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(1,new Functions::ZeroFunction<dim>(dim)));
+  boundary_descriptor_pressure->dirichlet_bc.insert(pair(2,new Functions::ZeroFunction<dim>(1)));
+  boundary_descriptor_pressure->neumann_bc.insert(pair(3,new Functions::ZeroFunction<dim>(dim)));
+}
+
+template<int dim>
+void set_field_functions(std::shared_ptr<FieldFunctions<dim> > field_functions)
+{
+  field_functions->initial_solution_velocity.reset(new Functions::ZeroFunction<dim>(dim));
+  field_functions->initial_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->analytical_solution_pressure.reset(new Functions::ZeroFunction<dim>(1));
+  field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(dim));
+}
+
+/************************************************************************************************************/
+/*                                                                                                          */
+/*                                              POSTPROCESSOR                                               */
+/*                                                                                                          */
+/************************************************************************************************************/
+
+template<int dim, typename Number>
+std::shared_ptr<PostProcessorBase<dim, Number> >
+construct_postprocessor(InputParameters const &param, MPI_Comm const &mpi_comm)
+{
+  PostProcessorData<dim> pp_data;
+
+  // write output for visualization of results
+  pp_data.output_data.write_output = true;
+  pp_data.output_data.output_folder = "output/bending_wall/vtu/";
+  pp_data.output_data.output_name = "test";
+  pp_data.output_data.write_boundary_IDs = true;
+  pp_data.output_data.output_start_time = param.start_time;
+  pp_data.output_data.output_interval_time = (param.end_time-param.start_time)/20;
+  pp_data.output_data.write_vorticity = true;
+  pp_data.output_data.write_divergence = true;
+  pp_data.output_data.write_velocity_magnitude = true;
+  pp_data.output_data.write_vorticity_magnitude = true;
+  pp_data.output_data.write_processor_id = true;
+  pp_data.output_data.mean_velocity.calculate = true;
+  pp_data.output_data.mean_velocity.sample_start_time = param.start_time;
+  pp_data.output_data.mean_velocity.sample_end_time = param.end_time;
+  pp_data.output_data.mean_velocity.sample_every_timesteps = 1;
+  pp_data.output_data.write_higher_order = true;
+  pp_data.output_data.degree = param.degree_u;
+
+  std::shared_ptr<PostProcessorBase<dim,Number> > pp;
+  pp.reset(new PostProcessor<dim,Number>(pp_data, mpi_comm));
+
+  return pp;
+}
+
+}
+
+#endif /* APPLICATIONS_INCOMPRESSIBLE_NAVIER_STOKES_TEST_CASES_VORTEX_H_ */

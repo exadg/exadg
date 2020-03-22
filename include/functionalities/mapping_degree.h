@@ -12,7 +12,7 @@
 
 using namespace dealii;
 
-unsigned int
+inline unsigned int
 get_mapping_degree(MappingType const & mapping_type, unsigned int const degree_shape_functions)
 {
   unsigned int degree = 0;
