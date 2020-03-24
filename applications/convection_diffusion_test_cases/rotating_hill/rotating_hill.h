@@ -72,7 +72,7 @@ public:
     // parse application-specific parameters
     ParameterHandler prm;
     this->add_parameters(prm);
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
   }
 
   void
@@ -110,10 +110,10 @@ public:
     param.diffusivity = 0.0;
 
     // TEMPORAL DISCRETIZATION
-    param.temporal_discretization = TemporalDiscretization::ExplRK; // BDF; //ExplRK;
-    param.time_integrator_rk      = TimeIntegratorRK::ExplRK3Stage7Reg2;
-    param.order_time_integrator   = 2; // instabilities for BDF 3 and 4
-    param.start_with_low_order    = false;
+    param.temporal_discretization      = TemporalDiscretization::ExplRK; // BDF; //ExplRK;
+    param.time_integrator_rk           = TimeIntegratorRK::ExplRK3Stage7Reg2;
+    param.order_time_integrator        = 2; // instabilities for BDF 3 and 4
+    param.start_with_low_order         = false;
     param.treatment_of_convective_term = TreatmentOfConvectiveTerm::Implicit; // ExplicitOIF;
     param.time_integrator_oif =
       TimeIntegratorRK::ExplRK2Stage2; // ExplRK3Stage7Reg2; //ExplRK4Stage8Reg2;

@@ -71,7 +71,7 @@ public:
     // parse application-specific parameters
     ParameterHandler prm;
     this->add_parameters(prm);
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
   }
 
   void
@@ -185,14 +185,14 @@ public:
     std::shared_ptr<Function<dim>> mesh_motion;
 
     MeshMovementData<dim> data;
-    data.temporal      = MeshMovementAdvanceInTime::Sin;
-    data.shape         = MeshMovementShape::SineZeroAtBoundary; // SineAligned;
-    data.dimensions[0] = std::abs(right - left);
-    data.dimensions[1] = std::abs(right - left);
-    data.amplitude     = 0.08 * (right - left); // A_max = (right-left)/(2*pi)
-    data.period        = end_time;
-    data.t_start       = 0.0;
-    data.t_end         = end_time;
+    data.temporal                       = MeshMovementAdvanceInTime::Sin;
+    data.shape                          = MeshMovementShape::SineZeroAtBoundary; // SineAligned;
+    data.dimensions[0]                  = std::abs(right - left);
+    data.dimensions[1]                  = std::abs(right - left);
+    data.amplitude                      = 0.08 * (right - left); // A_max = (right-left)/(2*pi)
+    data.period                         = end_time;
+    data.t_start                        = 0.0;
+    data.t_end                          = end_time;
     data.spatial_number_of_oscillations = 1.0;
     mesh_motion.reset(new CubeMeshMovementFunctions<dim>(data));
 

@@ -145,7 +145,7 @@ public:
     // parse application-specific parameters
     ParameterHandler prm;
     this->add_parameters(prm);
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
   }
 
   void

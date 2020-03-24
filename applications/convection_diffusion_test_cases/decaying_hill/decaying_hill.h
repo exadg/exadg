@@ -119,7 +119,7 @@ public:
     // parse application-specific parameters
     ParameterHandler prm;
     this->add_parameters(prm);
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
   }
 
   void
@@ -184,9 +184,9 @@ public:
     // SOLVER
     param.solver =
       Solver::CG; // use FGMRES for elementwise iterative block Jacobi type preconditioners
-    param.solver_data = SolverData(1e4, 1.e-20, 1.e-6, 100);
-    param.preconditioner = Preconditioner::InverseMassMatrix; // BlockJacobi; //Multigrid;
-    param.mg_operator_type                      = MultigridOperatorType::ReactionDiffusion;
+    param.solver_data      = SolverData(1e4, 1.e-20, 1.e-6, 100);
+    param.preconditioner   = Preconditioner::InverseMassMatrix; // BlockJacobi; //Multigrid;
+    param.mg_operator_type = MultigridOperatorType::ReactionDiffusion;
     param.multigrid_data.smoother_data.smoother = MultigridSmoother::Chebyshev; // GMRES;
     param.implement_block_diagonal_preconditioner_matrix_free = true;
     param.solver_block_diagonal                               = Elementwise::Solver::CG;

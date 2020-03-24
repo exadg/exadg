@@ -105,7 +105,7 @@ public:
     // parse application-specific parameters
     ParameterHandler prm;
     this->add_parameters(prm);
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
   }
 
   void
@@ -169,8 +169,8 @@ public:
     param.IP_factor = 1.0;
 
     // SOLVER
-    param.solver      = Solver::GMRES;
-    param.solver_data = SolverData(1e4, 1.e-20, 1.e-8, 100);
+    param.solver         = Solver::GMRES;
+    param.solver_data    = SolverData(1e4, 1.e-20, 1.e-8, 100);
     param.preconditioner = Preconditioner::Multigrid; // PointJacobi; //BlockJacobi;
     param.implement_block_diagonal_preconditioner_matrix_free = false;
     param.use_cell_based_face_loops                           = false;

@@ -46,7 +46,7 @@ public:
   {
     dealii::ParameterHandler prm;
     this->add_name_parameter(prm);
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
 
     std::shared_ptr<Structure::ApplicationBase<dim, Number>> app;
     if(name == "Bar")
@@ -84,7 +84,7 @@ struct ConvergenceStudy
     dealii::ParameterHandler prm;
     this->add_parameters(prm);
 
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
   }
 
   void
