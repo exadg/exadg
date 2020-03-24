@@ -47,6 +47,45 @@ using namespace dealii;
 
 namespace ConvDiff
 {
+enum class Operatortype
+{
+  MassOperator,
+  ConvectiveOperator,
+  DiffusiveOperator,
+  MassConvectionDiffusionOperator
+};
+
+inline std::string
+enum_to_string(Operatortype const enum_type)
+{
+  std::string string_type;
+
+  switch(enum_type)
+  {
+    // clang-format off
+    case Operatortype::MassOperator:                    string_type = "MassOperator";                    break;
+    case Operatortype::ConvectiveOperator:              string_type = "ConvectiveOperator";              break;
+    case Operatortype::DiffusiveOperator:               string_type = "DiffusiveOperator";               break;
+    case Operatortype::MassConvectionDiffusionOperator: string_type = "MassConvectionDiffusionOperator"; break;
+    default: AssertThrow(false, ExcMessage("Not implemented.")); break;
+      // clang-format on
+  }
+
+  return string_type;
+}
+
+inline void
+string_to_enum(Operatortype & enum_type, std::string const string_type)
+{
+  // clang-format off
+  if     (string_type == "MassOperator")                    enum_type = Operatortype::MassOperator;
+  else if(string_type == "ConvectiveOperator")              enum_type = Operatortype::ConvectiveOperator;
+  else if(string_type == "DiffusiveOperator")               enum_type = Operatortype::DiffusiveOperator;
+  else if(string_type == "MassConvectionDiffusionOperator") enum_type = Operatortype::MassConvectionDiffusionOperator;
+  else AssertThrow(false, ExcMessage("Unknown operator type. Not implemented."));
+  // clang-format on
+}
+
 template<int dim, typename Number = double>
 class Driver
 {
@@ -61,6 +100,11 @@ public:
 
   void
   solve();
+
+  std::tuple<unsigned int, types::global_dof_index, double>
+  apply_operator(std::string const & operator_type,
+                 unsigned int const  n_repetitions_inner,
+                 unsigned int const  n_repetitions_outer);
 
   void
   analyze_computing_times() const;

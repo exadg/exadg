@@ -8,6 +8,9 @@
 #ifndef INCLUDE_FUNCTIONALITIES_MESH_RESOLUTION_GENERATOR_HYPERCUBE_H_
 #define INCLUDE_FUNCTIONALITIES_MESH_RESOLUTION_GENERATOR_HYPERCUBE_H_
 
+// TODO this file can be removed later once all solvers are adapted to the new infrastructure
+// ThroughputStudy
+
 /*
  * study throughput as a function of polynomial degree or problem size
  */
@@ -17,6 +20,17 @@ enum class RunType
   FixedProblemSize,     // increase polynomial degree and keep problem size approximately constant
   IncreasingProblemSize // run at fixed polynomial degree
 };
+
+void
+string_to_enum(RunType & enum_type, std::string const string_type)
+{
+  // clang-format off
+  if     (string_type == "RefineHAndP")           enum_type = RunType::RefineHAndP;
+  else if(string_type == "FixedProblemSize")      enum_type = RunType::FixedProblemSize;
+  else if(string_type == "IncreasingProblemSize") enum_type = RunType::IncreasingProblemSize;
+  else AssertThrow(false, ExcMessage("Not implemented."));
+  // clang-format on
+}
 
 /*
  * Determines mesh refinement level l and number of subdivisions in 1d of hyper_cube mesh for a
@@ -29,15 +43,17 @@ fill_resolutions_vector(
                                 resolutions,
   unsigned int const            degree,
   unsigned int const            dim,
-  unsigned int const            dofs_per_element,
+  unsigned int const            n_components,
   types::global_dof_index const n_dofs_min,
   types::global_dof_index const n_dofs_max,
   RunType const &               run_type)
 {
+  unsigned int const dofs_per_element = n_components * std::pow(degree + 1, dim);
+
   unsigned int l = 0, n_subdivisions_1d = 1;
 
-  double n_cells_min = n_dofs_min / dofs_per_element;
-  double n_cells_max = n_dofs_max / dofs_per_element;
+  double n_cells_min = (double)n_dofs_min / dofs_per_element;
+  double n_cells_max = (double)n_dofs_max / dofs_per_element;
 
   int    refine_level = 0;
   double n_cells      = 1.0;
@@ -119,7 +135,8 @@ fill_resolutions_vector(
   {
     AssertThrow((n_cells >= n_cells_min && n_cells <= n_cells_max),
                 ExcMessage("No mesh found that meets the requirements regarding problem size. "
-                           "Make sure that N_DOFS_MAX is sufficiently larger than N_DOFS_MIN."));
+                           "Make sure that maximum number of dofs is sufficiently larger than "
+                           "minimum number of dofs."));
 
     resolutions.push_back(
       std::tuple<unsigned int, unsigned int, unsigned int>(degree, l, n_subdivisions_1d));

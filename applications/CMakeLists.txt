@@ -22,8 +22,8 @@ SET( SOURCE_FILES
  
 
      # Scalar reaction-convection-diffusion
-     convection_diffusion_performance.cc
      convection_diffusion.cc
+     convection_diffusion_throughput.cc
 
      # Incompressible Navier-Stokes
      incompressible_navier_stokes_performance.cc

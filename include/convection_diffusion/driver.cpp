@@ -244,6 +244,98 @@ Driver<dim, Number>::solve()
 }
 
 template<int dim, typename Number>
+std::tuple<unsigned int, types::global_dof_index, double>
+Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
+                                    unsigned int const  n_repetitions_inner,
+                                    unsigned int const  n_repetitions_outer)
+{
+  pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
+
+  Operatortype operator_type;
+  string_to_enum(operator_type, operator_type_string);
+
+  LinearAlgebra::distributed::Vector<Number> dst, src;
+
+  conv_diff_operator->initialize_dof_vector(src);
+  src = 1.0;
+  conv_diff_operator->initialize_dof_vector(dst);
+
+  LinearAlgebra::distributed::Vector<Number> velocity;
+  if(param.convective_problem())
+  {
+    if(param.get_type_velocity_field() == TypeVelocityField::DoFVector)
+    {
+      conv_diff_operator->initialize_dof_vector_velocity(velocity);
+      velocity = 1.0;
+    }
+  }
+
+  if(operator_type == Operatortype::ConvectiveOperator)
+    conv_diff_operator->update_convective_term(1.0 /* time */, &velocity);
+  else if(operator_type == Operatortype::MassConvectionDiffusionOperator)
+    conv_diff_operator->update_conv_diff_operator(1.0 /* time */,
+                                                  1.0 /* scaling_factor_mass_matrix */,
+                                                  &velocity);
+
+  // Timer and wall times
+  Timer  timer;
+  double wall_time = std::numeric_limits<double>::max();
+
+  for(unsigned int i_outer = 0; i_outer < n_repetitions_outer; ++i_outer)
+  {
+    double current_wall_time = 0.0;
+
+    // apply matrix-vector product several times
+    for(unsigned int i = 0; i < n_repetitions_inner; ++i)
+    {
+      timer.restart();
+
+      if(operator_type == Operatortype::MassOperator)
+        conv_diff_operator->apply_mass_matrix(dst, src);
+      else if(operator_type == Operatortype::ConvectiveOperator)
+        conv_diff_operator->apply_convective_term(dst, src);
+      else if(operator_type == Operatortype::DiffusiveOperator)
+        conv_diff_operator->apply_diffusive_term(dst, src);
+      else if(operator_type == Operatortype::MassConvectionDiffusionOperator)
+        conv_diff_operator->apply_conv_diff_operator(dst, src);
+
+      current_wall_time += timer.wall_time();
+    }
+
+    // compute average wall time
+    current_wall_time /= (double)n_repetitions_inner;
+
+    wall_time = std::min(wall_time, current_wall_time);
+  }
+
+  if(wall_time * n_repetitions_inner * n_repetitions_outer < 1.0 /*wall time in seconds*/)
+  {
+    this->pcout
+      << std::endl
+      << "WARNING: One should use a larger number of matrix-vector products to obtain reproducible results."
+      << std::endl;
+  }
+
+  types::global_dof_index dofs              = conv_diff_operator->get_number_of_dofs();
+  double                  dofs_per_walltime = (double)dofs / wall_time;
+
+  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
+
+  // clang-format off
+  pcout << std::endl
+        << std::scientific << std::setprecision(4)
+        << "DoFs/sec:        " << dofs_per_walltime << std::endl
+        << "DoFs/(sec*core): " << dofs_per_walltime/(double)N_mpi_processes << std::endl;
+  // clang-format on
+
+  pcout << std::endl << " ... done." << std::endl << std::endl;
+
+  return std::tuple<unsigned int, types::global_dof_index, double>(param.degree,
+                                                                   dofs,
+                                                                   dofs_per_walltime);
+}
+
+template<int dim, typename Number>
 void
 Driver<dim, Number>::analyze_computing_times() const
 {

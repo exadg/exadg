@@ -72,7 +72,7 @@ public:
   {
     dealii::ParameterHandler prm;
     this->add_name_parameter(prm);
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
 
     std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> app;
     if(name == "Template")
@@ -119,7 +119,7 @@ struct ConvergenceStudy
     dealii::ParameterHandler prm;
     this->add_parameters(prm);
 
-    parse_input(input_file, prm);
+    parse_input(input_file, prm, true, true);
   }
 
   void
