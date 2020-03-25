@@ -5,6 +5,11 @@
 
 // elasticity solver
 #include "../include/structure/driver.h"
+
+// infrastructure for convergence studies
+#include "../include/functionalities/convergence_study.h"
+
+// applications
 #include "./structure/bar/bar.h"
 #include "./structure/beam/beam.h"
 #include "./structure/can/can.h"
@@ -71,46 +76,6 @@ private:
   }
 
   std::string name = "MyApp";
-};
-
-struct ConvergenceStudy
-{
-  ConvergenceStudy()
-  {
-  }
-
-  ConvergenceStudy(const std::string & input_file)
-  {
-    dealii::ParameterHandler prm;
-    this->add_parameters(prm);
-
-    parse_input(input_file, prm, true, true);
-  }
-
-  void
-  add_parameters(dealii::ParameterHandler & prm)
-  {
-    // clang-format off
-    prm.enter_subsection("General");
-      prm.add_parameter("Precision",      precision,        "Floating point precision.",                     Patterns::Selection("float|double"));
-      prm.add_parameter("Dim",            dim,              "Number of space dimension.",                    Patterns::Integer(2,3));
-      prm.add_parameter("DegreeMin",      degree_min,       "Minimal polynomial degree of shape functions.", Patterns::Integer(1,15));
-      prm.add_parameter("DegreeMax",      degree_max,       "Maximal polynomial degree of shape functions.", Patterns::Integer(1,15));
-      prm.add_parameter("RefineSpaceMin", refine_space_min, "Minimal number of mesh refinements.",           Patterns::Integer(0,20));
-      prm.add_parameter("RefineSpaceMax", refine_space_max, "Maximal number of mesh refinements.",           Patterns::Integer(0,20));
-    prm.leave_subsection();
-    // clang-format on
-  }
-
-  std::string precision = "double";
-
-  unsigned int dim = 2;
-
-  unsigned int degree_min = 3;
-  unsigned int degree_max = 3;
-
-  unsigned int refine_space_min = 0;
-  unsigned int refine_space_max = 0;
 };
 
 void
