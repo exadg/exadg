@@ -11,7 +11,7 @@
         "DofsMax": "10000"
     },
     "Throughput": {
-	"OperatorType": "MassConvectionDiffusionOperator",
+	"OperatorType": "MatrixFree",
 	"RepetitionsInner": "100",
 	"RepetitionsOuter": "1"
     },

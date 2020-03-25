@@ -2,7 +2,7 @@
     "General": {
 	"Precision": "double",
         "Dim": "2",
-        "RunType": "FixedProblemSize",
+        "RunType": "RefineHAndP",
         "DegreeMin": "1",
         "DegreeMax": "15",
         "RefineSpaceMin": "3",
@@ -10,13 +10,10 @@
         "DofsMin": "1000",
         "DofsMax": "10000"
     },
-    "Throughput": {
-	"OperatorType": "MassConvectionDiffusionOperator",
-	"RepetitionsInner": "100",
-	"RepetitionsOuter": "1"
-    },
     "Application": {
-       	"Name": "PeriodicBox",
-	"MeshType": "Cartesian"    
+       	"Name": "Gaussian",
+	"MeshType": "Cartesian",
+	"OutputDirectory": "output/poisson/vtu/",
+	"OutputName": "gaussian"    
     }
 }

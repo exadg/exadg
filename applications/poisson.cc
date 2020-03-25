@@ -5,510 +5,149 @@
  *      Author: fehn
  */
 
-// deal.II
-#include <deal.II/base/revision.h>
-#include <deal.II/base/timer.h>
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/grid/manifold_lib.h>
-#include <deal.II/grid/tria_description.h>
+// driver
+#include "../include/poisson/driver.h"
 
-// spatial discretization
-#include "../include/poisson/spatial_discretization/operator.h"
+// infrastructure for parameter studies
+#include "../include/functionalities/parameter_study.h"
 
-// postprocessor
-#include "../include/convection_diffusion/postprocessor/postprocessor_base.h"
+// applications
+#include "poisson_test_cases/gaussian/gaussian.h"
+#include "poisson_test_cases/lung/lung.h"
+#include "poisson_test_cases/lung_tubus/lung_tubus.h"
+#include "poisson_test_cases/nozzle/nozzle.h"
+#include "poisson_test_cases/sine/sine.h"
+#include "poisson_test_cases/slit/slit.h"
+#include "poisson_test_cases/template/template.h"
+#include "poisson_test_cases/torus/torus.h"
 
-// user interface, etc.
-#include "../include/poisson/user_interface/analytical_solution.h"
-#include "../include/poisson/user_interface/field_functions.h"
-#include "../include/poisson/user_interface/input_parameters.h"
-
-#include "../include/convection_diffusion/user_interface/boundary_descriptor.h"
-
-// functionalities
-#include "../include/functionalities/calculate_maximum_aspect_ratio.h"
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/matrix_free_wrapper.h"
-#include "../include/functionalities/mesh.h"
-#include "../include/functionalities/mesh_resolution_generator_hypercube.h"
-#include "../include/functionalities/print_functions.h"
-#include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/verify_boundary_conditions.h"
-
-
-// specify the test case that has to be solved
-
-// template
-#include "poisson_test_cases/template.h"
-
-//#include "poisson_test_cases/gaussian.h"
-//#include "poisson_test_cases/slit.h"
-//#include "poisson_test_cases/sine.h"
-//#include "poisson_test_cases/nozzle.h"
-//#include "poisson_test_cases/torus.h"
-//#include "poisson_test_cases/lung_tubus.h"
-//#include "poisson_test_cases/lung.h"
-
-using namespace dealii;
-using namespace Poisson;
-
-RunType const RUN_TYPE = RunType::RefineHAndP; // FixedProblemSize //IncreasingProblemSize
-
-/*
- * Specify minimum and maximum problem size for
- *  RunType::FixedProblemSize
- *  RunType::IncreasingProblemSize
- */
-types::global_dof_index N_DOFS_MIN = 2.5e5;
-types::global_dof_index N_DOFS_MAX = 7.5e5;
-
-/*
- * Enable hyper_cube meshes with number of cells per direction other than multiples of 2.
- * Use this only for simple hyper_cube problems and for
- *  RunType::FixedProblemSize
- *  RunType::IncreasingProblemSize
- */
-//#define ENABLE_SUBDIVIDED_HYPERCUBE
-
-#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
-// will be set automatically for RunType::FixedProblemSize and RunType::IncreasingProblemSize
-unsigned int SUBDIVISIONS_MESH = 1;
-#endif
-
-struct Timings
-{
-  Timings() : degree(1), dofs(1), n_10(0), tau_10(0.0)
-  {
-  }
-
-  Timings(unsigned int const            degree_,
-          types::global_dof_index const dofs_,
-          double const                  n_10_,
-          double const                  tau_10_)
-    : degree(degree_), dofs(dofs_), n_10(n_10_), tau_10(tau_10_)
-  {
-  }
-
-  void
-  print_header(ConditionalOStream const & pcout) const
-  {
-    // names
-    pcout << std::setw(7) << "degree";
-    pcout << std::setw(15) << "dofs";
-    pcout << std::setw(8) << "n_10";
-    pcout << std::setw(15) << "tau_10";
-    pcout << std::setw(15) << "throughput";
-    pcout << std::endl;
-
-    // units
-    pcout << std::setw(7) << " ";
-    pcout << std::setw(15) << " ";
-    pcout << std::setw(8) << " ";
-    pcout << std::setw(15) << "in s*core/DoF";
-    pcout << std::setw(15) << "in DoF/s/core";
-    pcout << std::endl;
-
-    pcout << std::endl;
-  }
-
-  void
-  print_results(ConditionalOStream const & pcout) const
-  {
-    pcout << std::setw(7) << std::fixed << degree;
-    pcout << std::setw(15) << std::fixed << dofs;
-    pcout << std::setw(8) << std::fixed << std::setprecision(1) << n_10;
-    pcout << std::setw(15) << std::scientific << std::setprecision(2) << tau_10;
-    pcout << std::setw(15) << std::scientific << std::setprecision(2) << 1.0 / tau_10;
-    pcout << std::endl;
-  }
-
-  unsigned int            degree;
-  types::global_dof_index dofs;
-  double                  n_10;
-  double                  tau_10;
-};
-// global variable used to store the wall times for different polynomial degrees and problem sizes
-std::vector<Timings> timings;
-
-class ProblemBase
+class ApplicationSelector
 {
 public:
-  virtual ~ProblemBase()
+  template<int dim, typename Number>
+  void
+  add_parameters(dealii::ParameterHandler & prm, std::string name_of_application = "")
   {
+    // application is unknown -> only add name of application to parameters
+    if(name_of_application.length() == 0)
+    {
+      this->add_name_parameter(prm);
+    }
+    else // application is known -> add also application-specific parameters
+    {
+      name = name_of_application;
+      this->add_name_parameter(prm);
+
+      std::shared_ptr<Poisson::ApplicationBase<dim, Number>> app;
+      if(name == "Template")
+        app.reset(new Poisson::Template::Application<dim, Number>());
+      else if(name == "Gaussian")
+        app.reset(new Poisson::Gaussian::Application<dim, Number>());
+      else if(name == "Sine")
+        app.reset(new Poisson::Sine::Application<dim, Number>());
+      else if(name == "Slit")
+        app.reset(new Poisson::Slit::Application<dim, Number>());
+      else if(name == "Torus")
+        app.reset(new Poisson::Torus::Application<dim, Number>());
+      else if(name == "Nozzle")
+        app.reset(new Poisson::Nozzle::Application<dim, Number>());
+      else if(name == "LungTubus")
+        app.reset(new Poisson::LungTubus::Application<dim, Number>());
+      else if(name == "Lung")
+        app.reset(new Poisson::Lung::Application<dim, Number>());
+      else
+        AssertThrow(false, ExcMessage("This application does not exist!"));
+
+      app->add_parameters(prm);
+    }
   }
 
-  virtual void
-  setup(InputParameters const & param) = 0;
+  template<int dim, typename Number>
+  std::shared_ptr<Poisson::ApplicationBase<dim, Number>>
+  get_application(std::string input_file)
+  {
+    dealii::ParameterHandler prm;
+    this->add_name_parameter(prm);
+    parse_input(input_file, prm, true, true);
 
-  virtual void
-  solve() = 0;
+    std::shared_ptr<Poisson::ApplicationBase<dim, Number>> app;
+    if(name == "Template")
+      app.reset(new Poisson::Template::Application<dim, Number>(input_file));
+    else if(name == "Gaussian")
+      app.reset(new Poisson::Gaussian::Application<dim, Number>(input_file));
+    else if(name == "Sine")
+      app.reset(new Poisson::Sine::Application<dim, Number>(input_file));
+    else if(name == "Slit")
+      app.reset(new Poisson::Slit::Application<dim, Number>(input_file));
+    else if(name == "Torus")
+      app.reset(new Poisson::Torus::Application<dim, Number>(input_file));
+    else if(name == "Nozzle")
+      app.reset(new Poisson::Nozzle::Application<dim, Number>(input_file));
+    else if(name == "LungTubus")
+      app.reset(new Poisson::LungTubus::Application<dim, Number>(input_file));
+    else if(name == "Lung")
+      app.reset(new Poisson::Lung::Application<dim, Number>(input_file));
+    else
+      AssertThrow(false, ExcMessage("This application does not exist!"));
 
-  virtual void
-  analyze_computing_times() const = 0;
-};
-
-template<int dim, typename Number = double>
-class Problem : public ProblemBase
-{
-public:
-  Problem(MPI_Comm const & mpi_comm);
-
-  void
-  setup(InputParameters const & param);
-
-  void
-  solve();
-
-  void
-  analyze_computing_times() const;
+    return app;
+  }
 
 private:
   void
-  print_header();
+  add_name_parameter(ParameterHandler & prm)
+  {
+    prm.enter_subsection("Application");
+    prm.add_parameter("Name", name, "Name of application.");
+    prm.leave_subsection();
+  }
 
-  MPI_Comm const & mpi_comm;
-
-  ConditionalOStream pcout;
-
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
-
-  std::shared_ptr<Mesh<dim>> mesh;
-
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces;
-
-  InputParameters param;
-
-  std::shared_ptr<FieldFunctions<dim>>                  field_functions;
-  std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor;
-
-  /*
-   * MatrixFree
-   */
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-
-  std::shared_ptr<Operator<dim, Number>> poisson_operator;
-
-  /*
-   * Postprocessor
-   */
-  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> postprocessor;
-
-  /*
-   * Computation time (wall clock time).
-   */
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
-
-  // number of iterations
-  mutable unsigned int iterations;
-  mutable double wall_time_vector_init, wall_time_rhs, wall_time_solver, wall_time_postprocessing;
+  std::string name = "MyApp";
 };
 
-template<int dim, typename Number>
-Problem<dim, Number>::Problem(MPI_Comm const & comm)
-  : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0),
-    overall_time(0.0),
-    setup_time(0.0),
-    iterations(0),
-    wall_time_vector_init(0.0),
-    wall_time_rhs(0.0),
-    wall_time_solver(0.0),
-    wall_time_postprocessing(0.0)
+void
+create_input_file(std::string const & name_of_application = "")
 {
+  dealii::ParameterHandler prm;
+
+  ParameterStudy parameter_study;
+  parameter_study.add_parameters(prm);
+
+  // we have to assume a default dimension and default Number type
+  // for the automatic generation of a default input file
+  unsigned int const Dim = 2;
+  typedef double     Number;
+
+  ApplicationSelector selector;
+  selector.add_parameters<Dim, Number>(prm, name_of_application);
+
+  prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::JSON, false);
 }
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::print_header()
+run(std::vector<Timings> & timings,
+    std::string const &    input_file,
+    unsigned int const     degree,
+    unsigned int const     refine_space,
+    unsigned int const     n_cells_1d,
+    MPI_Comm const &       mpi_comm)
 {
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                            scalar Poisson equation                              " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
-}
+  std::shared_ptr<Poisson::Driver<dim, Number>> driver;
+  driver.reset(new Poisson::Driver<dim, Number>(mpi_comm));
 
-template<int dim, typename Number>
-void
-Problem<dim, Number>::setup(InputParameters const & param_in)
-{
-  timer.restart();
+  ApplicationSelector selector;
 
-  print_header();
-  print_dealii_info<Number>(pcout);
-  print_MPI_info(pcout, mpi_comm);
+  std::shared_ptr<Poisson::ApplicationBase<dim, Number>> application =
+    selector.get_application<dim, Number>(input_file);
 
-  param = param_in;
-  param.check_input_parameters();
-  param.print(pcout, "List of input parameters:");
+  application->set_subdivisions_hypercube(n_cells_1d);
+  driver->setup(application, degree, refine_space);
 
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
+  driver->solve();
 
-#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
-  create_grid_and_set_boundary_ids(triangulation,
-                                   param.h_refinements,
-                                   periodic_faces,
-                                   SUBDIVISIONS_MESH);
-#else
-  create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
-#endif
-  print_grid_data(pcout, param.h_refinements, *triangulation);
-
-  boundary_descriptor.reset(new ConvDiff::BoundaryDescriptor<0, dim>());
-  set_boundary_conditions(boundary_descriptor);
-  verify_boundary_conditions(*boundary_descriptor, *triangulation, periodic_faces);
-
-  field_functions.reset(new FieldFunctions<dim>());
-  set_field_functions(field_functions);
-
-  // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree);
-  mesh.reset(new Mesh<dim>(mapping_degree));
-
-  // compute aspect ratio
-  if(false)
-  {
-    // this variant is only for comparison
-    double AR = calculate_aspect_ratio_vertex_distance(*triangulation, mpi_comm);
-    pcout << std::endl << "Maximum aspect ratio vertex distance = " << AR << std::endl;
-
-    QGauss<dim> quadrature(param.degree + 1);
-    AR = GridTools::compute_maximum_aspect_ratio(*triangulation, mesh->get_mapping(), quadrature);
-    pcout << std::endl << "Maximum aspect ratio Jacobian = " << AR << std::endl;
-  }
-
-  // initialize Poisson operator
-  poisson_operator.reset(new Operator<dim, Number>(*triangulation,
-                                                   mesh->get_mapping(),
-                                                   periodic_faces,
-                                                   boundary_descriptor,
-                                                   field_functions,
-                                                   param,
-                                                   mpi_comm));
-
-  // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  matrix_free_wrapper->append_data_structures(*poisson_operator);
-  matrix_free_wrapper->reinit(param.enable_cell_based_face_loops, triangulation);
-
-  poisson_operator->setup(matrix_free_wrapper);
-  poisson_operator->setup_solver();
-
-  // initialize postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
-  postprocessor->setup(poisson_operator->get_dof_handler(), mesh->get_mapping());
-
-  setup_time = timer.wall_time();
-}
-
-template<int dim, typename Number>
-void
-Problem<dim, Number>::solve()
-{
-  Timer timer_local;
-
-  // initialization of vectors
-  timer_local.restart();
-  LinearAlgebra::distributed::Vector<Number> rhs;
-  LinearAlgebra::distributed::Vector<Number> sol;
-  poisson_operator->initialize_dof_vector(rhs);
-  poisson_operator->initialize_dof_vector(sol);
-  poisson_operator->prescribe_initial_conditions(sol);
-  wall_time_vector_init = timer_local.wall_time();
-
-  // postprocessing of results
-  timer_local.restart();
-  postprocessor->do_postprocessing(sol);
-  wall_time_postprocessing = timer_local.wall_time();
-
-  // calculate right-hand side
-  timer_local.restart();
-  poisson_operator->rhs(rhs);
-  wall_time_rhs = timer_local.wall_time();
-
-  // solve linear system of equations
-  timer_local.restart();
-  iterations       = poisson_operator->solve(sol, rhs);
-  wall_time_solver = timer_local.wall_time();
-
-  // postprocessing of results
-  timer_local.restart();
-  postprocessor->do_postprocessing(sol);
-  wall_time_postprocessing += timer_local.wall_time();
-
-  overall_time += this->timer.wall_time();
-}
-
-template<int dim, typename Number>
-void
-Problem<dim, Number>::analyze_computing_times() const
-{
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-
-  this->pcout << "Performance results for Poisson solver:" << std::endl;
-
-  double const n_10 = poisson_operator->get_n10();
-  // Iterations
-  {
-    this->pcout << std::endl << "Number of iterations:" << std::endl;
-
-    this->pcout << "  Iterations n         = " << std::fixed << iterations << std::endl;
-
-    this->pcout << "  Iterations n_10      = " << std::fixed << std::setprecision(1) << n_10
-                << std::endl;
-
-    this->pcout << "  Convergence rate rho = " << std::fixed << std::setprecision(4)
-                << poisson_operator->get_average_convergence_rate() << std::endl;
-  }
-
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
-
-  // wall times
-  this->pcout << std::endl << "Wall times:" << std::endl;
-
-  std::vector<std::string> names = {"Initialization of vectors",
-                                    "Right-hand side",
-                                    "Linear solver",
-                                    "Postprocessing"};
-
-  std::vector<double> computing_times;
-  computing_times.resize(4);
-  computing_times[0] = wall_time_vector_init;
-  computing_times[1] = wall_time_rhs;
-  computing_times[2] = wall_time_solver;
-  computing_times[3] = wall_time_postprocessing;
-
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  double sum_of_substeps = 0.0;
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
-                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-                << data.avg / overall_time_avg * 100 << " %" << std::endl;
-
-    sum_of_substeps += data.avg;
-  }
-
-  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
-  double const              setup_time_avg  = setup_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  double const other = overall_time_avg - sum_of_substeps - setup_time_avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << other << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << other / overall_time_avg * 100 << " %" << std::endl;
-
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  // computational costs in CPUh
-  // Throughput in DoF/s per time step per core
-  unsigned int                  N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-  types::global_dof_index const DoFs            = poisson_operator->get_number_of_dofs();
-
-  this->pcout << std::endl
-              << "Computational costs and throughput:" << std::endl
-              << "  Number of MPI processes = " << N_mpi_processes << std::endl
-              << "  Degrees of freedom      = " << DoFs << std::endl
-              << std::endl;
-
-  this->pcout << "Overall costs (including setup + postprocessing):" << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl
-              << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / (overall_time_avg * N_mpi_processes) << " DoF/s/core" << std::endl
-              << std::endl;
-
-  this->pcout << "Linear solver:" << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << wall_time_solver << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << wall_time_solver * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl
-              << "  Throughput              = " << std::scientific << std::setprecision(2)
-              << DoFs / (wall_time_solver * N_mpi_processes) << " DoF/s/core" << std::endl
-              << std::endl;
-
-  double const t_10   = wall_time_solver * n_10 / iterations;
-  double const tau_10 = t_10 * (double)N_mpi_processes / DoFs;
-  this->pcout << "Linear solver (numbers based on n_10):" << std::endl
-              << "  Wall time t_10          = " << std::scientific << std::setprecision(2) << t_10
-              << " s" << std::endl
-              << "  tau_10                  = " << std::scientific << std::setprecision(2) << tau_10
-              << " s*core/DoF" << std::endl
-              << "  Throughput E_10         = " << std::scientific << std::setprecision(2)
-              << 1.0 / tau_10 << " DoF/s/core" << std::endl;
-
-  this->pcout << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-
-  timings.push_back(Timings(param.degree, DoFs, n_10, tau_10));
-}
-
-void
-do_run(InputParameters const & param, MPI_Comm const & mpi_comm)
-{
-  // setup problem and run simulation
-  typedef double               Number;
-  std::shared_ptr<ProblemBase> problem;
-
-  if(param.dim == 2)
-    problem.reset(new Problem<2, Number>(mpi_comm));
-  else if(param.dim == 3)
-    problem.reset(new Problem<3, Number>(mpi_comm));
-  else
-    AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
-
-  problem->setup(param);
-
-  problem->solve();
-
-  problem->analyze_computing_times();
+  Timings timing = driver->analyze_computing_times();
+  timings.push_back(timing);
 }
 
 int
@@ -520,90 +159,59 @@ main(int argc, char ** argv)
 
     MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
-    // set parameters
-    InputParameters param;
-    set_input_parameters(param);
+    // check if parameter file is provided
 
-    if(RUN_TYPE == RunType::RefineHAndP)
+    // ./poisson
+    AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
+
+    // ./poisson --help
+    if(argc == 2 && std::string(argv[1]) == "--help")
     {
-      // p-refinement
-      for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
-      {
-        // reset degree
-        param.degree = degree;
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        create_input_file();
 
-        // h-refinement
-        for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
-            ++h_refinements)
-        {
-          // reset mesh refinement
-          param.h_refinements = h_refinements;
-
-          do_run(param, mpi_comm);
-        }
-      }
+      return 0;
     }
-#ifdef ENABLE_SUBDIVIDED_HYPERCUBE
-    else if(RUN_TYPE == RunType::FixedProblemSize || RUN_TYPE == RunType::IncreasingProblemSize)
+    // ./poisson --help NameOfApplication
+    else if(argc == 3 && std::string(argv[1]) == "--help")
     {
-      // a vector storing tuples of the form (degree k, refine level l, n_subdivisions_1d)
-      std::vector<std::tuple<unsigned int, unsigned int, unsigned int>> resolutions;
+      if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
+        create_input_file(argv[2]);
 
-      // fill resolutions vector
-
-      if(RUN_TYPE == RunType::IncreasingProblemSize)
-      {
-        AssertThrow(
-          DEGREE_MIN == DEGREE_MAX,
-          ExcMessage(
-            "Only a single polynomial degree can be considered for RunType::IncreasingProblemSize"));
-      }
-
-      // k-refinement
-      for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
-      {
-        unsigned int const dim              = double(param.dim);
-        double const       dofs_per_element = std::pow(degree + 1, dim);
-
-        fill_resolutions_vector(
-          resolutions, degree, dim, dofs_per_element, N_DOFS_MIN, N_DOFS_MAX, RUN_TYPE);
-      }
-
-      // loop over resolutions vector and run simulations
-      for(auto iter = resolutions.begin(); iter != resolutions.end(); ++iter)
-      {
-        param.degree        = std::get<0>(*iter);
-        param.h_refinements = std::get<1>(*iter);
-        SUBDIVISIONS_MESH   = std::get<2>(*iter);
-
-        do_run(param, mpi_comm);
-      }
-    }
-#endif
-    else
-    {
-      AssertThrow(false,
-                  ExcMessage("Not implemented. Make sure to activate ENABLE_SUBDIVIDED_HYPERCUBE "
-                             "for RunType::FixedProblemSize or RunType::IncreasingProblemSize."));
+      return 0;
     }
 
-    // summarize results for all polynomial degrees and problem sizes
-    ConditionalOStream pcout(std::cout, Utilities::MPI::this_mpi_process(mpi_comm) == 0);
+    // the second argument is the input-file
+    // ./poisson InputFile
+    std::string    input_file = std::string(argv[1]);
+    ParameterStudy study(input_file);
 
-    pcout << std::endl
-          << "_________________________________________________________________________________"
-          << std::endl
-          << std::endl;
+    // fill resolutions vector depending on type of throughput study
+    unsigned int const n_components = 1;
+    study.fill_resolution_vector(n_components);
 
-    pcout << "Summary of performance results for Poisson solver:" << std::endl << std::endl;
+    std::vector<Timings> timings;
 
-    timings[0].print_header(pcout);
-    for(std::vector<Timings>::const_iterator it = timings.begin(); it != timings.end(); ++it)
-      it->print_results(pcout);
+    // loop over resolutions vector and run simulations
+    for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)
+    {
+      unsigned int const degree       = std::get<0>(*iter);
+      unsigned int const refine_space = std::get<1>(*iter);
+      unsigned int const n_cells_1d   = std::get<2>(*iter);
 
-    pcout << "_________________________________________________________________________________"
-          << std::endl
-          << std::endl;
+      if(study.dim == 2 && study.precision == "float")
+        run<2, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      else if(study.dim == 2 && study.precision == "double")
+        run<2, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      else if(study.dim == 3 && study.precision == "float")
+        run<3, float>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      else if(study.dim == 3 && study.precision == "double")
+        run<3, double>(timings, input_file, degree, refine_space, n_cells_1d, mpi_comm);
+      else
+        AssertThrow(false, ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
+    }
+
+    print_results(timings, mpi_comm);
   }
   catch(std::exception & exc)
   {

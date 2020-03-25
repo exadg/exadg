@@ -148,9 +148,7 @@ private:
 
   std::shared_ptr<DriverSteadyProblems<Number>> driver_steady;
 
-  /*
-   * Computation time (wall clock time).
-   */
+  // Computation time (wall clock time)
   Timer          timer;
   mutable double overall_time;
   double         setup_time;

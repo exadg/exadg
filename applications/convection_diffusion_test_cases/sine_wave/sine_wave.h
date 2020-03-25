@@ -78,10 +78,10 @@ public:
   add_parameters(ParameterHandler & prm)
   {
     // clang-format off
-  prm.enter_subsection("Application");
-    prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
-    prm.add_parameter("OutputName",       output_name,      "Name of output files.");
-  prm.leave_subsection();
+    prm.enter_subsection("Application");
+      prm.add_parameter("OutputDirectory",  output_directory, "Directory where output is written.");
+      prm.add_parameter("OutputName",       output_name,      "Name of output files.");
+    prm.leave_subsection();
     // clang-format on
   }
 

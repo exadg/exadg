@@ -5,27 +5,31 @@
  *      Author: fehn
  */
 
-#ifndef INCLUDE_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_
-#define INCLUDE_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_
+#ifndef INCLUDE_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
+#define INCLUDE_POISSON_USER_INTERFACE_APPLICATION_BASE_H_
 
 // deal.II
+#include <deal.II/distributed/fully_distributed_tria.h>
 #include <deal.II/distributed/tria.h>
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
+#include <deal.II/grid/manifold_lib.h>
+#include <deal.II/grid/tria_description.h>
 
 // functionalities
-#include "../../../include/functionalities/parse_input.h"
+#include "../../functionalities/parse_input.h"
 
 // user interface
-#include "boundary_descriptor.h"
+#include "../../convection_diffusion/user_interface/boundary_descriptor.h"
 #include "field_functions.h"
 #include "input_parameters.h"
 
 // postprocessor
-#include "../postprocessor/postprocessor.h"
+#include "../../convection_diffusion/postprocessor/postprocessor.h"
 
 using namespace dealii;
 
-namespace ConvDiff
+namespace Poisson
 {
 template<int dim, typename Number>
 class ApplicationBase
@@ -58,16 +62,13 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces) = 0;
 
-  virtual void
-    set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor) = 0;
+  virtual void set_boundary_conditions(
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor) = 0;
 
   virtual void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions) = 0;
 
-  virtual std::shared_ptr<Function<dim>>
-  set_mesh_movement_function() = 0;
-
-  virtual std::shared_ptr<PostProcessorBase<dim, Number>>
+  virtual std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
   construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm) = 0;
 
   void
@@ -83,8 +84,8 @@ protected:
   unsigned int n_subdivisions_1d_hypercube;
 };
 
-} // namespace ConvDiff
+} // namespace Poisson
 
 
 
-#endif /* INCLUDE_CONVECTION_DIFFUSION_USER_INTERFACE_APPLICATION_BASE_H_ */
+#endif /* INCLUDE_POISSON_USER_INTERFACE_APPLICATION_BASE_H_ */

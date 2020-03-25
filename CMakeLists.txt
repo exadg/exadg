@@ -65,6 +65,7 @@ SET( TARGET_SRC
      include/poisson/user_interface/input_parameters.cpp
      include/poisson/spatial_discretization/operator.cpp
      include/poisson/spatial_discretization/laplace_operator.cpp
+     include/poisson/driver.cpp
      # convection-diffusion equation
      include/convection_diffusion/user_interface/enum_types.cpp
      include/convection_diffusion/user_interface/input_parameters.cpp

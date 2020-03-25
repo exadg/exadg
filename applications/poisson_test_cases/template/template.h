@@ -1,16 +1,11 @@
 /*
- * application.h
- *
- *  Created on: 22.03.2020
- *      Author: fehn
+ * template.h
  */
 
-#ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_APPLICATION_H_
-#define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_APPLICATION_H_
+#ifndef APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_
+#define APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_
 
-// template that shows how to setup a new application
-
-namespace ConvDiff
+namespace Poisson
 {
 namespace Template
 {
@@ -67,8 +62,11 @@ public:
   set_input_parameters(InputParameters & param)
   {
     (void)param;
-    // TODO fill parameters
+
+    // Here, set all parameters differing from their default values as initialized in
+    // Poisson::InputParameters::InputParameters()
   }
+
 
   void
   create_grid(std::shared_ptr<parallel::TriangulationBase<dim>> triangulation,
@@ -76,52 +74,47 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces)
   {
+    // to avoid warnings (unused variable) use ...
+    (void)triangulation;
+    (void)n_refine_space;
     (void)periodic_faces;
-
-    GridGenerator::hyper_cube(*triangulation, -1.0, 1.0);
-    triangulation->refine_global(n_refine_space);
   }
 
-  std::shared_ptr<Function<dim>>
-  set_mesh_movement_function()
-  {
-    std::shared_ptr<Function<dim>> mesh_motion;
-    mesh_motion.reset(new Functions::ZeroFunction<dim>(dim));
 
-    return mesh_motion;
-  }
-
-  void set_boundary_conditions(std::shared_ptr<BoundaryDescriptor<0, dim>> boundary_descriptor)
+  void set_boundary_conditions(
+    std::shared_ptr<ConvDiff::BoundaryDescriptor<0, dim>> boundary_descriptor)
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
+
+    // these lines show exemplarily how the boundary descriptors are filled
     boundary_descriptor->dirichlet_bc.insert(pair(0, new Functions::ZeroFunction<dim>(1)));
+    boundary_descriptor->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(1)));
   }
 
 
   void
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
+    // these lines show exemplarily how the field functions are filled
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->velocity.reset(new Functions::ZeroFunction<dim>(dim));
   }
 
-  std::shared_ptr<PostProcessorBase<dim, Number>>
-  construct_postprocessor(InputParameters const & param, MPI_Comm const & mpi_comm)
+  std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
+  construct_postprocessor(Poisson::InputParameters const & param, MPI_Comm const & mpi_comm)
   {
     (void)param;
 
-    PostProcessorData<dim>                          pp_data;
-    std::shared_ptr<PostProcessorBase<dim, Number>> pp;
-    pp.reset(new PostProcessor<dim, Number>(pp_data, mpi_comm));
+    ConvDiff::PostProcessorData<dim> pp_data;
+
+    std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
+    pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));
 
     return pp;
   }
 };
 
 } // namespace Template
-} // namespace ConvDiff
+} // namespace Poisson
 
-
-
-#endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_APPLICATION_H_ */
+#endif /* APPLICATIONS_CONVECTION_DIFFUSION_TEST_CASES_TEMPLATE_H_ */

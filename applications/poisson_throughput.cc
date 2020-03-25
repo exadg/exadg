@@ -1,7 +1,7 @@
 /*
- * convection_diffusion_throughput.cc
+ * poisson_throughput.cc
  *
- *  Created on: Aug 18, 2016
+ *  Created on: 25.03.2020
  *      Author: fehn
  */
 
@@ -10,14 +10,14 @@
 #include <deal.II/base/parameter_handler.h>
 
 // driver
-#include "../include/convection_diffusion/driver.h"
+#include "../include/poisson/driver.h"
 
 // infrastructure for parameter studies and throughput measurements
 #include "../include/functionalities/parameter_study.h"
 #include "../include/functionalities/throughput_study.h"
 
 // application
-#include "convection_diffusion_test_cases/periodic_box/periodic_box.h"
+#include "poisson_test_cases/periodic_box/periodic_box.h"
 
 class ApplicationSelector
 {
@@ -36,9 +36,9 @@ public:
       name = name_of_application;
       this->add_name_parameter(prm);
 
-      std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> app;
+      std::shared_ptr<Poisson::ApplicationBase<dim, Number>> app;
       if(name == "PeriodicBox")
-        app.reset(new ConvDiff::PeriodicBox::Application<dim, Number>());
+        app.reset(new Poisson::PeriodicBox::Application<dim, Number>());
       else
         AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -47,16 +47,16 @@ public:
   }
 
   template<int dim, typename Number>
-  std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>>
+  std::shared_ptr<Poisson::ApplicationBase<dim, Number>>
   get_application(std::string input_file)
   {
     dealii::ParameterHandler prm;
     this->add_name_parameter(prm);
     parse_input(input_file, prm, true, true);
 
-    std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> app;
+    std::shared_ptr<Poisson::ApplicationBase<dim, Number>> app;
     if(name == "PeriodicBox")
-      app.reset(new ConvDiff::PeriodicBox::Application<dim, Number>(input_file));
+      app.reset(new Poisson::PeriodicBox::Application<dim, Number>(input_file));
     else
       AssertThrow(false, ExcMessage("This application does not exist!"));
 
@@ -74,7 +74,6 @@ private:
 
   std::string name = "MyApp";
 };
-
 
 void
 create_input_file(std::string const & name_of_application = "")
@@ -98,7 +97,6 @@ create_input_file(std::string const & name_of_application = "")
   prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::JSON, false);
 }
 
-
 template<int dim, typename Number>
 void
 run(ThroughputStudy const & throughput,
@@ -108,18 +106,16 @@ run(ThroughputStudy const & throughput,
     unsigned int const      n_cells_1d,
     MPI_Comm const &        mpi_comm)
 {
-  std::shared_ptr<ConvDiff::Driver<dim, Number>> driver;
-  driver.reset(new ConvDiff::Driver<dim, Number>(mpi_comm));
+  std::shared_ptr<Poisson::Driver<dim, Number>> driver;
+  driver.reset(new Poisson::Driver<dim, Number>(mpi_comm));
 
   ApplicationSelector selector;
 
-  std::shared_ptr<ConvDiff::ApplicationBase<dim, Number>> application =
+  std::shared_ptr<Poisson::ApplicationBase<dim, Number>> application =
     selector.get_application<dim, Number>(input_file);
   application->set_subdivisions_hypercube(n_cells_1d);
 
-  unsigned int const refine_time = 0; // not used
-  driver->setup(application, degree, refine_space, refine_time);
-
+  driver->setup(application, degree, refine_space);
 
   std::tuple<unsigned int, types::global_dof_index, double> wall_time =
     driver->apply_operator(throughput.operator_type,
@@ -128,7 +124,6 @@ run(ThroughputStudy const & throughput,
 
   throughput.wall_times.push_back(wall_time);
 }
-
 
 int
 main(int argc, char ** argv)
@@ -141,10 +136,10 @@ main(int argc, char ** argv)
 
     // check if parameter file is provided
 
-    // ./convection_diffusion_throughput
+    // ./poisson_throughput
     AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
 
-    // ./convection_diffusion_throughput --help
+    // ./poisson_throughput --help
     if(argc == 2 && std::string(argv[1]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
@@ -152,7 +147,7 @@ main(int argc, char ** argv)
 
       return 0;
     }
-    // ./convection_diffusion_throughput --help NameOfApplication
+    // ./poisson_throughput --help NameOfApplication
     else if(argc == 3 && std::string(argv[1]) == "--help")
     {
       if(dealii::Utilities::MPI::this_mpi_process(mpi_comm) == 0)
@@ -162,7 +157,7 @@ main(int argc, char ** argv)
     }
 
     // the second argument is the input-file
-    // ./convection_diffusion_throughput InputFile
+    // ./poisson_throughput InputFile
     std::string    input_file = std::string(argv[1]);
     ParameterStudy study(input_file);
 
