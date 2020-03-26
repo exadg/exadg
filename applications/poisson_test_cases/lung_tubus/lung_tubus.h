@@ -12,22 +12,6 @@ namespace Poisson
 namespace LungTubus
 {
 template<int dim>
-class RightHandSide : public Function<dim>
-{
-public:
-  RightHandSide(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  double
-  value(const Point<dim> & /*p*/, const unsigned int /* component */) const
-  {
-    return 1.0;
-  }
-};
-
-template<int dim>
 void
 set_manifolds_pipe(Triangulation<dim> & triangulation, double const radius)
 {
@@ -271,7 +255,7 @@ public:
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new RightHandSide<dim>());
+    field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(1.0, 1));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>

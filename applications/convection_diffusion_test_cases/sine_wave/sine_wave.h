@@ -37,27 +37,6 @@ public:
   }
 };
 
-template<int dim>
-class VelocityField : public Function<dim>
-{
-public:
-  VelocityField(const unsigned int n_components = dim, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  double
-  value(const Point<dim> & /*p*/, const unsigned int component = 0) const
-  {
-    double value = 0.0;
-
-    if(component == 0)
-      value = 1.0;
-
-    return value;
-  }
-};
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -213,7 +192,9 @@ public:
   {
     field_functions->initial_solution.reset(new Solution<dim>());
     field_functions->right_hand_side.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->velocity.reset(new VelocityField<dim>());
+    std::vector<double> velocity = std::vector<double>(dim, 0.0);
+    velocity[0]                  = 1.0;
+    field_functions->velocity.reset(new Functions::ConstantFunction<dim>(velocity));
   }
 
   std::shared_ptr<PostProcessorBase<dim, Number>>

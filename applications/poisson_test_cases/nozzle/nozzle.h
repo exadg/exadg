@@ -11,24 +11,6 @@ namespace Poisson
 {
 namespace Nozzle
 {
-template<int dim>
-class BoundaryCondition : public Function<dim>
-{
-public:
-  BoundaryCondition(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  double
-  value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
-  {
-    double result = 1.0;
-
-    return result;
-  }
-};
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -105,7 +87,7 @@ public:
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
     // inflow
-    boundary_descriptor->dirichlet_bc.insert(pair(1, new BoundaryCondition<dim>()));
+    boundary_descriptor->dirichlet_bc.insert(pair(1, new Functions::ConstantFunction<dim>(1.0, 1)));
 
     // outflow
     boundary_descriptor->dirichlet_bc.insert(pair(2, new Functions::ZeroFunction<dim>(1)));

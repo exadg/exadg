@@ -25,23 +25,6 @@ enum class VelocityType
 VelocityType const VELOCITY_TYPE = VelocityType::CircularZeroAtBoundary;
 
 template<int dim>
-class RightHandSide : public Function<dim>
-{
-public:
-  RightHandSide(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  double
-  value(const Point<dim> & /*p*/, const unsigned int /*component*/) const
-  {
-    double result = 1.0;
-    return result;
-  }
-};
-
-template<int dim>
 class VelocityField : public Function<dim>
 {
 public:
@@ -239,7 +222,7 @@ public:
   set_field_functions(std::shared_ptr<ConvDiff::FieldFunctions<dim>> field_functions)
   {
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new RightHandSide<dim>());
+    field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(1.0, 1));
     field_functions->velocity.reset(new VelocityField<dim>());
   }
 

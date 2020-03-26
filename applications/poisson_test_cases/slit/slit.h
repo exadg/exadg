@@ -11,15 +11,6 @@ namespace Poisson
 {
 namespace Slit
 {
-template<int dim>
-class Solution : public Functions::SlitSingularityFunction<dim>
-{
-public:
-  Solution() : Functions::SlitSingularityFunction<dim>()
-  {
-  }
-};
-
 template<int dim, typename Number>
 class Application : public ApplicationBase<dim, Number>
 {
@@ -102,7 +93,8 @@ public:
   {
     typedef typename std::pair<types::boundary_id, std::shared_ptr<Function<dim>>> pair;
 
-    boundary_descriptor->dirichlet_bc.insert(pair(0, new Solution<dim>()));
+    boundary_descriptor->dirichlet_bc.insert(
+      pair(0, new Functions::SlitSingularityFunction<dim>()));
   }
 
   void
@@ -123,7 +115,7 @@ public:
     pp_data.output_data.degree             = param.degree;
 
     pp_data.error_data.analytical_solution_available = true;
-    pp_data.error_data.analytical_solution.reset(new Solution<dim>());
+    pp_data.error_data.analytical_solution.reset(new Functions::SlitSingularityFunction<dim>());
 
     std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>> pp;
     pp.reset(new ConvDiff::PostProcessor<dim, Number>(pp_data, mpi_comm));

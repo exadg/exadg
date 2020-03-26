@@ -272,7 +272,6 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.dt_refinements = 0;
 
   // output of solver information
-  param.solver_info_data.print_to_screen = true;
   param.solver_info_data.interval_time = T_0;
 
 

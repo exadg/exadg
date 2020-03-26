@@ -5,28 +5,10 @@
  *      Author: fehn
  */
 
-#include "../../../include/functionalities/one_sided_cylindrical_manifold.h"
-
 namespace Poisson
 {
 namespace Torus
 {
-template<int dim>
-class RightHandSide : public Function<dim>
-{
-public:
-  RightHandSide(const unsigned int n_components = 1, const double time = 0.)
-    : Function<dim>(n_components, time)
-  {
-  }
-
-  double
-  value(const Point<dim> & /*p*/, const unsigned int /* component */) const
-  {
-    return 1.0;
-  }
-};
-
 void do_create_grid(
   std::shared_ptr<parallel::TriangulationBase<2>> /*triangulation*/,
   unsigned int const /*n_refine_space*/,
@@ -127,7 +109,7 @@ public:
   set_field_functions(std::shared_ptr<FieldFunctions<dim>> field_functions)
   {
     field_functions->initial_solution.reset(new Functions::ZeroFunction<dim>(1));
-    field_functions->right_hand_side.reset(new RightHandSide<dim>());
+    field_functions->right_hand_side.reset(new Functions::ConstantFunction<dim>(1.0, 1));
   }
 
   std::shared_ptr<ConvDiff::PostProcessorBase<dim, Number>>
