@@ -130,6 +130,7 @@ SET( TARGET_SRC
      include/compressible_navier_stokes/spatial_discretization/dg_operator.cpp
      include/compressible_navier_stokes/postprocessor/write_output.cpp
      include/compressible_navier_stokes/postprocessor/postprocessor.cpp
+     include/compressible_navier_stokes/driver.cpp
      # elasticity
      include/structure/user_interface/enum_types.cpp
      include/structure/material/library/st_venant_kirchhoff.cpp

@@ -55,9 +55,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // number of space dimensions
-  unsigned int dim;
-
   // description: see enum declaration
   EquationType equation_type;
 

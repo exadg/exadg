@@ -10,6 +10,7 @@
 
 #include "../../include/incompressible_navier_stokes/postprocessor/postprocessor.h"
 #include "../../include/functionalities/linear_interpolation.h"
+#include "../grid_tools/mesh_flow_past_cylinder.h"
 
 /************************************************************************************************************/
 /*                                                                                                          */
@@ -42,10 +43,6 @@ double const END_TIME = (TEST_CASE==1) ? 1000.0 : 8.0;
 
 // CFL number (use CFL <= 0.4 - 0.6 for adaptive time stepping)
 double const CFL = 0.6;
-
-// physical dimensions
-double const Y_C = 0.2; // center of cylinder (y-coordinate)
-double const D = 0.1; // cylinder diameter
 
 // use prescribed velocity profile at inflow superimposed by random perturbations (white noise)?
 bool const USE_RANDOM_PERTURBATION = false;
@@ -108,7 +105,6 @@ void set_input_parameters(InputParameters &param)
   param.dt_refinements = REFINE_TIME_MIN;
 
   // output of solver information
-  param.solver_info_data.print_to_screen = true;
   param.solver_info_data.interval_time = (param.end_time-param.start_time)/8.0;
 
   // pseudo-timestepping for steady-state problems
@@ -249,8 +245,6 @@ void set_input_parameters(InputParameters &param)
 /*                                       CREATE GRID AND SET BOUNDARY IDs                                   */
 /*                                                                                                          */
 /************************************************************************************************************/
-
-#include "../grid_tools/mesh_flow_past_cylinder.h"
 
 template<int dim>
 void

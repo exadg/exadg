@@ -26,15 +26,15 @@ SET( SOURCE_FILES
      # Incompressible flow with scalar transport
      incompressible_flow_with_transport.cc
 
+     # Compressible Navier-Stokes
+     compressible_navier_stokes.cc 
+     compressible_navier_stokes_throughput.cc
+
      # Elasticity
      elasticity.cc
 
      # Fluid-structure interaction
      fluid_structure_interaction.cc
-
-     # Compressible Navier-Stokes
-     compressible_navier_stokes_performance.cc 
-     compressible_navier_stokes.cc
 
      # Other
      gmres_test.cc

@@ -64,11 +64,11 @@ struct TurbulentChannelData
   std::string filename_prefix;
 };
 
-template<int dim>
+template<int dim, typename Number>
 class StatisticsManager
 {
 public:
-  typedef LinearAlgebra::distributed::Vector<double> VectorType;
+  typedef LinearAlgebra::distributed::Vector<Number> VectorType;
 
   StatisticsManager(const DoFHandler<dim> & dof_handler_velocity, const Mapping<dim> & mapping);
 

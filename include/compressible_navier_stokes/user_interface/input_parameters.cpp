@@ -14,7 +14,6 @@ namespace CompNS
 // standard constructor that initializes parameters with default values
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
-    dim(2),
     equation_type(EquationType::Undefined),
     right_hand_side(false),
 
@@ -69,8 +68,6 @@ void
 InputParameters::check_input_parameters()
 {
   // MATHEMATICAL MODEL
-  AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
-
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
 
 
@@ -155,7 +152,6 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
   print_parameter(pcout, "Right-hand side", right_hand_side);
 }

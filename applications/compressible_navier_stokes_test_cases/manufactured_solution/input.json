@@ -1,0 +1,17 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "DegreeMin": "6",
+        "DegreeMax": "6",
+        "RefineSpaceMin": "1",
+        "RefineSpaceMax": "1",
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+       	"Name": "ManufacturedSolution",
+	"OutputDirectory": "output/compressible_flow/manufactured_solution/",
+	"OutputName": "test"
+    }
+}

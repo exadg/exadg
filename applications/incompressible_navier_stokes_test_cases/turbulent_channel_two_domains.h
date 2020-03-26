@@ -136,7 +136,6 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.dt_refinements = 0;
 
   // output of solver information
-  param.solver_info_data.print_to_screen = true;
   param.solver_info_data.interval_time = CHARACTERISTIC_TIME;
 
   // SPATIAL DISCRETIZATION
@@ -750,7 +749,7 @@ public:
     Base::setup(pde_operator);
 
     // perform setup of turbulent channel related things
-    statistics_turb_ch.reset(new StatisticsManager<dim>(pde_operator.get_dof_handler_u(),
+    statistics_turb_ch.reset(new StatisticsManager<dim, Number>(pde_operator.get_dof_handler_u(),
                                                         pde_operator.get_mapping()));
 
     statistics_turb_ch->setup(&grid_transform_y,turb_ch_data);
@@ -780,7 +779,7 @@ public:
 
   bool write_final_output;
   TurbulentChannelData turb_ch_data;
-  std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
+  std::shared_ptr<StatisticsManager<dim, Number> > statistics_turb_ch;
   std::shared_ptr<InflowDataCalculator<dim, Number> > inflow_data_calculator;
 };
 

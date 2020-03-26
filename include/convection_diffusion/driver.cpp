@@ -247,7 +247,7 @@ template<int dim, typename Number>
 std::tuple<unsigned int, types::global_dof_index, double>
 Driver<dim, Number>::apply_operator(std::string const & operator_type_string,
                                     unsigned int const  n_repetitions_inner,
-                                    unsigned int const  n_repetitions_outer)
+                                    unsigned int const  n_repetitions_outer) const
 {
   pcout << std::endl << "Computing matrix-vector product ..." << std::endl;
 

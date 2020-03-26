@@ -171,7 +171,6 @@ void set_input_parameters(InputParameters &param, unsigned int const domain_id)
   param.dt_refinements = 0;
 
   // output of solver information
-  param.solver_info_data.print_to_screen = true;
   param.solver_info_data.interval_time = (END_TIME-START_TIME)/100;
 
   // SPATIAL DISCRETIZATION
@@ -812,7 +811,7 @@ public:
     // turbulent channel statistics for precursor simulation
     if(pp_data_bfs.turb_ch_data.calculate_statistics)
     {
-      statistics_turb_ch.reset(new StatisticsManager<dim>(pde_operator.get_dof_handler_u(),
+      statistics_turb_ch.reset(new StatisticsManager<dim, Number>(pde_operator.get_dof_handler_u(),
                                                           pde_operator.get_mapping()));
 
       statistics_turb_ch->setup(&grid_transform_turb_channel, pp_data_bfs.turb_ch_data);
@@ -870,7 +869,7 @@ public:
   bool write_final_output;
   bool write_final_output_lines;
   PostProcessorDataBFS<dim> pp_data_bfs;
-  std::shared_ptr<StatisticsManager<dim> > statistics_turb_ch;
+  std::shared_ptr<StatisticsManager<dim, Number> > statistics_turb_ch;
   std::shared_ptr<InflowDataCalculator<dim, Number> > inflow_data_calculator;
   std::shared_ptr<LinePlotCalculatorStatisticsHomogeneous<dim> > line_plot_calculator_statistics;
 };

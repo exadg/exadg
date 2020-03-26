@@ -104,7 +104,7 @@ public:
   std::tuple<unsigned int, types::global_dof_index, double>
   apply_operator(std::string const & operator_type,
                  unsigned int const  n_repetitions_inner,
-                 unsigned int const  n_repetitions_outer);
+                 unsigned int const  n_repetitions_outer) const;
 
   void
   analyze_computing_times() const;
