@@ -1075,7 +1075,9 @@ main(int argc, char ** argv)
     {
       set_input_parameters(scalar_param[i], i);
 
-      AssertThrow(fluid_param.dim == scalar_param[i].dim, ExcMessage("Invalid parameters!"));
+      // TODO: dim has been removed from ConvDiff::InputParameters
+      //      AssertThrow(fluid_param.dim == scalar_param[i].dim, ExcMessage("Invalid
+      //      parameters!"));
       AssertThrow(fluid_param.h_refinements == scalar_param[i].h_refinements,
                   ExcMessage("Invalid parameters!"));
       AssertThrow(fluid_param.restarted_simulation == scalar_param[i].restarted_simulation,

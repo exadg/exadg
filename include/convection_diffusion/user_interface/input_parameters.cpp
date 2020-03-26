@@ -13,7 +13,6 @@ namespace ConvDiff
 {
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
-    dim(2),
     problem_type(ProblemType::Undefined),
     equation_type(EquationType::Undefined),
     analytical_velocity_field(true),
@@ -86,8 +85,6 @@ void
 InputParameters::check_input_parameters()
 {
   // MATHEMATICAL MODEL
-  AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
-
   AssertThrow(problem_type != ProblemType::Undefined, ExcMessage("parameter must be defined"));
 
   AssertThrow(equation_type != EquationType::Undefined, ExcMessage("parameter must be defined"));
@@ -404,7 +401,6 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Problem type", enum_to_string(problem_type));
   print_parameter(pcout, "Equation type", enum_to_string(equation_type));
   print_parameter(pcout, "Right-hand side", right_hand_side);

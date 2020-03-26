@@ -78,7 +78,6 @@ public:
   set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim                         = 2;
     param.problem_type                = ProblemType::Unsteady;
     param.equation_type               = EquationType::Convection;
     param.analytical_velocity_field   = true;

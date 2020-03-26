@@ -209,10 +209,9 @@ public:
   std::string output_directory = "output/poisson/vtu/", output_name = "lung_tubus";
 
   void
-  set_input_parameters(Poisson::InputParameters & param)
+  set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim             = 3;
     param.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION

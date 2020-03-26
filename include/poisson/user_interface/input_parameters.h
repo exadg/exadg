@@ -50,10 +50,7 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // number of space dimensions
-  unsigned int dim;
-
-  // if the rhs f is unequal zero, set right_hand_side = true
+  // if the right-hand side f is unequal zero, set right_hand_side = true
   bool right_hand_side;
 
   /**************************************************************************************/

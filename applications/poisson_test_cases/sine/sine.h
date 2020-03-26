@@ -132,10 +132,9 @@ public:
   MeshType    mesh_type        = MeshType::Cartesian;
 
   void
-  set_input_parameters(Poisson::InputParameters & param)
+  set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim             = 2;
     param.right_hand_side = true;
 
     // SPATIAL DISCRETIZATION

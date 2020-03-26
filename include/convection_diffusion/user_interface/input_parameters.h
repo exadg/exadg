@@ -79,9 +79,6 @@ public:
   /*                                                                                    */
   /**************************************************************************************/
 
-  // number of space dimensions
-  unsigned int dim;
-
   // description: see enum declaration
   ProblemType problem_type;
 

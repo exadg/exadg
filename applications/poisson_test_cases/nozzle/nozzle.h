@@ -42,10 +42,9 @@ public:
 
 
   void
-  set_input_parameters(Poisson::InputParameters & param)
+  set_input_parameters(InputParameters & param)
   {
     // MATHEMATICAL MODEL
-    param.dim             = 3;
     param.right_hand_side = false;
 
     // SPATIAL DISCRETIZATION

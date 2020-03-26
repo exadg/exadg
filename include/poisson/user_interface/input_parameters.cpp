@@ -12,7 +12,6 @@ namespace Poisson
 {
 InputParameters::InputParameters()
   : // MATHEMATICAL MODEL
-    dim(2),
     right_hand_side(false),
 
     // SPATIAL DISCRETIZATION
@@ -37,7 +36,6 @@ void
 InputParameters::check_input_parameters()
 {
   // MATHEMATICAL MODEL
-  AssertThrow(dim == 2 || dim == 3, ExcMessage("Invalid parameter."));
 
   // SPATIAL DISCRETIZATION
   AssertThrow(triangulation_type != TriangulationType::Undefined,
@@ -77,7 +75,6 @@ InputParameters::print_parameters_mathematical_model(ConditionalOStream & pcout)
 {
   pcout << std::endl << "Mathematical model:" << std::endl;
 
-  print_parameter(pcout, "Space dimensions", dim);
   print_parameter(pcout, "Right-hand side", right_hand_side);
 }
 
