@@ -115,17 +115,17 @@ public:
     std::vector<types::global_dof_index> indices_has, indices_want;
 
     for(const auto & I : local_cells)
-      for(types::global_dof_index i = 0; i < Utilities::pow(points_dst, dim); i++)
+      for(types::global_dof_index i = 0; i < pow_(points_dst, dim); i++)
         for(types::global_dof_index d = 0; d < dim; d++)
         {
           types::global_dof_index index =
             (I / (n_cells_1D * n_cells_1D) * points_dst + i / (points_dst * points_dst)) *
-              Utilities::pow(n_cells_1D * points_dst, 2) +
+              pow_(n_cells_1D * points_dst, 2) +
             (((I / n_cells_1D) % n_cells_1D) * points_dst + ((i / points_dst) % points_dst)) *
-              Utilities::pow(n_cells_1D * points_dst, 1) +
+              pow_(n_cells_1D * points_dst, 1) +
             (I % (n_cells_1D)*points_dst + i % (points_dst));
 
-          indices_has.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + index);
+          indices_has.push_back(d * pow_(points_dst * n_cells_1D, dim) + index);
         }
 
     types::global_dof_index N  = s.cells * s.points_dst;
@@ -138,14 +138,14 @@ public:
         for(types::global_dof_index j = 0; j < N; j++)
           for(types::global_dof_index i = 0; i < Nx; i++, c++)
             if(i < N )
-              indices_want.push_back(d * Utilities::pow(points_dst * n_cells_1D, dim) + (k+start) * Utilities::pow(points_dst * n_cells_1D, 2) + j * Utilities::pow(points_dst * n_cells_1D, 1) + i);
+              indices_want.push_back(d * pow_(points_dst * n_cells_1D, dim) + (k+start) * pow_(points_dst * n_cells_1D, 2) + j * pow_(points_dst * n_cells_1D, 1) + i);
             else
               indices_want.push_back(numbers::invalid_dof_index); // x-padding
         
       for(; c < static_cast<types::global_dof_index>(fftw.bsize) ; c++)
         indices_want.push_back(numbers::invalid_dof_index); // z-padding
     }
-
+    
     nonconti = std::make_shared<Utilities::MPI::NoncontiguousPartitioner<double>>(indices_has,
                                                                                   indices_want,
                                                                                   comm);
@@ -183,9 +183,9 @@ public:
       ArrayView<double> dst(
         fftw.u_real,
         s.dim *
-          Utilities::pow(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
+          pow_(static_cast<types::global_dof_index>(s.cells * s.points_dst), s.dim) * 2);
       ArrayView<double> src_(ipol.dst,
-                             s.dim * Utilities::pow(static_cast<types::global_dof_index>(
+                             s.dim * pow_(static_cast<types::global_dof_index>(
                                                       s.cells * s.points_dst),
                                                     s.dim));
       nonconti->update_values(dst, src_);
@@ -228,6 +228,16 @@ public:
   }
 
 private:
+    
+    types::global_dof_index pow_ (const types::global_dof_index base, const types::global_dof_index exp){
+        types::global_dof_index result = 1.0;
+        
+        for(types::global_dof_index i = 0; i < exp; i++)
+            result *= base;
+        
+        return result;
+    };
+    
   template<int dim>
   double norm_point_to_lex(const Point<dim> &c, const unsigned int &n_cells_1D)
   {
