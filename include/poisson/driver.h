@@ -70,6 +70,18 @@ string_to_enum(OperatorType & enum_type, std::string const string_type)
   // clang-format on
 }
 
+inline unsigned int
+get_dofs_per_element(std::string const & operator_type_string,
+                     unsigned int const  dim,
+                     unsigned int const  degree)
+{
+  (void)operator_type_string;
+
+  unsigned int const dofs_per_element = std::pow(degree + 1, dim);
+
+  return dofs_per_element;
+}
+
 template<int dim, typename Number>
 class Driver
 {

@@ -10,6 +10,8 @@
 
 #include <deal.II/base/parameter_handler.h>
 
+#include "parse_input.h"
+
 using namespace dealii;
 
 struct ConvergenceStudy

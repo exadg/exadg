@@ -1,0 +1,17 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "DegreeMin": "2",
+        "DegreeMax": "2",
+        "RefineSpaceMin": "0",
+        "RefineSpaceMax": "0",
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+       	"Name": "Poiseuille",
+	"OutputDirectory": "output/poiseuille/",
+	"OutputName": "test"
+    }
+}

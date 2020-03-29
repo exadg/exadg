@@ -5,639 +5,226 @@
  *      Author: fehn
  */
 
-// deal.II
-#include <deal.II/base/revision.h>
-#include <deal.II/distributed/fully_distributed_tria.h>
-#include <deal.II/distributed/tria.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_tools.h>
-#include <deal.II/grid/manifold_lib.h>
+// driver
+#include "../include/incompressible_navier_stokes/driver.h"
 
-// postprocessor
-#include "../include/incompressible_navier_stokes/postprocessor/postprocessor_base.h"
+// infrastructure for convergence studies
+#include "../include/functionalities/convergence_study.h"
 
-// spatial discretization
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/dg_pressure_correction.h"
-#include "../include/incompressible_navier_stokes/spatial_discretization/interface.h"
-
-// temporal discretization
-#include "../include/incompressible_navier_stokes/time_integration/driver_steady_problems.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_coupled_solver.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_dual_splitting.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_navier_stokes.h"
-#include "../include/incompressible_navier_stokes/time_integration/time_int_bdf_pressure_correction.h"
-
-// Parameters, BCs, etc.
-#include "../include/incompressible_navier_stokes/user_interface/boundary_descriptor.h"
-#include "../include/incompressible_navier_stokes/user_interface/field_functions.h"
-#include "../include/incompressible_navier_stokes/user_interface/input_parameters.h"
-
-// general functionalities
-#include "../include/functionalities/mapping_degree.h"
-#include "../include/functionalities/matrix_free_wrapper.h"
-#include "../include/functionalities/moving_mesh.h"
-#include "../include/functionalities/print_general_infos.h"
-#include "../include/functionalities/verify_boundary_conditions.h"
-
-using namespace dealii;
-using namespace IncNS;
-
-// specify the flow problem that has to be solved
+// applications
 
 // template
-#include "incompressible_navier_stokes_test_cases/template.h"
+#include "incompressible_navier_stokes_test_cases/template/template.h"
 
-// 2D Stokes flow
-//#include "incompressible_navier_stokes_test_cases/stokes_guermond.h"
-//#include "incompressible_navier_stokes_test_cases/stokes_shahbazi.h"
-//#include "incompressible_navier_stokes_test_cases/stokes_curl_flow.h"
+// Stokes flow - analytical solutions
+#include "incompressible_navier_stokes_test_cases/stokes_curl_flow/stokes_curl_flow.h"
+#include "incompressible_navier_stokes_test_cases/stokes_guermond/stokes_guermond.h"
+#include "incompressible_navier_stokes_test_cases/stokes_shahbazi/stokes_shahbazi.h"
 
-// 2D Navier-Stokes flow
-//#include "incompressible_navier_stokes_test_cases/free_stream_preservation_test.h"
-//#include "incompressible_navier_stokes_test_cases/couette.h"
-//#include "incompressible_navier_stokes_test_cases/poiseuille.h"
-//#include "incompressible_navier_stokes_test_cases/poiseuille_pressure_inflow.h"
-//#include "incompressible_navier_stokes_test_cases/cavity.h"
-//#include "incompressible_navier_stokes_test_cases/kovasznay.h"
-//#include "incompressible_navier_stokes_test_cases/vortex.h"
-//#include "incompressible_navier_stokes_test_cases/taylor_vortex.h"
-//#include "incompressible_navier_stokes_test_cases/tum.h"
-//#include "incompressible_navier_stokes_test_cases/orr_sommerfeld.h"
-//#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz.h"
-//#include "incompressible_navier_stokes_test_cases/shear_layer_problem.h"
+// Navier-Stokes flow - analytical solutions
+#include "incompressible_navier_stokes_test_cases/beltrami/beltrami.h"
+#include "incompressible_navier_stokes_test_cases/cavity/cavity.h"
+#include "incompressible_navier_stokes_test_cases/couette/couette.h"
+#include "incompressible_navier_stokes_test_cases/free_stream/free_stream.h"
+#include "incompressible_navier_stokes_test_cases/kovasznay/kovasznay.h"
+#include "incompressible_navier_stokes_test_cases/orr_sommerfeld/orr_sommerfeld.h"
+#include "incompressible_navier_stokes_test_cases/poiseuille/poiseuille.h"
+#include "incompressible_navier_stokes_test_cases/unstable_beltrami/unstable_beltrami.h"
+#include "incompressible_navier_stokes_test_cases/vortex/vortex.h"
+#include "incompressible_navier_stokes_test_cases/vortex_periodic/vortex_periodic.h"
 
-// 2D/3D Navier-Stokes flow
-//#include "incompressible_navier_stokes_test_cases/flow_past_cylinder.h"
-
-// 3D Navier-Stokes flow
-//#include "incompressible_navier_stokes_test_cases/beltrami.h"
-//#include "incompressible_navier_stokes_test_cases/unstable_beltrami.h"
-//#include "incompressible_navier_stokes_test_cases/3D_taylor_green_vortex.h"
-//#include "incompressible_navier_stokes_test_cases/turbulent_channel.h"
-//#include "incompressible_navier_stokes_test_cases/periodic_hill.h"
+// more complex applications and turbulence
+#include "incompressible_navier_stokes_test_cases/flow_past_cylinder/flow_past_cylinder.h"
+#include "incompressible_navier_stokes_test_cases/kelvin_helmholtz/kelvin_helmholtz.h"
+#include "incompressible_navier_stokes_test_cases/periodic_hill/periodic_hill.h"
+#include "incompressible_navier_stokes_test_cases/shear_layer/shear_layer.h"
+#include "incompressible_navier_stokes_test_cases/taylor_green_vortex/taylor_green_vortex.h"
+#include "incompressible_navier_stokes_test_cases/tum/tum.h"
+#include "incompressible_navier_stokes_test_cases/turbulent_channel/turbulent_channel.h"
 //#include "incompressible_navier_stokes_test_cases/fda_nozzle_benchmark.h"
 
 // incompressible flow with scalar transport (but can also be used for pure fluid simulations)
 //#include "incompressible_flow_with_transport_test_cases/lung.h"
 
-template<typename Number>
-class ProblemBase
+class ApplicationSelector
 {
 public:
-  virtual ~ProblemBase()
+  template<int dim, typename Number>
+  void
+  add_parameters(dealii::ParameterHandler & prm, std::string name_of_application = "")
   {
+    // application is unknown -> only add name of application to parameters
+    if(name_of_application.length() == 0)
+    {
+      this->add_name_parameter(prm);
+    }
+    else // application is known -> add also application-specific parameters
+    {
+      name = name_of_application;
+      this->add_name_parameter(prm);
+
+      std::shared_ptr<IncNS::ApplicationBase<dim, Number>> app;
+      if(name == "Template")
+        app.reset(new IncNS::Template::Application<dim, Number>());
+      else if(name == "StokesGuermond")
+        app.reset(new IncNS::StokesGuermond::Application<dim, Number>());
+      else if(name == "StokesShahbazi")
+        app.reset(new IncNS::StokesShahbazi::Application<dim, Number>());
+      else if(name == "StokesCurlFlow")
+        app.reset(new IncNS::StokesCurlFlow::Application<dim, Number>());
+      else if(name == "FreeStream")
+        app.reset(new IncNS::FreeStream::Application<dim, Number>());
+      else if(name == "Couette")
+        app.reset(new IncNS::Couette::Application<dim, Number>());
+      else if(name == "Poiseuille")
+        app.reset(new IncNS::Poiseuille::Application<dim, Number>());
+      else if(name == "Cavity")
+        app.reset(new IncNS::Cavity::Application<dim, Number>());
+      else if(name == "Kovasznay")
+        app.reset(new IncNS::Kovasznay::Application<dim, Number>());
+      else if(name == "VortexPeriodic")
+        app.reset(new IncNS::VortexPeriodic::Application<dim, Number>());
+      else if(name == "Vortex")
+        app.reset(new IncNS::Vortex::Application<dim, Number>());
+      else if(name == "OrrSommerfeld")
+        app.reset(new IncNS::OrrSommerfeld::Application<dim, Number>());
+      else if(name == "Beltrami")
+        app.reset(new IncNS::Beltrami::Application<dim, Number>());
+      else if(name == "UnstableBeltrami")
+        app.reset(new IncNS::UnstableBeltrami::Application<dim, Number>());
+      else if(name == "KelvinHelmholtz")
+        app.reset(new IncNS::KelvinHelmholtz::Application<dim, Number>());
+      else if(name == "ShearLayer")
+        app.reset(new IncNS::ShearLayer::Application<dim, Number>());
+      else if(name == "TUM")
+        app.reset(new IncNS::TUM::Application<dim, Number>());
+      else if(name == "FlowPastCylinder")
+        app.reset(new IncNS::FlowPastCylinder::Application<dim, Number>());
+      else if(name == "TaylorGreenVortex")
+        app.reset(new IncNS::TaylorGreenVortex::Application<dim, Number>());
+      else if(name == "TurbulentChannel")
+        app.reset(new IncNS::TurbulentChannel::Application<dim, Number>());
+      else if(name == "PeriodicHill")
+        app.reset(new IncNS::PeriodicHill::Application<dim, Number>());
+      else
+        AssertThrow(false, ExcMessage("This application does not exist!"));
+
+      app->add_parameters(prm);
+    }
   }
 
-  virtual void
-  setup(InputParameters const & param) = 0;
+  template<int dim, typename Number>
+  std::shared_ptr<IncNS::ApplicationBase<dim, Number>>
+  get_application(std::string input_file)
+  {
+    dealii::ParameterHandler prm;
+    this->add_name_parameter(prm);
+    parse_input(input_file, prm, true, true);
 
-  virtual void
-  solve() const = 0;
+    std::shared_ptr<IncNS::ApplicationBase<dim, Number>> app;
+    if(name == "Template")
+      app.reset(new IncNS::Template::Application<dim, Number>(input_file));
+    else if(name == "StokesGuermond")
+      app.reset(new IncNS::StokesGuermond::Application<dim, Number>(input_file));
+    else if(name == "StokesShahbazi")
+      app.reset(new IncNS::StokesShahbazi::Application<dim, Number>(input_file));
+    else if(name == "StokesCurlFlow")
+      app.reset(new IncNS::StokesCurlFlow::Application<dim, Number>(input_file));
+    else if(name == "FreeStream")
+      app.reset(new IncNS::FreeStream::Application<dim, Number>(input_file));
+    else if(name == "Couette")
+      app.reset(new IncNS::Couette::Application<dim, Number>(input_file));
+    else if(name == "Poiseuille")
+      app.reset(new IncNS::Poiseuille::Application<dim, Number>(input_file));
+    else if(name == "Cavity")
+      app.reset(new IncNS::Cavity::Application<dim, Number>(input_file));
+    else if(name == "Kovasznay")
+      app.reset(new IncNS::Kovasznay::Application<dim, Number>(input_file));
+    else if(name == "VortexPeriodic")
+      app.reset(new IncNS::VortexPeriodic::Application<dim, Number>(input_file));
+    else if(name == "Vortex")
+      app.reset(new IncNS::Vortex::Application<dim, Number>(input_file));
+    else if(name == "OrrSommerfeld")
+      app.reset(new IncNS::OrrSommerfeld::Application<dim, Number>(input_file));
+    else if(name == "Beltrami")
+      app.reset(new IncNS::Beltrami::Application<dim, Number>(input_file));
+    else if(name == "UnstableBeltrami")
+      app.reset(new IncNS::UnstableBeltrami::Application<dim, Number>(input_file));
+    else if(name == "KelvinHelmholtz")
+      app.reset(new IncNS::KelvinHelmholtz::Application<dim, Number>(input_file));
+    else if(name == "ShearLayer")
+      app.reset(new IncNS::ShearLayer::Application<dim, Number>(input_file));
+    else if(name == "TUM")
+      app.reset(new IncNS::TUM::Application<dim, Number>(input_file));
+    else if(name == "FlowPastCylinder")
+      app.reset(new IncNS::FlowPastCylinder::Application<dim, Number>(input_file));
+    else if(name == "TaylorGreenVortex")
+      app.reset(new IncNS::TaylorGreenVortex::Application<dim, Number>(input_file));
+    else if(name == "TurbulentChannel")
+      app.reset(new IncNS::TurbulentChannel::Application<dim, Number>(input_file));
+    else if(name == "PeriodicHill")
+      app.reset(new IncNS::PeriodicHill::Application<dim, Number>(input_file));
+    else
+      AssertThrow(false, ExcMessage("This application does not exist!"));
 
-  virtual void
-  analyze_computing_times() const = 0;
-};
-
-template<int dim, typename Number>
-class Problem : public ProblemBase<Number>
-{
-public:
-  Problem(MPI_Comm const & comm);
-
-  void
-  setup(InputParameters const & param);
-
-  void
-  solve() const;
-
-  void
-  analyze_computing_times() const;
+    return app;
+  }
 
 private:
   void
-  print_header() const;
+  add_name_parameter(ParameterHandler & prm)
+  {
+    prm.enter_subsection("Application");
+    prm.add_parameter("Name", name, "Name of application.");
+    prm.leave_subsection();
+  }
 
-  MPI_Comm const & mpi_comm;
-
-  ConditionalOStream pcout;
-
-  /*
-   * Mesh: triangulation, mapping
-   */
-  std::shared_ptr<parallel::TriangulationBase<dim>> triangulation;
-  std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>>
-    periodic_faces;
-
-  // mapping (static and moving meshes)
-  std::shared_ptr<Mesh<dim>>                         mesh;
-  std::shared_ptr<MovingMeshAnalytical<dim, Number>> moving_mesh;
-
-  std::shared_ptr<FieldFunctions<dim>>      field_functions;
-  std::shared_ptr<BoundaryDescriptorU<dim>> boundary_descriptor_velocity;
-  std::shared_ptr<BoundaryDescriptorP<dim>> boundary_descriptor_pressure;
-
-  /*
-   * Parameters
-   */
-  InputParameters param;
-
-  /*
-   * MatrixFree
-   */
-  std::shared_ptr<MatrixFreeWrapper<dim, Number>> matrix_free_wrapper;
-
-  /*
-   * Spatial discretization
-   */
-  typedef DGNavierStokesBase<dim, Number>               DGBase;
-  typedef DGNavierStokesCoupled<dim, Number>            DGCoupled;
-  typedef DGNavierStokesDualSplitting<dim, Number>      DGDualSplitting;
-  typedef DGNavierStokesPressureCorrection<dim, Number> DGPressureCorrection;
-
-  std::shared_ptr<DGBase>               navier_stokes_operator;
-  std::shared_ptr<DGCoupled>            navier_stokes_operator_coupled;
-  std::shared_ptr<DGDualSplitting>      navier_stokes_operator_dual_splitting;
-  std::shared_ptr<DGPressureCorrection> navier_stokes_operator_pressure_correction;
-
-  /*
-   * Postprocessor
-   */
-  typedef PostProcessorBase<dim, Number> Postprocessor;
-
-  std::shared_ptr<Postprocessor> postprocessor;
-
-  /*
-   * Temporal discretization
-   */
-
-  // unsteady solvers
-  typedef TimeIntBDF<dim, Number>                   TimeInt;
-  typedef TimeIntBDFCoupled<dim, Number>            TimeIntCoupled;
-  typedef TimeIntBDFDualSplitting<dim, Number>      TimeIntDualSplitting;
-  typedef TimeIntBDFPressureCorrection<dim, Number> TimeIntPressureCorrection;
-
-  std::shared_ptr<TimeInt> time_integrator;
-
-  // steady solver
-  typedef DriverSteadyProblems<dim, Number> DriverSteady;
-
-  std::shared_ptr<DriverSteady> driver_steady;
-
-  /*
-   * Computation time (wall clock time).
-   */
-  Timer          timer;
-  mutable double overall_time;
-  double         setup_time;
-  mutable double ale_update_time;
+  std::string name = "MyApp";
 };
 
-template<int dim, typename Number>
-Problem<dim, Number>::Problem(MPI_Comm const & comm)
-  : mpi_comm(comm),
-    pcout(std::cout, Utilities::MPI::this_mpi_process(comm) == 0),
-    overall_time(0.0),
-    setup_time(0.0),
-    ale_update_time(0.0)
+void
+create_input_file(std::string const & name_of_application = "")
 {
+  dealii::ParameterHandler prm;
+
+  ConvergenceStudy study;
+  study.add_parameters(prm);
+
+  // we have to assume a default dimension and default Number type
+  // for the automatic generation of a default input file
+  unsigned int const Dim = 2;
+  typedef double     Number;
+
+  ApplicationSelector selector;
+  selector.add_parameters<Dim, Number>(prm, name_of_application);
+
+  prm.print_parameters(std::cout, dealii::ParameterHandler::OutputStyle::JSON, false);
 }
 
 template<int dim, typename Number>
 void
-Problem<dim, Number>::print_header() const
+run(std::string const & input_file,
+    unsigned int const  degree,
+    unsigned int const  refine_space,
+    unsigned int const  refine_time,
+    MPI_Comm const &    mpi_comm)
 {
-  // clang-format off
-  pcout << std::endl << std::endl << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << "                                                                                 " << std::endl
-  << "                High-order discontinuous Galerkin solver for the                 " << std::endl
-  << "                     incompressible Navier-Stokes equations                      " << std::endl
-  << "_________________________________________________________________________________" << std::endl
-  << std::endl;
-  // clang-format on
+  std::shared_ptr<IncNS::Driver<dim, Number>> solver;
+  solver.reset(new IncNS::Driver<dim, Number>(mpi_comm));
+
+  ApplicationSelector selector;
+
+  std::shared_ptr<IncNS::ApplicationBase<dim, Number>> application =
+    selector.get_application<dim, Number>(input_file);
+
+  solver->setup(application, degree, refine_space, refine_time);
+
+  solver->solve();
+
+  solver->analyze_computing_times();
 }
 
-template<int dim, typename Number>
-void
-Problem<dim, Number>::setup(InputParameters const & param_in)
-{
-  timer.restart();
-
-  print_header();
-  print_dealii_info<Number>(pcout);
-  print_MPI_info(pcout, mpi_comm);
-
-  // input parameters
-  param = param_in;
-  param.check_input_parameters(pcout);
-  param.print(pcout, "List of input parameters:");
-
-  // triangulation
-  if(param.triangulation_type == TriangulationType::Distributed)
-  {
-    triangulation.reset(new parallel::distributed::Triangulation<dim>(
-      mpi_comm,
-      dealii::Triangulation<dim>::none,
-      parallel::distributed::Triangulation<dim>::construct_multigrid_hierarchy));
-  }
-  else if(param.triangulation_type == TriangulationType::FullyDistributed)
-  {
-    triangulation.reset(new parallel::fullydistributed::Triangulation<dim>(mpi_comm));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Invalid parameter triangulation_type."));
-  }
-
-  create_grid_and_set_boundary_ids(triangulation, param.h_refinements, periodic_faces);
-  print_grid_data(pcout, param.h_refinements, *triangulation);
-
-  boundary_descriptor_velocity.reset(new BoundaryDescriptorU<dim>());
-  boundary_descriptor_pressure.reset(new BoundaryDescriptorP<dim>());
-
-  set_boundary_conditions(boundary_descriptor_velocity, boundary_descriptor_pressure);
-  verify_boundary_conditions(*boundary_descriptor_velocity, *triangulation, periodic_faces);
-  verify_boundary_conditions(*boundary_descriptor_pressure, *triangulation, periodic_faces);
-
-  // field functions and boundary conditions
-  field_functions.reset(new FieldFunctions<dim>());
-  set_field_functions(field_functions);
-
-  // mapping
-  unsigned int const mapping_degree = get_mapping_degree(param.mapping, param.degree_u);
-
-  if(param.ale_formulation) // moving mesh
-  {
-    std::shared_ptr<Function<dim>> mesh_motion = set_mesh_movement_function<dim>();
-    moving_mesh.reset(new MovingMeshAnalytical<dim, Number>(
-      *triangulation, mapping_degree, param.degree_u, mpi_comm, mesh_motion, param.start_time));
-
-    mesh = moving_mesh;
-  }
-  else // static mesh
-  {
-    mesh.reset(new Mesh<dim>(mapping_degree));
-  }
-
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    // initialize navier_stokes_operator
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
-      navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
-                                                         mesh->get_mapping(),
-                                                         periodic_faces,
-                                                         boundary_descriptor_velocity,
-                                                         boundary_descriptor_pressure,
-                                                         field_functions,
-                                                         param,
-                                                         mpi_comm));
-
-      navier_stokes_operator = navier_stokes_operator_coupled;
-    }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      navier_stokes_operator_dual_splitting.reset(new DGDualSplitting(*triangulation,
-                                                                      mesh->get_mapping(),
-                                                                      periodic_faces,
-                                                                      boundary_descriptor_velocity,
-                                                                      boundary_descriptor_pressure,
-                                                                      field_functions,
-                                                                      param,
-                                                                      mpi_comm));
-
-      navier_stokes_operator = navier_stokes_operator_dual_splitting;
-    }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      navier_stokes_operator_pressure_correction.reset(
-        new DGPressureCorrection(*triangulation,
-                                 mesh->get_mapping(),
-                                 periodic_faces,
-                                 boundary_descriptor_velocity,
-                                 boundary_descriptor_pressure,
-                                 field_functions,
-                                 param,
-                                 mpi_comm));
-
-      navier_stokes_operator = navier_stokes_operator_pressure_correction;
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-  else if(param.solver_type == SolverType::Steady)
-  {
-    navier_stokes_operator_coupled.reset(new DGCoupled(*triangulation,
-                                                       mesh->get_mapping(),
-                                                       periodic_faces,
-                                                       boundary_descriptor_velocity,
-                                                       boundary_descriptor_pressure,
-                                                       field_functions,
-                                                       param,
-                                                       mpi_comm));
-
-    navier_stokes_operator = navier_stokes_operator_coupled;
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  // initialize matrix_free
-  matrix_free_wrapper.reset(new MatrixFreeWrapper<dim, Number>(mesh->get_mapping()));
-  matrix_free_wrapper->append_data_structures(*navier_stokes_operator);
-  matrix_free_wrapper->reinit(param.use_cell_based_face_loops, triangulation);
-
-  // setup Navier-Stokes operator
-  navier_stokes_operator->setup(matrix_free_wrapper);
-
-  // setup postprocessor
-  postprocessor = construct_postprocessor<dim, Number>(param, mpi_comm);
-  postprocessor->setup(*navier_stokes_operator);
-
-  // setup time integrator before calling setup_solvers
-  // (this is necessary since the setup of the solvers
-  // depends on quantities such as the time_step_size or gamma0!!!)
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    // initialize navier_stokes_operator
-    if(this->param.temporal_discretization == TemporalDiscretization::BDFCoupledSolution)
-    {
-      time_integrator.reset(new TimeIntCoupled(navier_stokes_operator_coupled,
-                                               param,
-                                               mpi_comm,
-                                               postprocessor,
-                                               moving_mesh,
-                                               matrix_free_wrapper));
-    }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFDualSplittingScheme)
-    {
-      time_integrator.reset(new TimeIntDualSplitting(navier_stokes_operator_dual_splitting,
-                                                     param,
-                                                     mpi_comm,
-                                                     postprocessor,
-                                                     moving_mesh,
-                                                     matrix_free_wrapper));
-    }
-    else if(this->param.temporal_discretization == TemporalDiscretization::BDFPressureCorrection)
-    {
-      time_integrator.reset(
-        new TimeIntPressureCorrection(navier_stokes_operator_pressure_correction,
-                                      param,
-                                      mpi_comm,
-                                      postprocessor,
-                                      moving_mesh,
-                                      matrix_free_wrapper));
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-  else if(param.solver_type == SolverType::Steady)
-  {
-    // initialize driver for steady state problem that depends on navier_stokes_operator
-    driver_steady.reset(
-      new DriverSteady(navier_stokes_operator_coupled, param, mpi_comm, postprocessor));
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    time_integrator->setup(param.restarted_simulation);
-
-    navier_stokes_operator->setup_solvers(
-      time_integrator->get_scaling_factor_time_derivative_term(), time_integrator->get_velocity());
-  }
-  else if(param.solver_type == SolverType::Steady)
-  {
-    driver_steady->setup();
-
-    navier_stokes_operator->setup_solvers(1.0 /* dummy */, driver_steady->get_velocity());
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  setup_time = timer.wall_time();
-}
-
-template<int dim, typename Number>
-void
-Problem<dim, Number>::solve() const
-{
-  if(this->param.problem_type == ProblemType::Unsteady)
-  {
-    // stability analysis (uncomment if desired)
-    // time_integrator->postprocessing_stability_analysis();
-
-    if(this->param.ale_formulation == true)
-    {
-      do
-      {
-        time_integrator->advance_one_timestep_pre_solve();
-
-        // move the mesh and update dependent data structures
-        Timer timer;
-        timer.restart();
-
-        moving_mesh->move_mesh(time_integrator->get_next_time());
-        matrix_free_wrapper->update_geometry();
-        navier_stokes_operator->update_after_mesh_movement();
-        time_integrator->ale_update();
-
-        ale_update_time += timer.wall_time();
-
-        time_integrator->advance_one_timestep_solve();
-
-        time_integrator->advance_one_timestep_post_solve();
-      } while(!time_integrator->finished());
-    }
-    else
-    {
-      time_integrator->timeloop();
-    }
-  }
-  else if(this->param.problem_type == ProblemType::Steady)
-  {
-    if(param.solver_type == SolverType::Unsteady)
-    {
-      time_integrator->timeloop_steady_problem();
-    }
-    else if(param.solver_type == SolverType::Steady)
-    {
-      // solve steady problem
-      driver_steady->solve_steady_problem();
-    }
-    else
-    {
-      AssertThrow(false, ExcMessage("Not implemented."));
-    }
-  }
-  else
-  {
-    AssertThrow(false, ExcMessage("Not implemented."));
-  }
-
-  overall_time += this->timer.wall_time();
-}
-
-template<int dim, typename Number>
-void
-Problem<dim, Number>::analyze_computing_times() const
-{
-  this->pcout << std::endl
-              << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-
-  this->pcout << "Performance results for incompressible Navier-Stokes solver:" << std::endl;
-
-  // Iterations
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    this->pcout << std::endl << "Average number of iterations:" << std::endl;
-
-    std::vector<std::string> names;
-    std::vector<double>      iterations;
-
-    this->time_integrator->get_iterations(names, iterations);
-
-    unsigned int length = 1;
-    for(unsigned int i = 0; i < names.size(); ++i)
-    {
-      length = length > names[i].length() ? length : names[i].length();
-    }
-
-    for(unsigned int i = 0; i < iterations.size(); ++i)
-    {
-      this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::fixed
-                  << std::setprecision(2) << std::right << std::setw(6) << iterations[i]
-                  << std::endl;
-    }
-  }
-
-  // overall wall time including postprocessing
-  Utilities::MPI::MinMaxAvg overall_time_data = Utilities::MPI::min_max_avg(overall_time, mpi_comm);
-  double const              overall_time_avg  = overall_time_data.avg;
-
-  // wall times
-  this->pcout << std::endl << "Wall times:" << std::endl;
-
-  std::vector<std::string> names;
-  std::vector<double>      computing_times;
-
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    this->time_integrator->get_wall_times(names, computing_times);
-  }
-  else
-  {
-    this->driver_steady->get_wall_times(names, computing_times);
-  }
-
-  unsigned int length = 1;
-  for(unsigned int i = 0; i < names.size(); ++i)
-  {
-    length = length > names[i].length() ? length : names[i].length();
-  }
-
-  double sum_of_substeps = 0.0;
-  for(unsigned int i = 0; i < computing_times.size(); ++i)
-  {
-    Utilities::MPI::MinMaxAvg data = Utilities::MPI::min_max_avg(computing_times[i], mpi_comm);
-    this->pcout << "  " << std::setw(length + 2) << std::left << names[i] << std::setprecision(2)
-                << std::scientific << std::setw(10) << std::right << data.avg << " s  "
-                << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-                << data.avg / overall_time_avg * 100 << " %" << std::endl;
-
-    sum_of_substeps += data.avg;
-  }
-
-  Utilities::MPI::MinMaxAvg setup_time_data = Utilities::MPI::min_max_avg(setup_time, mpi_comm);
-  double const              setup_time_avg  = setup_time_data.avg;
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Setup" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << setup_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << setup_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  Utilities::MPI::MinMaxAvg ale_time_data = Utilities::MPI::min_max_avg(ale_update_time, mpi_comm);
-  double const              ale_time_avg  = ale_time_data.avg;
-  if(this->param.ale_formulation)
-  {
-    this->pcout << "  " << std::setw(length + 2) << std::left << "ALE update"
-                << std::setprecision(2) << std::scientific << std::setw(10) << std::right
-                << ale_time_avg << " s  " << std::setprecision(2) << std::fixed << std::setw(6)
-                << std::right << ale_time_avg / overall_time_avg * 100 << " %" << std::endl;
-  }
-
-  double other = overall_time_avg - sum_of_substeps - setup_time_avg;
-  if(this->param.ale_formulation)
-    other -= ale_time_avg;
-
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Other" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << other << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << other / overall_time_avg * 100 << " %" << std::endl;
-
-  this->pcout << "  " << std::setw(length + 2) << std::left << "Overall" << std::setprecision(2)
-              << std::scientific << std::setw(10) << std::right << overall_time_avg << " s  "
-              << std::setprecision(2) << std::fixed << std::setw(6) << std::right
-              << overall_time_avg / overall_time_avg * 100 << " %" << std::endl;
-
-  // computational costs in CPUh
-  unsigned int N_mpi_processes = Utilities::MPI::n_mpi_processes(mpi_comm);
-
-  this->pcout << std::endl
-              << "Computational costs (including setup + postprocessing):" << std::endl
-              << "  Number of MPI processes = " << N_mpi_processes << std::endl
-              << "  Wall time               = " << std::scientific << std::setprecision(2)
-              << overall_time_avg << " s" << std::endl
-              << "  Computational costs     = " << std::scientific << std::setprecision(2)
-              << overall_time_avg * (double)N_mpi_processes / 3600.0 << " CPUh" << std::endl;
-
-  // Throughput in DoFs/s per time step per core
-  types::global_dof_index const DoFs = this->navier_stokes_operator->get_number_of_dofs();
-
-  if(param.solver_type == SolverType::Unsteady)
-  {
-    unsigned int N_time_steps      = this->time_integrator->get_number_of_time_steps();
-    double const time_per_timestep = overall_time_avg / (double)N_time_steps;
-    this->pcout << std::endl
-                << "Throughput per time step (including setup + postprocessing):" << std::endl
-                << "  Degrees of freedom      = " << DoFs << std::endl
-                << "  Wall time               = " << std::scientific << std::setprecision(2)
-                << overall_time_avg << " s" << std::endl
-                << "  Time steps              = " << std::left << N_time_steps << std::endl
-                << "  Wall time per time step = " << std::scientific << std::setprecision(2)
-                << time_per_timestep << " s" << std::endl
-                << "  Throughput              = " << std::scientific << std::setprecision(2)
-                << DoFs / (time_per_timestep * N_mpi_processes) << " DoFs/s/core" << std::endl;
-  }
-  else
-  {
-    this->pcout << std::endl
-                << "Throughput (including setup + postprocessing):" << std::endl
-                << "  Degrees of freedom      = " << DoFs << std::endl
-                << "  Wall time               = " << std::scientific << std::setprecision(2)
-                << overall_time_avg << " s" << std::endl
-                << "  Throughput              = " << std::scientific << std::setprecision(2)
-                << DoFs / (overall_time_avg * N_mpi_processes) << " DoFs/s/core" << std::endl;
-  }
-
-
-  this->pcout << "_________________________________________________________________________________"
-              << std::endl
-              << std::endl;
-}
+//#define USE_SUB_COMMUNICATOR
 
 int
 main(int argc, char ** argv)
@@ -648,85 +235,86 @@ main(int argc, char ** argv)
 
     MPI_Comm mpi_comm(MPI_COMM_WORLD);
 
-    // set parameters
-    InputParameters param;
-    set_input_parameters(param);
+    // new communicator
+    MPI_Comm sub_comm;
 
-    // check parameters in case of restart
-    if(param.restarted_simulation)
+#ifdef USE_SUB_COMMUNICATOR
+    // use stride of n cores
+    const int n = 48; // 24;
+
+    const int rank     = Utilities::MPI::this_mpi_process(mpi_comm);
+    const int size     = Utilities::MPI::n_mpi_processes(mpi_comm);
+    const int flag     = 1;
+    const int new_rank = rank + (rank % n) * size;
+
+    // split default communicator into two groups
+    MPI_Comm_split(mpi_comm, flag, new_rank, &sub_comm);
+
+    if(rank == 0)
+      std::cout << std::endl << "Created sub communicator with stride of " << n << std::endl;
+#else
+    sub_comm = mpi_comm;
+#endif
+
+    // check if parameter file is provided
+
+    // ./incompressible_navier_stokes
+    AssertThrow(argc > 1, ExcMessage("No parameter file has been provided!"));
+
+    // ./incompressible_navier_stokes --help
+    if(argc == 2 && std::string(argv[1]) == "--help")
     {
-      AssertThrow(DEGREE_MIN == DEGREE_MAX && REFINE_SPACE_MIN == REFINE_SPACE_MAX,
-                  ExcMessage("Spatial refinement not possible in combination with restart!"));
+      if(dealii::Utilities::MPI::this_mpi_process(sub_comm) == 0)
+        create_input_file();
 
-      AssertThrow(REFINE_TIME_MIN == REFINE_TIME_MAX,
-                  ExcMessage("Temporal refinement not possible in combination with restart!"));
+      return 0;
+    }
+    // ./incompressible_navier_stokes --help NameOfApplication
+    else if(argc == 3 && std::string(argv[1]) == "--help")
+    {
+      if(dealii::Utilities::MPI::this_mpi_process(sub_comm) == 0)
+        create_input_file(argv[2]);
+
+      return 0;
     }
 
+    // the second argument is the input-file
+    // ./incompressible_navier_stokes InputFile
+    std::string      input_file = std::string(argv[1]);
+    ConvergenceStudy study(input_file);
+
     // k-refinement
-    for(unsigned int degree = DEGREE_MIN; degree <= DEGREE_MAX; ++degree)
+    for(unsigned int degree = study.degree_min; degree <= study.degree_max; ++degree)
     {
       // h-refinement
-      for(unsigned int h_refinements = REFINE_SPACE_MIN; h_refinements <= REFINE_SPACE_MAX;
-          ++h_refinements)
+      for(unsigned int refine_space = study.refine_space_min;
+          refine_space <= study.refine_space_max;
+          ++refine_space)
       {
         // dt-refinement
-        for(unsigned int dt_refinements = REFINE_TIME_MIN; dt_refinements <= REFINE_TIME_MAX;
-            ++dt_refinements)
+        for(unsigned int refine_time = study.refine_time_min; refine_time <= study.refine_time_max;
+            ++refine_time)
         {
-          // new communicator
-          MPI_Comm sub_comm;
-
-#ifdef USE_SUB_COMMUNICATOR_FOR_FFTW
-          // use stride of n cores
-          const int n = 48; // 24;
-
-          const int rank     = Utilities::MPI::this_mpi_process(mpi_comm);
-          const int size     = Utilities::MPI::n_mpi_processes(mpi_comm);
-          const int flag     = 1;
-          const int new_rank = rank + (rank % n) * size;
-
-          // split default communicator into two groups
-          MPI_Comm_split(mpi_comm, flag, new_rank, &sub_comm);
-
-          if(rank == 0)
-            std::cout << std::endl << "Created sub communicator with stride of " << n << std::endl;
-#else
-          sub_comm = mpi_comm;
-#endif
-
-          // reset degree
-          param.degree_u = degree;
-
-          // reset mesh refinements
-          param.h_refinements = h_refinements;
-
-          // reset dt refinements
-          param.dt_refinements = dt_refinements;
-
-          // setup problem and run simulation
-          typedef double                       Number;
-          std::shared_ptr<ProblemBase<Number>> problem;
-
-          if(param.dim == 2)
-            problem.reset(new Problem<2, Number>(sub_comm));
-          else if(param.dim == 3)
-            problem.reset(new Problem<3, Number>(sub_comm));
+          // run the simulation
+          if(study.dim == 2 && study.precision == "float")
+            run<2, float>(input_file, degree, refine_space, refine_time, sub_comm);
+          else if(study.dim == 2 && study.precision == "double")
+            run<2, double>(input_file, degree, refine_space, refine_time, sub_comm);
+          else if(study.dim == 3 && study.precision == "float")
+            run<3, float>(input_file, degree, refine_space, refine_time, sub_comm);
+          else if(study.dim == 3 && study.precision == "double")
+            run<3, double>(input_file, degree, refine_space, refine_time, sub_comm);
           else
-            AssertThrow(false, ExcMessage("Only dim=2 and dim=3 implemented."));
-
-          problem->setup(param);
-
-          problem->solve();
-
-          problem->analyze_computing_times();
-
-#ifdef USE_SUB_COMMUNICATOR_FOR_FFTW
-          // free communicator
-          MPI_Comm_free(&sub_comm);
-#endif
+            AssertThrow(false,
+                        ExcMessage("Only dim = 2|3 and precision=float|double implemented."));
         }
       }
     }
+
+#ifdef USE_SUB_COMMUNICATOR
+    // free communicator
+    MPI_Comm_free(&sub_comm);
+#endif
   }
   catch(std::exception & exc)
   {

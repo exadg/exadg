@@ -158,14 +158,12 @@ main(int argc, char ** argv)
 
     // the second argument is the input-file
     // ./poisson_throughput InputFile
-    std::string    input_file = std::string(argv[1]);
-    ParameterStudy study(input_file);
-
-    // fill resolutions vector depending on type of throughput study
-    unsigned int const n_components = 1;
-    study.fill_resolution_vector(n_components);
-
+    std::string     input_file = std::string(argv[1]);
+    ParameterStudy  study(input_file);
     ThroughputStudy throughput(input_file);
+
+    // fill resolution vector depending on the operator_type
+    study.fill_resolution_vector(&Poisson::get_dofs_per_element, throughput.operator_type);
 
     // loop over resolutions vector and run simulations
     for(auto iter = study.resolutions.begin(); iter != study.resolutions.end(); ++iter)

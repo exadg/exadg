@@ -1,0 +1,17 @@
+{
+    "General": {
+	"Precision": "double",
+        "Dim": "2",
+        "DegreeMin": "6",
+        "DegreeMax": "6",
+        "RefineSpaceMin": "4",
+        "RefineSpaceMax": "4",
+        "RefineTimeMin": "0",
+        "RefineTimeMax": "0"
+    },
+    "Application": {
+       	"Name": "VortexPeriodic",
+	"OutputDirectory": "output/vortex_periodic/",
+	"OutputName": "test"
+    }
+}

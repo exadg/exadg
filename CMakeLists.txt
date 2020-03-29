@@ -122,6 +122,7 @@ SET( TARGET_SRC
      include/incompressible_navier_stokes/postprocessor/mean_velocity_calculator.cpp 
      include/incompressible_navier_stokes/postprocessor/flow_rate_calculator.cpp 
      include/incompressible_navier_stokes/postprocessor/postprocessor.cpp 
+     include/incompressible_navier_stokes/driver.cpp
      # compressible Navier-Stokes equations
      include/compressible_navier_stokes/user_interface/enum_types.cpp
      include/compressible_navier_stokes/user_interface/input_parameters.cpp

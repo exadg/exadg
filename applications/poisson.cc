@@ -186,9 +186,9 @@ main(int argc, char ** argv)
     std::string    input_file = std::string(argv[1]);
     ParameterStudy study(input_file);
 
-    // fill resolutions vector depending on type of throughput study
-    unsigned int const n_components = 1;
-    study.fill_resolution_vector(n_components);
+    // fill resolution vector depending on the operator_type
+    study.fill_resolution_vector(&Poisson::get_dofs_per_element,
+                                 enum_to_string(Poisson::OperatorType::MatrixFree));
 
     std::vector<Timings> timings;
 

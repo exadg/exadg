@@ -8,6 +8,10 @@
 #ifndef APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_
 #define APPLICATIONS_GRID_TOOLS_PERIODIC_BOX_H_
 
+#include <deal.II/distributed/tria.h>
+#include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_tools.h>
+
 #include "deformed_cube_manifold.h"
 
 template<int dim>

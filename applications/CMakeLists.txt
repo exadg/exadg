@@ -19,8 +19,8 @@ SET( SOURCE_FILES
      convection_diffusion_throughput.cc
 
      # Incompressible Navier-Stokes
-     incompressible_navier_stokes_performance.cc
      incompressible_navier_stokes.cc
+     incompressible_navier_stokes_throughput.cc
      incompressible_navier_stokes_two_domains.cc
 
      # Incompressible flow with scalar transport

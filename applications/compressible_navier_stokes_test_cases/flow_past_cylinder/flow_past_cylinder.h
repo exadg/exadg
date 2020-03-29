@@ -19,8 +19,8 @@ template<int dim>
 class VelocityBC : public Function<dim>
 {
 public:
-  VelocityBC(const double Um, const double H, const double END_TIME, const unsigned int TEST_CASE)
-    : Function<dim>(dim, 0.0), Um(Um), H(H), END_TIME(END_TIME), TEST_CASE(TEST_CASE)
+  VelocityBC(const double Um, const double H, const double end_time, const unsigned int test_case)
+    : Function<dim>(dim, 0.0), Um(Um), H(H), end_time(end_time), test_case(test_case)
   {
   }
 
@@ -37,11 +37,11 @@ public:
     {
       double coefficient =
         Utilities::fixed_power<dim - 1>(4.) * Um / Utilities::fixed_power<2 * dim - 2>(H);
-      if(TEST_CASE < 3)
+      if(test_case < 3)
         result =
           coefficient * p[1] * (H - p[1]) * ((t / T) < 1.0 ? std::sin(pi / 2. * t / T) : 1.0);
-      else if(TEST_CASE == 3)
-        result = coefficient * p[1] * (H - p[1]) * std::sin(pi * t / END_TIME);
+      else if(test_case == 3)
+        result = coefficient * p[1] * (H - p[1]) * std::sin(pi * t / end_time);
 
       if(dim == 3)
         result *= p[2] * (H - p[2]);
@@ -51,8 +51,8 @@ public:
   }
 
 private:
-  double const       Um, H, END_TIME;
-  unsigned int const TEST_CASE;
+  double const       Um, H, end_time;
+  unsigned int const test_case;
 };
 
 template<int dim, typename Number>
@@ -86,7 +86,7 @@ public:
      prm.enter_subsection("Application");
        prm.add_parameter("OutputDirectory",     output_directory,     "Directory where output is written.");
        prm.add_parameter("OutputName",          output_name,          "Name of output files.");
-       prm.add_parameter("TestCase",            test_case,            "Name of output files.", Patterns::Integer(1,3));
+       prm.add_parameter("TestCase",            test_case,            "Number of test case.", Patterns::Integer(1,3));
      prm.leave_subsection();
     // clang-format on
   }
@@ -95,11 +95,10 @@ public:
   std::string output_name      = "test";
 
   // test case according to benchmark nomenclature
-  unsigned int test_case = 1;
+  unsigned int test_case = 3;
 
-  // start and end time
-  double const START_TIME = 0.0;
-  double const END_TIME   = 8.0;
+  // end time
+  double const end_time = 8.0;
 
   // physical quantities
   double const VISCOSITY    = 1.e-3;
@@ -124,8 +123,8 @@ public:
     param.right_hand_side = false;
 
     // PHYSICAL QUANTITIES
-    param.start_time            = START_TIME;
-    param.end_time              = END_TIME;
+    param.start_time            = 0.0;
+    param.end_time              = end_time;
     param.dynamic_viscosity     = VISCOSITY;
     param.reference_density     = RHO_0;
     param.heat_capacity_ratio   = GAMMA;
@@ -241,7 +240,7 @@ public:
 
     // velocity
     boundary_descriptor_velocity->dirichlet_bc.insert(
-      pair(0, new VelocityBC<dim>(Um, H, END_TIME, test_case)));
+      pair(0, new VelocityBC<dim>(Um, H, end_time, test_case)));
     boundary_descriptor_velocity->dirichlet_bc.insert(
       pair(2, new Functions::ZeroFunction<dim>(dim)));
     boundary_descriptor_velocity->neumann_bc.insert(pair(1, new Functions::ZeroFunction<dim>(dim)));

@@ -11,7 +11,8 @@ template<int dim>
 class FunctionWithNormal : public Function<dim>
 {
 public:
-  FunctionWithNormal(const double time_in) : Function<dim>(dim, time_in)
+  FunctionWithNormal(unsigned int const n_components, const double time)
+    : Function<dim>(n_components, time)
   {
   }
 

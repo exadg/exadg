@@ -38,15 +38,13 @@ fill_resolutions_vector(
   std::vector<
     std::tuple<unsigned int /*k*/, unsigned int /*l*/, unsigned int /*subdivisions hypercube*/>> &
                                 resolutions,
-  unsigned int const            degree,
   unsigned int const            dim,
-  unsigned int const            n_components,
+  unsigned int const            degree,
+  unsigned int const            dofs_per_element,
   types::global_dof_index const n_dofs_min,
   types::global_dof_index const n_dofs_max,
   RunType const &               run_type)
 {
-  unsigned int const dofs_per_element = n_components * std::pow(degree + 1, dim);
-
   unsigned int l = 0, n_subdivisions_1d = 1;
 
   double n_cells_min = (double)n_dofs_min / dofs_per_element;
@@ -209,7 +207,10 @@ struct ParameterStudy
   }
 
   void
-  fill_resolution_vector(unsigned int const n_components)
+  fill_resolution_vector(
+    std::function<unsigned int(std::string, unsigned int, unsigned int)> const &
+                get_dofs_per_element,
+    std::string operator_type)
   {
     if(run_type == RunType::RefineHAndP)
     {
@@ -231,8 +232,9 @@ struct ParameterStudy
     {
       for(unsigned int degree = degree_min; degree <= degree_max; ++degree)
       {
+        unsigned int dofs_per_element = get_dofs_per_element(operator_type, dim, degree);
         fill_resolutions_vector(
-          resolutions, degree, dim, n_components, n_dofs_min, n_dofs_max, run_type);
+          resolutions, dim, degree, dofs_per_element, n_dofs_min, n_dofs_max, run_type);
       }
     }
     else

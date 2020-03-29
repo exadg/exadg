@@ -17,10 +17,10 @@ LinePlotCalculator<dim, Number>::LinePlotCalculator(MPI_Comm const & comm)
 
 template<int dim, typename Number>
 void
-LinePlotCalculator<dim, Number>::setup(DoFHandler<dim> const &   dof_handler_velocity_in,
-                                       DoFHandler<dim> const &   dof_handler_pressure_in,
-                                       Mapping<dim> const &      mapping_in,
-                                       LinePlotData<dim> const & line_plot_data_in)
+LinePlotCalculator<dim, Number>::setup(DoFHandler<dim> const & dof_handler_velocity_in,
+                                       DoFHandler<dim> const & dof_handler_pressure_in,
+                                       Mapping<dim> const &    mapping_in,
+                                       LinePlotDataInstantaneous<dim> const & line_plot_data_in)
 {
   dof_handler_velocity = &dof_handler_velocity_in;
   dof_handler_pressure = &dof_handler_pressure_in;
@@ -36,11 +36,12 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
   if(data.calculate == true)
   {
     // precision
-    unsigned int const precision = data.precision;
+    unsigned int const precision = data.line_data.precision;
 
     // loop over all lines
-    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line = data.lines.begin();
-        line != data.lines.end();
+    for(typename std::vector<std::shared_ptr<Line<dim>>>::const_iterator line =
+          data.line_data.lines.begin();
+        line != data.line_data.lines.end();
         ++line)
     {
       // store all points along current line in a vector
@@ -53,7 +54,7 @@ LinePlotCalculator<dim, Number>::evaluate(VectorType const & velocity,
           (*line)->begin + double(i) / double(n_points - 1) * ((*line)->end - (*line)->begin);
 
       // filename prefix for current line
-      std::string filename_prefix = data.directory + (*line)->name;
+      std::string filename_prefix = data.line_data.directory + (*line)->name;
 
       // write output for all specified quantities
       for(std::vector<std::shared_ptr<Quantity>>::const_iterator quantity =

@@ -14,10 +14,6 @@ namespace CompNS
 {
 namespace TurbulentChannel
 {
-// can only be used for GridStretchType::TransformGridCells, otherwise coarse grid consists of 1
-// cell
-const unsigned int N_CELLS_1D_COARSE_GRID = 1;
-
 // set problem specific parameters like physical dimensions, etc.
 double const DIMENSIONS_X1 = 2.0 * numbers::PI;
 double const DIMENSIONS_X2 = 2.0;
@@ -55,13 +51,6 @@ double const SAMPLE_END_TIME   = END_TIME;
 // use a negative GRID_STRETCH_FAC to deactivate grid stretching
 double const GRID_STRETCH_FAC = 1.8;
 
-enum class GridStretchType
-{
-  TransformGridCells,
-  VolumeManifold
-};
-GridStretchType const GRID_STRETCH_TYPE = GridStretchType::TransformGridCells;
-
 /*
  *  maps eta in [0,1] --> y in [-1,1]*length_y/2.0 (using a hyperbolic mesh stretching)
  */
@@ -97,21 +86,6 @@ inverse_grid_transform_y(const double & y)
     eta = (2. * y / DIMENSIONS_X2 + 1.) / 2.0;
 
   return eta;
-}
-
-template<int dim>
-Point<dim>
-grid_transform(const Point<dim> & in)
-{
-  Point<dim> out = in;
-
-  out[0] = in(0) - DIMENSIONS_X1 / 2.0;
-  out[1] = grid_transform_y(in[1]);
-
-  if(dim == 3)
-    out[2] = in(2) - DIMENSIONS_X3 / 2.0;
-
-  return out;
 }
 
 template<int dim>
@@ -345,84 +319,38 @@ public:
               std::vector<GridTools::PeriodicFacePair<typename Triangulation<dim>::cell_iterator>> &
                 periodic_faces)
   {
-    if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
+    Tensor<1, dim> dimensions;
+    dimensions[0] = DIMENSIONS_X1;
+    dimensions[1] = DIMENSIONS_X2;
+    if(dim == 3)
+      dimensions[2] = DIMENSIONS_X3;
+
+    GridGenerator::hyper_rectangle(*triangulation,
+                                   Point<dim>(-dimensions / 2.0),
+                                   Point<dim>(dimensions / 2.0));
+
+    // manifold
+    unsigned int manifold_id = 1;
+    for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
+        cell != triangulation->end();
+        ++cell)
     {
-      Point<dim> coordinates;
-      coordinates[0] = DIMENSIONS_X1;
-      // dimension in y-direction is 2.0, see also function grid_transform()
-      // that maps the y-coordinate from [0,1] to [-1,1]
-      coordinates[1] = DIMENSIONS_X2 / 2.0;
-      if(dim == 3)
-        coordinates[2] = DIMENSIONS_X3;
-
-      // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-      std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
-      GridGenerator::subdivided_hyper_rectangle(*triangulation,
-                                                refinements,
-                                                Point<dim>(),
-                                                coordinates);
-
-      for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-          cell != triangulation->end();
-          ++cell)
-      {
-        for(unsigned int face_number = 0; face_number < GeometryInfo<dim>::faces_per_cell;
-            ++face_number)
-        {
-          // x-direction
-          if((std::fabs(cell->face(face_number)->center()(0) - 0.0) < 1e-12))
-            cell->face(face_number)->set_all_boundary_ids(0 + 10);
-          else if((std::fabs(cell->face(face_number)->center()(0) - DIMENSIONS_X1) < 1e-12))
-            cell->face(face_number)->set_all_boundary_ids(1 + 10);
-          // z-direction
-          else if((std::fabs(cell->face(face_number)->center()(2) - 0 - 0) < 1e-12))
-            cell->face(face_number)->set_all_boundary_ids(2 + 10);
-          else if((std::fabs(cell->face(face_number)->center()(2) - DIMENSIONS_X3) < 1e-12))
-            cell->face(face_number)->set_all_boundary_ids(3 + 10);
-        }
-      }
+      cell->set_all_manifold_ids(manifold_id);
     }
-    else if(GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
+
+    // apply mesh stretching towards no-slip boundaries in y-direction
+    static const ManifoldTurbulentChannel<dim> manifold(dimensions);
+    triangulation->set_manifold(manifold_id, manifold);
+
+    // periodicity in x- and z-direction
+    // add 10 to avoid conflicts with dirichlet boundary, which is 0
+    triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
+    triangulation->begin()->face(1)->set_all_boundary_ids(1 + 10);
+    // periodicity in z-direction
+    if(dim == 3)
     {
-      Tensor<1, dim> dimensions;
-      dimensions[0] = DIMENSIONS_X1;
-      dimensions[1] = DIMENSIONS_X2;
-      if(dim == 3)
-        dimensions[2] = DIMENSIONS_X3;
-
-      // hypercube: line in 1D, square in 2D, etc., hypercube volume is [left,right]^dim
-      AssertThrow(N_CELLS_1D_COARSE_GRID == 1,
-                  ExcMessage("Only N_CELLS_1D_COARSE_GRID=1 possible for curvilinear grid."));
-
-      std::vector<unsigned int> refinements(dim, N_CELLS_1D_COARSE_GRID);
-      GridGenerator::subdivided_hyper_rectangle(*triangulation,
-                                                refinements,
-                                                Point<dim>(-dimensions / 2.0),
-                                                Point<dim>(dimensions / 2.0));
-
-      // manifold
-      unsigned int manifold_id = 1;
-      for(typename Triangulation<dim>::cell_iterator cell = triangulation->begin();
-          cell != triangulation->end();
-          ++cell)
-      {
-        cell->set_all_manifold_ids(manifold_id);
-      }
-
-      // apply mesh stretching towards no-slip boundaries in y-direction
-      static const ManifoldTurbulentChannel<dim> manifold(dimensions);
-      triangulation->set_manifold(manifold_id, manifold);
-
-      // periodicity in x- and z-direction
-      // add 10 to avoid conflicts with dirichlet boundary, which is 0
-      triangulation->begin()->face(0)->set_all_boundary_ids(0 + 10);
-      triangulation->begin()->face(1)->set_all_boundary_ids(1 + 10);
-      // periodicity in z-direction
-      if(dim == 3)
-      {
-        triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
-        triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
-      }
+      triangulation->begin()->face(4)->set_all_boundary_ids(2 + 10);
+      triangulation->begin()->face(5)->set_all_boundary_ids(3 + 10);
     }
 
     auto tria = dynamic_cast<Triangulation<dim> *>(&*triangulation);
@@ -434,12 +362,6 @@ public:
 
     // perform global refinements
     triangulation->refine_global(n_refine_space);
-
-    if(GRID_STRETCH_TYPE == GridStretchType::TransformGridCells)
-    {
-      // perform grid transform
-      GridTools::transform(&grid_transform<dim>, *triangulation);
-    }
   }
 
   void
@@ -499,10 +421,8 @@ public:
     pp_data_turb_ch.pp_data = pp_data;
 
     // turbulent channel statistics
-    pp_data_turb_ch.turb_ch_data.calculate_statistics = true;
-    pp_data_turb_ch.turb_ch_data.cells_are_stretched  = false;
-    if(GRID_STRETCH_TYPE == GridStretchType::VolumeManifold)
-      pp_data_turb_ch.turb_ch_data.cells_are_stretched = true;
+    pp_data_turb_ch.turb_ch_data.calculate_statistics   = true;
+    pp_data_turb_ch.turb_ch_data.cells_are_stretched    = true;
     pp_data_turb_ch.turb_ch_data.sample_start_time      = SAMPLE_START_TIME;
     pp_data_turb_ch.turb_ch_data.sample_end_time        = SAMPLE_END_TIME;
     pp_data_turb_ch.turb_ch_data.sample_every_timesteps = 10;

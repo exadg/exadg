@@ -57,7 +57,7 @@ public:
                                MPI_Comm const &        mpi_comm_in);
 
   void
-  setup(LinePlotData<dim> const & line_plot_data_in);
+  setup(LinePlotDataStatistics<dim> const & line_plot_data_in);
 
   void
   evaluate(VectorType const &   velocity,
@@ -98,7 +98,7 @@ private:
   Mapping<dim> const &    mapping;
   MPI_Comm                communicator;
 
-  LinePlotData<dim> data;
+  LinePlotDataStatistics<dim> data;
 
   // Global points
   std::vector<std::vector<Point<dim>>> global_points;

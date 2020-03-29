@@ -29,15 +29,15 @@ struct PostProcessorData
   {
   }
 
-  OutputData                  output_data;
-  ErrorCalculationData<dim>   error_data_u;
-  ErrorCalculationData<dim>   error_data_p;
-  LiftAndDragData             lift_and_drag_data;
-  PressureDifferenceData<dim> pressure_difference_data;
-  MassConservationData        mass_data;
-  KineticEnergyData           kinetic_energy_data;
-  KineticEnergySpectrumData   kinetic_energy_spectrum_data;
-  LinePlotData<dim>           line_plot_data;
+  OutputData                     output_data;
+  ErrorCalculationData<dim>      error_data_u;
+  ErrorCalculationData<dim>      error_data_p;
+  LiftAndDragData                lift_and_drag_data;
+  PressureDifferenceData<dim>    pressure_difference_data;
+  MassConservationData           mass_data;
+  KineticEnergyData              kinetic_energy_data;
+  KineticEnergySpectrumData      kinetic_energy_spectrum_data;
+  LinePlotDataInstantaneous<dim> line_plot_data;
 };
 
 template<int dim, typename Number>

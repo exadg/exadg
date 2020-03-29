@@ -14,7 +14,7 @@ namespace ConvDiff
 {
 namespace Template
 {
-//  Example for a user defined function
+//  Example of a user defined function
 template<int dim>
 class MyFunction : public Function<dim>
 {
